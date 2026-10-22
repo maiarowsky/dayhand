@@ -1,0 +1,28 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.gradle/
+*.apk
+*.aab
+DerivedData/
+Pods/
+
+# Secrets and local environment: never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Convex local backend: binary, data, instance secret, signing key
+backend/.local-backend/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local agent tooling
+.claude/settings.local.json
