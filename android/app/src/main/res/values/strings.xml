@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Helm</string>
+
+    <string name="today_title">Today</string>
+    <string name="section_overdue">Overdue (%1$d)</string>
+    <string name="section_now">Now</string>
+    <string name="section_today">Today</string>
+    <string name="section_done">Done (%1$d)</string>
+    <string name="done_expand">Show done tasks</string>
+    <string name="done_collapse">Hide done tasks</string>
+    <string name="empty_today">Nothing planned for today.</string>
+    <string name="add_task">Add task</string>
+    <string name="open_settings">Settings</string>
+    <string name="yesterday">yesterday</string>
+
+    <string name="complete_task">Mark done: %1$s</string>
+    <string name="reopen_task">Mark not done: %1$s</string>
+    <string name="move_to_today">To today</string>
+    <string name="move_to_today_described">Move to today: %1$s</string>
+    <string name="move_to_day">Another day…</string>
+    <string name="archive">Archive</string>
+    <string name="set_now">Work on it now</string>
+    <string name="more_actions">More actions: %1$s</string>
+    <string name="stop_now">Not now</string>
+
+    <string name="resume_label">Where I stopped / next step</string>
+    <string name="resume_empty">Add where you stopped or the next step</string>
+    <string name="resume_edit">Edit where I stopped</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="clear">Clear</string>
+
+    <string name="quick_add_title">New task</string>
+    <string name="quick_add_field">What needs doing?</string>
+    <string name="quick_add_more">More options</string>
+    <string name="quick_add_less">Fewer options</string>
+    <string name="quick_add_day">Day</string>
+    <string name="quick_add_today">Today</string>
+    <string name="quick_add_tomorrow">Tomorrow</string>
+    <string name="quick_add_time">Time</string>
+    <string name="quick_add_no_time">No time</string>
+    <string name="quick_add_note">Note</string>
+    <string name="quick_add_save">Add</string>
+    <string name="title_too_long">At most %1$d characters</string>
+
+    <string name="status_offline">Offline. Changes are saved and will be sent when the network is back (%1$d waiting).</string>
+    <string name="status_offline_mode">Offline test mode is on. Changes wait on the phone (%1$d waiting).</string>
+    <string name="status_not_configured">Not connected to a server yet. Set the address and token in Settings.</string>
+    <string name="status_unauthorized">The server refused the token. Paste a new one in Settings.</string>
+    <string name="status_error">Cannot reach the server. Helm keeps trying.</string>
+    <string name="status_sending">Sending %1$d changes…</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="back">Back</string>
+    <string name="settings_backend">Server</string>
+    <string name="settings_url">Backend address</string>
+    <string name="settings_url_hint">For example https://example.convex.cloud</string>
+    <string name="settings_url_invalid">Enter an http:// or https:// address</string>
+    <string name="settings_token">App token</string>
+    <string name="settings_token_hint">Paste the token from npm run app-token</string>
+    <string name="settings_token_saved">A token is saved. Leave the field empty to keep it.</string>
+    <string name="settings_token_missing">No token saved yet.</string>
+    <string name="settings_token_invalid">This does not look like an app token</string>
+    <string name="settings_saved">Saved</string>
+    <string name="settings_offline">Offline test mode</string>
+    <string name="settings_offline_hint">Nothing is sent or received while it is on; changes wait in the queue.</string>
+    <string name="settings_timezone">Time zone (from the server): %1$s</string>
+    <string name="settings_version">Helm %1$s</string>
+</resources>

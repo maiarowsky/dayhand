@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_title">Dzisiaj</string>
+    <string name="section_overdue">Zaległe (%1$d)</string>
+    <string name="section_now">Teraz</string>
+    <string name="section_today">Dzisiaj</string>
+    <string name="section_done">Zrobione (%1$d)</string>
+    <string name="done_expand">Pokaż zrobione</string>
+    <string name="done_collapse">Ukryj zrobione</string>
+    <string name="empty_today">Na dziś nic nie zaplanowano.</string>
+    <string name="add_task">Dodaj zadanie</string>
+    <string name="open_settings">Ustawienia</string>
+    <string name="yesterday">wczoraj</string>
+
+    <string name="complete_task">Odhacz: %1$s</string>
+    <string name="reopen_task">Cofnij odhaczenie: %1$s</string>
+    <string name="move_to_today">Na dziś</string>
+    <string name="move_to_today_described">Przenieś na dziś: %1$s</string>
+    <string name="move_to_day">Inny dzień…</string>
+    <string name="archive">Archiwizuj</string>
+    <string name="set_now">Zajmij się teraz</string>
+    <string name="more_actions">Więcej akcji: %1$s</string>
+    <string name="stop_now">Nie teraz</string>
+
+    <string name="resume_label">Gdzie skończyłem / następny krok</string>
+    <string name="resume_empty">Dopisz, na czym stanęło, albo następny krok</string>
+    <string name="resume_edit">Edytuj, gdzie skończyłem</string>
+    <string name="save">Zapisz</string>
+    <string name="cancel">Anuluj</string>
+    <string name="ok">OK</string>
+    <string name="clear">Wyczyść</string>
+
+    <string name="quick_add_title">Nowe zadanie</string>
+    <string name="quick_add_field">Co trzeba zrobić?</string>
+    <string name="quick_add_more">Więcej opcji</string>
+    <string name="quick_add_less">Mniej opcji</string>
+    <string name="quick_add_day">Dzień</string>
+    <string name="quick_add_today">Dziś</string>
+    <string name="quick_add_tomorrow">Jutro</string>
+    <string name="quick_add_time">Godzina</string>
+    <string name="quick_add_no_time">Bez godziny</string>
+    <string name="quick_add_note">Notatka</string>
+    <string name="quick_add_save">Dodaj</string>
+    <string name="title_too_long">Najwyżej %1$d znaków</string>
+
+    <string name="status_offline">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</string>
+    <string name="status_offline_mode">Włączony testowy tryb offline. Zmiany czekają w telefonie (w kolejce: %1$d).</string>
+    <string name="status_not_configured">Brak połączenia z serwerem. Ustaw adres i token w Ustawieniach.</string>
+    <string name="status_unauthorized">Serwer odrzucił token. Wklej nowy w Ustawieniach.</string>
+    <string name="status_error">Nie mogę połączyć się z serwerem. Helm próbuje dalej.</string>
+    <string name="status_sending">Wysyłanie zmian: %1$d…</string>
+
+    <string name="settings_title">Ustawienia</string>
+    <string name="back">Wstecz</string>
+    <string name="settings_backend">Serwer</string>
+    <string name="settings_url">Adres backendu</string>
+    <string name="settings_url_hint">Na przykład https://example.convex.cloud</string>
+    <string name="settings_url_invalid">Wpisz adres zaczynający się od http:// albo https://</string>
+    <string name="settings_token">Token aplikacji</string>
+    <string name="settings_token_hint">Wklej token z npm run app-token</string>
+    <string name="settings_token_saved">Token jest zapisany. Zostaw pole puste, żeby go zachować.</string>
+    <string name="settings_token_missing">Nie zapisano jeszcze tokenu.</string>
+    <string name="settings_token_invalid">To nie wygląda na token aplikacji</string>
+    <string name="settings_saved">Zapisano</string>
+    <string name="settings_offline">Testowy tryb offline</string>
+    <string name="settings_offline_hint">Gdy jest włączony, nic nie jest wysyłane ani pobierane; zmiany czekają w kolejce.</string>
+    <string name="settings_timezone">Strefa czasowa (z serwera): %1$s</string>
+    <string name="settings_version">Helm %1$s</string>
+</resources>
