@@ -233,6 +233,10 @@ def main():
     tap(find(text="Add a time"))
     tap(button("OK"))
     wait_server(task_id, lambda t: t.get("dueTime") == "09:00", "time 09:00")
+    # The first task with a time asks for the notification permission (Android 13+).
+    find(text="Allow Helm to send you notifications?")
+    tap(button("Allow"))
+    log("notification permission asked for the first timed task, allowed")
 
     tap(find_scrolling(text="Add link"))
     tap(edit_text())

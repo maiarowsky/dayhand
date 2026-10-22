@@ -1,6 +1,9 @@
 package dev.helm.planner.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
@@ -118,6 +121,16 @@ class TodayScreenTest {
     fun offlineBannerTellsHowManyChangesWait() {
         show(TodayUiState(sections(today = listOf(task("t", "2026-10-22"))), ConnectionStatus.OFFLINE, 2))
         compose.onNodeWithTag(TodayTags.STATUS).assertTextContains(text(R.string.status_offline, 2))
+    }
+
+    @Test
+    fun bannerThatAppearsLaterIsOnScreenWithALongList() {
+        val tasks = (1..30).map { task("t$it", "2026-10-22") }
+        var state by mutableStateOf(TodayUiState(sections(today = tasks), ConnectionStatus.SYNCED, 0))
+        compose.setContent { HelmTheme { TodayScreen(state, Recorder()) } }
+        compose.waitForIdle()
+        state = state.copy(connection = ConnectionStatus.OFFLINE)
+        compose.onNodeWithTag(TodayTags.STATUS).assertIsDisplayed()
     }
 
     @Test

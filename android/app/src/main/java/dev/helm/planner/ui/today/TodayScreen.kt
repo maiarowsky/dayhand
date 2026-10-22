@@ -123,10 +123,24 @@ private fun TodayList(
     modifier: Modifier,
     onAdd: () -> Unit,
 ) {
+    // The banner stays above the list: as a list item it could appear above the first visible row, off screen.
+    Column(modifier.fillMaxSize()) {
+        StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS))
+        TodayItems(state, actions, today, contentPadding, onAdd)
+    }
+}
+
+@Composable
+private fun TodayItems(
+    state: TodayUiState,
+    actions: TodayActions,
+    today: LocalDate,
+    contentPadding: PaddingValues,
+    onAdd: () -> Unit,
+) {
     var doneExpanded by rememberSaveable { mutableStateOf(false) }
     val sections = state.sections
-    LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
-        item { StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS)) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding) {
         if (sections.isEmpty) item { EmptyState(onAdd) }
         if (sections.overdue.isNotEmpty()) {
             item {
