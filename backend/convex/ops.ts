@@ -5,6 +5,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { args } from "./lib/args";
+import { identityOf as who } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
 import {
@@ -19,7 +20,7 @@ import {
   softDeleteTask,
   updateTask,
 } from "./lib/taskOps";
-import { actorValidator } from "./lib/validators";
+import { identityFields as identity } from "./lib/validators";
 import {
   board as boardOp,
   getTask as getTaskOp,
@@ -27,9 +28,6 @@ import {
   listToday as listTodayOp,
   listTrash as listTrashOp,
 } from "./lib/views";
-
-const identity = { userId: v.string(), actor: actorValidator };
-const who = ({ userId, actor }: { userId: string; actor: "app" | "agent" }) => ({ userId, actor });
 
 export const add = internalMutation({
   args: { ...identity, ...args.add },

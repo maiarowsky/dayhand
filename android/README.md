@@ -84,7 +84,7 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
 
    ```sh
    npm run app-token > ~/helm-token.txt        # user https://helm.local|me, valid 90 days
-   npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli"}'
+   npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}'
    ```
 
    Optionally set your time zone:

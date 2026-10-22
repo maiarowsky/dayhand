@@ -24,11 +24,45 @@ npx convex env set HELM_JWT_ISSUER https://helm.example
 npx convex env set HELM_JWKS "$(node scripts/signing-key.mjs jwks ~/helm-signing-key.json)"
 node scripts/signing-key.mjs private ~/helm-signing-key.json | npx convex env set HELM_JWT_PRIVATE_JWK
 npx convex deploy
-npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"app","name":"cli"}'
+npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"app","name":"cli","kind":"cli"}'
 ```
 
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
+
+## Upgrading to 0.3.0
+
+0.3.0 adds task numbers (`tasks.ref`, new table `taskCounters`) and key kinds (`apiKeys.kind`,
+`taskEvents.keyId` and `actorName`). All new fields are optional in the schema, so the deploy
+accepts existing data, and the app, the agent and old API keys keep working before the
+migration runs. Until then, tasks created before the upgrade have no number (`#n` does not
+find them) and old keys count as `agent` keys.
+
+0. Take a snapshot to roll back to: `npx convex export --path helm-before-0.3.0.zip` (it holds
+   the user's tasks; keep it out of the repository).
+1. Deploy: `npx convex deploy`.
+2. Right after, number the existing tasks (oldest first, per user; runs in batches of 200 and
+   schedules itself until done) and mark the existing keys as `agent` keys:
+
+   ```sh
+   npx convex run migrations:backfillTaskRefs
+   npx convex run migrations:backfillKeyKinds
+   ```
+
+   Run it right away: tasks added between the deploy and the migration get numbers first, so
+   older tasks get the numbers after them. Both migrations are idempotent and can be run again.
+3. Check that nothing is left: `npx convex run migrations:status` must print
+   `{ "keysWithoutKind": 0, "tasksWithoutRef": 0 }`. If `tasksWithoutRef` is not 0 yet, the
+   scheduled batches are still running; check again after a few seconds.
+4. If the key the user types commands with is a CLI key, make a new one with
+   `"kind": "cli"` (see [mcp.md](mcp.md#keys-and-actors)), switch the CLI to it and revoke the
+   old one, so the history shows `cli` instead of `agent: <name>`. Kinds cannot be changed on
+   an existing key.
+
+Rollback: deploying 0.2.0 again over migrated data fails schema validation (`ref`, `kind`,
+`actor: "cli"`, `keyId` and `actorName` are unknown to it). Roll forward with a fix instead, or
+restore the snapshot from step 0 (`npx convex import --replace-all helm-before-0.3.0.zip`,
+which drops changes made since) and deploy 0.2.0.
 
 ## Moving an existing key from disk into the deployment
 

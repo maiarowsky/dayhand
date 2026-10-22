@@ -1,4 +1,5 @@
 // The MCP endpoint through the official @modelcontextprotocol/sdk client.
+import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { internal } from "../convex/_generated/api";
 import { admin, callTool, createKey, mcpClient, mcpUrl, newUserId } from "./helpers";
@@ -85,6 +86,44 @@ describe("MCP over Streamable HTTP", () => {
     await client.close();
   });
 
+  test("tool errors carry a code in structuredContent next to the text", async () => {
+    const key = await createKey(newUserId());
+    const client = await mcpClient(key);
+    const notFound = await client.callTool({ name: "get_task", arguments: { taskId: "#404" } });
+    expect(notFound).toMatchObject({
+      isError: true,
+      content: [{ type: "text", text: "Task #404 not found" }],
+      structuredContent: { error: { code: "not_found", message: "Task #404 not found" } },
+    });
+    const badDate = await client.callTool({ name: "add_task", arguments: { title: "x", dueDate: "someday" } });
+    expect(badDate.structuredContent).toEqual({
+      error: { code: "invalid_argument", message: (badDate.content as any)[0].text },
+    });
+    expect((badDate.content as any)[0].text).toMatch(/dueDate must be YYYY-MM-DD/);
+    const missing = await client.callTool({ name: "get_task", arguments: {} });
+    expect(missing.structuredContent).toMatchObject({ error: { code: "invalid_argument", message: /Invalid arguments/ } });
+    const identity = await client.callTool({ name: "add_task", arguments: { title: "x", actor: "app" } });
+    expect(identity.structuredContent).toMatchObject({ error: { code: "invalid_argument", message: /set by the server/ } });
+    const notObject = await rpc(key, {
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/call",
+      params: { name: "list_all", arguments: [] },
+    });
+    expect(await notObject.json()).toMatchObject({
+      result: { isError: true, structuredContent: { error: { code: "invalid_argument" } } },
+    });
+    await client.close();
+  });
+
+  test("serverInfo.version is the backend package version", async () => {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    const client = await mcpClient(await createKey(newUserId()));
+    expect(client.getServerVersion()).toEqual({ name: "helm", version: pkg.version });
+    expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/);
+    await client.close();
+  });
+
   test("idempotent add through MCP with a clientId", async () => {
     const client = await mcpClient(await createKey(newUserId()));
     const a = await callTool(client, "add_task", { title: "once", clientId: "mcp-1" });
@@ -134,7 +173,9 @@ describe("MCP authentication", () => {
     const exported: any = await admin().query(internal.ops.exportPlan, { userId, actor: "app", format: "json" });
     expect(JSON.stringify(exported)).not.toContain(key);
     const listed = (await admin().query(internal.apiKeys.list, { userId, actor: "app" })) as any[];
-    expect(listed).toEqual([{ id: expect.any(String), name: "laptop", createdAt: expect.any(Number), revokedAt: null }]);
+    expect(listed).toEqual([
+      { id: expect.any(String), name: "laptop", kind: "agent", createdAt: expect.any(Number), revokedAt: null },
+    ]);
     expect(JSON.stringify(listed)).not.toContain(key);
   });
 });

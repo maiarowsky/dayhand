@@ -7,6 +7,7 @@
 // Failures never say whether a code or token existed, was used, expired or revoked.
 import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { hashKey } from "./apiKeys";
 import { checkDeviceName, PAIRING_CODE_TTL_MS } from "./devices";
@@ -91,12 +92,20 @@ export const token = httpAction(async (ctx, request) => {
 
 // ---- Device management with a personal API key (helm pair / devices / revoke) ----
 
-type KeyOwner = { userId: string; keyId: string; name: string };
+type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
 
 async function keyOwner(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
   const key = bearerToken(request);
   return key ? ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) }) : null;
 }
+
+/** The key's identity for the domain: its owner, its kind as the actor, and the key itself. */
+const keyIdentity = (owner: KeyOwner) => ({
+  userId: owner.userId,
+  actor: owner.kind,
+  keyId: owner.keyId,
+  actorName: owner.name,
+});
 
 const unauthorized = () =>
   errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="helm"' });
@@ -113,8 +122,7 @@ export const createCode = httpAction(async (ctx, request) => {
   if (!owner) return unauthorized();
   try {
     const created = await ctx.runAction(internal.devices.createPairingCode, {
-      userId: owner.userId,
-      actor: "agent",
+      ...keyIdentity(owner),
       createdBy: `API key "${owner.name}"`,
     });
     return json({ ...created, expiresIn: PAIRING_CODE_TTL_MS / 1000 }, 201, noStore);
@@ -126,7 +134,7 @@ export const createCode = httpAction(async (ctx, request) => {
 export const listDevices = httpAction(async (ctx, request) => {
   const owner = await keyOwner(ctx, request);
   if (!owner) return unauthorized();
-  return json({ devices: await ctx.runQuery(internal.devices.list, { userId: owner.userId, actor: "agent" }) });
+  return json({ devices: await ctx.runQuery(internal.devices.list, keyIdentity(owner)) });
 });
 
 export const revokeDevice = httpAction(async (ctx, request) => {
@@ -138,7 +146,7 @@ export const revokeDevice = httpAction(async (ctx, request) => {
   }
   try {
     return json(
-      await ctx.runMutation(internal.devices.revoke, { userId: owner.userId, actor: "agent", deviceId: body.deviceId }),
+      await ctx.runMutation(internal.devices.revoke, { ...keyIdentity(owner), deviceId: body.deviceId }),
     );
   } catch (error) {
     return domainError(error);

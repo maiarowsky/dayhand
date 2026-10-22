@@ -65,7 +65,7 @@ async function main() {
   Convex CLI config: backend/.env.local (admin key; keep it private)
 
 Create a personal API key (shown once) for the app user ${ISSUER}|me:
-  npx convex run apiKeys:create '{"userId":"${ISSUER}|me","actor":"app","name":"cli"}'
+  npx convex run apiKeys:create '{"userId":"${ISSUER}|me","actor":"app","name":"cli","kind":"cli"}'
 
 Then:
   export HELM_URL=${backend.siteUrl} HELM_API_KEY=<key>

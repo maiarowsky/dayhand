@@ -85,8 +85,10 @@ helm revoke <deviceId>
 ```
 
 They call `POST /devices/pairing-code`, `GET /devices` and `POST /devices/revoke`
-(`{ "deviceId": … }`) with `Authorization: Bearer <personal API key>`. The deployment admin
-can do the same without an API key:
+(`{ "deviceId": … }`) with `Authorization: Bearer <personal API key>`. Pairing codes and
+revocations are recorded in the history under the key's kind and name (`cli`, or
+`agent: <name>`; see [mcp.md](mcp.md#keys-and-actors)). The deployment admin can do the same
+without an API key:
 
 ```sh
 npx convex run devices:createPairingCode '{"userId":"<issuer>|owner","actor":"app"}'

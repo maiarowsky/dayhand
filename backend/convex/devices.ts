@@ -7,9 +7,9 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
 import { appSubject } from "./lib/appToken";
-import { fail, recordEvent } from "./lib/core";
+import { fail, identityOf, recordEvent } from "./lib/core";
 import { formatPairingCode, newPairingCode, parsePairingCode, sha256Hex, timingSafeEqual } from "./lib/secrets";
-import { actorValidator } from "./lib/validators";
+import { identityFields as identityArgs } from "./lib/validators";
 
 export const PAIRING_CODE_TTL_MS = 10 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
@@ -18,7 +18,6 @@ const PAIR_FAILURE_LIMIT = 10;
 const PAIR_FAILURE_WINDOW_MS = 10 * 60 * 1000;
 const CODE_RETENTION_MS = 24 * 60 * 60 * 1000;
 const MAX_NAME = 100;
-const identityArgs = { userId: v.string(), actor: actorValidator };
 
 export function checkDeviceName(name: string): string {
   const trimmed = name.trim();
@@ -38,8 +37,7 @@ export const createPairingCode = internalAction({
       const code = newPairingCode();
       const parsed = parsePairingCode(code)!;
       const expiresAt: number | null = await ctx.runMutation(internal.devices.insertCode, {
-        userId: input.userId,
-        actor: input.actor,
+        ...identityOf(input),
         createdBy: input.createdBy ?? "admin",
         selector: parsed.selector,
         secretHash: await sha256Hex(parsed.secret),
@@ -53,7 +51,8 @@ export const createPairingCode = internalAction({
 
 export const insertCode = internalMutation({
   args: { ...identityArgs, createdBy: v.string(), selector: v.string(), secretHash: v.string(), ttlMs: v.number() },
-  handler: async (ctx, { userId, actor, createdBy, selector, secretHash, ttlMs }) => {
+  handler: async (ctx, input) => {
+    const { userId, createdBy, selector, secretHash, ttlMs } = input;
     const issuer = process.env.HELM_JWT_ISSUER ?? "";
     if (!appSubject(userId, issuer)) {
       fail("invalid_argument", `User ${userId} cannot sign in to the app: app users are "${issuer}|<subject>"`);
@@ -74,7 +73,7 @@ export const insertCode = internalMutation({
       expiresAt,
       failedAttempts: 0,
     });
-    await recordEvent(ctx, { userId, actor }, { action: "device.pairingCode", after: { codeId: id, createdBy, expiresAt } });
+    await recordEvent(ctx, identityOf(input), { action: "device.pairingCode", after: { codeId: id, createdBy, expiresAt } });
     return expiresAt;
   },
 });
@@ -210,14 +209,15 @@ export const list = internalQuery({
 /** The device gets no new app tokens; a token it already holds expires within an hour. */
 export const revoke = internalMutation({
   args: { ...identityArgs, deviceId: v.string() },
-  handler: async (ctx, { userId, actor, deviceId }) => {
+  handler: async (ctx, input) => {
+    const { userId, deviceId } = input;
     const id = ctx.db.normalizeId("devices", deviceId);
     const device = id ? await ctx.db.get(id) : null;
     if (!device || device.userId !== userId) fail("not_found", `Device ${deviceId} not found`);
     if (device.revokedAt !== undefined) return { id: device._id, revokedAt: device.revokedAt };
     const revokedAt = Date.now();
     await ctx.db.patch(device._id, { revokedAt });
-    await recordEvent(ctx, { userId, actor }, { action: "device.revoke", after: { deviceId: device._id, name: device.name } });
+    await recordEvent(ctx, identityOf(input), { action: "device.revoke", after: { deviceId: device._id, name: device.name } });
     return { id: device._id, revokedAt };
   },
 });

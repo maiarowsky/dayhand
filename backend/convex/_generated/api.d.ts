@@ -27,6 +27,7 @@ import type * as lib_taskOps from "../lib/taskOps.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_views from "../lib/views.js";
 import type * as mcp from "../mcp.js";
+import type * as migrations from "../migrations.js";
 import type * as ops from "../ops.js";
 import type * as pairing from "../pairing.js";
 
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "lib/validators": typeof lib_validators;
   "lib/views": typeof lib_views;
   mcp: typeof mcp;
+  migrations: typeof migrations;
   ops: typeof ops;
   pairing: typeof pairing;
 }>;

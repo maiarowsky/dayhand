@@ -3,7 +3,7 @@ import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
-import { loadSettings, loadTask, toTask, type Identity } from "./core";
+import { actorLabel, loadSettings, loadTask, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
 import type { Status } from "./validators";
 
@@ -134,6 +134,8 @@ export async function getTask(ctx: QueryCtx, identity: Identity, input: Args<"ge
     history: events.map((e) => ({
       at: e.at,
       actor: e.actor,
+      actorName: e.actorName ?? null,
+      by: actorLabel(e),
       action: e.action,
       before: e.before ?? null,
       after: e.after ?? null,

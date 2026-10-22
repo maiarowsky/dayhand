@@ -33,7 +33,7 @@ In a second terminal, create a personal API key (printed once) and use the CLI:
 
 ```sh
 cd backend
-npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli"}'
+npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}'
 export HELM_URL=http://127.0.0.1:3211
 export HELM_API_KEY=<the key>
 npx helm add "Review the plan" --time 09:00

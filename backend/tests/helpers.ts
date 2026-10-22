@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { ConvexHttpClient } from "convex/browser";
@@ -6,6 +9,7 @@ import type { FunctionReference } from "convex/server";
 import { inject } from "vitest";
 import { internal } from "../convex/_generated/api";
 import { signAppToken } from "../scripts/jwt.mjs";
+import { convexCliEnv, runConvexCli } from "../scripts/local-backend-lib.mjs";
 
 export const helm = () => inject("helm");
 
@@ -42,9 +46,24 @@ export async function appClient(subject = randomUUID()) {
   return { client, userId: `${issuer}|${subject}` };
 }
 
-export async function createKey(userId: string, name = "test"): Promise<string> {
-  const created = (await admin().action(internal.apiKeys.create, { userId, actor: "app", name })) as { key: string };
+export async function createKey(userId: string, name = "test", kind?: "cli" | "agent"): Promise<string> {
+  const created = (await admin().action(internal.apiKeys.create, { userId, actor: "app", name, kind })) as {
+    key: string;
+  };
   return created.key;
+}
+
+/** Writes rows straight into a table with `convex import`, as data from an older version would be. */
+export async function importRows(table: string, rows: Record<string, unknown>[]) {
+  const dir = mkdtempSync(join(process.env.HELM_TEST_TMPDIR ?? tmpdir(), "helm-import-"));
+  try {
+    const file = join(dir, `${table}.jsonl`);
+    writeFileSync(file, rows.map((row) => JSON.stringify(row)).join("\n") + "\n");
+    const env = convexCliEnv({ url: helm().url, adminKey: helm().adminKey, home: join(dir, "home") });
+    await runConvexCli(["import", "--table", table, "--append", "--yes", file], env);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 export const mcpUrl = () => new URL(`${helm().siteUrl}/mcp`);
