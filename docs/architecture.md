@@ -56,3 +56,10 @@ helm CLI ──(MCP tools/call, API key)─────────────�
   identifier `<issuer>|<subject>`. `scripts/jwt.mjs` creates a key pair and tokens for tests;
   `scripts/app-token.mjs` (`npm run app-token`) issues the token that is pasted into the
   Android app. Pairing with a QR code is a later idea, see [pairing.md](pairing.md).
+
+## Reminders
+
+Reminders and the morning summary are computed on the phone, not on the server: the server
+stores only the settings (`summaryTime`, `defaultReminderMinutes`), and the Android app arms
+AlarmManager from its Room copy of the tasks, in the time zone from these settings. See
+[android/README.md](../android/README.md#reminders-and-the-morning-summary).

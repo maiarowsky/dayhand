@@ -1,11 +1,13 @@
 # Helm for Android
 
-Kotlin, Jetpack Compose and Material 3. This first version has the **Today** screen with quick
-add and works offline; the board, task details, full settings and reminders come in later steps.
+Kotlin, Jetpack Compose and Material 3. This version has the **Today** screen with quick add,
+works offline, rings reminders and a morning summary computed on the phone, and has the
+**Settings** screen; the board and task details come in later steps.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.1.0 (`versionName`); `versionCode` is the number of commits on `HEAD`.
+- Version 0.2.0 (`versionName`: 0.x, MINOR for each new screen); `versionCode` is the number of
+  commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, light and dark theme, text that follows the system font size, touch
   targets of at least 48 dp and descriptions for screen readers.
@@ -28,7 +30,51 @@ server is set up.
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
 keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
 
-**Settings** (minimal): backend address, app token (pasted) and an offline test switch.
+**Settings**, top to bottom:
+
+1. **Notifications**: whether Helm may post them, with a button that asks Android (13+) or opens
+   the system settings after a refusal; whether exact alarms are allowed, with a button to allow
+   them.
+2. **Morning summary**: the time (default 05:00); tap to change it on a clock.
+3. **Default reminders**: at the due time, 5, 10, 15, 30 min, 1 h, 2 h or 1 day before, any
+   number of them or none.
+4. **Language**: phone language, Polski or English (Android 13+ per-app language).
+5. **Server**: connection status with the number of changes waiting, backend address, app token
+   (pasted, never shown again), the offline test switch and the time zone from the server.
+6. **Export**: the whole plan as Markdown or JSON, saved where you choose in the system dialog.
+7. **About**: version, Apache License 2.0.
+
+The summary time and default reminders are server settings (`summaryTime`,
+`defaultReminderMinutes`), so the agent sees and can change them too. A change on the phone is
+stored at once and sent through the outbox (`app:updateSettings`) like any other change; a
+snapshot does not undo it while it waits.
+
+## Reminders and the morning summary
+
+Computed on the phone from Room, with no server and no foreground service:
+
+- A task **rings** when it has a day and a time, is not done and not archived: once for each
+  default reminder (minutes before the due time). Tasks without a time never ring.
+- **Overdue tasks never ring**; they wait at the top of Today. A reminder that would come more
+  than 15 minutes late (phone off, Doze) is dropped instead, and so is one whose moment had
+  already passed when the task was set.
+- The **morning summary** comes every day at the summary time: how many tasks today (the now
+  task included), how many overdue, and where to start (the now task, else the first overdue,
+  else the first of today). Its channel is quiet, so it waits on the lock screen instead of
+  waking you at 05:00.
+- Times are read in the **time zone from the server settings**, the same zone that decides
+  "today", so the phone and the agent agree.
+
+How: `ReminderEngine` keeps exactly **two alarms** in AlarmManager, the next reminder and the
+next summary. When one fires, `AlarmReceiver` shows what is due and arms the next one. Alarms
+are exact (`setExactAndAllowWhileIdle`) when the user allows exact alarms (Android 12+; off by
+default from Android 14), otherwise inexact and possibly a few minutes late; Settings says
+which. They are armed again on every change of tasks or reminder settings, at app start, after
+a reboot, an app update, a clock or time zone change and a change of the exact-alarm
+permission (`SystemEventsReceiver`). After a force stop Android drops the alarms until Helm is
+opened again. A reminder's **Done** button completes the task offline-first, like a tap on
+Today. Android 13+ asks for the notification permission when the first task with a time is
+added, or from Settings.
 
 ## How offline works
 
@@ -109,9 +155,13 @@ tokens with `HELM_SIGNING_KEY_FILE=<file> HELM_JWT_ISSUER=<issuer> npm run app-t
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM: dates, Today sections, outbox, merge, HTTP
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room, outbox across restarts, Compose
+./gradlew :app:testDebugUnitTest            # JVM: dates, Today sections, reminders, outbox, merge, HTTP, export
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room, outbox across restarts, settings sync, Compose,
+                                            # and a real alarm + notification (ReminderDeliveryTest, about 80 s)
 ```
+
+`ReminderDeliveryTest` speeds time up by setting a task and the summary to the next whole
+minute: Android fires the real alarm, the test checks both notifications and taps **Done**.
 
 The end-to-end offline check drives the app on an emulator against the local backend: add a
 task, go offline, add another, kill the app, go online, and verify both on the server with the
@@ -131,6 +181,8 @@ at the time of choosing (2026-10-22) is used. Compose BOM 2026.09.00, androidx.c
 lifecycle 2.11 need compileSdk 37; until platform 37 is set up, the app uses BOM 2026.06.01,
 core 1.18.0 and lifecycle 2.10.0 with compileSdk 36.
 
-Permissions: the app declares `INTERNET` and `ACCESS_NETWORK_STATE`. WorkManager adds
-`WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED` (needed for the outbox to survive a reboot); its
-`FOREGROUND_SERVICE` is removed. No analytics, crash reporting or other outside services.
+Permissions: the app declares `INTERNET` and `ACCESS_NETWORK_STATE`, `POST_NOTIFICATIONS`
+(reminders and the summary; Android 13+ asks), `SCHEDULE_EXACT_ALARM` (reminders on the minute;
+the user can refuse) and `RECEIVE_BOOT_COMPLETED` (alarms and the outbox after a reboot).
+WorkManager adds `WAKE_LOCK`; its `FOREGROUND_SERVICE` is removed. No analytics, crash reporting
+or other outside services.

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.domain.todaySections
 import dev.helm.planner.settings.SettingsStore
-import dev.helm.planner.sync.FeedState
 import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
 import kotlinx.coroutines.delay
@@ -34,18 +33,7 @@ class TodayViewModel(
         }
     }
 
-    private val connection: Flow<ConnectionStatus> =
-        combine(settings.settings, network.online, liveSync.state) { s, online, feed ->
-            when {
-                s.backend == null -> ConnectionStatus.NOT_CONFIGURED
-                s.offlineMode -> ConnectionStatus.OFFLINE_MODE
-                !online -> ConnectionStatus.OFFLINE
-                feed == FeedState.UNAUTHORIZED -> ConnectionStatus.UNAUTHORIZED
-                feed == FeedState.ERROR -> ConnectionStatus.ERROR
-                feed == FeedState.SYNCED -> ConnectionStatus.SYNCED
-                else -> ConnectionStatus.CONNECTING
-            }
-        }
+    private val connection: Flow<ConnectionStatus> = connectionStatus(settings.settings, network.online, liveSync.state)
 
     val state: StateFlow<TodayUiState?> =
         combine(repository.tasks, settings.settings, minutes, connection, repository.pendingChanges) { tasks, s, now, c, pending ->

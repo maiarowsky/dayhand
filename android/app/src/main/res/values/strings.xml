@@ -68,4 +68,77 @@
     <string name="settings_offline_hint">Nothing is sent or received while it is on; changes wait in the queue.</string>
     <string name="settings_timezone">Time zone (from the server): %1$s</string>
     <string name="settings_version">Helm %1$s</string>
+    <string name="channel_reminders">Reminders</string>
+    <string name="channel_reminders_description">Rings before a task that has a time.</string>
+    <string name="channel_summary">Morning summary</string>
+    <string name="channel_summary_description">What is on today and what is overdue. Quiet by default.</string>
+    <string name="reminder_done">Done</string>
+    <string name="reminder_now">Now, at %1$s</string>
+    <string name="reminder_soon">At %1$s, in %2$s</string>
+    <string name="summary_title">Today: %1$s</string>
+    <string name="summary_title_overdue">Today: %1$s, %2$s</string>
+    <string name="summary_nothing">Nothing planned for today.</string>
+    <string name="summary_start_with">Start with: %1$s</string>
+    <plurals name="summary_tasks">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <plurals name="summary_overdue">
+        <item quantity="one">%d overdue</item>
+        <item quantity="other">%d overdue</item>
+    </plurals>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <plurals name="duration_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_on">Notifications are on.</string>
+    <string name="settings_notifications_off">Notifications are off, so reminders and the morning summary cannot appear.</string>
+    <string name="settings_notifications_allow">Allow notifications</string>
+    <string name="settings_open_system">Open system settings</string>
+    <string name="settings_exact_on">Reminders ring on the minute.</string>
+    <string name="settings_exact_off">Exact alarms are not allowed, so reminders may come a few minutes late.</string>
+    <string name="settings_exact_allow">Allow exact alarms</string>
+    <string name="settings_summary">Morning summary</string>
+    <string name="settings_summary_hint">Every day at this time: tasks for today, overdue tasks and where to start.</string>
+    <string name="settings_summary_change">Change the morning summary time</string>
+    <string name="settings_reminders">Default reminders</string>
+    <string name="settings_reminders_hint">Only tasks with a time ring. Overdue tasks never ring; they wait on Today.</string>
+    <string name="settings_reminders_none">No reminders.</string>
+    <string name="reminder_at_due">At the due time</string>
+    <string name="reminder_before">%1$s before</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">Phone language</string>
+    <string name="language_polish" translatable="false">Polski</string>
+    <string name="language_english" translatable="false">English</string>
+    <string name="settings_language_unsupported">Helm follows the phone\'s language.</string>
+    <string name="connection_label">Status: %1$s</string>
+    <string name="connection_synced">connected</string>
+    <string name="connection_connecting">connecting…</string>
+    <string name="connection_offline">no network</string>
+    <string name="connection_offline_mode">offline test mode</string>
+    <string name="connection_not_configured">no server set up</string>
+    <string name="connection_unauthorized">the server refused the token</string>
+    <string name="connection_error">cannot reach the server</string>
+    <plurals name="connection_pending">
+        <item quantity="one">%d change waits to be sent.</item>
+        <item quantity="other">%d changes wait to be sent.</item>
+    </plurals>
+    <string name="settings_export">Export</string>
+    <string name="settings_export_hint">The whole plan from the server: Markdown to read, JSON as a full copy with the history of changes.</string>
+    <string name="export_markdown">Export Markdown</string>
+    <string name="export_json">Export JSON</string>
+    <string name="export_working">Preparing the export…</string>
+    <string name="export_saved">Saved %1$s</string>
+    <string name="export_failed">Export failed: cannot reach the server.</string>
+    <string name="export_unauthorized">Export failed: the server refused the token.</string>
+    <string name="export_not_configured">Set up the server first.</string>
+    <string name="export_write_failed">Could not save the file.</string>
+    <string name="settings_about">About</string>
+    <string name="about_text">Helm is open source under the Apache License 2.0. No analytics and no ads; your plan stays on your server.</string>
+    <string name="about_license">Read the license</string>
 </resources>
