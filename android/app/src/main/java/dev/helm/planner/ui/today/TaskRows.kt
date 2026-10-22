@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -84,7 +85,10 @@ fun DoneRow(task: Task, actions: TodayActions) {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textDecoration = TextDecoration.LineThrough,
-            modifier = Modifier.weight(1f).padding(end = 16.dp),
+            modifier = Modifier
+                .weight(1f)
+                .openTask(task, actions)
+                .padding(end = 16.dp),
         )
     }
 }
@@ -109,7 +113,12 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                TaskTitle(task, color = MaterialTheme.colorScheme.onPrimaryContainer, emphasized = true)
+                TaskTitle(
+                    task,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    emphasized = true,
+                    modifier = Modifier.openTask(task, actions),
+                )
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
@@ -148,7 +157,12 @@ private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, trail
             .padding(start = 4.dp, end = 4.dp),
     ) {
         TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
-        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+        Column(
+            Modifier
+                .weight(1f)
+                .openTask(task, actions)
+                .padding(vertical = 8.dp),
+        ) {
             TaskTitle(task)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -177,13 +191,24 @@ private fun TaskTitle(
     task: Task,
     color: Color = MaterialTheme.colorScheme.onSurface,
     emphasized: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     val time = task.dueTime
     Text(
         text = if (time != null) "$time  ${task.title}" else task.title,
         style = if (emphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
         color = color,
+        modifier = modifier,
     )
+}
+
+/** Tapping a task's text opens its details; at least 48 dp tall, announced as "open details". */
+@Composable
+private fun Modifier.openTask(task: Task, actions: TodayActions): Modifier {
+    val label = stringResource(R.string.open_details)
+    return heightIn(min = 48.dp)
+        .clickable(onClickLabel = label) { actions.openTask(task.localId) }
+        .wrapContentHeight(Alignment.CenterVertically)
 }
 
 @Composable
@@ -239,7 +264,7 @@ private fun MenuItem(@StringRes label: Int, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ResumeNoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+fun ResumeNoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,

@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
 /** Groups of task fields that one kind of change touches. */
-enum class Field { TITLE_NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED }
+enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED }
 
 data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
 
@@ -21,8 +21,9 @@ data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
  *   the server after everything already there, so the server will end up with it too.
  * - Every other field takes the server value, but only from a server copy newer than the one
  *   merged before (`updatedAt`), so a late snapshot never undoes a newer state.
- * - A task missing from the snapshot was deleted elsewhere and goes, unless it still has
- *   changes waiting or is too fresh to be in any snapshot yet.
+ * - A task missing from the snapshot was purged (or never reached the server) and goes, unless
+ *   it still has changes waiting or is too fresh to be in any snapshot yet. Tasks in the trash
+ *   are part of the snapshot, with `deletedAt` set.
  */
 object SnapshotMerger {
     /** How long a task the server has not shown yet is kept (a snapshot may predate it). */
@@ -66,14 +67,23 @@ object SnapshotMerger {
             createdAt = r.createdAt,
             updatedAt = r.updatedAt,
             serverUpdatedAt = r.updatedAt,
+            repeat = r.repeat,
+            labels = r.labels,
+            links = r.links,
+            deletedAt = r.deletedAt,
         )
         if (row == null || keepLocal.isEmpty()) return task
-        if (Field.TITLE_NOTE in keepLocal) task = task.copy(title = row.title, note = row.note)
+        if (Field.TITLE in keepLocal) task = task.copy(title = row.title)
+        if (Field.NOTE in keepLocal) task = task.copy(note = row.note)
         if (Field.DUE in keepLocal) task = task.copy(dueDate = row.dueDate, dueTime = row.dueTime)
         if (Field.STATUS in keepLocal) task = task.copy(status = row.status, completedAt = row.completedAt)
         if (Field.NOW in keepLocal) task = task.copy(isNow = row.isNow)
         if (Field.RESUME in keepLocal) task = task.copy(resumeNote = row.resumeNote)
         if (Field.ARCHIVED in keepLocal) task = task.copy(archivedAt = row.archivedAt)
+        if (Field.REPEAT in keepLocal) task = task.copy(repeat = row.repeat)
+        if (Field.LABELS in keepLocal) task = task.copy(labels = row.labels)
+        if (Field.LINKS in keepLocal) task = task.copy(links = row.links)
+        if (Field.DELETED in keepLocal) task = task.copy(deletedAt = row.deletedAt)
         return task.copy(updatedAt = maxOf(row.updatedAt, r.updatedAt))
     }
 }
@@ -107,6 +117,9 @@ class DirtyFields private constructor(
             Mutations.RESCHEDULE -> setOf(Field.DUE)
             Mutations.ARCHIVE -> setOf(Field.ARCHIVED, Field.NOW)
             Mutations.SET_NOW -> setOf(Field.STATUS, Field.NOW, Field.RESUME)
+            Mutations.SOFT_DELETE -> setOf(Field.DELETED, Field.NOW)
+            // `restore` clears the trash, or the archive when the task is not in the trash.
+            Mutations.RESTORE -> setOf(Field.DELETED, Field.ARCHIVED)
             Mutations.UPDATE -> updatedFields(op.argsJson)
             else -> Field.entries.toSet()
         }
@@ -118,9 +131,13 @@ class DirtyFields private constructor(
                 return Field.entries.toSet()
             }
             return buildSet {
-                if ("title" in keys || "note" in keys) add(Field.TITLE_NOTE)
+                if ("title" in keys) add(Field.TITLE)
+                if ("note" in keys) add(Field.NOTE)
                 if ("dueDate" in keys || "dueTime" in keys) add(Field.DUE)
                 if ("resumeNote" in keys) add(Field.RESUME)
+                if ("repeat" in keys) add(Field.REPEAT)
+                if ("labels" in keys) add(Field.LABELS)
+                if ("links" in keys) add(Field.LINKS)
             }
         }
     }

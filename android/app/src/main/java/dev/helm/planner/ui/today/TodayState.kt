@@ -22,4 +22,5 @@ interface TodayActions {
     fun saveResumeNote(localId: String, note: String) {}
     fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {}
     fun openSettings() {}
+    fun openTask(localId: String) {}
 }

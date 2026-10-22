@@ -93,4 +93,18 @@ class TodaySectionsTest {
         val s = todaySections(emptyList(), at, "Europe/London")
         assertTrue(s.isEmpty)
     }
+
+    @Test
+    fun `tasks in the trash are neither overdue, now, today nor done`() {
+        val trashed = listOf(
+            task("late", "2026-10-20") { copy(deletedAt = 1) },
+            task("now", "2026-10-22", status = TaskStatus.DOING) { copy(isNow = true, deletedAt = 1) },
+            task("today", "2026-10-22") { copy(deletedAt = 1) },
+            task("done", "2026-10-22", status = TaskStatus.DONE) { copy(completedAt = at, deletedAt = 1) },
+        )
+        val s = todaySections(trashed, at, "Europe/London")
+        assertTrue(s.isEmpty)
+        assertTrue(s.done.isEmpty())
+        assertFalse(HelmDates.isOverdue(trashed.first(), "2026-10-22"))
+    }
 }

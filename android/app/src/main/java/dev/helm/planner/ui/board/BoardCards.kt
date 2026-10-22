@@ -1,0 +1,227 @@
+package dev.helm.planner.ui.board
+
+import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
+import dev.helm.planner.R
+import dev.helm.planner.data.local.Task
+import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.HelmDates
+import dev.helm.planner.ui.common.dueLabel
+import dev.helm.planner.ui.common.statusLabel
+import dev.helm.planner.ui.today.ResumeNoteDialog
+import java.util.Locale
+import java.time.LocalDate
+
+/** A task on the board: tap for details, long-press and drag to another column, or move it from the menu. */
+@Composable
+fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
+    Card(
+        onClick = { actions.openTask(task.localId) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .alpha(if (drag.task?.localId == task.localId) DRAGGED_ALPHA else 1f)
+            .draggableCard(task, drag) { actions.move(task.localId, it) }
+            .moveActions(task, actions)
+            .testTag(BoardTags.card(task.localId)),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)) {
+            CardContent(task, today, Modifier.weight(1f))
+            MoveMenu(task, actions)
+        }
+    }
+}
+
+/** The single "now" task, highlighted, with where the work stopped (tap to edit). */
+@Composable
+fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
+    var editing by rememberSaveable { mutableStateOf(false) }
+    Card(
+        onClick = { actions.openTask(task.localId) },
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .alpha(if (drag.task?.localId == task.localId) DRAGGED_ALPHA else 1f)
+            .draggableCard(task, drag) { actions.move(task.localId, it) }
+            .moveActions(task, actions)
+            .testTag(BoardTags.NOW),
+    ) {
+        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp, end = 4.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    stringResource(R.string.section_now).uppercase(Locale.getDefault()),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                CardContent(task, today, Modifier, emphasized = true)
+                val resume = task.resumeNote
+                Text(
+                    text = resume ?: stringResource(R.string.resume_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = if (resume == null) 0.7f else 1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .clickable(onClickLabel = stringResource(R.string.resume_edit)) { editing = true }
+                        .padding(vertical = 12.dp),
+                )
+            }
+            MoveMenu(task, actions)
+        }
+    }
+    if (editing) {
+        ResumeNoteDialog(
+            initial = task.resumeNote.orEmpty(),
+            onDismiss = { editing = false },
+            onSave = {
+                actions.saveResumeNote(task.localId, it)
+                editing = false
+            },
+        )
+    }
+}
+
+/** Title (with the time), the due day (red when overdue) and the labels. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Boolean = false) {
+    Column(modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            task.title,
+            style = if (emphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
+            color = if (emphasized) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+        )
+        dueLabel(task, today)?.let { due ->
+            val overdue = HelmDates.isOverdue(task, today.toString())
+            Text(
+                if (overdue) stringResource(R.string.overdue_due, due) else due,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (task.labels.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                task.labels.forEach { LabelTag(it) }
+            }
+        }
+    }
+}
+
+@Composable
+fun LabelTag(label: String, color: Color = MaterialTheme.colorScheme.secondaryContainer) {
+    Surface(color = color, shape = RoundedCornerShape(8.dp)) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/** Moves without dragging: one menu per card, every other column plus "now". */
+@Composable
+private fun MoveMenu(task: Task, actions: BoardActions) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_actions, task.title))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            moves(task).forEach { move ->
+                DropdownMenuItem(
+                    text = { Text(move.label()) },
+                    onClick = {
+                        open = false
+                        move.run(task, actions)
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                )
+            }
+        }
+    }
+}
+
+/** The same moves for screen readers, as custom actions on the card. */
+@Composable
+private fun Modifier.moveActions(task: Task, actions: BoardActions): Modifier {
+    val labelled = moves(task).map { it.label() to it }
+    return semantics {
+        customActions = labelled.map { (label, move) ->
+            CustomAccessibilityAction(label) {
+                move.run(task, actions)
+                true
+            }
+        }
+    }
+}
+
+private sealed interface Move {
+    @Composable
+    fun label(): String
+    fun run(task: Task, actions: BoardActions)
+
+    data class ToColumn(val status: TaskStatus) : Move {
+        @Composable
+        override fun label() = stringResource(R.string.move_to_column, statusLabel(status))
+        override fun run(task: Task, actions: BoardActions) = actions.move(task.localId, status)
+    }
+
+    data class Simple(@param:StringRes val text: Int, val action: (Task, BoardActions) -> Unit) : Move {
+        @Composable
+        override fun label() = stringResource(text)
+        override fun run(task: Task, actions: BoardActions) = action(task, actions)
+    }
+}
+
+private fun moves(task: Task): List<Move> = buildList {
+    TaskStatus.entries.filter { it != task.status }.forEach { add(Move.ToColumn(it)) }
+    if (task.isNow) {
+        add(Move.Simple(R.string.stop_now) { _, a -> a.clearNow() })
+    } else if (task.status != TaskStatus.DONE) {
+        add(Move.Simple(R.string.set_now) { t, a -> a.setNow(t.localId) })
+    }
+}
+
+private const val DRAGGED_ALPHA = 0.4f

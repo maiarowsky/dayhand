@@ -21,8 +21,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,7 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,14 +39,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
+import dev.helm.planner.ui.common.StatusBanner
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -67,7 +63,12 @@ object TodayTags {
 /** The Today screen: overdue, the one "now" task, today's tasks, then done (collapsed). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodayScreen(state: TodayUiState, actions: TodayActions, modifier: Modifier = Modifier) {
+fun TodayScreen(
+    state: TodayUiState,
+    actions: TodayActions,
+    modifier: Modifier = Modifier,
+    bottomBar: @Composable () -> Unit = {},
+) {
     var adding by rememberSaveable { mutableStateOf(false) }
     val locale = Locale.getDefault()
     val date = LocalDate.parse(state.sections.date)
@@ -92,6 +93,7 @@ fun TodayScreen(state: TodayUiState, actions: TodayActions, modifier: Modifier =
                 },
             )
         },
+        bottomBar = bottomBar,
         floatingActionButton = {
             FloatingActionButton(onClick = { adding = true }, modifier = Modifier.testTag(TodayTags.FAB)) {
                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_task))
@@ -124,7 +126,7 @@ private fun TodayList(
     var doneExpanded by rememberSaveable { mutableStateOf(false) }
     val sections = state.sections
     LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
-        item { StatusBanner(state.connection, state.pendingChanges, actions::openSettings) }
+        item { StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS)) }
         if (sections.isEmpty) item { EmptyState(onAdd) }
         if (sections.overdue.isNotEmpty()) {
             item {
@@ -210,37 +212,6 @@ private fun EmptyState(onAdd: () -> Unit) {
             Icon(Icons.Filled.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.add_task))
-        }
-    }
-}
-
-@Composable
-private fun StatusBanner(status: ConnectionStatus, pending: Int, openSettings: () -> Unit) {
-    val text = when (status) {
-        ConnectionStatus.OFFLINE -> stringResource(R.string.status_offline, pending)
-        ConnectionStatus.OFFLINE_MODE -> stringResource(R.string.status_offline_mode, pending)
-        ConnectionStatus.NOT_CONFIGURED -> stringResource(R.string.status_not_configured)
-        ConnectionStatus.UNAUTHORIZED -> stringResource(R.string.status_unauthorized)
-        ConnectionStatus.ERROR -> stringResource(R.string.status_error)
-        ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING ->
-            if (pending > 0) stringResource(R.string.status_sending, pending) else return
-    }
-    val needsSettings = status == ConnectionStatus.NOT_CONFIGURED || status == ConnectionStatus.UNAUTHORIZED
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag(TodayTags.STATUS)
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            if (needsSettings) {
-                TextButton(onClick = openSettings, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.open_settings))
-                }
-            }
         }
     }
 }

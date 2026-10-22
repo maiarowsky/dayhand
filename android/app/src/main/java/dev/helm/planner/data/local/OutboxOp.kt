@@ -39,4 +39,6 @@ object Mutations {
     const val ARCHIVE = "app:archive"
     const val SET_NOW = "app:setNow"
     const val UPDATE = "app:update"
+    const val SOFT_DELETE = "app:softDelete"
+    const val RESTORE = "app:restore"
 }

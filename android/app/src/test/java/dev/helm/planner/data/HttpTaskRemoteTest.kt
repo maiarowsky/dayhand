@@ -1,8 +1,12 @@
 package dev.helm.planner.data
 
+import dev.helm.planner.data.local.RepeatEvery
+import dev.helm.planner.data.local.RepeatRule
+import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.data.remote.HttpResponse
 import dev.helm.planner.data.remote.HttpTaskRemote
 import dev.helm.planner.data.remote.RemoteEvent
+import dev.helm.planner.data.remote.RemoteJson
 import dev.helm.planner.data.remote.SendResult
 import java.io.IOException
 import kotlinx.coroutines.flow.first
@@ -57,23 +61,57 @@ class HttpTaskRemoteTest {
     }
 
     @Test
-    fun `polling feed builds a snapshot from listAll and getSettings`() = runTest {
+    fun `polling feed builds a snapshot from listAll, the trash and getSettings`() = runTest {
         val urls = mutableListOf<String>()
         val remote = HttpTaskRemote("http://h", "t", transport = { url, token, body ->
             urls += url
             assertEquals("t", token)
             val path = Json.parseToJsonElement(body).jsonObject.getValue("path").jsonPrimitive.content
-            val value = if (path == "app:listAll") {
-                """[{"id":"s1","title":"A","status":"todo","isNow":false,"labels":[],"links":[],"createdAt":1.7E12,"updatedAt":1761130000000,"dueDate":"2026-10-22"}]"""
-            } else {
-                """{"timezone":"Europe/Warsaw","summaryTime":"05:00","defaultReminderMinutes":[0]}"""
+            val value = when (path) {
+                "app:listAll" ->
+                    """[{"id":"s1","title":"A","status":"todo","isNow":false,"labels":["home"],"links":[{"url":"https://a.pl","title":"A"}],"repeat":{"every":"week","interval":2.0,"weekdays":[1.0,5.0]},"createdAt":1.7E12,"updatedAt":1761130000000,"dueDate":"2026-10-22"}]"""
+                "app:listTrash" ->
+                    """[{"id":"s2","title":"B","status":"todo","isNow":false,"labels":[],"links":[],"createdAt":1,"updatedAt":2,"deletedAt":1761130000001}]"""
+                else -> """{"timezone":"Europe/Warsaw","summaryTime":"05:00","defaultReminderMinutes":[0]}"""
             }
             HttpResponse(200, """{"status":"success","value":$value}""")
         })
         val snapshot = remote.events().first() as RemoteEvent.Snapshot
         assertEquals("Europe/Warsaw", snapshot.timezone)
-        assertEquals(1761130000000L, snapshot.tasks.single().updatedAt)
-        assertEquals(1_700_000_000_000L, snapshot.tasks.single().createdAt)
-        assertEquals(listOf("http://h/api/query", "http://h/api/query"), urls)
+        val (active, trashed) = snapshot.tasks
+        assertEquals(1761130000000L, active.updatedAt)
+        assertEquals(1_700_000_000_000L, active.createdAt)
+        assertEquals(listOf("home"), active.labels)
+        assertEquals(listOf(TaskLink("https://a.pl", "A")), active.links)
+        assertEquals(RepeatRule(RepeatEvery.WEEK, 2, listOf(1, 5)), active.repeat)
+        assertEquals(null, active.deletedAt)
+        assertEquals(1761130000001L, trashed.deletedAt)
+        assertEquals(listOf("http://h/api/query", "http://h/api/query", "http://h/api/query"), urls)
+    }
+
+    @Test
+    fun `history of a task is read newest first with who made each change`() {
+        val value = Json.parseToJsonElement(
+            """{"task":{"id":"s1"},"history":[
+              {"at":1,"actor":"app","action":"create","before":null,"after":{"title":"A"}},
+              {"at":3,"actor":"agent","action":"update","before":{"title":"A"},"after":{"title":"B"}}]}""",
+        )
+        val history = RemoteJson.history(value)
+        assertEquals(listOf("agent", "app"), history.map { it.actor })
+        assertEquals("""{"title":"B"}""", history.first().after)
+        assertEquals(null, history.last().before)
+    }
+
+    @Test
+    fun `repeat rules arrive with numbers as doubles and are read as whole numbers`() {
+        val task = RemoteJson.task(
+            Json.parseToJsonElement(
+                """{"id":"s1","title":"A","status":"todo","isNow":false,"createdAt":1,"updatedAt":2,
+                   "repeat":{"every":"month","interval":3.0}}""",
+            ).jsonObject,
+        )
+        assertEquals(RepeatRule(RepeatEvery.MONTH, 3), task.repeat)
+        assertEquals(null, RepeatRule.parse(Json.parseToJsonElement("""{"every":"fortnight","interval":1}""")))
+        assertEquals(null, RepeatRule.parse(Json.parseToJsonElement("""{"every":"day","interval":1.5}""")))
     }
 }

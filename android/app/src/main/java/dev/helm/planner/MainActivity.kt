@@ -5,20 +5,41 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.helm.planner.ui.board.BoardActions
+import dev.helm.planner.ui.board.BoardScreen
+import dev.helm.planner.ui.board.BoardViewModel
 import dev.helm.planner.ui.settings.SettingsScreen
+import dev.helm.planner.ui.task.TaskDetailActions
+import dev.helm.planner.ui.task.TaskDetailScreen
+import dev.helm.planner.ui.task.TaskDetailUiState
+import dev.helm.planner.ui.task.TaskDetailViewModel
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
 import dev.helm.planner.ui.today.TodayViewModel
+import dev.helm.planner.ui.trash.TrashActions
+import dev.helm.planner.ui.trash.TrashScreen
+import dev.helm.planner.ui.trash.TrashViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -33,29 +54,81 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Screen { TODAY, SETTINGS }
+/** Screens; a task's details are `task/<localId>`. Today and the board are the two main views. */
+private object Route {
+    const val TODAY = "today"
+    const val BOARD = "board"
+    const val TRASH = "trash"
+    const val SETTINGS = "settings"
+    private const val TASK = "task/"
+
+    fun task(localId: String) = TASK + localId
+    fun taskId(route: String): String? = route.removePrefix(TASK).takeIf { route.startsWith(TASK) }
+}
 
 @Composable
 private fun HelmRoot(container: AppContainer, versionName: String) {
-    var screen by rememberSaveable { mutableStateOf(Screen.TODAY) }
+    // A back stack of routes; Today is always at the bottom, so Back from the board returns to it.
+    var stack by rememberSaveable { mutableStateOf(listOf(Route.TODAY)) }
+    val route = stack.last()
+    val open: (String) -> Unit = { stack = stack + it }
+    val back: () -> Unit = { if (stack.size > 1) stack = stack.dropLast(1) }
+    val selectTab: (String) -> Unit = { tab -> stack = if (tab == Route.TODAY) listOf(Route.TODAY) else listOf(Route.TODAY, tab) }
     val scope = rememberCoroutineScope()
-    when (screen) {
-        Screen.TODAY -> {
+    BackHandler(enabled = stack.size > 1, onBack = back)
+    val tabs: @Composable () -> Unit = { MainTabs(route, selectTab) }
+    val taskId = Route.taskId(route)
+    when {
+        route == Route.TODAY -> {
             val viewModel = viewModel {
                 TodayViewModel(container.repository, container.settings, container.network, container.liveSync)
             }
             val actions = remember(viewModel) {
                 object : TodayActions by viewModel {
-                    override fun openSettings() {
-                        screen = Screen.SETTINGS
-                    }
+                    override fun openSettings() = open(Route.SETTINGS)
+                    override fun openTask(localId: String) = open(Route.task(localId))
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
-            state?.let { TodayScreen(it, actions) }
+            state?.let { TodayScreen(it, actions, bottomBar = tabs) }
         }
-        Screen.SETTINGS -> {
-            BackHandler { screen = Screen.TODAY }
+        route == Route.BOARD -> {
+            val viewModel = viewModel {
+                BoardViewModel(container.repository, container.settings, container.network, container.liveSync)
+            }
+            val actions = remember(viewModel) {
+                object : BoardActions by viewModel {
+                    override fun openSettings() = open(Route.SETTINGS)
+                    override fun openTask(localId: String) = open(Route.task(localId))
+                    override fun openTrash() = open(Route.TRASH)
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.let { BoardScreen(it, actions, bottomBar = tabs) }
+        }
+        taskId != null -> {
+            val viewModel = viewModel { TaskDetailViewModel(container.repository, container.settings, container.historySync) }
+            LaunchedEffect(taskId) { viewModel.open(taskId) }
+            val actions = remember(viewModel) {
+                object : TaskDetailActions by viewModel {
+                    override fun back() = back()
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.takeIf { it.localId() == taskId }?.let { TaskDetailScreen(it, actions) }
+        }
+        route == Route.TRASH -> {
+            val viewModel = viewModel { TrashViewModel(container.repository, container.settings) }
+            val actions = remember(viewModel) {
+                object : TrashActions by viewModel {
+                    override fun openTask(localId: String) = open(Route.task(localId))
+                    override fun back() = back()
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.let { TrashScreen(it, actions) }
+        }
+        route == Route.SETTINGS -> {
             val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
             settings?.let { current ->
                 SettingsScreen(
@@ -73,9 +146,39 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
                             if (!enabled) container.outboxScheduler.restart()
                         }
                     },
-                    onBack = { screen = Screen.TODAY },
+                    onBack = back,
                 )
             }
         }
     }
+}
+
+private fun TaskDetailUiState.localId(): String = when (this) {
+    is TaskDetailUiState.Missing -> localId
+    is TaskDetailUiState.Ready -> task.localId
+}
+
+/** Bottom navigation between the two main views. */
+@Composable
+private fun MainTabs(current: String, onSelect: (String) -> Unit) {
+    NavigationBar {
+        Tab(Route.TODAY, current, Icons.Filled.DateRange, R.string.today_title, onSelect)
+        Tab(Route.BOARD, current, Icons.AutoMirrored.Filled.List, R.string.board_title, onSelect)
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.Tab(
+    route: String,
+    current: String,
+    icon: ImageVector,
+    @StringRes label: Int,
+    onSelect: (String) -> Unit,
+) {
+    NavigationBarItem(
+        selected = current == route,
+        onClick = { if (current != route) onSelect(route) },
+        icon = { Icon(icon, contentDescription = null) },
+        label = { Text(stringResource(label)) },
+    )
 }

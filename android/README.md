@@ -1,11 +1,13 @@
 # Helm for Android
 
-Kotlin, Jetpack Compose and Material 3. This first version has the **Today** screen with quick
-add and works offline; the board, task details, full settings and reminders come in later steps.
+Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **board**,
+**task details** and the **trash**, and works offline; full settings and reminders come in later
+steps.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.1.0 (`versionName`); `versionCode` is the number of commits on `HEAD`.
+- Version 0.2.0 (`versionName`, 0.x with the minor number raised for each new screen);
+  `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, light and dark theme, text that follows the system font size, touch
   targets of at least 48 dp and descriptions for screen readers.
@@ -25,6 +27,27 @@ With nothing to do, one sentence and an **Add task** button. A line at the top s
 phone is offline (and how many changes wait), when the server refused the token, or when no
 server is set up.
 
+Tapping a task opens its details. The bar at the bottom switches between Today and the board.
+
+**Board**: three columns, **To do / In progress / Done** (the 50 most recently done). On a phone
+one column shows at a time under tabs; from 600 dp wide the columns sit side by side. The "now"
+task leads "In progress", highlighted, with "where I stopped" under its title (tap to edit).
+Move a card by long-pressing it and dragging it onto another column (or its tab), or without
+dragging from the card's menu (each other column, "Work on it now", "Not now"); screen readers
+get the same moves as actions on the card. Tap a card for its details. The bin icon opens the
+trash.
+
+**Task details**: title, status (and "Work on it now" with the resume note), due day with an
+optional time, repeat (every N days, weeks on chosen weekdays, months or years), labels (which
+are also the projects: the backend has one list for both), links (http/https only; no files in
+version 1) and the note. Each field is edited in place or in a small dialog and checked against
+the backend's limits before it is queued, so a change the server would refuse is never queued.
+**Move to trash** keeps the task for 30 days; a task in the trash is read-only until restored.
+**Change history** lists who changed what, **You (app)** or **Agent**, newest first.
+
+**Trash**: tasks deleted by you or the agent, newest first, with the day each one goes for good;
+**Restore** brings one back.
+
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
 keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
 
@@ -38,7 +61,7 @@ tap ──> Room transaction: change the task row + append to outbox ──> scr
             WorkManager (needs network) ── sends the outbox in order over
             POST /api/mutation, deletes a record only after the server answered
                                                 │
-Convex subscription (app:listAll, app:getSettings) ──> SnapshotMerger ──> Room
+Convex subscription (app:listAll, app:listTrash, app:getSettings) ──> SnapshotMerger ──> Room
 ```
 
 - **Room is the source of truth for the screens.** The screen never waits for the network.
@@ -53,6 +76,11 @@ Convex subscription (app:listAll, app:getSettings) ──> SnapshotMerger ──
   keeps a live subscription and every snapshot is merged into Room. Both directions sit behind
   `TaskRemote` (`TaskFeed` + `MutationSender`), so the Convex client can be replaced by plain
   HTTP (`HttpTaskRemote`, which also polls `POST /api/query` if the native client cannot load).
+- **The trash is part of every snapshot** (`app:listTrash`), so trashed tasks stay on the phone
+  with `deletedAt` set and the Trash screen works offline; a task purged after 30 days disappears.
+- **History** (`app:getTask`) is read over HTTP when a task's details open and whenever a newer
+  server copy of it arrives, and cached in Room (`task_events`), so it shows offline too.
+  Changes still in the outbox are counted under it; they join the history once sent.
 - **Conflicts: last write wins per field, by `updatedAt`.** A field changed by a change still in
   the outbox keeps its local value (that change will reach the server last). Every other field
   takes the server value, but only from a server copy newer than the one merged before, so a
@@ -109,8 +137,8 @@ tokens with `HELM_SIGNING_KEY_FILE=<file> HELM_JWT_ISSUER=<issuer> npm run app-t
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM: dates, Today sections, outbox, merge, HTTP
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room, outbox across restarts, Compose
+./gradlew :app:testDebugUnitTest            # JVM: dates, Today, board, rules, history, outbox, merge, HTTP
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, Compose
 ```
 
 The end-to-end offline check drives the app on an emulator against the local backend: add a
@@ -121,6 +149,12 @@ CLI. With the backend running, the token in a file and `HELM_URL`/`HELM_API_KEY`
 ./gradlew :app:assembleDebug
 python3 scripts/e2e-offline.py --apk app/build/outputs/apk/debug/app-debug.apk --token-file ~/helm-token.txt
 ```
+
+`scripts/e2e-board-details.py` (same arguments) checks the board and details the same way: a task
+added by the agent is dragged to "In progress", moved to "Done" from its menu, renamed and given a
+label, a time and a link; offline it goes to the trash and the change reaches the server after the
+app was killed; it is restored from the Trash screen, and an agent edit shows in its history as
+the agent's. Every step is checked on the server through MCP.
 
 ## Dependencies
 

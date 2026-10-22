@@ -2,10 +2,14 @@ package dev.helm.planner.sync
 
 import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.OutboxOp
+import dev.helm.planner.data.local.RepeatEvery
+import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
+import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.remote.RemoteTask
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -108,5 +112,81 @@ class SnapshotMergerTest {
             now,
         )
         assertEquals(setOf("gone", "orphan"), plan.deletes.toSet())
+    }
+
+    @Test
+    fun `repeat, labels, links and the trash come from the server`() {
+        val server = remote("s1", 10) {
+            copy(
+                repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)),
+                labels = listOf("home", "Helm"),
+                links = listOf(TaskLink("https://example.com", "Spec")),
+                deletedAt = 7,
+            )
+        }
+        val task = SnapshotMerger.merge(emptyList(), emptyList(), listOf(server), now).upserts.single()
+        assertEquals(RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), task.repeat)
+        assertEquals(listOf("home", "Helm"), task.labels)
+        assertEquals(listOf(TaskLink("https://example.com", "Spec")), task.links)
+        assertEquals(7L, task.deletedAt)
+    }
+
+    @Test
+    fun `a waiting label change keeps the labels local and only them`() {
+        val local = row("a", "s1", 10) { copy(labels = listOf("mine"), title = "Old") }
+        val server = remote("s1", 20) { copy(labels = listOf("agent"), title = "Renamed", links = listOf(TaskLink("https://a.pl"))) }
+        val pending = op(Mutations.UPDATE, "a", """{"labels":["mine"],"clientId":"c"}""")
+        val merged = SnapshotMerger.merge(listOf(local), listOf(pending), listOf(server), now).upserts.single()
+        assertEquals(listOf("mine"), merged.labels)
+        assertEquals("Renamed", merged.title)
+        assertEquals(listOf(TaskLink("https://a.pl")), merged.links)
+    }
+
+    @Test
+    fun `a waiting title change does not hold back the agent's note`() {
+        val local = row("a", "s1", 10) { copy(title = "Mine", note = "old note") }
+        val server = remote("s1", 20) { copy(title = "Agent title", note = "agent note") }
+        val pending = op(Mutations.UPDATE, "a", """{"title":"Mine","clientId":"c"}""")
+        val merged = SnapshotMerger.merge(listOf(local), listOf(pending), listOf(server), now).upserts.single()
+        assertEquals("Mine", merged.title)
+        assertEquals("agent note", merged.note)
+    }
+
+    @Test
+    fun `waiting repeat and link changes stay local`() {
+        val local = row("a", "s1", 10) { copy(repeat = RepeatRule(RepeatEvery.DAY), links = listOf(TaskLink("https://mine.pl"))) }
+        val server = remote("s1", 20)
+        val pending = listOf(
+            op(Mutations.UPDATE, "a", """{"repeat":{"every":"day","interval":1},"clientId":"c"}"""),
+            op(Mutations.UPDATE, "a", """{"links":[{"url":"https://mine.pl"}],"clientId":"d"}""").copy(opId = "op2"),
+        )
+        val merged = SnapshotMerger.merge(listOf(local), pending, listOf(server), now).upserts.single()
+        assertEquals(RepeatRule(RepeatEvery.DAY), merged.repeat)
+        assertEquals(listOf(TaskLink("https://mine.pl")), merged.links)
+    }
+
+    @Test
+    fun `a task moved to the trash offline stays there until the server agrees`() {
+        val local = row("a", "s1", 10) { copy(deletedAt = 500) }
+        val merged = SnapshotMerger.merge(listOf(local), listOf(op(Mutations.SOFT_DELETE, "a")), listOf(remote("s1", 20)), now)
+            .upserts.single()
+        assertEquals(500L, merged.deletedAt)
+    }
+
+    @Test
+    fun `a task restored offline is not put back in the trash by an older server copy`() {
+        val local = row("a", "s1", 10) { copy(deletedAt = null) }
+        val server = remote("s1", 20) { copy(deletedAt = 400, title = "Agent edit") }
+        val merged = SnapshotMerger.merge(listOf(local), listOf(op(Mutations.RESTORE, "a")), listOf(server), now).upserts.single()
+        assertNull(merged.deletedAt)
+        assertEquals("Agent edit", merged.title)
+    }
+
+    @Test
+    fun `a task trashed by the agent stays on the phone, in the trash`() {
+        val local = row("a", "s1", 10)
+        val plan = SnapshotMerger.merge(listOf(local), emptyList(), listOf(remote("s1", 20) { copy(deletedAt = 15) }), now)
+        assertEquals(15L, plan.upserts.single().deletedAt)
+        assertTrue(plan.deletes.isEmpty())
     }
 }

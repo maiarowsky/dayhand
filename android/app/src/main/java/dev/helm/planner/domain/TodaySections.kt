@@ -16,7 +16,7 @@ data class TodaySections(
 }
 
 /** Timed tasks first by time, then untimed by creation (backend `bySchedule`). */
-private val bySchedule = Comparator<Task> { a, b ->
+internal val bySchedule = Comparator<Task> { a, b ->
     val dateOrder = (a.dueDate ?: "").compareTo(b.dueDate ?: "")
     when {
         dateOrder != 0 -> dateOrder
@@ -30,7 +30,7 @@ private val bySchedule = Comparator<Task> { a, b ->
 /** Splits the local tasks into the Today sections for instant [nowMs] in [timezone]. */
 fun todaySections(tasks: List<Task>, nowMs: Long, timezone: String?): TodaySections {
     val today = HelmDates.localDate(nowMs, timezone)
-    val active = tasks.filter { it.archivedAt == null }
+    val active = tasks.filter { it.isActive }
     val nowTask = active.firstOrNull { it.isNow && it.status != TaskStatus.DONE }
     val open = active.filter { it.status != TaskStatus.DONE && it.localId != nowTask?.localId }
     return TodaySections(

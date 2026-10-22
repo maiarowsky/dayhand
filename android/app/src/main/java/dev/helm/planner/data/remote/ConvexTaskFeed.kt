@@ -26,15 +26,16 @@ class ConvexTaskFeed(deploymentUrl: String, token: String, scope: CoroutineScope
     override fun events(): Flow<RemoteEvent> = flow {
         client.loginFromCache()
         val tasks = client.subscribe<JsonElement>(RemoteJson.QUERY_TASKS, RemoteJson.TASKS_ARGS)
+        val trash = client.subscribe<JsonElement>(RemoteJson.QUERY_TRASH)
         val settings = client.subscribe<JsonElement>(RemoteJson.QUERY_SETTINGS)
         emitAll(
-            combine(tasks, settings) { t, s ->
-                val failure = t.exceptionOrNull() ?: s.exceptionOrNull()
+            combine(tasks, trash, settings) { t, d, s ->
+                val failure = t.exceptionOrNull() ?: d.exceptionOrNull() ?: s.exceptionOrNull()
                 if (failure != null) {
                     failure.toEvent()
                 } else {
                     RemoteEvent.Snapshot(
-                        tasks = RemoteJson.tasks(t.getOrThrow()),
+                        tasks = RemoteJson.tasksWithTrash(t.getOrThrow(), d.getOrThrow()),
                         timezone = RemoteJson.timezone(s.getOrThrow()) ?: HelmDates.DEFAULT_TIMEZONE,
                     )
                 }

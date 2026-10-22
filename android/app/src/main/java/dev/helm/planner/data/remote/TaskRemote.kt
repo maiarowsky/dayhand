@@ -1,5 +1,7 @@
 package dev.helm.planner.data.remote
 
+import dev.helm.planner.data.local.RepeatRule
+import dev.helm.planner.data.local.TaskLink
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -11,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
  * also stand in for the feed by polling.
  */
 interface TaskFeed {
-    /** Snapshots of every task that is not in the trash, with the user's time zone. */
+    /** Snapshots of every task, the trash included, with the user's time zone. */
     fun events(): Flow<RemoteEvent>
 }
 
@@ -19,7 +21,12 @@ fun interface MutationSender {
     suspend fun send(mutation: String, args: JsonObject): SendResult
 }
 
-interface TaskRemote : TaskFeed, MutationSender
+/** One-off reads, e.g. a task's change history for the details screen. */
+fun interface QueryRunner {
+    suspend fun query(path: String, args: JsonObject): SendResult
+}
+
+interface TaskRemote : TaskFeed, MutationSender, QueryRunner
 
 sealed interface RemoteEvent {
     data class Snapshot(val tasks: List<RemoteTask>, val timezone: String) : RemoteEvent
@@ -56,4 +63,17 @@ data class RemoteTask(
     val archivedAt: Long?,
     val createdAt: Long,
     val updatedAt: Long,
+    val repeat: RepeatRule? = null,
+    val labels: List<String> = emptyList(),
+    val links: List<TaskLink> = emptyList(),
+    val deletedAt: Long? = null,
+)
+
+/** One entry of a task's history (`getTask` in `backend/convex/lib/views.ts`); before/after as JSON objects. */
+data class RemoteHistoryEntry(
+    val at: Long,
+    val actor: String,
+    val action: String,
+    val before: String?,
+    val after: String?,
 )

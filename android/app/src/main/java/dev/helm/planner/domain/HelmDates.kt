@@ -33,6 +33,7 @@ object HelmDates {
     fun isOverdue(task: Task, today: String): Boolean =
         task.status != TaskStatus.DONE &&
             task.archivedAt == null &&
+            task.deletedAt == null &&
             task.dueDate != null &&
             task.dueDate < today
 

@@ -18,6 +18,7 @@ import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
 import dev.helm.planner.sync.OutboxScheduler
 import dev.helm.planner.sync.RoomOutboxStore
+import dev.helm.planner.sync.TaskHistorySync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -47,6 +48,15 @@ class AppContainer(context: Context) {
     val outboxStore = RoomOutboxStore(database)
     val repository = TaskRepository(database, onOutboxChanged = outboxScheduler::schedule)
     val liveSync = LiveSync(settings, repository, ::feedFor)
+
+    /** A task's change history is read over plain HTTP when its details are open, cached in Room. */
+    val historySync = TaskHistorySync(
+        runner = {
+            val current = settings.current()
+            current.backend?.takeUnless { current.offlineMode }?.let { HttpTaskRemote(it.url, it.token) }
+        },
+        save = repository::saveHistory,
+    )
 
     /** The outbox talks plain HTTP: clear timeouts and no WebSocket in the background. */
     fun mutationSender(backend: BackendConfig): MutationSender = HttpTaskRemote(backend.url, backend.token)
