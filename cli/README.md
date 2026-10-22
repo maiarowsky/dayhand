@@ -29,8 +29,12 @@ For agents and scripts: `HLM_URL` and `HLM_API_KEY` win over the file and the ke
 (2 usage, 3 key, 4 not found, 5 server unavailable: retry with the same `--client-id`),
 `--dry-run` shows a change without sending it, and `hlm` never prompts without a terminal.
 Give each agent its own key of kind `agent`; history then shows its changes as `agent: <key name>`.
+`hlm prime` prints Today and these rules as plain text for an agent's session-start hook, and
+[docs/skills/hlm/SKILL.md](../docs/skills/hlm/SKILL.md) is the same guidance as an Agent Skill.
 
-The full reference is generated from the command registry: [docs/cli.md](../docs/cli.md).
+The full reference is generated from the command registry: [docs/cli.md](../docs/cli.md),
+the man page [man/hlm.1](../man/hlm.1) (in the package, so `man hlm` works after a global
+install) and the agent skill. Releases: [docs/release.md](../docs/release.md).
 
 ## Layout
 
@@ -45,6 +49,8 @@ src/credentials/      API key: environment, OS keychain (@napi-rs/keyring), 0600
 src/when/             English date phrases and calendar arithmetic in a time zone
 src/render/           human (tables, colors, relative days) and plain (TSV) output
 src/completion/       hlm __complete and the bash, zsh, fish and PowerShell scripts
+src/docs.ts, man.ts, skill.ts   docs/cli.md, man/hlm.1 and the agent skill, rendered from the registry
+scripts/              gen-docs (npm run docs), pack-files (prepack), check-release (publish workflow)
 tests/                unit tests (*.unit.test.ts) and tests against a real local Convex backend
 ```
 
@@ -54,7 +60,8 @@ tests/                unit tests (*.unit.test.ts) and tests against a real local
 (cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
 npm test                                      # builds, then runs everything
 npm run test:unit                             # pure tests only (dates, config, output, completion)
-npm run build && npm run docs                 # regenerate docs/cli.md after changing a command
+npm run build && npm run docs                 # regenerate docs/cli.md, man/hlm.1 and SKILL.md
+npm pack                                      # a local tarball with dist/, the man page and LICENSE (not published)
 ```
 
 The tests never touch the real keychain or config folder: every run gets its own

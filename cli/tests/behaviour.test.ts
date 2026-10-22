@@ -21,6 +21,20 @@ describe("output", () => {
     expect(await hlmJson(key, [])).toEqual(await hlmJson(key, ["today"]));
   });
 
+  test("hlm prime prints Today and the agent rules as plain text; --json is list_today", async () => {
+    const { key } = await newUser("agent");
+    await hlm(key, ["add", "Write the report", "--time", "09:00"]);
+    await hlm(key, ["now", "1", "--note", "section 2 next"]);
+    const run = await hlm(key, ["prime"], { env: { FORCE_COLOR: "1" } });
+    expect(run.code).toBe(0);
+    expect(run.stdout).toMatch(/^# Helm tasks \(hlm\)\n\nToday, /);
+    expect(run.stdout).toContain("NOW  #1 Write the report\n     next: section 2 next");
+    expect(run.stdout).toContain("## Using hlm\n- Pass --json");
+    expect(run.stdout).not.toContain("\x1b[");
+    expect((await hlm(key, ["prime", "--plain"])).stdout).toBe(run.stdout);
+    expect(await hlmJson(key, ["prime"])).toEqual(await hlmJson(key, ["today"]));
+  });
+
   test("--plain is tab-separated without headers; --fields picks columns and JSON fields", async () => {
     const { key } = await newUser();
     await hlm(key, ["add", "Water plants", "--time", "18:00", "-l", "home", "-l", "garden"]);
