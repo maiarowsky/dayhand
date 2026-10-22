@@ -10,7 +10,8 @@ step is checked on the server through MCP, as the agent sees it.
 
 Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend
 and HELM_URL / HELM_API_KEY of the app user in the environment; the app is paired with a code
-from `helm pair`.
+from `helm pair`. HELM_AGENT_KEY is an agent key of the same user (`"kind":"agent"`), so the
+agent's changes are recorded as the agent's: a `cli` key records them as the person's.
 
   python3 android/scripts/e2e-board-details.py --apk app-debug.apk --shots DIR
 """
@@ -42,13 +43,13 @@ SYNC_TIMEOUT = 150
 
 
 def mcp(tool, **arguments):
-    """Calls one MCP tool as the agent and returns its JSON result."""
+    """Calls one MCP tool with the agent key (HELM_AGENT_KEY) and returns its JSON result."""
     url = os.environ["HELM_URL"].rstrip("/") + "/mcp"
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": tool, "arguments": arguments}})
     request = urllib.request.Request(url, data=body.encode(), method="POST", headers={
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
-        "Authorization": f"Bearer {os.environ['HELM_API_KEY']}",
+        "Authorization": f"Bearer {os.environ['HELM_AGENT_KEY']}",
     })
     with urllib.request.urlopen(request, timeout=15) as response:
         message = json.loads(response.read())

@@ -149,6 +149,7 @@
     <string name="restore_described">Przywróć: %1$s</string>
 
     <string name="actor_app">Ty (aplikacja)</string>
+    <string name="actor_cli">Ty (CLI)</string>
     <string name="actor_agent">Agent</string>
     <string name="action_create">Utworzono</string>
     <string name="action_update">Zmieniono</string>

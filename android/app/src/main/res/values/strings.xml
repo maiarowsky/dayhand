@@ -141,6 +141,7 @@
     <string name="restore_described">Restore: %1$s</string>
 
     <string name="actor_app">You (app)</string>
+    <string name="actor_cli">You (CLI)</string>
     <string name="actor_agent">Agent</string>
     <string name="action_create">Created</string>
     <string name="action_update">Edited</string>

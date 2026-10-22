@@ -9,11 +9,16 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-/** Who made a change, as the backend records it (`actorValidator`). */
-enum class Actor { APP, AGENT;
+/** Who made a change, as the backend records it (`actorValidator`): the app, a person with `hlm`, or an agent. */
+enum class Actor { APP, CLI, AGENT;
 
     companion object {
-        fun fromWire(value: String): Actor = if (value == "agent") AGENT else APP
+        /** Anything the app does not know is not shown as the app's own change. */
+        fun fromWire(value: String): Actor = when (value) {
+            "app" -> APP
+            "cli" -> CLI
+            else -> AGENT
+        }
     }
 }
 

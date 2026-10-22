@@ -88,16 +88,21 @@ private fun HistoryRow(entry: HistoryEntry, timezone: String, today: LocalDate) 
     }
 }
 
-/** "You (app)" or "Agent", in clearly different colours. */
+/** "You (app)", "You (CLI)" or "Agent"; the agent in a clearly different colour. */
 @Composable
 private fun ActorBadge(actor: Actor) {
     val agent = actor == Actor.AGENT
+    val label = when (actor) {
+        Actor.APP -> R.string.actor_app
+        Actor.CLI -> R.string.actor_cli
+        Actor.AGENT -> R.string.actor_agent
+    }
     Surface(
         color = if (agent) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer,
         shape = RoundedCornerShape(8.dp),
     ) {
         Text(
-            stringResource(if (agent) R.string.actor_agent else R.string.actor_app),
+            stringResource(label),
             style = MaterialTheme.typography.labelMedium,
             color = if (agent) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),

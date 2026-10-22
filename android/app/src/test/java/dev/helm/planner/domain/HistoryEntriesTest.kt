@@ -28,6 +28,13 @@ class HistoryEntriesTest {
     }
 
     @Test
+    fun `changes from the hlm CLI and from unknown sources are never shown as the app's`() {
+        assertEquals(Actor.CLI, historyEntry(event("cli", "update", null, null)).actor)
+        assertEquals(Actor.AGENT, historyEntry(event("something-new", "update", null, null)).actor)
+        assertEquals(Actor.APP, historyEntry(event("app", "update", null, null)).actor)
+    }
+
+    @Test
     fun `a trash entry has no field changes and unreadable json is ignored`() {
         assertTrue(historyEntry(event("agent", "delete", """{"deletedAt":null}""", """{"deletedAt":9}""")).changes.isEmpty())
         assertTrue(historyEntry(event("app", "update", "not json", "[1]")).changes.isEmpty())

@@ -56,7 +56,8 @@ are also the projects: the backend has one list for both), links (http/https onl
 version 1) and the note. Each field is edited in place or in a small dialog and checked against
 the backend's limits before it is queued, so a change the server would refuse is never queued.
 **Move to trash** keeps the task for 30 days; a task in the trash is read-only until restored.
-**Change history** lists who changed what, **You (app)** or **Agent**, newest first.
+**Change history** lists who changed what, newest first: **You (app)**, **You (CLI)** (`hlm` with a
+`cli` key) or **Agent**.
 
 **Trash**: tasks deleted by you or the agent, newest first, with the day each one goes for good;
 **Restore** brings one back.
@@ -251,7 +252,8 @@ python3 scripts/e2e-offline.py --apk app/build/outputs/apk/debug/app-debug.apk
 added by the agent is dragged to "In progress", moved to "Done" from its menu, renamed and given a
 label, a time and a link; offline it goes to the trash and the change reaches the server after the
 app was killed; it is restored from the Trash screen, and an agent edit shows in its history as
-the agent's. Every step is checked on the server through MCP.
+the agent's. Every step is checked on the server through MCP, with an agent key of the same user
+in `HELM_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
 
 ## Dependencies
 
