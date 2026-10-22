@@ -7,21 +7,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +36,15 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
+import dev.helm.planner.ui.components.HelmChip
+import dev.helm.planner.ui.components.HelmTextField
+import dev.helm.planner.ui.components.PrimaryButton
+import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.components.TextAction
+import dev.helm.planner.ui.theme.HelmDimens
+import dev.helm.planner.ui.theme.HelmShapes
+import dev.helm.planner.ui.theme.helmType
+import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -73,42 +77,52 @@ fun QuickAddSheet(
     val canSave = title.isNotBlank()
     val save = { if (canSave) onSave(title.trim(), day, time, note.trim().ifEmpty { null }) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    val p = palette
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = p.surface,
+        contentColor = p.text,
+        shape = HelmShapes.sheet,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = p.border) },
+    ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = HelmDimens.screenMargin)
                 .padding(bottom = 24.dp)
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(stringResource(R.string.quick_add_title), style = MaterialTheme.typography.titleLarge)
-            OutlinedTextField(
+            Text(stringResource(R.string.quick_add_title), style = helmType.screenTitle, color = p.text)
+            HelmTextField(
                 value = title,
                 onValueChange = { if (it.length <= TaskRepository.MAX_TITLE) title = it },
-                label = { Text(stringResource(R.string.quick_add_field)) },
+                label = stringResource(R.string.quick_add_field),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { save() }),
                 modifier = Modifier
-                    .fillMaxWidth()
                     .focusRequester(focus)
                     .testTag(QuickAddTags.TITLE),
             )
             // Save sits right under the title so the keyboard never hides it.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { expanded = !expanded }, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(if (expanded) R.string.quick_add_less else R.string.quick_add_more))
-                }
+                TextAction(
+                    stringResource(if (expanded) R.string.quick_add_less else R.string.quick_add_more),
+                    onClick = { expanded = !expanded },
+                    color = p.secondary,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
                 Spacer(Modifier.weight(1f))
-                Button(
+                PrimaryButton(
+                    stringResource(R.string.quick_add_save),
                     onClick = save,
                     enabled = canSave,
-                    modifier = Modifier
-                        .heightIn(min = 48.dp)
-                        .testTag(QuickAddTags.SAVE),
-                ) { Text(stringResource(R.string.quick_add_save)) }
+                    fillWidth = false,
+                    modifier = Modifier.testTag(QuickAddTags.SAVE),
+                )
             }
             if (expanded) {
                 MoreOptions(
@@ -155,31 +169,27 @@ private fun MoreOptions(
 ) {
     val tomorrow = today.plusDays(1).toString()
     val other = day != today.toString() && day != tomorrow
-    Text(stringResource(R.string.quick_add_day), style = MaterialTheme.typography.labelLarge)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(selected = day == today.toString(), onClick = { onDay(today.toString()) }, label = { Text(stringResource(R.string.quick_add_today)) })
-        FilterChip(selected = day == tomorrow, onClick = { onDay(tomorrow) }, label = { Text(stringResource(R.string.quick_add_tomorrow)) })
-        FilterChip(
+    val muted = palette.textMuted
+    SectionLabel(stringResource(R.string.quick_add_day), color = muted)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HelmChip(stringResource(R.string.quick_add_today), selected = day == today.toString(), onClick = { onDay(today.toString()) })
+        HelmChip(stringResource(R.string.quick_add_tomorrow), selected = day == tomorrow, onClick = { onDay(tomorrow) })
+        HelmChip(
+            if (other) LocalDate.parse(day).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+            else stringResource(R.string.move_to_day),
             selected = other,
             onClick = onPickDay,
-            label = {
-                Text(
-                    if (other) LocalDate.parse(day).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
-                    else stringResource(R.string.move_to_day),
-                )
-            },
         )
     }
-    Text(stringResource(R.string.quick_add_time), style = MaterialTheme.typography.labelLarge)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(selected = time == null, onClick = onClearTime, label = { Text(stringResource(R.string.quick_add_no_time)) })
-        FilterChip(selected = time != null, onClick = onPickTime, label = { Text(time ?: stringResource(R.string.quick_add_time)) })
+    SectionLabel(stringResource(R.string.quick_add_time), color = muted)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HelmChip(stringResource(R.string.quick_add_no_time), selected = time == null, onClick = onClearTime)
+        HelmChip(time ?: stringResource(R.string.quick_add_time), selected = time != null, onClick = onPickTime)
     }
-    OutlinedTextField(
+    HelmTextField(
         value = note,
         onValueChange = { if (it.length <= TaskRepository.MAX_NOTE) onNote(it) },
-        label = { Text(stringResource(R.string.quick_add_note)) },
+        label = stringResource(R.string.quick_add_note),
         minLines = 2,
-        modifier = Modifier.fillMaxWidth(),
     )
 }

@@ -1,37 +1,23 @@
 package dev.helm.planner.ui.today
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,14 +28,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
+import dev.helm.planner.ui.components.BannerTone
+import dev.helm.planner.ui.components.EmptyState
+import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.LargeHeader
+import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.components.StatusBanner
+import dev.helm.planner.ui.theme.HelmDimens
+import dev.helm.planner.ui.theme.HelmShapes
+import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -65,35 +57,31 @@ object TodayTags {
 }
 
 /** The Today screen: overdue, the one "now" task, today's tasks, then done (collapsed). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodayScreen(state: TodayUiState, actions: TodayActions, modifier: Modifier = Modifier) {
+    val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
     val locale = Locale.getDefault()
     val date = LocalDate.parse(state.sections.date)
     Scaffold(
         modifier = modifier,
+        containerColor = p.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column(Modifier.semantics(mergeDescendants = true) { heading() }) {
-                        Text(stringResource(R.string.today_title))
-                        Text(
-                            date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale)),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = actions::openSettings, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.open_settings))
-                    }
-                },
-            )
+            LargeHeader(
+                title = stringResource(R.string.today_title),
+                subtitle = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale)),
+            ) {
+                HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { adding = true }, modifier = Modifier.testTag(TodayTags.FAB)) {
+            FloatingActionButton(
+                onClick = { adding = true },
+                containerColor = p.accent,
+                contentColor = p.onAccent,
+                shape = HelmShapes.pill,
+                modifier = Modifier.testTag(TodayTags.FAB),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_task))
             }
         },
@@ -121,18 +109,26 @@ private fun TodayList(
     modifier: Modifier,
     onAdd: () -> Unit,
 ) {
+    val p = palette
     var doneExpanded by rememberSaveable { mutableStateOf(false) }
     val sections = state.sections
     LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
-        item { StatusBanner(state.connection, state.pendingChanges, actions::openSettings) }
-        if (sections.isEmpty) item { EmptyState(onAdd) }
+        item { StatusLine(state.connection, state.pendingChanges, actions::openSettings) }
+        if (sections.isEmpty) {
+            item {
+                EmptyState(
+                    icon = Icons.Filled.CheckCircle,
+                    title = stringResource(R.string.empty_today),
+                    action = stringResource(R.string.add_task),
+                    actionIcon = Icons.Filled.Add,
+                    onAction = onAdd,
+                    modifier = Modifier.testTag(TodayTags.EMPTY),
+                )
+            }
+        }
         if (sections.overdue.isNotEmpty()) {
             item {
-                SectionHeader(
-                    stringResource(R.string.section_overdue, sections.overdue.size),
-                    Modifier.testTag(TodayTags.OVERDUE),
-                    color = MaterialTheme.colorScheme.error,
-                )
+                SectionHeader(stringResource(R.string.section_overdue, sections.overdue.size), Modifier.testTag(TodayTags.OVERDUE), p.danger)
             }
             items(sections.overdue, key = { it.localId }) { OverdueRow(it, today, actions) }
         }
@@ -149,73 +145,46 @@ private fun TodayList(
 }
 
 @Composable
-private fun SectionHeader(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.primary) {
-    Text(
-        text = text.uppercase(Locale.getDefault()),
-        style = MaterialTheme.typography.labelLarge,
+private fun SectionHeader(text: String, modifier: Modifier = Modifier, color: Color = palette.accent) {
+    SectionLabel(
+        text,
         color = color,
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp)
-            .semantics { heading() },
+            .padding(start = HelmDimens.screenMargin, end = HelmDimens.screenMargin, top = 20.dp, bottom = 4.dp),
     )
 }
 
 @Composable
 private fun DoneHeader(count: Int, expanded: Boolean, onToggle: () -> Unit) {
+    val p = palette
     val stateText = stringResource(if (expanded) R.string.done_collapse else R.string.done_expand)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
+            .heightIn(min = HelmDimens.touchTarget)
+            .padding(top = 12.dp)
             .clickable(onClickLabel = stateText, onClick = onToggle)
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = HelmDimens.screenMargin)
             .testTag(TodayTags.DONE)
             .semantics(mergeDescendants = true) {
                 heading()
                 stateDescription = stateText
             },
     ) {
-        Text(
-            stringResource(R.string.section_done, count).uppercase(Locale.getDefault()),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
+        SectionLabel(stringResource(R.string.section_done, count), Modifier.weight(1f), color = p.textMuted)
         Icon(
             if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = p.textMuted,
         )
     }
 }
 
+/** The state of the connection when it needs a word: offline, changes waiting, no server, refused token. */
 @Composable
-private fun EmptyState(onAdd: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 48.dp)
-            .testTag(TodayTags.EMPTY),
-    ) {
-        Text(
-            stringResource(R.string.empty_today),
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center,
-        )
-        Button(onClick = onAdd, modifier = Modifier.heightIn(min = 48.dp)) {
-            Icon(Icons.Filled.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.add_task))
-        }
-    }
-}
-
-@Composable
-private fun StatusBanner(status: ConnectionStatus, pending: Int, openSettings: () -> Unit) {
+private fun StatusLine(status: ConnectionStatus, pending: Int, openSettings: () -> Unit) {
     val text = when (status) {
         ConnectionStatus.OFFLINE -> stringResource(R.string.status_offline, pending)
         ConnectionStatus.OFFLINE_MODE -> stringResource(R.string.status_offline_mode, pending)
@@ -225,22 +194,19 @@ private fun StatusBanner(status: ConnectionStatus, pending: Int, openSettings: (
         ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING ->
             if (pending > 0) stringResource(R.string.status_sending, pending) else return
     }
-    val needsSettings = status == ConnectionStatus.NOT_CONFIGURED || status == ConnectionStatus.UNAUTHORIZED
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag(TodayTags.STATUS)
-            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            if (needsSettings) {
-                TextButton(onClick = openSettings, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.open_settings))
-                }
-            }
-        }
+    val tone = when (status) {
+        ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> BannerTone.Danger
+        ConnectionStatus.OFFLINE, ConnectionStatus.OFFLINE_MODE, ConnectionStatus.NOT_CONFIGURED -> BannerTone.Warning
+        ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING -> BannerTone.Info
     }
+    val needsSettings = status == ConnectionStatus.NOT_CONFIGURED || status == ConnectionStatus.UNAUTHORIZED
+    StatusBanner(
+        text = text,
+        tone = tone,
+        action = if (needsSettings) stringResource(R.string.open_settings) else null,
+        onAction = openSettings,
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag(TodayTags.STATUS),
+    )
 }

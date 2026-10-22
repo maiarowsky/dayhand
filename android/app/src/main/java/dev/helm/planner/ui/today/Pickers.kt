@@ -2,16 +2,18 @@ package dev.helm.planner.ui.today
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import dev.helm.planner.R
+import dev.helm.planner.ui.components.TextAction
+import dev.helm.planner.ui.theme.palette
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -24,17 +26,19 @@ fun DayPickerDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDat
     val state = rememberDatePickerState(
         initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
     )
+    val colors = DatePickerDefaults.colors(containerColor = palette.surface)
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        colors = colors,
         confirmButton = {
-            TextButton(onClick = {
+            TextAction(stringResource(R.string.ok), onClick = {
                 state.selectedDateMillis?.let { onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
                     ?: onDismiss()
-            }) { Text(stringResource(R.string.ok)) }
+            })
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = { TextAction(stringResource(R.string.cancel), onClick = onDismiss, color = palette.textMuted) },
     ) {
-        DatePicker(state = state)
+        DatePicker(state = state, colors = colors)
     }
 }
 
@@ -43,14 +47,21 @@ fun DayPickerDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDat
 @Composable
 fun TimePickerDialog(initial: LocalTime, onDismiss: () -> Unit, onPick: (String) -> Unit) {
     val state = rememberTimePickerState(initialHour = initial.hour, initialMinute = initial.minute, is24Hour = true)
+    val p = palette
     AlertDialog(
         onDismissRequest = onDismiss,
-        text = { TimePicker(state = state) },
-        confirmButton = {
-            TextButton(onClick = { onPick(LocalTime.of(state.hour, state.minute).toString()) }) {
-                Text(stringResource(R.string.ok))
-            }
+        containerColor = p.surface,
+        text = {
+            TimePicker(
+                state = state,
+                colors = TimePickerDefaults.colors(
+                    clockDialColor = p.surfaceRaised,
+                    timeSelectorUnselectedContainerColor = p.surfaceRaised,
+                    periodSelectorUnselectedContainerColor = p.surfaceRaised,
+                ),
+            )
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextAction(stringResource(R.string.ok), onClick = { onPick(LocalTime.of(state.hour, state.minute).toString()) }) },
+        dismissButton = { TextAction(stringResource(R.string.cancel), onClick = onDismiss, color = p.textMuted) },
     )
 }

@@ -12,18 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +34,16 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.Task
+import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.HelmCard
+import dev.helm.planner.ui.components.HelmDialog
+import dev.helm.planner.ui.components.HelmMenu
+import dev.helm.planner.ui.components.HelmTextField
+import dev.helm.planner.ui.components.SecondaryButton
+import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.components.helmCheckboxColors
+import dev.helm.planner.ui.theme.helmType
+import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,12 +53,12 @@ import java.util.Locale
 fun OverdueRow(task: Task, today: LocalDate, actions: TodayActions) {
     TaskLine(task, actions, subtitle = overdueLabel(task, today)) {
         val todayText = stringResource(R.string.move_to_today_described, task.title)
-        TextButton(
+        SecondaryButton(
+            stringResource(R.string.move_to_today),
             onClick = { actions.moveTo(task.localId, today.toString()) },
-            modifier = Modifier
-                .heightIn(min = 48.dp)
-                .semantics { contentDescription = todayText },
-        ) { Text(stringResource(R.string.move_to_today)) }
+            color = palette.accent,
+            modifier = Modifier.semantics { contentDescription = todayText },
+        )
         TaskMenu(task, today, actions, offerNow = false)
     }
 }
@@ -76,13 +77,13 @@ fun DoneRow(task: Task, actions: TodayActions) {
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 8.dp),
     ) {
         TaskCheckbox(checked = true, description = description) { actions.reopen(task.localId) }
         Text(
             task.title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = helmType.body,
+            color = palette.textMuted,
             textDecoration = TextDecoration.LineThrough,
             modifier = Modifier.weight(1f).padding(end = 16.dp),
         )
@@ -94,27 +95,24 @@ fun DoneRow(task: Task, actions: TodayActions) {
 fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
     val completeText = stringResource(R.string.complete_task, task.title)
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    val p = palette
+    HelmCard(
+        color = p.accentSoft,
+        contentPadding = 6.dp,
         modifier = Modifier
-            .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .testTag(TodayTags.NOW),
     ) {
-        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)) {
+        Row(verticalAlignment = Alignment.Top) {
             TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
-            Column(Modifier.weight(1f).padding(top = 4.dp)) {
-                Text(
-                    stringResource(R.string.section_now).uppercase(Locale.getDefault()),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-                TaskTitle(task, color = MaterialTheme.colorScheme.onPrimaryContainer, emphasized = true)
+            Column(Modifier.weight(1f).padding(top = 10.dp)) {
+                SectionLabel(stringResource(R.string.section_now), color = p.working)
+                TaskTitle(task, emphasized = true)
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = if (resume == null) 0.7f else 1f),
+                    style = helmType.small,
+                    color = if (resume == null) p.textMuted else p.text,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
@@ -145,13 +143,13 @@ private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, trail
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .padding(start = 4.dp, end = 4.dp),
+            .padding(start = 8.dp, end = 8.dp),
     ) {
         TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
             TaskTitle(task)
             if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                Text(subtitle, style = helmType.small, color = palette.danger)
             }
         }
         trailing()
@@ -168,20 +166,20 @@ private fun TaskCheckbox(checked: Boolean, description: String, onToggle: () -> 
             .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() })
             .semantics { contentDescription = description },
     ) {
-        Checkbox(checked = checked, onCheckedChange = null)
+        Checkbox(checked = checked, onCheckedChange = null, colors = helmCheckboxColors())
     }
 }
 
 @Composable
 private fun TaskTitle(
     task: Task,
-    color: Color = MaterialTheme.colorScheme.onSurface,
+    color: Color = palette.text,
     emphasized: Boolean = false,
 ) {
     val time = task.dueTime
     Text(
         text = if (time != null) "$time  ${task.title}" else task.title,
-        style = if (emphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+        style = if (emphasized) helmType.title else helmType.body,
         color = color,
     )
 }
@@ -191,10 +189,8 @@ private fun TaskMenu(task: Task, today: LocalDate, actions: TodayActions, offerN
     var open by remember { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_actions, task.title))
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
+        HelmMenu(expanded = open, onDismiss = { open = false }) {
             if (offerNow) MenuItem(R.string.set_now) { open = false; actions.setNow(task.localId) }
             MenuItem(R.string.move_to_day) { open = false; picking = true }
             MenuItem(R.string.archive) { open = false; actions.archive(task.localId) }
@@ -214,10 +210,8 @@ private fun NowMenu(task: Task, today: LocalDate, actions: TodayActions, onEditN
     var open by remember { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_actions, task.title))
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
+        HelmMenu(expanded = open, onDismiss = { open = false }) {
             MenuItem(R.string.resume_edit) { open = false; onEditNote() }
             MenuItem(R.string.stop_now) { open = false; actions.clearNow() }
             MenuItem(R.string.move_to_day) { open = false; picking = true }
@@ -235,26 +229,29 @@ private fun NowMenu(task: Task, today: LocalDate, actions: TodayActions, onEditN
 
 @Composable
 private fun MenuItem(@StringRes label: Int, onClick: () -> Unit) {
-    DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = onClick, modifier = Modifier.heightIn(min = 48.dp))
+    DropdownMenuItem(
+        text = { Text(stringResource(label), style = helmType.body, color = palette.text) },
+        onClick = onClick,
+        modifier = Modifier.heightIn(min = 48.dp),
+    )
 }
 
 @Composable
 private fun ResumeNoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf(initial) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.resume_label)) },
-        text = {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { if (it.length <= TaskRepository.MAX_RESUME_NOTE) text = it },
-                minLines = 3,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        confirmButton = { TextButton(onClick = { onSave(text) }) { Text(stringResource(R.string.save)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+    HelmDialog(
+        title = stringResource(R.string.resume_label),
+        onDismiss = onDismiss,
+        confirm = stringResource(R.string.save),
+        onConfirm = { onSave(text) },
+        dismiss = stringResource(R.string.cancel),
+    ) {
+        HelmTextField(
+            value = text,
+            onValueChange = { if (it.length <= TaskRepository.MAX_RESUME_NOTE) text = it },
+            minLines = 3,
+        )
+    }
 }
 
 /** "yesterday" or a short date such as "Mon, 19 Oct" in the app's language. */

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -108,6 +110,18 @@ fun ListRow(
 @Composable
 fun ListNote(text: String, modifier: Modifier = Modifier) {
     Text(text, style = helmType.small, color = palette.textMuted, modifier = modifier.padding(horizontal = 4.dp))
+}
+
+/** A menu on a raised card colour with option corners; items are [androidx.compose.material3.DropdownMenuItem]s. */
+@Composable
+fun HelmMenu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        containerColor = palette.surfaceRaised,
+        shape = HelmShapes.option,
+        content = content,
+    )
 }
 
 /** A dialog on the palette's card colour with text actions; [content] is the body under the title. */
