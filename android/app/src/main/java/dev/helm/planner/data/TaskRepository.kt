@@ -208,6 +208,18 @@ class TaskRepository(
         onOutboxChanged()
     }
 
+    /**
+     * Queues a change of the server settings (`summaryTime`, `defaultReminderMinutes`); the
+     * caller has already stored the new value on the phone.
+     */
+    suspend fun queueSettingsChange(args: JsonObject) {
+        enqueue(Mutations.UPDATE_SETTINGS, null, args, now = clock())
+        onOutboxChanged()
+    }
+
+    /** True while a settings change waits in the outbox, so a snapshot must not overwrite it. */
+    suspend fun hasPendingSettingsChange(): Boolean = db.outbox().countFor(Mutations.UPDATE_SETTINGS) > 0
+
     /** Writes a server snapshot into Room (see [SnapshotMerger]). */
     suspend fun applySnapshot(snapshot: RemoteEvent.Snapshot) {
         db.withTransaction {

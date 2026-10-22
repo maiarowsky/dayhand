@@ -86,7 +86,7 @@ export const getSettings = query({ args: args.getSettings, handler: async (ctx) 
 
 export const createApiKey = action({
   args: args.createApiKey,
-  handler: async (ctx, a): Promise<{ id: Id<"apiKeys">; name: string; key: string }> =>
+  handler: async (ctx, a): Promise<{ id: Id<"apiKeys">; name: string; kind: "cli" | "agent"; key: string }> =>
     ctx.runAction(internal.apiKeys.create, { ...(await appUser(ctx)), ...a }),
 });
 export const revokeApiKey = mutation({

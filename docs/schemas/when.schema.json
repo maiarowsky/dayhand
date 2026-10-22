@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/when.schema.json",
+  "title": "When",
+  "description": "hlm when: a date phrase resolved in a time zone.",
+  "type": "object",
+  "required": [
+    "date",
+    "time",
+    "timezone",
+    "weekday",
+    "relative"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "time": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{2}:\\d{2}$"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "weekday": {
+      "type": "string",
+      "enum": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ]
+    },
+    "relative": {
+      "type": "string",
+      "description": "today, tomorrow, yesterday, in N days, N days ago"
+    },
+    "shiftedFrom": {
+      "type": "string",
+      "pattern": "^\\d{2}:\\d{2}$",
+      "description": "The typed time, when it does not exist that day (clocks go forward) and time is the moved one"
+    }
+  }
+}

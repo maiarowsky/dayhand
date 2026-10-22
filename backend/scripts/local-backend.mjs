@@ -49,7 +49,11 @@ async function main() {
     await deployFunctions({
       url: backend.url,
       adminKey: backend.adminKey,
-      envVars: { HELM_JWT_ISSUER: ISSUER, HELM_JWKS: signing.jwksDataUri },
+      envVars: {
+        HELM_JWT_ISSUER: ISSUER,
+        HELM_JWKS: signing.jwksDataUri,
+        HELM_JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
+      },
     });
   } catch (error) {
     console.error(error.stderr || error.message);
@@ -60,12 +64,13 @@ async function main() {
   HTTP actions/MCP:  ${backend.siteUrl}/mcp
   Convex CLI config: backend/.env.local (admin key; keep it private)
 
-Create a personal API key (shown once):
-  npx convex run apiKeys:create '{"userId":"local|me","actor":"app","name":"cli"}'
+Create a personal API key (shown once) for the app user ${ISSUER}|me:
+  npx convex run apiKeys:create '{"userId":"${ISSUER}|me","actor":"app","name":"cli","kind":"cli"}'
 
 Then:
   export HELM_URL=${backend.siteUrl} HELM_API_KEY=<key>
   npx helm today
+  npx helm pair      # pairing code for the phone app (same user)
 
 Press Ctrl+C to stop.`);
 }

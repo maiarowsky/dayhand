@@ -27,13 +27,13 @@ import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.HistoryEntry
 import dev.helm.planner.domain.HistoryField
 import dev.helm.planner.sync.HistoryState
+import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dayLabel
 import dev.helm.planner.ui.common.repeatLabel
 import dev.helm.planner.ui.common.statusLabel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -65,7 +65,7 @@ fun HistorySection(state: TaskDetailUiState.Ready) {
 @Composable
 private fun HistoryRow(entry: HistoryEntry, timezone: String, today: LocalDate) {
     val at = Instant.ofEpochMilli(entry.at).atZone(HelmDates.zone(timezone))
-    val time = stringResource(R.string.day_and_time, dayLabel(at.toLocalDate(), today), at.format(DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())))
+    val time = stringResource(R.string.day_and_time, dayLabel(at.toLocalDate(), today), at.format(DateTimeFormatter.ofPattern("HH:mm", appLocale())))
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier

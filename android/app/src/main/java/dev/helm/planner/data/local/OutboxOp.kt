@@ -41,4 +41,5 @@ object Mutations {
     const val UPDATE = "app:update"
     const val SOFT_DELETE = "app:softDelete"
     const val RESTORE = "app:restore"
+    const val UPDATE_SETTINGS = "app:updateSettings"
 }

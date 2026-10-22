@@ -117,15 +117,22 @@ def configure(url, token):
     for _ in range(8):
         tap(find(desc="Settings", timeout=60))
         try:
-            find(text="Backend address", timeout=15)
+            base.find_scrolling(text="Backend address")
             break
         except RuntimeError:
             continue
-    tap(find(text="Backend address"))
+    tap(base.find_scrolling(text="Backend address"))
+    time.sleep(1)
     type_text(url)
-    tap(find(text="App token"))
+    # Close the keyboard first: it moves the long Settings screen under the next tap.
+    shell("input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1)
+    tap(base.find_scrolling(text="App token"))
+    time.sleep(1)
     type_text(token)
-    tap(button("Save"))
+    shell("input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1)
+    tap(base.find_scrolling(text="Save"))
     find(text="Saved")
     tap(find(desc="Back"))
     log("backend address and token saved in Settings")

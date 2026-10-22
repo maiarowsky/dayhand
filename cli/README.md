@@ -1,0 +1,64 @@
+# hlm
+
+`hlm` is the Helm command line client. Every command is one or more calls of the MCP tools the
+agent uses (`/mcp`), so the terminal, the app and an agent share one set of operations, and
+`hlm call <tool> '<json>'` reaches any tool directly. It replaces the old `helm` command
+(`backend/cli/helm.mjs`).
+
+Requires Node.js 22.12 or newer; runs on macOS, Linux and Windows.
+
+```sh
+npm ci --ignore-scripts
+npm run build                   # then `npm link` once to get `hlm` on the PATH
+hlm login --url https://<deployment>.convex.site    # locally: http://127.0.0.1:3211
+hlm                             # Today
+hlm add Call the accountant --due "fri 2pm" -l home
+hlm list --due-before eow --search accountant
+source <(hlm completion bash)   # or zsh, fish, powershell: hlm help completion
+```
+
+`hlm login` checks the API key (kind `cli`, created in the app) and keeps it in the OS keychain
+(macOS Keychain, Windows Credential Manager, Secret Service on Linux), or in a private
+`credentials.json` when there is none; the key never goes into a shell profile or config.toml.
+`config.toml` holds the URL, profiles, aliases and the color default (`hlm help config`).
+Dates are English phrases resolved in your time zone (`hlm help dates`, `hlm when "next mon"`).
+
+For agents and scripts: `HLM_URL` and `HLM_API_KEY` win over the file and the keychain,
+`--json` prints exactly the tool's `structuredContent` (schemas in
+[docs/schemas](../docs/schemas)), errors are one JSON line on stderr, exit codes are distinct
+(2 usage, 3 key, 4 not found, 5 server unavailable: retry with the same `--client-id`),
+`--dry-run` shows a change without sending it, and `hlm` never prompts without a terminal.
+Give each agent its own key of kind `agent`; history then shows its changes as `agent: <key name>`.
+
+The full reference is generated from the command registry: [docs/cli.md](../docs/cli.md).
+
+## Layout
+
+```
+src/bin/hlm.ts        entry point
+src/main.ts           commander program built from the registry; aliases; hlm help
+src/run.ts            runs one command: context, output format, exit codes, --dry-run
+src/registry/         the commands (single source for help, completion, docs/cli.md and tests)
+src/transport/        MCP JSON-RPC and /devices over HTTP
+src/config/           environment, folders per system, config.toml, profiles, aliases
+src/credentials/      API key: environment, OS keychain (@napi-rs/keyring), 0600 file
+src/when/             English date phrases and calendar arithmetic in a time zone
+src/render/           human (tables, colors, relative days) and plain (TSV) output
+src/completion/       hlm __complete and the bash, zsh, fish and PowerShell scripts
+tests/                unit tests (*.unit.test.ts) and tests against a real local Convex backend
+```
+
+## Tests
+
+```sh
+(cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
+npm test                                      # builds, then runs everything
+npm run test:unit                             # pure tests only (dates, config, output, completion)
+npm run build && npm run docs                 # regenerate docs/cli.md after changing a command
+```
+
+The tests never touch the real keychain or config folder: every run gets its own
+`HLM_CONFIG_DIR` and keys go to a file. `tests/tty.test.ts` drives prompts and `$EDITOR` on a
+real pseudo-terminal with node-pty, which ships prebuilt binaries for macOS and Windows only;
+on Linux without a build toolchain those tests are skipped. `tests/shells.test.ts` runs the
+completion scripts in whichever of bash, zsh, PowerShell and fish are installed.

@@ -67,7 +67,7 @@ async function main() {
   const { token, userId } = await issueAppToken({ keyFile, issuer, subject: values.subject, days: Number(values.days) });
   console.error(`App token for user ${userId}, valid ${values.days} days. Paste it into Helm > Settings.`);
   console.error(`To let the agent and CLI see the same tasks, create the API key for the same user:`);
-  console.error(`  npx convex run apiKeys:create '{"userId":"${userId}","actor":"app","name":"cli"}'`);
+  console.error(`  npx convex run apiKeys:create '{"userId":"${userId}","actor":"app","name":"cli","kind":"cli"}'`);
   console.log(token);
 }
 

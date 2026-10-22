@@ -3,8 +3,21 @@ import { v, type Infer } from "convex/values";
 export const statusValidator = v.union(v.literal("todo"), v.literal("doing"), v.literal("done"));
 export type Status = Infer<typeof statusValidator>;
 
-export const actorValidator = v.union(v.literal("app"), v.literal("agent"));
+// Who made a change: the app, the user at the CLI, or an agent. API keys
+// have a kind (cli or agent) that becomes the actor of their changes.
+export const actorValidator = v.union(v.literal("app"), v.literal("agent"), v.literal("cli"));
 export type Actor = Infer<typeof actorValidator>;
+
+export const keyKindValidator = v.union(v.literal("cli"), v.literal("agent"));
+export type KeyKind = Infer<typeof keyKindValidator>;
+
+/** Acting identity of internal functions. Callers with an API key also pass the key's id and name. */
+export const identityFields = {
+  userId: v.string(),
+  actor: actorValidator,
+  keyId: v.optional(v.id("apiKeys")),
+  actorName: v.optional(v.string()),
+};
 
 export const linkValidator = v.object({
   url: v.string(),

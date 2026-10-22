@@ -7,7 +7,6 @@ import dev.helm.planner.domain.todaySections
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
-import dev.helm.planner.ui.common.connectionStatus
 import dev.helm.planner.ui.common.minuteTicks
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

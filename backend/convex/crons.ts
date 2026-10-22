@@ -6,4 +6,7 @@ const crons = cronJobs();
 // Empties the trash of tasks deleted more than 30 days ago.
 crons.daily("purge expired trash", { hourUTC: 3, minuteUTC: 30 }, internal.ops.purgeTrash, {});
 
+// Removes pairing codes that expired more than a day ago.
+crons.daily("purge expired pairing codes", { hourUTC: 3, minuteUTC: 45 }, internal.devices.purgeExpiredCodes, {});
+
 export default crons;

@@ -1,20 +1,25 @@
 // MCP server for the agent: stateless Streamable HTTP with JSON responses.
-// The personal API key establishes the user; the actor is always "agent".
-// Tools map 1:1 onto the domain operations in ops.ts.
+// The personal API key establishes the user and the actor: the key's kind
+// ("cli" or "agent") and name. Tools map 1:1 onto the domain operations in ops.ts.
 import { ConvexError, type PropertyValidators } from "convex/values";
 import type { FunctionReference } from "convex/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { hashKey } from "./apiKeys";
 import { args } from "./lib/args";
+import type { ErrorCode } from "./lib/core";
+import { bearerToken } from "./lib/http";
 import { objectSchema } from "./lib/jsonSchema";
 
-export const SERVER_INFO = { name: "helm", version: "0.1.0" };
+// The version clients check for compatibility (semver): a minor release only
+// adds tools, fields and error codes; a major release may change or remove them.
+export const SERVER_INFO = { name: "helm", version: "0.3.0" };
 const SUPPORTED_PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 256 * 1024;
 
 const FIELD_DOCS: Record<string, string> = {
-  taskId: "Task id (the `id` field returned by other tools).",
+  taskId: 'Task id (the `id` field returned by other tools) or the task number as "#42" (the `ref` field).',
   title: "Short task title.",
   note: "Free-text note. In update_task, null clears it.",
   dueDate: 'Due day as YYYY-MM-DD in the user\'s time zone, or "today" / "tomorrow". Null clears it.',
@@ -110,37 +115,56 @@ function unauthorized() {
   });
 }
 
-async function authenticate(ctx: ActionCtx, request: Request): Promise<string | null> {
-  const match = /^Bearer\s+(\S+)\s*$/i.exec(request.headers.get("Authorization") ?? "");
-  if (!match) return null;
-  const owner = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(match[1]) });
-  return owner?.userId ?? null;
+type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
+
+async function authenticate(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
+  const key = bearerToken(request);
+  if (!key) return null;
+  return ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) });
 }
 
-function toolError(message: string) {
-  return { content: [{ type: "text", text: message }], isError: true };
+type ToolErrorCode = ErrorCode | "internal";
+type ToolError = { code: ToolErrorCode; message: string };
+const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated"];
+const IDENTITY_FIELDS = ["userId", "actor", "keyId", "actorName"];
+
+/** A failed tool call: the message as text, and `{ error: { code, message } }` for programs. */
+function toolError(error: ToolError) {
+  return { content: [{ type: "text", text: error.message }], structuredContent: { error }, isError: true };
 }
 
-/** Message safe to show the agent: domain errors and argument errors, nothing internal. */
-function describeError(error: unknown): string {
+/** Error safe to show the agent: domain errors and argument errors, nothing internal. */
+function describeError(error: unknown): ToolError {
   if (error instanceof ConvexError) {
-    const data = error.data as { message?: string } | string;
-    return typeof data === "string" ? data : (data.message ?? "Request failed");
+    const data = error.data as { code?: string; message?: string } | string;
+    if (typeof data === "string") return { code: "internal", message: data };
+    const code = ERROR_CODES.find((c) => c === data.code) ?? "internal";
+    return { code, message: data.message ?? "Request failed" };
   }
   const message = error instanceof Error ? error.message : "";
   const validation = /ArgumentValidationError:([\s\S]*?)(\n\s*\n|$)/.exec(message);
-  if (validation) return `Invalid arguments:${validation[1]}`.trim();
-  return "Internal error";
+  if (validation) return { code: "invalid_argument", message: `Invalid arguments:${validation[1]}`.trim() };
+  return { code: "internal", message: "Internal error" };
 }
 
-async function callTool(ctx: ActionCtx, userId: string, params: any) {
+async function callTool(ctx: ActionCtx, owner: KeyOwner, params: any) {
   const found = TOOLS.find((t) => t.name === params?.name);
   if (!found) return null;
   const input = params.arguments ?? {};
-  if (typeof input !== "object" || Array.isArray(input)) return toolError("arguments must be an object");
+  if (typeof input !== "object" || Array.isArray(input)) {
+    return toolError({ code: "invalid_argument", message: "arguments must be an object" });
+  }
   // Identity always comes from the key, never from the arguments.
-  if ("userId" in input || "actor" in input) return toolError("userId and actor are set by the server");
-  const callArgs: Record<string, unknown> = { ...input, userId, actor: "agent" };
+  if (IDENTITY_FIELDS.some((field) => field in input)) {
+    return toolError({ code: "invalid_argument", message: `${IDENTITY_FIELDS.join(", ")} are set by the server` });
+  }
+  const callArgs: Record<string, unknown> = {
+    ...input,
+    userId: owner.userId,
+    actor: owner.kind,
+    keyId: owner.keyId,
+    actorName: owner.name,
+  };
   if ("at" in found.fields && callArgs.at === undefined) callArgs.at = Date.now();
   try {
     const result = READ_ONLY.has(found.name)
@@ -156,7 +180,7 @@ async function callTool(ctx: ActionCtx, userId: string, params: any) {
   }
 }
 
-async function handleMessage(ctx: ActionCtx, userId: string, message: JsonRpcRequest): Promise<Response> {
+async function handleMessage(ctx: ActionCtx, owner: KeyOwner, message: JsonRpcRequest): Promise<Response> {
   if (message?.jsonrpc !== "2.0" || typeof message.method !== "string") {
     // Responses from the client, or anything that is not a request.
     if (message && message.id !== undefined && message.method === undefined) return new Response(null, { status: 202 });
@@ -171,7 +195,7 @@ async function handleMessage(ctx: ActionCtx, userId: string, message: JsonRpcReq
         capabilities: { tools: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
-          "Helm is the user's personal task list and day plan. Start with list_today. Pass a clientId with changes you might retry.",
+          "Helm is the user's personal task list and day plan. Start with list_today. Refer to a task by its id or its number as \"#42\". Pass a clientId with changes you might retry.",
       });
     }
     case "ping":
@@ -179,7 +203,7 @@ async function handleMessage(ctx: ActionCtx, userId: string, message: JsonRpcReq
     case "tools/list":
       return rpcResult(message.id, { tools: listTools() });
     case "tools/call": {
-      const result = await callTool(ctx, userId, message.params);
+      const result = await callTool(ctx, owner, message.params);
       if (!result) return rpcError(message.id, -32602, `Unknown tool: ${message.params?.name}`);
       return rpcResult(message.id, result);
     }
@@ -189,8 +213,8 @@ async function handleMessage(ctx: ActionCtx, userId: string, message: JsonRpcReq
 }
 
 export const handlePost = httpAction(async (ctx, request) => {
-  const userId = await authenticate(ctx, request);
-  if (!userId) return unauthorized();
+  const owner = await authenticate(ctx, request);
+  if (!owner) return unauthorized();
   const body = await request.text();
   if (body.length > MAX_BODY_BYTES) return rpcError(null, -32600, "Request too large", 413);
   let message: JsonRpcRequest;
@@ -200,7 +224,7 @@ export const handlePost = httpAction(async (ctx, request) => {
     return rpcError(null, -32700, "Parse error", 400);
   }
   if (Array.isArray(message)) return rpcError(null, -32600, "Batch requests are not supported", 400);
-  return handleMessage(ctx, userId, message);
+  return handleMessage(ctx, owner, message);
 });
 
 /** No server-initiated stream: this server is stateless and JSON-only. */

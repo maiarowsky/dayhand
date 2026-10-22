@@ -44,6 +44,7 @@ import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.domain.TaskRules
+import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.weekdayName
 
 object EditorTags {
@@ -161,7 +162,7 @@ fun RepeatDialog(initial: RepeatRule?, onDismiss: () -> Unit, onSave: (RepeatRul
                             FilterChip(
                                 selected = day in weekdays,
                                 onClick = { weekdays = if (day in weekdays) weekdays - day else weekdays + day },
-                                label = { Text(weekdayName(day)) },
+                                label = { Text(weekdayName(day, appLocale())) },
                                 modifier = ChipHeight.testTag(EditorTags.weekday(day)),
                             )
                         }

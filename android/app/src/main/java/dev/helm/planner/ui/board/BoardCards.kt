@@ -45,10 +45,10 @@ import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.HelmDates
+import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dueLabel
 import dev.helm.planner.ui.common.statusLabel
 import dev.helm.planner.ui.today.ResumeNoteDialog
-import java.util.Locale
 import java.time.LocalDate
 
 /** A task on the board: tap for details, long-press and drag to another column, or move it from the menu. */
@@ -89,7 +89,7 @@ fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: Boar
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp, end = 4.dp)) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    stringResource(R.string.section_now).uppercase(Locale.getDefault()),
+                    stringResource(R.string.section_now).uppercase(appLocale()),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )

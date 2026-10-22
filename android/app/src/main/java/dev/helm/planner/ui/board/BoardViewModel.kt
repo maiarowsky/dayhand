@@ -8,8 +8,8 @@ import dev.helm.planner.domain.boardColumns
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
-import dev.helm.planner.ui.common.connectionStatus
 import dev.helm.planner.ui.common.minuteTicks
+import dev.helm.planner.ui.today.connectionStatus
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine

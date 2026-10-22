@@ -1,6 +1,7 @@
 package dev.helm.planner.ui.common
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import dev.helm.planner.R
@@ -13,6 +14,10 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+
+/** The app's language; unlike `Locale.getDefault()` it recomposes when the language changes. */
+@Composable
+fun appLocale(): Locale = LocalConfiguration.current.locales[0]
 
 /** Board column names, also used for the status of a task. */
 @Composable
@@ -30,7 +35,7 @@ fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     today -> stringResource(R.string.day_today)
     today.plusDays(1) -> stringResource(R.string.day_tomorrow)
     today.minusDays(1) -> stringResource(R.string.yesterday)
-    else -> date.format(DateTimeFormatter.ofPattern(if (date.year == today.year) "EEE, d MMM" else "EEE, d MMM yyyy", Locale.getDefault()))
+    else -> date.format(DateTimeFormatter.ofPattern(if (date.year == today.year) "EEE, d MMM" else "EEE, d MMM yyyy", appLocale()))
 }
 
 /** The due day and time of a task, e.g. "tomorrow, 09:00", or null without a due day. */
@@ -50,9 +55,10 @@ fun repeatLabel(rule: RepeatRule): String {
         RepeatEvery.YEAR -> R.plurals.repeat_years
     }
     val every = pluralStringResource(plural, rule.interval, rule.interval)
-    val days = rule.weekdays?.sorted()?.joinToString(", ") { weekdayName(it) } ?: return every
+    val locale = appLocale()
+    val days = rule.weekdays?.sorted()?.joinToString(", ") { weekdayName(it, locale) } ?: return every
     return stringResource(R.string.repeat_on_days, every, days)
 }
 
-/** Short name of ISO weekday [day] (1 = Monday) in the app's language. */
-fun weekdayName(day: Int): String = DayOfWeek.of(day).getDisplayName(TextStyle.SHORT, Locale.getDefault())
+/** Short name of ISO weekday [day] (1 = Monday) in [locale], the app's language. */
+fun weekdayName(day: Int, locale: Locale): String = DayOfWeek.of(day).getDisplayName(TextStyle.SHORT, locale)

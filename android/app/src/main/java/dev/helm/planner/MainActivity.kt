@@ -1,10 +1,14 @@
 package dev.helm.planner
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -18,17 +22,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardViewModel
-import dev.helm.planner.ui.settings.SettingsScreen
+import dev.helm.planner.ui.settings.SettingsRoute
+import dev.helm.planner.ui.settings.needsNotificationPermission
 import dev.helm.planner.ui.task.TaskDetailActions
 import dev.helm.planner.ui.task.TaskDetailScreen
 import dev.helm.planner.ui.task.TaskDetailUiState
@@ -40,7 +45,6 @@ import dev.helm.planner.ui.today.TodayViewModel
 import dev.helm.planner.ui.trash.TrashActions
 import dev.helm.planner.ui.trash.TrashScreen
 import dev.helm.planner.ui.trash.TrashViewModel
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,9 +78,16 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
     val open: (String) -> Unit = { stack = stack + it }
     val back: () -> Unit = { if (stack.size > 1) stack = stack.dropLast(1) }
     val selectTab: (String) -> Unit = { tab -> stack = if (tab == Route.TODAY) listOf(Route.TODAY) else listOf(Route.TODAY, tab) }
-    val scope = rememberCoroutineScope()
     BackHandler(enabled = stack.size > 1, onBack = back)
     val tabs: @Composable () -> Unit = { MainTabs(route, selectTab) }
+    val context = LocalContext.current
+    // Asked in context: the first task with a time is the first one that can ring.
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val timeSet: (String?) -> Unit = { dueTime ->
+        if (dueTime != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && needsNotificationPermission(context)) {
+            askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     val taskId = Route.taskId(route)
     when {
         route == Route.TODAY -> {
@@ -87,6 +98,10 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
                 object : TodayActions by viewModel {
                     override fun openSettings() = open(Route.SETTINGS)
                     override fun openTask(localId: String) = open(Route.task(localId))
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
+                        viewModel.add(title, dueDate, dueTime, note)
+                        timeSet(dueTime)
+                    }
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -101,6 +116,10 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
                     override fun openSettings() = open(Route.SETTINGS)
                     override fun openTask(localId: String) = open(Route.task(localId))
                     override fun openTrash() = open(Route.TRASH)
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
+                        viewModel.add(title, dueDate, dueTime, note)
+                        timeSet(dueTime)
+                    }
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -112,6 +131,10 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
             val actions = remember(viewModel) {
                 object : TaskDetailActions by viewModel {
                     override fun back() = back()
+                    override fun setDue(localId: String, date: String?, time: String?) {
+                        viewModel.setDue(localId, date, time)
+                        timeSet(time)
+                    }
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -128,28 +151,7 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
             val state by viewModel.state.collectAsStateWithLifecycle()
             state?.let { TrashScreen(it, actions) }
         }
-        route == Route.SETTINGS -> {
-            val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
-            settings?.let { current ->
-                SettingsScreen(
-                    settings = current,
-                    versionName = versionName,
-                    onSave = { url, token ->
-                        scope.launch {
-                            container.settings.saveBackend(url, token)
-                            container.outboxScheduler.restart()
-                        }
-                    },
-                    onOfflineMode = { enabled ->
-                        scope.launch {
-                            container.settings.setOfflineMode(enabled)
-                            if (!enabled) container.outboxScheduler.restart()
-                        }
-                    },
-                    onBack = back,
-                )
-            }
-        }
+        route == Route.SETTINGS -> SettingsRoute(container, versionName, onBack = back)
     }
 }
 

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/devices.schema.json",
+  "title": "Devices",
+  "description": "GET /devices (hlm device list).",
+  "type": "object",
+  "required": [
+    "devices"
+  ],
+  "properties": {
+    "devices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "pairedBy",
+          "createdAt",
+          "lastUsedAt",
+          "revokedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pairedBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Unix time in milliseconds"
+          },
+          "lastUsedAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "revokedAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
