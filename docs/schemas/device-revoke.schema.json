@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/device-revoke.schema.json",
+  "title": "Revoked device",
+  "description": "POST /devices/revoke (hlm device revoke).",
+  "type": "object",
+  "required": [
+    "id",
+    "revokedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "revokedAt": {
+      "type": "number",
+      "description": "Unix time in milliseconds"
+    }
+  }
+}

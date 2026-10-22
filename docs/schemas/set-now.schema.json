@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/set-now.schema.json",
+  "title": "Now task",
+  "description": "set_now (hlm now <ref>, hlm now --clear): the new now task, or {\"result\": null} after clearing.",
+  "anyOf": [
+    {
+      "$ref": "task.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "result"
+      ],
+      "properties": {
+        "result": {
+          "type": "null"
+        }
+      }
+    }
+  ]
+}

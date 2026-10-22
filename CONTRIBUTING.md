@@ -39,6 +39,11 @@ What a change needs:
 - Domain behaviour (`backend/convex/lib/`): a test in `backend/tests/` that calls the
   operation on the local backend, or a pure unit test for date and repeat logic.
 - MCP tools: a test through the official `@modelcontextprotocol/sdk` client.
+- The `hlm` CLI (`cli/`): `cd cli && npm ci --ignore-scripts && npm test` (the backend's
+  dependencies must be installed too). A command is an entry in the registry
+  (`cli/src/registry/`); after changing one, run `npm run build && npm run docs` to regenerate
+  `docs/cli.md`. A change to `--json` output must keep its schema in `docs/schemas/` passing:
+  fields may be added, never removed or retyped.
 - New operations go into the domain layer first; the app layer (`convex/app.ts`) and the MCP
   tools (`convex/mcp.ts`) only establish identity and must stay thin.
 

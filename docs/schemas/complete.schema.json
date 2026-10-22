@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/complete.schema.json",
+  "title": "Completed task",
+  "description": "complete_task (hlm done): the task and, for a repeating task, its next occurrence.",
+  "type": "object",
+  "required": [
+    "task",
+    "next"
+  ],
+  "properties": {
+    "task": {
+      "$ref": "task.schema.json"
+    },
+    "next": {
+      "anyOf": [
+        {
+          "$ref": "task.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

@@ -1,32 +1,32 @@
 package dev.helm.planner
 
+import android.Manifest
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.helm.planner.ui.settings.FontScreen
-import dev.helm.planner.ui.settings.LicensesScreen
-import dev.helm.planner.ui.settings.PaletteScreen
-import dev.helm.planner.ui.settings.SettingsScreen
+import dev.helm.planner.ui.settings.SettingsRoute
+import dev.helm.planner.ui.settings.needsNotificationPermission
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
 import dev.helm.planner.ui.today.TodayViewModel
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,13 +52,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class Screen { TODAY, SETTINGS, COLORS, FONT, LICENSES }
+private enum class Screen { TODAY, SETTINGS }
 
 @Composable
 private fun HelmRoot(container: AppContainer, versionName: String) {
     var screen by rememberSaveable { mutableStateOf(Screen.TODAY) }
-    val scope = rememberCoroutineScope()
-    val appearance by container.appearance.appearance.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    // Asked in context: the first task with a time is the first one that can ring.
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     when (screen) {
         Screen.TODAY -> {
             val viewModel = viewModel {
@@ -69,50 +70,20 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
                     override fun openSettings() {
                         screen = Screen.SETTINGS
                     }
+
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
+                        viewModel.add(title, dueDate, dueTime, note)
+                        if (dueTime != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            needsNotificationPermission(context)
+                        ) {
+                            askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             state?.let { TodayScreen(it, actions) }
         }
-        Screen.SETTINGS -> {
-            BackHandler { screen = Screen.TODAY }
-            val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
-            settings?.let { current ->
-                SettingsScreen(
-                    settings = current,
-                    versionName = versionName,
-                    appearance = appearance,
-                    onAppearance = container.appearance::save,
-                    onOpenColors = { screen = Screen.COLORS },
-                    onOpenFont = { screen = Screen.FONT },
-                    onOpenLicenses = { screen = Screen.LICENSES },
-                    onSave = { url, token ->
-                        scope.launch {
-                            container.settings.saveBackend(url, token)
-                            container.outboxScheduler.restart()
-                        }
-                    },
-                    onOfflineMode = { enabled ->
-                        scope.launch {
-                            container.settings.setOfflineMode(enabled)
-                            if (!enabled) container.outboxScheduler.restart()
-                        }
-                    },
-                    onBack = { screen = Screen.TODAY },
-                )
-            }
-        }
-        Screen.COLORS -> {
-            BackHandler { screen = Screen.SETTINGS }
-            PaletteScreen(appearance, container.appearance::save, onBack = { screen = Screen.SETTINGS })
-        }
-        Screen.FONT -> {
-            BackHandler { screen = Screen.SETTINGS }
-            FontScreen(appearance, container.appearance::save, onBack = { screen = Screen.SETTINGS })
-        }
-        Screen.LICENSES -> {
-            BackHandler { screen = Screen.SETTINGS }
-            LicensesScreen(onBack = { screen = Screen.SETTINGS })
-        }
+        Screen.SETTINGS -> SettingsRoute(container, versionName, onBack = { screen = Screen.TODAY })
     }
 }

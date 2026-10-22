@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/task-detail.schema.json",
+  "title": "Task with history",
+  "description": "get_task (hlm show, hlm note <ref> without text).",
+  "type": "object",
+  "required": [
+    "task",
+    "history"
+  ],
+  "properties": {
+    "task": {
+      "$ref": "task.schema.json"
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "at",
+          "actor",
+          "actorName",
+          "by",
+          "action",
+          "before",
+          "after"
+        ],
+        "properties": {
+          "at": {
+            "type": "number",
+            "description": "Unix time in milliseconds"
+          },
+          "actor": {
+            "type": "string",
+            "description": "app, cli or agent (values may be added)"
+          },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The API key's name; null for the app"
+          },
+          "by": {
+            "type": "string",
+            "description": "\"app\", \"cli\" or \"agent: <key name>\""
+          },
+          "action": {
+            "type": "string"
+          },
+          "before": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "after": {
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

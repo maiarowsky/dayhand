@@ -1,6 +1,7 @@
 package dev.helm.planner.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,13 +9,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
@@ -115,29 +120,35 @@ fun Pill(text: String, color: Color, modifier: Modifier = Modifier, strong: Bool
     )
 }
 
-/** A choice chip (day, time, label filter): a pill that is soft accent when [selected], at least 48 dp high. */
+/**
+ * A choice chip (day, time, reminder): a pill that is soft accent with a tick when [selected], at least 48 dp high.
+ * [multiple]: one of several that can be on together (a checkbox for screen readers), else one of a group.
+ */
 @Composable
-fun HelmChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun HelmChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, multiple: Boolean = false) {
     val p = palette
-    Text(
-        text,
-        style = helmType.smallStrong,
-        color = if (selected) p.accent else p.textMuted,
-        textAlign = TextAlign.Center,
-        modifier = modifier
+    Row(
+        modifier
             .heightIn(min = HelmDimens.touchTarget)
             .clip(HelmShapes.pill)
             .background(if (selected) p.accentSoft else p.surface)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    )
+            .border(1.dp, if (selected) p.accent else p.border, HelmShapes.pill)
+            .selectable(selected = selected, role = if (multiple) Role.Checkbox else Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Selected is shown by a tick too, not by colour alone.
+        if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(18.dp))
+        Text(text, style = helmType.smallStrong, color = if (selected) p.accent else p.textMuted, textAlign = TextAlign.Center)
+    }
 }
 
 data class SegmentOption(val id: String, val label: String)
 
 /** One of a few options in a pill (Mussh "Segmented"): the selected one raised and in the accent colour. */
 @Composable
-fun Segmented(options: List<SegmentOption>, selected: String, onSelect: (String) -> Unit, modifier: Modifier = Modifier, tagPrefix: String) {
+fun Segmented(options: List<SegmentOption>, selected: String, onSelect: (String) -> Unit, tagFor: (String) -> String, modifier: Modifier = Modifier) {
     val p = palette
     Row(
         modifier.fillMaxWidth().background(p.surface, HelmShapes.pill).padding(4.dp).selectableGroup(),
@@ -149,12 +160,12 @@ fun Segmented(options: List<SegmentOption>, selected: String, onSelect: (String)
             Column(
                 Modifier
                     .weight(1f)
-                    .heightIn(min = HelmDimens.touchTarget - 8.dp)
+                    .heightIn(min = HelmDimens.touchTarget)
                     .clip(HelmShapes.pill)
                     .background(if (active) p.surfaceRaised else Color.Transparent)
                     .selectable(selected = active, role = Role.RadioButton) { onSelect(option.id) }
                     .padding(horizontal = 4.dp, vertical = 10.dp)
-                    .testTag("$tagPrefix-${option.id}"),
+                    .testTag(tagFor(option.id)),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {

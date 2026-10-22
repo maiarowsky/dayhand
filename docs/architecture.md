@@ -80,3 +80,10 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 - **Tokens by hand:** `scripts/jwt.mjs` creates a key pair and tokens for tests;
   `scripts/app-token.mjs` (`npm run app-token`) signs a long-lived token from a key file to
   paste into the Android app. Pairing replaces this; the script stays for local development.
+
+## Reminders
+
+Reminders and the morning summary are computed on the phone, not on the server: the server
+stores only the settings (`summaryTime`, `defaultReminderMinutes`), and the Android app arms
+AlarmManager from its Room copy of the tasks, in the time zone from these settings. See
+[android/README.md](../android/README.md#reminders-and-the-morning-summary).

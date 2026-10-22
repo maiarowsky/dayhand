@@ -101,7 +101,7 @@ private fun ModeRow(appearance: Appearance, onChange: (Appearance) -> Unit) {
             options = ThemeMode.entries.map { SegmentOption(it.id, stringResource(modeName(it))) },
             selected = appearance.mode.id,
             onSelect = { id -> onChange(appearance.copy(mode = ThemeMode.byId(id))) },
-            tagPrefix = "mode",
+            tagFor = { "mode-$it" },
         )
     }
 }

@@ -2,6 +2,7 @@
 // helm: a thin command line client authenticated with HELM_API_KEY. Task
 // commands are one MCP tools/call on the same /mcp endpoint the agent uses;
 // device commands (pair, devices, revoke) use the /devices endpoints.
+// Superseded by `hlm` (cli/); kept working until hlm has fully replaced it.
 import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
 import qrcode from "qrcode-terminal";

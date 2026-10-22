@@ -1,6 +1,5 @@
 package dev.helm.planner.data.remote
 
-import dev.helm.planner.domain.HelmDates
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -44,6 +43,12 @@ class HttpTaskRemote(
         return classify(response)
     }
 
+    /** The whole plan as `app:exportPlan` renders it, for [format] `markdown` or `json`. */
+    suspend fun exportPlan(format: String, at: Long): SendResult = query(RemoteJson.QUERY_EXPORT, buildJsonObject {
+        put("format", format)
+        put("at", at)
+    })
+
     override fun events(): Flow<RemoteEvent> = flow {
         while (true) {
             emit(snapshot())
@@ -58,10 +63,7 @@ class HttpTaskRemote(
         val settings = query(RemoteJson.QUERY_SETTINGS, JsonObject(emptyMap()))
         if (tasks !is SendResult.Applied) return tasks.toEvent()
         if (settings !is SendResult.Applied) return settings.toEvent()
-        return RemoteEvent.Snapshot(
-            tasks = RemoteJson.tasks(tasks.value),
-            timezone = RemoteJson.timezone(settings.value) ?: HelmDates.DEFAULT_TIMEZONE,
-        )
+        return RemoteJson.snapshot(tasks.value, settings.value)
     }
 
     private suspend fun query(path: String, args: JsonObject): SendResult = try {

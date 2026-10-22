@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/board.schema.json",
+  "title": "Board",
+  "description": "board (hlm board).",
+  "type": "object",
+  "required": [
+    "todo",
+    "doing",
+    "done"
+  ],
+  "properties": {
+    "todo": {
+      "type": "array",
+      "items": {
+        "$ref": "task.schema.json"
+      }
+    },
+    "doing": {
+      "type": "array",
+      "items": {
+        "$ref": "task.schema.json"
+      }
+    },
+    "done": {
+      "type": "array",
+      "items": {
+        "$ref": "task.schema.json"
+      }
+    }
+  }
+}

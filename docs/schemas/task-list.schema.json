@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/task-list.schema.json",
+  "title": "Task list",
+  "description": "list_all and list_trash (hlm list, hlm trash): a list tool's array wrapped as `result`.",
+  "type": "object",
+  "required": [
+    "result"
+  ],
+  "properties": {
+    "result": {
+      "type": "array",
+      "items": {
+        "$ref": "task.schema.json"
+      }
+    }
+  }
+}

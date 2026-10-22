@@ -12,7 +12,10 @@ import com.google.crypto.tink.KeyTemplates
 import com.google.crypto.tink.RegistryConfiguration
 import com.google.crypto.tink.aead.AeadConfig
 import com.google.crypto.tink.integration.android.AndroidKeysetManager
+import dev.helm.planner.data.remote.RemoteEvent
 import dev.helm.planner.domain.HelmDates
+import dev.helm.planner.domain.ReminderRules
+import dev.helm.planner.notify.ReminderSettings
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.GeneralSecurityException
@@ -29,8 +32,14 @@ data class AppSettings(
     val offlineMode: Boolean,
     /** The user's time zone as the backend last reported it. */
     val timezone: String,
+    /** HH:MM of the morning summary, in [timezone] (server setting `summaryTime`). */
+    val summaryTime: String = ReminderRules.DEFAULT_SUMMARY_TIME,
+    /** Minutes before a timed task's due time when it rings (server setting `defaultReminderMinutes`). */
+    val reminderMinutes: List<Int> = ReminderRules.DEFAULT_REMINDER_MINUTES,
 ) {
     val hasToken: Boolean get() = backend != null
+
+    val reminders: ReminderSettings get() = ReminderSettings(timezone, summaryTime, reminderMinutes)
 }
 
 private val Context.helmSettings by preferencesDataStore(name = "helm_settings")
@@ -61,8 +70,26 @@ class SettingsStore(context: Context) {
         dataStore.edit { it[KEY_OFFLINE] = enabled }
     }
 
-    suspend fun setTimezone(timezone: String) {
-        dataStore.edit { it[KEY_TIMEZONE] = timezone }
+    suspend fun setSummaryTime(time: String) {
+        dataStore.edit { it[KEY_SUMMARY_TIME] = time }
+    }
+
+    suspend fun setReminderMinutes(minutes: List<Int>) {
+        dataStore.edit { it[KEY_REMINDER_MINUTES] = encodeMinutes(minutes) }
+    }
+
+    /**
+     * The settings from a server snapshot. With [keepLocalChanges] (a settings change still waits
+     * in the outbox) only the time zone is taken, so the snapshot does not undo the user's change.
+     */
+    suspend fun applyServer(snapshot: RemoteEvent.Snapshot, keepLocalChanges: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[KEY_TIMEZONE] = snapshot.timezone
+            if (!keepLocalChanges) {
+                prefs[KEY_SUMMARY_TIME] = snapshot.summaryTime
+                prefs[KEY_REMINDER_MINUTES] = encodeMinutes(snapshot.reminderMinutes)
+            }
+        }
     }
 
     private fun read(prefs: Preferences): AppSettings {
@@ -72,6 +99,8 @@ class SettingsStore(context: Context) {
             backend = if (url != null && token != null) BackendConfig(url, token) else null,
             offlineMode = prefs[KEY_OFFLINE] ?: false,
             timezone = prefs[KEY_TIMEZONE] ?: HelmDates.DEFAULT_TIMEZONE,
+            summaryTime = prefs[KEY_SUMMARY_TIME] ?: ReminderRules.DEFAULT_SUMMARY_TIME,
+            reminderMinutes = prefs[KEY_REMINDER_MINUTES]?.let(::decodeMinutes) ?: ReminderRules.DEFAULT_REMINDER_MINUTES,
         )
     }
 
@@ -92,10 +121,18 @@ class SettingsStore(context: Context) {
         private val KEY_TOKEN = stringPreferencesKey("app_token_encrypted")
         private val KEY_OFFLINE = booleanPreferencesKey("offline_mode")
         private val KEY_TIMEZONE = stringPreferencesKey("timezone")
+        private val KEY_SUMMARY_TIME = stringPreferencesKey("summary_time")
+        private val KEY_REMINDER_MINUTES = stringPreferencesKey("reminder_minutes")
         private val ASSOCIATED_DATA = "helm-app-token".toByteArray()
         private const val KEYSET_NAME = "helm_token_keyset"
         private const val KEYSET_PREFS = "helm_token_keyset_prefs"
         private const val MASTER_KEY_URI = "android-keystore://helm_token_master_key"
+
+        /** Minutes as `0,15,60`; an empty string is "no reminders". */
+        private fun encodeMinutes(minutes: List<Int>) = minutes.joinToString(",")
+
+        private fun decodeMinutes(stored: String): List<Int> =
+            stored.split(',').mapNotNull { it.trim().toIntOrNull() }
 
         private fun createAead(context: Context): Aead {
             AeadConfig.register()

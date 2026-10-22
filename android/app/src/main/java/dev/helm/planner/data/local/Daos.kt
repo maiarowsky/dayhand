@@ -47,6 +47,9 @@ interface OutboxDao {
     @Query("SELECT COUNT(*) FROM outbox")
     suspend fun count(): Int
 
+    @Query("SELECT COUNT(*) FROM outbox WHERE mutation = :mutation")
+    suspend fun countFor(mutation: String): Int
+
     @Query("DELETE FROM outbox WHERE seq = :seq")
     suspend fun delete(seq: Long)
 

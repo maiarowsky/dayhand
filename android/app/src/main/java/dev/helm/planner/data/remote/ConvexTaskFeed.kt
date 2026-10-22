@@ -4,7 +4,6 @@ import android.content.Context
 import dev.convex.android.AuthProvider
 import dev.convex.android.ConvexClientWithAuth
 import dev.convex.android.ConvexError
-import dev.helm.planner.domain.HelmDates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -33,10 +32,7 @@ class ConvexTaskFeed(deploymentUrl: String, token: String, scope: CoroutineScope
                 if (failure != null) {
                     failure.toEvent()
                 } else {
-                    RemoteEvent.Snapshot(
-                        tasks = RemoteJson.tasks(t.getOrThrow()),
-                        timezone = RemoteJson.timezone(s.getOrThrow()) ?: HelmDates.DEFAULT_TIMEZONE,
-                    )
+                    RemoteJson.snapshot(t.getOrThrow(), s.getOrThrow())
                 }
             },
         )

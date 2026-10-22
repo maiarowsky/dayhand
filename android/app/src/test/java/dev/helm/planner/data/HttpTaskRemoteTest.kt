@@ -3,11 +3,17 @@ package dev.helm.planner.data
 import dev.helm.planner.data.remote.HttpResponse
 import dev.helm.planner.data.remote.HttpTaskRemote
 import dev.helm.planner.data.remote.RemoteEvent
+import dev.helm.planner.data.remote.RemoteJson
 import dev.helm.planner.data.remote.SendResult
+import dev.helm.planner.export.ExportFormat
+import dev.helm.planner.export.ExportResult
+import dev.helm.planner.export.PlanExport
+import dev.helm.planner.export.PlanExporter
 import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
@@ -66,14 +72,56 @@ class HttpTaskRemoteTest {
             val value = if (path == "app:listAll") {
                 """[{"id":"s1","title":"A","status":"todo","isNow":false,"labels":[],"links":[],"createdAt":1.7E12,"updatedAt":1761130000000,"dueDate":"2026-10-22"}]"""
             } else {
-                """{"timezone":"Europe/Warsaw","summaryTime":"05:00","defaultReminderMinutes":[0]}"""
+                """{"timezone":"Europe/Warsaw","summaryTime":"05:30","defaultReminderMinutes":[0,15.0]}"""
             }
             HttpResponse(200, """{"status":"success","value":$value}""")
         })
         val snapshot = remote.events().first() as RemoteEvent.Snapshot
         assertEquals("Europe/Warsaw", snapshot.timezone)
+        assertEquals("05:30", snapshot.summaryTime)
+        assertEquals(listOf(0, 15), snapshot.reminderMinutes)
         assertEquals(1761130000000L, snapshot.tasks.single().updatedAt)
         assertEquals(1_700_000_000_000L, snapshot.tasks.single().createdAt)
         assertEquals(listOf("http://h/api/query", "http://h/api/query"), urls)
+    }
+
+    @Test
+    fun `settings without reminder fields take the backend defaults`() {
+        val snapshot = RemoteJson.snapshot(JsonArray(emptyList()), Json.parseToJsonElement("""{"timezone":"Europe/Warsaw"}"""))
+        assertEquals("05:00", snapshot.summaryTime)
+        assertEquals(listOf(0), snapshot.reminderMinutes)
+    }
+
+    @Test
+    fun `export asks app exportPlan with the format and time`() = runTest {
+        var sent: JsonObject? = null
+        val remote = HttpTaskRemote("http://h", "t", transport = { url, _, body ->
+            assertEquals("http://h/api/query", url)
+            sent = Json.parseToJsonElement(body).jsonObject
+            HttpResponse(200, """{"status":"success","value":{"format":"markdown","content":"# Helm plan"}}""")
+        })
+        val result = PlanExporter(remote).export(ExportFormat.MARKDOWN, at = 1_761_130_000_000L, today = "2026-10-22")
+        assertEquals(ExportResult.Ready(ExportFormat.MARKDOWN, "helm-plan-2026-10-22.md", "# Helm plan"), result)
+        assertEquals("app:exportPlan", sent!!.getValue("path").jsonPrimitive.content)
+        val args = sent!!.getValue("args").jsonArray[0].jsonObject
+        assertEquals("markdown", args.getValue("format").jsonPrimitive.content)
+        assertEquals(1_761_130_000_000L, args.getValue("at").jsonPrimitive.content.toLong())
+    }
+
+    @Test
+    fun `JSON export is the server copy, indented`() {
+        val value = Json.parseToJsonElement("""{"format":"json","content":{"version":1,"tasks":[{"title":"A"}]}}""")
+        val content = PlanExport.content(ExportFormat.JSON, value)!!
+        assertTrue(content.startsWith("{\n    \"version\": 1,"))
+        assertEquals(Json.parseToJsonElement("""{"version":1,"tasks":[{"title":"A"}]}"""), Json.parseToJsonElement(content))
+        assertEquals(null, PlanExport.content(ExportFormat.MARKDOWN, value))
+    }
+
+    @Test
+    fun `export without a server answer or with a refused token says so`() = runTest {
+        val offline = HttpTaskRemote("http://h", "t", transport = { _, _, _ -> throw IOException("no route") })
+        assertTrue(PlanExporter(offline).export(ExportFormat.JSON, 0, "2026-10-22") is ExportResult.Failed)
+        val refused = HttpTaskRemote("http://h", "t", transport = { _, _, _ -> HttpResponse(401, "") })
+        assertEquals(ExportResult.Unauthorized, PlanExporter(refused).export(ExportFormat.JSON, 0, "2026-10-22"))
     }
 }

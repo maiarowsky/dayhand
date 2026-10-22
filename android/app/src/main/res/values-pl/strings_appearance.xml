@@ -58,7 +58,6 @@
     <string name="palette_rose_pine_dawn">Rosé Pine Dawn</string>
     <string name="palette_rose_pine_dawn_note">Róż i sosna w miękkim porannym świetle</string>
 
-    <string name="settings_about">O aplikacji</string>
     <string name="licenses_title">Licencje open source</string>
     <string name="licenses_intro">Helm to wolne oprogramowanie na licencji Apache 2.0. Zawiera te czcionki, bez zmian, na licencji SIL Open Font License 1.1:</string>
     <string name="licenses_show">Pokaż licencję</string>
