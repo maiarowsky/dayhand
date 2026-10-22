@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/results.schema.json",
+  "title": "Several tasks",
+  "description": "A command given several tasks (hlm done 1 2, hlm rm 4 5 6 …): one tool result per task, in order.",
+  "type": "object",
+  "required": [
+    "results"
+  ],
+  "properties": {
+    "results": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "task.schema.json"
+          },
+          {
+            "$ref": "complete.schema.json"
+          }
+        ]
+      }
+    }
+  }
+}

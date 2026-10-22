@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/tool.schema.json",
+  "title": "Tool",
+  "description": "One MCP tool (hlm tools <name>): name, description and input JSON Schema.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "inputSchema"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "inputSchema": {
+      "type": "object"
+    },
+    "annotations": {
+      "type": "object"
+    }
+  }
+}

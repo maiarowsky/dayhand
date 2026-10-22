@@ -1,10 +1,11 @@
 // Argument validators of every domain operation, shared by the internal
 // domain functions, the app layer and the MCP tool schemas.
 import { v } from "convex/values";
-import { clearable, linkValidator, repeatValidator, statusValidator } from "./validators";
+import { clearable, keyKindValidator, linkValidator, repeatValidator, statusValidator } from "./validators";
 
 const clientId = v.optional(v.string());
-const taskId = v.id("tasks");
+// A task id, or the task's number written as "#42".
+const taskId = v.string();
 const at = v.optional(v.number());
 
 export const args = {
@@ -59,5 +60,5 @@ export const args = {
   },
   revokeApiKey: { keyId: v.id("apiKeys") },
   listApiKeys: {},
-  createApiKey: { name: v.string() },
+  createApiKey: { name: v.string(), kind: v.optional(keyKindValidator) },
 };

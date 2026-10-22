@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/error.schema.json",
+  "title": "Error",
+  "description": "The one stderr line of a failed command with --json. stdout is empty.",
+  "type": "object",
+  "required": [
+    "error"
+  ],
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "exitCode",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "usage, invalid_argument, not_found, unauthenticated, unavailable, internal (values may be added)"
+        },
+        "message": {
+          "type": "string"
+        },
+        "exitCode": {
+          "type": "integer",
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "true when the change may have been applied: retry with the same clientId"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "The operation's clientId (pass it as --client-id to retry)"
+        },
+        "ref": {
+          "type": "string",
+          "description": "The task that failed, in a command given several tasks"
+        },
+        "valid": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Accepted values (flags, fields, tool names)"
+        },
+        "hint": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

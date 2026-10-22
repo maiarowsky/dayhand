@@ -17,6 +17,7 @@ import {
   checkTitle,
   fail,
   loadTask,
+  nextTaskRef,
   patchTask,
   recordEvent,
   toTask,
@@ -73,7 +74,8 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     updatedAt: now,
     clientId,
   };
-  const taskId = await ctx.db.insert("tasks", { userId: identity.userId, ...fields });
+  const ref = await nextTaskRef(ctx, identity.userId);
+  const taskId = await ctx.db.insert("tasks", { userId: identity.userId, ref, ...fields });
   const { createdAt, updatedAt, ...snapshot } = fields;
   await recordEvent(ctx, identity, { taskId, action: "create", after: snapshot, clientId });
   return toTask((await ctx.db.get(taskId))!);
@@ -159,7 +161,11 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     createdAt: now,
     updatedAt: now,
   };
-  const nextId = await ctx.db.insert("tasks", { userId: identity.userId, ...nextFields });
+  const nextId = await ctx.db.insert("tasks", {
+    userId: identity.userId,
+    ref: await nextTaskRef(ctx, identity.userId),
+    ...nextFields,
+  });
   await recordEvent(ctx, identity, {
     taskId: nextId,
     action: "repeat",
