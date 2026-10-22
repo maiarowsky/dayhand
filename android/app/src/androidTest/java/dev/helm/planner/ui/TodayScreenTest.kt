@@ -1,6 +1,9 @@
 package dev.helm.planner.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
@@ -53,6 +56,7 @@ class TodayScreenTest {
         override fun moveTo(localId: String, date: String) { calls += "move:$localId:$date" }
         override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) { calls += "add:$title:$dueDate:$dueTime" }
         override fun openSettings() { calls += "settings" }
+        override fun openTask(localId: String) { calls += "open:$localId" }
     }
 
     private fun show(state: TodayUiState, actions: TodayActions = Recorder()) {
@@ -120,6 +124,16 @@ class TodayScreenTest {
     }
 
     @Test
+    fun bannerThatAppearsLaterIsOnScreenWithALongList() {
+        val tasks = (1..30).map { task("t$it", "2026-10-22") }
+        var state by mutableStateOf(TodayUiState(sections(today = tasks), ConnectionStatus.SYNCED, 0))
+        compose.setContent { HelmTheme { TodayScreen(state, Recorder()) } }
+        compose.waitForIdle()
+        state = state.copy(connection = ConnectionStatus.OFFLINE)
+        compose.onNodeWithTag(TodayTags.STATUS).assertIsDisplayed()
+    }
+
+    @Test
     fun missingServerLeadsToSettings() {
         val actions = Recorder()
         show(TodayUiState(sections(), ConnectionStatus.NOT_CONFIGURED, 0), actions)
@@ -137,5 +151,13 @@ class TodayScreenTest {
         compose.onNodeWithTag(QuickAddTags.SAVE).performClick()
         compose.waitForIdle()
         assertEquals(listOf("add:Order a present:2026-10-22:null"), actions.calls)
+    }
+
+    @Test
+    fun tappingATaskOpensItsDetails() {
+        val actions = Recorder()
+        show(TodayUiState(sections(today = listOf(task("t", "2026-10-22"))), ConnectionStatus.SYNCED, 0), actions)
+        compose.onNodeWithText("Task t").assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf("open:t"), actions.calls)
     }
 }

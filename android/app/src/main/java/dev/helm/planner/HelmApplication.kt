@@ -29,6 +29,7 @@ import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
 import dev.helm.planner.sync.OutboxScheduler
 import dev.helm.planner.sync.RoomOutboxStore
+import dev.helm.planner.sync.TaskHistorySync
 import dev.helm.planner.ui.theme.AppearanceStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +74,15 @@ class AppContainer(context: Context) {
     val outboxStore = RoomOutboxStore(database)
     val repository = TaskRepository(database, onOutboxChanged = outboxScheduler::schedule)
     val liveSync = LiveSync(settings, repository, ::feedFor)
+
+    /** A task's change history is read over plain HTTP when its details are open, cached in Room. */
+    val historySync = TaskHistorySync(
+        runner = {
+            val current = settings.current()
+            current.backend?.takeUnless { current.offlineMode }?.let { HttpTaskRemote(it.url, tokensFor(it)) }
+        },
+        save = repository::saveHistory,
+    )
 
     /** Work that outlives a screen: alarm receivers and the reminder schedule. */
     val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)

@@ -8,13 +8,14 @@ The app and an AI agent are two clients of the same operations: the agent connec
 [MCP](https://modelcontextprotocol.io) with a personal, revocable API key and can do
 everything the user can. Every change is recorded with who made it (`app` or `agent`).
 
-Status: the backend (Convex), the MCP endpoint, the `hlm` CLI, phone pairing and the first
-Android version (the Today screen with quick add, working offline) are in place; iOS comes later.
+Status: the backend (Convex), the MCP endpoint, the `hlm` CLI, phone pairing and the Android
+app (Today with quick add, the board, task details and the trash, reminders and Settings, all
+working offline) are in place; iOS comes later.
 
 ```
 backend/   Convex backend: data model, domain operations, MCP endpoint, old CLI (helm)
 cli/       hlm, the command line client for people and agents; see cli/README.md
-android/   Android app (Kotlin, Compose): Today, quick add, offline outbox; see android/README.md
+android/   Android app (Kotlin, Compose): Today, board, task details, reminders, settings, offline outbox; see android/README.md
 ios/       iOS app (Swift), later
 docs/      Architecture, MCP, phone pairing, deployment and release notes
 man/       hlm(1), generated from the CLI's command registry

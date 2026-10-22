@@ -59,6 +59,117 @@
     <string name="settings_offline_hint">Nothing is sent or received while it is on; changes wait in the queue.</string>
     <string name="settings_timezone">Time zone (from the server): %1$s</string>
     <string name="settings_version">Helm %1$s</string>
+
+    <!-- Board, task details and trash (0.2) -->
+    <string name="board_title">Board</string>
+    <string name="column_todo">To do</string>
+    <string name="column_doing">In progress</string>
+    <string name="column_done">Done</string>
+    <string name="column_with_count">%1$s (%2$d)</string>
+    <string name="board_empty_column">Nothing here. Long-press a card and drag it onto a column, or use a card\'s menu to move it.</string>
+    <string name="move_to_column">Move to %1$s</string>
+    <string name="overdue_due">Overdue · %1$s</string>
+    <string name="open_details">Open details</string>
+    <string name="day_today">today</string>
+    <string name="day_tomorrow">tomorrow</string>
+    <string name="day_and_time">%1$s, %2$s</string>
+
+    <string name="detail_title">Task</string>
+    <string name="detail_missing">This task is no longer on the phone. It may have been removed from the trash.</string>
+    <string name="detail_status">Status</string>
+    <string name="detail_due">Due</string>
+    <string name="detail_no_due">No due day</string>
+    <string name="detail_repeat">Repeat</string>
+    <string name="detail_labels">Labels and projects</string>
+    <string name="detail_links">Links</string>
+    <string name="detail_history">Change history</string>
+    <string name="detail_archived">Archived. Restore it to see it on Today and the board again.</string>
+    <plurals name="detail_in_trash">
+        <item quantity="one">In the trash. Deleted for good in %1$d day (%2$s) unless you restore it.</item>
+        <item quantity="other">In the trash. Deleted for good in %1$d days (%2$s) unless you restore it.</item>
+    </plurals>
+    <string name="edit_title">Edit title</string>
+    <string name="title_required">The title cannot be empty</string>
+    <string name="edit_note">Edit note</string>
+    <string name="note_empty">Add a note</string>
+    <string name="pick_day">Pick a day</string>
+    <string name="add_time">Add a time</string>
+    <string name="change_time">Change time</string>
+    <string name="remove_time">No time</string>
+    <string name="remove_due">No due day</string>
+    <string name="edit_repeat">Repeat</string>
+    <string name="repeat_none">Does not repeat</string>
+    <string name="repeat_unit_day">Daily</string>
+    <string name="repeat_unit_week">Weekly</string>
+    <string name="repeat_unit_month">Monthly</string>
+    <string name="repeat_unit_year">Yearly</string>
+    <string name="repeat_interval">Every how many</string>
+    <string name="repeat_interval_invalid">Enter a number from 1 to %1$d</string>
+    <string name="repeat_on">On</string>
+    <string name="repeat_on_days">%1$s: %2$s</string>
+    <plurals name="repeat_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %1$d days</item>
+    </plurals>
+    <plurals name="repeat_weeks">
+        <item quantity="one">Every week</item>
+        <item quantity="other">Every %1$d weeks</item>
+    </plurals>
+    <plurals name="repeat_months">
+        <item quantity="one">Every month</item>
+        <item quantity="other">Every %1$d months</item>
+    </plurals>
+    <plurals name="repeat_years">
+        <item quantity="one">Every year</item>
+        <item quantity="other">Every %1$d years</item>
+    </plurals>
+    <string name="add_label">Add label</string>
+    <string name="remove_label">Remove label: %1$s</string>
+    <string name="label_name">Label or project</string>
+    <string name="labels_full">At most %1$d labels</string>
+    <string name="labels_in_use">In use</string>
+    <string name="add_link">Add link</string>
+    <string name="open_link">Open link</string>
+    <string name="remove_link">Remove link: %1$s</string>
+    <string name="no_links">No links</string>
+    <string name="link_url">Address</string>
+    <string name="link_title">Title (optional)</string>
+    <string name="link_invalid">Enter a full http:// or https:// address</string>
+    <string name="add">Add</string>
+    <string name="move_to_trash">Move to trash</string>
+    <string name="restore">Restore</string>
+    <string name="restore_described">Restore: %1$s</string>
+
+    <string name="actor_app">You (app)</string>
+    <string name="actor_cli">You (CLI)</string>
+    <string name="actor_agent">Agent</string>
+    <string name="action_create">Created</string>
+    <string name="action_update">Edited</string>
+    <string name="action_status">Moved on the board</string>
+    <string name="action_now">Now changed</string>
+    <string name="action_complete">Marked done</string>
+    <string name="action_archive">Archived</string>
+    <string name="action_delete">Moved to the trash</string>
+    <string name="action_restore">Restored</string>
+    <string name="action_repeat">Created as the next repeat</string>
+    <string name="field_title">Title</string>
+    <string name="field_day">Day</string>
+    <string name="history_change">%1$s: %2$s → %3$s</string>
+    <string name="history_none">none</string>
+    <string name="history_empty">No changes recorded yet.</string>
+    <string name="history_cached">Offline: this is the history from the last connection.</string>
+    <string name="history_not_on_server">The history starts once this task reaches the server.</string>
+    <plurals name="history_pending">
+        <item quantity="one">%1$d change waits to be sent; it shows here after that.</item>
+        <item quantity="other">%1$d changes wait to be sent; they show here after that.</item>
+    </plurals>
+    <string name="yes">yes</string>
+    <string name="no">no</string>
+
+    <string name="trash_title">Trash</string>
+    <string name="trash_empty">The trash is empty. Deleted tasks stay here for %1$d days.</string>
+    <string name="trash_hint">Tasks stay here for %1$d days, then they are deleted for good.</string>
+    <string name="trash_deleted_on">Deleted %1$s · gone after %2$s</string>
     <string name="channel_reminders">Reminders</string>
     <string name="channel_reminders_description">Rings before a task that has a time.</string>
     <string name="channel_summary">Morning summary</string>

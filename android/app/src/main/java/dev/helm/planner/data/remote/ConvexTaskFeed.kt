@@ -38,13 +38,14 @@ class ConvexTaskFeed(
         client.loginFromCache()
         launch { keepFresh(first.expiresAt) }
         val tasks = client.subscribe<JsonElement>(RemoteJson.QUERY_TASKS, RemoteJson.TASKS_ARGS)
+        val trash = client.subscribe<JsonElement>(RemoteJson.QUERY_TRASH)
         val settings = client.subscribe<JsonElement>(RemoteJson.QUERY_SETTINGS)
-        combine(tasks, settings) { t, s ->
-            val failure = t.exceptionOrNull() ?: s.exceptionOrNull()
+        combine(tasks, trash, settings) { t, d, s ->
+            val failure = t.exceptionOrNull() ?: d.exceptionOrNull() ?: s.exceptionOrNull()
             if (failure != null) {
                 failure.toEvent()
             } else {
-                RemoteJson.snapshot(t.getOrThrow(), s.getOrThrow())
+                RemoteJson.snapshot(t.getOrThrow(), d.getOrThrow(), s.getOrThrow())
             }
         }.collect { send(it) }
     }

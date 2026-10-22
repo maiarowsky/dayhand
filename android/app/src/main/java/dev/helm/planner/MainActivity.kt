@@ -7,11 +7,16 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,18 +24,32 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.helm.planner.auth.PairingInput
 import dev.helm.planner.auth.PairingLink
 import dev.helm.planner.ui.connect.ConnectRoute
+import dev.helm.planner.ui.board.BoardActions
+import dev.helm.planner.ui.board.BoardScreen
+import dev.helm.planner.ui.board.BoardViewModel
 import dev.helm.planner.ui.settings.SettingsRoute
 import dev.helm.planner.ui.settings.needsNotificationPermission
+import dev.helm.planner.ui.task.TaskDetailActions
+import dev.helm.planner.ui.task.TaskDetailScreen
+import dev.helm.planner.ui.task.TaskDetailUiState
+import dev.helm.planner.ui.task.TaskDetailViewModel
+import dev.helm.planner.ui.components.HelmTab
+import dev.helm.planner.ui.components.HelmTabBar
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
 import dev.helm.planner.ui.today.TodayViewModel
+import dev.helm.planner.ui.trash.TrashActions
+import dev.helm.planner.ui.trash.TrashScreen
+import dev.helm.planner.ui.trash.TrashViewModel
 
 class MainActivity : ComponentActivity() {
     /** A `helm://pair` link (QR code from `hlm pair`) waiting to fill in the Connect screen. */
@@ -68,7 +87,21 @@ class MainActivity : ComponentActivity() {
         intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString?.let(PairingInput::parseLink)
 }
 
-private enum class Screen { TODAY, SETTINGS, CONNECT, FIRST_CONNECT }
+/** Screens; a task's details are `task/<localId>`. Today and the board are the two main views. */
+private object Route {
+    const val TODAY = "today"
+    const val BOARD = "board"
+    const val TRASH = "trash"
+    const val SETTINGS = "settings"
+    const val CONNECT = "connect"
+
+    /** Connect shown by itself at the first start without a server (with "Not now"). */
+    const val FIRST_CONNECT = "first-connect"
+    private const val TASK = "task/"
+
+    fun task(localId: String) = TASK + localId
+    fun taskId(route: String): String? = route.removePrefix(TASK).takeIf { route.startsWith(TASK) }
+}
 
 @Composable
 private fun HelmRoot(
@@ -77,60 +110,136 @@ private fun HelmRoot(
     pairingLink: PairingLink?,
     onLinkUsed: () -> Unit,
 ) {
-    var screen by rememberSaveable { mutableStateOf(Screen.TODAY) }
+    // A back stack of routes; Today is always at the bottom, so Back from the board returns to it.
+    var stack by rememberSaveable { mutableStateOf(listOf(Route.TODAY)) }
+    val route = stack.last()
+    val open: (String) -> Unit = { stack = stack + it }
+    val back: () -> Unit = { if (stack.size > 1) stack = stack.dropLast(1) }
+    val selectTab: (String) -> Unit = { tab -> stack = if (tab == Route.TODAY) listOf(Route.TODAY) else listOf(Route.TODAY, tab) }
+    BackHandler(enabled = stack.size > 1, onBack = back)
+    val tabs: @Composable () -> Unit = { MainTabs(route, selectTab) }
     var firstRunChecked by rememberSaveable { mutableStateOf(false) }
     // At first start without a server, Connect comes first (once per launch at most).
     LaunchedEffect(Unit) {
         if (firstRunChecked) return@LaunchedEffect
         firstRunChecked = true
         val settings = container.settings.current()
-        if (screen == Screen.TODAY && settings.backend == null && !settings.connectPromptDone) screen = Screen.FIRST_CONNECT
+        if (stack == listOf(Route.TODAY) && settings.backend == null && !settings.connectPromptDone) open(Route.FIRST_CONNECT)
     }
     // A pairing link always opens Connect, filled in.
     LaunchedEffect(pairingLink) {
-        if (pairingLink != null) screen = Screen.CONNECT
+        if (pairingLink != null && route != Route.CONNECT) open(Route.CONNECT)
     }
     val context = LocalContext.current
     // Asked in context: the first task with a time is the first one that can ring.
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    when (screen) {
-        Screen.TODAY -> {
+    val timeSet: (String?) -> Unit = { dueTime ->
+        if (dueTime != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && needsNotificationPermission(context)) {
+            askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    val taskId = Route.taskId(route)
+    when {
+        route == Route.TODAY -> {
             val viewModel = viewModel {
                 TodayViewModel(container.repository, container.settings, container.network, container.liveSync)
             }
             val actions = remember(viewModel) {
                 object : TodayActions by viewModel {
-                    override fun openSettings() {
-                        screen = Screen.SETTINGS
-                    }
-
+                    override fun openSettings() = open(Route.SETTINGS)
+                    override fun openTask(localId: String) = open(Route.task(localId))
                     override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
                         viewModel.add(title, dueDate, dueTime, note)
-                        if (dueTime != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                            needsNotificationPermission(context)
-                        ) {
-                            askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
+                        timeSet(dueTime)
                     }
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
-            state?.let { TodayScreen(it, actions) }
+            state?.let { TodayScreen(it, actions, bottomBar = tabs) }
         }
-        Screen.SETTINGS -> SettingsRoute(
+        route == Route.BOARD -> {
+            val viewModel = viewModel {
+                BoardViewModel(container.repository, container.settings, container.network, container.liveSync)
+            }
+            val actions = remember(viewModel) {
+                object : BoardActions by viewModel {
+                    override fun openSettings() = open(Route.SETTINGS)
+                    override fun openTask(localId: String) = open(Route.task(localId))
+                    override fun openTrash() = open(Route.TRASH)
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
+                        viewModel.add(title, dueDate, dueTime, note)
+                        timeSet(dueTime)
+                    }
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.let { BoardScreen(it, actions, bottomBar = tabs) }
+        }
+        taskId != null -> {
+            val viewModel = viewModel { TaskDetailViewModel(container.repository, container.settings, container.historySync) }
+            LaunchedEffect(taskId) { viewModel.open(taskId) }
+            val actions = remember(viewModel) {
+                object : TaskDetailActions by viewModel {
+                    override fun back() = back()
+                    override fun setDue(localId: String, date: String?, time: String?) {
+                        viewModel.setDue(localId, date, time)
+                        timeSet(time)
+                    }
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.takeIf { it.localId() == taskId }?.let { TaskDetailScreen(it, actions) }
+        }
+        route == Route.TRASH -> {
+            val viewModel = viewModel { TrashViewModel(container.repository, container.settings) }
+            val actions = remember(viewModel) {
+                object : TrashActions by viewModel {
+                    override fun openTask(localId: String) = open(Route.task(localId))
+                    override fun back() = back()
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.let { TrashScreen(it, actions) }
+        }
+        route == Route.SETTINGS -> SettingsRoute(
             container,
             versionName,
-            onBack = { screen = Screen.TODAY },
-            onConnect = { screen = Screen.CONNECT },
+            onBack = back,
+            onConnect = { open(Route.CONNECT) },
         )
-        Screen.CONNECT, Screen.FIRST_CONNECT -> ConnectRoute(
+        route == Route.CONNECT || route == Route.FIRST_CONNECT -> ConnectRoute(
             container,
             link = pairingLink,
-            firstRun = screen == Screen.FIRST_CONNECT,
+            firstRun = route == Route.FIRST_CONNECT,
             onDone = {
                 onLinkUsed()
-                screen = Screen.TODAY
+                stack = listOf(Route.TODAY)
             },
         )
     }
+}
+
+private fun TaskDetailUiState.localId(): String = when (this) {
+    is TaskDetailUiState.Missing -> localId
+    is TaskDetailUiState.Ready -> task.localId
+}
+
+/** Bottom navigation between the two main views. */
+@Composable
+private fun MainTabs(current: String, onSelect: (String) -> Unit) {
+    HelmTabBar {
+        Tab(Route.TODAY, current, Icons.Filled.DateRange, R.string.today_title, onSelect)
+        Tab(Route.BOARD, current, Icons.AutoMirrored.Filled.List, R.string.board_title, onSelect)
+    }
+}
+
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.Tab(
+    route: String,
+    current: String,
+    icon: ImageVector,
+    @StringRes label: Int,
+    onSelect: (String) -> Unit,
+) {
+    HelmTab(selected = current == route, icon = icon, label = stringResource(label), onClick = { if (current != route) onSelect(route) })
 }

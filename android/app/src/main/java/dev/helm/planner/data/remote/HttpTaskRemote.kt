@@ -65,13 +65,15 @@ class HttpTaskRemote(
         val tasks = query(RemoteJson.QUERY_TASKS, buildJsonObject {
             RemoteJson.TASKS_ARGS.forEach { (key, value) -> put(key, value) }
         })
+        val trash = query(RemoteJson.QUERY_TRASH, JsonObject(emptyMap()))
         val settings = query(RemoteJson.QUERY_SETTINGS, JsonObject(emptyMap()))
         if (tasks !is SendResult.Applied) return tasks.toEvent()
+        if (trash !is SendResult.Applied) return trash.toEvent()
         if (settings !is SendResult.Applied) return settings.toEvent()
-        return RemoteJson.snapshot(tasks.value, settings.value)
+        return RemoteJson.snapshot(tasks.value, trash.value, settings.value)
     }
 
-    private suspend fun query(path: String, args: JsonObject): SendResult =
+    override suspend fun query(path: String, args: JsonObject): SendResult =
         call("$deploymentUrl/api/query", requestBody(path, args))
 
     private suspend fun call(url: String, body: String): SendResult {

@@ -38,6 +38,7 @@ class ReminderRulesTest {
             task("nodate", null, null),
             task("done", "2026-10-22", "10:00") { copy(status = TaskStatus.DONE, completedAt = 1) },
             task("archived", "2026-10-22", "10:00") { copy(archivedAt = 1) },
+            task("trashed", "2026-10-22", "10:00") { copy(deletedAt = 1) },
         )
         val reminders = ReminderRules.reminders(tasks, listOf(0, 30), warsaw)
         assertEquals(

@@ -1,6 +1,7 @@
 package dev.helm.planner.ui.today
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,12 +34,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
-import dev.helm.planner.ui.components.BannerTone
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
-import dev.helm.planner.ui.components.StatusBanner
+import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.palette
@@ -58,7 +58,12 @@ object TodayTags {
 
 /** The Today screen: overdue, the one "now" task, today's tasks, then done (collapsed). */
 @Composable
-fun TodayScreen(state: TodayUiState, actions: TodayActions, modifier: Modifier = Modifier) {
+fun TodayScreen(
+    state: TodayUiState,
+    actions: TodayActions,
+    modifier: Modifier = Modifier,
+    bottomBar: @Composable () -> Unit = {},
+) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
     val locale = Locale.getDefault()
@@ -74,6 +79,7 @@ fun TodayScreen(state: TodayUiState, actions: TodayActions, modifier: Modifier =
                 HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
             }
         },
+        bottomBar = bottomBar,
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { adding = true },
@@ -109,11 +115,25 @@ private fun TodayList(
     modifier: Modifier,
     onAdd: () -> Unit,
 ) {
+    // The banner stays above the list: as a list item it could appear above the first visible row, off screen.
+    Column(modifier.fillMaxSize()) {
+        StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS))
+        TodayItems(state, actions, today, contentPadding, onAdd)
+    }
+}
+
+@Composable
+private fun TodayItems(
+    state: TodayUiState,
+    actions: TodayActions,
+    today: LocalDate,
+    contentPadding: PaddingValues,
+    onAdd: () -> Unit,
+) {
     val p = palette
     var doneExpanded by rememberSaveable { mutableStateOf(false) }
     val sections = state.sections
-    LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
-        item { StatusLine(state.connection, state.pendingChanges, actions::openSettings) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding) {
         if (sections.isEmpty) {
             item {
                 EmptyState(
@@ -180,33 +200,4 @@ private fun DoneHeader(count: Int, expanded: Boolean, onToggle: () -> Unit) {
             tint = p.textMuted,
         )
     }
-}
-
-/** The state of the connection when it needs a word: offline, changes waiting, no server, refused token. */
-@Composable
-private fun StatusLine(status: ConnectionStatus, pending: Int, openSettings: () -> Unit) {
-    val text = when (status) {
-        ConnectionStatus.OFFLINE -> stringResource(R.string.status_offline, pending)
-        ConnectionStatus.OFFLINE_MODE -> stringResource(R.string.status_offline_mode, pending)
-        ConnectionStatus.NOT_CONFIGURED -> stringResource(R.string.status_not_configured)
-        ConnectionStatus.UNAUTHORIZED -> stringResource(R.string.status_unauthorized)
-        ConnectionStatus.ERROR -> stringResource(R.string.status_error)
-        ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING ->
-            if (pending > 0) stringResource(R.string.status_sending, pending) else return
-    }
-    val tone = when (status) {
-        ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> BannerTone.Danger
-        ConnectionStatus.OFFLINE, ConnectionStatus.OFFLINE_MODE, ConnectionStatus.NOT_CONFIGURED -> BannerTone.Warning
-        ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING -> BannerTone.Info
-    }
-    val needsSettings = status == ConnectionStatus.NOT_CONFIGURED || status == ConnectionStatus.UNAUTHORIZED
-    StatusBanner(
-        text = text,
-        tone = tone,
-        action = if (needsSettings) stringResource(R.string.open_settings) else null,
-        onAction = openSettings,
-        modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag(TodayTags.STATUS),
-    )
 }

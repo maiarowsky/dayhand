@@ -57,7 +57,7 @@ object ReminderRules {
      */
     fun reminders(tasks: List<Task>, minutesBefore: List<Int>, timezone: String?): List<Reminder> =
         tasks
-            .filter { it.status != TaskStatus.DONE && it.archivedAt == null }
+            .filter { it.status != TaskStatus.DONE && it.isActive }
             .flatMap { task ->
                 val due = dueAt(task, timezone) ?: return@flatMap emptyList()
                 minutesBefore.distinct().map { minutes ->

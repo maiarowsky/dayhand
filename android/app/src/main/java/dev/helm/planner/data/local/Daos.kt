@@ -3,6 +3,7 @@ package dev.helm.planner.data.local
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 interface TaskDao {
     @Query("SELECT * FROM tasks")
     fun observeAll(): Flow<List<Task>>
+
+    @Query("SELECT * FROM tasks WHERE localId = :localId")
+    fun observe(localId: String): Flow<Task?>
 
     @Query("SELECT * FROM tasks")
     suspend fun all(): List<Task>
@@ -44,6 +48,9 @@ interface OutboxDao {
     @Query("SELECT COUNT(*) FROM outbox")
     fun observeCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM outbox WHERE taskLocalId = :taskLocalId")
+    fun observeCountFor(taskLocalId: String): Flow<Int>
+
     @Query("SELECT COUNT(*) FROM outbox")
     suspend fun count(): Int
 
@@ -58,4 +65,27 @@ interface OutboxDao {
 
     @Query("UPDATE outbox SET attempts = attempts + 1, lastError = :error WHERE seq = :seq")
     suspend fun recordFailure(seq: Long, error: String)
+}
+
+@Dao
+interface TaskEventDao {
+    @Query("SELECT * FROM task_events WHERE taskServerId = :taskServerId ORDER BY at DESC, id DESC")
+    fun observe(taskServerId: String): Flow<List<TaskEvent>>
+
+    @Query("DELETE FROM task_events WHERE taskServerId = :taskServerId")
+    suspend fun deleteFor(taskServerId: String)
+
+    @Insert
+    suspend fun insert(events: List<TaskEvent>)
+
+    /** The server's history is the whole truth: the cached copy is replaced, never merged. */
+    @Transaction
+    suspend fun replace(taskServerId: String, events: List<TaskEvent>) {
+        deleteFor(taskServerId)
+        insert(events)
+    }
+
+    /** History of tasks that no longer exist on the phone. */
+    @Query("DELETE FROM task_events WHERE taskServerId NOT IN (SELECT serverId FROM tasks WHERE serverId IS NOT NULL)")
+    suspend fun deleteOrphans()
 }

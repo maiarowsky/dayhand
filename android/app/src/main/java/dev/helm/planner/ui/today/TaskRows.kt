@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -85,7 +86,10 @@ fun DoneRow(task: Task, actions: TodayActions) {
             style = helmType.body,
             color = palette.textMuted,
             textDecoration = TextDecoration.LineThrough,
-            modifier = Modifier.weight(1f).padding(end = 16.dp),
+            modifier = Modifier
+                .weight(1f)
+                .openTask(task, actions)
+                .padding(end = 16.dp),
         )
     }
 }
@@ -107,7 +111,7 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
             TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
             Column(Modifier.weight(1f).padding(top = 10.dp)) {
                 SectionLabel(stringResource(R.string.section_now), color = p.working)
-                TaskTitle(task, emphasized = true)
+                TaskTitle(task, emphasized = true, modifier = Modifier.openTask(task, actions))
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
@@ -146,7 +150,12 @@ private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, trail
             .padding(start = 8.dp, end = 8.dp),
     ) {
         TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
-        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+        Column(
+            Modifier
+                .weight(1f)
+                .openTask(task, actions)
+                .padding(vertical = 8.dp),
+        ) {
             TaskTitle(task)
             if (subtitle != null) {
                 Text(subtitle, style = helmType.small, color = palette.danger)
@@ -175,13 +184,24 @@ private fun TaskTitle(
     task: Task,
     color: Color = palette.text,
     emphasized: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     val time = task.dueTime
     Text(
         text = if (time != null) "$time  ${task.title}" else task.title,
         style = if (emphasized) helmType.title else helmType.body,
         color = color,
+        modifier = modifier,
     )
+}
+
+/** Tapping a task's text opens its details; at least 48 dp tall, announced as "open details". */
+@Composable
+private fun Modifier.openTask(task: Task, actions: TodayActions): Modifier {
+    val label = stringResource(R.string.open_details)
+    return heightIn(min = 48.dp)
+        .clickable(onClickLabel = label) { actions.openTask(task.localId) }
+        .wrapContentHeight(Alignment.CenterVertically)
 }
 
 @Composable
@@ -237,7 +257,7 @@ private fun MenuItem(@StringRes label: Int, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ResumeNoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+fun ResumeNoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var text by rememberSaveable { mutableStateOf(initial) }
     HelmDialog(
         title = stringResource(R.string.resume_label),
