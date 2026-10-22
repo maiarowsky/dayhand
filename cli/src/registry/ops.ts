@@ -15,7 +15,7 @@ export async function tool<T = Record<string, unknown>>(ctx: RunContext, name: s
 /** The user's time zone, for timestamps in human output only (one extra read). */
 export async function userTimezone(ctx: RunContext): Promise<string | undefined> {
   if (ctx.format !== "human") return undefined;
-  return (await tool<{ timezone?: string }>(ctx, "get_settings")).timezone;
+  return ctx.zone();
 }
 
 export async function confirmBulk(ctx: RunContext, count: number, verb: string): Promise<void> {
@@ -23,7 +23,7 @@ export async function confirmBulk(ctx: RunContext, count: number, verb: string):
   if (!ctx.interactive) {
     throw usageError(`Refusing to ${verb} ${count} tasks without --yes`, { hint: `hlm ${verb} <ref>... --yes` });
   }
-  if (!(await ctx.confirm(`${verb} ${count} tasks?`))) throw usageError("Cancelled; nothing was changed");
+  if (!(await ctx.confirm(`${capitalize(verb)} ${count} tasks?`))) throw usageError("Cancelled; nothing was changed");
 }
 
 /**
@@ -52,3 +52,5 @@ export async function eachRef<T>(
 
 /** One result as the tool returned it; several as `{ results: [...] }`. */
 export const oneOrMany = <T>(results: T[]): T | { results: T[] } => (results.length === 1 ? results[0]! : { results });
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);

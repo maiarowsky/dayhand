@@ -1,0 +1,539 @@
+.\" Generated from cli/src/registry by `npm run docs` in cli/. Do not edit by hand.
+.TH HLM 1 "" "hlm" "User Commands"
+.SH NAME
+hlm \- the Helm command line client for people and agents
+.SH SYNOPSIS
+.B hlm
+[\fIcommand\fR] [\fIarguments\fR] [\fIoptions\fR]
+.SH DESCRIPTION
+hlm reads and changes a Helm task list. Every command is one or more calls of the MCP tools the agent uses on the same /mcp endpoint; hlm call reaches any tool directly. Without a command, hlm shows Today.
+.PP
+Task references: #42 or 42 (the task number), now (the now task) or the task id.
+.SH COMMANDS
+.TP
+.B hlm today
+The Today screen: now task, overdue, today and done today (also plain `hlm`)
+.TP
+.B hlm add <title...>
+Add a task (due today unless \-\-due or \-\-no\-due)
+.RS
+.TP
+.B \-\-due <when>
+Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026\-10\-23 (hlm help dates)
+.TP
+.B \-\-time <HH:MM>
+Due time, 24h, in your time zone
+.TP
+.B \-\-every <unit>
+Repeat every day, week, month or year (day, week, month, year)
+.TP
+.B \-\-interval <n>
+Repeat interval (2 = every other)
+.TP
+.B \-\-on <days>
+Weekly repeat days, e.g. mon,thu
+.TP
+.B \-\-no\-due
+No due day: the task shows only in list and board
+.TP
+.B \-l, \-\-label <label>
+Label (repeatable)
+.TP
+.B \-\-note <text>
+Note
+.TP
+.B \-\-status <status>
+Initial status (todo, doing)
+.TP
+.B \-\-resume\-note <text>
+Where you stopped / next step
+.TP
+.B \-\-link <url>
+Link, optionally followed by a title: "https://… Title" (repeatable)
+.RE
+.TP
+.B hlm list
+Open tasks, oldest due first (with \-\-done also done ones); filters narrow the list
+.br
+Aliases: ls.
+.RS
+.TP
+.B \-l, \-\-label <label>
+Only tasks with this label (repeatable: all must match)
+.TP
+.B \-\-done
+Include done tasks
+.TP
+.B \-\-archived
+Include archived tasks
+.TP
+.B \-\-status <statuses>
+Only these statuses, comma\-separated: todo, doing, done (done implies \-\-done)
+.TP
+.B \-\-overdue
+Only overdue tasks
+.TP
+.B \-\-due\-before <when>
+Only tasks due before this day, e.g. eow, next mon, 2026\-11\-01
+.TP
+.B \-\-due\-after <when>
+Only tasks due after this day, e.g. today
+.TP
+.B \-\-search <text>
+Only tasks whose title, note, resume note or labels contain the text (any case)
+.TP
+.B \-\-limit <n>
+At most this many tasks
+.RE
+.TP
+.B hlm board
+Kanban board: todo, doing and done columns
+.RS
+.TP
+.B \-\-done\-limit <n>
+Maximum tasks in the done column (default 50)
+.RE
+.TP
+.B hlm show <ref>
+One task with its change history (who changed what, when)
+.TP
+.B hlm edit <ref>
+Change a task's fields; \-\-clear\-* removes one; on a terminal without options, edit title and note in $EDITOR
+.RS
+.TP
+.B \-\-title <text>
+New title
+.TP
+.B \-\-note <text>
+Replace the note
+.TP
+.B \-\-clear\-note
+Remove the note
+.TP
+.B \-\-due <when>
+Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026\-10\-23 (hlm help dates)
+.TP
+.B \-\-time <HH:MM>
+Due time, 24h, in your time zone
+.TP
+.B \-\-every <unit>
+Repeat every day, week, month or year (day, week, month, year)
+.TP
+.B \-\-interval <n>
+Repeat interval (2 = every other)
+.TP
+.B \-\-on <days>
+Weekly repeat days, e.g. mon,thu
+.TP
+.B \-\-clear\-due
+Remove the due day (and time)
+.TP
+.B \-\-clear\-time
+Remove the due time
+.TP
+.B \-\-clear\-repeat
+Stop repeating
+.TP
+.B \-\-resume\-note <text>
+Where you stopped / next step
+.TP
+.B \-\-clear\-resume\-note
+Remove the resume note
+.TP
+.B \-l, \-\-label <label>
+Replace all labels (repeatable)
+.TP
+.B \-\-add\-label <label>
+Add a label (repeatable)
+.TP
+.B \-\-rm\-label <label>
+Remove a label (repeatable)
+.TP
+.B \-\-clear\-labels
+Remove all labels
+.TP
+.B \-\-link <url>
+Replace all links: "https://… Title" (repeatable)
+.TP
+.B \-\-clear\-links
+Remove all links
+.RE
+.TP
+.B hlm note <ref> [text...]
+Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it
+.RS
+.TP
+.B \-\-clear
+Remove the note
+.RE
+.TP
+.B hlm move <ref> <date>
+Move a task to another day, optionally with a time (none removes the date)
+.RS
+.TP
+.B \-\-time <HH:MM>
+New due time
+.TP
+.B \-\-clear\-time
+Remove the due time
+.RE
+.TP
+.B hlm done <refs...>
+Mark tasks done; a repeating task gets its next occurrence
+.TP
+.B hlm start <refs...>
+Set tasks to doing
+.TP
+.B hlm stop <refs...>
+Set tasks back to todo (from doing)
+.TP
+.B hlm reopen <refs...>
+Set done tasks back to todo
+.TP
+.B hlm now [ref]
+Show the now task, make a task the now task (\-\-note: where you stopped), or \-\-clear
+.RS
+.TP
+.B \-\-note <text>
+Resume note shown on Today
+.TP
+.B \-\-clear
+Clear the now task
+.RE
+.TP
+.B hlm archive <refs...>
+Archive tasks: off Today and the board, kept in exports
+.TP
+.B hlm rm <refs...>
+Move tasks to the trash (purged after 30 days)
+.br
+Aliases: delete.
+.TP
+.B hlm restore <refs...>
+Restore tasks from the trash (or the archive)
+.TP
+.B hlm trash
+Tasks in the trash, newest first
+.TP
+.B hlm settings
+Show settings (time zone, morning summary time, default reminders)
+.TP
+.B hlm settings get
+Show settings
+.TP
+.B hlm settings set <pairs...>
+Change settings: timezone, summaryTime (summary\-time), defaultReminderMinutes (reminders)
+.TP
+.B hlm export
+Export the whole plan as Markdown or JSON (with history)
+.RS
+.TP
+.B \-\-format <format>
+md or json (default: md, or json with \-\-json) (md, markdown, json)
+.TP
+.B \-o, \-\-output <file>
+Write to a file instead of stdout
+.RE
+.TP
+.B hlm tools [name]
+MCP tools and their input schemas (introspection)
+.TP
+.B hlm call <tool> [json]
+Call an MCP tool with JSON arguments, exactly as an MCP client would
+.br
+Prints the tool's structuredContent (or, for a Markdown export, its text). Errors and exit codes are the same as for the other commands.
+.TP
+.B hlm version
+CLI and server versions, and whether they are compatible
+.TP
+.B hlm pair
+One\-time code (10 minutes) that signs the phone app in as you
+.RS
+.TP
+.B \-\-no\-qr
+Do not draw the QR code
+.RE
+.TP
+.B hlm device
+Paired phones (same as hlm device list); revoke one with hlm device revoke
+.TP
+.B hlm device list
+Paired phones
+.br
+Aliases: ls.
+.TP
+.B hlm device revoke <deviceId>
+Sign a phone out: it gets no new app tokens
+.TP
+.B hlm devices
+Same as hlm device list
+.TP
+.B hlm revoke <deviceId>
+Same as hlm device revoke
+.TP
+.B hlm login
+Store an API key for the deployment in the OS keychain (or a private file)
+.br
+Create a key with kind cli in the app (Settings → API keys) or with `npx convex run apiKeys:create`. The key is checked against the server first; HLM_API_KEY, when set, still wins over the stored key.
+.RS
+.TP
+.B \-\-with\-key
+Read the key from stdin instead of a hidden prompt
+.TP
+.B \-\-store <store>
+Where to keep the key (default: keychain, else file) (keychain, file)
+.RE
+.TP
+.B hlm logout
+Remove the stored API key for the deployment (keychain and file)
+.TP
+.B hlm whoami
+Which deployment, profile, key source and config file hlm uses, checked against the server
+.TP
+.B hlm prime
+Context for an AI agent: Today and how to use hlm (for a SessionStart hook)
+.br
+Prints plain text without colors in every format except \-\-json, which prints list_today like hlm today \-\-json. In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"hlm prime"}]}]}}.
+.TP
+.B hlm when <phrase...>
+Show the day (and time) a date phrase means in your time zone, without changing anything
+.RS
+.TP
+.B \-\-timezone <zone>
+IANA time zone to resolve in (default: yours from the server settings)
+.TP
+.B \-\-now <moment>
+Resolve as if it were this moment (ISO 8601) instead of now
+.RE
+.TP
+.B hlm completion <shell>
+Print the shell completion script for bash, zsh, fish or powershell (hlm help completion)
+.SH GLOBAL OPTIONS
+Valid before or after the command.
+.TP
+.B \-\-json
+Print the tool's structuredContent as JSON; errors as JSON on stderr
+.TP
+.B \-\-plain
+Tab\-separated text without headers (for scripts)
+.TP
+.B \-\-fields <names>
+Comma\-separated task (or settings) fields for JSON and columns
+.TP
+.B \-\-client\-id <id>
+Operation id for safe retries (default: generated, shown on errors)
+.TP
+.B \-y, \-\-yes
+Confirm changing many tasks at once
+.TP
+.B \-\-no\-input
+Never prompt (also HLM_NO_INPUT=1); prompts need a terminal anyway
+.TP
+.B \-\-dry\-run
+Show the changes a command would send (dates resolved) and send nothing
+.TP
+.B \-\-url <url>
+Deployment HTTP actions URL (default: HLM_URL, then config.toml)
+.TP
+.B \-\-profile <name>
+Profile from config.toml (default: HLM_PROFILE, then default_profile)
+.TP
+.B \-\-color <when>
+Colors in the human format (auto, always, never)
+.TP
+.B \-\-no\-color
+Same as \-\-color never (NO_COLOR=1 works too)
+.TP
+.B \-V, \-\-version
+Print the CLI version.
+.TP
+.B \-h, \-\-help
+Help for hlm or for a command; hlm help <topic> for a topic.
+.SH JSON OUTPUT
+\-\-json (or HLM_FORMAT=json) prints the MCP tool's structuredContent exactly as an MCP client receives it. Fields may be added in a minor version; they are never removed or retyped within a major version. Errors go to standard error as one line: {"error":{"code","message","exitCode","retryable","clientId",...}}; standard output then stays empty. \-\-plain prints tab\-separated rows without headers.
+.SH EXIT STATUS
+.TP
+.B 0
+Success, including a change that was already applied (no\-op)
+.TP
+.B 1
+Other error (internal)
+.TP
+.B 2
+Usage: unknown command or flag, bad value or date, \-\-yes missing, broken config.toml
+.TP
+.B 3
+Authentication: no key (hlm login or HLM_API_KEY), or a wrong or revoked one
+.TP
+.B 4
+Not found: no such task (#n), device or now task
+.TP
+.B 5
+Server unavailable (network, timeout, HTTP 5xx or 429): the change may have been applied; retry with the same \-\-client\-id
+.TP
+.B 130
+Interrupted (Ctrl\-C)
+.SH ENVIRONMENT
+.TP
+.B HLM_URL
+Deployment HTTP actions URL, e.g. https://<deployment>.convex.site (wins over config.toml)
+.TP
+.B HLM_API_KEY
+API key; wins over the key stored by hlm login (give agents and CI their own, kind agent)
+.TP
+.B HLM_PROFILE
+Profile from config.toml (\-\-profile wins)
+.TP
+.B HLM_FORMAT
+json, plain or human: default output format (flags win)
+.TP
+.B HLM_NO_INPUT
+1 to never prompt
+.TP
+.B HLM_CONFIG_DIR
+Folder of config.toml and credentials.json (default: the system's config folder)
+.TP
+.B HLM_CACHE_DIR
+Folder of the completion cache (default: the system's cache folder)
+.TP
+.B HLM_CREDENTIAL_STORE
+keychain or file: where hlm login keeps keys (default: keychain, else file)
+.TP
+.B NO_COLOR, FORCE_COLOR
+Turn colors off or on when neither \-\-color nor config.toml decides
+.TP
+.B VISUAL, EDITOR
+Editor for hlm note <ref> and hlm edit <ref> on a terminal (default: vi, notepad on Windows)
+.TP
+.B HELM_URL, HELM_API_KEY
+Old names, still read when the HLM_* name is unset (deprecated, with a warning)
+.SH DATES
+hlm help dates
+.PP
+.nf
+.RS 4
+Dates (\-\-due, hlm move, hlm list \-\-due\-before/\-\-due\-after, hlm when)
+
+Dates are English phrases resolved in your time zone from the server settings
+(hlm settings), not the computer's. The same phrase at the same moment always
+gives the same day. Try one with: hlm when "<phrase>", or add \-\-dry\-run to a command.
+
+  Days        today (tod), tomorrow (tmr), yesterday, day after tomorrow
+  Weekdays    fri, friday, on mon: the first such day after today
+              this fri: this week's (today included); next fri: next week's (weeks start on Monday)
+  Periods     next week (its Monday), next month (the 1st), next year, weekend, next weekend
+              eow / end of week (Sunday), eoww / end of work week (Friday),
+              eom / end of month, eoy / end of year
+  Relative    in 3 days, in a week, in 2 months, in 1 year, +3d, +2w, +1mo, +1y
+              in 2 hours, in 30 min, +3h: a day and a time
+  Calendar    23 oct, 23rd of october, oct 23, oct 23 2027, the 15th, 2026\-10\-23
+              (without a year: the next such day, today included)
+  Times       14:00, 9:30, 2pm, 2:30 pm, at 9, noon, midnight
+              alone: today, or tomorrow once that time has passed
+  Together    tomorrow at 9am, fri 14:30, 9am tomorrow, at 3pm on friday, in 3 days at 8:15
+
+A time that does not exist because the clocks go forward (01:30 on the last
+Sunday of March in London) moves forward by the gap (to 02:30) with a warning.
+YYYY\-MM\-DD, today and tomorrow are sent to the server as typed; every other
+phrase is sent as YYYY\-MM\-DD (and HH:MM). Anything else is refused (exit 2),
+never guessed.
+
+Examples: today, tomorrow, fri, next mon, this weekend, in 3 days, +2w, in 2 hours, eow, eom, 23 oct, oct 23 2027, 2026\-10\-23, 14:00, 2pm, noon, tomorrow at 9am, fri 14:30
+.RE
+.fi
+.SH CONFIG
+hlm help config
+.PP
+.nf
+.RS 4
+Configuration (config.toml)
+
+The file lives in:
+  Linux     $XDG_CONFIG_HOME/hlm/config.toml (~/.config/hlm/config.toml)
+  macOS     ~/Library/Application Support/hlm/config.toml
+  Windows   %APPDATA%\ehlm\econfig.toml
+or in $HLM_CONFIG_DIR. hlm whoami prints the one in use. hlm login creates it.
+
+  url = "https://<deployment>.convex.site"     # used when no profile is chosen
+  default_profile = "personal"
+
+  [profiles.personal]
+  url = "https://<deployment>.convex.site"
+
+  [profiles.work]
+  url = "https://<other>.convex.site"
+
+  [aliases]
+  home = "list \-l home \-\-status todo,doing"    # hlm home \-\-json
+  week = "list \-\-due\-before eow"
+
+  [ui]
+  color = "auto"                               # auto, always or never
+
+Precedence. URL: \-\-url, the profile named by \-\-profile, HLM_URL, the profile from
+HLM_PROFILE or default_profile, then the top\-level url. Key: HLM_API_KEY, then the
+key hlm login stored for that URL. Colors: \-\-color/\-\-no\-color, [ui] color,
+NO_COLOR/FORCE_COLOR, then whether the output is a terminal.
+
+The API key never goes into this file: hlm refuses keys named api_key, key,
+token, secret or password. An unknown key or a wrong value is an error that names
+the file and the key (exit 2). Aliases cannot hide a built\-in command.
+.RE
+.fi
+.SH LOGIN
+hlm help login
+.PP
+.nf
+.RS 4
+Signing in (hlm login, hlm logout, hlm whoami)
+
+  hlm login \-\-url https://<deployment>.convex.site   # paste the key at the hidden prompt
+  hlm login \-\-with\-key < key.txt                     # or pipe it (scripts)
+  hlm whoami                                         # URL, profile, where the key came from
+  hlm logout
+
+Create the key in the app (Settings → API keys, kind cli) or with
+npx convex run apiKeys:create. hlm login checks it against the server, then stores
+it for that URL in the OS keychain: macOS Keychain, Windows Credential Manager or
+the Secret Service on Linux (GNOME Keyring, KWallet, KeePassXC). Without one (a
+server, Omarchy without a keyring daemon) it says so and keeps the key in
+credentials.json next to config.toml, readable only by you (mode 0600).
+HLM_CREDENTIAL_STORE=file or \-\-store file chooses the file on purpose.
+
+HLM_API_KEY, when set, wins over the stored key: give agents and CI their own key
+(kind agent) that way. The keychain keeps the key out of dotfiles, backups and shell
+history; it does not hide it from programs running as you.
+.RE
+.fi
+.SH COMPLETION
+hlm help completion
+.PP
+.nf
+.RS 4
+Shell completion (hlm completion <shell>)
+
+  bash         echo 'source <(hlm completion bash)' >> ~/.bashrc
+  zsh          hlm completion zsh > "${fpath[1]}/_hlm"     (or source <(hlm completion zsh) after compinit)
+  fish         hlm completion fish > ~/.config/fish/completions/hlm.fish
+  PowerShell   hlm completion powershell | Out\-String | Invoke\-Expression   (add it to $PROFILE)
+
+Completes commands, aliases from config.toml, options and their values, task
+numbers with their titles, labels, profiles and date words. Task numbers and
+labels come from one list_all call, cached for 60 seconds in the cache folder
+(~/.cache/hlm, ~/Library/Caches/hlm or %LOCALAPPDATA%\ehlm\eCache). Completion
+never prompts and prints nothing when it cannot reach the server.
+.RE
+.fi
+.SH EXAMPLES
+.nf
+.RS 4
+hlm login \-\-url https://<deployment>.convex.site
+hlm add Call the accountant \-\-due "fri 2pm" \-l home
+hlm list \-\-due\-before eow \-\-json
+hlm done 42
+hlm pair
+source <(hlm completion bash)
+.RE
+.fi
+.SH SEE ALSO
+docs/cli.md and docs/schemas/ in the Helm repository; hlm help dates | config | login | completion.

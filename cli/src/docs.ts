@@ -1,8 +1,9 @@
 // Renders docs/cli.md from the registry (npm run docs); a test checks the
 // committed file is current.
 import { ENVIRONMENT, EXIT_CODES } from "./help.js";
-import { GLOBAL_OPTIONS } from "./main.js";
+import { GLOBAL_OPTIONS } from "./globals.js";
 import { flatten } from "./registry/index.js";
+import { TOPICS } from "./topics.js";
 import type { CommandSpec, OptSpec } from "./registry/types.js";
 
 const usage = (path: string, spec: CommandSpec) =>
@@ -59,6 +60,18 @@ export function renderDocs(): string {
     "  ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{\"warning\":{…}}` lines.",
     "- `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`",
     "  (or the `--fields`); views with sections (Today, board) start each row with the section name.",
+    "- `hlm list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`) keep",
+    "  the `{\"result\": [...]}` shape with fewer tasks; like `--fields`, a documented narrowing.",
+    "- `--dry-run` on a command that changes something prints `{\"dryRun\":true,\"calls\":[{\"tool\",\"arguments\"}]}`",
+    "  ([schema](schemas/dry-run.schema.json)) with dates resolved, and sends nothing; reads still happen.",
+    "",
+    "## Human output",
+    "",
+    "Tables are aligned by display width; due days read as `today`, `tomorrow`, `yesterday` or",
+    "`Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,",
+    "`[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without",
+    "colors or cutting. `hlm board` shows its columns side by side on terminals 90 columns or wider.",
+    "On a terminal, `hlm note <ref>` and `hlm edit <ref>` without options open `$VISUAL`/`$EDITOR`.",
     "",
     "## Exit codes",
     "",
@@ -86,6 +99,7 @@ export function renderDocs(): string {
     "|---|---|",
     ...ENVIRONMENT.map(([name, meaning]) => `| \`${name}\` | ${escape(meaning)} |`),
     "",
+    ...Object.entries(TOPICS).flatMap(([name, text]) => [`## Topic: ${name}`, "", `\`hlm help ${name}\``, "", "```text", text.trimEnd(), "```", ""]),
     "## Command details",
     "",
   ];

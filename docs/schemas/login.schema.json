@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/login.schema.json",
+  "title": "Login",
+  "description": "hlm login: where the checked key was stored. Never contains the key.",
+  "type": "object",
+  "required": [
+    "url",
+    "store",
+    "location",
+    "profile",
+    "config",
+    "timezone"
+  ],
+  "properties": {
+    "url": {
+      "type": "string"
+    },
+    "store": {
+      "type": "string",
+      "enum": [
+        "keychain",
+        "file"
+      ]
+    },
+    "location": {
+      "type": "string",
+      "description": "The keychain's name or the credentials file"
+    },
+    "profile": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The profile the URL was saved under, or the profile in use"
+    },
+    "config": {
+      "type": "string",
+      "enum": [
+        "created",
+        "added",
+        "unchanged"
+      ],
+      "description": "What happened to config.toml"
+    },
+    "timezone": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The user's time zone, read with the key to check it"
+    }
+  }
+}

@@ -1,6 +1,8 @@
 // Task commands: verbs at the top level, one MCP tool each (see docs/cli.md).
 import { usageError } from "../core/exit.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
+import { applyDue } from "./dates.js";
+import { FILTER_OPTIONS, hasFilters, parseStatuses, taskFilter } from "./filters.js";
 import { eachRef, oneOrMany, tool, userTimezone } from "./ops.js";
 import { parseLink, parseRepeat, resolveRef } from "./parse.js";
 import type { CommandSpec, OptSpec, Opts, RunContext } from "./types.js";
@@ -9,7 +11,7 @@ const REF = { name: "ref", description: "Task: #42 or 42 (its number), now, or i
 const REFS = { name: "refs", description: "Tasks: #42 or 42, now, or ids", required: true, variadic: true };
 
 const SCHEDULE_OPTIONS: OptSpec[] = [
-  { flags: "--due <date>", description: "Due day: YYYY-MM-DD, today or tomorrow" },
+  { flags: "--due <when>", description: "Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (hlm help dates)" },
   { flags: "--time <HH:MM>", description: "Due time, 24h, in your time zone" },
   { flags: "--every <unit>", description: "Repeat every day, week, month or year", choices: ["day", "week", "month", "year"] },
   { flags: "--interval <n>", description: "Repeat interval (2 = every other)", kind: "int" },
@@ -75,14 +77,15 @@ export const taskCommands: CommandSpec[] = [
     tools: ["add_task"],
     fields: "task",
     examples: [
-      'hlm add Call the accountant --due tomorrow --time 14:00 -l home',
+      'hlm add Call the accountant --due "fri 2pm" -l home',
+      'hlm add Pay rent --due "1 nov" --dry-run',
       'hlm add "Review the plan" --time 09:00 --every week --on mon,thu',
       "hlm add Buy a present --no-due --json",
     ],
     run: async (ctx, args, opts) => {
       const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId() };
-      if (opts.due !== false) input.dueDate = (opts.due as string | undefined) ?? "today";
       copy(opts, input, { time: "dueTime", note: "note", status: "status", resumeNote: "resumeNote" });
+      if (opts.due !== false) await applyDue(ctx, input, (opts.due as string | undefined) ?? "today", opts);
       if ((opts.label as string[]).length) input.labels = opts.label;
       if ((opts.link as string[]).length) input.links = (opts.link as string[]).map(parseLink);
       const repeat = parseRepeat(opts as never);
@@ -95,20 +98,29 @@ export const taskCommands: CommandSpec[] = [
     name: "list",
     schema: "task-list.schema.json",
     aliases: ["ls"],
-    summary: "Open tasks, oldest due first (with --done also done ones)",
+    summary: "Open tasks, oldest due first (with --done also done ones); filters narrow the list",
     options: [
       { flags: "-l, --label <label>", description: "Only tasks with this label (repeatable: all must match)", kind: "list" },
       { flags: "--done", description: "Include done tasks" },
       { flags: "--archived", description: "Include archived tasks" },
+      ...FILTER_OPTIONS,
     ],
     tools: ["list_all"],
     fields: "task",
-    examples: ["hlm list -l home", "hlm list --done --json --fields ref,title,status"],
+    examples: [
+      "hlm list -l home --status todo,doing",
+      "hlm list --overdue",
+      'hlm list --due-before eow --search accountant --limit 20',
+      "hlm list --done --json --fields ref,title,status",
+    ],
     run: async (ctx, _args, opts) => {
-      const input: Record<string, unknown> = { includeDone: Boolean(opts.done), includeArchived: Boolean(opts.archived) };
+      const statuses = parseStatuses(opts.status);
+      const includeDone = Boolean(opts.done) || Boolean(statuses?.includes("done"));
+      const input: Record<string, unknown> = { includeDone, includeArchived: Boolean(opts.archived) };
       if ((opts.label as string[]).length) input.labels = opts.label;
-      const value = await tool<{ result: Task[] }>(ctx, "list_all", input);
-      return { value, view: { kind: "tasks", tasks: asList(value) } };
+      const [listed, filter] = await Promise.all([tool<{ result: Task[] }>(ctx, "list_all", input), taskFilter(ctx, opts)]);
+      const value = hasFilters(opts) ? { ...listed, result: filter(asList(listed)) } : listed;
+      return { value, view: { kind: "tasks", tasks: asList(value), empty: hasFilters(opts) ? "no tasks match" : undefined } };
     },
   },
   {
@@ -122,7 +134,7 @@ export const taskCommands: CommandSpec[] = [
     run: async (ctx, _args, opts) => {
       const value = await tool<Board>(ctx, "board", opts.doneLimit === undefined ? {} : { doneLimit: opts.doneLimit });
       const section = (name: keyof Board) => ({ name, label: name.toUpperCase(), tasks: value[name], count: true, empty: "empty" });
-      return { value, view: { kind: "sections", sections: [section("todo"), section("doing"), section("done")] } };
+      return { value, view: { kind: "sections", columns: true, sections: [section("todo"), section("doing"), section("done")] } };
     },
   },
   {
@@ -142,7 +154,7 @@ export const taskCommands: CommandSpec[] = [
   {
     name: "edit",
     schema: "task.schema.json",
-    summary: "Change a task's fields; --clear-* removes one",
+    summary: "Change a task's fields; --clear-* removes one; on a terminal without options, edit title and note in $EDITOR",
     args: [REF],
     options: [
       { flags: "--title <text>", description: "New title" },
@@ -163,10 +175,11 @@ export const taskCommands: CommandSpec[] = [
     ],
     tools: ["update_task"],
     fields: "task",
-    examples: ["hlm edit 42 --title \"Call the bank\" --due tomorrow --time 10:00", "hlm edit 42 --add-label work --rm-label home", "hlm edit 42 --clear-repeat"],
+    examples: ['hlm edit 42 --title "Call the bank" --due "tomorrow 10:00"', "hlm edit 42 --add-label work --rm-label home", "hlm edit 42 --clear-repeat", "hlm edit 42"],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const input = await editArgs(ctx, taskId, opts);
+      if (Object.keys(input).length === 0 && ctx.interactive && ctx.format === "human") return editInEditor(ctx, taskId);
       if (Object.keys(input).length === 0) throw usageError("Nothing to change: give at least one option", { hint: "hlm edit --help" });
       const task = await tool<Task>(ctx, "update_task", { taskId, ...input, clientId: ctx.clientId() });
       return { value: task, view: { kind: "task", verb: "Updated", task } };
@@ -175,7 +188,7 @@ export const taskCommands: CommandSpec[] = [
   {
     name: "note",
     schema: ["task-detail.schema.json", "task.schema.json"],
-    summary: "Print a task's note, or append text to it",
+    summary: "Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it",
     args: [REF, { name: "text", description: "Text to append as a new line", variadic: true }],
     options: [{ flags: "--clear", description: "Remove the note" }],
     tools: ["get_task", "update_task"],
@@ -186,6 +199,7 @@ export const taskCommands: CommandSpec[] = [
       const text = ((args.text as string[] | undefined) ?? []).join(" ").trim();
       if (!text && !opts.clear) {
         const value = await tool<Detail>(ctx, "get_task", { taskId });
+        if (ctx.interactive && ctx.format === "human") return editNote(ctx, taskId, value.task);
         return { value, view: { kind: "text", text: value.task.note ?? "(no note)" } };
       }
       if (text && opts.clear) throw usageError("Give text to append or --clear, not both");
@@ -201,19 +215,22 @@ export const taskCommands: CommandSpec[] = [
   {
     name: "move",
     schema: "task.schema.json",
-    summary: "Move a task to another day (none removes the date)",
-    args: [REF, { name: "date", description: "YYYY-MM-DD, today, tomorrow or none", required: true }],
+    summary: "Move a task to another day, optionally with a time (none removes the date)",
+    args: [REF, { name: "date", description: "When: tomorrow, fri 14:00, next mon, 2026-10-23 … or none (hlm help dates)", required: true }],
     options: [
       { flags: "--time <HH:MM>", description: "New due time" },
       { flags: "--clear-time", description: "Remove the due time" },
     ],
     tools: ["reschedule_task"],
     fields: "task",
-    examples: ["hlm move 42 tomorrow --time 08:00", "hlm move 42 none"],
+    examples: ["hlm move 42 tomorrow --time 08:00", 'hlm move 42 "next mon 9am"', "hlm move 42 none"],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
-      const date = args.date as string;
-      const input: Record<string, unknown> = { taskId, dueDate: date === "none" ? null : date, clientId: ctx.clientId() };
+      const date = (args.date as string).trim();
+      const input: Record<string, unknown> = { taskId };
+      if (date.toLowerCase() === "none") input.dueDate = null;
+      else await applyDue(ctx, input, date, opts);
+      input.clientId = ctx.clientId();
       if (opts.time !== undefined) input.dueTime = opts.time;
       if (opts.clearTime) input.dueTime = null;
       const task = await tool<Task>(ctx, "reschedule_task", input);
@@ -318,7 +335,8 @@ function copy(opts: Opts, input: Record<string, unknown>, names: Record<string, 
 
 async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Record<string, unknown>> {
   const input: Record<string, unknown> = {};
-  copy(opts, input, { title: "title", note: "note", due: "dueDate", time: "dueTime", resumeNote: "resumeNote" });
+  copy(opts, input, { title: "title", note: "note", time: "dueTime", resumeNote: "resumeNote" });
+  if (opts.due !== undefined) await applyDue(ctx, input, opts.due as string, opts);
   const clears: Record<string, string> = { clearNote: "note", clearDue: "dueDate", clearTime: "dueTime", clearRepeat: "repeat", clearResumeNote: "resumeNote" };
   for (const [flag, field] of Object.entries(clears)) {
     if (!opts[flag]) continue;
@@ -349,3 +367,28 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
 }
 
 const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
+/** `hlm note <ref>` on a terminal: the note in the editor; an unchanged note sends nothing. */
+async function editNote(ctx: RunContext, taskId: string, task: Task) {
+  const before = task.note ?? "";
+  const after = ctx.edit(before ? `${before}\n` : "", `hlm-note-${task.ref ?? "task"}.md`).replace(/\s+$/, "");
+  if (after === before) return { value: task, view: { kind: "text" as const, text: "Note unchanged" } };
+  const updated = await tool<Task>(ctx, "update_task", { taskId, note: after === "" ? null : after, clientId: ctx.clientId() });
+  return { value: updated, view: { kind: "task" as const, verb: "Note updated", task: updated } };
+}
+
+/** `hlm edit <ref>` on a terminal without options: first line the title, after a blank line the note. */
+async function editInEditor(ctx: RunContext, taskId: string) {
+  const { task } = await tool<Detail>(ctx, "get_task", { taskId });
+  const text = ctx.edit(`${task.title}\n\n${task.note ? `${task.note}\n` : ""}`, `hlm-task-${task.ref ?? "task"}.md`);
+  const [first = "", ...rest] = text.split(/\r?\n/);
+  const title = first.trim();
+  if (!title) throw usageError("The first line (the title) is empty; nothing was changed");
+  const note = rest.join("\n").replace(/^(\s*\n)+/, "").replace(/\s+$/, "");
+  const changes: Record<string, unknown> = {};
+  if (title !== task.title) changes.title = title;
+  if (note !== (task.note ?? "")) changes.note = note === "" ? null : note;
+  if (Object.keys(changes).length === 0) return { value: task, view: { kind: "text" as const, text: "No changes" } };
+  const updated = await tool<Task>(ctx, "update_task", { taskId, ...changes, clientId: ctx.clientId() });
+  return { value: updated, view: { kind: "task" as const, verb: "Updated", task: updated } };
+}
