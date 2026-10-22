@@ -14,6 +14,7 @@
   "scripts": {
     "backend:fetch": "node scripts/fetch-local-backend.mjs",
     "backend:start": "node scripts/local-backend.mjs",
+    "app-token": "node scripts/app-token.mjs",
     "typecheck": "tsc --noEmit -p . && tsc --noEmit -p convex",
     "test": "vitest run"
   },
