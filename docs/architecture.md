@@ -53,5 +53,6 @@ helm CLI ──(MCP tools/call, API key)─────────────�
   A missing, wrong or revoked key gets HTTP 401.
 - **App:** a custom ES256 JWT. The deployment trusts the public key given in `HELM_JWKS`
   (a JWKS `data:` URI) for issuer `HELM_JWT_ISSUER`, audience `helm`; `userId` is the token
-  identifier `<issuer>|<subject>`. How the phone obtains a token (pairing) is part of the
-  Android step. `scripts/jwt.mjs` creates a key pair and tokens for local use and tests.
+  identifier `<issuer>|<subject>`. `scripts/jwt.mjs` creates a key pair and tokens for tests;
+  `scripts/app-token.mjs` (`npm run app-token`) issues the token that is pasted into the
+  Android app. Pairing with a QR code is a later idea, see [pairing.md](pairing.md).
