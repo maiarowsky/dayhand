@@ -37,7 +37,7 @@ import dev.helm.planner.ui.theme.HelmFont
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
-/** Licences of what the app ships: Helm itself and every bundled font with its full licence text. */
+/** Licenses of what the app ships: Helm itself and every bundled font with its full license text. */
 @Composable
 fun LicensesScreen(onBack: () -> Unit) {
     Column(Modifier.fillMaxSize().background(palette.background).testTag("licenses")) {

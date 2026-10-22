@@ -43,7 +43,7 @@ private enum class SettingsPage { MAIN, COLORS, FONT, LICENSES }
 
 /**
  * Settings with what only the system knows: permissions, the per-app language, the save dialog; and its sub-pages
- * (colours, font, licences), which change the appearance at once.
+ * (colors, font, licenses), which change the appearance at once.
  */
 @Composable
 fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Unit) {

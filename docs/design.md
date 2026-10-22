@@ -47,7 +47,7 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 | `MonoLabel` | `SectionLabel` | Also a heading for screen readers. |
 | `Pill` | `Pill` | |
 | `Segmented` | `Segmented` | |
-| filter choice (pills) | `HelmChip` | Soft-accent pill when selected, 48 dp. |
+| filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (reminders). |
 | `SettingsSwitchRow` | `SwitchRow` | Same switch colours, one toggle for screen readers. |
 | `fieldColors()` + `OutlinedTextField`, 14 dp | `HelmTextField`, `helmFieldColors()` | |
 | `SettingsPage` header (back + 22 sp title) | `ScreenHeader` | |
@@ -57,14 +57,17 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 | `AppearancePreview`, palette swatches, font sample "Aa ąę 0O il1" | `AppearancePreview`, `Swatches`, `FontOption` | Preview is a small Today screen in both chosen palettes. |
 | Connection notice, `successSoft` result card | `StatusBanner(tone)` | Soft background per tone, text colour kept for contrast, read out when it changes. |
 | Empty lists | `EmptyState` | Icon tile, sentence, primary action. |
-| `MessageDialog` (`AlertDialog` on `surface`) | `HelmDialog` | |
+| `MessageDialog` (`AlertDialog` on `surface`) | `HelmDialog` | Date and time pickers use the same card colour and text actions. |
+| `ActionSheet` / long-press menu | `HelmMenu` | Dropdown on `surfaceRaised` with option corners. |
+| `BottomSheet` | Quick add `ModalBottomSheet` | `surface`, 28 dp top corners, border-coloured handle. |
+| Notification accent | `setColor(accent)` | The chosen palette's accent for the shade's light or dark look. |
 | Spacing: 20 dp screen margin, 18 dp card padding, 12 dp between groups, 60 dp list rows | `HelmDimens` | |
 
-## Fonts and licences
+## Fonts and licenses
 
 Every bundled font is an unmodified file from Mussh under the SIL Open Font License 1.1, which allows bundling and
 redistribution with software, including open source and commercial software, as long as the font is not sold on its
-own and the licence goes with it. The licence texts are in `android/app/src/main/assets/licenses/` and shown in
+own and the license goes with it. The license texts are in `android/app/src/main/assets/licenses/` and shown in
 Settings → About → Open source licenses.
 
 | Font | Version | Licence file |

@@ -7,7 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import dev.helm.planner.R
 
 /**
- * A font shipped inside the app, never downloaded: its own name, the Compose family and the licence file in
+ * A font shipped inside the app, never downloaded: its own name, the Compose family and the license file in
  * `assets/licenses` (all SIL Open Font License 1.1, unmodified files from Mussh).
  */
 class BundledFont(val name: String, val version: String, val family: FontFamily, val license: String)
@@ -49,7 +49,7 @@ enum class HelmFont(val id: String, val bundled: BundledFont?, val monospace: Bo
 
         fun byId(id: String?): HelmFont = entries.firstOrNull { it.id == id } ?: Default
 
-        /** Every bundled font, for the licences screen. */
+        /** Every bundled font, for the licenses screen. */
         val bundledFonts: List<BundledFont> get() = entries.mapNotNull { it.bundled }
     }
 }
