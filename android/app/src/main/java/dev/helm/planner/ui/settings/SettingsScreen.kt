@@ -25,9 +25,6 @@ import dev.helm.planner.export.ExportFormat
 import dev.helm.planner.settings.AppLanguage
 
 object SettingsTags {
-    const val URL = "settings_url"
-    const val TOKEN = "settings_token"
-    const val SAVE = "settings_save"
     const val OFFLINE = "settings_offline"
     const val CONNECTION = "settings_connection"
     const val NOTIFICATIONS = "settings_notifications"
@@ -63,7 +60,8 @@ data class SettingsUiState(
 )
 
 interface SettingsActions {
-    fun saveBackend(url: String, token: String?) {}
+    fun openConnect() {}
+    fun disconnect() {}
     fun setOfflineMode(enabled: Boolean) {}
     fun setSummaryTime(time: String) {}
     fun setReminderMinutes(minutes: List<Int>) {}

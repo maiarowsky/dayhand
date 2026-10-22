@@ -39,7 +39,7 @@ private const val LICENSE_URL = "https://www.apache.org/licenses/LICENSE-2.0"
 
 /** Settings with what only the system knows: permissions, the per-app language, the save dialog. */
 @Composable
-fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Unit) {
+fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Unit, onConnect: () -> Unit) {
     BackHandler(onBack = onBack)
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -84,7 +84,8 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
 
     val actions = remember(viewModel) {
         object : SettingsActions {
-            override fun saveBackend(url: String, token: String?) = viewModel.saveBackend(url, token)
+            override fun openConnect() = onConnect()
+            override fun disconnect() = viewModel.disconnect()
             override fun setOfflineMode(enabled: Boolean) = viewModel.setOfflineMode(enabled)
             override fun setSummaryTime(time: String) = viewModel.setSummaryTime(time)
             override fun setReminderMinutes(minutes: List<Int>) = viewModel.setReminderMinutes(minutes)

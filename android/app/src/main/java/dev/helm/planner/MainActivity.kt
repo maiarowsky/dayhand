@@ -1,6 +1,7 @@
 package dev.helm.planner
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -29,6 +30,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.helm.planner.auth.PairingInput
+import dev.helm.planner.auth.PairingLink
+import dev.helm.planner.ui.connect.ConnectRoute
 import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardViewModel
@@ -47,15 +51,27 @@ import dev.helm.planner.ui.trash.TrashScreen
 import dev.helm.planner.ui.trash.TrashViewModel
 
 class MainActivity : ComponentActivity() {
+    /** A `helm://pair` link (QR code from `hlm pair`) waiting to fill in the Connect screen. */
+    private var pairingLink by mutableStateOf<PairingLink?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as HelmApplication).container
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
+        if (savedInstanceState == null) pairingLink = linkOf(intent)
         setContent {
-            HelmTheme { HelmRoot(container, versionName) }
+            HelmTheme { HelmRoot(container, versionName, pairingLink, onLinkUsed = { pairingLink = null }) }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        linkOf(intent)?.let { pairingLink = it }
+    }
+
+    private fun linkOf(intent: Intent?): PairingLink? =
+        intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString?.let(PairingInput::parseLink)
 }
 
 /** Screens; a task's details are `task/<localId>`. Today and the board are the two main views. */
@@ -64,6 +80,10 @@ private object Route {
     const val BOARD = "board"
     const val TRASH = "trash"
     const val SETTINGS = "settings"
+    const val CONNECT = "connect"
+
+    /** Connect shown by itself at the first start without a server (with "Not now"). */
+    const val FIRST_CONNECT = "first-connect"
     private const val TASK = "task/"
 
     fun task(localId: String) = TASK + localId
@@ -71,7 +91,12 @@ private object Route {
 }
 
 @Composable
-private fun HelmRoot(container: AppContainer, versionName: String) {
+private fun HelmRoot(
+    container: AppContainer,
+    versionName: String,
+    pairingLink: PairingLink?,
+    onLinkUsed: () -> Unit,
+) {
     // A back stack of routes; Today is always at the bottom, so Back from the board returns to it.
     var stack by rememberSaveable { mutableStateOf(listOf(Route.TODAY)) }
     val route = stack.last()
@@ -80,6 +105,18 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
     val selectTab: (String) -> Unit = { tab -> stack = if (tab == Route.TODAY) listOf(Route.TODAY) else listOf(Route.TODAY, tab) }
     BackHandler(enabled = stack.size > 1, onBack = back)
     val tabs: @Composable () -> Unit = { MainTabs(route, selectTab) }
+    var firstRunChecked by rememberSaveable { mutableStateOf(false) }
+    // At first start without a server, Connect comes first (once per launch at most).
+    LaunchedEffect(Unit) {
+        if (firstRunChecked) return@LaunchedEffect
+        firstRunChecked = true
+        val settings = container.settings.current()
+        if (stack == listOf(Route.TODAY) && settings.backend == null && !settings.connectPromptDone) open(Route.FIRST_CONNECT)
+    }
+    // A pairing link always opens Connect, filled in.
+    LaunchedEffect(pairingLink) {
+        if (pairingLink != null && route != Route.CONNECT) open(Route.CONNECT)
+    }
     val context = LocalContext.current
     // Asked in context: the first task with a time is the first one that can ring.
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -151,7 +188,21 @@ private fun HelmRoot(container: AppContainer, versionName: String) {
             val state by viewModel.state.collectAsStateWithLifecycle()
             state?.let { TrashScreen(it, actions) }
         }
-        route == Route.SETTINGS -> SettingsRoute(container, versionName, onBack = back)
+        route == Route.SETTINGS -> SettingsRoute(
+            container,
+            versionName,
+            onBack = back,
+            onConnect = { open(Route.CONNECT) },
+        )
+        route == Route.CONNECT || route == Route.FIRST_CONNECT -> ConnectRoute(
+            container,
+            link = pairingLink,
+            firstRun = route == Route.FIRST_CONNECT,
+            onDone = {
+                onLinkUsed()
+                stack = listOf(Route.TODAY)
+            },
+        )
     }
 }
 

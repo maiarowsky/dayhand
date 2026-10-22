@@ -6,6 +6,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import dev.helm.planner.auth.AppTokens
+import dev.helm.planner.auth.DeviceTokens
+import dev.helm.planner.auth.PairingApi
+import dev.helm.planner.auth.StaticTokens
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.HelmDatabase
 import dev.helm.planner.data.remote.ConvexTaskFeed
@@ -19,6 +23,7 @@ import dev.helm.planner.notify.AndroidNotifier
 import dev.helm.planner.notify.DataStoreAlarmState
 import dev.helm.planner.notify.ReminderEngine
 import dev.helm.planner.settings.BackendConfig
+import dev.helm.planner.settings.Credential
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
@@ -72,7 +77,7 @@ class AppContainer(context: Context) {
     val historySync = TaskHistorySync(
         runner = {
             val current = settings.current()
-            current.backend?.takeUnless { current.offlineMode }?.let { HttpTaskRemote(it.url, it.token) }
+            current.backend?.takeUnless { current.offlineMode }?.let { HttpTaskRemote(it.url, tokensFor(it)) }
         },
         save = repository::saveHistory,
     )
@@ -88,16 +93,39 @@ class AppContainer(context: Context) {
         notifier = notifier,
     )
 
+    val pairingApi = PairingApi()
+    private var tokenCache: Pair<BackendConfig, AppTokens>? = null
+
     /** The plan export goes over plain HTTP, like the outbox. */
-    fun exporter(backend: BackendConfig) = PlanExporter(HttpTaskRemote(backend.url, backend.token))
+    fun exporter(backend: BackendConfig) = PlanExporter(HttpTaskRemote(backend.url, tokensFor(backend)))
 
     /** The outbox talks plain HTTP: clear timeouts and no WebSocket in the background. */
-    fun mutationSender(backend: BackendConfig): MutationSender = HttpTaskRemote(backend.url, backend.token)
+    fun mutationSender(backend: BackendConfig): MutationSender = HttpTaskRemote(backend.url, tokensFor(backend))
+
+    /**
+     * One token source per sign-in, shared by the feed, the outbox and the export, so they reuse
+     * one app JWT. A revoked device is forgotten, which shows the Connect prompt again.
+     */
+    @Synchronized
+    fun tokensFor(backend: BackendConfig): AppTokens {
+        tokenCache?.let { (config, tokens) -> if (config == backend) return tokens }
+        val tokens = when (val credential = backend.credential) {
+            is Credential.AppToken -> StaticTokens(credential.token)
+            is Credential.Device -> DeviceTokens(
+                serverUrl = credential.serverUrl,
+                deviceToken = credential.deviceToken,
+                api = pairingApi,
+                onRevoked = { settings.forgetDevice(revoked = true) },
+            )
+        }
+        tokenCache = backend to tokens
+        return tokens
+    }
 
     /** Live Convex subscription; polling over HTTP if the native client cannot load on this device. */
     private fun feedFor(backend: BackendConfig, scope: CoroutineScope): TaskFeed = try {
-        ConvexTaskFeed(backend.url, backend.token, scope)
+        ConvexTaskFeed(backend.url, tokensFor(backend), scope)
     } catch (_: LinkageError) {
-        HttpTaskRemote(backend.url, backend.token)
+        HttpTaskRemote(backend.url, tokensFor(backend))
     }
 }

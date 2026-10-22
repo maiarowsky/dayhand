@@ -45,6 +45,7 @@ Without a command, `hlm` shows Today.
 | `hlm login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
 | `hlm logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
 | `hlm whoami` | `initialize`, `get_settings` | [whoami](schemas/whoami.schema.json) | Which deployment, profile, key source and config file hlm uses, checked against the server |
+| `hlm prime` | `list_today` | [today](schemas/today.schema.json) | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...> [options]` | `get_settings` | [when](schemas/when.schema.json) | Show the day (and time) a date phrase means in your time zone, without changing anything |
 | `hlm completion <shell>` | - | [completion](schemas/completion.schema.json) | Print the shell completion script for bash, zsh, fish or powershell (hlm help completion) |
 
@@ -804,6 +805,21 @@ hlm whoami
 ```sh
 hlm whoami
 hlm whoami --json
+```
+
+### hlm prime
+
+Context for an AI agent: Today and how to use hlm (for a SessionStart hook)
+
+Prints plain text without colors in every format except --json, which prints list_today like hlm today --json. In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"hlm prime"}]}]}}.
+
+```
+hlm prime
+```
+
+```sh
+hlm prime
+hlm prime --json
 ```
 
 ### hlm when

@@ -8,10 +8,11 @@ change must reach the server once the network is back. The task is then restored
 Trash screen. Finally an agent edit must show up in the task's history marked "Agent". Every
 step is checked on the server through MCP, as the agent sees it.
 
-Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend,
-an app token in a file and HELM_URL / HELM_API_KEY of the same user in the environment.
+Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend
+and HELM_URL / HELM_API_KEY of the app user in the environment; the app is paired with a code
+from `helm pair`.
 
-  python3 android/scripts/e2e-board-details.py --apk app-debug.apk --token-file token.txt --shots DIR
+  python3 android/scripts/e2e-board-details.py --apk app-debug.apk --shots DIR
 """
 import argparse
 import importlib.util
@@ -112,35 +113,6 @@ def find_scrolling(text=None, desc=None, up=True):
     raise RuntimeError(f"not found after scrolling: text={text!r} desc={desc!r}")
 
 
-def configure(url, token):
-    """As in e2e-offline.py, but retries the first tap, which a slow emulator can drop right after start."""
-    for _ in range(8):
-        tap(find(desc="Settings", timeout=60))
-        try:
-            base.find_scrolling(text="Backend address")
-            break
-        except RuntimeError:
-            continue
-    tap(base.find_scrolling(text="Backend address"))
-    time.sleep(1)
-    type_text(url)
-    # Close the keyboard first: it moves the long Settings screen under the next tap.
-    shell("input", "keyevent", "KEYCODE_BACK")
-    time.sleep(1)
-    tap(base.find_scrolling(text="App token"))
-    time.sleep(1)
-    type_text(token)
-    shell("input", "keyevent", "KEYCODE_BACK")
-    time.sleep(1)
-    tap(base.find_scrolling(text="Save"))
-    find(text="Saved")
-    tap(find(desc="Back"))
-    log("backend address and token saved in Settings")
-    time.sleep(10)
-    if any("refused the token" in n.get("text", "") for n in base.ui_nodes()):
-        raise RuntimeError("the server refused the token (typed wrong?)")
-
-
 def fully_visible(text):
     """The card with [text], scrolled clear of the bottom bar and the add button."""
     for _ in range(6):
@@ -163,11 +135,9 @@ def drag(source, target):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True)
-    parser.add_argument("--token-file", required=True)
-    parser.add_argument("--url", default="http://10.0.2.2:3210")
+    parser.add_argument("--server-url", default="http://10.0.2.2:3211", help="HTTP actions URL as the emulator sees it")
     parser.add_argument("--shots", help="directory for screenshots")
     args = parser.parse_args()
-    token = open(args.token_file).read().strip()
     stamp = time.strftime("%H%M%S")
     title = f"E2E board {stamp}"
     renamed = f"E2E renamed {stamp}"
@@ -175,18 +145,9 @@ def main():
     set_network(True)
     adb("install", "-r", args.apk)
     shell("pm", "clear", PACKAGE)
-    # A start racing the clear can be dropped; start again until the app is on screen.
-    for attempt in range(3):
-        shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
-        try:
-            find(desc="Settings", timeout=40)
-            break
-        except RuntimeError:
-            if attempt == 2:
-                raise
+    base.configure(args.server_url)
     # A first start (keystore key, database) on a loaded emulator drops taps for a while.
-    time.sleep(20)
-    configure(args.url, token)
+    time.sleep(10)
 
     task = mcp("add_task", title=title, dueDate="today", labels=["Helm"])
     task_id = task["id"]

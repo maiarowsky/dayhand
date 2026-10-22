@@ -66,9 +66,9 @@ class SettingsViewModel(
         SettingsData(settings, connection, pending, exportStatus)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
-    fun saveBackend(url: String, token: String?) = launch {
-        container.settings.saveBackend(url, token)
-        container.outboxScheduler.restart()
+    /** Forgets the sign-in on this phone; tasks and waiting changes stay for the next pairing. */
+    fun disconnect() = launch {
+        container.settings.forgetDevice(revoked = false)
     }
 
     fun setOfflineMode(enabled: Boolean) = launch {

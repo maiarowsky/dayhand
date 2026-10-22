@@ -1,6 +1,6 @@
 {
   "name": "hlm",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "hlm: the Helm command line client for people and agents",
   "license": "Apache-2.0",
@@ -8,8 +8,12 @@
   "bin": {
     "hlm": "dist/bin/hlm.js"
   },
+  "man": [
+    "./man/hlm.1"
+  ],
   "files": [
-    "dist"
+    "dist",
+    "man"
   ],
   "engines": {
     "node": ">=22.12"
@@ -19,7 +23,8 @@
     "typecheck": "tsc --noEmit -p .",
     "docs": "node scripts/gen-docs.mjs",
     "test": "npm run build && vitest run",
-    "test:unit": "vitest run --config vitest.unit.config.ts"
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "prepack": "npm run build && node scripts/pack-files.mjs"
   },
   "dependencies": {
     "@napi-rs/keyring": "2.1.1",
