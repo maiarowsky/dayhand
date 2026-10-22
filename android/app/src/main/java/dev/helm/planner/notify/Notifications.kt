@@ -8,16 +8,19 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import dev.helm.planner.MainActivity
 import dev.helm.planner.R
 import dev.helm.planner.domain.MorningSummary
 import dev.helm.planner.domain.Reminder
+import dev.helm.planner.ui.theme.AppearanceStore
 
 /**
  * Reminders and the morning summary as notifications, in two channels so each can be turned
@@ -46,6 +49,7 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
         for (reminder in reminders) {
             val notification = NotificationCompat.Builder(context, CHANNEL_REMINDERS)
                 .setSmallIcon(R.drawable.ic_stat_helm)
+                .setColor(accent())
                 .setContentTitle(reminder.title)
                 .setContentText(reminderText(context.resources, reminder))
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -66,6 +70,7 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
         val text = summary.startWith?.let { context.getString(R.string.summary_start_with, it) }
         val notification = NotificationCompat.Builder(context, CHANNEL_SUMMARY)
             .setSmallIcon(R.drawable.ic_stat_helm)
+            .setColor(accent())
             .setContentTitle(summaryTitle(context.resources, summary))
             .apply { if (text != null) setContentText(text).setStyle(NotificationCompat.BigTextStyle().bigText(text)) }
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -73,6 +78,16 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
             .setContentIntent(openApp())
             .build()
         notifySafely { manager.notify(ID_SUMMARY, notification) }
+    }
+
+    /**
+     * The icon tint: the accent of the chosen palette for the shade's own light or dark look (the system draws the
+     * shade by its mode, not Helm's), so it keeps its contrast there.
+     */
+    private fun accent(): Int {
+        val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        val appearance = AppearanceStore(context).appearance.value
+        return (if (night) appearance.darkPalette else appearance.lightPalette).accent.toArgb()
     }
 
     fun cancelReminder(taskLocalId: String) = manager.cancel(taskLocalId, ID_REMINDER)
