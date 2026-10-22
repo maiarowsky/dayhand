@@ -1,0 +1,49 @@
+# Publishes hlm to npm with trusted publishing (OIDC, no npm token) and
+# provenance. Does nothing until the captain enables it (docs/release.md):
+# the repository variable HLM_PUBLISH_ENABLED must be "true", the job runs in
+# the "npm" environment, and scripts/check-release.mjs refuses a private
+# package, a tag that does not match package.json, or a missing repository URL.
+name: Publish hlm to npm
+
+on:
+  push:
+    tags: ["hlm-v*"]
+  # A tag made with the default GITHUB_TOKEN starts no workflow: run this by
+  # hand on that tag (Run workflow, "Use workflow from": the tag).
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: vars.HLM_PUBLISH_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/hlm-v')
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # trusted publishing and provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Check the package can be published from this tag
+        working-directory: cli
+        run: node scripts/check-release.mjs "$GITHUB_REF_NAME" "$(npm --version)"
+      - name: Install (lockfiles only, no install scripts)
+        run: |
+          (cd backend && npm ci --ignore-scripts)
+          (cd cli && npm ci --ignore-scripts)
+      - name: Test against a local backend
+        working-directory: cli
+        run: npm test
+      - name: Publish
+        working-directory: cli
+        run: npm publish --provenance --access public

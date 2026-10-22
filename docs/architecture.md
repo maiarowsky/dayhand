@@ -78,8 +78,9 @@ helm CLI ──(API key)──> /devices/* ──────────┘
   devices; a revoked device gets no new JWTs. Protocol: [pairing.md](pairing.md); deployment
   and key migration: [deploy.md](deploy.md).
 - **Tokens by hand:** `scripts/jwt.mjs` creates a key pair and tokens for tests;
-  `scripts/app-token.mjs` (`npm run app-token`) signs a long-lived token from a key file to
-  paste into the Android app. Pairing replaces this; the script stays for local development.
+  `scripts/app-token.mjs` (`npm run app-token`) signs a long-lived token from a key file for
+  scripts and local development. The Android app pairs instead (version 0.2 took such a
+  token pasted, and keeps one stored until the phone is paired).
 
 ## Reminders
 

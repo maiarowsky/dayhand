@@ -7,10 +7,10 @@ A second round does the same with a force-stopped app, which Android lets run ag
 after it is opened.
 
 Requirements: a running emulator (adb), the debug APK, the local backend
-(npm run backend:start), an app token in a file (npm run app-token > file) and, in the
-environment, HELM_URL and HELM_API_KEY for the CLI of the same user.
+(npm run backend:start) and, in the environment, HELM_URL and HELM_API_KEY for the CLI of the
+app user (`https://helm.local|me`). The app is paired with a code from `helm pair`.
 
-  python3 android/scripts/e2e-offline.py --apk app-debug.apk --token-file token.txt --shots DIR
+  python3 android/scripts/e2e-offline.py --apk app-debug.apk --shots DIR
 """
 import argparse
 import json
@@ -19,6 +19,7 @@ import re
 import subprocess
 import sys
 import time
+import urllib.parse
 import xml.etree.ElementTree as ET
 
 PACKAGE = "dev.helm.planner"
@@ -128,41 +129,46 @@ def app_pid():
     return shell("pidof", PACKAGE, check=False).strip()
 
 
-def configure(url, token):
-    tap(find(desc="Settings"))
-    tap(find_scrolling(text="Backend address"))
+def pairing_code():
+    """A fresh one-time code from the CLI (POST /devices/pairing-code)."""
+    return json.loads(helm_cli("pair", "--json"))["code"]
+
+
+def open_connect(server_url):
+    """Opens Connect through a pairing link that carries only the server address."""
+    link = "helm://pair?url=" + urllib.parse.quote(server_url, safe="")
+    shell("am", "start", "-a", "android.intent.action.VIEW", "-d", f"'{link}'", PACKAGE)
+    # A cold start right after installing can take a while on a loaded emulator.
+    find(text="Pairing code", timeout=60)
+
+
+def configure(server_url, shots=None):
+    """Pairs the app: the address from a link, the code typed by hand, then Connect."""
+    open_connect(server_url)
+    tap(find(text="Pairing code"))
     time.sleep(1)
-    type_text(url)
-    # Close the keyboard first: it moves the long Settings screen under the next tap.
+    type_text(pairing_code().lower().replace("-", ""))
     shell("input", "keyevent", "KEYCODE_BACK")
     time.sleep(1)
-    tap(find_scrolling(text="App token"))
-    time.sleep(1)
-    type_text(token)
-    shell("input", "keyevent", "KEYCODE_BACK")
-    time.sleep(1)
-    tap(find_scrolling(text="Save"))
-    find(text="Saved")
-    tap(find(desc="Back"))
-    log("backend address and token saved in Settings")
+    screenshot(shots, "connect-filled.png")
+    tap(find_button("Connect"))
+    find(desc="Add task", timeout=30)
+    log(f"paired with {server_url}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True)
-    parser.add_argument("--token-file", required=True)
-    parser.add_argument("--url", default="http://10.0.2.2:3210")
+    parser.add_argument("--server-url", default="http://10.0.2.2:3211", help="HTTP actions URL as the emulator sees it")
     parser.add_argument("--shots", help="directory for screenshots")
     args = parser.parse_args()
-    token = open(args.token_file).read().strip()
     stamp = time.strftime("%H%M%S")
     online, offline, stopped = f"E2E online {stamp}", f"E2E offline {stamp}", f"E2E force-stopped {stamp}"
 
     set_network(True)
     adb("install", "-r", args.apk)
     shell("pm", "clear", PACKAGE)
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
-    configure(args.url, token)
+    configure(args.server_url)
 
     add_task(online)
     if not wait_on_server({online}, 60):

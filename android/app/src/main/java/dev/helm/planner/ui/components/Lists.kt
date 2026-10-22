@@ -133,6 +133,9 @@ fun HelmDialog(
     onConfirm: () -> Unit,
     dismiss: String? = null,
     confirmEnabled: Boolean = true,
+    /** The danger colour for a confirm that removes or disconnects something. */
+    destructive: Boolean = false,
+    confirmTag: String? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
     val p = palette
@@ -143,7 +146,15 @@ fun HelmDialog(
         textContentColor = p.textMuted,
         title = { Text(title, style = helmType.title) },
         text = content,
-        confirmButton = { TextAction(confirm, onConfirm, enabled = confirmEnabled) },
+        confirmButton = {
+            TextAction(
+                confirm,
+                onConfirm,
+                enabled = confirmEnabled,
+                color = if (destructive) p.danger else p.accent,
+                modifier = confirmTag?.let { Modifier.testTag(it) } ?: Modifier,
+            )
+        },
         dismissButton = dismiss?.let { { TextAction(it, onDismiss, color = p.textMuted) } },
     )
 }

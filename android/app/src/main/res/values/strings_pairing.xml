@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">Connect to server</string>
+    <string name="connect_intro">On your computer run hlm pair (or npx helm pair) and type the code it shows. The code works once, for 10 minutes.</string>
+    <string name="connect_address">Server address</string>
+    <string name="connect_address_hint">The HTTP actions address, like https://name.convex.site</string>
+    <string name="connect_code">Pairing code</string>
+    <string name="connect_code_hint">12 letters and digits, like ABCD-EFGH-JKMN</string>
+    <string name="connect_button">Connect</string>
+    <string name="connect_working">Connecting…</string>
+    <string name="connect_skip">Not now, use Helm offline</string>
+    <string name="connect_done">Connected. Syncing your tasks…</string>
+    <string name="connect_error_address">Enter the server address, starting with https://</string>
+    <string name="connect_error_code">A code has 12 letters and digits, like ABCD-EFGH-JKMN.</string>
+    <string name="connect_error_invalid">This code is wrong, already used or expired. Run hlm pair for a new one.</string>
+    <string name="connect_error_rate_limited">Too many wrong codes. Try again later.</string>
+    <plurals name="connect_error_rate_limited_minutes">
+        <item quantity="one">Too many wrong codes. Try again in %1$d minute.</item>
+        <item quantity="other">Too many wrong codes. Try again in %1$d minutes.</item>
+    </plurals>
+    <string name="connect_error_no_network">No network. Connect to the internet and try again.</string>
+    <string name="connect_error_unreachable">Cannot reach the server. Check the address and try again.</string>
+    <string name="connect_error_not_helm">There is no Helm server at this address.</string>
+    <string name="connect_error_server">The server has a problem right now. Try again in a while.</string>
+
+    <string name="server_connected_to">Connected to %1$s</string>
+    <string name="server_device">This phone: %1$s</string>
+    <string name="server_app_token">Signed in with an app token. Pair the phone with a code instead; the token stops working when it expires.</string>
+    <string name="server_not_connected">This phone is not connected to a server. Tasks stay on the phone until you connect.</string>
+    <string name="server_signed_out">The server signed this phone out. Connect again with a new code.</string>
+    <string name="server_connect">Connect to server</string>
+    <string name="server_connect_code">Connect with a code</string>
+    <string name="server_disconnect">Disconnect</string>
+    <string name="server_disconnect_title">Disconnect this phone?</string>
+    <string name="server_disconnect_text">Helm forgets the sign-in on this phone. Your tasks stay here, and changes not sent yet wait until you connect again. To also revoke the phone on the server, run: hlm revoke %1$s</string>
+    <string name="server_disconnect_text_no_id">Helm forgets the sign-in on this phone. Your tasks stay here, and changes not sent yet wait until you connect again.</string>
+</resources>

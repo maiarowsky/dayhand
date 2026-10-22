@@ -1,5 +1,7 @@
 package dev.helm.planner.data
 
+import dev.helm.planner.auth.AppTokens
+import dev.helm.planner.auth.TokenResult
 import dev.helm.planner.data.remote.HttpResponse
 import dev.helm.planner.data.remote.HttpTaskRemote
 import dev.helm.planner.data.remote.RemoteEvent
@@ -123,5 +125,35 @@ class HttpTaskRemoteTest {
         assertTrue(PlanExporter(offline).export(ExportFormat.JSON, 0, "2026-10-22") is ExportResult.Failed)
         val refused = HttpTaskRemote("http://h", "t", transport = { _, _, _ -> HttpResponse(401, "") })
         assertEquals(ExportResult.Unauthorized, PlanExporter(refused).export(ExportFormat.JSON, 0, "2026-10-22"))
+    }
+
+    @Test
+    fun `a refused app token is refreshed once and the call repeated`() = runTest {
+        val tokens = object : AppTokens {
+            var issued = 0
+            override suspend fun token(forceRefresh: Boolean): TokenResult {
+                if (forceRefresh || issued == 0) issued++
+                return TokenResult.Issued("jwt$issued", Long.MAX_VALUE)
+            }
+        }
+        val seen = mutableListOf<String>()
+        val remote = HttpTaskRemote("http://h", tokens, transport = { _, token, _ ->
+            seen += token
+            if (token == "jwt1") HttpResponse(401, "") else HttpResponse(200, """{"status":"success","value":null}""")
+        })
+        assertTrue(remote.send("app:add", buildJsonObject { put("title", "x") }) is SendResult.Applied)
+        assertEquals(listOf("jwt1", "jwt2"), seen)
+    }
+
+    @Test
+    fun `a revoked device or a missing token keeps the change`() = runTest {
+        val revoked = HttpTaskRemote("http://h", object : AppTokens {
+            override suspend fun token(forceRefresh: Boolean) = TokenResult.Revoked
+        }, transport = { _, _, _ -> error("must not be called") })
+        assertEquals(SendResult.Unauthorized, revoked.send("app:add", JsonObject(emptyMap())))
+        val unavailable = HttpTaskRemote("http://h", object : AppTokens {
+            override suspend fun token(forceRefresh: Boolean) = TokenResult.Unavailable("HTTP 503")
+        }, transport = { _, _, _ -> error("must not be called") })
+        assertTrue(unavailable.send("app:add", JsonObject(emptyMap())) is SendResult.Failed)
     }
 }

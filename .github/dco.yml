@@ -1,0 +1,7 @@
+# Settings of the DCO GitHub App (https://github.com/apps/dco): every commit
+# needs a Signed-off-by line matching its author (CONTRIBUTING.md), members of
+# the organization included.
+require:
+  members: true
+allowRemediationCommits:
+  individual: true

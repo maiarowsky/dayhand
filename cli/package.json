@@ -1,6 +1,6 @@
 {
   "name": "hlm",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "description": "hlm: the Helm command line client for people and agents",
   "license": "Apache-2.0",
@@ -8,8 +8,12 @@
   "bin": {
     "hlm": "dist/bin/hlm.js"
   },
+  "man": [
+    "./man/hlm.1"
+  ],
   "files": [
-    "dist"
+    "dist",
+    "man"
   ],
   "engines": {
     "node": ">=22.12"
@@ -18,16 +22,22 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p .",
     "docs": "node scripts/gen-docs.mjs",
-    "test": "npm run build && vitest run"
+    "test": "npm run build && vitest run",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "prepack": "npm run build && node scripts/pack-files.mjs"
   },
   "dependencies": {
+    "@napi-rs/keyring": "2.1.1",
     "commander": "15.0.0",
-    "qrcode-terminal": "0.12.0"
+    "qrcode-terminal": "0.12.0",
+    "smol-toml": "1.9.1",
+    "string-width": "8.3.0"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
     "@types/node": "24.19.2",
     "ajv": "8.20.0",
+    "node-pty": "1.1.0",
     "typescript": "5.9.3",
     "vitest": "5.0.4"
   }

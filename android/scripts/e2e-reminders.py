@@ -10,10 +10,10 @@ after a reboot the alarms are armed again.
 Time is sped up by using the next whole minute (at least 90 s away) instead of a real 05:00.
 
 Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend,
-an app token in a file, HELM_URL and HELM_API_KEY for the CLI of the same user, and
+HELM_URL and HELM_API_KEY for the CLI of the app user (the app is paired with a code), and
 backend/.env.local from `npm run backend:start` for `npx convex run`.
 
-  python3 android/scripts/e2e-reminders.py --apk app-debug.apk --token-file token.txt --shots DIR
+  python3 android/scripts/e2e-reminders.py --apk app-debug.apk --shots DIR
 """
 import argparse
 import datetime
@@ -129,17 +129,15 @@ def allow_notifications():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True)
-    parser.add_argument("--token-file", required=True)
-    parser.add_argument("--backend-url", default="http://10.0.2.2:3210")
+    parser.add_argument("--server-url", default="http://10.0.2.2:3211", help="HTTP actions URL as the emulator sees it")
     parser.add_argument("--shots")
     args = parser.parse_args()
-    token = open(args.token_file).read().strip()
 
     adb("install", "-r", "-t", args.apk)
     shell("pm", "clear", PACKAGE)
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    # Pairing first: at first start without a server Helm opens Connect, not Today.
+    configure(args.server_url)
     allow_notifications()
-    configure(args.backend_url, token)
 
     zone = ZoneInfo(convex_run("ops:getSettings", {"userId": USER, "actor": "agent"})["timezone"])
     due = (datetime.datetime.now(zone) + datetime.timedelta(seconds=90)).replace(second=0, microsecond=0)

@@ -46,7 +46,7 @@ private enum class SettingsPage { MAIN, COLORS, FONT, LICENSES }
  * (colors, font, licenses), which change the appearance at once.
  */
 @Composable
-fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Unit) {
+fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Unit, onConnect: () -> Unit) {
     var page by rememberSaveable { mutableStateOf(SettingsPage.MAIN) }
     BackHandler { if (page == SettingsPage.MAIN) onBack() else page = SettingsPage.MAIN }
     val appearance by container.appearance.appearance.collectAsStateWithLifecycle()
@@ -93,7 +93,8 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
 
     val actions = remember(viewModel) {
         object : SettingsActions {
-            override fun saveBackend(url: String, token: String?) = viewModel.saveBackend(url, token)
+            override fun openConnect() = onConnect()
+            override fun disconnect() = viewModel.disconnect()
             override fun setOfflineMode(enabled: Boolean) = viewModel.setOfflineMode(enabled)
             override fun setSummaryTime(time: String) = viewModel.setSummaryTime(time)
             override fun setReminderMinutes(minutes: List<Int>) = viewModel.setReminderMinutes(minutes)

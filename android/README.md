@@ -1,12 +1,13 @@
 # Helm for Android
 
 Kotlin, Jetpack Compose and Material 3. This version has the **Today** screen with quick add,
-works offline, rings reminders and a morning summary computed on the phone, and has the
-**Settings** screen; the board and task details come in later steps.
+works offline, rings reminders and a morning summary computed on the phone, has the
+**Settings** screen and connects to a server by **pairing** with a one-time code from
+`hlm pair`; the board and task details come in later steps.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.3.0 (`versionName`: 0.x, MINOR for each new screen); `versionCode` is the number of
+- Version 0.4.0 (`versionName`: 0.x, MINOR for each new screen); `versionCode` is the number of
   commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -26,8 +27,20 @@ works offline, rings reminders and a morning summary computed on the phone, and 
 4. **Done (n)**: collapsed by default.
 
 With nothing to do, one sentence and an **Add task** button. A line at the top says when the
-phone is offline (and how many changes wait), when the server refused the token, or when no
-server is set up.
+phone is offline (and how many changes wait), while changes are being sent, when the server
+signed the phone out, or when no server is connected.
+
+**Connect to server** opens by itself at the first start (with **Not now, use Helm offline**),
+from Settings, and from a `helm://pair` link (the QR code of `hlm pair`):
+
+1. **Server address**, filled in with the built-in server (`BuildConfig.DEFAULT_SERVER_URL`,
+   the production HTTP actions URL; another with `-Phelm.serverUrl=…`), the last server used or
+   the link's `url`. A `.convex.cloud` address is turned into its `.convex.site` one.
+2. **Pairing code** from `hlm pair` (or `npx helm pair` in `backend/`): any case, with or
+   without dashes; `O` is read as `0`, `I` and `L` as `1`.
+3. **Connect**. Errors are said in words: a wrong, used or expired code; too many wrong codes
+   (with the wait); no network; the server cannot be reached; no Helm server at the address;
+   a problem on the server.
 
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
 keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
@@ -45,8 +58,11 @@ keyboard's Done key) saves it for today. "More options" adds the day, a time and
 4. **Default reminders**: at the due time, 5, 10, 15, 30 min, 1 h, 2 h or 1 day before, any
    number of them or none.
 5. **Language**: phone language, Polski or English (Android 13+ per-app language).
-6. **Server**: connection status with the number of changes waiting, backend address, app token
-   (pasted, never shown again), the offline test switch and the time zone from the server.
+6. **Server**: connection status (connected, connecting, no network, offline test mode, not
+   connected, signed out, cannot reach the server) with the number of changes waiting; the
+   server and this phone's name with **Disconnect** (after a confirmation that names the
+   `hlm revoke <deviceId>` command), or **Connect to server**; the offline test switch and the
+   time zone from the server.
 7. **Export**: the whole plan as Markdown or JSON, saved where you choose in the system dialog.
 8. **About**: version, Apache License 2.0, and the licenses of the bundled fonts (SIL Open
    Font License 1.1).
@@ -114,13 +130,38 @@ Convex subscription (app:listAll, app:getSettings) ──> SnapshotMerger ──
   rules as `backend/convex/lib/dates.ts`, in the time zone from your server settings (default
   `Europe/London`, as on the backend). The screen moves on at local midnight.
 
-## Signing in (this step)
+## Signing in
 
-The app stores the backend address and an **app token**: an ES256 JWT signed by
-`backend/scripts/app-token.mjs` with a private key that never enters the repository. The token
-is pasted into Settings, encrypted with AES-256-GCM by Tink under a key in the Android Keystore,
-and never logged or shown again. Backups and device transfers are switched off for the app.
-Pairing with a QR code is described, not built, in [docs/pairing.md](../docs/pairing.md).
+The phone is paired once and then asks the server for short-lived app tokens
+([docs/pairing.md](../docs/pairing.md)):
+
+```
+Connect: POST /auth/pair {code, deviceName}  ──> deviceToken + convexUrl (stored encrypted)
+any time: POST /auth/token {deviceToken}       ──> app JWT for 1 hour (kept in memory only)
+Convex client and HTTP API with that JWT       ──> app.* as the owner
+```
+
+- The **device token** is encrypted with AES-256-GCM by Tink under a key in the Android
+  Keystore and never logged or shown. Backups and device transfers are switched off for the app.
+  The device name sent is the phone model (`Build.MODEL`); `hlm devices` shows it.
+- `DeviceTokens` keeps one JWT for the live feed, the outbox and the export, and fetches a new
+  one when less than 5 minutes are left. The Convex client gets the new token before the old
+  one ends, and asks again when the server refuses one; the HTTP API retries once with a new
+  token.
+- **Network errors and `503`** keep the device token; a cached JWT that is still valid is used
+  meanwhile, and changes wait in the outbox. **`401` from `/auth/token`** means the phone was
+  revoked (`hlm revoke`): the device token is deleted, Today and Settings say the server signed
+  the phone out, and Connect asks for a new code. Tasks and waiting changes stay on the phone.
+- On a local backend `/auth/pair` returns `http://127.0.0.1:3210` as the Convex URL; the app
+  keeps the port and uses the host it paired with (`10.0.2.2` on the emulator).
+- **Disconnect** forgets the sign-in on the phone only. The backend has no endpoint for a
+  device to revoke itself, so the dialog names `hlm revoke <deviceId>` for that.
+- A phone that had an app token pasted in version 0.2 keeps using it until it is paired or
+  disconnected; pasting tokens is no longer offered.
+
+What happens after connecting: the outbox starts at once and sends every change made before,
+in order (tasks added offline before any server was known included), and the live Convex
+subscription downloads the whole plan into Room. The connection line shows the progress.
 
 ## Run it locally
 
@@ -133,11 +174,12 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
    npm run backend:start
    ```
 
-2. In a second terminal, in `backend/`, issue an app token and a CLI key **for the same user**:
+2. In a second terminal, in `backend/`, create a CLI key for the app user and a pairing code:
 
    ```sh
-   npm run app-token > ~/helm-token.txt        # user https://helm.local|me, valid 90 days
    npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}'
+   export HELM_URL=http://127.0.0.1:3211 HELM_API_KEY=<key>
+   npx helm pair                               # or hlm pair with HLM_URL / HLM_API_KEY
    ```
 
    Optionally set your time zone:
@@ -149,34 +191,41 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
    ./gradlew :app:installDebug
    ```
 
-4. In the app open Settings, enter `http://10.0.2.2:3210` on the emulator (on a phone in the
+4. In the app, on Connect, enter `http://10.0.2.2:3211` on the emulator (on a phone in the
    same network use the computer's address; debug builds allow plain HTTP, release builds only
-   HTTPS), paste the token and save.
+   HTTPS) and the code, then Connect. Or open the link from `helm pair` on the emulator:
+   `adb shell am start -a android.intent.action.VIEW -d "'helm://pair?url=http%3A%2F%2F10.0.2.2%3A3211&code=<code>'"`.
 
-5. Check from the computer: `HELM_URL=http://127.0.0.1:3211 HELM_API_KEY=<key> npx helm today`.
+5. Check from the computer: `npx helm today` and `npx helm devices`.
 
-For your own deployment, create a key pair with `npm run app-token -- --generate <file outside
-the repo>`, set the printed `HELM_JWKS` and `HELM_JWT_ISSUER` on the deployment, and issue
-tokens with `HELM_SIGNING_KEY_FILE=<file> HELM_JWT_ISSUER=<issuer> npm run app-token`.
+For a production deployment see [docs/deploy.md](../docs/deploy.md); the app's default server
+is set in `app/build.gradle.kts` (`helm.serverUrl`).
 
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM: dates, Today sections, reminders, outbox, merge, HTTP, export
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room, outbox across restarts, settings sync, Compose,
+./gradlew :app:testDebugUnitTest            # JVM: dates, Today sections, reminders, outbox, merge, HTTP, export,
+                                            # pairing input, /auth/pair and /auth/token, token refresh
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room, outbox across restarts, settings sync, Compose
+                                            # (Today, Settings, Connect), encrypted pairing storage,
                                             # and a real alarm + notification (ReminderDeliveryTest, about 80 s)
 ```
 
 `ReminderDeliveryTest` speeds time up by setting a task and the summary to the next whole
 minute: Android fires the real alarm, the test checks both notifications and taps **Done**.
 
-The end-to-end offline check drives the app on an emulator against the local backend: add a
-task, go offline, add another, kill the app, go online, and verify both on the server with the
-CLI. With the backend running, the token in a file and `HELM_URL`/`HELM_API_KEY` set:
+The end-to-end checks drive the app on an emulator against the local backend and pair it with
+a code from the CLI. `e2e-pairing.py`: first start opens Connect, a task added before pairing,
+a wrong code refused, the right one typed by hand, the CLI's task on the phone and the phone's
+on the server, a task added in airplane mode reaching the server when the network is back,
+Disconnect. `e2e-offline.py`: the same offline path with a killed and a force-stopped app. With
+the backend running, `HELM_URL`/`HELM_API_KEY` set and the CLI built (`cli/`: `npm ci
+--ignore-scripts && npm run build`):
 
 ```sh
 ./gradlew :app:assembleDebug
-python3 scripts/e2e-offline.py --apk app/build/outputs/apk/debug/app-debug.apk --token-file ~/helm-token.txt
+python3 scripts/e2e-pairing.py --apk app/build/outputs/apk/debug/app-debug.apk --shots /tmp/shots
+python3 scripts/e2e-offline.py --apk app/build/outputs/apk/debug/app-debug.apk
 ```
 
 ## Dependencies

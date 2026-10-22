@@ -14,12 +14,18 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
+import dev.helm.planner.auth.ConnectError
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.TodaySections
 import dev.helm.planner.settings.AppLanguage
 import dev.helm.planner.settings.AppSettings
 import dev.helm.planner.settings.BackendConfig
+import dev.helm.planner.settings.Credential
+import dev.helm.planner.ui.connect.ConnectActions
+import dev.helm.planner.ui.connect.ConnectPhase
+import dev.helm.planner.ui.connect.ConnectScreen
+import dev.helm.planner.ui.connect.ConnectUiState
 import dev.helm.planner.ui.settings.ExportStatus
 import dev.helm.planner.ui.settings.NotificationAccess
 import dev.helm.planner.ui.settings.SettingsActions
@@ -117,7 +123,7 @@ class ScreenTour {
     private fun settingsState() = SettingsUiState(
         data = SettingsData(
             settings = AppSettings(
-                backend = BackendConfig("https://helm.example.convex.cloud", "a.b.c"),
+                backend = BackendConfig("https://helm.example.convex.site", Credential.Device("https://helm.example.convex.site", "jd7device", "Pixel 7", "helmdev_secret.secret")),
                 offlineMode = false,
                 timezone = "Europe/Warsaw",
                 summaryTime = "05:00",
@@ -137,9 +143,16 @@ class ScreenTour {
     fun settings() {
         show { SettingsScreen(settingsState(), object : SettingsActions {}) }
         shot("06-settings")
-        compose.onNodeWithTag(SettingsTags.URL).performScrollTo()
+        compose.onNodeWithTag(SettingsTags.OFFLINE).performScrollTo()
         shot("07-settings-server")
         compose.onNodeWithTag(SettingsTags.LICENSE).performScrollTo()
         shot("08-settings-about")
+    }
+
+    @Test
+    fun connect() {
+        val failed = ConnectPhase.Failed(ConnectError.INVALID_CODE)
+        show { ConnectScreen(ConnectUiState("https://helm.example.convex.site", "ABCD-EFGH-JKMN", failed, firstRun = true), object : ConnectActions {}) }
+        shot("09-connect")
     }
 }

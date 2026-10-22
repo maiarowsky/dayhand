@@ -19,6 +19,8 @@ import dev.helm.planner.export.ExportFormat
 import dev.helm.planner.settings.AppLanguage
 import dev.helm.planner.settings.AppSettings
 import dev.helm.planner.settings.BackendConfig
+import dev.helm.planner.settings.Credential
+import dev.helm.planner.ui.connect.ServerTags
 import dev.helm.planner.ui.settings.ExportFailure
 import dev.helm.planner.ui.settings.ExportStatus
 import dev.helm.planner.ui.settings.NotificationAccess
@@ -50,6 +52,8 @@ class SettingsScreenTest {
         override fun allowExactAlarms() { calls += "exact" }
         override fun export(format: ExportFormat) { calls += "export:$format" }
         override fun openLicense() { calls += "license" }
+        override fun openConnect() { calls += "connect" }
+        override fun disconnect() { calls += "disconnect" }
     }
 
     private fun state(
@@ -59,14 +63,17 @@ class SettingsScreenTest {
         exact: Boolean = true,
         export: ExportStatus = ExportStatus.Idle,
         minutes: List<Int> = listOf(0),
+        backend: BackendConfig? = BackendConfig("http://10.0.2.2:3210", DEVICE),
+        pairingLost: Boolean = false,
     ) = SettingsUiState(
         data = SettingsData(
             settings = AppSettings(
-                backend = BackendConfig("http://10.0.2.2:3210", "a.b.c"),
+                backend = backend,
                 offlineMode = false,
                 timezone = "Europe/Warsaw",
                 summaryTime = "05:00",
                 reminderMinutes = minutes,
+                pairingLost = pairingLost,
             ),
             connection = connection,
             pendingChanges = pending,
@@ -161,7 +168,42 @@ class SettingsScreenTest {
     fun offlineSwitchReflectsTheSetting() {
         show(state())
         compose.onNodeWithTag(SettingsTags.OFFLINE).performScrollTo().assertIsOff()
-        compose.onNodeWithTag(SettingsTags.SAVE).performScrollTo().assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(SettingsTags.OFFLINE).assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun pairedPhoneShowsServerAndDisconnectsAfterConfirming() {
+        val actions = Recorder()
+        show(state(), actions)
+        compose.onNodeWithText(text(R.string.server_connected_to, "10.0.2.2"), substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.server_device, "Pixel 9")).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(ServerTags.CONNECT).assertDoesNotExist()
+        compose.onNodeWithTag(ServerTags.DISCONNECT).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        // The dialog names the device id for revoking it on the server too.
+        compose.onNodeWithText("hlm revoke jd7device", substring = true).assertIsDisplayed()
+        compose.onNodeWithTag(ServerTags.DISCONNECT_CONFIRM).performClick()
+        assertEquals(listOf("disconnect"), actions.calls)
+    }
+
+    @Test
+    fun withoutServerTheConnectButtonOpensPairing() {
+        val actions = Recorder()
+        show(state(backend = null, connection = ConnectionStatus.NOT_CONFIGURED), actions)
+        compose.onNodeWithText(text(R.string.server_not_connected)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(ServerTags.DISCONNECT).assertDoesNotExist()
+        compose.onNodeWithTag(ServerTags.CONNECT).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf("connect"), actions.calls)
+    }
+
+    @Test
+    fun aRevokedPhoneSaysTheServerSignedItOut() {
+        show(state(backend = null, connection = ConnectionStatus.UNAUTHORIZED, pairingLost = true))
+        compose.onNodeWithText(text(R.string.server_signed_out)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(SettingsTags.CONNECTION)
+            .assertTextContains(text(R.string.connection_unauthorized), substring = true)
+    }
+
+    private companion object {
+        val DEVICE = Credential.Device("http://10.0.2.2:3211", "jd7device", "Pixel 9", "helmdev_secret.secret")
     }
 }

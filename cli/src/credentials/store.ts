@@ -1,16 +1,29 @@
-// Where the API key comes from. Batch 1 reads only the environment; the OS
-// keychain (batch 2, `hlm login`) becomes another CredentialStore in front of
-// or behind it without touching the commands.
+// Where the API key comes from, in order: HLM_API_KEY (agents, CI), then the
+// key `hlm login` stored for the deployment URL in the OS keychain or, when
+// no keychain is available, in a 0600 file next to config.toml.
 import { readEnv, type Env, type Warning } from "../config/env.js";
 
 export type Credential = { key: string; source: string };
 
 export interface CredentialStore {
-  /** Shown by a future `hlm whoami` as where the key came from. */
+  /** "environment", "keychain" or "file"; `hlm whoami` reports it. */
   readonly name: string;
   /** The key for this deployment URL, or undefined when this store has none. */
   get(url: string): Promise<Credential | undefined>;
 }
+
+/** A store `hlm login` can write to. */
+export interface KeyStore extends CredentialStore {
+  readonly name: "keychain" | "file";
+  /** Where the key lives, for messages: "macOS Keychain", a file path, … */
+  readonly location: string;
+  set(url: string, key: string): Promise<void>;
+  /** True when a key was removed. */
+  delete(url: string): Promise<boolean>;
+}
+
+/** The store cannot be used here (no keychain service, locked, unsupported system). */
+export class StoreUnavailable extends Error {}
 
 export class EnvCredentialStore implements CredentialStore {
   readonly name = "environment";
@@ -27,11 +40,19 @@ export class EnvCredentialStore implements CredentialStore {
   }
 }
 
-/** The first store that has a key wins. */
-export async function findCredential(stores: CredentialStore[], url: string): Promise<Credential | undefined> {
+export type Lookup = { credential?: Credential; unavailable: string[] };
+
+/** The first store that has a key wins; stores that cannot be read are reported, not fatal. */
+export async function findCredential(stores: CredentialStore[], url: string): Promise<Lookup> {
+  const unavailable: string[] = [];
   for (const store of stores) {
-    const found = await store.get(url);
-    if (found) return found;
+    try {
+      const credential = await store.get(url);
+      if (credential) return { credential, unavailable };
+    } catch (error) {
+      if (!(error instanceof StoreUnavailable)) throw error;
+      unavailable.push(`${store.name}: ${error.message}`);
+    }
   }
-  return undefined;
+  return { unavailable };
 }

@@ -66,21 +66,26 @@ fun LargeHeader(title: String, modifier: Modifier = Modifier, subtitle: String? 
     }
 }
 
-/** Header of a sub-screen: the back arrow (48 dp) and the title, as on Mussh's settings pages. */
+/**
+ * Header of a sub-screen: the back arrow (48 dp) and the title, as on Mussh's settings pages. Without [onBack] (a
+ * screen that cannot be left backwards) the title starts at the screen margin.
+ */
 @Composable
-fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}) {
+fun ScreenHeader(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}) {
     val p = palette
     Row(
         modifier
             .fillMaxWidth()
             .background(p.background)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-            .padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+            .padding(start = if (onBack != null) 8.dp else HelmDimens.screenMargin, end = 8.dp, top = 12.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
-        HeaderIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack, Modifier.testTag("back"))
-        Spacer(Modifier.width(8.dp))
+        if (onBack != null) {
+            HeaderIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack, Modifier.testTag("back"))
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             title,
             style = helmType.screenTitle,

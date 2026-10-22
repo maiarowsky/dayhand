@@ -1,11 +1,13 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { inject } from "vitest";
+import { afterAll, inject } from "vitest";
 
 export const helm = () => inject("helm");
 
@@ -15,11 +17,33 @@ const SCHEMAS = new URL("../../docs/schemas/", import.meta.url);
 export type Run = { code: number; stdout: string; stderr: string };
 
 /**
+ * Config, cache and stored keys of the test runs live in a private folder, and
+ * keys go to a file: tests never touch the real keychain or ~/.config.
+ */
+export const TEST_HOME = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-home-"));
+afterAll(() => rmSync(TEST_HOME, { recursive: true, force: true }));
+const isolated = (dir = TEST_HOME) => ({
+  HLM_CONFIG_DIR: join(dir, "config"),
+  HLM_CACHE_DIR: join(dir, "cache"),
+  HLM_CREDENTIAL_STORE: "file",
+  HOME: dir,
+  USERPROFILE: dir,
+  APPDATA: dir,
+  LOCALAPPDATA: dir,
+});
+
+/**
  * Runs the built `hlm` with only the given environment. stdin is a pipe (no
  * TTY), closed after `input`; a run that waits for input fails on the timeout.
  */
 export function hlm(key: string | undefined, args: string[], options: { env?: Record<string, string>; input?: string; url?: string } = {}): Promise<Run> {
-  const env: Record<string, string> = { PATH: process.env.PATH ?? "", HLM_URL: options.url ?? helm().siteUrl, ...(key ? { HLM_API_KEY: key } : {}), ...options.env };
+  const env: Record<string, string> = {
+    PATH: process.env.PATH ?? "",
+    ...isolated(),
+    HLM_URL: options.url ?? helm().siteUrl,
+    ...(key ? { HLM_API_KEY: key } : {}),
+    ...options.env,
+  };
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [BIN, ...args], { env, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "";

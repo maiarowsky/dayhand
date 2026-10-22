@@ -45,23 +45,14 @@
 
     <string name="status_offline">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</string>
     <string name="status_offline_mode">Włączony testowy tryb offline. Zmiany czekają w telefonie (w kolejce: %1$d).</string>
-    <string name="status_not_configured">Brak połączenia z serwerem. Ustaw adres i token w Ustawieniach.</string>
-    <string name="status_unauthorized">Serwer odrzucił token. Wklej nowy w Ustawieniach.</string>
+    <string name="status_not_configured">Brak połączenia z serwerem. Połącz w Ustawieniach kodem z hlm pair.</string>
+    <string name="status_unauthorized">Serwer wylogował ten telefon. Połącz ponownie w Ustawieniach.</string>
     <string name="status_error">Nie mogę połączyć się z serwerem. Helm próbuje dalej.</string>
     <string name="status_sending">Wysyłanie zmian: %1$d…</string>
 
     <string name="settings_title">Ustawienia</string>
     <string name="back">Wstecz</string>
     <string name="settings_backend">Serwer</string>
-    <string name="settings_url">Adres backendu</string>
-    <string name="settings_url_hint">Na przykład https://example.convex.cloud</string>
-    <string name="settings_url_invalid">Wpisz adres zaczynający się od http:// albo https://</string>
-    <string name="settings_token">Token aplikacji</string>
-    <string name="settings_token_hint">Wklej token z npm run app-token</string>
-    <string name="settings_token_saved">Token jest zapisany. Zostaw pole puste, żeby go zachować.</string>
-    <string name="settings_token_missing">Nie zapisano jeszcze tokenu.</string>
-    <string name="settings_token_invalid">To nie wygląda na token aplikacji</string>
-    <string name="settings_saved">Zapisano</string>
     <string name="settings_offline">Testowy tryb offline</string>
     <string name="settings_offline_hint">Gdy jest włączony, nic nie jest wysyłane ani pobierane; zmiany czekają w kolejce.</string>
     <string name="settings_timezone">Strefa czasowa (z serwera): %1$s</string>
@@ -123,8 +114,8 @@
     <string name="connection_connecting">łączenie…</string>
     <string name="connection_offline">brak sieci</string>
     <string name="connection_offline_mode">testowy tryb offline</string>
-    <string name="connection_not_configured">serwer nie jest ustawiony</string>
-    <string name="connection_unauthorized">serwer odrzucił token</string>
+    <string name="connection_not_configured">brak połączenia</string>
+    <string name="connection_unauthorized">serwer odrzucił logowanie</string>
     <string name="connection_error">nie można połączyć się z serwerem</string>
     <plurals name="connection_pending">
         <item quantity="one">%d zmiana czeka na wysłanie.</item>

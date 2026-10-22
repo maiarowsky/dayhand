@@ -14,12 +14,12 @@ Without a command, `hlm` shows Today.
 |---|---|---|---|
 | `hlm today` | `list_today` | [today](schemas/today.schema.json) | The Today screen: now task, overdue, today and done today (also plain `hlm`) |
 | `hlm add <title...> [options]` | `add_task` | [task](schemas/task.schema.json) | Add a task (due today unless --due or --no-due) |
-| `hlm list [options]` | `list_all` | [task-list](schemas/task-list.schema.json) | Open tasks, oldest due first (with --done also done ones) |
+| `hlm list [options]` | `list_all` | [task-list](schemas/task-list.schema.json) | Open tasks, oldest due first (with --done also done ones); filters narrow the list |
 | `hlm board [options]` | `board` | [board](schemas/board.schema.json) | Kanban board: todo, doing and done columns |
 | `hlm show <ref>` | `get_task` | [task-detail](schemas/task-detail.schema.json) | One task with its change history (who changed what, when) |
-| `hlm edit <ref> [options]` | `update_task` | [task](schemas/task.schema.json) | Change a task's fields; --clear-* removes one |
-| `hlm note <ref> [text...] [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's note, or append text to it |
-| `hlm move <ref> <date> [options]` | `reschedule_task` | [task](schemas/task.schema.json) | Move a task to another day (none removes the date) |
+| `hlm edit <ref> [options]` | `update_task` | [task](schemas/task.schema.json) | Change a task's fields; --clear-* removes one; on a terminal without options, edit title and note in $EDITOR |
+| `hlm note <ref> [text...] [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it |
+| `hlm move <ref> <date> [options]` | `reschedule_task` | [task](schemas/task.schema.json) | Move a task to another day, optionally with a time (none removes the date) |
 | `hlm done <refs...>` | `complete_task` | [complete](schemas/complete.schema.json) | Mark tasks done; a repeating task gets its next occurrence |
 | `hlm start <refs...>` | `set_status` | [task](schemas/task.schema.json) | Set tasks to doing |
 | `hlm stop <refs...>` | `set_status` | [task](schemas/task.schema.json) | Set tasks back to todo (from doing) |
@@ -42,6 +42,12 @@ Without a command, `hlm` shows Today.
 | `hlm device revoke <deviceId>` | `/devices/revoke` | [device-revoke](schemas/device-revoke.schema.json) | Sign a phone out: it gets no new app tokens |
 | `hlm devices` | `/devices` | [devices](schemas/devices.schema.json) | Same as hlm device list |
 | `hlm revoke <deviceId>` | `/devices/revoke` | [device-revoke](schemas/device-revoke.schema.json) | Same as hlm device revoke |
+| `hlm login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
+| `hlm logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
+| `hlm whoami` | `initialize`, `get_settings` | [whoami](schemas/whoami.schema.json) | Which deployment, profile, key source and config file hlm uses, checked against the server |
+| `hlm prime` | `list_today` | [today](schemas/today.schema.json) | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
+| `hlm when <phrase...> [options]` | `get_settings` | [when](schemas/when.schema.json) | Show the day (and time) a date phrase means in your time zone, without changing anything |
+| `hlm completion <shell>` | - | [completion](schemas/completion.schema.json) | Print the shell completion script for bash, zsh, fish or powershell (hlm help completion) |
 
 ## Global options
 
@@ -53,7 +59,11 @@ Without a command, `hlm` shows Today.
 | `--client-id <id>` | Operation id for safe retries (default: generated, shown on errors) |
 | `-y, --yes` | Confirm changing many tasks at once |
 | `--no-input` | Never prompt (also HLM_NO_INPUT=1); prompts need a terminal anyway |
-| `--url <url>` | Deployment HTTP actions URL (default: HLM_URL) |
+| `--dry-run` | Show the changes a command would send (dates resolved) and send nothing |
+| `--url <url>` | Deployment HTTP actions URL (default: HLM_URL, then config.toml) |
+| `--profile <name>` | Profile from config.toml (default: HLM_PROFILE, then default_profile) |
+| `--color <when>` | Colors in the human format (auto, always, never) |
+| `--no-color` | Same as --color never (NO_COLOR=1 works too) |
 
 ## JSON output
 
@@ -68,6 +78,18 @@ Without a command, `hlm` shows Today.
   ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{"warning":{…}}` lines.
 - `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`
   (or the `--fields`); views with sections (Today, board) start each row with the section name.
+- `hlm list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`) keep
+  the `{"result": [...]}` shape with fewer tasks; like `--fields`, a documented narrowing.
+- `--dry-run` on a command that changes something prints `{"dryRun":true,"calls":[{"tool","arguments"}]}`
+  ([schema](schemas/dry-run.schema.json)) with dates resolved, and sends nothing; reads still happen.
+
+## Human output
+
+Tables are aligned by display width; due days read as `today`, `tomorrow`, `yesterday` or
+`Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,
+`[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without
+colors or cutting. `hlm board` shows its columns side by side on terminals 90 columns or wider.
+On a terminal, `hlm note <ref>` and `hlm edit <ref>` without options open `$VISUAL`/`$EDITOR`.
 
 ## Exit codes
 
@@ -75,8 +97,8 @@ Without a command, `hlm` shows Today.
 |---|---|
 | 0 | Success, including a change that was already applied (no-op) |
 | 1 | Other error (internal) |
-| 2 | Usage: unknown command or flag, bad value or date, --yes missing |
-| 3 | Authentication: HLM_API_KEY missing, wrong or revoked |
+| 2 | Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml |
+| 3 | Authentication: no key (hlm login or HLM_API_KEY), or a wrong or revoked one |
 | 4 | Not found: no such task (#n), device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx or 429): the change may have been applied; retry with the same --client-id |
 | 130 | Interrupted (Ctrl-C) |
@@ -99,11 +121,134 @@ terminal (or with `--no-input` / `HLM_NO_INPUT=1`) it never waits for input and 
 
 | Variable | Meaning |
 |---|---|
-| `HLM_URL` | Deployment HTTP actions URL, e.g. https://<deployment>.convex.site |
-| `HLM_API_KEY` | Personal API key (create one with kind cli for yourself, agent for an agent) |
+| `HLM_URL` | Deployment HTTP actions URL, e.g. https://<deployment>.convex.site (wins over config.toml) |
+| `HLM_API_KEY` | API key; wins over the key stored by hlm login (give agents and CI their own, kind agent) |
+| `HLM_PROFILE` | Profile from config.toml (--profile wins) |
 | `HLM_FORMAT` | json, plain or human: default output format (flags win) |
 | `HLM_NO_INPUT` | 1 to never prompt |
+| `HLM_CONFIG_DIR` | Folder of config.toml and credentials.json (default: the system's config folder) |
+| `HLM_CACHE_DIR` | Folder of the completion cache (default: the system's cache folder) |
+| `HLM_CREDENTIAL_STORE` | keychain or file: where hlm login keeps keys (default: keychain, else file) |
+| `NO_COLOR, FORCE_COLOR` | Turn colors off or on when neither --color nor config.toml decides |
+| `VISUAL, EDITOR` | Editor for hlm note <ref> and hlm edit <ref> on a terminal (default: vi, notepad on Windows) |
 | `HELM_URL, HELM_API_KEY` | Old names, still read when the HLM_* name is unset (deprecated, with a warning) |
+
+## Topic: dates
+
+`hlm help dates`
+
+```text
+Dates (--due, hlm move, hlm list --due-before/--due-after, hlm when)
+
+Dates are English phrases resolved in your time zone from the server settings
+(hlm settings), not the computer's. The same phrase at the same moment always
+gives the same day. Try one with: hlm when "<phrase>", or add --dry-run to a command.
+
+  Days        today (tod), tomorrow (tmr), yesterday, day after tomorrow
+  Weekdays    fri, friday, on mon: the first such day after today
+              this fri: this week's (today included); next fri: next week's (weeks start on Monday)
+  Periods     next week (its Monday), next month (the 1st), next year, weekend, next weekend
+              eow / end of week (Sunday), eoww / end of work week (Friday),
+              eom / end of month, eoy / end of year
+  Relative    in 3 days, in a week, in 2 months, in 1 year, +3d, +2w, +1mo, +1y
+              in 2 hours, in 30 min, +3h: a day and a time
+  Calendar    23 oct, 23rd of october, oct 23, oct 23 2027, the 15th, 2026-10-23
+              (without a year: the next such day, today included)
+  Times       14:00, 9:30, 2pm, 2:30 pm, at 9, noon, midnight
+              alone: today, or tomorrow once that time has passed
+  Together    tomorrow at 9am, fri 14:30, 9am tomorrow, at 3pm on friday, in 3 days at 8:15
+
+A time that does not exist because the clocks go forward (01:30 on the last
+Sunday of March in London) moves forward by the gap (to 02:30) with a warning.
+YYYY-MM-DD, today and tomorrow are sent to the server as typed; every other
+phrase is sent as YYYY-MM-DD (and HH:MM). Anything else is refused (exit 2),
+never guessed.
+
+Examples: today, tomorrow, fri, next mon, this weekend, in 3 days, +2w, in 2 hours, eow, eom, 23 oct, oct 23 2027, 2026-10-23, 14:00, 2pm, noon, tomorrow at 9am, fri 14:30
+```
+
+## Topic: config
+
+`hlm help config`
+
+```text
+Configuration (config.toml)
+
+The file lives in:
+  Linux     $XDG_CONFIG_HOME/hlm/config.toml (~/.config/hlm/config.toml)
+  macOS     ~/Library/Application Support/hlm/config.toml
+  Windows   %APPDATA%\hlm\config.toml
+or in $HLM_CONFIG_DIR. hlm whoami prints the one in use. hlm login creates it.
+
+  url = "https://<deployment>.convex.site"     # used when no profile is chosen
+  default_profile = "personal"
+
+  [profiles.personal]
+  url = "https://<deployment>.convex.site"
+
+  [profiles.work]
+  url = "https://<other>.convex.site"
+
+  [aliases]
+  home = "list -l home --status todo,doing"    # hlm home --json
+  week = "list --due-before eow"
+
+  [ui]
+  color = "auto"                               # auto, always or never
+
+Precedence. URL: --url, the profile named by --profile, HLM_URL, the profile from
+HLM_PROFILE or default_profile, then the top-level url. Key: HLM_API_KEY, then the
+key hlm login stored for that URL. Colors: --color/--no-color, [ui] color,
+NO_COLOR/FORCE_COLOR, then whether the output is a terminal.
+
+The API key never goes into this file: hlm refuses keys named api_key, key,
+token, secret or password. An unknown key or a wrong value is an error that names
+the file and the key (exit 2). Aliases cannot hide a built-in command.
+```
+
+## Topic: login
+
+`hlm help login`
+
+```text
+Signing in (hlm login, hlm logout, hlm whoami)
+
+  hlm login --url https://<deployment>.convex.site   # paste the key at the hidden prompt
+  hlm login --with-key < key.txt                     # or pipe it (scripts)
+  hlm whoami                                         # URL, profile, where the key came from
+  hlm logout
+
+Create the key in the app (Settings → API keys, kind cli) or with
+npx convex run apiKeys:create. hlm login checks it against the server, then stores
+it for that URL in the OS keychain: macOS Keychain, Windows Credential Manager or
+the Secret Service on Linux (GNOME Keyring, KWallet, KeePassXC). Without one (a
+server, Omarchy without a keyring daemon) it says so and keeps the key in
+credentials.json next to config.toml, readable only by you (mode 0600).
+HLM_CREDENTIAL_STORE=file or --store file chooses the file on purpose.
+
+HLM_API_KEY, when set, wins over the stored key: give agents and CI their own key
+(kind agent) that way. The keychain keeps the key out of dotfiles, backups and shell
+history; it does not hide it from programs running as you.
+```
+
+## Topic: completion
+
+`hlm help completion`
+
+```text
+Shell completion (hlm completion <shell>)
+
+  bash         echo 'source <(hlm completion bash)' >> ~/.bashrc
+  zsh          hlm completion zsh > "${fpath[1]}/_hlm"     (or source <(hlm completion zsh) after compinit)
+  fish         hlm completion fish > ~/.config/fish/completions/hlm.fish
+  PowerShell   hlm completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
+
+Completes commands, aliases from config.toml, options and their values, task
+numbers with their titles, labels, profiles and date words. Task numbers and
+labels come from one list_all call, cached for 60 seconds in the cache folder
+(~/.cache/hlm, ~/Library/Caches/hlm or %LOCALAPPDATA%\hlm\Cache). Completion
+never prompts and prints nothing when it cannot reach the server.
+```
 
 ## Command details
 
@@ -133,7 +278,7 @@ hlm add <title...> [options]
 
 | Option | Meaning |
 |---|---|
-| `--due <date>` | Due day: YYYY-MM-DD, today or tomorrow |
+| `--due <when>` | Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (hlm help dates) |
 | `--time <HH:MM>` | Due time, 24h, in your time zone |
 | `--every <unit>` | Repeat every day, week, month or year (day, week, month, year) |
 | `--interval <n>` | Repeat interval (2 = every other) |
@@ -146,14 +291,15 @@ hlm add <title...> [options]
 | `--link <url>` | Link, optionally followed by a title: "https://… Title" (repeatable) |
 
 ```sh
-hlm add Call the accountant --due tomorrow --time 14:00 -l home
+hlm add Call the accountant --due "fri 2pm" -l home
+hlm add Pay rent --due "1 nov" --dry-run
 hlm add "Review the plan" --time 09:00 --every week --on mon,thu
 hlm add Buy a present --no-due --json
 ```
 
 ### hlm list
 
-Open tasks, oldest due first (with --done also done ones) Aliases: `ls`.
+Open tasks, oldest due first (with --done also done ones); filters narrow the list Aliases: `ls`.
 
 ```
 hlm list [options]
@@ -164,9 +310,17 @@ hlm list [options]
 | `-l, --label <label>` | Only tasks with this label (repeatable: all must match) |
 | `--done` | Include done tasks |
 | `--archived` | Include archived tasks |
+| `--status <statuses>` | Only these statuses, comma-separated: todo, doing, done (done implies --done) |
+| `--overdue` | Only overdue tasks |
+| `--due-before <when>` | Only tasks due before this day, e.g. eow, next mon, 2026-11-01 |
+| `--due-after <when>` | Only tasks due after this day, e.g. today |
+| `--search <text>` | Only tasks whose title, note, resume note or labels contain the text (any case) |
+| `--limit <n>` | At most this many tasks |
 
 ```sh
-hlm list -l home
+hlm list -l home --status todo,doing
+hlm list --overdue
+hlm list --due-before eow --search accountant --limit 20
 hlm list --done --json --fields ref,title,status
 ```
 
@@ -204,7 +358,7 @@ hlm show now --json
 
 ### hlm edit
 
-Change a task's fields; --clear-* removes one
+Change a task's fields; --clear-* removes one; on a terminal without options, edit title and note in $EDITOR
 
 ```
 hlm edit <ref> [options]
@@ -217,7 +371,7 @@ hlm edit <ref> [options]
 | `--title <text>` | New title |
 | `--note <text>` | Replace the note |
 | `--clear-note` | Remove the note |
-| `--due <date>` | Due day: YYYY-MM-DD, today or tomorrow |
+| `--due <when>` | Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (hlm help dates) |
 | `--time <HH:MM>` | Due time, 24h, in your time zone |
 | `--every <unit>` | Repeat every day, week, month or year (day, week, month, year) |
 | `--interval <n>` | Repeat interval (2 = every other) |
@@ -235,14 +389,15 @@ hlm edit <ref> [options]
 | `--clear-links` | Remove all links |
 
 ```sh
-hlm edit 42 --title "Call the bank" --due tomorrow --time 10:00
+hlm edit 42 --title "Call the bank" --due "tomorrow 10:00"
 hlm edit 42 --add-label work --rm-label home
 hlm edit 42 --clear-repeat
+hlm edit 42
 ```
 
 ### hlm note
 
-Print a task's note, or append text to it
+Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it
 
 ```
 hlm note <ref> [text...] [options]
@@ -263,14 +418,14 @@ hlm note 42 --clear
 
 ### hlm move
 
-Move a task to another day (none removes the date)
+Move a task to another day, optionally with a time (none removes the date)
 
 ```
 hlm move <ref> <date> [options]
 ```
 
 - `ref`: Task: #42 or 42 (its number), now, or its id
-- `date`: YYYY-MM-DD, today, tomorrow or none
+- `date`: When: tomorrow, fri 14:00, next mon, 2026-10-23 … or none (hlm help dates)
 
 | Option | Meaning |
 |---|---|
@@ -279,6 +434,7 @@ hlm move <ref> <date> [options]
 
 ```sh
 hlm move 42 tomorrow --time 08:00
+hlm move 42 "next mon 9am"
 hlm move 42 none
 ```
 
@@ -602,4 +758,103 @@ hlm revoke <deviceId>
 
 ```sh
 hlm revoke <deviceId>
+```
+
+### hlm login
+
+Store an API key for the deployment in the OS keychain (or a private file)
+
+Create a key with kind cli in the app (Settings → API keys) or with `npx convex run apiKeys:create`. The key is checked against the server first; HLM_API_KEY, when set, still wins over the stored key.
+
+```
+hlm login [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--with-key` | Read the key from stdin instead of a hidden prompt |
+| `--store <store>` | Where to keep the key (default: keychain, else file) (keychain, file) |
+
+```sh
+hlm login --url https://<deployment>.convex.site
+hlm login --with-key < ~/helm-key.txt
+hlm --profile work login
+```
+
+### hlm logout
+
+Remove the stored API key for the deployment (keychain and file)
+
+```
+hlm logout
+```
+
+```sh
+hlm logout
+hlm --profile work logout --json
+```
+
+### hlm whoami
+
+Which deployment, profile, key source and config file hlm uses, checked against the server
+
+```
+hlm whoami
+```
+
+```sh
+hlm whoami
+hlm whoami --json
+```
+
+### hlm prime
+
+Context for an AI agent: Today and how to use hlm (for a SessionStart hook)
+
+Prints plain text without colors in every format except --json, which prints list_today like hlm today --json. In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"hlm prime"}]}]}}.
+
+```
+hlm prime
+```
+
+```sh
+hlm prime
+hlm prime --json
+```
+
+### hlm when
+
+Show the day (and time) a date phrase means in your time zone, without changing anything
+
+```
+hlm when <phrase...> [options]
+```
+
+- `phrase`: A date phrase, e.g. fri 14:00 (quotes optional)
+
+| Option | Meaning |
+|---|---|
+| `--timezone <zone>` | IANA time zone to resolve in (default: yours from the server settings) |
+| `--now <moment>` | Resolve as if it were this moment (ISO 8601) instead of now |
+
+```sh
+hlm when "fri 14:00"
+hlm when next mon --json
+hlm when "in 2 hours" --timezone America/New_York
+```
+
+### hlm completion
+
+Print the shell completion script for bash, zsh, fish or powershell (hlm help completion)
+
+```
+hlm completion <shell>
+```
+
+- `shell`: bash, zsh, fish, powershell
+
+```sh
+source <(hlm completion bash)
+hlm completion zsh > "${fpath[1]}/_hlm"
+hlm completion powershell | Out-String | Invoke-Expression
 ```

@@ -16,8 +16,23 @@ describe("output", () => {
     expect(run.code).toBe(0);
     expect(run.stdout).toMatch(/^Today, \w{3} \d{1,2} \w{3} \d{4} \(Europe\/London\)\n/);
     expect(run.stdout).toContain("NOW  #1 Call the bank\n     next: have the account number");
-    expect(run.stdout).toMatch(/#1 +\[~\] \d{4}-\d{2}-\d{2} 18:00 Call the bank #admin/);
+    // Batch 2: aligned columns; inside TODAY only the time is shown.
+    expect(run.stdout).toMatch(/#1 +\[~\] +18:00 +Call the bank +#admin/);
     expect(await hlmJson(key, [])).toEqual(await hlmJson(key, ["today"]));
+  });
+
+  test("hlm prime prints Today and the agent rules as plain text; --json is list_today", async () => {
+    const { key } = await newUser("agent");
+    await hlm(key, ["add", "Write the report", "--time", "09:00"]);
+    await hlm(key, ["now", "1", "--note", "section 2 next"]);
+    const run = await hlm(key, ["prime"], { env: { FORCE_COLOR: "1" } });
+    expect(run.code).toBe(0);
+    expect(run.stdout).toMatch(/^# Helm tasks \(hlm\)\n\nToday, /);
+    expect(run.stdout).toContain("NOW  #1 Write the report\n     next: section 2 next");
+    expect(run.stdout).toContain("## Using hlm\n- Pass --json");
+    expect(run.stdout).not.toContain("\x1b[");
+    expect((await hlm(key, ["prime", "--plain"])).stdout).toBe(run.stdout);
+    expect(await hlmJson(key, ["prime"])).toEqual(await hlmJson(key, ["today"]));
   });
 
   test("--plain is tab-separated without headers; --fields picks columns and JSON fields", async () => {
@@ -159,7 +174,8 @@ describe("commands", () => {
       rmSync(dir, { recursive: true, force: true });
     }
 
-    expect((await hlm(key, ["version"])).stdout).toMatch(/^hlm 0\.1\.0\nserver helm 0\.\d+\.\d+\n$/);
+    const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    expect((await hlm(key, ["version"])).stdout).toBe(`hlm ${version}\nserver helm ${(await hlmJson(key, ["version"])).server.version}\n`);
 
     const pairing = await hlm(key, ["pair", "--no-qr"]);
     expect(pairing.stdout).toMatch(/helm:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+&code=[0-9A-Z-]{14}/);

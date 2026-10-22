@@ -13,16 +13,27 @@ export const EXIT = {
 
 /**
  * Error codes in `{"error":{"code":…}}`. The tool codes come from the backend
- * (`structuredContent.error.code`); `usage` and `unavailable` are the CLI's own.
+ * (`structuredContent.error.code`); `usage`, `config`, `unavailable` and
+ * `interrupted` are the CLI's own.
  */
-export type ErrorCode = "usage" | "invalid_argument" | "not_found" | "unauthenticated" | "unavailable" | "internal";
+export type ErrorCode =
+  | "usage"
+  | "config"
+  | "invalid_argument"
+  | "not_found"
+  | "unauthenticated"
+  | "unavailable"
+  | "interrupted"
+  | "internal";
 
 const EXIT_BY_CODE: Record<ErrorCode, number> = {
   usage: EXIT.usage,
+  config: EXIT.usage,
   invalid_argument: EXIT.usage,
   not_found: EXIT.notFound,
   unauthenticated: EXIT.auth,
   unavailable: EXIT.unavailable,
+  interrupted: EXIT.interrupted,
   internal: EXIT.failed,
 };
 
@@ -63,3 +74,8 @@ export class CliError extends Error {
 }
 
 export const usageError = (message: string, details: ErrorDetails = {}) => new CliError("usage", message, details);
+
+export function toCliError(error: unknown): CliError {
+  if (error instanceof CliError) return error;
+  return new CliError("internal", `Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+}

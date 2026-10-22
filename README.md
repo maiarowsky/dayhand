@@ -16,8 +16,43 @@ backend/   Convex backend: data model, domain operations, MCP endpoint, old CLI 
 cli/       hlm, the command line client for people and agents; see cli/README.md
 android/   Android app (Kotlin, Compose): Today, quick add, offline outbox; see android/README.md
 ios/       iOS app (Swift), later
-docs/      Architecture, MCP, phone pairing and deployment notes
+docs/      Architecture, MCP, phone pairing, deployment and release notes
+man/       hlm(1), generated from the CLI's command registry
+packaging/ Homebrew formula template
 ```
+
+## The `hlm` command line
+
+`hlm` needs Node.js 22.12 or newer and runs on macOS, Linux and Windows. It is not on npm or
+Homebrew yet (see [docs/release.md](docs/release.md)); install it from this repository:
+
+```sh
+cd cli
+npm ci --ignore-scripts && npm run build
+npm link                       # puts hlm on the PATH (npm unlink -g hlm removes it)
+```
+
+Once it is published: `npm install -g <package>` or `brew install <owner>/hlm/hlm`.
+
+Quick start:
+
+```sh
+hlm login --url https://<deployment>.convex.site   # paste an API key (kind cli) made in the app
+hlm add Call the accountant --due "fri 2pm" -l home
+hlm                                                 # Today: now, overdue, today, done
+hlm done 1
+hlm pair                                            # QR code: signs the phone app in as you
+```
+
+`hlm login` keeps the key in the OS keychain, never in a shell profile. `hlm help dates` lists
+the date phrases, `source <(hlm completion bash)` adds Tab completion (also zsh, fish,
+PowerShell), and `man hlm` or [docs/cli.md](docs/cli.md) has every command. Without Kubernetes
+Helm on your machine, `alias helm=hlm` works too.
+
+For AI agents: give each agent its own key (kind `agent`) in `HLM_API_KEY`, use `--json`
+(exact MCP results, [schemas](docs/schemas)), and add `hlm prime` to a session-start hook.
+[docs/skills/hlm/SKILL.md](docs/skills/hlm/SKILL.md) is a ready Agent Skill: copy the folder
+to `~/.claude/skills/hlm/` (or your agent's skills folder).
 
 ## Run the backend locally
 

@@ -1,8 +1,16 @@
+import { agentCommands } from "./agents.js";
+import { authCommands } from "./auth.js";
+import { localCommands } from "./local.js";
 import { systemCommands } from "./system.js";
 import { taskCommands } from "./tasks.js";
 import type { CommandSpec } from "./types.js";
 
-export const COMMANDS: CommandSpec[] = [...taskCommands, ...systemCommands];
+export const COMMANDS: CommandSpec[] = [...taskCommands, ...systemCommands, ...authCommands, ...agentCommands, ...localCommands];
+
+/** Top-level names and aliases (and help): config.toml aliases may not reuse them. */
+export function commandNames(): Set<string> {
+  return new Set(["help", ...COMMANDS.flatMap((c) => [c.name, ...(c.aliases ?? [])])]);
+}
 
 /** Every command with its full name ("settings set"), depth first. */
 export function flatten(commands: CommandSpec[] = COMMANDS, prefix = ""): { path: string; spec: CommandSpec }[] {

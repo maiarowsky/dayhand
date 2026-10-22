@@ -1,7 +1,7 @@
 // The process boundary, injectable so commands can be tested without spawning.
 import type { Env } from "../config/env.js";
 
-export type Stream = { write(chunk: string): unknown; isTTY?: boolean };
+export type Stream = { write(chunk: string): unknown; isTTY?: boolean; columns?: number };
 
 export type Io = {
   stdout: Stream;
