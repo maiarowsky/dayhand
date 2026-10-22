@@ -1,7 +1,9 @@
 // The backend over HTTP: MCP JSON-RPC on /mcp (stateless, JSON responses) and
 // the /devices endpoints. Every failure becomes a CliError with the exit code
 // of the contract: 3 for a rejected key, 5 when the server could not answer.
-import { displayUrl, type Connection } from "../config/resolve.js";
+// With --dry-run, changes are recorded instead of sent; reads still happen.
+import type { Target } from "../config/resolve.js";
+import { displayUrl } from "../config/url.js";
 import { CliError, toErrorCode } from "../core/exit.js";
 
 const TIMEOUT_MS = 30_000;
@@ -25,17 +27,29 @@ export type ToolInfo = {
 
 export type ServerInfo = { name: string; version: string };
 
+/** A change --dry-run held back: a tool call or a POST to a /devices endpoint. */
+export type HeldCall = { tool: string; arguments: Record<string, unknown> } | { endpoint: string; body: unknown };
+
+/** Tools that only read; every other tool (including unknown ones) counts as a change. */
+export const READ_ONLY_TOOLS = new Set(["list_today", "list_all", "board", "get_task", "list_trash", "get_settings", "export_plan"]);
+
 type RpcResponse = { result?: any; error?: { code: number; message: string } };
 
 const unavailable = (message: string, cause?: unknown) =>
   new CliError("unavailable", message, { retryable: true }, { cause });
 
+/** Where to connect; the source fields are for `hlm whoami` (the key itself is never printed). */
+export type ClientConnection = { url: string; key: string } & Partial<Target> & { keySource?: string };
+
 export class HelmClient {
   private nextId = 1;
 
   constructor(
-    private readonly connection: Connection,
+    readonly connection: ClientConnection,
     private readonly fetchImpl: typeof fetch = fetch,
+    /** Set by --dry-run: changes are appended here and not sent. */
+    private readonly held?: HeldCall[],
+    private readonly timeoutMs = TIMEOUT_MS,
   ) {}
 
   /** The deployment HTTP actions URL (no trailing slash). */
@@ -45,6 +59,10 @@ export class HelmClient {
 
   /** One HTTP request; maps transport and status errors to exit codes. */
   async request(method: "GET" | "POST", path: string, body?: unknown): Promise<any> {
+    if (this.held && method === "POST" && path !== "/mcp") {
+      this.held.push({ endpoint: path, body: body ?? null });
+      return {};
+    }
     const where = displayUrl(this.connection.url);
     let response: Response;
     try {
@@ -56,14 +74,14 @@ export class HelmClient {
           Authorization: `Bearer ${this.connection.key}`,
         },
         body: body === undefined ? undefined : JSON.stringify(body),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (error) {
       throw unavailable(`Cannot reach ${where} (${networkReason(error)})`, error);
     }
     if (response.status === 401) {
       throw new CliError("unauthenticated", "The API key was rejected (wrong or revoked)", {
-        hint: "Set HLM_API_KEY to a valid key",
+        hint: "hlm login (or set HLM_API_KEY to a valid key)",
       });
     }
     if (response.status === 429 || response.status >= 500) {
@@ -105,6 +123,10 @@ export class HelmClient {
 
   /** Calls a tool; a tool error (`isError`) is thrown with its backend code. */
   async callTool(name: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
+    if (this.held && !READ_ONLY_TOOLS.has(name)) {
+      this.held.push({ tool: name, arguments: args });
+      return { structured: {}, text: "", content: [] };
+    }
     const result = await this.rpc("tools/call", { name, arguments: args });
     const content = Array.isArray(result.content) ? result.content : [];
     const text = content.find((c: { type?: string }) => c.type === "text")?.text ?? "";
@@ -126,7 +148,7 @@ function httpError(status: number, payload: any, where: string): CliError {
         ? payload.error.message
         : undefined;
   if (payload?.error === "not_found") return new CliError("not_found", description ?? "Not found");
-  if (status === 404) return new CliError("internal", `No Helm endpoint at ${where} (HTTP 404); check HLM_URL`);
+  if (status === 404) return new CliError("internal", `No Helm endpoint at ${where} (HTTP 404); check the URL (hlm whoami)`);
   if (status === 400 || status === 413) {
     return new CliError("invalid_argument", description ?? `${where} rejected the request (HTTP ${status})`);
   }

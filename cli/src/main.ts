@@ -1,43 +1,35 @@
 // Builds the commander program from the registry, runs one command and turns
 // every outcome into output plus an exit code. Never prompts without a TTY.
-import { randomUUID } from "node:crypto";
-import { createInterface } from "node:readline/promises";
 import { Command, CommanderError, InvalidArgumentError, Option } from "commander";
-import { envFlag, envFormat, type Format } from "./config/env.js";
-import { resolveConnection } from "./config/resolve.js";
-import { CliError, EXIT, usageError } from "./core/exit.js";
+import { expandAlias } from "./config/aliases.js";
+import { envFormat, type Format } from "./config/env.js";
+import { EXIT, toCliError, usageError } from "./core/exit.js";
 import { processIo, type Io } from "./core/io.js";
 import { Output } from "./core/output.js";
 import { CLI_VERSION } from "./core/version.js";
-import { parseFields, projectFields } from "./fields.js";
 import { ROOT_HELP, commandHelp } from "./help.js";
 import { COMMANDS } from "./registry/index.js";
 import { parseInt0 } from "./registry/parse.js";
-import type { Args, CommandSpec, OptSpec, RunContext } from "./registry/types.js";
-import { renderHuman, renderPlain } from "./render/views.js";
-import { HelmClient } from "./transport/client.js";
+import type { Args, CommandSpec, OptSpec } from "./registry/types.js";
+import { execute, type GlobalOpts } from "./run.js";
+import { loadSetup, type Setup } from "./setup.js";
+import { GLOBAL_OPTIONS, VALUE_OPTIONS } from "./globals.js";
+import { TOPICS } from "./topics.js";
 
-/** Global options: valid before or after the command. Value-taking ones are listed for argv scanning. */
-export const GLOBAL_OPTIONS: OptSpec[] = [
-  { flags: "--json", description: "Print the tool's structuredContent as JSON; errors as JSON on stderr" },
-  { flags: "--plain", description: "Tab-separated text without headers (for scripts)" },
-  { flags: "--fields <names>", description: "Comma-separated task (or settings) fields for JSON and columns" },
-  { flags: "--client-id <id>", description: "Operation id for safe retries (default: generated, shown on errors)" },
-  { flags: "-y, --yes", description: `Confirm changing many tasks at once` },
-  { flags: "--no-input", description: "Never prompt (also HLM_NO_INPUT=1); prompts need a terminal anyway" },
-  { flags: "--url <url>", description: "Deployment HTTP actions URL (default: HLM_URL)" },
-];
-const VALUE_OPTIONS = new Set(["--fields", "--client-id", "--url"]);
-const CLIENT_ID = /^[\x21-\x7e]{1,120}$/;
-
-type GlobalOpts = { json?: boolean; plain?: boolean; fields?: string; clientId?: string; yes?: boolean; input?: boolean; url?: string };
+export { GLOBAL_OPTIONS };
 
 export async function main(argv: string[], io: Io = processIo()): Promise<number> {
+  if (argv[0] === "__complete") {
+    const { completeCommand } = await import("./completion/engine.js");
+    return completeCommand(argv.slice(1), io);
+  }
+  const setup = loadSetup(io);
   const early = new Output(io, earlyFormat(argv, io));
   let run: Promise<number> | undefined;
-  const program = buildProgram(io, (promise) => (run = promise));
+  const program = buildProgram(io, setup, (promise) => (run = promise));
   try {
-    await program.parseAsync(withDefaultCommand(argv), { from: "user" });
+    const expanded = expandAlias(argv, setup.aliases, VALUE_OPTIONS);
+    await program.parseAsync(withDefaultCommand(expanded), { from: "user" });
     return run ? await run : EXIT.ok;
   } catch (error) {
     if (error instanceof CommanderError) {
@@ -76,21 +68,41 @@ function earlyFormat(argv: string[], io: Io): Format {
   }
 }
 
-function toCliError(error: unknown): CliError {
-  if (error instanceof CliError) return error;
-  return new CliError("internal", `Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
-}
-
-function buildProgram(io: Io, started: (run: Promise<number>) => void): Command {
+function buildProgram(io: Io, setup: Setup, started: (run: Promise<number>) => void): Command {
   const program = new Command("hlm")
     .description("Helm from the terminal: the same operations the app and the agent use")
     .version(CLI_VERSION, "-V, --version", "Print the CLI version")
     .helpOption("-h, --help", "Show help")
+    .helpCommand(false)
     .addHelpText("after", ROOT_HELP);
   for (const spec of GLOBAL_OPTIONS) program.addOption(toOption(spec));
   configure(program, io, []);
-  for (const spec of COMMANDS) program.addCommand(toCommand(spec, io, started, []));
+  for (const spec of COMMANDS) program.addCommand(toCommand(spec, io, setup, started, []));
+  program.addCommand(helpCommand(program, io));
   return program;
+}
+
+/** `hlm help [command…]` prints a command's help; `hlm help <topic>` a topic (dates, config, …). */
+function helpCommand(program: Command, io: Io): Command {
+  const topics = Object.keys(TOPICS);
+  const command = new Command("help")
+    .description(`Help for a command, or a topic: ${topics.join(", ")}`)
+    .argument("[words...]", "Command or topic")
+    .action((words: string[]) => {
+      if (words.length === 1 && Object.hasOwn(TOPICS, words[0]!)) {
+        io.stdout.write(TOPICS[words[0]!]!.trimEnd() + "\n");
+        return;
+      }
+      let target: Command = program;
+      for (const word of words) {
+        const sub = target.commands.find((c) => c.name() === word || c.aliases().includes(word));
+        if (!sub) throw usageError("No such command or help topic", { valid: [...new Set([...topics, ...program.commands.map((c) => c.name())])] });
+        target = sub;
+      }
+      target.outputHelp();
+    });
+  configure(command, io, []);
+  return command;
 }
 
 function configure(command: Command, io: Io, specOptions: OptSpec[]) {
@@ -128,7 +140,7 @@ function toOption(spec: OptSpec): Option {
   return option;
 }
 
-function toCommand(spec: CommandSpec, io: Io, started: (run: Promise<number>) => void, parents: string[]): Command {
+function toCommand(spec: CommandSpec, io: Io, setup: Setup, started: (run: Promise<number>) => void, parents: string[]): Command {
   const path = [...parents, spec.name];
   const command = new Command(spec.name).description(spec.summary).aliases(spec.aliases ?? []);
   for (const arg of spec.args ?? []) {
@@ -138,7 +150,7 @@ function toCommand(spec: CommandSpec, io: Io, started: (run: Promise<number>) =>
   for (const option of spec.options ?? []) command.addOption(toOption(option));
   command.addHelpText("after", commandHelp(spec));
   configure(command, io, spec.options ?? []);
-  for (const sub of spec.subcommands ?? []) command.addCommand(toCommand(sub, io, started, path));
+  for (const sub of spec.subcommands ?? []) command.addCommand(toCommand(sub, io, setup, started, path));
   const run = spec.run;
   if (run) {
     command.action((...actionArgs: unknown[]) => {
@@ -150,61 +162,8 @@ function toCommand(spec: CommandSpec, io: Io, started: (run: Promise<number>) =>
         const key = self.options.find((o) => o.flags === option.flags)!.attributeName();
         if (option.kind === "list" && opts[key] === undefined) opts[key] = [];
       }
-      started(execute(io, spec, path.join(" "), args, opts, self.optsWithGlobals<GlobalOpts>()));
+      started(execute(io, setup, spec, path.join(" "), args, opts, self.optsWithGlobals<GlobalOpts>()));
     });
   }
   return command;
-}
-
-async function execute(io: Io, spec: CommandSpec, name: string, args: Args, opts: Record<string, unknown>, global: GlobalOpts): Promise<number> {
-  let out = new Output(io, global.json ? "json" : "human");
-  let usedClientId: string | undefined;
-  try {
-    const format = resolveFormat(global, io);
-    out = new Output(io, format);
-    const fields = parseFields(global.fields, spec.fields, name);
-    if (global.clientId !== undefined && !CLIENT_ID.test(global.clientId)) {
-      throw usageError("--client-id must be 1 to 120 printable characters without spaces");
-    }
-    let client: Promise<HelmClient> | undefined;
-    const ctx: RunContext = {
-      io,
-      env: io.env,
-      out,
-      format,
-      fields,
-      yes: Boolean(global.yes),
-      interactive: Boolean(io.stdin.isTTY && io.stdout.isTTY) && global.input !== false && !envFlag(io.env, "HLM_NO_INPUT"),
-      client: () =>
-        (client ??= resolveConnection({ url: global.url }, io.env, (w) => out.warn(w)).then((c) => new HelmClient(c, io.fetch))),
-      clientId: () => (usedClientId ??= global.clientId ?? randomUUID()),
-      confirm: (question) => confirm(io, question),
-    };
-    const outcome = await spec.run!(ctx, args, opts);
-    const value = fields && spec.fields ? projectFields(outcome.value, spec.fields, fields) : outcome.value;
-    if (format === "json") out.json(value);
-    else out.text(format === "plain" ? renderPlain(outcome.view, value, fields) : renderHuman(outcome.view, value, fields));
-    return EXIT.ok;
-  } catch (error) {
-    let failure = toCliError(error);
-    if (usedClientId && failure.details.clientId === undefined) failure = failure.with({ clientId: usedClientId });
-    out.error(failure);
-    return failure.exitCode;
-  }
-}
-
-function resolveFormat(global: GlobalOpts, io: Io): Format {
-  if (global.json && global.plain) throw usageError("Use either --json or --plain");
-  if (global.json) return "json";
-  if (global.plain) return "plain";
-  return envFormat(io.env) ?? "human";
-}
-
-async function confirm(io: Io, question: string): Promise<boolean> {
-  const rl = createInterface({ input: io.stdin, output: io.stderr as NodeJS.WritableStream });
-  try {
-    return /^y(es)?$/i.test((await rl.question(`${question} [y/N] `)).trim());
-  } finally {
-    rl.close();
-  }
 }

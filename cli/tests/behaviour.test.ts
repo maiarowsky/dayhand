@@ -16,7 +16,8 @@ describe("output", () => {
     expect(run.code).toBe(0);
     expect(run.stdout).toMatch(/^Today, \w{3} \d{1,2} \w{3} \d{4} \(Europe\/London\)\n/);
     expect(run.stdout).toContain("NOW  #1 Call the bank\n     next: have the account number");
-    expect(run.stdout).toMatch(/#1 +\[~\] \d{4}-\d{2}-\d{2} 18:00 Call the bank #admin/);
+    // Batch 2: aligned columns; inside TODAY only the time is shown.
+    expect(run.stdout).toMatch(/#1 +\[~\] +18:00 +Call the bank +#admin/);
     expect(await hlmJson(key, [])).toEqual(await hlmJson(key, ["today"]));
   });
 
@@ -159,7 +160,8 @@ describe("commands", () => {
       rmSync(dir, { recursive: true, force: true });
     }
 
-    expect((await hlm(key, ["version"])).stdout).toMatch(/^hlm 0\.1\.0\nserver helm 0\.\d+\.\d+\n$/);
+    const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    expect((await hlm(key, ["version"])).stdout).toBe(`hlm ${version}\nserver helm ${(await hlmJson(key, ["version"])).server.version}\n`);
 
     const pairing = await hlm(key, ["pair", "--no-qr"]);
     expect(pairing.stdout).toMatch(/helm:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+&code=[0-9A-Z-]{14}/);

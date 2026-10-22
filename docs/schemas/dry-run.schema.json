@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/dry-run.schema.json",
+  "title": "Dry run",
+  "description": "Any changing command with --dry-run: the changes it would send, with dates resolved. Nothing was sent.",
+  "type": "object",
+  "required": [
+    "dryRun",
+    "calls"
+  ],
+  "properties": {
+    "dryRun": {
+      "const": true
+    },
+    "calls": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "tool",
+              "arguments"
+            ],
+            "properties": {
+              "tool": {
+                "type": "string"
+              },
+              "arguments": {
+                "type": "object"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "endpoint",
+              "body"
+            ],
+            "properties": {
+              "endpoint": {
+                "type": "string"
+              },
+              "body": {}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

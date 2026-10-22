@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/completion.schema.json",
+  "title": "Completion",
+  "description": "hlm completion: the script for a shell.",
+  "type": "object",
+  "required": [
+    "shell",
+    "script"
+  ],
+  "properties": {
+    "shell": {
+      "type": "string",
+      "enum": [
+        "bash",
+        "zsh",
+        "fish",
+        "powershell"
+      ]
+    },
+    "script": {
+      "type": "string"
+    }
+  }
+}

@@ -1,58 +1,63 @@
-// Connection settings in precedence order: flag > environment > (batch 2:
-// profile in config.toml) > none. Secrets never come from flags.
+// Connection settings in precedence order. URL: --url, then the profile named
+// by --profile, then HLM_URL (HELM_URL), then the profile from HLM_PROFILE or
+// default_profile, then the top-level url in config.toml. Key: HLM_API_KEY
+// (HELM_API_KEY), then the key stored by `hlm login` for that URL.
+// Secrets never come from flags or config.toml.
 import { CliError, usageError } from "../core/exit.js";
-import { EnvCredentialStore, findCredential, type CredentialStore } from "../credentials/store.js";
+import { findCredential, type CredentialStore } from "../credentials/store.js";
 import { readEnv, type Env, type Warning } from "./env.js";
+import type { Config } from "./file.js";
+import { displayUrl, normalizeUrl } from "./url.js";
 
-export type Connection = { url: string; key: string };
+export { displayUrl, normalizeUrl };
 
-/** Deployment HTTP actions URL without a trailing slash or /mcp. */
-export function normalizeUrl(raw: string): string {
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    throw usageError("The Helm URL is not a valid URL (expected e.g. https://<deployment>.convex.site)");
+export type Target = { url: string; urlSource: string; profile?: string };
+export type Connection = Target & { key: string; keySource: string };
+
+/** The profile in use: --profile, HLM_PROFILE, then default_profile. */
+export function selectProfile(flags: { profile?: string }, env: Env, config: Config): { name?: string; fromFlag: boolean } {
+  const named = flags.profile ?? (env.HLM_PROFILE || undefined);
+  const name = named ?? config.defaultProfile;
+  if (name !== undefined && !config.profiles[name]) {
+    const valid = Object.keys(config.profiles);
+    throw usageError(`Unknown profile${valid.length ? "" : `: ${config.file} defines none`}`, valid.length ? { valid } : { hint: "hlm help config" });
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw usageError("The Helm URL must start with https:// or http://");
-  }
-  return raw.replace(/\/+$/, "").replace(/\/mcp$/, "");
+  return { name, fromFlag: flags.profile !== undefined };
 }
 
-/** The URL for messages: no user info, no query. */
-export function displayUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, "")}`;
-  } catch {
-    return "the Helm URL";
+export function resolveTarget(flags: { url?: string; profile?: string }, env: Env, config: Config, warn: (w: Warning) => void): Target {
+  const profile = selectProfile(flags, env, config);
+  const profileUrl = profile.name === undefined ? undefined : config.profiles[profile.name]?.url;
+  const withProfile = (url: string, urlSource: string): Target => ({ url, urlSource, ...(profile.name ? { profile: profile.name } : {}) });
+
+  if (flags.url) return withProfile(normalizeUrl(flags.url), "--url");
+  if (profileUrl && profile.fromFlag) return withProfile(profileUrl, `--profile ${profile.name}`);
+  const fromEnv = readEnv(env, "HLM_URL");
+  if (fromEnv.value) {
+    if (fromEnv.warning) warn(fromEnv.warning);
+    return withProfile(normalizeUrl(fromEnv.value), fromEnv.warning ? "HELM_URL" : "HLM_URL");
   }
+  if (profileUrl) return withProfile(profileUrl, `profile ${profile.name}`);
+  if (config.url) return withProfile(config.url, "config.toml");
+  throw usageError("No Helm URL: set HLM_URL, pass --url, or run hlm login --url <url> (e.g. https://<deployment>.convex.site)", {
+    hint: "hlm login --url <url>",
+  });
 }
 
 export async function resolveConnection(
-  flags: { url?: string },
+  flags: { url?: string; profile?: string },
   env: Env,
+  config: Config,
   warn: (warning: Warning) => void,
-  stores: CredentialStore[] = [new EnvCredentialStore(env, warn)],
+  stores: CredentialStore[],
 ): Promise<Connection> {
-  let raw = flags.url;
-  if (!raw) {
-    const fromEnv = readEnv(env, "HLM_URL");
-    if (fromEnv.warning) warn(fromEnv.warning);
-    raw = fromEnv.value;
-  }
-  if (!raw) {
-    throw usageError("HLM_URL is not set (the deployment HTTP actions URL, e.g. https://<deployment>.convex.site)", {
-      hint: "export HLM_URL=<url>",
-    });
-  }
-  const url = normalizeUrl(raw);
-  const credential = await findCredential(stores, url);
+  const target = resolveTarget(flags, env, config, warn);
+  const { credential, unavailable } = await findCredential(stores, target.url);
   if (!credential) {
-    throw new CliError("unauthenticated", "HLM_API_KEY is not set", {
-      hint: "Create an API key with kind cli in the app (or apiKeys:create) and export HLM_API_KEY",
+    const why = unavailable.length ? ` (${unavailable.join("; ")})` : "";
+    throw new CliError("unauthenticated", `Not signed in to ${displayUrl(target.url)}${why}`, {
+      hint: "hlm login, or set HLM_API_KEY (an API key with kind cli)",
     });
   }
-  return { url, key: credential.key };
+  return { ...target, key: credential.key, keySource: credential.source };
 }
