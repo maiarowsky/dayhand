@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -87,6 +88,15 @@ fun SecondaryButton(
     ) {
         icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
         Text(text, style = helmType.smallStrong, color = tint)
+    }
+}
+
+/** The floating add button: an accent pill with the on-accent icon; [description] names it for screen readers. */
+@Composable
+fun HelmFab(icon: ImageVector, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val p = palette
+    FloatingActionButton(onClick = onClick, containerColor = p.accent, contentColor = p.onAccent, shape = HelmShapes.pill, modifier = modifier) {
+        Icon(icon, contentDescription = description)
     }
 }
 

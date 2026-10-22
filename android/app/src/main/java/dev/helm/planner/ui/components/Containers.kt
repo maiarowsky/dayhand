@@ -60,6 +60,15 @@ fun HelmCard(
     )
 }
 
+/** A labelled group (Mussh settings section): a muted section label over a card holding [content]. */
+@Composable
+fun CardSection(title: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel(title, Modifier.padding(start = 4.dp, top = 12.dp), color = palette.textMuted)
+        HelmCard(content = content)
+    }
+}
+
 /** An icon on a rounded tile in the accent's soft colour. */
 @Composable
 fun IconTile(icon: ImageVector, size: Dp = HelmDimens.iconTile, tint: Color = palette.accent, background: Color = palette.accentSoft) {

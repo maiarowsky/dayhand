@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -36,11 +35,11 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.HelmFab
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
-import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -81,15 +80,7 @@ fun TodayScreen(
         },
         bottomBar = bottomBar,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { adding = true },
-                containerColor = p.accent,
-                contentColor = p.onAccent,
-                shape = HelmShapes.pill,
-                modifier = Modifier.testTag(TodayTags.FAB),
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_task))
-            }
+            HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(TodayTags.FAB))
         },
     ) { padding ->
         TodayList(state, actions, date, PaddingValues(bottom = 96.dp), Modifier.padding(padding), onAdd = { adding = true })

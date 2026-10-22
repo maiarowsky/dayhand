@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,6 +28,10 @@ import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dayLabel
 import dev.helm.planner.ui.common.repeatLabel
 import dev.helm.planner.ui.common.statusLabel
+import dev.helm.planner.ui.components.CardSection
+import dev.helm.planner.ui.components.Pill
+import dev.helm.planner.ui.theme.helmType
+import dev.helm.planner.ui.theme.palette
 import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -46,9 +47,8 @@ import kotlinx.serialization.json.booleanOrNull
 /** Who changed what and when, newest first; changes still in the outbox are counted, not listed. */
 @Composable
 fun HistorySection(state: TaskDetailUiState.Ready) {
-    SectionLabel(stringResource(R.string.detail_history))
     val today = LocalDate.parse(state.today)
-    Column(Modifier.testTag(TaskDetailTags.HISTORY)) {
+    CardSection(stringResource(R.string.detail_history), Modifier.testTag(TaskDetailTags.HISTORY)) {
         if (state.pendingChanges > 0) Placeholder(pluralStringResource(R.plurals.history_pending, state.pendingChanges, state.pendingChanges))
         when (state.historyState) {
             HistoryState.NOT_ON_SERVER_YET -> Placeholder(stringResource(R.string.history_not_on_server))
@@ -70,25 +70,21 @@ private fun HistoryRow(entry: HistoryEntry, timezone: String, today: LocalDate) 
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(vertical = 6.dp)
             .semantics(mergeDescendants = true) {},
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ActorBadge(entry.actor)
-            Text(time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(time, style = helmType.small, color = palette.textMuted)
         }
-        Text(actionLabel(entry.action), style = MaterialTheme.typography.bodyMedium)
+        Text(actionLabel(entry.action), style = helmType.bodyStrong, color = palette.text)
         entry.changes.forEach { change ->
-            Text(
-                changeLabel(change, today),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(changeLabel(change, today), style = helmType.small, color = palette.textMuted)
         }
     }
 }
 
-/** "You (app)", "You (CLI)" or "Agent"; the agent in a clearly different colour. */
+/** "You (app)", "You (CLI)" or "Agent"; the agent in the palette's attention colour, the person in its secondary. */
 @Composable
 private fun ActorBadge(actor: Actor) {
     val agent = actor == Actor.AGENT
@@ -97,17 +93,7 @@ private fun ActorBadge(actor: Actor) {
         Actor.CLI -> R.string.actor_cli
         Actor.AGENT -> R.string.actor_agent
     }
-    Surface(
-        color = if (agent) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Text(
-            stringResource(label),
-            style = MaterialTheme.typography.labelMedium,
-            color = if (agent) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-        )
-    }
+    Pill(stringResource(label), color = if (agent) palette.attention else palette.secondary)
 }
 
 @Composable

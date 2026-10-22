@@ -41,6 +41,10 @@ class PaletteContrastTest {
         assertContrast(4.5, "danger on background", { it.danger }, { it.background })
         assertContrast(4.5, "danger on surface", { it.danger }, { it.surface })
         assertContrast(4.5, "secondary on background", { it.secondary }, { it.background })
+        // Roles drawn on cards: task labels and the person's badge, links and chip icons, the agent's badge.
+        assertContrast(4.5, "secondary on surface", { it.secondary }, { it.surface })
+        assertContrast(4.5, "accent on surface", { it.accent }, { it.surface })
+        assertContrast(4.5, "attention on surface", { it.attention }, { it.surface })
         assertContrast(3.0, "faint text on background", { it.textFaint }, { it.background })
     }
 

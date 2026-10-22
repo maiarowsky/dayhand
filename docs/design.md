@@ -43,15 +43,19 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 | `HeaderIconButton` / `BackButton` (48 dp) | `HeaderIconButton` | Material icons instead of Mussh's own drawings. |
 | `IconButtonBox` (44 dp) | `HeaderIconButton` | 48 dp, Helm's minimum. |
 | `FeatureCard`, `InfoCard`, cards on `surface` with 18 dp padding | `HelmCard` | |
+| Settings section (muted `MonoLabel` over a card) | `CardSection` | Settings and task details. |
 | `IconTile` | `IconTile` | |
 | `MonoLabel` | `SectionLabel` | Also a heading for screen readers. |
 | `Pill` | `Pill` | |
 | `Segmented` | `Segmented` | |
-| filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (reminders). |
+| filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (reminders, weekdays). |
+| outlined action pill | `ActionChip` | Pick a day, add or remove a label; 48 dp, optional leading and trailing icon. |
 | `SettingsSwitchRow` | `SwitchRow` | Same switch colours, one toggle for screen readers. |
-| `fieldColors()` + `OutlinedTextField`, 14 dp | `HelmTextField`, `helmFieldColors()` | |
+| `fieldColors()` + `OutlinedTextField`, 14 dp | `HelmTextField`, `helmFieldColors()` | Radio buttons and checkboxes take `helmRadioColors()` / `helmCheckboxColors()`. |
 | `SettingsPage` header (back + 22 sp title) | `ScreenHeader` | |
-| Top-level screen title | `LargeHeader` | Headline 30 sp with a subtitle and actions. |
+| Top-level screen title | `LargeHeader` | Headline 30 sp with a subtitle and actions (Today, Board). |
+| Bottom navigation | `HelmTabBar`, `HelmTab` | Bar on `surface`, the selected tab in the accent on `accentSoft`. |
+| Accent "new" button | `HelmFab` | Accent pill with the on-accent icon (Today, Board). |
 | `SettingsGroup`, `SettingsRow`, `SettingsNote` | `ListGroup`, `ListRow`, `ListNote` | Same large-text layout. |
 | `OptionRow` (palette and font choice) | `OptionCard` | |
 | `AppearancePreview`, palette swatches, font sample "Aa ąę 0O il1" | `AppearancePreview`, `Swatches`, `FontOption` | Preview is a small Today screen in both chosen palettes. |
@@ -60,6 +64,8 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 | `MessageDialog` (`AlertDialog` on `surface`) | `HelmDialog` | Date and time pickers use the same card colour and text actions. |
 | `ActionSheet` / long-press menu | `HelmMenu` | Dropdown on `surfaceRaised` with option corners. |
 | `BottomSheet` | Quick add `ModalBottomSheet` | `surface`, 28 dp top corners, border-coloured handle. |
+| Board cards, "Now" card | Material `Card` in palette roles | `surface` with option corners, the "Now" card on `accentSoft` with an accent label; labels in the secondary colour on its own tint. |
+| Task history actor | `Pill` | The person in the secondary colour, the agent in `attention`. |
 | Notification accent | `setColor(accent)` | The chosen palette's accent for the shade's light or dark look. |
 | Spacing: 20 dp screen margin, 18 dp card padding, 12 dp between groups, 60 dp list rows | `HelmDimens` | |
 

@@ -12,14 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -46,6 +41,15 @@ import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.domain.TaskRules
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.weekdayName
+import dev.helm.planner.ui.components.ActionChip
+import dev.helm.planner.ui.components.HelmChip
+import dev.helm.planner.ui.components.HelmDialog
+import dev.helm.planner.ui.components.HelmTextField
+import dev.helm.planner.ui.components.helmFieldColors
+import dev.helm.planner.ui.components.helmRadioColors
+import dev.helm.planner.ui.theme.HelmShapes
+import dev.helm.planner.ui.theme.helmType
+import dev.helm.planner.ui.theme.palette
 
 object EditorTags {
     const val FIELD = "editor-field"
@@ -75,36 +79,38 @@ fun TextEditDialog(
     val text = field.text
     val focus = remember { FocusRequester() }
     val valid = allowEmpty || text.isNotBlank()
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            // Inside the dialog's own window, where the field is attached.
-            LaunchedEffect(Unit) { focus.requestFocus() }
-            OutlinedTextField(
-                value = field,
-                onValueChange = { if (it.text.length <= maxLength) field = it },
-                singleLine = singleLine,
-                minLines = if (singleLine) 1 else 4,
-                isError = !valid,
-                supportingText = if (!valid) {
-                    { Text(stringResource(R.string.title_required)) }
-                } else {
-                    null
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focus)
-                    .testTag(EditorTags.FIELD),
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(text) }, enabled = valid, modifier = Modifier.testTag(EditorTags.SAVE)) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+    HelmDialog(
+        title = title,
+        onDismiss = onDismiss,
+        confirm = stringResource(R.string.save),
+        onConfirm = { onSave(text) },
+        dismiss = stringResource(R.string.cancel),
+        confirmEnabled = valid,
+        confirmTag = EditorTags.SAVE,
+    ) {
+        // Inside the dialog's own window, where the field is attached.
+        LaunchedEffect(Unit) { focus.requestFocus() }
+        // Material's field, not HelmTextField: it needs a TextFieldValue to place the cursor after the text.
+        OutlinedTextField(
+            value = field,
+            onValueChange = { if (it.text.length <= maxLength) field = it },
+            singleLine = singleLine,
+            minLines = if (singleLine) 1 else 4,
+            textStyle = helmType.body,
+            shape = HelmShapes.field,
+            colors = helmFieldColors(),
+            isError = !valid,
+            supportingText = if (!valid) {
+                { Text(stringResource(R.string.title_required)) }
+            } else {
+                null
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focus)
+                .testTag(EditorTags.FIELD),
+        )
+    }
 }
 
 /** Repeat: never, or every N days / weeks (optionally on chosen weekdays) / months / years. */
@@ -118,65 +124,60 @@ fun RepeatDialog(initial: RepeatRule?, onDismiss: () -> Unit, onSave: (RepeatRul
         RepeatRule(unit, interval.toIntOrNull() ?: 0, weekdays.sorted().takeIf { unit == RepeatEvery.WEEK && it.isNotEmpty() })
     }
     val valid = rule == null || TaskRules.isValid(rule)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.edit_repeat)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                (listOf(null) + RepeatEvery.entries).forEach { unit ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .selectable(selected = every == unit, role = Role.RadioButton, onClick = { every = unit })
-                            .testTag(EditorTags.every(unit)),
-                    ) {
-                        RadioButton(selected = every == unit, onClick = null)
-                        Text(stringResource(everyLabel(unit)), modifier = Modifier.padding(start = 12.dp))
-                    }
+    val p = palette
+    HelmDialog(
+        title = stringResource(R.string.edit_repeat),
+        onDismiss = onDismiss,
+        confirm = stringResource(R.string.save),
+        onConfirm = { onSave(rule) },
+        dismiss = stringResource(R.string.cancel),
+        confirmEnabled = valid,
+        confirmTag = EditorTags.SAVE,
+    ) {
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            (listOf(null) + RepeatEvery.entries).forEach { unit ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = every == unit, role = Role.RadioButton, onClick = { every = unit })
+                        .testTag(EditorTags.every(unit)),
+                ) {
+                    RadioButton(selected = every == unit, onClick = null, colors = helmRadioColors())
+                    Text(stringResource(everyLabel(unit)), style = helmType.body, color = p.text, modifier = Modifier.padding(start = 12.dp))
                 }
-                if (every != null) {
-                    OutlinedTextField(
-                        value = interval,
-                        onValueChange = { value -> if (value.length <= 3 && value.all(Char::isDigit)) interval = value },
-                        label = { Text(stringResource(R.string.repeat_interval)) },
-                        singleLine = true,
-                        isError = !valid,
-                        supportingText = if (!valid) {
-                            { Text(stringResource(R.string.repeat_interval_invalid, TaskRules.MAX_REPEAT_INTERVAL)) }
-                        } else {
-                            null
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .testTag(EditorTags.INTERVAL),
-                    )
-                }
-                if (every == RepeatEvery.WEEK) {
-                    Text(stringResource(R.string.repeat_on), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        (1..7).forEach { day ->
-                            FilterChip(
-                                selected = day in weekdays,
-                                onClick = { weekdays = if (day in weekdays) weekdays - day else weekdays + day },
-                                label = { Text(weekdayName(day, appLocale())) },
-                                modifier = ChipHeight.testTag(EditorTags.weekday(day)),
-                            )
-                        }
+            }
+            if (every != null) {
+                HelmTextField(
+                    value = interval,
+                    onValueChange = { value -> if (value.length <= 3 && value.all(Char::isDigit)) interval = value },
+                    label = stringResource(R.string.repeat_interval),
+                    singleLine = true,
+                    isError = !valid,
+                    supportingText = if (!valid) stringResource(R.string.repeat_interval_invalid, TaskRules.MAX_REPEAT_INTERVAL) else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .testTag(EditorTags.INTERVAL),
+                )
+            }
+            if (every == RepeatEvery.WEEK) {
+                Text(stringResource(R.string.repeat_on), style = helmType.smallStrong, color = p.textMuted, modifier = Modifier.padding(vertical = 8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (1..7).forEach { day ->
+                        HelmChip(
+                            weekdayName(day, appLocale()),
+                            selected = day in weekdays,
+                            onClick = { weekdays = if (day in weekdays) weekdays - day else weekdays + day },
+                            multiple = true,
+                            modifier = Modifier.testTag(EditorTags.weekday(day)),
+                        )
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(rule) }, enabled = valid, modifier = Modifier.testTag(EditorTags.SAVE)) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+        }
+    }
 }
 
 private fun everyLabel(every: RepeatEvery?) = when (every) {
@@ -195,44 +196,34 @@ fun LabelDialog(current: List<String>, suggestions: List<String>, onDismiss: () 
     val clean = text.trim()
     val full = current.size >= TaskRules.MAX_LABELS
     val valid = clean.isNotEmpty() && clean.length <= TaskRules.MAX_LABEL && !full
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_label)) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { if (it.length <= TaskRules.MAX_LABEL) text = it },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.label_name)) },
-                    supportingText = if (full) {
-                        { Text(stringResource(R.string.labels_full, TaskRules.MAX_LABELS)) }
-                    } else {
-                        null
-                    },
-                    isError = full,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(EditorTags.FIELD),
-                )
-                if (suggestions.isNotEmpty() && !full) {
-                    Text(stringResource(R.string.labels_in_use), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        suggestions.take(MAX_SUGGESTIONS).forEach { label ->
-                            SuggestionChip(onClick = { onAdd(label) }, label = { Text(label) }, modifier = ChipHeight)
-                        }
-                    }
+    HelmDialog(
+        title = stringResource(R.string.add_label),
+        onDismiss = onDismiss,
+        confirm = stringResource(R.string.add),
+        onConfirm = { onAdd(clean) },
+        dismiss = stringResource(R.string.cancel),
+        confirmEnabled = valid,
+        confirmTag = EditorTags.SAVE,
+    ) {
+        Column {
+            HelmTextField(
+                value = text,
+                onValueChange = { if (it.length <= TaskRules.MAX_LABEL) text = it },
+                singleLine = true,
+                label = stringResource(R.string.label_name),
+                supportingText = if (full) stringResource(R.string.labels_full, TaskRules.MAX_LABELS) else null,
+                isError = full,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                modifier = Modifier.testTag(EditorTags.FIELD),
+            )
+            if (suggestions.isNotEmpty() && !full) {
+                Text(stringResource(R.string.labels_in_use), style = helmType.smallStrong, color = palette.textMuted, modifier = Modifier.padding(vertical = 8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    suggestions.take(MAX_SUGGESTIONS).forEach { label -> ActionChip(label, onClick = { onAdd(label) }) }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onAdd(clean) }, enabled = valid, modifier = Modifier.testTag(EditorTags.SAVE)) {
-                Text(stringResource(R.string.add))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+        }
+    }
 }
 
 /** A link: an http(s) address and an optional title. */
@@ -242,47 +233,38 @@ fun LinkDialog(onDismiss: () -> Unit, onAdd: (TaskLink) -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     val link = TaskRules.link(url, title)
     val showError = url.isNotBlank() && link == null
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_link)) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { if (it.length <= TaskRules.MAX_URL) url = it },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.link_url)) },
-                    placeholder = { Text("https://") },
-                    isError = showError,
-                    supportingText = if (showError) {
-                        { Text(stringResource(R.string.link_invalid)) }
-                    } else {
-                        null
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(EditorTags.URL),
-                )
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { if (it.length <= TaskRules.MAX_TITLE) title = it },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.link_title)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .testTag(EditorTags.LINK_TITLE),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { link?.let(onAdd) }, enabled = link != null, modifier = Modifier.testTag(EditorTags.SAVE)) {
-                Text(stringResource(R.string.add))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+    HelmDialog(
+        title = stringResource(R.string.add_link),
+        onDismiss = onDismiss,
+        confirm = stringResource(R.string.add),
+        onConfirm = { link?.let(onAdd) },
+        dismiss = stringResource(R.string.cancel),
+        confirmEnabled = link != null,
+        confirmTag = EditorTags.SAVE,
+    ) {
+        Column {
+            HelmTextField(
+                value = url,
+                onValueChange = { if (it.length <= TaskRules.MAX_URL) url = it },
+                singleLine = true,
+                label = stringResource(R.string.link_url),
+                placeholder = "https://",
+                isError = showError,
+                supportingText = if (showError) stringResource(R.string.link_invalid) else null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                modifier = Modifier.testTag(EditorTags.URL),
+            )
+            HelmTextField(
+                value = title,
+                onValueChange = { if (it.length <= TaskRules.MAX_TITLE) title = it },
+                singleLine = true,
+                label = stringResource(R.string.link_title),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .testTag(EditorTags.LINK_TITLE),
+            )
+        }
+    }
 }
 
 private const val MAX_SUGGESTIONS = 12

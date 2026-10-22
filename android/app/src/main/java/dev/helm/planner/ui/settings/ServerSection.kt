@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import dev.helm.planner.R
+import dev.helm.planner.ui.components.CardSection
 import dev.helm.planner.ui.components.SwitchRow
 import dev.helm.planner.ui.connect.ServerConnectionPanel
 import dev.helm.planner.ui.theme.helmType
@@ -21,7 +22,7 @@ import dev.helm.planner.ui.today.ConnectionStatus
 @Composable
 internal fun ServerSection(data: SettingsData, actions: SettingsActions) {
     val settings = data.settings
-    Section(stringResource(R.string.settings_backend)) {
+    CardSection(stringResource(R.string.settings_backend)) {
         ConnectionLine(data.connection, data.pendingChanges)
         ServerConnectionPanel(settings, onConnect = actions::openConnect, onDisconnect = actions::disconnect)
         SwitchRow(

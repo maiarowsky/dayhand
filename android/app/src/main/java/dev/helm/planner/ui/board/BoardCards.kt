@@ -1,6 +1,7 @@
 package dev.helm.planner.ui.board
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,18 +12,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,9 +39,14 @@ import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.HelmDates
-import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dueLabel
 import dev.helm.planner.ui.common.statusLabel
+import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.HelmMenu
+import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.theme.HelmShapes
+import dev.helm.planner.ui.theme.helmType
+import dev.helm.planner.ui.theme.palette
 import dev.helm.planner.ui.today.ResumeNoteDialog
 import java.time.LocalDate
 
@@ -56,6 +55,8 @@ import java.time.LocalDate
 fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
     Card(
         onClick = { actions.openTask(task.localId) },
+        colors = CardDefaults.cardColors(containerColor = palette.surface, contentColor = palette.text),
+        shape = HelmShapes.option,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -75,9 +76,11 @@ fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDr
 @Composable
 fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
     var editing by rememberSaveable { mutableStateOf(false) }
+    val p = palette
     Card(
         onClick = { actions.openTask(task.localId) },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(containerColor = p.accentSoft, contentColor = p.text),
+        shape = HelmShapes.card,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 4.dp)
@@ -88,17 +91,13 @@ fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: Boar
     ) {
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp, end = 4.dp)) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.section_now).uppercase(appLocale()),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+                SectionLabel(stringResource(R.string.section_now))
                 CardContent(task, today, Modifier, emphasized = true)
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = if (resume == null) 0.7f else 1f),
+                    style = helmType.small,
+                    color = if (resume == null) p.textMuted else p.text,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 48.dp)
@@ -128,16 +127,16 @@ fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Bo
     Column(modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             task.title,
-            style = if (emphasized) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyLarge,
+            style = if (emphasized) helmType.title else helmType.body,
             textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
-            color = if (emphasized) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+            color = if (task.status == TaskStatus.DONE) palette.textMuted else palette.text,
         )
         dueLabel(task, today)?.let { due ->
             val overdue = HelmDates.isOverdue(task, today.toString())
             Text(
                 if (overdue) stringResource(R.string.overdue_due, due) else due,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = helmType.small,
+                color = if (overdue) palette.danger else palette.textMuted,
             )
         }
         if (task.labels.isNotEmpty()) {
@@ -148,16 +147,17 @@ fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Bo
     }
 }
 
+/** A task label: the secondary colour on its own 16 % tint, small badge corners. */
 @Composable
-fun LabelTag(label: String, color: Color = MaterialTheme.colorScheme.secondaryContainer) {
-    Surface(color = color, shape = RoundedCornerShape(8.dp)) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-        )
-    }
+fun LabelTag(label: String, color: Color = palette.secondary) {
+    Text(
+        label,
+        style = helmType.smallStrong,
+        color = color,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.16f), HelmShapes.badge)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    )
 }
 
 /** Moves without dragging: one menu per card, every other column plus "now". */
@@ -165,13 +165,11 @@ fun LabelTag(label: String, color: Color = MaterialTheme.colorScheme.secondaryCo
 private fun MoveMenu(task: Task, actions: BoardActions) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more_actions, task.title))
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
+        HelmMenu(expanded = open, onDismiss = { open = false }) {
             moves(task).forEach { move ->
                 DropdownMenuItem(
-                    text = { Text(move.label()) },
+                    text = { Text(move.label(), style = helmType.body, color = palette.text) },
                     onClick = {
                         open = false
                         move.run(task, actions)

@@ -2,8 +2,6 @@ package dev.helm.planner.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,10 +27,9 @@ import dev.helm.planner.R
 import dev.helm.planner.export.ExportFormat
 import dev.helm.planner.notify.AndroidNotifier
 import dev.helm.planner.settings.AppLanguage
-import dev.helm.planner.ui.components.HelmCard
+import dev.helm.planner.ui.components.CardSection
 import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.SecondaryButton
-import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.components.SegmentOption
 import dev.helm.planner.ui.components.Segmented
 import dev.helm.planner.ui.components.TextAction
@@ -48,14 +45,6 @@ val REMINDER_OPTIONS = listOf(0, 5, 10, 15, 30, 60, 120, 1440)
 
 /** A settings section: an upper-case label and a card holding its rows. */
 @Composable
-internal fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionLabel(title, Modifier.padding(start = 4.dp, top = 12.dp), color = palette.textMuted)
-        HelmCard(content = content)
-    }
-}
-
-@Composable
 internal fun Hint(text: String, modifier: Modifier = Modifier) {
     Text(text, style = helmType.small, color = palette.textMuted, modifier = modifier)
 }
@@ -63,7 +52,7 @@ internal fun Hint(text: String, modifier: Modifier = Modifier) {
 @Composable
 internal fun NotificationsSection(access: NotificationAccess, exactAlarms: Boolean, actions: SettingsActions) {
     val p = palette
-    Section(stringResource(R.string.settings_notifications)) {
+    CardSection(stringResource(R.string.settings_notifications)) {
         if (access == NotificationAccess.ALLOWED) {
             Text(stringResource(R.string.settings_notifications_on), style = helmType.body, color = p.text)
         } else {
@@ -96,7 +85,7 @@ internal fun SummarySection(summaryTime: String, onPick: (String) -> Unit) {
     val p = palette
     var picking by rememberSaveable { mutableStateOf(false) }
     val changeLabel = stringResource(R.string.settings_summary_change)
-    Section(stringResource(R.string.settings_summary)) {
+    CardSection(stringResource(R.string.settings_summary)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -122,7 +111,7 @@ internal fun SummarySection(summaryTime: String, onPick: (String) -> Unit) {
 @Composable
 internal fun RemindersSection(minutes: List<Int>, onChange: (List<Int>) -> Unit) {
     val resources = LocalResources.current
-    Section(stringResource(R.string.settings_reminders)) {
+    CardSection(stringResource(R.string.settings_reminders)) {
         Hint(stringResource(R.string.settings_reminders_hint))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -151,10 +140,10 @@ internal fun RemindersSection(minutes: List<Int>, onChange: (List<Int>) -> Unit)
 
 @Composable
 internal fun LanguageSection(language: AppLanguage?, onChange: (AppLanguage) -> Unit) {
-    Section(stringResource(R.string.settings_language)) {
+    CardSection(stringResource(R.string.settings_language)) {
         if (language == null) {
             Hint(stringResource(R.string.settings_language_unsupported))
-            return@Section
+            return@CardSection
         }
         Segmented(
             options = AppLanguage.entries.map { option ->
@@ -179,7 +168,7 @@ internal fun LanguageSection(language: AppLanguage?, onChange: (AppLanguage) -> 
 @Composable
 internal fun ExportSection(status: ExportStatus, onExport: (ExportFormat) -> Unit) {
     val p = palette
-    Section(stringResource(R.string.settings_export)) {
+    CardSection(stringResource(R.string.settings_export)) {
         Hint(stringResource(R.string.settings_export_hint))
         val busy = status == ExportStatus.Working || status is ExportStatus.Ready
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -224,7 +213,7 @@ internal fun ExportSection(status: ExportStatus, onExport: (ExportFormat) -> Uni
 
 @Composable
 internal fun AboutSection(versionName: String, actions: SettingsActions) {
-    Section(stringResource(R.string.settings_about)) {
+    CardSection(stringResource(R.string.settings_about)) {
         Text(stringResource(R.string.settings_version, versionName), style = helmType.bodyStrong, color = palette.text)
         Hint(stringResource(R.string.about_text))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {

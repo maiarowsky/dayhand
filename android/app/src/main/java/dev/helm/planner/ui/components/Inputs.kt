@@ -2,6 +2,7 @@ package dev.helm.planner.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButtonColors
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.VisualTransformation
@@ -125,7 +129,14 @@ fun Pill(text: String, color: Color, modifier: Modifier = Modifier, strong: Bool
  * [multiple]: one of several that can be on together (a checkbox for screen readers), else one of a group.
  */
 @Composable
-fun HelmChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, multiple: Boolean = false) {
+fun HelmChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    multiple: Boolean = false,
+    enabled: Boolean = true,
+) {
     val p = palette
     Row(
         modifier
@@ -133,14 +144,55 @@ fun HelmChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Mod
             .clip(HelmShapes.pill)
             .background(if (selected) p.accentSoft else p.surface)
             .border(1.dp, if (selected) p.accent else p.border, HelmShapes.pill)
-            .selectable(selected = selected, role = if (multiple) Role.Checkbox else Role.RadioButton, onClick = onClick)
+            .selectable(selected = selected, enabled = enabled, role = if (multiple) Role.Checkbox else Role.RadioButton, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Selected is shown by a tick too, not by colour alone.
         if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(18.dp))
-        Text(text, style = helmType.smallStrong, color = if (selected) p.accent else p.textMuted, textAlign = TextAlign.Center)
+        Text(
+            text,
+            style = helmType.smallStrong,
+            color = when {
+                selected -> p.accent
+                enabled -> p.textMuted
+                else -> p.textFaint
+            },
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * A chip that does something (pick a day, add or remove a label): an outlined pill, at least 48 dp high, with an
+ * optional [icon] before the text and [trailingIcon] after it. [clickLabel] tells a screen reader what a tap does.
+ */
+@Composable
+fun ActionChip(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector? = null,
+    trailingIcon: ImageVector? = null,
+    clickLabel: String? = null,
+) {
+    val p = palette
+    val tint = if (enabled) p.accent else p.textFaint
+    Row(
+        modifier
+            .heightIn(min = HelmDimens.touchTarget)
+            .clip(HelmShapes.pill)
+            .border(1.dp, p.border, HelmShapes.pill)
+            .clickable(enabled = enabled, onClickLabel = clickLabel, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
+        Text(text, style = helmType.smallStrong, color = if (enabled) p.text else p.textMuted)
+        trailingIcon?.let { Icon(it, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(18.dp)) }
     }
 }
 
@@ -186,6 +238,7 @@ fun SwitchRow(
     onChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    enabled: Boolean = true,
 ) {
     val p = palette
     val interaction = remember { MutableInteractionSource() }
@@ -193,16 +246,17 @@ fun SwitchRow(
         modifier
             .fillMaxWidth()
             .heightIn(min = HelmDimens.touchTarget)
-            .toggleable(value = checked, interactionSource = interaction, indication = null, role = Role.Switch, onValueChange = onChange),
+            .toggleable(value = checked, enabled = enabled, interactionSource = interaction, indication = null, role = Role.Switch, onValueChange = onChange),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(end = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = helmType.body, color = p.text)
+            Text(title, style = helmType.body, color = if (enabled) p.text else p.textMuted)
             subtitle?.let { Text(it, style = helmType.small, color = p.textMuted) }
         }
         Switch(
             checked = checked,
             onCheckedChange = null,
+            enabled = enabled,
             interactionSource = interaction,
             colors = SwitchDefaults.colors(
                 checkedTrackColor = p.accent,
@@ -213,6 +267,12 @@ fun SwitchRow(
             ),
         )
     }
+}
+
+/** Radio button colours: the accent when chosen, muted otherwise. */
+@Composable
+fun helmRadioColors(): RadioButtonColors = palette.let { p ->
+    RadioButtonDefaults.colors(selectedColor = p.accent, unselectedColor = p.textMuted)
 }
 
 /** Checkbox colours: accent box with the on-accent tick, muted outline. */

@@ -23,15 +23,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,8 +41,6 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
@@ -54,6 +48,14 @@ import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.common.statusLabel
+import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.HelmFab
+import dev.helm.planner.ui.components.LargeHeader
+import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.theme.HelmDimens
+import dev.helm.planner.ui.theme.HelmShapes
+import dev.helm.planner.ui.theme.helmType
+import dev.helm.planner.ui.theme.palette
 import dev.helm.planner.ui.today.QuickAddSheet
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -80,28 +82,21 @@ fun BoardScreen(
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
 ) {
+    val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
     val today = LocalDate.parse(state.columns.date)
     Scaffold(
         modifier = modifier,
+        containerColor = p.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.board_title), modifier = Modifier.semantics { heading() }) },
-                actions = {
-                    IconButton(onClick = actions::openTrash, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.trash_title))
-                    }
-                    IconButton(onClick = actions::openSettings, modifier = Modifier.size(48.dp)) {
-                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.open_settings))
-                    }
-                },
-            )
+            LargeHeader(stringResource(R.string.board_title)) {
+                HeaderIconButton(Icons.Filled.Delete, stringResource(R.string.trash_title), actions::openTrash, tint = p.textMuted)
+                HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
+            }
         },
         bottomBar = bottomBar,
         floatingActionButton = {
-            FloatingActionButton(onClick = { adding = true }, modifier = Modifier.testTag(BoardTags.FAB)) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_task))
-            }
+            HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(BoardTags.FAB))
         },
     ) { padding ->
         val drag = remember { BoardDragState() }
@@ -139,14 +134,23 @@ fun BoardScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Tabbed(state: BoardUiState, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
+    val p = palette
     var selected by rememberSaveable { mutableStateOf(TaskStatus.TODO) }
     // Scrollable, so a column name is never broken mid-word at the largest system font.
-    PrimaryScrollableTabRow(selectedTabIndex = selected.ordinal, edgePadding = 0.dp) {
+    PrimaryScrollableTabRow(
+        selectedTabIndex = selected.ordinal,
+        edgePadding = HelmDimens.screenMargin - 16.dp,
+        containerColor = p.background,
+        contentColor = p.accent,
+        divider = { HorizontalDivider(color = p.border) },
+    ) {
         TaskStatus.entries.forEach { status ->
             Tab(
                 selected = selected == status,
                 onClick = { selected = status },
-                text = { Text(columnTitle(status, state.columns.column(status).size), maxLines = 1) },
+                selectedContentColor = p.accent,
+                unselectedContentColor = p.textMuted,
+                text = { Text(columnTitle(status, state.columns.column(status).size), style = helmType.smallStrong, maxLines = 1) },
                 modifier = Modifier
                     .heightIn(min = 48.dp)
                     .dropTarget(drag, status)
@@ -170,14 +174,11 @@ private fun SideBySide(state: BoardUiState, today: LocalDate, actions: BoardActi
                     .hoverHighlight(drag.hovered == status)
                     .testTag(BoardTags.column(status)),
             ) {
-                Text(
+                SectionLabel(
                     columnTitle(status, state.columns.column(status).size),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .semantics { heading() },
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 )
                 ColumnList(status, state, today, actions, drag, Modifier)
             }
@@ -201,8 +202,8 @@ private fun ColumnList(
             item {
                 Text(
                     stringResource(R.string.board_empty_column),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = helmType.body,
+                    color = palette.textMuted,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(24.dp)
@@ -220,7 +221,7 @@ private fun columnTitle(status: TaskStatus, count: Int) = stringResource(R.strin
 
 @Composable
 private fun Modifier.hoverHighlight(hovered: Boolean): Modifier =
-    if (hovered) background(MaterialTheme.colorScheme.primaryContainer) else this
+    if (hovered) background(palette.accentSoft) else this
 
 /** The card under the finger while it is dragged. */
 @Composable
@@ -235,7 +236,8 @@ private fun DragGhost(drag: BoardDragState, rootOrigin: Offset, today: LocalDate
     ) {
         Card(
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            colors = CardDefaults.cardColors(containerColor = palette.surfaceRaised, contentColor = palette.text),
+            shape = HelmShapes.option,
             modifier = Modifier.width(width),
         ) {
             CardContent(task, today, Modifier.padding(16.dp))

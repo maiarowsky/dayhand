@@ -110,7 +110,7 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
         Row(verticalAlignment = Alignment.Top) {
             TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
             Column(Modifier.weight(1f).padding(top = 10.dp)) {
-                SectionLabel(stringResource(R.string.section_now), color = p.working)
+                SectionLabel(stringResource(R.string.section_now))
                 TaskTitle(task, emphasized = true, modifier = Modifier.openTask(task, actions))
                 val resume = task.resumeNote
                 Text(

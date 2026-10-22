@@ -140,6 +140,7 @@
     <string name="open_link">Otwórz link</string>
     <string name="remove_link">Usuń link: %1$s</string>
     <string name="no_links">Brak linków</string>
+    <string name="no_labels">Brak etykiet</string>
     <string name="link_url">Adres</string>
     <string name="link_title">Tytuł (opcjonalnie)</string>
     <string name="link_invalid">Wpisz pełny adres http:// lub https://</string>
