@@ -371,7 +371,7 @@ private fun LinksSection(task: Task, editable: Boolean, actions: TaskDetailActio
                             .clickable(onClickLabel = stringResource(R.string.open_link)) { uriHandler.openUri(link.url) }
                             .padding(vertical = 8.dp),
                     ) {
-                        Text(link.title ?: link.url, style = helmType.bodyStrong, color = p.link)
+                        Text(link.title ?: link.url, style = helmType.bodyStrong, color = p.accent)
                         if (link.title != null) Text(link.url, style = helmType.small, color = p.textMuted)
                     }
                     if (editable) {

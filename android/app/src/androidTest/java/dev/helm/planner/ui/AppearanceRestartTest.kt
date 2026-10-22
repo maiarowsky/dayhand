@@ -6,9 +6,9 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -58,7 +58,8 @@ class AppearanceRestartTest {
 
     @Test
     fun paletteAndFontChangeAtOnceAndSurviveARestart() {
-        assertColor(Palettes.Terracotta.background, rootCorner())
+        assertColor(Palettes.Terracotta.background, screenEdge())
+        assertColor(Palettes.Terracotta.surface, tabBarCorner())
 
         compose.onNodeWithContentDescription(context.getString(R.string.open_settings)).performClick()
         compose.onNodeWithTag(AppearanceTags.COLORS).performScrollTo().performClick()
@@ -71,12 +72,13 @@ class AppearanceRestartTest {
         compose.waitForIdle()
 
         // Back on Today, without a restart.
-        assertColor(Palettes.Dracula.background, rootCorner())
+        assertColor(Palettes.Dracula.background, screenEdge())
+        assertColor(Palettes.Dracula.surface, tabBarCorner())
         assertEquals(HelmFont.Atkinson.family, titleFont())
 
         compose.activityRule.scenario.recreate()
         compose.waitForIdle()
-        assertColor(Palettes.Dracula.background, rootCorner())
+        assertColor(Palettes.Dracula.background, screenEdge())
         assertEquals(HelmFont.Atkinson.family, titleFont())
 
         // What the next launch reads from storage.
@@ -88,13 +90,20 @@ class AppearanceRestartTest {
 
     private fun titleFont(): FontFamily? {
         val results = mutableListOf<TextLayoutResult>()
-        compose.onNodeWithText(context.getString(R.string.today_title), useUnmergedTree = true)
+        // The header title; the tab bar's "Today" label is the second node with the same text.
+        compose.onAllNodesWithText(context.getString(R.string.today_title), useUnmergedTree = true)[0]
             .fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
         return results.first().layoutInput.style.fontFamily
     }
 
-    /** A pixel near the bottom-left corner of Today, left of the add button: only the screen background is there. */
-    private fun rootCorner(): Color {
+    /** A pixel on the left edge halfway down Today, inside the screen margin: only the screen background is there. */
+    private fun screenEdge(): Color {
+        val pixels = compose.onRoot().captureToImage().toPixelMap()
+        return pixels[4, pixels.height / 2]
+    }
+
+    /** A pixel in the bottom-left corner: the tab bar, drawn in the palette's surface colour. */
+    private fun tabBarCorner(): Color {
         val pixels = compose.onRoot().captureToImage().toPixelMap()
         return pixels[4, pixels.height - 4]
     }
