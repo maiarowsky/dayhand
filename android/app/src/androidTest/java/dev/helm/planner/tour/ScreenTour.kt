@@ -2,11 +2,14 @@ package dev.helm.planner.tour
 
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -82,7 +85,9 @@ class ScreenTour {
     fun today() {
         show { TodayScreen(full, object : TodayActions {}) }
         shot("01-today")
-        compose.onNodeWithTag(TodayTags.DONE).performScrollTo().performClick()
+        // A lazy list composes only what is on screen, so scroll the list itself to the header first.
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag(TodayTags.DONE))
+        compose.onNodeWithTag(TodayTags.DONE).performClick()
         shot("02-today-done-open")
     }
 

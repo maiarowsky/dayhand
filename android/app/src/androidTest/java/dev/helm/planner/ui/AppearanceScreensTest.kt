@@ -89,14 +89,14 @@ class AppearanceScreensTest {
         }
         val title = compose.onNodeWithText(context.getString(R.string.appearance_font))
         assertEquals(FontFamily.Default, title.fontFamily())
-        val before = title.fetchSemanticsNode().size.width
+        val before = title.layout().getLineRight(0)
 
         compose.onNodeWithTag(AppearanceTags.font(HelmFont.Mono)).performScrollTo().performClick()
         compose.waitForIdle()
 
         assertEquals(HelmFont.Mono, appearance.font)
         assertEquals(HelmFont.Mono.family, title.fontFamily())
-        assertNotEquals("the title is drawn in another font", before, title.fetchSemanticsNode().size.width)
+        assertNotEquals("the title is drawn in another font", before, title.layout().getLineRight(0))
     }
 
     private fun background(): Color {
@@ -110,9 +110,11 @@ class AppearanceScreensTest {
         assertTrue("expected $expected, drawn $actual", close)
     }
 
-    private fun SemanticsNodeInteraction.fontFamily(): FontFamily? {
+    private fun SemanticsNodeInteraction.layout(): TextLayoutResult {
         val results = mutableListOf<TextLayoutResult>()
         fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
-        return results.first().layoutInput.style.fontFamily
+        return results.first()
     }
+
+    private fun SemanticsNodeInteraction.fontFamily(): FontFamily? = layout().layoutInput.style.fontFamily
 }
