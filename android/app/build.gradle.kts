@@ -11,6 +11,10 @@ val commitCount = providers.exec {
     isIgnoreExitValue = true
 }.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }
 
+// The server the Connect screen offers first (HTTP actions URL); -Phelm.serverUrl=… for another deployment.
+val defaultServerUrl = providers.gradleProperty("helm.serverUrl")
+    .orElse("https://impressive-grouse-796.eu-west-1.convex.site")
+
 android {
     namespace = "dev.helm.planner"
     compileSdk = 36
@@ -21,8 +25,9 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount.get()
-        versionName = "0.2.0"
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "DEFAULT_SERVER_URL", "\"${defaultServerUrl.get()}\"")
 
         // Phones and Apple Silicon emulators are arm64; x86_64 covers Intel emulators.
         ndk {
@@ -43,6 +48,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     androidResources {

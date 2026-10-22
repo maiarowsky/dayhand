@@ -76,6 +76,12 @@ The JWT has header `{ "alg": "ES256", "typ": "JWT", "kid": … }` and claims `is
 - Revoking a device stops new tokens at once; a JWT it already holds stays valid until its
   `exp` (at most one hour).
 
+The app does all of the above from version 0.3.0: the Connect screen, the `helm://pair` link,
+the encrypted device token and the refresh are described in
+[android/README.md](../android/README.md#signing-in). A device cannot revoke itself (the
+`/devices/*` routes need an API key), so the app's Disconnect only forgets the sign-in on the
+phone and names `helm revoke <deviceId>` for the server side.
+
 ## Managing devices (CLI)
 
 ```sh

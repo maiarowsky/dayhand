@@ -16,7 +16,8 @@ fun connectionStatus(
     feed: Flow<FeedState>,
 ): Flow<ConnectionStatus> = combine(settings, online, feed) { s, isOnline, state ->
     when {
-        s.backend == null -> ConnectionStatus.NOT_CONFIGURED
+        // A phone the server signed out says so until it is paired again.
+        s.backend == null -> if (s.pairingLost) ConnectionStatus.UNAUTHORIZED else ConnectionStatus.NOT_CONFIGURED
         s.offlineMode -> ConnectionStatus.OFFLINE_MODE
         !isOnline -> ConnectionStatus.OFFLINE
         state == FeedState.UNAUTHORIZED -> ConnectionStatus.UNAUTHORIZED

@@ -47,23 +47,14 @@
 
     <string name="status_offline">Offline. Changes are saved and will be sent when the network is back (%1$d waiting).</string>
     <string name="status_offline_mode">Offline test mode is on. Changes wait on the phone (%1$d waiting).</string>
-    <string name="status_not_configured">Not connected to a server yet. Set the address and token in Settings.</string>
-    <string name="status_unauthorized">The server refused the token. Paste a new one in Settings.</string>
+    <string name="status_not_configured">Not connected to a server. Connect in Settings with a code from hlm pair.</string>
+    <string name="status_unauthorized">The server signed this phone out. Connect again in Settings.</string>
     <string name="status_error">Cannot reach the server. Helm keeps trying.</string>
     <string name="status_sending">Sending %1$d changes…</string>
 
     <string name="settings_title">Settings</string>
     <string name="back">Back</string>
     <string name="settings_backend">Server</string>
-    <string name="settings_url">Backend address</string>
-    <string name="settings_url_hint">For example https://example.convex.cloud</string>
-    <string name="settings_url_invalid">Enter an http:// or https:// address</string>
-    <string name="settings_token">App token</string>
-    <string name="settings_token_hint">Paste the token from npm run app-token</string>
-    <string name="settings_token_saved">A token is saved. Leave the field empty to keep it.</string>
-    <string name="settings_token_missing">No token saved yet.</string>
-    <string name="settings_token_invalid">This does not look like an app token</string>
-    <string name="settings_saved">Saved</string>
     <string name="settings_offline">Offline test mode</string>
     <string name="settings_offline_hint">Nothing is sent or received while it is on; changes wait in the queue.</string>
     <string name="settings_timezone">Time zone (from the server): %1$s</string>
@@ -121,8 +112,8 @@
     <string name="connection_connecting">connecting…</string>
     <string name="connection_offline">no network</string>
     <string name="connection_offline_mode">offline test mode</string>
-    <string name="connection_not_configured">no server set up</string>
-    <string name="connection_unauthorized">the server refused the token</string>
+    <string name="connection_not_configured">not connected</string>
+    <string name="connection_unauthorized">the server refused the sign-in</string>
     <string name="connection_error">cannot reach the server</string>
     <plurals name="connection_pending">
         <item quantity="one">%d change waits to be sent.</item>

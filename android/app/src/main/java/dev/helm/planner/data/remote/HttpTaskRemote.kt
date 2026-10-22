@@ -1,5 +1,8 @@
 package dev.helm.planner.data.remote
 
+import dev.helm.planner.auth.AppTokens
+import dev.helm.planner.auth.StaticTokens
+import dev.helm.planner.auth.TokenResult
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -26,22 +29,24 @@ fun interface HttpTransport {
 /**
  * The Convex HTTP API (`POST /api/mutation`, `POST /api/query`), the same calls the official
  * `ConvexHttpClient` makes. A function that failed answers 560 with `{status: "error"}`.
+ * The app JWT comes from [tokens]; a refused one is refreshed and the call tried once more.
  */
 class HttpTaskRemote(
     private val deploymentUrl: String,
-    private val token: String,
+    private val tokens: AppTokens,
     private val transport: HttpTransport = UrlConnectionTransport,
     private val pollIntervalMs: Long = POLL_INTERVAL_MS,
 ) : TaskRemote {
 
-    override suspend fun send(mutation: String, args: JsonObject): SendResult {
-        val response = try {
-            transport.postJson("$deploymentUrl/api/mutation", token, requestBody(mutation, args))
-        } catch (e: IOException) {
-            return SendResult.Failed(e.javaClass.simpleName)
-        }
-        return classify(response)
-    }
+    constructor(
+        deploymentUrl: String,
+        token: String,
+        transport: HttpTransport = UrlConnectionTransport,
+        pollIntervalMs: Long = POLL_INTERVAL_MS,
+    ) : this(deploymentUrl, StaticTokens(token), transport, pollIntervalMs)
+
+    override suspend fun send(mutation: String, args: JsonObject): SendResult =
+        call("$deploymentUrl/api/mutation", requestBody(mutation, args))
 
     /** The whole plan as `app:exportPlan` renders it, for [format] `markdown` or `json`. */
     suspend fun exportPlan(format: String, at: Long): SendResult = query(RemoteJson.QUERY_EXPORT, buildJsonObject {
@@ -66,8 +71,28 @@ class HttpTaskRemote(
         return RemoteJson.snapshot(tasks.value, settings.value)
     }
 
-    private suspend fun query(path: String, args: JsonObject): SendResult = try {
-        classify(transport.postJson("$deploymentUrl/api/query", token, requestBody(path, args)))
+    private suspend fun query(path: String, args: JsonObject): SendResult =
+        call("$deploymentUrl/api/query", requestBody(path, args))
+
+    private suspend fun call(url: String, body: String): SendResult {
+        val first = tokens.token()
+        if (first !is TokenResult.Issued) return first.asSendResult()
+        val result = post(url, first.token, body)
+        if (result != SendResult.Unauthorized) return result
+        // The JWT may have expired early (clock skew) or been rotated: one more try with a new one.
+        val second = tokens.token(forceRefresh = true)
+        if (second !is TokenResult.Issued || second.token == first.token) return result
+        return post(url, second.token, body)
+    }
+
+    private fun TokenResult.asSendResult(): SendResult = when (this) {
+        TokenResult.Revoked -> SendResult.Unauthorized
+        is TokenResult.Unavailable -> SendResult.Failed(reason)
+        is TokenResult.Issued -> SendResult.Failed("unexpected")
+    }
+
+    private suspend fun post(url: String, token: String, body: String): SendResult = try {
+        classify(transport.postJson(url, token, body))
     } catch (e: IOException) {
         SendResult.Failed(e.javaClass.simpleName)
     }

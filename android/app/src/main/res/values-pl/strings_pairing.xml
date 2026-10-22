@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">Połącz z serwerem</string>
+    <string name="connect_intro">Na komputerze uruchom hlm pair (albo npx helm pair) i wpisz kod, który się pojawi. Kod działa raz, przez 10 minut.</string>
+    <string name="connect_address">Adres serwera</string>
+    <string name="connect_address_hint">Adres HTTP actions, np. https://nazwa.convex.site</string>
+    <string name="connect_code">Kod parowania</string>
+    <string name="connect_code_hint">12 liter i cyfr, np. ABCD-EFGH-JKMN</string>
+    <string name="connect_button">Połącz</string>
+    <string name="connect_working">Łączę…</string>
+    <string name="connect_skip">Nie teraz, używaj Helm offline</string>
+    <string name="connect_done">Połączono. Synchronizuję zadania…</string>
+    <string name="connect_error_address">Wpisz adres serwera zaczynający się od https://</string>
+    <string name="connect_error_code">Kod ma 12 liter i cyfr, np. ABCD-EFGH-JKMN.</string>
+    <string name="connect_error_invalid">Ten kod jest błędny, już użyty albo wygasł. Uruchom hlm pair, żeby dostać nowy.</string>
+    <string name="connect_error_rate_limited">Za dużo błędnych kodów. Spróbuj później.</string>
+    <plurals name="connect_error_rate_limited_minutes">
+        <item quantity="one">Za dużo błędnych kodów. Spróbuj za %1$d minutę.</item>
+        <item quantity="few">Za dużo błędnych kodów. Spróbuj za %1$d minuty.</item>
+        <item quantity="many">Za dużo błędnych kodów. Spróbuj za %1$d minut.</item>
+        <item quantity="other">Za dużo błędnych kodów. Spróbuj za %1$d minuty.</item>
+    </plurals>
+    <string name="connect_error_no_network">Brak sieci. Połącz się z internetem i spróbuj ponownie.</string>
+    <string name="connect_error_unreachable">Nie mogę połączyć się z serwerem. Sprawdź adres i spróbuj ponownie.</string>
+    <string name="connect_error_not_helm">Pod tym adresem nie ma serwera Helm.</string>
+    <string name="connect_error_server">Serwer ma teraz problem. Spróbuj za chwilę.</string>
+
+    <string name="server_connected_to">Połączono z %1$s</string>
+    <string name="server_device">Ten telefon: %1$s</string>
+    <string name="server_app_token">Zalogowano tokenem aplikacji. Lepiej sparuj telefon kodem; token przestanie działać, gdy wygaśnie.</string>
+    <string name="server_not_connected">Ten telefon nie jest połączony z serwerem. Zadania zostają w telefonie, dopóki się nie połączysz.</string>
+    <string name="server_signed_out">Serwer wylogował ten telefon. Połącz ponownie nowym kodem.</string>
+    <string name="server_connect">Połącz z serwerem</string>
+    <string name="server_connect_code">Połącz kodem</string>
+    <string name="server_disconnect">Rozłącz</string>
+    <string name="server_disconnect_title">Rozłączyć ten telefon?</string>
+    <string name="server_disconnect_text">Helm zapomni logowanie na tym telefonie. Zadania zostaną tutaj, a niewysłane zmiany poczekają do ponownego połączenia. Aby odwołać telefon także na serwerze, uruchom: hlm revoke %1$s</string>
+    <string name="server_disconnect_text_no_id">Helm zapomni logowanie na tym telefonie. Zadania zostaną tutaj, a niewysłane zmiany poczekają do ponownego połączenia.</string>
+</resources>
