@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/export.schema.json",
+  "title": "Export",
+  "description": "export_plan (hlm export --json). A Markdown export has no structured content; hlm prints it as {format: markdown, content: <text>}. With -o, the JSON is {written: <file>, format}.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "format",
+        "content"
+      ],
+      "properties": {
+        "format": {
+          "const": "markdown"
+        },
+        "content": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "format",
+        "content"
+      ],
+      "properties": {
+        "format": {
+          "const": "json"
+        },
+        "content": {
+          "type": "object",
+          "required": [
+            "version",
+            "exportedAt",
+            "settings",
+            "tasks",
+            "events"
+          ],
+          "properties": {
+            "version": {
+              "type": "integer"
+            },
+            "exportedAt": {
+              "type": "number",
+              "description": "Unix time in milliseconds"
+            },
+            "settings": {
+              "$ref": "settings.schema.json"
+            },
+            "tasks": {
+              "type": "array",
+              "items": {
+                "$ref": "task.schema.json"
+              }
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "written",
+        "format"
+      ],
+      "properties": {
+        "written": {
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "markdown",
+            "json"
+          ]
+        }
+      }
+    }
+  ]
+}

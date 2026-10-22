@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/tools.schema.json",
+  "title": "Tools",
+  "description": "tools/list (hlm tools).",
+  "type": "object",
+  "required": [
+    "tools"
+  ],
+  "properties": {
+    "tools": {
+      "type": "array",
+      "items": {
+        "$ref": "tool.schema.json"
+      }
+    }
+  }
+}

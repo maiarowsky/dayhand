@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/version.schema.json",
+  "title": "Version",
+  "description": "hlm version: CLI and server versions.",
+  "type": "object",
+  "required": [
+    "cli",
+    "server",
+    "minServerVersion",
+    "compatible"
+  ],
+  "properties": {
+    "cli": {
+      "type": "string"
+    },
+    "server": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "minServerVersion": {
+      "type": "string"
+    },
+    "compatible": {
+      "type": "boolean"
+    }
+  }
+}
