@@ -1,5 +1,6 @@
 package dev.helm.planner.data.remote
 
+import dev.helm.planner.domain.ReminderRules
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +23,12 @@ fun interface MutationSender {
 interface TaskRemote : TaskFeed, MutationSender
 
 sealed interface RemoteEvent {
-    data class Snapshot(val tasks: List<RemoteTask>, val timezone: String) : RemoteEvent
+    data class Snapshot(
+        val tasks: List<RemoteTask>,
+        val timezone: String,
+        val summaryTime: String = ReminderRules.DEFAULT_SUMMARY_TIME,
+        val reminderMinutes: List<Int> = ReminderRules.DEFAULT_REMINDER_MINUTES,
+    ) : RemoteEvent
     data object Unauthorized : RemoteEvent
     data class Failed(val message: String) : RemoteEvent
 }

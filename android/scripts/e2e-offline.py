@@ -56,6 +56,16 @@ def find(text=None, desc=None, timeout=15):
     raise RuntimeError(f"not on screen: text={text!r} desc={desc!r}")
 
 
+def find_scrolling(text=None, desc=None, attempts=8):
+    """Scrolls a long screen (Settings) down until the node is on screen."""
+    for _ in range(attempts):
+        try:
+            return find(text=text, desc=desc, timeout=2)
+        except RuntimeError:
+            shell("input", "swipe", "540", "1800", "540", "900", "300")
+    raise RuntimeError(f"not found after scrolling: text={text!r} desc={desc!r}")
+
+
 def tap(node):
     x1, y1, x2, y2 = map(int, re.findall(r"\d+", node.get("bounds")))
     shell("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
@@ -120,11 +130,18 @@ def app_pid():
 
 def configure(url, token):
     tap(find(desc="Settings"))
-    tap(find(text="Backend address"))
+    tap(find_scrolling(text="Backend address"))
+    time.sleep(1)
     type_text(url)
-    tap(find(text="App token"))
+    # Close the keyboard first: it moves the long Settings screen under the next tap.
+    shell("input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1)
+    tap(find_scrolling(text="App token"))
+    time.sleep(1)
     type_text(token)
-    tap(find_button("Save"))
+    shell("input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1)
+    tap(find_scrolling(text="Save"))
     find(text="Saved")
     tap(find(desc="Back"))
     log("backend address and token saved in Settings")

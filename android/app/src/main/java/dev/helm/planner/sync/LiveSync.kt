@@ -49,7 +49,7 @@ class LiveSync(
             when (event) {
                 is RemoteEvent.Snapshot -> {
                     repository.applySnapshot(event)
-                    settings.setTimezone(event.timezone)
+                    settings.applyServer(event, keepLocalChanges = repository.hasPendingSettingsChange())
                     _state.value = FeedState.SYNCED
                 }
                 RemoteEvent.Unauthorized -> _state.value = FeedState.UNAUTHORIZED

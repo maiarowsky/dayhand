@@ -12,6 +12,12 @@ import dev.helm.planner.data.remote.ConvexTaskFeed
 import dev.helm.planner.data.remote.HttpTaskRemote
 import dev.helm.planner.data.remote.MutationSender
 import dev.helm.planner.data.remote.TaskFeed
+import dev.helm.planner.domain.ReminderRules
+import dev.helm.planner.export.PlanExporter
+import dev.helm.planner.notify.AndroidAlarmScheduler
+import dev.helm.planner.notify.AndroidNotifier
+import dev.helm.planner.notify.DataStoreAlarmState
+import dev.helm.planner.notify.ReminderEngine
 import dev.helm.planner.settings.BackendConfig
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
@@ -19,6 +25,10 @@ import dev.helm.planner.sync.NetworkMonitor
 import dev.helm.planner.sync.OutboxScheduler
 import dev.helm.planner.sync.RoomOutboxStore
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class HelmApplication : Application() {
@@ -30,6 +40,15 @@ class HelmApplication : Application() {
         container = AppContainer(this)
         // Changes left from an earlier run (killed app, reboot) go out as soon as there is a network.
         container.outboxScheduler.restart()
+        container.notifier.createChannels()
+        // Alarms follow every change of the timed tasks or the reminder settings, from any source.
+        container.backgroundScope.launch {
+            combine(container.repository.tasks, container.settings.settings) { tasks, s ->
+                ReminderRules.reminders(tasks, s.reminderMinutes, s.timezone) to s.reminders
+            }
+                .distinctUntilChanged()
+                .collect { container.reminders.reschedule() }
+        }
         ProcessLifecycleOwner.get().lifecycleScope.launch {
             ProcessLifecycleOwner.get().repeatOnLifecycle(Lifecycle.State.STARTED) {
                 container.liveSync.run()
@@ -47,6 +66,20 @@ class AppContainer(context: Context) {
     val outboxStore = RoomOutboxStore(database)
     val repository = TaskRepository(database, onOutboxChanged = outboxScheduler::schedule)
     val liveSync = LiveSync(settings, repository, ::feedFor)
+
+    /** Work that outlives a screen: alarm receivers and the reminder schedule. */
+    val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val notifier = AndroidNotifier(context)
+    val reminders = ReminderEngine(
+        tasks = { database.tasks().all() },
+        settings = { settings.current().reminders },
+        state = DataStoreAlarmState(context),
+        alarms = AndroidAlarmScheduler(context),
+        notifier = notifier,
+    )
+
+    /** The plan export goes over plain HTTP, like the outbox. */
+    fun exporter(backend: BackendConfig) = PlanExporter(HttpTaskRemote(backend.url, backend.token))
 
     /** The outbox talks plain HTTP: clear timeouts and no WebSocket in the background. */
     fun mutationSender(backend: BackendConfig): MutationSender = HttpTaskRemote(backend.url, backend.token)
