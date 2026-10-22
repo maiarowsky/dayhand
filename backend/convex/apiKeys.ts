@@ -6,22 +6,18 @@ import type { Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
 import { args } from "./lib/args";
 import { fail, recordEvent } from "./lib/core";
+import { randomBase64url, sha256Hex } from "./lib/secrets";
 import { actorValidator } from "./lib/validators";
 
 const KEY_PREFIX = "helm_";
 const MAX_NAME = 100;
 const identityArgs = { userId: v.string(), actor: actorValidator };
 
-export async function hashKey(key: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
+export const hashKey = sha256Hex;
 
 function newKey(): string {
   // Actions have a real random source (mutations are deterministic).
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  const base64 = btoa(String.fromCharCode(...bytes));
-  return KEY_PREFIX + base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return KEY_PREFIX + randomBase64url(32);
 }
 
 /** Domain operation createApiKey: returns the plain key exactly once. */
@@ -85,6 +81,6 @@ export const verify = internalQuery({
       .withIndex("by_hash", (q) => q.eq("hash", hash))
       .unique();
     if (!key || key.revokedAt !== undefined) return null;
-    return { userId: key.userId };
+    return { userId: key.userId, keyId: key._id, name: key.name };
   },
 });

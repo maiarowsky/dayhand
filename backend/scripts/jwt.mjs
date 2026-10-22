@@ -1,6 +1,8 @@
 // Minimal ES256 JWT helpers for local development and tests: a key pair
-// whose public half goes into the deployment as a JWKS data URI, and app
-// tokens signed with the private half. Production pairing is a later step.
+// whose public half goes into the deployment as a JWKS data URI (HELM_JWKS)
+// and whose private half is HELM_JWT_PRIVATE_JWK, and app tokens signed with
+// the private half. Deployed, the backend itself signs tokens for paired
+// phones (convex/lib/appToken.ts).
 import { randomUUID, webcrypto } from "node:crypto";
 
 const { subtle } = webcrypto;

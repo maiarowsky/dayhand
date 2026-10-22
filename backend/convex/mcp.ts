@@ -7,9 +7,10 @@ import { internal } from "./_generated/api";
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { hashKey } from "./apiKeys";
 import { args } from "./lib/args";
+import { bearerToken } from "./lib/http";
 import { objectSchema } from "./lib/jsonSchema";
 
-export const SERVER_INFO = { name: "helm", version: "0.1.0" };
+export const SERVER_INFO = { name: "helm", version: "0.2.0" };
 const SUPPORTED_PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const MAX_BODY_BYTES = 256 * 1024;
 
@@ -111,9 +112,9 @@ function unauthorized() {
 }
 
 async function authenticate(ctx: ActionCtx, request: Request): Promise<string | null> {
-  const match = /^Bearer\s+(\S+)\s*$/i.exec(request.headers.get("Authorization") ?? "");
-  if (!match) return null;
-  const owner = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(match[1]) });
+  const key = bearerToken(request);
+  if (!key) return null;
+  const owner = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) });
   return owner?.userId ?? null;
 }
 

@@ -38,6 +38,9 @@ Creating and revoking API keys is not exposed to the agent on purpose: a key tha
 keys could outlive its own revocation. Keys are managed by the app (`app.createApiKey`,
 `app.revokeApiKey`) or by the deployment admin (`npx convex run apiKeys:create`).
 
+Phone pairing is not an MCP tool either. The CLI pairs phones through separate endpoints
+(`/devices/*`, see [pairing.md](pairing.md)) that accept the same API key.
+
 ## Connecting a client
 
 Any MCP client with Streamable HTTP and custom headers works, for example:

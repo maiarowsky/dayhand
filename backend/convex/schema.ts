@@ -64,6 +64,47 @@ export default defineSchema({
     .index("by_hash", ["hash"])
     .index("by_user", ["userId"]),
 
+  // One-time codes that pair a phone; valid 10 minutes, used at most once.
+  pairingCodes: defineTable({
+    userId: v.string(),
+    // Public first part of the code, used to find it among active codes.
+    selector: v.string(),
+    // SHA-256 of the secret part, hex. The code itself is never stored.
+    secretHash: v.string(),
+    // Who created the code: `API key "<name>"` or `admin`.
+    createdBy: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    // Wrong secrets for this selector; the code dies at the limit.
+    failedAttempts: v.number(),
+  })
+    .index("by_selector", ["selector"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  // Paired phones. The device token is long-lived and revocable; the phone
+  // exchanges it for short-lived app JWTs at POST /auth/token.
+  devices: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    selector: v.string(),
+    // SHA-256 of the device token's secret part, hex.
+    secretHash: v.string(),
+    pairedBy: v.string(),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_selector", ["selector"])
+    .index("by_user", ["userId"]),
+
+  // Failed-attempt counters of unauthenticated endpoints, one row per bucket.
+  authLimits: defineTable({
+    bucket: v.string(),
+    windowStart: v.number(),
+    failures: v.number(),
+  }).index("by_bucket", ["bucket"]),
+
   settings: defineTable({
     userId: v.string(),
     timezone: v.string(),

@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// helm: a thin command line client. Every command is one MCP tools/call on
-// the same /mcp endpoint the agent uses, authenticated with HELM_API_KEY.
+// helm: a thin command line client authenticated with HELM_API_KEY. Task
+// commands are one MCP tools/call on the same /mcp endpoint the agent uses;
+// device commands (pair, devices, revoke) use the /devices endpoints.
 import { randomUUID } from "node:crypto";
 import { parseArgs } from "node:util";
+import qrcode from "qrcode-terminal";
 
 const USAGE = `Usage: helm <command> [options]
 
@@ -17,6 +19,9 @@ Commands:
   now --clear                        Clear the "now" task
   list [--label L]... [--done]       All open tasks (with --done also done ones)
   export [--format md|json]          Print the whole plan
+  pair [--no-qr]                     One-time code (10 minutes) that signs the phone app in
+  devices                            Paired phones
+  revoke <deviceId>                  Sign a phone out: it gets no new app tokens
 
 Options:
   --json     Print the raw JSON result
@@ -35,31 +40,44 @@ class CliError extends Error {
   }
 }
 
-function endpoint() {
+/** Deployment HTTP actions URL without a trailing slash or /mcp. */
+function baseUrl() {
   const base = process.env.HELM_URL;
   if (!base) throw new CliError("HELM_URL is not set", EXIT.usage);
   if (!process.env.HELM_API_KEY) throw new CliError("HELM_API_KEY is not set", EXIT.usage);
-  return base.replace(/\/+$/, "").replace(/\/mcp$/, "") + "/mcp";
+  return base.replace(/\/+$/, "").replace(/\/mcp$/, "");
 }
 
-async function callTool(name, args = {}) {
+async function request(method, path, body) {
   let response;
   try {
-    response = await fetch(endpoint(), {
-      method: "POST",
+    response = await fetch(baseUrl() + path, {
+      method,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json, text/event-stream",
         Authorization: `Bearer ${process.env.HELM_API_KEY}`,
       },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }),
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (error) {
     throw new CliError(`Cannot reach ${process.env.HELM_URL}: ${error.cause?.code ?? error.message}`, EXIT.failed);
   }
   if (response.status === 401) throw new CliError("HELM_API_KEY was rejected (wrong or revoked)", EXIT.auth);
-  if (!response.ok) throw new CliError(`Server answered HTTP ${response.status}`, EXIT.failed);
-  const message = await response.json();
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new CliError(error?.error_description ?? `Server answered HTTP ${response.status}`, EXIT.failed);
+  }
+  return response.json();
+}
+
+async function callTool(name, args = {}) {
+  const message = await request("POST", "/mcp", {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "tools/call",
+    params: { name, arguments: args },
+  });
   if (message.error) throw new CliError(message.error.message, EXIT.failed);
   const text = message.result.content?.[0]?.text ?? "";
   if (message.result.isError) throw new CliError(text, EXIT.failed);
@@ -90,6 +108,25 @@ function printToday(view) {
   out.push("TODAY", ...(view.today.length ? view.today.map(line) : ["  (nothing planned)"]));
   if (view.doneToday.length) out.push(`DONE (${view.doneToday.length})`, ...view.doneToday.map(line));
   console.log(out.join("\n"));
+}
+
+const day = (ms) => new Date(ms).toISOString().slice(0, 16).replace("T", " ");
+
+function printDevices({ devices }) {
+  if (!devices.length) return console.log("(no paired devices)");
+  for (const d of devices) {
+    const state = d.revokedAt ? `revoked ${day(d.revokedAt)}` : d.lastUsedAt ? `last used ${day(d.lastUsedAt)}` : "never used";
+    console.log(`  ${d.name}  paired ${day(d.createdAt)} by ${d.pairedBy}, ${state} (${d.id})`);
+  }
+}
+
+/** Deep link the phone app opens: helm://pair?url=<HTTP actions URL>&code=<code>. */
+const pairingLink = (code) => `helm://pair?url=${encodeURIComponent(baseUrl())}&code=${code}`;
+
+async function printPairing({ code }, withQr) {
+  const link = pairingLink(code);
+  console.log(`Pairing code (single use, valid 10 minutes):\n  ${code}\n\nOn the phone, scan the QR code or open:\n  ${link}`);
+  if (withQr) await new Promise((resolve) => qrcode.generate(link, { small: true }, (qr) => resolve(console.log(qr))));
 }
 
 // ---- Commands ----
@@ -145,6 +182,17 @@ async function run(command, positionals, options) {
       const result = await callTool("export_plan", { format });
       return console.log(format === "json" ? JSON.stringify(result.content, null, 2) : result);
     }
+    case "pair": {
+      const created = await request("POST", "/devices/pairing-code");
+      if (options.json) return console.log(JSON.stringify({ ...created, link: pairingLink(created.code) }, null, 2));
+      return printPairing(created, !options["no-qr"]);
+    }
+    case "devices":
+      return show(await request("GET", "/devices"), printDevices);
+    case "revoke": {
+      const result = await request("POST", "/devices/revoke", { deviceId: need(positionals[0], "deviceId") });
+      return show(result, () => console.log(`Revoked ${result.id}: it gets no new app tokens; its current one expires within an hour`));
+    }
     default:
       throw new CliError(command ? `Unknown command: ${command}\n\n${USAGE}` : USAGE, EXIT.usage);
   }
@@ -166,6 +214,7 @@ async function main() {
         done: { type: "boolean" },
         clear: { type: "boolean" },
         format: { type: "string" },
+        "no-qr": { type: "boolean" },
       },
     });
   } catch (error) {

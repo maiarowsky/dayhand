@@ -36,7 +36,11 @@ export default async function setup(project: TestProject) {
       url: backend.url,
       adminKey: backend.adminKey,
       home: join(workDir, "home"),
-      envVars: { HELM_JWT_ISSUER: ISSUER, HELM_JWKS: signing.jwksDataUri },
+      envVars: {
+        HELM_JWT_ISSUER: ISSUER,
+        HELM_JWKS: signing.jwksDataUri,
+        HELM_JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
+      },
     });
     project.provide("helm", {
       url: backend.url,
