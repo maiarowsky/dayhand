@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.settings.AppSettings
 import dev.helm.planner.settings.SettingsInput
+import dev.helm.planner.ui.components.ListGroup
+import dev.helm.planner.ui.components.ListRow
+import dev.helm.planner.ui.theme.Appearance
 
 object SettingsTags {
     const val URL = "settings_url"
@@ -55,6 +58,11 @@ object SettingsTags {
 fun SettingsScreen(
     settings: AppSettings,
     versionName: String,
+    appearance: Appearance,
+    onAppearance: (Appearance) -> Unit,
+    onOpenColors: () -> Unit,
+    onOpenFont: () -> Unit,
+    onOpenLicenses: () -> Unit,
     onSave: (url: String, token: String?) -> Unit,
     onOfflineMode: (Boolean) -> Unit,
     onBack: () -> Unit,
@@ -151,6 +159,11 @@ fun SettingsScreen(
                 }
                 Switch(checked = settings.offlineMode, onCheckedChange = null)
             }
+            AppearanceGroup(appearance, onAppearance, onOpenColors, onOpenFont)
+            ListGroup(
+                title = stringResource(R.string.settings_about),
+                rows = listOf({ ListRow(stringResource(R.string.licenses_title), "settings_licenses", onClick = onOpenLicenses) }),
+            )
             HorizontalDivider()
             Text(stringResource(R.string.settings_timezone, settings.timezone), style = MaterialTheme.typography.bodyMedium)
             Text(

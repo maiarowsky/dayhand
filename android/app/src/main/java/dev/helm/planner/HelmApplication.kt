@@ -18,6 +18,7 @@ import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
 import dev.helm.planner.sync.OutboxScheduler
 import dev.helm.planner.sync.RoomOutboxStore
+import dev.helm.planner.ui.theme.AppearanceStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,7 @@ class HelmApplication : Application() {
 class AppContainer(context: Context) {
     val database = HelmDatabase.open(context)
     val settings = SettingsStore(context)
+    val appearance = AppearanceStore(context)
     val network = NetworkMonitor(context)
     val outboxScheduler = OutboxScheduler(context)
     val outboxStore = RoomOutboxStore(database)

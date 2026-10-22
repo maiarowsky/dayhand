@@ -3,5 +3,5 @@
     <style name="Theme.Helm" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/window_background</item>
     </style>
-    <color name="window_background">#FFF8F9FF</color>
+    <color name="window_background">#FFF6F0E2</color>
 </resources>

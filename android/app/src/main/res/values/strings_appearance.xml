@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_appearance">Appearance</string>
+    <string name="appearance_mode">Theme</string>
+    <string name="appearance_mode_system">System</string>
+    <string name="appearance_mode_light">Light</string>
+    <string name="appearance_mode_dark">Dark</string>
+    <string name="appearance_colors">Colors</string>
+    <string name="appearance_font">Font</string>
+    <string name="appearance_palettes_dark">Dark palette (dark theme)</string>
+    <string name="appearance_palettes_light">Light palette (light theme)</string>
+    <string name="appearance_fonts_proportional">Proportional</string>
+    <string name="appearance_fonts_mono">Monospace</string>
+    <string name="appearance_font_system">System</string>
+    <string name="appearance_preview_today">Today</string>
+    <string name="appearance_preview_task">Water the plants</string>
+    <string name="appearance_preview_now">Now</string>
+    <string name="appearance_preview_done">Done</string>
+
+    <string name="font_note_system">The phone\'s own font, like in other apps</string>
+    <string name="font_note_inter">Clear sans-serif for long reading</string>
+    <string name="font_note_ibm_plex_sans">Technical sans-serif from IBM</string>
+    <string name="font_note_atkinson">Designed to stay legible with low vision</string>
+    <string name="font_note_geist">Modern, compact sans-serif</string>
+    <string name="font_note_source_serif">Serif, like in a book</string>
+    <string name="font_note_mono">Fixed width, like in a terminal</string>
+
+    <string name="palette_terracotta">Terracotta and sand</string>
+    <string name="palette_terracotta_note">Default dark. Amber accent, sage “done”, terracotta “overdue”</string>
+    <string name="palette_honey">Honey and olive</string>
+    <string name="palette_honey_note">Olive “done”, salmon “overdue”, rose links</string>
+    <string name="palette_amber">Amber</string>
+    <string name="palette_amber_note">Amber on a graphite background</string>
+    <string name="palette_gruvbox_dark">Gruvbox Dark</string>
+    <string name="palette_gruvbox_dark_note">Warm retro: yellow, orange and green on brown-black</string>
+    <string name="palette_solarized_dark">Solarized Dark</string>
+    <string name="palette_solarized_dark_note">Calm deep teal background with muted accents</string>
+    <string name="palette_nord">Nord</string>
+    <string name="palette_nord_note">Arctic: cool blue-gray with frosty accents</string>
+    <string name="palette_dracula">Dracula</string>
+    <string name="palette_dracula_note">Purple, pink and green on dark violet-gray</string>
+    <string name="palette_tokyo_night">Tokyo Night</string>
+    <string name="palette_tokyo_night_note">Night city: blue and violet neon on navy</string>
+    <string name="palette_catppuccin_mocha">Catppuccin Mocha</string>
+    <string name="palette_catppuccin_mocha_note">Pastel colors on a soft dark background</string>
+    <string name="palette_one_dark">One Dark</string>
+    <string name="palette_one_dark_note">Atom classic: blue, green and violet on graphite</string>
+    <string name="palette_rose_pine">Rosé Pine</string>
+    <string name="palette_rose_pine_note">Muted rose, gold and pine on deep purple</string>
+    <string name="palette_paper">Paper</string>
+    <string name="palette_paper_note">Default light. Warm paper with terracotta accents</string>
+    <string name="palette_gruvbox_light">Gruvbox Light</string>
+    <string name="palette_gruvbox_light_note">Warm retro on cream</string>
+    <string name="palette_solarized_light">Solarized Light</string>
+    <string name="palette_solarized_light_note">Calm accents on light beige</string>
+    <string name="palette_catppuccin_latte">Catppuccin Latte</string>
+    <string name="palette_catppuccin_latte_note">Pastel accents on a cool light background</string>
+    <string name="palette_rose_pine_dawn">Rosé Pine Dawn</string>
+    <string name="palette_rose_pine_dawn_note">Rose and pine in soft morning light</string>
+
+    <string name="settings_about">About</string>
+    <string name="licenses_title">Open source licenses</string>
+    <string name="licenses_intro">Helm is free software under the Apache License 2.0. It includes these fonts, unchanged, under the SIL Open Font License 1.1:</string>
+    <string name="licenses_font" translatable="false">%1$s %2$s</string>
+    <string name="licenses_ofl" translatable="false">SIL Open Font License 1.1</string>
+    <string name="licenses_show">Show license</string>
+    <string name="licenses_hide">Hide license</string>
+</resources>
