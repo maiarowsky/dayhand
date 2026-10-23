@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kalendarz: widok tygodnia i dnia. -->
+    <string name="calendar_title">Kalendarz</string>
+    <string name="calendar_week">Tydzień</string>
+    <string name="calendar_day">Dzień</string>
+    <string name="calendar_previous_week">Poprzedni tydzień</string>
+    <string name="calendar_next_week">Następny tydzień</string>
+    <string name="calendar_previous_day">Poprzedni dzień</string>
+    <string name="calendar_next_day">Następny dzień</string>
+    <string name="calendar_go_today">Dziś</string>
+    <string name="calendar_no_time">Bez godziny</string>
+    <string name="calendar_no_time_short">Cały dzień</string>
+    <string name="calendar_more">+%1$d</string>
+    <string name="calendar_more_described">Jeszcze %1$d: otwórz dzień</string>
+    <string name="calendar_open_day">Otwórz dzień</string>
+    <string name="calendar_empty_day">Na ten dzień nic nie zaplanowano.</string>
+    <string name="calendar_open">Otwórz</string>
+    <string name="calendar_move_action">Przenieś na inny dzień lub godzinę</string>
+    <string name="calendar_state_overdue">zaległe</string>
+    <string name="calendar_state_done">zrobione</string>
+    <string name="calendar_state_repeat">powtarza się</string>
+    <string name="calendar_move_title">Przenieś „%1$s”</string>
+    <string name="calendar_move_day">Dzień</string>
+    <string name="calendar_move_time">Godzina</string>
+    <string name="calendar_move_other_day">Inny dzień…</string>
+    <string name="calendar_move_pick_time">Wybierz godzinę</string>
+    <string name="calendar_move_confirm">Przenieś</string>
+    <string name="calendar_moved">Przeniesiono na %1$s</string>
+    <string name="calendar_undo">Cofnij</string>
+
+    <!-- Ustawienia → Kalendarz: kanał tylko do odczytu dla Google i Apple. -->
+    <string name="calendar_feed_title">Kalendarz</string>
+    <string name="calendar_feed_off">Wyłączony</string>
+    <string name="calendar_feed_on">Włączony</string>
+    <string name="calendar_feed_intro">Pokaż zadania z datą w Kalendarzu Google lub Apple. Kalendarz jest tylko do odczytu: planujesz w Helmie, a on nadąża. Zadania z godziną są wydarzeniami, pozostałe całodniowymi, powtarzające się mają swoją regułę, a przypomnienia są alertami.</string>
+    <string name="calendar_feed_turn_on">Włącz adres kalendarza</string>
+    <string name="calendar_feed_address">Adres</string>
+    <string name="calendar_feed_secret">Każdy, kto zna ten adres, widzi Twoje zadania z datą. Dodaj go tylko do własnego kalendarza; jeśli wycieknie, utwórz nowy adres.</string>
+    <string name="calendar_feed_copy">Kopiuj adres</string>
+    <string name="calendar_feed_copied">Skopiowano adres</string>
+    <string name="calendar_feed_google">Dodaj do Kalendarza Google</string>
+    <string name="calendar_feed_google_note">Otwiera Kalendarz Google w przeglądarce (aplikacja na telefon nie dodaje kalendarzy z adresu). Google odświeża subskrybowane kalendarze we własnym rytmie, zwykle co kilka godzin, więc zmiany pojawiają się tam z opóźnieniem.</string>
+    <string name="calendar_feed_apple">Dodaj do Kalendarza Apple</string>
+    <string name="calendar_feed_apple_note">Wysyła adres webcal na Twojego iPhone’a lub Maca (Wiadomości, Mail, AirDrop…); otwórz go tam, aby zasubskrybować.</string>
+    <string name="calendar_feed_manage">Adres</string>
+    <string name="calendar_feed_rotate">Utwórz nowy adres</string>
+    <string name="calendar_feed_rotate_confirm_title">Utworzyć nowy adres?</string>
+    <string name="calendar_feed_rotate_confirm">Obecny adres od razu przestanie działać. Kalendarze, które go subskrybują, przestaną się odświeżać, dopóki nie dodasz nowego.</string>
+    <string name="calendar_feed_rotate_done">Utworzono nowy adres; stary już nie działa.</string>
+    <string name="calendar_feed_turn_off">Wyłącz</string>
+    <string name="calendar_feed_off_confirm_title">Wyłączyć adres kalendarza?</string>
+    <string name="calendar_feed_off_confirm">Adres przestanie działać, a subskrybowane kalendarze przestaną się odświeżać. Możesz go włączyć ponownie z nowym adresem.</string>
+    <string name="calendar_feed_export_group">Jednorazowy plik</string>
+    <string name="calendar_feed_export">Eksportuj plik .ics</string>
+    <string name="calendar_feed_export_note">Kopia planu w obecnym stanie do zaimportowania w dowolnym kalendarzu. Nie aktualizuje się.</string>
+    <string name="calendar_feed_exporting">Przygotowuję plik…</string>
+    <string name="calendar_feed_export_failed">Nie można wyeksportować: brak połączenia z serwerem.</string>
+    <string name="calendar_feed_loading">Odczytuję adres kalendarza…</string>
+    <string name="calendar_feed_not_connected">Najpierw połącz się z serwerem: adres kalendarza udostępnia Twój serwer Helma.</string>
+    <string name="calendar_feed_failed">Brak połączenia z serwerem. Spróbuj ponownie, gdy telefon będzie online.</string>
+    <string name="calendar_feed_unauthorized">Serwer wylogował ten telefon. Połącz się ponownie w Ustawienia → Serwer.</string>
+    <string name="calendar_feed_retry">Spróbuj ponownie</string>
+    <string name="calendar_feed_share_title">Kalendarz Helma</string>
+</resources>

@@ -7,10 +7,11 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-/** The two export formats of the plan (`app:exportPlan`): Markdown to read, JSON as a full copy. */
+/** The export formats of the plan (`app:exportPlan`): Markdown to read, JSON as a full copy, iCalendar for a calendar app. */
 enum class ExportFormat(val wire: String, val mimeType: String, val extension: String) {
     MARKDOWN("markdown", "text/markdown", "md"),
     JSON("json", "application/json", "json"),
+    ICS("ics", "text/calendar", "ics"),
 }
 
 sealed interface ExportResult {
@@ -41,11 +42,11 @@ object PlanExport {
     /** `helm-plan-2026-10-22.md`: the name offered in the system save dialog. */
     fun fileName(format: ExportFormat, today: String) = "helm-plan-$today.${format.extension}"
 
-    /** The file content from the answer `{format, content}`: the Markdown text, or the JSON copy indented. */
+    /** The file content from the answer `{format, content}`: the Markdown or iCalendar text, or the JSON copy indented. */
     fun content(format: ExportFormat, value: JsonElement): String? {
         val content = (value as? JsonObject)?.get("content") ?: return null
         return when (format) {
-            ExportFormat.MARKDOWN -> (content as? JsonPrimitive)?.takeIf { it.isString }?.content
+            ExportFormat.MARKDOWN, ExportFormat.ICS -> (content as? JsonPrimitive)?.takeIf { it.isString }?.content
             ExportFormat.JSON -> (content as? JsonObject)?.let { pretty.encodeToString(JsonElement.serializer(), it) + "\n" }
         }
     }

@@ -29,6 +29,11 @@ fun interface QueryRunner {
     suspend fun query(path: String, args: JsonObject): SendResult
 }
 
+/** Convex actions, which may draw random values (a new calendar feed address). */
+fun interface ActionRunner {
+    suspend fun action(path: String, args: JsonObject): SendResult
+}
+
 interface TaskRemote : TaskFeed, MutationSender, QueryRunner
 
 sealed interface RemoteEvent {

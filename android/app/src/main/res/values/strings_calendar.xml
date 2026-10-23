@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calendar: week and day views. -->
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_week">Week</string>
+    <string name="calendar_day">Day</string>
+    <string name="calendar_previous_week">Previous week</string>
+    <string name="calendar_next_week">Next week</string>
+    <string name="calendar_previous_day">Previous day</string>
+    <string name="calendar_next_day">Next day</string>
+    <string name="calendar_go_today">Today</string>
+    <string name="calendar_no_time">No time</string>
+    <string name="calendar_no_time_short">All day</string>
+    <string name="calendar_more">+%1$d</string>
+    <string name="calendar_more_described">%1$d more: open the day</string>
+    <string name="calendar_open_day">Open the day</string>
+    <string name="calendar_empty_day">Nothing planned for this day.</string>
+    <string name="calendar_open">Open</string>
+    <string name="calendar_move_action">Move to another day or time</string>
+    <string name="calendar_state_overdue">overdue</string>
+    <string name="calendar_state_done">done</string>
+    <string name="calendar_state_repeat">repeats</string>
+    <string name="calendar_move_title">Move “%1$s”</string>
+    <string name="calendar_move_day">Day</string>
+    <string name="calendar_move_time">Time</string>
+    <string name="calendar_move_other_day">Another day…</string>
+    <string name="calendar_move_pick_time">Pick a time</string>
+    <string name="calendar_move_confirm">Move</string>
+    <string name="calendar_moved">Moved to %1$s</string>
+    <string name="calendar_undo">Undo</string>
+
+    <!-- Settings → Calendar: the read-only feed for Google and Apple Calendar. -->
+    <string name="calendar_feed_title">Calendar</string>
+    <string name="calendar_feed_off">Off</string>
+    <string name="calendar_feed_on">On</string>
+    <string name="calendar_feed_intro">Show your dated tasks in Google Calendar or Apple Calendar. The calendar is read-only: plan in Helm, and it follows. Tasks with a time are events, the rest all-day events, repeating ones with their rule, reminders as alerts.</string>
+    <string name="calendar_feed_turn_on">Turn on the calendar address</string>
+    <string name="calendar_feed_address">Address</string>
+    <string name="calendar_feed_secret">Anyone with this address can see your dated tasks. Share it only with your own calendar; if it leaks, create a new address.</string>
+    <string name="calendar_feed_copy">Copy address</string>
+    <string name="calendar_feed_copied">Address copied</string>
+    <string name="calendar_feed_google">Add to Google Calendar</string>
+    <string name="calendar_feed_google_note">Opens Google Calendar on the web (the phone app cannot add calendars by address). Google refreshes subscribed calendars on its own schedule, usually every few hours, so changes show up late there.</string>
+    <string name="calendar_feed_apple">Add to Apple Calendar</string>
+    <string name="calendar_feed_apple_note">Sends the webcal address to your iPhone or Mac (Messages, Mail, AirDrop…); open it there to subscribe.</string>
+    <string name="calendar_feed_manage">Address</string>
+    <string name="calendar_feed_rotate">Create a new address</string>
+    <string name="calendar_feed_rotate_confirm_title">Create a new address?</string>
+    <string name="calendar_feed_rotate_confirm">The current address stops working at once. Calendars subscribed to it stop updating until you add the new one.</string>
+    <string name="calendar_feed_rotate_done">New address created; the old one no longer works.</string>
+    <string name="calendar_feed_turn_off">Turn off</string>
+    <string name="calendar_feed_off_confirm_title">Turn off the calendar address?</string>
+    <string name="calendar_feed_off_confirm">The address stops working and subscribed calendars stop updating. You can turn it on again with a new address.</string>
+    <string name="calendar_feed_export_group">One-time file</string>
+    <string name="calendar_feed_export">Export .ics file</string>
+    <string name="calendar_feed_export_note">A copy of the plan as it is now, to import into any calendar. It does not update.</string>
+    <string name="calendar_feed_exporting">Preparing the file…</string>
+    <string name="calendar_feed_export_failed">Cannot export: the server cannot be reached.</string>
+    <string name="calendar_feed_loading">Reading the calendar address…</string>
+    <string name="calendar_feed_not_connected">Connect to a server first: the calendar address is served by your Helm server.</string>
+    <string name="calendar_feed_failed">The server cannot be reached. Try again when the phone is online.</string>
+    <string name="calendar_feed_unauthorized">The server signed this phone out. Connect again in Settings → Server.</string>
+    <string name="calendar_feed_retry">Try again</string>
+    <string name="calendar_feed_share_title">Helm calendar</string>
+</resources>

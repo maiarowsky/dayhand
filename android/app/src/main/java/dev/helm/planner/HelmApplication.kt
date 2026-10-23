@@ -10,6 +10,7 @@ import dev.helm.planner.auth.AppTokens
 import dev.helm.planner.auth.DeviceTokens
 import dev.helm.planner.auth.PairingApi
 import dev.helm.planner.auth.StaticTokens
+import dev.helm.planner.calendar.CalendarFeedApi
 import dev.helm.planner.connections.AgentConnectionsApi
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.HelmDatabase
@@ -104,6 +105,9 @@ class AppContainer(context: Context) {
 
     /** Agent connections (approve, list, disconnect) are read and changed over plain HTTP when their page is open. */
     fun connectionsApi(backend: BackendConfig) = HttpTaskRemote(backend.url, tokensFor(backend)).let { AgentConnectionsApi(it, it) }
+
+    /** The calendar feed's address (Settings → Calendar) is read and changed over plain HTTP when its page is open. */
+    fun calendarFeedApi(backend: BackendConfig) = HttpTaskRemote(backend.url, tokensFor(backend)).let { CalendarFeedApi(it, it, it) }
 
     /** The outbox talks plain HTTP: clear timeouts and no WebSocket in the background. */
     fun mutationSender(backend: BackendConfig): MutationSender = HttpTaskRemote(backend.url, tokensFor(backend))

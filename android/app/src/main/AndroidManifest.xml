@@ -42,6 +42,17 @@
             </intent-filter>
         </activity>
 
+        <!-- The one-time .ics export is shared from the app's cache through this provider (res/xml/shared_files.xml). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
+
         <receiver
             android:name=".notify.AlarmReceiver"
             android:exported="false" />

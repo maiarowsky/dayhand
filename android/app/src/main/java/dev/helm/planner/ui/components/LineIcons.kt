@@ -25,7 +25,7 @@ import kotlin.math.sin
  */
 enum class LineIcon {
     Contrast, Palette, Font, Globe, Bell, Sun, Clock, Download, Cloud, CloudOff, Link, Unlink, Phone, Document, Code,
-    List, Info, Warning, Check, Chevron,
+    List, Info, Warning, Check, Chevron, Calendar, Copy, Share, Refresh,
 }
 
 @Composable
@@ -157,5 +157,26 @@ private fun DrawScope.draw(icon: LineIcon, color: Color) {
         }
         LineIcon.Check -> path(0.2f to 0.52f, 0.42f to 0.72f, 0.8f to 0.3f)
         LineIcon.Chevron -> path(0.38f to 0.2f, 0.66f to 0.5f, 0.38f to 0.8f)
+        LineIcon.Calendar -> {
+            rect(0.14f, 0.2f, 0.72f, 0.66f, 0.1f)
+            line(0.14f, 0.4f, 0.86f, 0.4f)
+            line(0.34f, 0.12f, 0.34f, 0.26f)
+            line(0.66f, 0.12f, 0.66f, 0.26f)
+            circle(0.36f, 0.6f, 0.04f, fill = true)
+            circle(0.64f, 0.6f, 0.04f, fill = true)
+        }
+        LineIcon.Copy -> {
+            rect(0.32f, 0.32f, 0.52f, 0.56f, 0.08f)
+            path(0.68f to 0.18f, 0.16f to 0.18f, 0.16f to 0.7f)
+        }
+        LineIcon.Share -> {
+            line(0.5f, 0.14f, 0.5f, 0.6f)
+            path(0.34f to 0.3f, 0.5f to 0.14f, 0.66f to 0.3f)
+            path(0.32f to 0.44f, 0.18f to 0.44f, 0.18f to 0.86f, 0.82f to 0.86f, 0.82f to 0.44f, 0.68f to 0.44f)
+        }
+        LineIcon.Refresh -> {
+            arc(0.5f, 0.5f, 0.32f, -60f, 300f)
+            path(0.62f to 0.14f, 0.68f to 0.24f, 0.56f to 0.3f)
+        }
     }
 }

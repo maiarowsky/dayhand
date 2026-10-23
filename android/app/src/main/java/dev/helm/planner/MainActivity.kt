@@ -17,6 +17,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +36,9 @@ import dev.helm.planner.ui.connect.ConnectRoute
 import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardViewModel
+import dev.helm.planner.ui.calendar.CalendarActions
+import dev.helm.planner.ui.calendar.CalendarScreen
+import dev.helm.planner.ui.calendar.CalendarViewModel
 import dev.helm.planner.ui.settings.SettingsRoute
 import dev.helm.planner.ui.settings.needsNotificationPermission
 import dev.helm.planner.ui.task.TaskDetailActions
@@ -87,9 +91,10 @@ class MainActivity : ComponentActivity() {
         intent?.takeIf { it.action == Intent.ACTION_VIEW }?.dataString?.let(PairingInput::parseLink)
 }
 
-/** Screens; a task's details are `task/<localId>`. Today and the board are the two main views. */
+/** Screens; a task's details are `task/<localId>`. Today, the calendar and the board are the main views. */
 private object Route {
     const val TODAY = "today"
+    const val CALENDAR = "calendar"
     const val BOARD = "board"
     const val TRASH = "trash"
     const val SETTINGS = "settings"
@@ -110,7 +115,7 @@ private fun HelmRoot(
     pairingLink: PairingLink?,
     onLinkUsed: () -> Unit,
 ) {
-    // A back stack of routes; Today is always at the bottom, so Back from the board returns to it.
+    // A back stack of routes; Today is always at the bottom, so Back from the calendar or the board returns to it.
     var stack by rememberSaveable { mutableStateOf(listOf(Route.TODAY)) }
     val route = stack.last()
     val open: (String) -> Unit = { stack = stack + it }
@@ -156,6 +161,23 @@ private fun HelmRoot(
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             state?.let { TodayScreen(it, actions, bottomBar = tabs) }
+        }
+        route == Route.CALENDAR -> {
+            val viewModel = viewModel {
+                CalendarViewModel(container.repository, container.settings, container.network, container.liveSync)
+            }
+            val actions = remember(viewModel) {
+                object : CalendarActions by viewModel {
+                    override fun openSettings() = open(Route.SETTINGS)
+                    override fun openTask(localId: String) = open(Route.task(localId))
+                    override fun move(localId: String, date: String, time: String?) {
+                        viewModel.move(localId, date, time)
+                        timeSet(time)
+                    }
+                }
+            }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            state?.let { CalendarScreen(it, actions, bottomBar = tabs) }
         }
         route == Route.BOARD -> {
             val viewModel = viewModel {
@@ -224,11 +246,12 @@ private fun TaskDetailUiState.localId(): String = when (this) {
     is TaskDetailUiState.Ready -> task.localId
 }
 
-/** Bottom navigation between the two main views. */
+/** Bottom navigation between the main views. */
 @Composable
 private fun MainTabs(current: String, onSelect: (String) -> Unit) {
     HelmTabBar {
-        Tab(Route.TODAY, current, Icons.Filled.DateRange, R.string.today_title, onSelect)
+        Tab(Route.TODAY, current, Icons.Filled.Home, R.string.today_title, onSelect)
+        Tab(Route.CALENDAR, current, Icons.Filled.DateRange, R.string.calendar_title, onSelect)
         Tab(Route.BOARD, current, Icons.AutoMirrored.Filled.List, R.string.board_title, onSelect)
     }
 }

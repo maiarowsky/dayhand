@@ -17,7 +17,7 @@ import dev.helm.planner.ui.theme.palette
 import dev.helm.planner.ui.today.ConnectionStatus
 
 /**
- * The Settings list: Appearance, Notifications, Data, Connection and About, each a group of equal rows that show only
+ * The Settings list: Appearance, Notifications, Data (export, calendar), Connection and About, each a group of equal rows that show only
  * a short current value. What a value means, warnings and the buttons that fix them live on the row's page.
  */
 @Composable
@@ -75,7 +75,10 @@ internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, 
     )
     ListGroup(
         stringResource(R.string.settings_data),
-        rows = listOf { ListRow(stringResource(R.string.settings_export), SettingsTags.ROW_EXPORT, icon = LineIcon.Download) { open(SettingsPane.EXPORT) } },
+        rows = listOf(
+            { ListRow(stringResource(R.string.settings_export), SettingsTags.ROW_EXPORT, icon = LineIcon.Download) { open(SettingsPane.EXPORT) } },
+            { ListRow(stringResource(R.string.calendar_feed_title), SettingsTags.ROW_CALENDAR, icon = LineIcon.Calendar) { open(SettingsPane.CALENDAR) } },
+        ),
     )
     ListGroup(
         stringResource(R.string.settings_connection),

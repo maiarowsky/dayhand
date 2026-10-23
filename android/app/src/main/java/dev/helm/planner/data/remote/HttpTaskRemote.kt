@@ -27,7 +27,7 @@ fun interface HttpTransport {
 }
 
 /**
- * The Convex HTTP API (`POST /api/mutation`, `POST /api/query`), the same calls the official
+ * The Convex HTTP API (`POST /api/mutation`, `/api/query`, `/api/action`), the same calls the official
  * `ConvexHttpClient` makes. A function that failed answers 560 with `{status: "error"}`.
  * The app JWT comes from [tokens]; a refused one is refreshed and the call tried once more.
  */
@@ -36,7 +36,7 @@ class HttpTaskRemote(
     private val tokens: AppTokens,
     private val transport: HttpTransport = UrlConnectionTransport,
     private val pollIntervalMs: Long = POLL_INTERVAL_MS,
-) : TaskRemote {
+) : TaskRemote, ActionRunner {
 
     constructor(
         deploymentUrl: String,
@@ -75,6 +75,9 @@ class HttpTaskRemote(
 
     override suspend fun query(path: String, args: JsonObject): SendResult =
         call("$deploymentUrl/api/query", requestBody(path, args))
+
+    override suspend fun action(path: String, args: JsonObject): SendResult =
+        call("$deploymentUrl/api/action", requestBody(path, args))
 
     private suspend fun call(url: String, body: String): SendResult {
         val first = tokens.token()

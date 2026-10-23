@@ -122,9 +122,12 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
         }
     }
     data?.let {
-        SettingsScreen(SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance), actions) { back ->
-            ConnectionsRoute(container, back)
-        }
+        SettingsScreen(
+            SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance),
+            actions,
+            connections = { back -> ConnectionsRoute(container, back) },
+            calendar = { back -> CalendarFeedRoute(container, back) },
+        )
     } ?: SettingsLoading(onBack)
 }
 

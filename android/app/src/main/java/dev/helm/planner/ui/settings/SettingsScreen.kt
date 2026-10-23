@@ -36,6 +36,7 @@ object SettingsTags {
     const val ROW_EXPORT = "settings_row_export"
     const val ROW_SERVER = "settings_row_server"
     const val ROW_CONNECTIONS = "settings_row_connections"
+    const val ROW_CALENDAR = "settings_row_calendar"
     const val LANGUAGE_ROW = "settings_language_row"
     const val LICENSE = "settings_license"
     const val LICENSES = "settings_licenses"
@@ -101,13 +102,14 @@ interface SettingsActions {
 }
 
 /** The Settings list ([MAIN]) and the pages its rows open. */
-enum class SettingsPane { MAIN, THEME, PALETTE, FONT, LANGUAGE, NOTIFICATIONS, SUMMARY, REMINDERS, EXPORT, SERVER, CONNECTIONS, LICENSES }
+enum class SettingsPane { MAIN, THEME, PALETTE, FONT, LANGUAGE, NOTIFICATIONS, SUMMARY, REMINDERS, EXPORT, CALENDAR, SERVER, CONNECTIONS, LICENSES }
 
 /**
  * Settings, the fifth screen of version 1, laid out as Mussh's: groups under upper-case labels, one row per setting
  * (outline icon, name, current value, "›"), and each row opens a page with the choice, what it means and, where
  * something is missing, the one action that fixes it. Back on a page returns to the list. [start] opens a page
- * directly (screenshots, tests). [connections] draws the Agent connections page, which loads its own data.
+ * directly (screenshots, tests). [connections] draws the Agent connections page and [calendar] the Calendar page;
+ * both load their own data.
  */
 @Composable
 fun SettingsScreen(
@@ -115,6 +117,7 @@ fun SettingsScreen(
     actions: SettingsActions,
     start: SettingsPane = SettingsPane.MAIN,
     connections: @Composable (onBack: () -> Unit) -> Unit = {},
+    calendar: @Composable (onBack: () -> Unit) -> Unit = {},
 ) {
     var pane by rememberSaveable(start) { mutableStateOf(start) }
     BackHandler(enabled = pane != SettingsPane.MAIN) { pane = SettingsPane.MAIN }
@@ -148,6 +151,7 @@ fun SettingsScreen(
             ServerOptions(state.data, actions)
         }
         SettingsPane.CONNECTIONS -> connections(toMain)
+        SettingsPane.CALENDAR -> calendar(toMain)
         SettingsPane.LICENSES -> LicensesScreen(onBack = toMain)
     }
 }
