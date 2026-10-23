@@ -11,11 +11,15 @@ export type Actor = Infer<typeof actorValidator>;
 export const keyKindValidator = v.union(v.literal("cli"), v.literal("agent"));
 export type KeyKind = Infer<typeof keyKindValidator>;
 
-/** Acting identity of internal functions. Callers with an API key also pass the key's id and name. */
+/**
+ * Acting identity of internal functions. Callers with an API key also pass the key's id and name;
+ * callers with an OAuth access token pass the connection's id and the client's name.
+ */
 export const identityFields = {
   userId: v.string(),
   actor: actorValidator,
   keyId: v.optional(v.id("apiKeys")),
+  connectionId: v.optional(v.id("oauthGrants")),
   actorName: v.optional(v.string()),
 };
 

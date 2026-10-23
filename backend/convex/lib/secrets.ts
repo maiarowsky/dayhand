@@ -71,3 +71,47 @@ export function parseDeviceToken(token: string): { selector: string; secret: str
   const match = /^helmdev_([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/.exec(token);
   return match ? { selector: match[1], secret: match[2] } : null;
 }
+
+// ---- OAuth secrets (docs/oauth.md) ----
+// Request handles, access and refresh tokens: <prefix><selector>.<secret>,
+// a 16-byte selector and a 32-byte secret stored only as SHA-256, like
+// device tokens. Authorization codes are 32 random bytes, looked up by hash.
+
+export type OAuthTokenPrefix = "helmrq_" | "helmat_" | "helmrt_";
+
+export function newSelectorToken(prefix: OAuthTokenPrefix): { token: string; selector: string; secret: string } {
+  const selector = randomBase64url(16);
+  const secret = randomBase64url(32);
+  return { token: `${prefix}${selector}.${secret}`, selector, secret };
+}
+
+export function parseSelectorToken(prefix: OAuthTokenPrefix, token: string): { selector: string; secret: string } | null {
+  if (!token.startsWith(prefix)) return null;
+  const match = /^([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/.exec(token.slice(prefix.length));
+  return match ? { selector: match[1], secret: match[2] } : null;
+}
+
+export const AUTHORIZATION_CODE_PREFIX = "helmac_";
+export const newAuthorizationCode = () => AUTHORIZATION_CODE_PREFIX + randomBase64url(32);
+
+// The code the user types on the phone to approve a connection: 8 Crockford
+// base32 characters (40 bits), shown as XXXX-XXXX, stored only as SHA-256.
+
+const USER_CODE_LENGTH = 8;
+
+export function newUserCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(USER_CODE_LENGTH));
+  const code = [...bytes].map((b) => CODE_ALPHABET[b & 31]).join("");
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
+/** Normalizes a typed user code like a pairing code; null if malformed. */
+export function normalizeUserCode(input: string): string | null {
+  const code = input
+    .toUpperCase()
+    .replace(/[\s-]/g, "")
+    .replace(/O/g, "0")
+    .replace(/[IL]/g, "1");
+  if (code.length !== USER_CODE_LENGTH || [...code].some((c) => !CODE_ALPHABET.includes(c))) return null;
+  return code;
+}

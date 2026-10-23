@@ -1,6 +1,8 @@
 // MCP server for the agent: stateless Streamable HTTP with JSON responses.
-// The personal API key establishes the user and the actor: the key's kind
-// ("cli" or "agent") and name. Tools map 1:1 onto the domain operations in ops.ts.
+// The caller is a personal API key (actor: the key's kind, "cli" or "agent",
+// and its name; every tool) or an OAuth access token of an agent connection
+// (actor "agent" with the client's name; the tools its scopes allow, see
+// docs/oauth.md). Tools map 1:1 onto the domain operations in ops.ts.
 import { ConvexError, type PropertyValidators } from "convex/values";
 import type { FunctionReference } from "convex/server";
 import { internal } from "./_generated/api";
@@ -11,6 +13,9 @@ import { args } from "./lib/args";
 import type { ErrorCode } from "./lib/core";
 import { bearerToken } from "./lib/http";
 import { objectSchema } from "./lib/jsonSchema";
+import { CHALLENGE_SCOPES, publicUrl, resourceFor, resourceMetadataFor, SCOPES, type Scope } from "./lib/oauthConfig";
+import { formatScopes } from "./lib/oauthRules";
+import { parseSelectorToken, sha256Hex } from "./lib/secrets";
 
 // The version clients check for compatibility (semver): a minor release only
 // adds tools, fields and error codes; a major release may change or remove them.
@@ -88,8 +93,12 @@ export const TOOLS: Tool[] = [
 
 const READ_ONLY = new Set(["list_today", "list_all", "list_trash", "board", "get_task", "export_plan", "get_settings"]);
 
-export function listTools() {
-  return TOOLS.map((t) => ({
+/** The OAuth scope a tool needs: reading tools tasks:read, every other tool tasks:write. */
+export const scopeOf = (name: string): Scope => (READ_ONLY.has(name) ? "tasks:read" : "tasks:write");
+
+/** The tools a caller with these scopes may see and call (an API key has all scopes). */
+export function listTools(scopes: readonly Scope[] = SCOPES) {
+  return TOOLS.filter((t) => scopes.includes(scopeOf(t.name))).map((t) => ({
     name: t.name,
     description: t.description,
     inputSchema: objectSchema(t.fields, FIELD_DOCS),
@@ -108,25 +117,77 @@ const rpcResult = (id: JsonRpcRequest["id"], result: unknown) => json({ jsonrpc:
 const rpcError = (id: JsonRpcRequest["id"], code: number, message: string, status = 200) =>
   json({ jsonrpc: "2.0", id: id ?? null, error: { code, message } }, status);
 
-function unauthorized() {
-  return new Response(JSON.stringify({ error: "invalid_token", error_description: "Missing, invalid or revoked API key" }), {
-    status: 401,
-    headers: { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="helm"' },
-  });
+/** The Bearer challenge: where OAuth clients find the authorization server (RFC 9728) and what to ask for. */
+function challenge(fields: Record<string, string>): string {
+  const base = publicUrl();
+  const all = { realm: "helm", ...fields, ...(base ? { resource_metadata: resourceMetadataFor(base) } : {}) };
+  return "Bearer " + Object.entries(all).map(([key, value]) => `${key}="${value}"`).join(", ");
 }
 
-type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
+/** 401 before any tool runs; a token that was sent but is not valid also gets error="invalid_token". */
+function unauthorized(presented: boolean) {
+  const fields: Record<string, string> = presented ? { error: "invalid_token" } : {};
+  return new Response(
+    JSON.stringify({ error: "invalid_token", error_description: "Missing, invalid, expired or revoked API key or access token" }),
+    {
+      status: 401,
+      headers: { "Content-Type": "application/json", "WWW-Authenticate": challenge({ ...fields, scope: formatScopes(CHALLENGE_SCOPES) }) },
+    },
+  );
+}
 
-async function authenticate(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
-  const key = bearerToken(request);
-  if (!key) return null;
-  return ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) });
+/** 403 for a tool outside the token's scopes: the client may ask the owner again for more (step-up). */
+function insufficientScope(needed: Scope, granted: readonly Scope[]) {
+  const scopes = SCOPES.filter((s) => s === needed || granted.includes(s));
+  return new Response(
+    JSON.stringify({ error: "insufficient_scope", error_description: `This tool needs the ${needed} scope` }),
+    {
+      status: 403,
+      headers: {
+        "Content-Type": "application/json",
+        "WWW-Authenticate": challenge({ error: "insufficient_scope", scope: formatScopes(scopes) }),
+      },
+    },
+  );
+}
+
+/** Who is calling: the identity for the domain and the scopes the credential carries. */
+type Caller = {
+  userId: string;
+  actor: "cli" | "agent";
+  actorName: string;
+  keyId?: Id<"apiKeys">;
+  connectionId?: Id<"oauthGrants">;
+  scopes: readonly Scope[];
+};
+
+async function authenticate(ctx: ActionCtx, presented: string): Promise<Caller | null> {
+  const access = parseSelectorToken("helmat_", presented);
+  if (access) {
+    const connection = await ctx.runQuery(internal.oauth.verifyAccessToken, {
+      selector: access.selector,
+      secretHash: await sha256Hex(access.secret),
+    });
+    // The token must have been issued for this server (RFC 8707 audience).
+    const base = publicUrl();
+    if (!connection || !base || connection.resource !== resourceFor(base)) return null;
+    if (connection.stale) await ctx.runMutation(internal.oauth.touchConnection, { connectionId: connection.connectionId });
+    return {
+      userId: connection.userId,
+      actor: "agent",
+      actorName: connection.clientName,
+      connectionId: connection.connectionId,
+      scopes: connection.scopes,
+    };
+  }
+  const key = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(presented) });
+  return key ? { userId: key.userId, actor: key.kind, actorName: key.name, keyId: key.keyId, scopes: SCOPES } : null;
 }
 
 type ToolErrorCode = ErrorCode | "internal";
 type ToolError = { code: ToolErrorCode; message: string };
 const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated"];
-const IDENTITY_FIELDS = ["userId", "actor", "keyId", "actorName"];
+const IDENTITY_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName"];
 
 /** A failed tool call: the message as text, and `{ error: { code, message } }` for programs. */
 function toolError(error: ToolError) {
@@ -147,23 +208,24 @@ function describeError(error: unknown): ToolError {
   return { code: "internal", message: "Internal error" };
 }
 
-async function callTool(ctx: ActionCtx, owner: KeyOwner, params: any) {
+async function callTool(ctx: ActionCtx, owner: Caller, params: any) {
   const found = TOOLS.find((t) => t.name === params?.name);
   if (!found) return null;
   const input = params.arguments ?? {};
   if (typeof input !== "object" || Array.isArray(input)) {
     return toolError({ code: "invalid_argument", message: "arguments must be an object" });
   }
-  // Identity always comes from the key, never from the arguments.
+  // Identity always comes from the key or token, never from the arguments.
   if (IDENTITY_FIELDS.some((field) => field in input)) {
     return toolError({ code: "invalid_argument", message: `${IDENTITY_FIELDS.join(", ")} are set by the server` });
   }
   const callArgs: Record<string, unknown> = {
     ...input,
     userId: owner.userId,
-    actor: owner.kind,
+    actor: owner.actor,
     keyId: owner.keyId,
-    actorName: owner.name,
+    connectionId: owner.connectionId,
+    actorName: owner.actorName,
   };
   if ("at" in found.fields && callArgs.at === undefined) callArgs.at = Date.now();
   try {
@@ -180,7 +242,7 @@ async function callTool(ctx: ActionCtx, owner: KeyOwner, params: any) {
   }
 }
 
-async function handleMessage(ctx: ActionCtx, owner: KeyOwner, message: JsonRpcRequest): Promise<Response> {
+async function handleMessage(ctx: ActionCtx, owner: Caller, message: JsonRpcRequest): Promise<Response> {
   if (message?.jsonrpc !== "2.0" || typeof message.method !== "string") {
     // Responses from the client, or anything that is not a request.
     if (message && message.id !== undefined && message.method === undefined) return new Response(null, { status: 202 });
@@ -201,8 +263,12 @@ async function handleMessage(ctx: ActionCtx, owner: KeyOwner, message: JsonRpcRe
     case "ping":
       return rpcResult(message.id, {});
     case "tools/list":
-      return rpcResult(message.id, { tools: listTools() });
+      return rpcResult(message.id, { tools: listTools(owner.scopes) });
     case "tools/call": {
+      const name = message.params?.name;
+      if (typeof name === "string" && TOOLS.some((t) => t.name === name) && !owner.scopes.includes(scopeOf(name))) {
+        return insufficientScope(scopeOf(name), owner.scopes);
+      }
       const result = await callTool(ctx, owner, message.params);
       if (!result) return rpcError(message.id, -32602, `Unknown tool: ${message.params?.name}`);
       return rpcResult(message.id, result);
@@ -213,8 +279,9 @@ async function handleMessage(ctx: ActionCtx, owner: KeyOwner, message: JsonRpcRe
 }
 
 export const handlePost = httpAction(async (ctx, request) => {
-  const owner = await authenticate(ctx, request);
-  if (!owner) return unauthorized();
+  const presented = bearerToken(request);
+  const owner = presented ? await authenticate(ctx, presented) : null;
+  if (!owner) return unauthorized(presented !== null);
   const body = await request.text();
   if (body.length > MAX_BODY_BYTES) return rpcError(null, -32600, "Request too large", 413);
   let message: JsonRpcRequest;

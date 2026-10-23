@@ -2,11 +2,19 @@
 // the actor is "app". Every function delegates to the domain layer.
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { v } from "convex/values";
 import { action, mutation, query } from "./_generated/server";
 import { listKeys } from "./apiKeys";
+import {
+  decideRequest,
+  listConnections as listConnectionsOp,
+  lookupRequest,
+  revokeConnection as revokeConnectionOp,
+} from "./oauthOwner";
 import { args } from "./lib/args";
 import { fail, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
+import { scopeValidator } from "./lib/oauthConfig";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
 import {
   addTask,
@@ -97,4 +105,23 @@ export const revokeApiKey = mutation({
 export const listApiKeys = query({
   args: args.listApiKeys,
   handler: async (ctx) => listKeys(ctx, (await appUser(ctx)).userId),
+});
+
+// Agent connections (OAuth, docs/oauth.md): the phone approves a connection by the
+// code its browser page shows, and lists and revokes connections.
+export const lookupConnectionRequest = mutation({
+  args: { code: v.string() },
+  handler: async (ctx, { code }) => lookupRequest(ctx, await appUser(ctx), code),
+});
+export const decideConnectionRequest = mutation({
+  args: { code: v.string(), approve: v.boolean(), scopes: v.optional(v.array(scopeValidator)) },
+  handler: async (ctx, a) => decideRequest(ctx, await appUser(ctx), a),
+});
+export const listConnections = query({
+  args: {},
+  handler: async (ctx) => listConnectionsOp(ctx, (await appUser(ctx)).userId),
+});
+export const revokeConnection = mutation({
+  args: { connectionId: v.string() },
+  handler: async (ctx, { connectionId }) => revokeConnectionOp(ctx, await appUser(ctx), connectionId),
 });

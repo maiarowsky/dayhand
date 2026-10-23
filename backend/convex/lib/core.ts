@@ -9,16 +9,23 @@ import type { Actor, Link, RepeatRule } from "./validators";
 
 /**
  * Who is acting. Thin layers (app, MCP) establish it; the domain trusts it.
- * Changes made with an API key also carry the key's id and name.
+ * Changes made with an API key also carry the key's id and name; changes made
+ * through an OAuth connection carry the connection's id and the client's name.
  */
-export type Identity = { userId: string; actor: Actor; keyId?: Id<"apiKeys">; actorName?: string };
+export type Identity = {
+  userId: string;
+  actor: Actor;
+  keyId?: Id<"apiKeys">;
+  connectionId?: Id<"oauthGrants">;
+  actorName?: string;
+};
 
 /** The identity part of an internal function's arguments. */
-export function identityOf({ userId, actor, keyId, actorName }: Identity): Identity {
-  return { userId, actor, keyId, actorName };
+export function identityOf({ userId, actor, keyId, connectionId, actorName }: Identity): Identity {
+  return { userId, actor, keyId, connectionId, actorName };
 }
 
-/** How history shows who made a change: "app", "cli", "agent" or "agent: <key name>". */
+/** How history shows who made a change: "app", "cli", "agent" or "agent: <key or client name>". */
 export function actorLabel(event: { actor: Actor; actorName?: string }): string {
   return event.actor === "agent" && event.actorName ? `agent: ${event.actorName}` : event.actor;
 }
@@ -109,6 +116,7 @@ export async function recordEvent(
     userId: identity.userId,
     actor: identity.actor,
     keyId: identity.keyId,
+    connectionId: identity.connectionId,
     actorName: identity.actorName,
     at: Date.now(),
     ...event,
