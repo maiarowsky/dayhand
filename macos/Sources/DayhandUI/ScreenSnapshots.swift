@@ -1,5 +1,6 @@
 import AppKit
 import DayhandCore
+import KeyboardShortcuts
 import SwiftUI
 
 /**
@@ -26,9 +27,9 @@ public enum ScreenSnapshots {
         }
         Task { @MainActor in
             do {
+                try registerShortcut()
                 try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
                 try await renderAll(to: outputDirectory)
-                try removePreferences()
                 exit(0)
             } catch {
                 FileHandle.standardError.write(Data("Snapshots failed: \(error)\n".utf8))
@@ -61,14 +62,13 @@ public enum ScreenSnapshots {
         try await render(SettingsView().environmentObject(model), CGSize(width: 520, height: 360), false, folder.appendingPathComponent("settings.png"))
     }
 
-    /// The shortcut recorder stores its default in the tool's preferences; the tool leaves none behind. macOS keeps
-    /// an empty file for a removed domain, so that goes too.
-    static func removePreferences() throws {
-        let domain = ProcessInfo.processInfo.processName
-        UserDefaults.standard.removePersistentDomain(forName: domain)
-        CFPreferencesAppSynchronize(domain as CFString)
-        let file = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Preferences/\(domain).plist")
-        if FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
+    /// KeyboardShortcuts stores the initial shortcut in the preferences unless its key already has a value. The tool
+    /// gives it one in the registration domain, which is never written, so it leaves no preferences behind (removing
+    /// them afterwards still leaves an empty file once macOS flushes its cache). The key is the package's for
+    /// `.quickAdd`, spelled out because touching `.quickAdd` here would store the shortcut first.
+    static func registerShortcut() throws {
+        let shortcut = String(decoding: try JSONEncoder().encode(KeyboardShortcuts.Name.quickAddInitial), as: UTF8.self)
+        UserDefaults.standard.register(defaults: ["KeyboardShortcuts_quickAdd": shortcut])
     }
 
     /// A day in Warsaw, as if it had come from the server.

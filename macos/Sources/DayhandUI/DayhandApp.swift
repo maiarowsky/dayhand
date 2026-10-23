@@ -5,7 +5,8 @@ import SwiftUI
 
 extension KeyboardShortcuts.Name {
     /// Quick add from anywhere; ⌃⌥N until the user records another in Settings.
-    static let quickAdd = Self("quickAdd", initial: .init(.n, modifiers: [.control, .option]))
+    static let quickAdd = Self("quickAdd", initial: quickAddInitial)
+    static let quickAddInitial = KeyboardShortcuts.Shortcut(.n, modifiers: [.control, .option])
 }
 
 public struct DayhandApp: App {
