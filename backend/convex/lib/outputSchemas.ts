@@ -301,6 +301,97 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       }
     ]
   },
+  "import-result": {
+    "title": "Import result",
+    "description": "POST /api/v1/import (hlm import): what the import did, or with dryRun what it would do.",
+    "type": "object",
+    "required": [
+      "format",
+      "dryRun",
+      "total",
+      "created",
+      "skipped",
+      "failed",
+      "warnings",
+      "tasks"
+    ],
+    "properties": {
+      "format": {
+        "enum": [
+          "helm-json",
+          "ics",
+          "todoist-csv"
+        ],
+        "description": "The format read (values may be added)"
+      },
+      "dryRun": {
+        "type": "boolean",
+        "description": "true: nothing was stored; numbers and ids are not reserved"
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Tasks found in the file"
+      },
+      "created": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Tasks imported (or that would be)"
+      },
+      "skipped": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "reason"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Tasks already here: imported before from the same file, or the same task (same id)"
+      },
+      "failed": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "title",
+            "message"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Tasks that failed add_task's checks, with the reason"
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "What could not be carried over (dates not understood, priorities, trash, …)"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/task"
+        },
+        "description": "The imported tasks"
+      }
+    }
+  },
   "problem": {
     "title": "Problem",
     "description": "An error of the REST API /api/v1 as problem details (RFC 9457, application/problem+json). code is the same code as an MCP tool error.",

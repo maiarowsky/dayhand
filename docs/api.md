@@ -23,7 +23,8 @@ curl -s https://<name>.convex.site/api/v1/today -H "Authorization: Bearer $HELM_
 OAuth access tokens of agent connections are bound to `/mcp` (RFC 8707) and get `401` here.
 
 Each route needs a key **scope** ([mcp.md](mcp.md#keys-and-actors)): `read` for `GET` routes,
-`write` for changes to tasks and settings, `full` for the account routes (API keys, webhooks). The OpenAPI document gives it per operation as `x-helm-scope`; a key with less gets
+`write` for changes to tasks and settings, `full` for the account routes (API keys, webhooks,
+import). The OpenAPI document gives it per operation as `x-helm-scope`; a key with less gets
 `403 insufficient_scope`. Give an integration the smallest scope it needs and an expiry date:
 
 ```sh
@@ -56,6 +57,7 @@ for an agent key, `cli` for a CLI key.
 | `GET /settings`, `PATCH /settings` | `get_settings`, `update_settings` | read, write |
 | `GET /keys`, `POST /keys`, `DELETE /keys/{keyId}` | none ([API keys](#api-keys)) | full |
 | `GET/POST /webhooks`, `GET/DELETE /webhooks/{webhookId}`, `POST /webhooks/{webhookId}/test`, `POST /webhooks/{webhookId}/enable`, `GET /webhooks/{webhookId}/deliveries` | none ([webhooks.md](webhooks.md)) | full |
+| `POST /import` | none ([Import](#import)) | full |
 | `GET /openapi.json` | none; no key needed | |
 
 `{taskId}` is the task number (`/tasks/42`) or its id. Bodies are JSON (`Content-Type:
@@ -131,7 +133,7 @@ is the same code an MCP tool error has ([mcp.md](mcp.md#errors)), and `detail` t
 | 404 | `not_found` | No such task, key or webhook, or no such route |
 | 405 | `method_not_allowed` | The path exists with other methods (`Allow` lists them) |
 | 412 | `precondition_failed` | `If-Match` does not match the task's version |
-| 413 | `payload_too_large` | A body over 256 KB |
+| 413 | `payload_too_large` | A body over 256 KB (2 MB for `POST /import`) |
 | 415 | `unsupported_media_type` | A body that is not JSON |
 | 422 | `invalid_argument` | Wrong or missing arguments, an unknown field or query parameter, or a change the task's state does not allow |
 | 429 | `rate_limited` | Too many calls with this key (`Retry-After`, `retryAfterMs`) |
@@ -167,6 +169,39 @@ A key created this way has scope `read` (the default) or `write`, never `full`; 
 later than the key that created it, and it works only while that key works. So a key can never
 outlive its parent's revocation, and an integration can never mint keys of its own.
 `hlm key list`, `hlm key create` and `hlm key revoke` use these routes.
+
+## Import
+
+`POST /import` brings a plan into Helm from a file:
+
+| `format` | File | What becomes of it |
+|---|---|---|
+| `helm-json` | Helm's own JSON export (`hlm export --format json`, `export_plan` format `json`, version 1) | Every task outside the trash with all its fields: status, dates, repeat rule, labels, links, checklist, reminders, done and archived times. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
+| `ics` | iCalendar: `VTODO` and `VEVENT` | `SUMMARY` → title, `DESCRIPTION` → note, `DUE` (or `DTSTART`) → day and time in your time zone (UTC and `TZID` times are converted), `RRULE` → repeat rule, `CATEGORIES` → labels, `URL` → link, `STATUS:COMPLETED`/`IN-PROCESS` → done/doing, `VALARM` before the start → reminders. Cancelled entries and changed occurrences of a series (`RECURRENCE-ID`) are skipped. Helm's own calendar file (`hlm calendar export`) reads back without its `✓` and `Helm #n` marks. |
+| `todoist-csv` | Todoist's CSV export of a project | Rows of type `task`; `@label` words in the content → labels; the section → a label; `note` rows → the task's note; sub-tasks (`INDENT` 2 or more) → checklist items of their task; `DATE` in English (`2026-11-03`, `today`, `tomorrow at 9am`, `Nov 20 15:30`, a weekday, `every day`, `every 2 weeks`, `every monday, friday`, `every weekday`) → day, time and repeat rule. A date it does not understand stays in the note, with a warning. Priorities are not imported. Todoist's CSV format is not documented by Todoist; this reader follows its current export. |
+
+```sh
+curl -s -X POST "https://<name>.convex.site/api/v1/import?dryRun=true" \
+  -H "Authorization: Bearer $HELM_API_KEY" -H 'Content-Type: application/json' \
+  --data "$(jq -Rs '{content: .}' todoist.csv)"
+```
+
+The body is `{ "content": "<the file's text>", "format": "auto" }`; `auto` (the default)
+recognises the format from the content. The answer (`docs/schemas/import-result.schema.json`)
+says how many tasks the file had (`total`), how many were imported (`created`, and the tasks in
+`tasks`), which were `skipped` and why, which `failed` add_task's checks (with the message; the
+others are imported all the same) and `warnings` about what could not be carried over.
+
+- Every task is checked by the same rules as `add_task`, gets an `import` history entry with
+  the key's actor, and sends `task.created` to webhooks.
+- **Importing the same file again imports nothing twice**: each task's `clientId` is a hash of
+  the format and its place in the file. A task from a Helm export whose id is still in this
+  account is skipped too, so importing an export into the account it came from changes nothing.
+- `?dryRun=true` reads the file and checks every task without storing anything (`dryRun: true`).
+- At most 2000 tasks per import; the server stores them in batches of 200, so a failure halfway
+  leaves the first batches imported, and running the same import again completes it.
+
+`hlm import <file> [--format …] [--dry-run]` sends a file this way.
 
 ## OpenAPI
 

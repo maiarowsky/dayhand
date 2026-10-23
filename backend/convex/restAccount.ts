@@ -1,5 +1,5 @@
 // Account routes of the REST API (docs/api.md#api-keys, docs/webhooks.md): API
-// keys made with a full key, and webhooks. Each handler only calls the domain
+// keys made with a full key, webhooks, and import (restImport.ts). Each handler only calls the domain
 // function with the caller's identity; rest.ts has already checked the key's
 // scope and limit.
 import type { Id } from "./_generated/dataModel";
@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 import type { CreatedKey } from "./apiKeys";
 import type { CreatedWebhook } from "./webhooks";
 import type { RestHandler } from "./rest";
+import { importPlan } from "./restImport";
 
 const webhookId = (params: Record<string, string>) => params.webhookId as Id<"webhooks">;
 
@@ -50,4 +51,6 @@ export const ACCOUNT_HANDLERS: Record<string, RestHandler> = {
   listDeliveries: async (ctx, { identity, params, query }) => ({
     body: { deliveries: await ctx.runQuery(internal.webhooks.deliveries, { ...identity, webhookId: webhookId(params), ...query }) },
   }),
+
+  importPlan,
 };

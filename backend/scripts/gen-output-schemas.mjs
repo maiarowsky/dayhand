@@ -14,6 +14,7 @@ const ROOTS = [
   "task", "task-list", "today", "board", "task-detail", "complete", "set-now", "export", "settings", "tool-error",
   "problem", "api-key-list", "api-key-created", "api-key-revoke",
   "webhook-list", "webhook-one", "webhook-created", "webhook-delete", "webhook-test", "webhook-delivery-list", "webhook-event",
+  "import-result",
 ];
 
 const nameOf = (file) => file.replace(/\.schema\.json$/, "");

@@ -27,6 +27,8 @@ import type * as lib_findTasks from "../lib/findTasks.js";
 import type * as lib_guide from "../lib/guide.js";
 import type * as lib_http from "../lib/http.js";
 import type * as lib_ical from "../lib/ical.js";
+import type * as lib_importFormats from "../lib/importFormats.js";
+import type * as lib_importOps from "../lib/importOps.js";
 import type * as lib_jsonSchema from "../lib/jsonSchema.js";
 import type * as lib_limits from "../lib/limits.js";
 import type * as lib_mcpContent from "../lib/mcpContent.js";
@@ -60,6 +62,7 @@ import type * as ops from "../ops.js";
 import type * as pairing from "../pairing.js";
 import type * as rest from "../rest.js";
 import type * as restAccount from "../restAccount.js";
+import type * as restImport from "../restImport.js";
 import type * as webhooks from "../webhooks.js";
 
 import type {
@@ -88,6 +91,8 @@ declare const fullApi: ApiFromModules<{
   "lib/guide": typeof lib_guide;
   "lib/http": typeof lib_http;
   "lib/ical": typeof lib_ical;
+  "lib/importFormats": typeof lib_importFormats;
+  "lib/importOps": typeof lib_importOps;
   "lib/jsonSchema": typeof lib_jsonSchema;
   "lib/limits": typeof lib_limits;
   "lib/mcpContent": typeof lib_mcpContent;
@@ -121,6 +126,7 @@ declare const fullApi: ApiFromModules<{
   pairing: typeof pairing;
   rest: typeof rest;
   restAccount: typeof restAccount;
+  restImport: typeof restImport;
   webhooks: typeof webhooks;
 }>;
 

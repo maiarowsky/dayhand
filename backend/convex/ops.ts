@@ -8,6 +8,7 @@ import { args, DRY_RUN_CODE, dryRunArgs } from "./lib/args";
 import { appliedOperation, fail, identityOf as who, loadTask, versionTag, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { findTasks as findTasksOp } from "./lib/findTasks";
+import { importArgs, importTasks as importTasksOp } from "./lib/importOps";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
 import {
   addTask,
@@ -76,6 +77,7 @@ export const archive = change(args.archive, archiveTask);
 export const softDelete = change(args.softDelete, softDeleteTask);
 export const restore = change(args.restore, restoreTask);
 export const updateSettings = change(args.updateSettings, updateSettingsOp);
+export const importTasks = change(importArgs, importTasksOp);
 
 export const listToday = internalQuery({
   args: { ...identity, ...args.listToday },
