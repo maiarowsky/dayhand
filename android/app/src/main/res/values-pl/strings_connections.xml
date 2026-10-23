@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connections_title">Połączenia agentów</string>
+    <string name="connections_approve_row">Zatwierdź połączenie</string>
+    <string name="connections_approve_note">Wpisz kod ze strony logowania Claude albo innego agenta</string>
+    <string name="connections_active">Połączone</string>
+    <string name="connections_none">Żaden agent nie jest połączony. Gdy Claude poprosi o połączenie z Helmem, jego strona pokaże kod: zatwierdź go tutaj.</string>
+    <string name="connections_hint">Połączony tu agent czyta i zmienia Twój plan we własnym imieniu; jego zmiany widać w historii pod jego nazwą. Rozłączenie działa od razu. Klucze API do terminala nie są tu pokazane.</string>
+    <string name="connections_loading">Wczytuję połączenia…</string>
+    <string name="connections_failed">Nie udało się wczytać połączeń. Sprawdź połączenie z serwerem.</string>
+    <string name="connections_unauthorized">Serwer odrzucił ten telefon. Sparuj go ponownie w sekcji Serwer.</string>
+    <string name="connections_from">z %1$s</string>
+    <string name="connections_registered">zarejestrował się sam, wraca do %1$s</string>
+    <string name="connections_read_only">Tylko odczyt</string>
+    <string name="connections_read_write">Odczyt i zmiany</string>
+    <string name="connections_last_used">ostatnio %1$s</string>
+    <string name="connections_never_used">jeszcze nieużywane</string>
+    <string name="connections_disconnect_title">Rozłączyć %1$s?</string>
+    <string name="connections_disconnect_text">Przestanie działać od razu. Żeby znów go używać, połącz go ponownie z jego aplikacji.</string>
+    <string name="connections_disconnect">Rozłącz</string>
+    <string name="connections_disconnect_failed">Nie udało się rozłączyć. Spróbuj ponownie.</string>
+
+    <string name="approve_title">Zatwierdź połączenie</string>
+    <string name="approve_code_label">Kod ze strony logowania</string>
+    <string name="approve_code_hint">Strona, która prosi o dostęp, pokazuje kod w rodzaju K7QF-M2XA. Zatwierdzaj tylko kod, który widzisz teraz na własnym ekranie.</string>
+    <string name="approve_continue">Dalej</string>
+    <string name="approve_checking">Sprawdzam kod…</string>
+    <string name="approve_not_found">Żadna oczekująca prośba nie ma tego kodu. Sprawdź go albo zacznij łączenie od nowa: kod jest ważny 10 minut.</string>
+    <string name="approve_rate_limited">Za dużo błędnych kodów. Spróbuj ponownie za kilka minut.</string>
+    <string name="approve_failed">Brak połączenia z serwerem. Spróbuj ponownie.</string>
+    <string name="approve_asks">%1$s prosi o dostęp do Twojego planu w Helmie</string>
+    <string name="approve_client_verified">Tożsamość z %1$s</string>
+    <string name="approve_client_registered">Zarejestrował się sam (nazwa niepotwierdzona)</string>
+    <string name="approve_returns_to">Odpowiedź trafi do %1$s</string>
+    <string name="approve_loopback_warning">Odpowiedź trafi do programu na komputerze, który otworzył stronę (Claude Code). Zatwierdź tylko, jeśli to Ty go przed chwilą uruchomiłeś.</string>
+    <string name="approve_allow">Pozwól na</string>
+    <string name="approve_scope_read">Odczyt zadań i ustawień</string>
+    <string name="approve_scope_write">Zmiany w zadaniach i ustawieniach</string>
+    <string name="approve_scope_write_note">Dodawanie, edycja, kończenie i usuwanie zadań; zmiana ustawień</string>
+    <string name="approve_confirm">Zatwierdź</string>
+    <string name="approve_refuse">Odrzuć</string>
+    <string name="approve_nothing_chosen">Wybierz przynajmniej jedno uprawnienie albo odrzuć.</string>
+    <string name="approve_done">Zatwierdzone. Wróć na stronę logowania: przejdzie dalej sama.</string>
+    <string name="approve_refused">Odrzucone. Strona logowania przekaże agentowi odmowę.</string>
+    <string name="approve_gone">Ta prośba wygasła albo została już rozstrzygnięta.</string>
+</resources>

@@ -10,6 +10,7 @@ import dev.helm.planner.auth.AppTokens
 import dev.helm.planner.auth.DeviceTokens
 import dev.helm.planner.auth.PairingApi
 import dev.helm.planner.auth.StaticTokens
+import dev.helm.planner.connections.AgentConnectionsApi
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.HelmDatabase
 import dev.helm.planner.data.remote.ConvexTaskFeed
@@ -100,6 +101,9 @@ class AppContainer(context: Context) {
 
     /** The plan export goes over plain HTTP, like the outbox. */
     fun exporter(backend: BackendConfig) = PlanExporter(HttpTaskRemote(backend.url, tokensFor(backend)))
+
+    /** Agent connections (approve, list, disconnect) are read and changed over plain HTTP when their page is open. */
+    fun connectionsApi(backend: BackendConfig) = HttpTaskRemote(backend.url, tokensFor(backend)).let { AgentConnectionsApi(it, it) }
 
     /** The outbox talks plain HTTP: clear timeouts and no WebSocket in the background. */
     fun mutationSender(backend: BackendConfig): MutationSender = HttpTaskRemote(backend.url, tokensFor(backend))
