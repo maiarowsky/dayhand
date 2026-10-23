@@ -10,7 +10,9 @@ import SwiftUI
  */
 @MainActor
 final class AppModel: ObservableObject {
-    static let shared = AppModel()
+    /// What the shared model is built from; the snapshot tool replaces it before the first use.
+    static var makeEnvironment: () -> AppEnvironment = { AppEnvironment.standard() }
+    static let shared = AppModel(makeEnvironment())
 
     @Published private(set) var tasks: [TaskItem] = []
     @Published private(set) var sections: TodaySections = .empty
@@ -23,7 +25,7 @@ final class AppModel: ObservableObject {
     @Published var connectPrefill: PairingLink?
     @Published var alert: String?
     @Published var useOffline: Bool {
-        didSet { UserDefaults.standard.set(useOffline, forKey: Keys.useOffline) }
+        didSet { defaults.set(useOffline, forKey: Keys.useOffline) }
     }
 
     let repository: TaskRepository
@@ -32,6 +34,7 @@ final class AppModel: ObservableObject {
     var openMainWindow: (() -> Void)?
 
     private let credentials: CredentialStore
+    private let defaults: UserDefaults
     private let engineBox = EngineBox()
     private var engine: SyncEngine?
     private var clockTimer: Timer?
@@ -42,21 +45,13 @@ final class AppModel: ObservableObject {
         static let lastServer = "lastServerUrl"
     }
 
-    init() {
-        let environment = ProcessInfo.processInfo.environment
+    init(_ environment: AppEnvironment) {
         let box = engineBox
-        do {
-            repository = TaskRepository(
-                database: try AppModel.openDatabase(environment),
-                onOutboxChanged: { box.poke() }
-            )
-        } catch {
-            // Without its database the app cannot show anything true; say why and stop.
-            fatalError("Dayhand could not open its database: \(error)")
-        }
-        credentials = KeychainCredentialStore(service: environment["DAYHAND_KEYCHAIN_SERVICE"] ?? KeychainCredentialStore.defaultService)
-        notifications = Bundle.main.bundleIdentifier == nil ? nil : NotificationScheduler()
-        useOffline = UserDefaults.standard.bool(forKey: Keys.useOffline)
+        repository = TaskRepository(database: environment.database, onOutboxChanged: { box.poke() })
+        credentials = environment.credentials
+        defaults = environment.defaults
+        notifications = environment.notifications ? NotificationScheduler() : nil
+        useOffline = environment.defaults.bool(forKey: Keys.useOffline)
         observe()
         clockTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             Task { @MainActor in AppModel.shared.recompute() }
@@ -64,24 +59,13 @@ final class AppModel: ObservableObject {
         do {
             credential = try credentials.load()
         } catch {
-            alert = "The Keychain could not be read, so Dayhand starts without a server. (\(error))"
+            alert = "The Keychain could not be read, so Dayhand starts without a server."
         }
         if let credential {
             startSession(credential)
         } else if !useOffline {
             showConnect = true
         }
-    }
-
-    static func openDatabase(_ environment: [String: String]) throws -> AppDatabase {
-        let folder: URL
-        if let custom = environment["DAYHAND_DATA_DIR"] {
-            folder = URL(fileURLWithPath: custom, isDirectory: true)
-        } else {
-            let support = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            folder = support.appendingPathComponent("Dayhand", isDirectory: true)
-        }
-        return try AppDatabase.onDisk(at: folder.appendingPathComponent("dayhand.sqlite"))
     }
 
     // MARK: Reading
@@ -201,7 +185,7 @@ final class AppModel: ObservableObject {
         let name = Host.current().localizedName ?? "Mac"
         switch await pairing.connect(address: address, code: code, deviceName: name) {
         case .success(let credential):
-            UserDefaults.standard.set(credential.serverUrl, forKey: Keys.lastServer)
+            defaults.set(credential.serverUrl, forKey: Keys.lastServer)
             self.credential = credential
             useOffline = false
             showConnect = false
@@ -213,7 +197,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    var lastServerUrl: String? { credential?.serverUrl ?? UserDefaults.standard.string(forKey: Keys.lastServer) }
+    var lastServerUrl: String? { credential?.serverUrl ?? defaults.string(forKey: Keys.lastServer) }
 
     /// Forgets the sign-in on this Mac. Tasks and waiting changes stay; `hlm revoke <deviceId>` ends it on the server.
     func disconnect() {
@@ -297,5 +281,46 @@ final class EngineBox: @unchecked Sendable {
         let engine = engine
         lock.unlock()
         engine?.poke()
+    }
+}
+
+/// Where the model keeps things: the database file, the sign-in and the preferences.
+struct AppEnvironment {
+    var database: AppDatabase
+    var credentials: CredentialStore
+    var notifications: Bool
+    var defaults: UserDefaults
+
+    /**
+     * The app's own: `~/Library/Application Support/Dayhand/dayhand.sqlite` and the login Keychain. For trying the app
+     * without touching those, `DAYHAND_DATA_DIR` names another folder for the database and `DAYHAND_CREDENTIALS=memory`
+     * keeps the sign-in in memory only (it is gone when the app quits).
+     */
+    static func standard() -> AppEnvironment {
+        let environment = ProcessInfo.processInfo.environment
+        let database: AppDatabase
+        do {
+            database = try AppDatabase.onDisk(at: databaseURL(environment))
+        } catch {
+            // Without its database the app cannot show anything true; stop with the reason in the crash report.
+            fatalError("Dayhand could not open its database: \(error)")
+        }
+        let credentials: CredentialStore = environment["DAYHAND_CREDENTIALS"] == "memory"
+            ? MemoryCredentialStore()
+            : KeychainCredentialStore()
+        return AppEnvironment(
+            database: database,
+            credentials: credentials,
+            notifications: Bundle.main.bundleIdentifier != nil,
+            defaults: .standard
+        )
+    }
+
+    static func databaseURL(_ environment: [String: String]) throws -> URL {
+        if let custom = environment["DAYHAND_DATA_DIR"] {
+            return URL(fileURLWithPath: custom, isDirectory: true).appendingPathComponent("dayhand.sqlite")
+        }
+        let support = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        return support.appendingPathComponent("Dayhand", isDirectory: true).appendingPathComponent("dayhand.sqlite")
     }
 }

@@ -50,7 +50,7 @@ struct TaskDetailView: View {
                     ))
                 }
                 if task.isNow {
-                    TextField("Where I stopped / next step", text: $resumeNote)
+                    TextField("Where I stopped", text: $resumeNote, prompt: Text("next step"))
                         .focused($focus, equals: .resume)
                         .onSubmit(saveResumeNote)
                 }
@@ -58,7 +58,7 @@ struct TaskDetailView: View {
             Section("When") {
                 LabeledContent("Due", value: Formatting.due(task, today: today) ?? "No day")
                 HStack {
-                    TextField("Change: tomorrow 9am, fri, 23 oct 14:00…", text: $duePhrase)
+                    TextField("Change", text: $duePhrase, prompt: Text("tomorrow 9am, fri, 23 oct 14:00"))
                         .onSubmit(saveDuePhrase)
                     Button("Today") { model.setDue(task.localId, date: today, time: task.dueTime) }
                     Button("No day") { model.setDue(task.localId, date: nil, time: nil) }
@@ -76,7 +76,7 @@ struct TaskDetailView: View {
                 LabeledContent("Reminders", value: Formatting.reminders(task.reminders, defaults: model.settings.reminderMinutes))
             }
             Section("Labels") {
-                TextField("Labels, separated by commas", text: $labels)
+                TextField("Labels", text: $labels, prompt: Text("home, work"))
                     .focused($focus, equals: .labels)
                     .onSubmit(saveLabels)
             }
@@ -95,7 +95,7 @@ struct TaskDetailView: View {
                             .accessibilityLabel("Remove \(item.title)")
                     }
                 }
-                TextField("Add an item", text: $newItem)
+                TextField("New item", text: $newItem, prompt: Text("Add an item"))
                     .onSubmit {
                         let clean = newItem.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !clean.isEmpty else { return }

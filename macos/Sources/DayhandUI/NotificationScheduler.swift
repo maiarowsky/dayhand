@@ -40,6 +40,8 @@ final class NotificationScheduler: NSObject, ObservableObject, UNUserNotificatio
         if authorization == .notDetermined, plan.contains(where: { if case .reminder = $0.kind { return true } else { return false } }) {
             await requestAuthorization()
         }
+        // Without permission nothing is left with macOS; Settings offers to ask.
+        guard authorization == .authorized || authorization == .provisional else { return }
         let pending = await center.pendingNotificationRequests().filter { $0.identifier.hasPrefix(ReminderPlanner.idPrefix) }
         let wanted = Dictionary(plan.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var keep = Set<String>()

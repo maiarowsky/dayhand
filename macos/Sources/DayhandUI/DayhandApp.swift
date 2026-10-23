@@ -8,12 +8,13 @@ extension KeyboardShortcuts.Name {
     static let quickAdd = Self("quickAdd", initial: .init(.n, modifiers: [.control, .option]))
 }
 
-@main
-struct DayhandApp: App {
+public struct DayhandApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
 
-    var body: some Scene {
+    public init() {}
+
+    public var body: some Scene {
         Window("Dayhand", id: "main") {
             MainWindow()
                 .environmentObject(model)

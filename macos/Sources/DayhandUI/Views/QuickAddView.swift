@@ -27,6 +27,11 @@ struct QuickAddView: View {
     @FocusState private var focused: Bool
     let onDone: () -> Void
 
+    init(line: String = "", onDone: @escaping () -> Void) {
+        _line = State(initialValue: line)
+        self.onDone = onDone
+    }
+
     var body: some View {
         let preview = QuickAddPreview.of(line, readPhrase: readPhrase, model: model)
         VStack(alignment: .leading, spacing: 8) {

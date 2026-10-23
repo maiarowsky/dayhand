@@ -1,0 +1,3 @@
+import DayhandUI
+
+DayhandApp.main()

@@ -14,6 +14,8 @@ enum Formatting {
         default:
             let formatter = DateFormatter()
             formatter.timeZone = TimeZone(identifier: "UTC")
+            // The screens are in English only so far; dates follow them instead of the Mac's language.
+            formatter.locale = Locale(identifier: "en_GB")
             formatter.setLocalizedDateFormatFromTemplate(civil.year == now.year ? "EEE d MMM" : "EEE d MMM yyyy")
             let instant = Date(timeIntervalSince1970: TimeInterval(civil.dayNumber) * 86_400)
             return formatter.string(from: instant)

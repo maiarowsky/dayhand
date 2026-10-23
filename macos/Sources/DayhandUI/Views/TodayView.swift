@@ -201,7 +201,7 @@ struct NowRow: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             DoneBox(task: task)
             VStack(alignment: .leading, spacing: 2) {
-                Text(task.title).fontWeight(.semibold)
+                Text(task.title).fontWeight(.semibold).foregroundStyle(.primary)
                 Text(task.resumeNote.map { "Where I stopped: \($0)" } ?? "Where I stopped: add a note in the details")
                     .font(.caption)
                     .foregroundStyle(.secondary)

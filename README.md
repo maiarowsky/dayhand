@@ -25,6 +25,7 @@ backend/   Convex backend: data model, domain operations, MCP endpoint, REST API
 cli/       hlm, the command line client for people and agents; see cli/README.md
 android/   Android app (Kotlin, Compose): Today, board, task details, reminders, settings, offline outbox; see android/README.md
 ios/       iOS app (Swift), later
+macos/     Dayhand for macOS (Swift, SwiftUI): Today, quick add, menu bar, reminders, offline outbox; see macos/README.md
 docs/      Architecture, MCP, REST API and webhooks, OAuth for the Claude apps, the calendar feed, phone pairing, deployment and release notes
 man/       hlm(1), generated from the CLI's command registry
 packaging/ Homebrew formula template
