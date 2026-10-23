@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.helm.invalid/dry-run.schema.json",
   "title": "Dry run",
-  "description": "Any changing command with --dry-run: the changes it would send, with dates resolved. Nothing was sent.",
+  "description": "Any changing command with --dry-run: the changes it would make, with dates resolved. Nothing was saved.",
   "type": "object",
   "required": [
     "dryRun",
@@ -28,6 +28,10 @@
               },
               "arguments": {
                 "type": "object"
+              },
+              "result": {
+                "type": "object",
+                "description": "What the backend says the change would return (its tool result with dryRun: true); absent for a backend older than 0.4.0"
               }
             }
           },

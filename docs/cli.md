@@ -59,7 +59,7 @@ Without a command, `hlm` shows Today.
 | `--client-id <id>` | Operation id for safe retries (default: generated, shown on errors) |
 | `-y, --yes` | Confirm changing many tasks at once |
 | `--no-input` | Never prompt (also HLM_NO_INPUT=1); prompts need a terminal anyway |
-| `--dry-run` | Show the changes a command would send (dates resolved) and send nothing |
+| `--dry-run` | Show the changes a command would make (dates resolved), checked by the backend, and save nothing |
 | `--url <url>` | Deployment HTTP actions URL (default: HLM_URL, then config.toml) |
 | `--profile <name>` | Profile from config.toml (default: HLM_PROFILE, then default_profile) |
 | `--color <when>` | Colors in the human format (auto, always, never) |
@@ -73,15 +73,19 @@ Without a command, `hlm` shows Today.
 - A list tool returns `{"result": [...]}`. A command given several tasks returns `{"results": [...]}`,
   one tool result per task. `--fields a,b` keeps only those fields of every task (or of the settings).
 - `hlm now` without a task prints `list_today`; `hlm note <ref>` without text prints `get_task`.
-- A Markdown export has no structured content; its JSON is `{"format":"markdown","content":"…"}`.
+- A Markdown export's JSON is `{"format":"markdown","content":"…"}`.
 - Errors go to stderr as one line: `{"error":{"code","message","exitCode","retryable","clientId",…}}`
   ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{"warning":{…}}` lines.
 - `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`
   (or the `--fields`); views with sections (Today, board) start each row with the section name.
-- `hlm list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`) keep
-  the `{"result": [...]}` shape with fewer tasks; like `--fields`, a documented narrowing.
-- `--dry-run` on a command that changes something prints `{"dryRun":true,"calls":[{"tool","arguments"}]}`
-  ([schema](schemas/dry-run.schema.json)) with dates resolved, and sends nothing; reads still happen.
+- `hlm list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)
+  run on the backend and keep list_all's shape: `{"result": [...], "total", "nextCursor"}`. With `--limit`, pass
+  `nextCursor` as `--cursor` for the next page. A backend older than 0.4.0 has no `total` and `nextCursor`;
+  hlm then filters its full list itself.
+- `--dry-run` on a command that changes something prints `{"dryRun":true,"calls":[{"tool","arguments","result"}]}`
+  ([schema](schemas/dry-run.schema.json)) with dates resolved. The backend checks each change and returns
+  what it would give (`result`) without saving anything; reads still happen. A backend older than 0.4.0
+  and the device endpoints get nothing: their calls are only listed.
 
 ## Human output
 
@@ -100,11 +104,11 @@ On a terminal, `hlm note <ref>` and `hlm edit <ref>` without options open `$VISU
 | 2 | Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml |
 | 3 | Authentication: no key (hlm login or HLM_API_KEY), or a wrong or revoked one |
 | 4 | Not found: no such task (#n), device or now task |
-| 5 | Server unavailable (network, timeout, HTTP 5xx or 429): the change may have been applied; retry with the same --client-id |
+| 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
 | 130 | Interrupted (Ctrl-C) |
 
 Backend error codes map to exit codes: `invalid_argument` → 2, `unauthenticated` → 3,
-`not_found` → 4, `internal` and unknown codes → 1.
+`not_found` → 4, `rate_limited` → 5, `internal` and unknown codes → 1.
 
 ## Retries
 
@@ -315,12 +319,14 @@ hlm list [options]
 | `--due-before <when>` | Only tasks due before this day, e.g. eow, next mon, 2026-11-01 |
 | `--due-after <when>` | Only tasks due after this day, e.g. today |
 | `--search <text>` | Only tasks whose title, note, resume note or labels contain the text (any case) |
-| `--limit <n>` | At most this many tasks |
+| `--limit <n>` | At most this many tasks; the JSON's nextCursor continues the list |
+| `--cursor <cursor>` | Continue a list cut by --limit: the nextCursor of the previous page |
 
 ```sh
 hlm list -l home --status todo,doing
 hlm list --overdue
 hlm list --due-before eow --search accountant --limit 20
+hlm list --limit 50 --cursor <nextCursor> --json
 hlm list --done --json --fields ref,title,status
 ```
 

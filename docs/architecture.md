@@ -19,7 +19,13 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 - `convex/app.ts` takes `userId` from the signed-in user (`ctx.auth`) and sets `actor: "app"`.
 - `convex/mcp.ts` takes `userId` from the personal API key and sets `actor` to the key's kind
   (`cli` or `agent`), `actorName` to its name and `keyId` to its id. Arguments that try to set
-  any of these are rejected. The `/devices/*` endpoints do the same.
+  any of these are rejected. The `/devices/*` endpoints do the same. Around it:
+  `lib/mcpTools.ts` (tool catalog, input schemas from the validators, output schemas from
+  `docs/schemas` via the generated `lib/outputSchemas.ts`, behaviour hints),
+  `lib/mcpContent.ts` (resources and prompts, read through the same internal queries) and
+  `lib/mcpProtocol.ts` (the 2025 and 2026-07-28 protocol eras on one endpoint).
+- `dryRun` exists only on the MCP layer: the internal mutation runs the operation, every check
+  included, then throws its result, so Convex rolls the transaction back (`convex/ops.ts`).
 - The CLI is an MCP client too, so app, agent and CLI run exactly the same code.
 
 ## Data model (`convex/schema.ts`)
@@ -33,6 +39,7 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 | `pairingCodes` | One-time pairing codes: public `selector`, SHA-256 `secretHash` of the secret part, `createdBy`, `expiresAt` (10 minutes), `usedAt`, `failedAttempts` |
 | `devices` | Paired phones: `name`, token `selector`, SHA-256 `secretHash`, `pairedBy`, `createdAt`, `lastUsedAt`, `revokedAt` |
 | `authLimits` | Failed-attempt counter of `POST /auth/pair` (one row per bucket) |
+| `callLimits` | MCP calls per API key in the current one-minute window: `keyId`, `kind` (`read` or `write`), `windowStart`, `calls` |
 | `settings` | `timezone` (default `Europe/London`), `summaryTime` (default `05:00`), `defaultReminderMinutes` (default `[0]`) |
 
 ## Rules
@@ -63,7 +70,8 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 - **Agent and CLI:** personal API keys (`helm_` + 32 random bytes, base64url), each with a
   name and a kind (`cli` or `agent`, default `agent`) that becomes the actor of its changes. Keys are generated in an
   action (mutations have a deterministic random source), shown once, and stored as SHA-256 only.
-  A missing, wrong or revoked key gets HTTP 401.
+  A missing, wrong or revoked key gets HTTP 401. Each key may make 120 reads and 60 changes a
+  minute over MCP (`convex/callLimits.ts`); a call over the limit is refused before it runs.
 - **App:** a custom ES256 JWT. The deployment trusts the public key given in `HELM_JWKS`
   (a JWKS `data:` URI) for issuer `HELM_JWT_ISSUER`, audience `helm`; `userId` is the token
   identifier `<issuer>|<subject>`. The deployment itself signs these tokens with

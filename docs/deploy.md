@@ -10,6 +10,7 @@ repository holds no secrets: everything below goes into the deployment's environ
 | `HELM_JWT_ISSUER` | Issuer of app tokens, e.g. `https://helm.example` | `auth.config.ts`, token signing |
 | `HELM_JWKS` | Public key(s) as a JWKS data URI (`data:application/json;base64,…`) | `auth.config.ts` (Convex verifies app JWTs) |
 | `HELM_JWT_PRIVATE_JWK` | Private ES256 key as a JWK with `kid`; its public half must be in `HELM_JWKS` under the same `kid` | `POST /auth/token` only; never returned |
+| `HELM_MCP_ALLOWED_ORIGINS` | Optional. Comma-separated browser origins allowed to call `/mcp`, e.g. `https://inspector.example`. Unset: any request with an `Origin` header gets `403` | `POST /mcp` |
 
 App users are `<HELM_JWT_ISSUER>|<subject>` (single-user deployments use `owner` as subject).
 Personal API keys for the CLI and agent should belong to that same user, so the phone, the CLI
@@ -29,6 +30,18 @@ npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"a
 
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
+
+## Upgrading to 0.4.0
+
+0.4.0 adds the table `callLimits` (MCP calls per key and minute) and changes nothing in the
+existing tables, so there is no migration: `npx convex deploy` is enough, and 0.3 clients (the
+app, `hlm` 0.3, agents) keep working. Calls are now limited per key (120 reads and 60 changes a
+minute), and `/mcp` refuses requests with a browser `Origin` that is not in
+`HELM_MCP_ALLOWED_ORIGINS`; MCP clients outside a browser send no `Origin`.
+
+Rollback: deploy 0.3.0 again. Its schema does not define `callLimits`; if Convex refuses the
+push because that table holds rows, empty it first (`npx convex import --table callLimits
+--replace --yes empty.jsonl` with an empty file). The rows only count calls, so nothing is lost.
 
 ## Upgrading to 0.3.0
 

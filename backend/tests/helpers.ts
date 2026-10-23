@@ -91,3 +91,46 @@ export async function callTool<T = any>(client: Client, name: string, args: Reco
 
 /** Unix ms of a UTC wall-clock time, e.g. utc("2026-10-22T23:30"). */
 export const utc = (isoMinute: string) => Date.parse(`${isoMinute}:00Z`);
+
+/** One raw JSON-RPC POST to /mcp with the key (or none) and extra headers. */
+export const mcpPost = (key: string | null, body: unknown, headers: Record<string, string> = {}) =>
+  fetch(mcpUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+      ...(key ? { Authorization: `Bearer ${key}` } : {}),
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  });
+
+export const MODERN = "2026-07-28";
+
+/**
+ * A 2026-07-28 request as the specification writes it: the protocol version
+ * and client capabilities in params._meta, mirrored in the standard headers.
+ */
+export function modern(method: string, params: Record<string, unknown> = {}, id: number | string = 1) {
+  const name = (params.name ?? params.uri) as string | undefined;
+  return {
+    body: {
+      jsonrpc: "2.0",
+      id,
+      method,
+      params: {
+        ...params,
+        _meta: {
+          "io.modelcontextprotocol/protocolVersion": MODERN,
+          "io.modelcontextprotocol/clientCapabilities": {},
+          "io.modelcontextprotocol/clientInfo": { name: "helm-tests", version: "0" },
+        },
+      },
+    },
+    headers: {
+      "MCP-Protocol-Version": MODERN,
+      "Mcp-Method": method,
+      ...(name !== undefined && ["tools/call", "resources/read", "prompts/get"].includes(method) ? { "Mcp-Name": name } : {}),
+    } as Record<string, string>,
+  };
+}

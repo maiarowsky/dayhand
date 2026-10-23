@@ -2,7 +2,7 @@
 import { usageError } from "../core/exit.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import { applyDue } from "./dates.js";
-import { FILTER_OPTIONS, hasFilters, parseStatuses, taskFilter } from "./filters.js";
+import { FILTER_OPTIONS, hasFilters, listTasks, parseStatuses } from "./filters.js";
 import { eachRef, oneOrMany, tool, userTimezone } from "./ops.js";
 import { parseLink, parseRepeat, resolveRef } from "./parse.js";
 import type { CommandSpec, OptSpec, Opts, RunContext } from "./types.js";
@@ -111,6 +111,7 @@ export const taskCommands: CommandSpec[] = [
       "hlm list -l home --status todo,doing",
       "hlm list --overdue",
       'hlm list --due-before eow --search accountant --limit 20',
+      "hlm list --limit 50 --cursor <nextCursor> --json",
       "hlm list --done --json --fields ref,title,status",
     ],
     run: async (ctx, _args, opts) => {
@@ -118,8 +119,7 @@ export const taskCommands: CommandSpec[] = [
       const includeDone = Boolean(opts.done) || Boolean(statuses?.includes("done"));
       const input: Record<string, unknown> = { includeDone, includeArchived: Boolean(opts.archived) };
       if ((opts.label as string[]).length) input.labels = opts.label;
-      const [listed, filter] = await Promise.all([tool<{ result: Task[] }>(ctx, "list_all", input), taskFilter(ctx, opts)]);
-      const value = hasFilters(opts) ? { ...listed, result: filter(asList(listed)) } : listed;
+      const value = await listTasks(ctx, input, opts);
       return { value, view: { kind: "tasks", tasks: asList(value), empty: hasFilters(opts) ? "no tasks match" : undefined } };
     },
   },

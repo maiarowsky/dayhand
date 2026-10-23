@@ -124,6 +124,15 @@ export default defineSchema({
     failures: v.number(),
   }).index("by_bucket", ["bucket"]),
 
+  // MCP calls per API key in the current one-minute window, one row per key
+  // and kind of call (read or write).
+  callLimits: defineTable({
+    keyId: v.id("apiKeys"),
+    kind: v.union(v.literal("read"), v.literal("write")),
+    windowStart: v.number(),
+    calls: v.number(),
+  }).index("by_key_kind", ["keyId", "kind"]),
+
   settings: defineTable({
     userId: v.string(),
     timezone: v.string(),

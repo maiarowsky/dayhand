@@ -97,16 +97,17 @@ describe("exit codes", () => {
     expect(many.ref).toBe("999");
   });
 
-  test("5: backend unreachable, 5xx or 429, with a clientId to retry", async () => {
+  test("5: backend unreachable, 5xx, or 429 (rate_limited), with a clientId to retry", async () => {
     const { key } = await newUser();
     const closed = `http://127.0.0.1:${await freePort()}`;
     const down = expectFailure(await hlm(key, ["add", "X", "--json"], { url: closed }), 5, "unavailable");
     expect(down.retryable).toBe(true);
     expect(down.clientId).toMatch(/^[0-9a-f-]{36}$/);
-    for (const status of [503, 429] as const) {
-      mode = status;
-      expectFailure(await hlm(key, ["today", "--json"], { url: proxyUrl }), 5, "unavailable");
-    }
+    mode = 503;
+    expectFailure(await hlm(key, ["today", "--json"], { url: proxyUrl }), 5, "unavailable");
+    mode = 429;
+    const limited = expectFailure(await hlm(key, ["today", "--json"], { url: proxyUrl }), 5, "rate_limited");
+    expect(limited.retryable).toBe(false);
   });
 
   test("5 then a retry with the same --client-id does not duplicate the change", async () => {

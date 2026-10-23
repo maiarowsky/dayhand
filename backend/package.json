@@ -1,6 +1,6 @@
 {
   "name": "helm-backend",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Helm backend: Convex data model, domain operations, MCP endpoint and CLI",
   "license": "Apache-2.0",
@@ -15,6 +15,7 @@
     "backend:fetch": "node scripts/fetch-local-backend.mjs",
     "backend:start": "node scripts/local-backend.mjs",
     "app-token": "node scripts/app-token.mjs",
+    "schemas": "node scripts/gen-output-schemas.mjs",
     "typecheck": "tsc --noEmit -p . && tsc --noEmit -p convex",
     "test": "vitest run"
   },
@@ -23,8 +24,10 @@
     "qrcode-terminal": "0.12.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@types/node": "24.19.2",
+    "ajv": "8.20.0",
     "typescript": "5.9.3",
     "vitest": "5.0.4"
   }

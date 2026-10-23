@@ -1,7 +1,9 @@
 // The backend over HTTP: MCP JSON-RPC on /mcp (stateless, JSON responses) and
 // the /devices endpoints. Every failure becomes a CliError with the exit code
 // of the contract: 3 for a rejected key, 5 when the server could not answer.
-// With --dry-run, changes are recorded instead of sent; reads still happen.
+// With --dry-run, changes are recorded instead of applied: a 0.4 backend checks
+// each tool call (dryRun: true) and returns what it would produce; endpoint
+// calls, and tool calls to an older backend, are only recorded. Reads still happen.
 import type { Target } from "../config/resolve.js";
 import { displayUrl } from "../config/url.js";
 import { CliError, toErrorCode } from "../core/exit.js";
@@ -27,8 +29,10 @@ export type ToolInfo = {
 
 export type ServerInfo = { name: string; version: string };
 
-/** A change --dry-run held back: a tool call or a POST to a /devices endpoint. */
-export type HeldCall = { tool: string; arguments: Record<string, unknown> } | { endpoint: string; body: unknown };
+/** A change --dry-run held back: a tool call (with the backend's preview) or a POST to a /devices endpoint. */
+export type HeldCall =
+  | { tool: string; arguments: Record<string, unknown>; result?: Record<string, unknown> }
+  | { endpoint: string; body: unknown };
 
 /** Tools that only read; every other tool (including unknown ones) counts as a change. */
 export const READ_ONLY_TOOLS = new Set(["list_today", "list_all", "board", "get_task", "list_trash", "get_settings", "export_plan"]);
@@ -84,7 +88,8 @@ export class HelmClient {
         hint: "hlm login (or set HLM_API_KEY to a valid key)",
       });
     }
-    if (response.status === 429 || response.status >= 500) {
+    if (response.status === 429) throw rateLimited(response.headers.get("Retry-After"));
+    if (response.status >= 500) {
       throw unavailable(`${where} answered HTTP ${response.status}; the change may or may not have been applied`);
     }
     const payload = await response.json().catch(() => undefined);
@@ -123,20 +128,46 @@ export class HelmClient {
 
   /** Calls a tool; a tool error (`isError`) is thrown with its backend code. */
   async callTool(name: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
-    if (this.held && !READ_ONLY_TOOLS.has(name)) {
-      this.held.push({ tool: name, arguments: args });
-      return { structured: {}, text: "", content: [] };
-    }
+    if (this.held && !READ_ONLY_TOOLS.has(name)) return this.preview(name, args, this.held);
+    return this.send(name, args);
+  }
+
+  private async send(name: string, args: Record<string, unknown>): Promise<ToolResult> {
     const result = await this.rpc("tools/call", { name, arguments: args });
     const content = Array.isArray(result.content) ? result.content : [];
     const text = content.find((c: { type?: string }) => c.type === "text")?.text ?? "";
     const structured = result.structuredContent as Record<string, unknown> | undefined;
     if (result.isError) {
-      const error = (structured?.error ?? {}) as { code?: unknown; message?: unknown };
-      throw new CliError(toErrorCode(error.code), typeof error.message === "string" ? error.message : text);
+      const error = (structured?.error ?? {}) as { code?: unknown; message?: unknown; retryAfterMs?: unknown };
+      const message = typeof error.message === "string" ? error.message : text;
+      if (error.code === "rate_limited") throw rateLimited(retryAfterSeconds(error.retryAfterMs), message);
+      throw new CliError(toErrorCode(error.code), message);
     }
     return { structured, text, content };
   }
+
+  /** A held change, checked by the backend without saving it; an older backend only records it. */
+  private async preview(name: string, args: Record<string, unknown>, held: HeldCall[]): Promise<ToolResult> {
+    try {
+      const checked = await this.send(name, { ...args, dryRun: true });
+      held.push({ tool: name, arguments: args, result: checked.structured });
+      return checked;
+    } catch (error) {
+      if (!(error instanceof CliError && error.code === "invalid_argument" && /extra field `dryRun`/.test(error.message))) throw error;
+      held.push({ tool: name, arguments: args });
+      return { structured: {}, text: "", content: [] };
+    }
+  }
+}
+
+const retryAfterSeconds = (ms: unknown) => (typeof ms === "number" ? String(Math.max(1, Math.ceil(ms / 1000))) : null);
+
+/** Too many calls with the key (HTTP 429 or a rate_limited tool error): nothing was applied. */
+function rateLimited(retryAfter: string | null, message?: string): CliError {
+  const wait = retryAfter && /^\d+$/.test(retryAfter) ? ` in ${retryAfter} s` : " in a minute";
+  return new CliError("rate_limited", message ?? `Too many requests with this API key; try again${wait}`, {
+    hint: `run the same command again${wait}`,
+  });
 }
 
 /** A 4xx answer other than 401: `{error, error_description}` from /devices, or a wrong URL. */
