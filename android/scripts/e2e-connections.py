@@ -169,8 +169,10 @@ def main():
     find(text=f"{client_name} asks for access")
     find(text="Registered itself")
     find(text="Answer goes to claude.ai")
+    find(text="Asked ")
+    assert not any("several minutes old" in n.get("text", "") for n in base.ui_nodes()), "a fresh request is flagged as old"
     shot("03-consent.png")
-    tap(find_scrolling(text="Approve"))
+    tap(find_button("Approve"))  # the exact label; "Approve a connection" is the page title
     find(text="Approved.")
     shot("04-approved.png")
     log("approved on the phone")
@@ -202,7 +204,7 @@ def main():
     open_connections()
     type_approval_code(code)
     find(text="asks for access")
-    tap(find_scrolling(text="Refuse"))
+    tap(find_button("Refuse"))
     find(text="Refused.")
     shot("07-refused.png")
     refused = second.come_back()

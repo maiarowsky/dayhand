@@ -45,7 +45,7 @@ class ConnectionsViewModelTest {
 
     @Test
     fun `code, consent with less than asked, approved`() {
-        val vm = ConnectionsViewModel { api }
+        val vm = ConnectionsViewModel(api = { api })
         assertEquals(ConnectionsList.Loaded(emptyList()), vm.ui.value.list)
         vm.startApprove()
         vm.codeChanged("k7qf m2xa")
@@ -64,7 +64,7 @@ class ConnectionsViewModelTest {
 
     @Test
     fun `nothing chosen is not sent, and a wrong code says so`() {
-        val vm = ConnectionsViewModel { api }
+        val vm = ConnectionsViewModel(api = { api })
         vm.startApprove()
         vm.codeChanged("K7QF-M2XA")
         vm.lookup()
@@ -103,7 +103,7 @@ class ConnectionsViewModelTest {
 
     @Test
     fun `a phone that is not paired says so in the list`() {
-        val vm = ConnectionsViewModel { null }
+        val vm = ConnectionsViewModel(api = { null })
         assertEquals(ConnectionsList.Failed(unauthorized = true), vm.ui.value.list)
     }
 }

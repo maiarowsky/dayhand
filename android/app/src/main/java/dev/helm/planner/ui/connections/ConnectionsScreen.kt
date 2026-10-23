@@ -112,7 +112,7 @@ fun ConnectionsScreen(state: ConnectionsUiState, actions: ConnectionsActions, on
     val approve = state.approve
     if (approve != null) {
         BackHandler(onBack = actions::closeApprove)
-        ApprovePage(approve, actions)
+        ApprovePage(approve, state.timeLabel, actions)
         return
     }
     var confirming by rememberSaveable { mutableStateOf<String?>(null) }
@@ -203,11 +203,11 @@ private fun ConnectionRow(connection: AgentConnection, timeLabel: (Long) -> Stri
 }
 
 @Composable
-private fun ApprovePage(state: ApproveState, actions: ConnectionsActions) {
+private fun ApprovePage(state: ApproveState, timeLabel: (Long) -> String, actions: ConnectionsActions) {
     SettingsPage(stringResource(R.string.approve_title), actions::closeApprove, ConnectionsTags.APPROVE_PAGE) {
         when (state) {
             is ApproveState.Entry -> CodeEntry(state, actions)
-            is ApproveState.Consent -> Consent(approve, state.timeLabel, actions)
+            is ApproveState.Consent -> Consent(state, timeLabel, actions)
             is ApproveState.Finished -> Finished(state.outcome, actions)
         }
     }
