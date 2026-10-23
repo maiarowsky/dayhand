@@ -113,6 +113,7 @@ function context(io: Io, setup: Setup, global: GlobalOpts, { format, out, fields
         throw error;
       }
     },
+    color: () => humanOptions(io, setup, global).style.enabled,
     confirm: (question) => confirm(io, question),
     prompt: (question, hidden) => (hidden ? askHidden(io, question) : ask(io, question)),
     edit: (initial, fileName) => editText(io.env, initial, fileName),

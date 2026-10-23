@@ -56,6 +56,8 @@ export type RunContext = {
   when(text: string): Promise<When>;
   confirm(question: string): Promise<boolean>;
   prompt(question: string, hidden?: boolean): Promise<string>;
+  /** Colours in the human format: --color/--no-color, [ui] color, NO_COLOR, a terminal. */
+  color(): boolean;
   /** Opens $VISUAL/$EDITOR on the text (only on a terminal) and returns what was saved. */
   edit(initial: string, fileName: string): string;
 };

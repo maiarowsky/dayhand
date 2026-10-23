@@ -10,8 +10,8 @@ const usage = (path: string, spec: CommandSpec) =>
 
 const escape = (text: string) => text.replace(/\|/g, "\\|");
 
-/** Commands an agent has no use for: they change the local setup or the user's phones. */
-const PEOPLE_ONLY = new Set(["login", "logout", "completion", "pair", "device revoke", "revoke"]);
+/** Commands an agent has no use for: they change the local setup or the user's phones, or need a person at the keys. */
+const PEOPLE_ONLY = new Set(["login", "logout", "completion", "pair", "device revoke", "revoke", "ui"]);
 
 export function renderSkill(): string {
   const commands = flatten().filter(({ path, spec }) => spec.run && !PEOPLE_ONLY.has(path));

@@ -20,7 +20,8 @@ describe("registry", () => {
     for (const { path, spec } of commands) {
       expect(spec.summary, path).not.toBe("");
       expect(spec.examples?.length, path).toBeGreaterThan(0);
-      if (path !== "call") expect(spec.schema, path).toBeDefined();
+      // hlm call prints the tool's own schema; hlm ui prints nothing (it refuses --json).
+      if (path !== "call" && path !== "ui") expect(spec.schema, path).toBeDefined();
       for (const file of [spec.schema ?? []].flat()) {
         expect(() => readFileSync(new URL(`../../docs/schemas/${file}`, import.meta.url)), `${path}: ${file}`).not.toThrow();
       }

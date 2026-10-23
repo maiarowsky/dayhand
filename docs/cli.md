@@ -73,6 +73,7 @@ Without a command, `hlm` shows Today.
 | `hlm prime` | `list_today` | [today](schemas/today.schema.json) | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...> [options]` | `get_settings` | [when](schemas/when.schema.json) | Show the day (and time) a date phrase means in your time zone, without changing anything |
 | `hlm completion <shell>` | - | [completion](schemas/completion.schema.json) | Print the shell completion script for bash, zsh, fish or powershell (hlm help completion) |
+| `hlm ui [options]` | `list_today`, `board`, `list_all`, `list_trash`, `get_task`, `get_settings`, `add_task`, `update_task`, `set_status`, `set_now`, `complete_task`, `reschedule_task`, `delete_task`, `restore_task` | - | Helm full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (hlm help ui) |
 
 ## Global options
 
@@ -277,6 +278,71 @@ numbers with their titles, labels, profiles and date words. Task numbers and
 labels come from one list_all call, cached for 60 seconds in the cache folder
 (~/.cache/hlm, ~/Library/Caches/hlm or %LOCALAPPDATA%\hlm\Cache). Completion
 never prompts and prints nothing when it cannot reach the server.
+```
+
+## Topic: ui
+
+`hlm help ui`
+
+```text
+The terminal app (hlm ui)
+
+hlm ui opens Helm full screen in the terminal: Today (overdue, the now task with
+its resume note, today, done today), the board, the week (Monday to Sunday as
+bars, the selected day in full below) and the trash. Enter opens a task with its
+history, which names who made each change: app, cli or agent: <name>. It uses
+the key from hlm login and the same MCP tools as the other commands, refreshes
+what is on screen every 12 seconds (--interval) within the key's limits, and
+keeps the last data on screen with a red status line when the server cannot be
+reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
+The mouse selects and scrolls (--no-mouse leaves it to the terminal).
+
+Quick add (a) reads a date phrase at the end or the start of the line, and
+#labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
+it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
+
+Move:
+  j k  ↓ ↑            Next / previous task
+  h l  ← →            Board column, week day
+  g G  Home End       First / last task
+  C-d C-u  PgDn PgUp  Half a page down / up
+  Enter               Open a task (an empty day: add)
+  Esc                 Back; clears the filter
+
+Views:
+  Tab S-Tab           Next / previous view
+  1 2 3 4             Today, Board, Week, Trash
+  /                   Filter: title, #label, note, #42
+  R                   Refresh now (also every 12 s)
+  ?                   This help
+  q  C-c              Quit (q in details: back)
+
+Tasks:
+  a                   Add: Pay rent fri 2pm #home
+  Space x             Done / not done (repeats go on)
+  s                   Start (doing) / stop (todo)
+  n                   Now task, with a resume note
+  N                   Clear the now task
+  e                   Edit title, due, labels, resume note
+  E                   Title and note in $EDITOR
+  m                   Move: tomorrow, fri 9am, none
+  d                   To the trash (asks); u undoes
+  r                   Restore (in the trash)
+
+Board and week:
+  H L                 Board: column left / right
+  H L                 Week: a day earlier / later
+  [ ]                 Week: previous / next week
+  t                   Week: this week
+
+Typing:
+  Enter Esc           Save / cancel
+  Tab S-Tab           Next / previous field (edit)
+  ← → C-a C-e         Move the cursor; start / end
+  C-u C-k C-w         Delete to start / to end / a word
+
+The layout and keys owe a lot to Backlog.md (github.com/MrLesk/Backlog.md, MIT)
+and lazygit; no code is taken from either.
 ```
 
 ## Command details
@@ -1322,4 +1388,26 @@ hlm completion <shell>
 source <(hlm completion bash)
 hlm completion zsh > "${fpath[1]}/_hlm"
 hlm completion powershell | Out-String | Invoke-Expression
+```
+
+### hlm ui
+
+Helm full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (hlm help ui)
+
+Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; hlm help ui prints them.
+
+```
+hlm ui [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--view <view>` | The view to open with (today, board, week, trash) |
+| `--interval <seconds>` | Seconds between refreshes, 10 to 300 (default 12) |
+| `--no-mouse` | Leave the mouse to the terminal (for selecting text) |
+
+```sh
+hlm ui
+hlm ui --view week
+hlm ui --interval 30 --no-mouse
 ```

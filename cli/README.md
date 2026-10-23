@@ -16,6 +16,7 @@ hlm login --url https://<deployment>.convex.site    # locally: http://127.0.0.1:
 hlm                             # Today
 hlm add Call the accountant --due "fri 2pm" -l home
 hlm list --due-before eow --search accountant
+hlm ui                          # full screen: Today, board, week, trash (? lists the keys)
 source <(hlm completion bash)   # or zsh, fish, powershell: hlm help completion
 ```
 
@@ -24,6 +25,13 @@ source <(hlm completion bash)   # or zsh, fish, powershell: hlm help completion
 `credentials.json` when there is none; the key never goes into a shell profile or config.toml.
 `config.toml` holds the URL, profiles, aliases and the color default (`hlm help config`).
 Dates are English phrases resolved in your time zone (`hlm help dates`, `hlm when "next mon"`).
+
+`hlm ui` is the same client full screen, written with [Ink](https://github.com/vadimdemedes/ink)
+(React for the terminal; Ink and React load only for this command). It shows Today, the board,
+the week and the trash, polls what is on screen every 12 s (`--interval`) within the key's
+limits, keeps the last data with a red status line when the server cannot be reached, and
+shows who made each change in a task's history. Keys follow vim and lazygit; `hlm help ui`
+lists them, and [docs/omarchy.md](../docs/omarchy.md) turns it into an Omarchy app.
 
 For agents and scripts: `HLM_URL` and `HLM_API_KEY` win over the file and the keychain,
 `--json` prints exactly the tool's `structuredContent` (schemas in
@@ -51,6 +59,7 @@ src/config/           environment, folders per system, config.toml, profiles, al
 src/credentials/      API key: environment, OS keychain (@napi-rs/keyring), 0600 file
 src/when/             English date phrases and calendar arithmetic in a time zone
 src/render/           human (tables, colors, relative days) and plain (TSV) output
+src/ui/               hlm ui: controller (polling, changes, mouse), key reducer, screens as rows, Ink app
 src/completion/       hlm __complete and the bash, zsh, fish and PowerShell scripts
 src/docs.ts, man.ts, skill.ts   docs/cli.md, man/hlm.1 and the agent skill, rendered from the registry
 scripts/              gen-docs (npm run docs), pack-files (prepack), check-release (publish workflow)
@@ -70,5 +79,7 @@ npm pack                                      # a local tarball with dist/, the 
 The tests never touch the real keychain or config folder: every run gets its own
 `HLM_CONFIG_DIR` and keys go to a file. `tests/tty.test.ts` drives prompts and `$EDITOR` on a
 real pseudo-terminal with node-pty, which ships prebuilt binaries for macOS and Windows only;
-on Linux without a build toolchain those tests are skipped. `tests/shells.test.ts` runs the
+on Linux without a build toolchain those tests are skipped. `tests/ui.test.ts` drives `hlm ui`
+the same way and reads the screen through a headless xterm (`tests/screen.ts`);
+`HLM_UI_SCREENS=<dir>` saves the screens it checks as text. `tests/shells.test.ts` runs the
 completion scripts in whichever of bash, zsh, PowerShell and fish are installed.

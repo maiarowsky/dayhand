@@ -1,5 +1,6 @@
 // `hlm help <topic>`: longer explanations that do not belong to one command.
 // docs/cli.md includes the same texts.
+import { keysText } from "./ui/keys.js";
 import { WHEN_EXAMPLES } from "./when/parse.js";
 
 const dates = `Dates (--due, hlm move, hlm list --due-before/--due-after, hlm when)
@@ -99,4 +100,26 @@ labels come from one list_all call, cached for 60 seconds in the cache folder
 never prompts and prints nothing when it cannot reach the server.
 `;
 
-export const TOPICS: Record<string, string> = { dates, config, login, completion };
+const ui = `The terminal app (hlm ui)
+
+hlm ui opens Helm full screen in the terminal: Today (overdue, the now task with
+its resume note, today, done today), the board, the week (Monday to Sunday as
+bars, the selected day in full below) and the trash. Enter opens a task with its
+history, which names who made each change: app, cli or agent: <name>. It uses
+the key from hlm login and the same MCP tools as the other commands, refreshes
+what is on screen every 12 seconds (--interval) within the key's limits, and
+keeps the last data on screen with a red status line when the server cannot be
+reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
+The mouse selects and scrolls (--no-mouse leaves it to the terminal).
+
+Quick add (a) reads a date phrase at the end or the start of the line, and
+#labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
+it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
+
+${keysText()}
+
+The layout and keys owe a lot to Backlog.md (github.com/MrLesk/Backlog.md, MIT)
+and lazygit; no code is taken from either.
+`;
+
+export const TOPICS: Record<string, string> = { dates, config, login, completion, ui };

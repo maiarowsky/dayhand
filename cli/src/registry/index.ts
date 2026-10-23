@@ -7,8 +7,9 @@ import { serverCommands } from "./server.js";
 import { systemCommands } from "./system.js";
 import { taskCommands } from "./tasks.js";
 import type { CommandSpec } from "./types.js";
+import { uiCommands } from "./ui.js";
 
-export const COMMANDS: CommandSpec[] = [...taskCommands, ...systemCommands, ...calendarCommands, ...integrationCommands, ...authCommands, ...serverCommands, ...agentCommands, ...localCommands];
+export const COMMANDS: CommandSpec[] = [...taskCommands, ...systemCommands, ...calendarCommands, ...integrationCommands, ...authCommands, ...serverCommands, ...agentCommands, ...localCommands, ...uiCommands];
 
 /** Top-level names and aliases (and help): config.toml aliases may not reuse them. */
 export function commandNames(): Set<string> {

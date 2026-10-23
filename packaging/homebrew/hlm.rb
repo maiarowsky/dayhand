@@ -5,7 +5,7 @@
 class Hlm < Formula
   desc "Command-line client for the Helm task manager, for people and agents"
   homepage "https://github.com/<owner>/helm"
-  url "https://registry.npmjs.org/hlm/-/hlm-0.8.0.tgz" # x-release-please-version
+  url "https://registry.npmjs.org/hlm/-/hlm-0.9.0.tgz" # x-release-please-version
   sha256 "REPLACE_WITH_THE_SHA256_OF_THE_NPM_TARBALL"
   license "Apache-2.0"
 

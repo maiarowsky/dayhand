@@ -87,6 +87,15 @@ the date phrases, `source <(hlm completion bash)` adds Tab completion (also zsh,
 PowerShell), and `man hlm` or [docs/cli.md](docs/cli.md) has every command. Without Kubernetes
 Helm on your machine, `alias helm=hlm` works too.
 
+### Full screen in the terminal: `hlm ui`
+
+`hlm ui` opens Today, the board, the week (Monday to Sunday as bars) and the trash full screen,
+with keys like vim and lazygit (`j`/`k`, `h`/`l`, `?` for help), quick add with date phrases
+(`a`, then `Call the accountant fri 2pm #home`) and the mouse. Task details show the history
+with who made each change, so an agent's edits stand out. It refreshes every 12 seconds and
+uses the terminal's 16 colours, so it follows the terminal theme; on Omarchy it becomes an
+app of its own ([docs/omarchy.md](docs/omarchy.md)). Keys: `hlm help ui`.
+
 For AI agents: give each agent its own key (kind `agent`) in `HLM_API_KEY`, use `--json`
 (exact MCP results, [schemas](docs/schemas)), and add `hlm prime` to a session-start hook.
 [docs/skills/hlm/SKILL.md](docs/skills/hlm/SKILL.md) is a ready Agent Skill: copy the folder
