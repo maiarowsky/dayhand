@@ -9,7 +9,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { TOOLS } from "../convex/lib/mcpTools";
 import { TOOL_ROUTES } from "../convex/lib/restRoutes";
-import { createKey, mcpClient, newUserId, rest, utc, type RestAnswer } from "./helpers";
+import { createKey, mcpClient, newUserId, openApiChecker, rest, utc, type RestAnswer } from "./helpers";
 
 const AT = utc("2026-11-03T08:00");
 
@@ -68,35 +68,11 @@ function normalize(value: unknown, ids = new Map<string, string>()): unknown {
   );
 }
 
-// ---- The OpenAPI document as a validator of answers ----
-
 let document: any;
-let ajv: Ajv2020;
-const BASE = "https://helm.test/openapi.json";
-
-/** The response schema the document gives for this answer, by route template and status. */
-function responseSchema(method: string, path: string, status: number) {
-  const pathname = path.split("?")[0]!;
-  const template = Object.keys(document.paths).find((t) => new RegExp(`^${t.replace(/\{\w+\}/g, "[^/]+")}$`).test(pathname));
-  if (!template) throw new Error(`No path in the document for ${pathname}`);
-  const responses = document.paths[template][method.toLowerCase()].responses;
-  let answer = responses[String(status)] ?? responses.default;
-  if (answer.$ref) answer = document.components.responses[answer.$ref.split("/").pop()];
-  const content = answer.content?.["application/json"] ?? answer.content?.["application/problem+json"];
-  return content?.schema;
-}
-
-export function conforms(method: string, path: string, answer: RestAnswer): string[] {
-  const schema = responseSchema(method, path, answer.status);
-  if (!schema) return answer.body === null ? [] : [`no schema for ${method} ${path} ${answer.status}`];
-  const validate = ajv.getSchema(`${BASE}${schema.$ref}`) ?? ajv.compile(schema);
-  return validate(answer.body) ? [] : (validate.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
-}
+let conforms: (method: string, path: string, answer: RestAnswer) => string[];
 
 beforeAll(async () => {
-  document = (await rest(null, "GET", "/openapi.json")).body;
-  ajv = new Ajv2020({ strict: false, allErrors: true });
-  ajv.addSchema({ $id: BASE, components: { schemas: document.components.schemas } });
+  ({ document, conforms } = await openApiChecker());
 });
 
 describe("REST contract", () => {
@@ -120,7 +96,8 @@ describe("REST contract", () => {
     const validate = checker.compile(meta);
     expect(validate(document), JSON.stringify(validate.errors)).toBe(true);
     // Each schema on its own, in strict mode: every keyword known, every reference resolved.
-    const strict = new Ajv2020({ strict: true, allErrors: true });
+    // Formats are annotations here (ajv-formats is not a dependency); the ones used are declared.
+    const strict = new Ajv2020({ strict: true, allErrors: true, formats: { "date-time": true } });
     const own = (name: string) => `https://helm.test/schemas/${name}`;
     for (const [name, schema] of Object.entries(document.components.schemas)) {
       const text = JSON.stringify(schema).replace(/"#\/components\/schemas\/([\w-]+)"/g, (_, n) => JSON.stringify(own(n)));

@@ -46,6 +46,12 @@ helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
   counters as `/mcp`. `lib/openapi.ts` builds the OpenAPI 3.1 document from the same table,
   validators and `docs/schemas`; `lib/toolResults.ts` holds the result and error shapes both
   surfaces share.
+- Webhooks: `recordEvent` (`lib/core.ts`), which every change of a task goes through, also
+  queues a message for each live webhook of the user that wants its type
+  (`lib/webhookEvents.ts`), in the same transaction, so a rolled-back change (a dry run, an
+  error) sends nothing. `convex/webhooks.ts` delivers it from the scheduler, signed per Standard
+  Webhooks (`lib/webhookSign.ts`), to an address checked against SSRF (`lib/webhookTarget.ts`),
+  and retries it with the same `webhook-id`.
 
 ## Data model (`convex/schema.ts`)
 
@@ -64,6 +70,8 @@ helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
 | `oauthGrants` | Agent connections: `userId`, client (`clientId`, `clientType`, `clientName`), `redirectUri`, `scopes`, `resource`, `createdAt`, `lastUsedAt`, `refreshExpiresAt`, `revokedAt` |
 | `oauthTokens` | Access and refresh tokens of a connection: `kind`, `selector`, SHA-256 `secretHash`, `expiresAt`, `rotatedAt` (refresh), `scopes` (after a narrowing refresh) |
 | `calendarFeeds` | The read-only calendar feed, at most one per user: `selector` and `secret` of the address `/cal/<selector><secret>.ics` (the secret is kept so the address can be shown again, [calendar.md](calendar.md#threat-model)), `createdAt` |
+| `webhooks` | HTTPS endpoints for task events ([webhooks.md](webhooks.md)): `url`, `events`, `description`, signing `secret` (`whsec_…`, kept to sign), `failureStreak`, `lastSuccessAt`, `lastFailureAt`, `disabledAt`, `disabledReason` |
+| `webhookDeliveries` | The delivery log: one message to one webhook, `eventId` (the `webhook-id`, the same on every retry), `type`, the exact `payload`, `status` (`pending`, `succeeded`, `failed`), `attempts` (time, duration, HTTP status or error), `nextAttemptAt`, `finishedAt`; 30 days |
 | `settings` | `timezone` (default `Europe/London`), `summaryTime` (default `05:00`), `defaultReminderMinutes` (default `[0]`) |
 
 ## Rules

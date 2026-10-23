@@ -48,6 +48,9 @@ import type * as lib_toolResults from "../lib/toolResults.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_views from "../lib/views.js";
 import type * as lib_vtimezone from "../lib/vtimezone.js";
+import type * as lib_webhookEvents from "../lib/webhookEvents.js";
+import type * as lib_webhookSign from "../lib/webhookSign.js";
+import type * as lib_webhookTarget from "../lib/webhookTarget.js";
 import type * as mcp from "../mcp.js";
 import type * as migrations from "../migrations.js";
 import type * as oauth from "../oauth.js";
@@ -57,6 +60,7 @@ import type * as ops from "../ops.js";
 import type * as pairing from "../pairing.js";
 import type * as rest from "../rest.js";
 import type * as restAccount from "../restAccount.js";
+import type * as webhooks from "../webhooks.js";
 
 import type {
   ApiFromModules,
@@ -105,6 +109,9 @@ declare const fullApi: ApiFromModules<{
   "lib/validators": typeof lib_validators;
   "lib/views": typeof lib_views;
   "lib/vtimezone": typeof lib_vtimezone;
+  "lib/webhookEvents": typeof lib_webhookEvents;
+  "lib/webhookSign": typeof lib_webhookSign;
+  "lib/webhookTarget": typeof lib_webhookTarget;
   mcp: typeof mcp;
   migrations: typeof migrations;
   oauth: typeof oauth;
@@ -114,6 +121,7 @@ declare const fullApi: ApiFromModules<{
   pairing: typeof pairing;
   rest: typeof rest;
   restAccount: typeof restAccount;
+  webhooks: typeof webhooks;
 }>;
 
 /**

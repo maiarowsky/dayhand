@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook-event.schema.json",
+  "title": "Webhook message",
+  "description": "The JSON body Helm POSTs to a webhook (docs/webhooks.md). Fields may be added.",
+  "type": "object",
+  "required": [
+    "type",
+    "timestamp",
+    "data"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "task.created, task.updated, task.completed, task.deleted, task.restored, now.changed or webhook.test (values may be added)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the change happened (ISO 8601, UTC)"
+    },
+    "data": {
+      "type": "object",
+      "description": "task: the task after the change (task.schema.json); now.changed adds isNow; webhook.test has webhookId",
+      "properties": {
+        "task": {
+          "$ref": "task.schema.json"
+        },
+        "isNow": {
+          "type": "boolean"
+        },
+        "webhookId": {
+          "type": "string"
+        }
+      }
+    },
+    "previous": {
+      "type": "object",
+      "description": "The changed fields' values before the change; {} for a new task"
+    },
+    "actor": {
+      "type": "object",
+      "required": [
+        "type",
+        "name"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "app",
+            "cli",
+            "agent"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

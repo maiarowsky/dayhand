@@ -58,6 +58,43 @@ async function startCimdServer(port: number): Promise<Server> {
   return server;
 }
 
+/**
+ * A webhook receiver for the webhook tests. POST /hook/<id>/<behaviour> answers by behaviour:
+ * ok (200), fail-<n> (500 for the first n requests of that id, then 200), down (always 500),
+ * redirect (302 to .../ok). GET /received/<id> returns what each <id> got, oldest first.
+ */
+async function startWebhookReceiver(port: number): Promise<Server> {
+  const received = new Map<string, { path: string; headers: Record<string, string>; body: string }[]>();
+  const server = createHttpServer((request, response) => {
+    const url = request.url ?? "";
+    const read = /^\/received\/([\w-]+)$/.exec(url);
+    if (request.method === "GET" && read) {
+      response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify(received.get(read[1]!) ?? []));
+      return;
+    }
+    const hook = /^\/hook\/([\w-]+)\/([\w-]+)$/.exec(url);
+    if (request.method !== "POST" || !hook) {
+      response.writeHead(404).end();
+      return;
+    }
+    let body = "";
+    request.on("data", (chunk) => (body += chunk));
+    request.on("end", () => {
+      const [, id, behaviour] = hook as unknown as [string, string, string];
+      const list = received.get(id) ?? [];
+      const headers = Object.fromEntries(Object.entries(request.headers).map(([k, v]) => [k, String(v)]));
+      list.push({ path: url, headers, body });
+      received.set(id, list);
+      const failFirst = /^fail-(\d+)$/.exec(behaviour);
+      if (behaviour === "redirect") response.writeHead(302, { Location: `/hook/${id}/ok` }).end();
+      else if (behaviour === "down" || (failFirst && list.length <= Number(failFirst[1]))) response.writeHead(500).end("broken");
+      else response.writeHead(200).end("ok");
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", resolve));
+  return server;
+}
+
 function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = createServer();
@@ -74,6 +111,9 @@ export default async function setup(project: TestProject) {
   const cimdPort = await freePort();
   const cimd = await startCimdServer(cimdPort);
   const cimdOrigin = `http://127.0.0.1:${cimdPort}`;
+  const receiverPort = await freePort();
+  const receiver = await startWebhookReceiver(receiverPort);
+  const webhookOrigin = `http://127.0.0.1:${receiverPort}`;
   const backend = await startLocalBackend({
     dataDir: join(workDir, "data"),
     port: await freePort(),
@@ -92,6 +132,8 @@ export default async function setup(project: TestProject) {
         HELM_JWKS: signing.jwksDataUri,
         HELM_JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
         HELM_OAUTH_CIMD_ORIGINS: `https://claude.ai,${cimdOrigin}`,
+        HELM_WEBHOOK_ALLOWED_ORIGINS: webhookOrigin,
+        HELM_WEBHOOK_RETRY_DELAYS: "0.3,0.3,0.3",
       },
     });
     project.provide("helm", {
@@ -101,15 +143,18 @@ export default async function setup(project: TestProject) {
       issuer: ISSUER,
       privateJwk: signing.privateJwk,
       cimdOrigin,
+      webhookOrigin,
     });
   } catch (error) {
     cimd.close();
+    receiver.close();
     await backend.stop();
     rmSync(workDir, { recursive: true, force: true });
     throw error;
   }
   return async () => {
     cimd.close();
+    receiver.close();
     await backend.stop();
     rmSync(workDir, { recursive: true, force: true });
   };
@@ -125,6 +170,8 @@ declare module "vitest" {
       privateJwk: JsonWebKey & { kid: string };
       /** Origin of the local Client ID Metadata Document server. */
       cimdOrigin: string;
+      /** Origin of the local webhook receiver (exempt from the HTTPS rule by HELM_WEBHOOK_ALLOWED_ORIGINS). */
+      webhookOrigin: string;
     };
   }
 }

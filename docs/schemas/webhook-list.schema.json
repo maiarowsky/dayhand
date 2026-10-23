@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook-list.schema.json",
+  "title": "Webhooks",
+  "description": "GET /api/v1/webhooks (hlm webhook list).",
+  "type": "object",
+  "required": [
+    "webhooks"
+  ],
+  "properties": {
+    "webhooks": {
+      "type": "array",
+      "items": {
+        "$ref": "webhook.schema.json"
+      }
+    }
+  }
+}

@@ -796,5 +796,337 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         }
       }
     }
+  },
+  "webhook": {
+    "title": "Webhook",
+    "description": "One webhook as GET /api/v1/webhooks lists it (hlm webhook list). Never its secret.",
+    "type": "object",
+    "required": [
+      "id",
+      "url",
+      "events",
+      "description",
+      "createdAt",
+      "enabled",
+      "disabledAt",
+      "disabledReason",
+      "failureStreak",
+      "lastSuccessAt",
+      "lastFailureAt"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "url": {
+        "type": "string"
+      },
+      "events": {
+        "type": "array",
+        "items": {
+          "enum": [
+            "task.created",
+            "task.updated",
+            "task.completed",
+            "task.deleted",
+            "task.restored",
+            "now.changed"
+          ]
+        },
+        "description": "Event types sent to this webhook (values may be added)"
+      },
+      "description": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "createdAt": {
+        "type": "integer",
+        "description": "Unix milliseconds"
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "false after it was turned off for failing; POST /webhooks/{id}/enable (hlm webhook enable) turns it on"
+      },
+      "disabledAt": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "When it was turned off, Unix milliseconds"
+      },
+      "disabledReason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "failureStreak": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Deliveries in a row that failed on every attempt"
+      },
+      "lastSuccessAt": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "Unix milliseconds"
+      },
+      "lastFailureAt": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "Unix milliseconds"
+      }
+    }
+  },
+  "webhook-created": {
+    "title": "Added webhook",
+    "description": "POST /api/v1/webhooks (hlm webhook add): the webhook and its signing secret, shown only this once.",
+    "type": "object",
+    "required": [
+      "webhook",
+      "secret"
+    ],
+    "properties": {
+      "webhook": {
+        "$ref": "#/$defs/webhook"
+      },
+      "secret": {
+        "type": "string",
+        "pattern": "^whsec_",
+        "description": "Standard Webhooks signing secret; verify webhook-signature with it"
+      }
+    }
+  },
+  "webhook-delete": {
+    "title": "Removed webhook",
+    "description": "DELETE /api/v1/webhooks/{id} (hlm webhook rm).",
+    "type": "object",
+    "required": [
+      "id",
+      "deleted"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "deleted": {
+        "const": true
+      }
+    }
+  },
+  "webhook-delivery-list": {
+    "title": "Webhook deliveries",
+    "description": "GET /api/v1/webhooks/{id}/deliveries (hlm webhook deliveries): the newest deliveries first, with every attempt.",
+    "type": "object",
+    "required": [
+      "deliveries"
+    ],
+    "properties": {
+      "deliveries": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "id",
+            "eventId",
+            "type",
+            "status",
+            "createdAt",
+            "nextAttemptAt",
+            "finishedAt",
+            "attempts",
+            "payload"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "eventId": {
+              "type": "string",
+              "description": "webhook-id: the same on every attempt"
+            },
+            "type": {
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "pending",
+                "succeeded",
+                "failed"
+              ]
+            },
+            "createdAt": {
+              "type": "integer"
+            },
+            "nextAttemptAt": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "When the next attempt is due, while pending"
+            },
+            "finishedAt": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "When it succeeded or finally failed"
+            },
+            "attempts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "at",
+                  "durationMs",
+                  "responseStatus",
+                  "error"
+                ],
+                "properties": {
+                  "at": {
+                    "type": "integer"
+                  },
+                  "durationMs": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "responseStatus": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "HTTP status of the answer; null when there was none"
+                  },
+                  "error": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "payload": {
+              "type": "object",
+              "description": "The message body as sent (webhook-event.schema.json)"
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhook-event": {
+    "title": "Webhook message",
+    "description": "The JSON body Helm POSTs to a webhook (docs/webhooks.md). Fields may be added.",
+    "type": "object",
+    "required": [
+      "type",
+      "timestamp",
+      "data"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "task.created, task.updated, task.completed, task.deleted, task.restored, now.changed or webhook.test (values may be added)"
+      },
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the change happened (ISO 8601, UTC)"
+      },
+      "data": {
+        "type": "object",
+        "description": "task: the task after the change (task.schema.json); now.changed adds isNow; webhook.test has webhookId",
+        "properties": {
+          "task": {
+            "$ref": "#/$defs/task"
+          },
+          "isNow": {
+            "type": "boolean"
+          },
+          "webhookId": {
+            "type": "string"
+          }
+        }
+      },
+      "previous": {
+        "type": "object",
+        "description": "The changed fields' values before the change; {} for a new task"
+      },
+      "actor": {
+        "type": "object",
+        "required": [
+          "type",
+          "name"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "app",
+              "cli",
+              "agent"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "webhook-list": {
+    "title": "Webhooks",
+    "description": "GET /api/v1/webhooks (hlm webhook list).",
+    "type": "object",
+    "required": [
+      "webhooks"
+    ],
+    "properties": {
+      "webhooks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/webhook"
+        }
+      }
+    }
+  },
+  "webhook-one": {
+    "title": "Webhook",
+    "description": "GET /api/v1/webhooks/{id} and POST /api/v1/webhooks/{id}/enable (hlm webhook enable).",
+    "type": "object",
+    "required": [
+      "webhook"
+    ],
+    "properties": {
+      "webhook": {
+        "$ref": "#/$defs/webhook"
+      }
+    }
+  },
+  "webhook-test": {
+    "title": "Test message queued",
+    "description": "POST /api/v1/webhooks/{id}/test (hlm webhook test): the queued delivery and its webhook-id.",
+    "type": "object",
+    "required": [
+      "deliveryId",
+      "eventId"
+    ],
+    "properties": {
+      "deliveryId": {
+        "type": "string"
+      },
+      "eventId": {
+        "type": "string",
+        "description": "The webhook-id header of the message"
+      }
+    }
   }
 };

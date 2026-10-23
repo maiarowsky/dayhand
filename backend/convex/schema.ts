@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { scopeValidator } from "./lib/oauthConfig";
+import { webhookEventValidator } from "./lib/webhookEvents";
 import {
   actorValidator,
   checklistItemValidator,
@@ -256,6 +257,50 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_selector", ["selector"]),
+
+  // Webhooks (docs/webhooks.md): HTTPS endpoints that get the user's task
+  // events, signed per Standard Webhooks. The secret is kept (not hashed)
+  // because every delivery is signed with it; it is shown once, at creation.
+  webhooks: defineTable({
+    userId: v.string(),
+    url: v.string(),
+    events: v.array(webhookEventValidator),
+    description: v.optional(v.string()),
+    secret: v.string(),
+    createdAt: v.number(),
+    // Deliveries in a row that failed on every attempt; the webhook is turned
+    // off when it reaches the limit, and a success sets it back to 0.
+    failureStreak: v.number(),
+    lastSuccessAt: v.optional(v.number()),
+    lastFailureAt: v.optional(v.number()),
+    disabledAt: v.optional(v.number()),
+    disabledReason: v.optional(v.string()),
+  }).index("by_user", ["userId"]),
+
+  // One message to one webhook and its attempts: the delivery log.
+  webhookDeliveries: defineTable({
+    userId: v.string(),
+    webhookId: v.id("webhooks"),
+    // webhook-id: the same on every retry, so the receiver can drop duplicates.
+    eventId: v.string(),
+    type: v.string(),
+    // The exact body sent (and signed) on every attempt.
+    payload: v.string(),
+    status: v.union(v.literal("pending"), v.literal("succeeded"), v.literal("failed")),
+    attempts: v.array(
+      v.object({
+        at: v.number(),
+        durationMs: v.number(),
+        responseStatus: v.optional(v.number()),
+        error: v.optional(v.string()),
+      }),
+    ),
+    createdAt: v.number(),
+    nextAttemptAt: v.optional(v.number()),
+    finishedAt: v.optional(v.number()),
+  })
+    .index("by_webhook", ["webhookId", "createdAt"])
+    .index("by_createdAt", ["createdAt"]),
 
   settings: defineTable({
     userId: v.string(),

@@ -23,7 +23,7 @@ curl -s https://<name>.convex.site/api/v1/today -H "Authorization: Bearer $HELM_
 OAuth access tokens of agent connections are bound to `/mcp` (RFC 8707) and get `401` here.
 
 Each route needs a key **scope** ([mcp.md](mcp.md#keys-and-actors)): `read` for `GET` routes,
-`write` for changes to tasks and settings, `full` for the account routes (API keys). The OpenAPI document gives it per operation as `x-helm-scope`; a key with less gets
+`write` for changes to tasks and settings, `full` for the account routes (API keys, webhooks). The OpenAPI document gives it per operation as `x-helm-scope`; a key with less gets
 `403 insufficient_scope`. Give an integration the smallest scope it needs and an expiry date:
 
 ```sh
@@ -55,6 +55,7 @@ for an agent key, `cli` for a CLI key.
 | `GET /export?format=markdown\|json\|ics` | `export_plan` | read |
 | `GET /settings`, `PATCH /settings` | `get_settings`, `update_settings` | read, write |
 | `GET /keys`, `POST /keys`, `DELETE /keys/{keyId}` | none ([API keys](#api-keys)) | full |
+| `GET/POST /webhooks`, `GET/DELETE /webhooks/{webhookId}`, `POST /webhooks/{webhookId}/test`, `POST /webhooks/{webhookId}/enable`, `GET /webhooks/{webhookId}/deliveries` | none ([webhooks.md](webhooks.md)) | full |
 | `GET /openapi.json` | none; no key needed | |
 
 `{taskId}` is the task number (`/tasks/42`) or its id. Bodies are JSON (`Content-Type:
@@ -184,4 +185,4 @@ every deployment of a version, apart from `servers`.
 
 - CORS: browsers cannot call the API from another site (keys do not belong in web pages).
 - OAuth access tokens: they are for `/mcp` only.
-- Server-sent events or long polling.
+- Server-sent events or long polling: use [webhooks](webhooks.md) to hear about changes.

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook-test.schema.json",
+  "title": "Test message queued",
+  "description": "POST /api/v1/webhooks/{id}/test (hlm webhook test): the queued delivery and its webhook-id.",
+  "type": "object",
+  "required": [
+    "deliveryId",
+    "eventId"
+  ],
+  "properties": {
+    "deliveryId": {
+      "type": "string"
+    },
+    "eventId": {
+      "type": "string",
+      "description": "The webhook-id header of the message"
+    }
+  }
+}

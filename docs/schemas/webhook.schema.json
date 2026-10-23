@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook.schema.json",
+  "title": "Webhook",
+  "description": "One webhook as GET /api/v1/webhooks lists it (hlm webhook list). Never its secret.",
+  "type": "object",
+  "required": [
+    "id",
+    "url",
+    "events",
+    "description",
+    "createdAt",
+    "enabled",
+    "disabledAt",
+    "disabledReason",
+    "failureStreak",
+    "lastSuccessAt",
+    "lastFailureAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "task.created",
+          "task.updated",
+          "task.completed",
+          "task.deleted",
+          "task.restored",
+          "now.changed"
+        ]
+      },
+      "description": "Event types sent to this webhook (values may be added)"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "createdAt": {
+      "type": "integer",
+      "description": "Unix milliseconds"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "false after it was turned off for failing; POST /webhooks/{id}/enable (hlm webhook enable) turns it on"
+    },
+    "disabledAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "When it was turned off, Unix milliseconds"
+    },
+    "disabledReason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "failureStreak": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Deliveries in a row that failed on every attempt"
+    },
+    "lastSuccessAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Unix milliseconds"
+    },
+    "lastFailureAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Unix milliseconds"
+    }
+  }
+}

@@ -6,6 +6,7 @@
 import type { GenericValidator, PropertyValidators } from "convex/values";
 import { args } from "./args";
 import { findTool, type Tool } from "./mcpTools";
+import { webhookArgs } from "./webhookEvents";
 
 export const API_PREFIX = "/api/v1";
 
@@ -22,7 +23,7 @@ type Base = {
   description?: string;
   tag: string;
   scope: RouteScope;
-  status?: 200 | 201;
+  status?: 200 | 201 | 202;
 };
 
 /** A route that runs one MCP tool: path parameters, then the query string (reads) or the JSON body (changes). */
@@ -84,6 +85,7 @@ export const TOOL_ROUTES: ToolRoute[] = [
 ];
 
 const account = "Account";
+const hooks = "Webhooks";
 
 /** Account routes, served by handlers in rest.ts and restAccount.ts; they need a full key. */
 export const HANDLER_ROUTES: HandlerRoute[] = [
@@ -103,6 +105,35 @@ export const HANDLER_ROUTES: HandlerRoute[] = [
   {
     method: "DELETE", path: "/keys/{keyId}", handler: "revokeKey", operationId: "revokeApiKey", tag: account, scope: "full", response: "api-key-revoke",
     summary: "Revoke an API key (and the keys it created)",
+  },
+  { method: "GET", path: "/webhooks", handler: "listWebhooks", operationId: "listWebhooks", tag: hooks, scope: "full", response: "webhook-list", summary: "Webhooks" },
+  {
+    method: "POST", path: "/webhooks", handler: "createWebhook", operationId: "createWebhook", tag: hooks, scope: "full", status: 201, response: "webhook-created",
+    body: webhookArgs.create,
+    docs: {
+      url: "HTTPS address on a public host that receives the events.",
+      events: "Event types to send (default: all): task.created, task.updated, task.completed, task.deleted, task.restored, now.changed.",
+      description: "What the webhook is for (up to 200 characters).",
+    },
+    summary: "Add a webhook; its signing secret is shown once",
+  },
+  { method: "GET", path: "/webhooks/{webhookId}", handler: "getWebhook", operationId: "getWebhook", tag: hooks, scope: "full", response: "webhook-one", summary: "One webhook" },
+  {
+    method: "DELETE", path: "/webhooks/{webhookId}", handler: "deleteWebhook", operationId: "deleteWebhook", tag: hooks, scope: "full", response: "webhook-delete",
+    summary: "Remove a webhook and its delivery log",
+  },
+  {
+    method: "POST", path: "/webhooks/{webhookId}/test", handler: "testWebhook", operationId: "testWebhook", tag: hooks, scope: "full", status: 202, response: "webhook-test",
+    summary: "Send a webhook.test message now",
+  },
+  {
+    method: "POST", path: "/webhooks/{webhookId}/enable", handler: "enableWebhook", operationId: "enableWebhook", tag: hooks, scope: "full", response: "webhook-one",
+    summary: "Turn a webhook back on after it was turned off for failing",
+  },
+  {
+    method: "GET", path: "/webhooks/{webhookId}/deliveries", handler: "listDeliveries", operationId: "listWebhookDeliveries", tag: hooks, scope: "full", response: "webhook-delivery-list",
+    query: webhookArgs.deliveries, docs: { limit: "How many of the newest deliveries, 1 to 200 (default 50)." },
+    summary: "The delivery log: the newest deliveries with every attempt",
   },
 ];
 

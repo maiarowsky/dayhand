@@ -6,6 +6,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { ConvexHttpClient } from "convex/browser";
 import type { FunctionReference } from "convex/server";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import { inject } from "vitest";
 import { internal } from "../convex/_generated/api";
 import { signAppToken } from "../scripts/jwt.mjs";
@@ -161,4 +162,32 @@ export async function rest(
     // not JSON: kept as text
   }
   return { status: response.status, headers: response.headers, body };
+}
+
+/**
+ * The deployment's OpenAPI document and a check of an answer against the response schema the
+ * document gives for its route and status: the list of mismatches, empty when it conforms.
+ */
+export async function openApiChecker() {
+  const document = (await rest(null, "GET", "/openapi.json")).body;
+  const base = "https://helm.test/openapi.json";
+  const ajv = new Ajv2020({ strict: false, allErrors: true });
+  ajv.addSchema({ $id: base, components: { schemas: document.components.schemas } });
+  const schemaOf = (method: string, path: string, status: number) => {
+    const pathname = path.split("?")[0]!;
+    const template = Object.keys(document.paths).find((t) => new RegExp(`^${t.replace(/\{\w+\}/g, "[^/]+")}$`).test(pathname));
+    if (!template) throw new Error(`No path in the document for ${pathname}`);
+    const responses = document.paths[template][method.toLowerCase()].responses;
+    let answer = responses[String(status)] ?? responses.default;
+    if (answer.$ref) answer = document.components.responses[answer.$ref.split("/").pop()];
+    const content = answer.content?.["application/json"] ?? answer.content?.["application/problem+json"];
+    return content?.schema;
+  };
+  const conforms = (method: string, path: string, answer: RestAnswer): string[] => {
+    const schema = schemaOf(method, path, answer.status);
+    if (!schema) return answer.body === null ? [] : [`no schema for ${method} ${path} ${answer.status}`];
+    const validate = ajv.getSchema(`${base}${schema.$ref}`) ?? ajv.compile(schema);
+    return validate(answer.body) ? [] : (validate.errors ?? []).map((e) => `${e.instancePath} ${e.message}`);
+  };
+  return { document, conforms };
 }

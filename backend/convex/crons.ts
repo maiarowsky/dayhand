@@ -12,4 +12,7 @@ crons.daily("purge expired pairing codes", { hourUTC: 3, minuteUTC: 45 }, intern
 // Removes OAuth requests and tokens that ended more than a day ago, and unused client registrations.
 crons.daily("purge expired oauth records", { hourUTC: 4, minuteUTC: 0 }, internal.oauth.purgeExpired, {});
 
+// Drops webhook delivery log entries older than 30 days.
+crons.daily("purge old webhook deliveries", { hourUTC: 4, minuteUTC: 15 }, internal.webhooks.purgeDeliveries, {});
+
 export default crons;

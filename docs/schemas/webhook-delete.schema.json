@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook-delete.schema.json",
+  "title": "Removed webhook",
+  "description": "DELETE /api/v1/webhooks/{id} (hlm webhook rm).",
+  "type": "object",
+  "required": [
+    "id",
+    "deleted"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "deleted": {
+      "const": true
+    }
+  }
+}

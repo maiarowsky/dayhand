@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook-created.schema.json",
+  "title": "Added webhook",
+  "description": "POST /api/v1/webhooks (hlm webhook add): the webhook and its signing secret, shown only this once.",
+  "type": "object",
+  "required": [
+    "webhook",
+    "secret"
+  ],
+  "properties": {
+    "webhook": {
+      "$ref": "webhook.schema.json"
+    },
+    "secret": {
+      "type": "string",
+      "pattern": "^whsec_",
+      "description": "Standard Webhooks signing secret; verify webhook-signature with it"
+    }
+  }
+}

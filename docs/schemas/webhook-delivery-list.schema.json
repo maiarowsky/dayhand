@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/webhook-delivery-list.schema.json",
+  "title": "Webhook deliveries",
+  "description": "GET /api/v1/webhooks/{id}/deliveries (hlm webhook deliveries): the newest deliveries first, with every attempt.",
+  "type": "object",
+  "required": [
+    "deliveries"
+  ],
+  "properties": {
+    "deliveries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "eventId",
+          "type",
+          "status",
+          "createdAt",
+          "nextAttemptAt",
+          "finishedAt",
+          "attempts",
+          "payload"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "webhook-id: the same on every attempt"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed"
+            ]
+          },
+          "createdAt": {
+            "type": "integer"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "When the next attempt is due, while pending"
+          },
+          "finishedAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "When it succeeded or finally failed"
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "at",
+                "durationMs",
+                "responseStatus",
+                "error"
+              ],
+              "properties": {
+                "at": {
+                  "type": "integer"
+                },
+                "durationMs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "responseStatus": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "description": "HTTP status of the answer; null when there was none"
+                },
+                "error": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "payload": {
+            "type": "object",
+            "description": "The message body as sent (webhook-event.schema.json)"
+          }
+        }
+      }
+    }
+  }
+}

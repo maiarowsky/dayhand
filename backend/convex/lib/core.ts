@@ -6,6 +6,7 @@ import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { isValidDate, isValidTime, localDate, resolveDate } from "./dates";
 import { validateRepeat } from "./repeat";
 import { RRuleError, parseRRule, toRRule } from "./rrule";
+import { queueTaskEvents } from "./webhookEvents";
 import type { Actor, ChecklistInput, ChecklistItem, Link, Reminder, RepeatInput, RepeatRule } from "./validators";
 
 /**
@@ -122,15 +123,22 @@ export async function recordEvent(
     clientId?: string;
   },
 ) {
-  await ctx.db.insert("taskEvents", {
+  const at = Date.now();
+  const eventId = await ctx.db.insert("taskEvents", {
     userId: identity.userId,
     actor: identity.actor,
     keyId: identity.keyId,
     connectionId: identity.connectionId,
     actorName: identity.actorName,
-    at: Date.now(),
+    at,
     ...event,
   });
+  // A change of a task is also an event for the user's webhooks (lib/webhookEvents.ts).
+  if (event.taskId) {
+    const { taskId, action, before, after } = event;
+    const { userId, actor, actorName } = identity;
+    await queueTaskEvents(ctx, { userId, eventId, taskId, action, at, actor, actorName, before, after }, toTask);
+  }
 }
 
 /** Changed fields of `patch` relative to `doc`, as before/after maps. */
