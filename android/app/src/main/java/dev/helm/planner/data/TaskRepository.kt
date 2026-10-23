@@ -1,6 +1,8 @@
 package dev.helm.planner.data
 
 import androidx.room.withTransaction
+import dev.helm.planner.data.local.ChecklistItem
+import dev.helm.planner.data.local.FieldJson
 import dev.helm.planner.data.local.HelmDatabase
 import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.OutboxOp
@@ -8,6 +10,7 @@ import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskEvent
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.remote.RemoteEvent
 import dev.helm.planner.data.remote.RemoteHistoryEntry
@@ -129,8 +132,55 @@ class TaskRepository(
     /** Sets the repeat rule; null stops repeating. */
     suspend fun setRepeat(localId: String, rule: RepeatRule?) {
         require(rule == null || TaskRules.isValid(rule)) { "invalid repeat rule" }
-        val value: JsonElement = rule?.let { Json.encodeToJsonElement(RepeatRule.serializer(), it) } ?: JsonNull
+        val value: JsonElement = rule?.let(FieldJson::wireRepeat) ?: JsonNull
         edit(localId, Mutations.UPDATE, { put("repeat", value) }) { task, _ -> task.copy(repeat = rule) }
+    }
+
+    /** The task's own reminders instead of the defaults; null goes back to the defaults, an empty list means none. */
+    suspend fun setReminders(localId: String, reminders: List<TaskReminder>?) {
+        val clean = reminders?.let { requireNotNull(TaskRules.reminders(it)) { "invalid reminders" } }
+        val value: JsonElement = clean?.let(FieldJson::wireReminders) ?: JsonNull
+        edit(localId, Mutations.UPDATE, { put("reminders", value) }) { task, _ -> task.copy(reminders = clean) }
+    }
+
+    /** Ticks or unticks one checklist item. */
+    suspend fun toggleItem(localId: String, itemId: String) = editChecklist(localId) { items ->
+        items.map { if (it.id == itemId) it.copy(done = !it.done) else it }
+    }
+
+    /** Adds an item at the end; its id is made here, so later changes can name it before the server has it. */
+    suspend fun addItem(localId: String, title: String) = editChecklist(localId) { items -> items + ChecklistItem(newId(), title) }
+
+    suspend fun renameItem(localId: String, itemId: String, title: String) = editChecklist(localId) { items ->
+        items.map { if (it.id == itemId) it.copy(title = title) else it }
+    }
+
+    suspend fun removeItem(localId: String, itemId: String) = editChecklist(localId) { items -> items.filter { it.id != itemId } }
+
+    /** Moves an item [by] places (negative = up), within the list. */
+    suspend fun moveItem(localId: String, itemId: String, by: Int) = editChecklist(localId) { items ->
+        val from = items.indexOfFirst { it.id == itemId }
+        if (from < 0) return@editChecklist items
+        val to = (from + by).coerceIn(0, items.lastIndex)
+        items.toMutableList().apply { add(to, removeAt(from)) }
+    }
+
+    /**
+     * Changes the checklist from its current state in Room and queues the whole new list (the backend replaces it as
+     * a whole), in one transaction, so quick taps in a row each build on the one before.
+     */
+    private suspend fun editChecklist(localId: String, change: (List<ChecklistItem>) -> List<ChecklistItem>) {
+        val now = clock()
+        val changed = db.withTransaction {
+            val task = db.tasks().byLocalId(localId) ?: return@withTransaction false
+            if (task.inTrash) return@withTransaction false
+            val items = requireNotNull(TaskRules.checklist(change(task.checklist))) { "too many or too long checklist items" }
+            if (items == task.checklist) return@withTransaction false
+            db.tasks().upsert(listOf(task.copy(checklist = items, updatedAt = now)))
+            enqueue(Mutations.UPDATE, localId, buildJsonObject { put("checklist", FieldJson.wireChecklist(items)) }, now = now)
+            true
+        }
+        if (changed) onOutboxChanged()
     }
 
     /** Sets the labels (which also serve as projects), cleaned as the backend cleans them. */

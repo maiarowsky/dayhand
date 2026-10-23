@@ -10,12 +10,18 @@ import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-/** Version 2 adds repeat, labels, links and the trash to tasks, and the cached change history. */
+/**
+ * Version 2 adds repeat, labels, links and the trash to tasks, and the cached change history; version 3 the
+ * checklist and the task's own reminders.
+ */
 @Database(
     entities = [Task::class, OutboxOp::class, TaskEvent::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2, spec = HelmDatabase.Version2::class)],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2, spec = HelmDatabase.Version2::class),
+        AutoMigration(from = 2, to = 3, spec = HelmDatabase.Version3::class),
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class HelmDatabase : RoomDatabase() {
@@ -29,6 +35,13 @@ abstract class HelmDatabase : RoomDatabase() {
      * fill every field in; changes still in the outbox keep their local values as usual.
      */
     class Version2 : AutoMigrationSpec {
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            db.execSQL("UPDATE tasks SET serverUpdatedAt = NULL")
+        }
+    }
+
+    /** As [Version2]: rows from version 2 have no checklist and no own reminders, so the next snapshot fills them in. */
+    class Version3 : AutoMigrationSpec {
         override fun onPostMigrate(db: SupportSQLiteDatabase) {
             db.execSQL("UPDATE tasks SET serverUpdatedAt = NULL")
         }
@@ -60,6 +73,18 @@ class Converters {
 
     @TypeConverter
     fun linksFromJson(value: String): List<TaskLink> = FieldJson.decodeLinks(value)
+
+    @TypeConverter
+    fun checklistToJson(items: List<ChecklistItem>): String = FieldJson.encodeChecklist(items)
+
+    @TypeConverter
+    fun checklistFromJson(value: String): List<ChecklistItem> = FieldJson.decodeChecklist(value)
+
+    @TypeConverter
+    fun remindersToJson(reminders: List<TaskReminder>?): String? = reminders?.let(FieldJson::encodeReminders)
+
+    @TypeConverter
+    fun remindersFromJson(value: String?): List<TaskReminder>? = value?.let(FieldJson::decodeReminders)
 
     @TypeConverter
     fun repeatToJson(rule: RepeatRule?): String? = rule?.let(FieldJson::encodeRepeat)

@@ -32,6 +32,8 @@ enum class HistoryField(val wire: String) {
     REPEAT("repeat"),
     LABELS("labels"),
     LINKS("links"),
+    CHECKLIST("checklist"),
+    REMINDERS("reminders"),
     NOTE("note"),
     RESUME_NOTE("resumeNote"),
 }

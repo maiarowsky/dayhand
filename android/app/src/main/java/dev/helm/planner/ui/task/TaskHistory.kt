@@ -16,7 +16,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.RepeatRule
+import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.Actor
 import dev.helm.planner.domain.FieldChange
@@ -26,6 +28,7 @@ import dev.helm.planner.domain.HistoryField
 import dev.helm.planner.sync.HistoryState
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dayLabel
+import dev.helm.planner.ui.common.reminderLabel
 import dev.helm.planner.ui.common.repeatLabel
 import dev.helm.planner.ui.common.statusLabel
 import dev.helm.planner.ui.components.CardSection
@@ -122,6 +125,8 @@ private fun changeLabel(change: FieldChange, today: LocalDate): String {
             HistoryField.REPEAT -> R.string.detail_repeat
             HistoryField.LABELS -> R.string.detail_labels
             HistoryField.LINKS -> R.string.detail_links
+            HistoryField.CHECKLIST -> R.string.detail_checklist
+            HistoryField.REMINDERS -> R.string.detail_reminders
             HistoryField.NOTE -> R.string.quick_add_note
             HistoryField.RESUME_NOTE -> R.string.resume_label
         },
@@ -132,6 +137,8 @@ private fun changeLabel(change: FieldChange, today: LocalDate): String {
 /** A field's value as text; long notes are cut, unknown shapes shown as they came. */
 @Composable
 private fun valueLabel(field: HistoryField, value: JsonElement, today: LocalDate): String {
+    // No own reminders means the defaults from Settings, unlike an empty list.
+    if (field == HistoryField.REMINDERS && value is JsonNull) return stringResource(R.string.reminders_mode_default)
     if (value is JsonNull || (value is JsonArray && value.isEmpty())) return stringResource(R.string.history_none)
     val text = (value as? JsonPrimitive)?.takeIf { it.isString }?.content
     return when (field) {
@@ -141,6 +148,9 @@ private fun valueLabel(field: HistoryField, value: JsonElement, today: LocalDate
         HistoryField.REPEAT -> RepeatRule.parse(value)?.let { repeatLabel(it) }
         HistoryField.LABELS -> (value as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content }?.joinToString(", ")
         HistoryField.LINKS -> decode(value, ListSerializer(TaskLink.serializer()))?.joinToString(", ") { it.title ?: it.url }
+        HistoryField.CHECKLIST -> decode(value, ListSerializer(ChecklistItem.serializer()))
+            ?.joinToString(", ") { if (it.done) "✓ ${it.title}" else it.title }?.let(::shorten)
+        HistoryField.REMINDERS -> (value as? JsonArray)?.mapNotNull(TaskReminder::parse)?.map { reminderLabel(it) }?.joinToString(", ")
         HistoryField.TITLE, HistoryField.DUE_TIME, HistoryField.NOTE, HistoryField.RESUME_NOTE -> text?.let(::shorten)
     } ?: value.toString()
 }

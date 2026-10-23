@@ -1,11 +1,13 @@
 package dev.helm.planner.sync
 
+import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.OutboxOp
 import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.remote.RemoteTask
 import org.junit.Assert.assertEquals
@@ -163,6 +165,26 @@ class SnapshotMergerTest {
         val merged = SnapshotMerger.merge(listOf(local), pending, listOf(server), now).upserts.single()
         assertEquals(RepeatRule(RepeatEvery.DAY), merged.repeat)
         assertEquals(listOf(TaskLink("https://mine.pl")), merged.links)
+    }
+
+    @Test
+    fun `the checklist and reminders come from the server unless a change of them is waiting`() {
+        val local = row("a", "s1", 10) { copy(checklist = listOf(ChecklistItem("c1", "Milk", done = true)), reminders = listOf(TaskReminder.before(5))) }
+        val server = remote("s1", 20) {
+            copy(title = "Agent title", checklist = listOf(ChecklistItem("c1", "Milk"), ChecklistItem("c2", "Bread")), reminders = null)
+        }
+        val taken = SnapshotMerger.merge(listOf(local), emptyList(), listOf(server), now).upserts.single()
+        assertEquals(server.checklist, taken.checklist)
+        assertNull(taken.reminders)
+
+        val pending = listOf(
+            op(Mutations.UPDATE, "a", """{"checklist":[{"id":"c1","title":"Milk","done":true}],"clientId":"c"}"""),
+            op(Mutations.UPDATE, "a", """{"reminders":[{"minutesBefore":5}],"clientId":"d"}""").copy(opId = "op2"),
+        )
+        val kept = SnapshotMerger.merge(listOf(local), pending, listOf(server), now).upserts.single()
+        assertEquals(local.checklist, kept.checklist)
+        assertEquals(local.reminders, kept.reminders)
+        assertEquals("Agent title", kept.title)
     }
 
     @Test

@@ -1,7 +1,9 @@
 package dev.helm.planner.data.remote
 
+import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import dev.helm.planner.domain.HelmDates
@@ -69,6 +71,8 @@ object RemoteJson {
         labels = (o["labels"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.content },
         links = (o["links"] as? JsonArray).orEmpty().mapNotNull { decodeOrNull(TaskLink.serializer(), it) },
         deletedAt = o.long("deletedAt"),
+        checklist = (o["checklist"] as? JsonArray).orEmpty().mapNotNull { decodeOrNull(ChecklistItem.serializer(), it) },
+        reminders = (o["reminders"] as? JsonArray)?.mapNotNull(TaskReminder::parse),
     )
 
     /** A task's change history from [QUERY_TASK], newest first. */

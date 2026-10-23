@@ -2,9 +2,13 @@ package dev.helm.planner.data
 
 import dev.helm.planner.auth.AppTokens
 import dev.helm.planner.auth.TokenResult
+import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.RepeatEvery
+import dev.helm.planner.data.local.RepeatFrom
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
+import dev.helm.planner.data.local.WeekdayOfMonth
 import dev.helm.planner.data.remote.HttpResponse
 import dev.helm.planner.data.remote.HttpTaskRemote
 import dev.helm.planner.data.remote.RemoteEvent
@@ -14,6 +18,9 @@ import dev.helm.planner.export.ExportFormat
 import dev.helm.planner.export.ExportResult
 import dev.helm.planner.export.PlanExport
 import dev.helm.planner.export.PlanExporter
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
 import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -25,9 +32,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
 
 class HttpTaskRemoteTest {
     private fun classify(status: Int, body: String) = HttpTaskRemote.classify(HttpResponse(status, body))
@@ -122,6 +126,39 @@ class HttpTaskRemoteTest {
         assertEquals(RepeatRule(RepeatEvery.MONTH, 3), task.repeat)
         assertEquals(null, RepeatRule.parse(Json.parseToJsonElement("""{"every":"fortnight","interval":1}""")))
         assertEquals(null, RepeatRule.parse(Json.parseToJsonElement("""{"every":"day","interval":1.5}""")))
+    }
+
+    @Test
+    fun `new repeat fields, the checklist and reminders arrive from the server`() {
+        val task = RemoteJson.task(
+            Json.parseToJsonElement(
+                """{"id":"s1","title":"A","status":"todo","isNow":false,"createdAt":1,"updatedAt":2,
+                   "repeat":{"every":"month","interval":1.0,"from":"completion","weekdayOfMonth":{"nth":-1.0,"weekday":5.0},"count":3.0},
+                   "rrule":"FREQ=MONTHLY;BYDAY=-1FR;COUNT=3",
+                   "checklist":[{"id":"c1","title":"Milk","done":true},{"id":"c2","title":"Bread","done":false}],
+                   "reminders":[{"minutesBefore":15.0},{"time":"18:00","daysBefore":1.0},{"time":"bad"},{"other":1}]}""",
+            ).jsonObject,
+        )
+        assertEquals(
+            RepeatRule(RepeatEvery.MONTH, from = RepeatFrom.COMPLETION, weekdayOfMonth = WeekdayOfMonth(-1, 5), count = 3),
+            task.repeat,
+        )
+        assertEquals(listOf(ChecklistItem("c1", "Milk", true), ChecklistItem("c2", "Bread")), task.checklist)
+        // Anything that is not a reminder is dropped; an odd time is kept for the rules to refuse.
+        assertEquals(listOf(TaskReminder.before(15), TaskReminder.at("18:00", 1), TaskReminder.at("bad")), task.reminders)
+    }
+
+    @Test
+    fun `a task from an older server has an empty checklist and the default reminders`() {
+        val task = RemoteJson.task(
+            Json.parseToJsonElement("""{"id":"s1","title":"A","status":"todo","isNow":false,"createdAt":1,"updatedAt":2}""").jsonObject,
+        )
+        assertEquals(emptyList<ChecklistItem>(), task.checklist)
+        assertEquals(null, task.reminders)
+        val silent = RemoteJson.task(
+            Json.parseToJsonElement("""{"id":"s1","title":"A","status":"todo","isNow":false,"createdAt":1,"updatedAt":2,"reminders":[]}""").jsonObject,
+        )
+        assertEquals(emptyList<TaskReminder>(), silent.reminders)
     }
 
     @Test

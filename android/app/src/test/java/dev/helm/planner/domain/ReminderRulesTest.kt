@@ -1,6 +1,7 @@
 package dev.helm.planner.domain
 
 import dev.helm.planner.data.local.Task
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -129,5 +130,39 @@ class ReminderRulesTest {
 
     private companion object {
         const val MINUTE = 60_000L
+    }
+
+    @Test
+    fun `a task's own reminders replace the defaults, and an empty list silences it`() {
+        val own = task("own", "2026-10-22", "13:15") { copy(reminders = listOf(TaskReminder.before(60))) }
+        val silent = task("silent", "2026-10-22", "13:30") { copy(reminders = emptyList()) }
+        val default = task("default", "2026-10-22", "14:00")
+        val reminders = ReminderRules.reminders(listOf(own, silent, default), listOf(0, 30), warsaw)
+        assertEquals(listOf("own@60", "default@30", "default@0"), reminders.map { "${it.taskLocalId}@${it.minutesBefore}" })
+    }
+
+    @Test
+    fun `a time of day rings on the due day or days before, even for a task without a time`() {
+        val reminders = listOf(TaskReminder.at("09:00"), TaskReminder.at("18:00", 1), TaskReminder.before(15))
+        val untimed = task("u", "2026-10-22", null) { copy(reminders = reminders) }
+        val rung = ReminderRules.reminders(listOf(untimed), listOf(0), warsaw)
+        // Minutes before need a due time, so only the two times of day ring.
+        assertEquals(listOf(utc("2026-10-21T16:00"), utc("2026-10-22T07:00")), rung.map { it.at })
+        assertEquals(listOf(1, 0), rung.map { it.daysBefore })
+        assertEquals(listOf(null, null), rung.map { it.minutesBefore })
+    }
+
+    @Test
+    fun `a time of day in London follows its clock changes`() {
+        val london = "Europe/London"
+        fun at(date: String, time: String) =
+            ReminderRules.reminders(listOf(task("a", date, null) { copy(reminders = listOf(TaskReminder.at(time))) }), emptyList(), london).single().at
+        // 09:00 BST (UTC+1) on 24 Oct, 09:00 GMT on 26 Oct after the autumn change.
+        assertEquals(utc("2026-10-24T08:00"), at("2026-10-24", "09:00"))
+        assertEquals(utc("2026-10-26T09:00"), at("2026-10-26", "09:00"))
+        // 01:30 on 29 Mar 2026 does not exist in London (01:00 GMT jumps to 02:00 BST): it rings at 02:30 BST.
+        assertEquals(utc("2026-03-29T01:30"), at("2026-03-29", "01:30"))
+        // 01:30 on 25 Oct happens twice; the first (BST) one rings.
+        assertEquals(utc("2026-10-25T00:30"), at("2026-10-25", "01:30"))
     }
 }

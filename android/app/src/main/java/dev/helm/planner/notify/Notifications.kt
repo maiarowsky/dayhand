@@ -133,12 +133,25 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
                         PackageManager.PERMISSION_GRANTED
                     )
 
-        fun reminderText(resources: Resources, reminder: Reminder): String =
-            if (reminder.minutesBefore == 0) {
-                resources.getString(R.string.reminder_now, reminder.dueTime)
-            } else {
-                resources.getString(R.string.reminder_soon, reminder.dueTime, durationLabel(resources, reminder.minutesBefore))
+        fun reminderText(resources: Resources, reminder: Reminder): String {
+            val minutes = reminder.minutesBefore
+            return when {
+                minutes == 0 -> resources.getString(R.string.reminder_now, reminder.dueTime)
+                minutes != null -> resources.getString(R.string.reminder_soon, reminder.dueTime, durationLabel(resources, minutes))
+                else -> dueDayText(resources, reminder)
             }
+        }
+
+        /** A reminder at a time of day: "Due today", "Due tomorrow at 10:00", "Due in 3 days". */
+        private fun dueDayText(resources: Resources, reminder: Reminder): String {
+            val day = when (reminder.daysBefore) {
+                0 -> resources.getString(R.string.day_today)
+                1 -> resources.getString(R.string.day_tomorrow)
+                else -> resources.getQuantityString(R.plurals.reminder_in_days, reminder.daysBefore, reminder.daysBefore)
+            }
+            return reminder.dueTime?.let { resources.getString(R.string.reminder_due_at, day, it) }
+                ?: resources.getString(R.string.reminder_due, day)
+        }
 
         fun summaryTitle(resources: Resources, summary: MorningSummary): String {
             val tasks = resources.getQuantityString(R.plurals.summary_tasks, summary.today, summary.today)

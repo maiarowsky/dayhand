@@ -6,6 +6,7 @@ import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.historyEntry
@@ -49,16 +50,18 @@ class TaskDetailViewModel(
 
     private val knownLabels = repository.tasks.map { tasks -> tasks.flatMap { it.labels }.distinct().sortedBy { it.lowercase() } }
 
-    private val today = combine(settings.settings, minuteTicks(clock)) { s, now -> s.timezone to HelmDates.localDate(now, s.timezone) }
+    private val today = combine(settings.settings, minuteTicks(clock)) { s, now -> Today(s.timezone, HelmDates.localDate(now, s.timezone), s.reminderMinutes) }
 
     val state: StateFlow<TaskDetailUiState?> =
-        combine(task, history, combine(historyState, pending, ::Pair), knownLabels, today) { task, history, (historyState, pending), labels, (zone, date) ->
+        combine(task, history, combine(historyState, pending, ::Pair), knownLabels, today) { task, history, (historyState, pending), labels, day ->
             if (task == null) {
                 TaskDetailUiState.Missing(selected.value.orEmpty())
             } else {
-                TaskDetailUiState.Ready(task, date, zone, history, historyState, pending, labels)
+                TaskDetailUiState.Ready(task, day.date, day.zone, history, historyState, pending, labels, day.reminders)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
+    private data class Today(val zone: String, val date: String, val reminders: List<Int>)
 
     init {
         // Fetch the server's history when the task is opened and whenever a newer server copy arrives.
@@ -81,6 +84,12 @@ class TaskDetailViewModel(
     override fun setRepeat(localId: String, rule: RepeatRule?) = launch { repository.setRepeat(localId, rule) }
     override fun setLabels(localId: String, labels: List<String>) = launch { repository.setLabels(localId, labels) }
     override fun setLinks(localId: String, links: List<TaskLink>) = launch { repository.setLinks(localId, links) }
+    override fun setReminders(localId: String, reminders: List<TaskReminder>?) = launch { repository.setReminders(localId, reminders) }
+    override fun toggleItem(localId: String, itemId: String) = launch { repository.toggleItem(localId, itemId) }
+    override fun addItem(localId: String, title: String) = launch { repository.addItem(localId, title) }
+    override fun renameItem(localId: String, itemId: String, title: String) = launch { repository.renameItem(localId, itemId, title) }
+    override fun removeItem(localId: String, itemId: String) = launch { repository.removeItem(localId, itemId) }
+    override fun moveItem(localId: String, itemId: String, by: Int) = launch { repository.moveItem(localId, itemId, by) }
     override fun move(localId: String, status: TaskStatus) = launch { repository.moveTo(localId, status) }
     override fun setNow(localId: String) = launch { repository.setNow(localId) }
     override fun clearNow() = launch { repository.clearNow() }

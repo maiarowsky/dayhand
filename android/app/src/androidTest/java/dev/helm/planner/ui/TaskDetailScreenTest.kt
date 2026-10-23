@@ -5,6 +5,8 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -18,16 +20,21 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
+import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.RepeatEvery
+import dev.helm.planner.data.local.RepeatFrom
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.data.local.WeekdayOfMonth
 import dev.helm.planner.domain.Actor
 import dev.helm.planner.domain.FieldChange
 import dev.helm.planner.domain.HistoryEntry
 import dev.helm.planner.domain.HistoryField
 import dev.helm.planner.sync.HistoryState
+import dev.helm.planner.ui.task.ChecklistTags
 import dev.helm.planner.ui.task.EditorTags
 import dev.helm.planner.ui.task.TaskDetailActions
 import dev.helm.planner.ui.task.TaskDetailScreen
@@ -70,10 +77,16 @@ class TaskDetailScreenTest {
         override fun move(localId: String, status: TaskStatus) { calls += "move:${status.wire}" }
         override fun moveToTrash(localId: String) { calls += "trash" }
         override fun restore(localId: String) { calls += "restore" }
+        override fun setReminders(localId: String, reminders: List<TaskReminder>?) { calls += "reminders:$reminders" }
+        override fun toggleItem(localId: String, itemId: String) { calls += "toggle:$itemId" }
+        override fun addItem(localId: String, title: String) { calls += "add:$title" }
+        override fun renameItem(localId: String, itemId: String, title: String) { calls += "rename:$itemId:$title" }
+        override fun removeItem(localId: String, itemId: String) { calls += "remove:$itemId" }
+        override fun moveItem(localId: String, itemId: String, by: Int) { calls += "move:$itemId:$by" }
     }
 
     private fun show(task: Task = this.task, actions: TaskDetailActions = Recorder(), state: HistoryState = HistoryState.FRESH, pending: Int = 0) {
-        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Helm", "home"))
+        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Helm", "home"), listOf(0, 30))
         compose.setContent { HelmTheme { TaskDetailScreen(ui, actions) } }
     }
 
@@ -137,6 +150,96 @@ class TaskDetailScreenTest {
             ),
             actions.calls,
         )
+    }
+
+    @Test
+    fun checklistRowsTickAddRenameMoveAndRemove() {
+        val actions = Recorder()
+        val items = listOf(ChecklistItem("c1", "Milk", done = true), ChecklistItem("c2", "Bread"))
+        show(task.copy(checklist = items), actions)
+        compose.onNodeWithText(text(R.string.checklist_title_progress, text(R.string.detail_checklist), 1, 2), ignoreCase = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(ChecklistTags.check(0)).assertIsOn()
+        compose.onNodeWithTag(ChecklistTags.check(1)).assertIsOff().assertHeightIsAtLeast(48.dp).performClick()
+
+        compose.onNodeWithTag(ChecklistTags.ADD).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.SAVE).assertIsNotEnabled()
+        compose.onNodeWithTag(EditorTags.FIELD).performTextInput("Eggs")
+        compose.onNodeWithTag(EditorTags.SAVE).performClick()
+
+        compose.onNodeWithTag(ChecklistTags.item(1)).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag(EditorTags.ITEM_DOWN).assertIsNotEnabled()
+        compose.onNodeWithTag(EditorTags.ITEM_UP).performClick()
+        compose.onNodeWithTag(EditorTags.FIELD).performTextReplacement("Rye bread")
+        compose.onNodeWithTag(EditorTags.SAVE).performClick()
+
+        compose.onNodeWithTag(ChecklistTags.item(0)).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.ITEM_REMOVE).performClick()
+
+        assertEquals(listOf("toggle:c2", "add:Eggs", "move:c2:-1", "rename:c2:Rye bread", "remove:c1"), actions.calls)
+    }
+
+    @Test
+    fun aTaskWithoutAChecklistOffersToStartOne() {
+        show(task.copy(checklist = emptyList()))
+        compose.onNodeWithText(text(R.string.checklist_empty)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(ChecklistTags.ADD).assertIsDisplayed()
+    }
+
+    @Test
+    fun monthlyRepeatOnTheLastFridayCountedFromCompletionForSixTimes() {
+        val actions = Recorder()
+        // 30 Oct 2026 is the last Friday of October.
+        show(task.copy(dueDate = "2026-10-30", repeat = null), actions)
+        compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.every(RepeatEvery.MONTH)).performClick()
+        compose.onNodeWithTag(EditorTags.month("last")).assertIsDisplayed()
+        compose.onNodeWithTag(EditorTags.month("nth:5:5")).assertIsDisplayed()
+        compose.onNodeWithTag(EditorTags.month("nth:-1:5")).performClick()
+        compose.onNodeWithTag(EditorTags.FROM_COMPLETION).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.END_COUNT).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.COUNT).performScrollTo().performTextReplacement("0")
+        compose.onNodeWithTag(EditorTags.SAVE).assertIsNotEnabled()
+        compose.onNodeWithTag(EditorTags.COUNT).performTextReplacement("6")
+        compose.onNodeWithTag(EditorTags.SAVE).performClick()
+        val rule = RepeatRule(RepeatEvery.MONTH, from = RepeatFrom.COMPLETION, weekdayOfMonth = WeekdayOfMonth(-1, 5), count = 6)
+        assertEquals(listOf("repeat:$rule"), actions.calls)
+    }
+
+    @Test
+    fun repeatSummaryShowsTheMonthPatternAndTheEnd() {
+        val rule = RepeatRule(RepeatEvery.MONTH, monthDay = -1, until = "2026-12-31")
+        show(task.copy(repeat = rule))
+        compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo()
+            .assertTextContains(text(R.string.repeat_label_last_day), substring = true)
+    }
+
+    @Test
+    fun remindersFollowSettingsUntilTheTaskGetsItsOwn() {
+        val actions = Recorder()
+        show(actions = actions)
+        compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo()
+            .assertTextContains(text(R.string.reminders_default_value, ""), substring = true)
+            .performClick()
+        compose.onNodeWithTag(EditorTags.REMINDERS_CUSTOM).performClick()
+        // The defaults (0 and 30) are the starting point; drop 30, add 60.
+        compose.onNodeWithTag(EditorTags.before(30)).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.before(60)).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.SAVE).performClick()
+
+        compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().performClick()
+        compose.onNodeWithTag(EditorTags.REMINDERS_NONE).performClick()
+        compose.onNodeWithTag(EditorTags.SAVE).performClick()
+
+        assertEquals(
+            listOf("reminders:${listOf(TaskReminder.before(0), TaskReminder.before(60))}", "reminders:[]"),
+            actions.calls,
+        )
+    }
+
+    @Test
+    fun ownRemindersAreListedOnTheRow() {
+        show(task.copy(reminders = listOf(TaskReminder.at("18:00", 1))))
+        compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().assertTextContains("18:00", substring = true)
     }
 
     @Test

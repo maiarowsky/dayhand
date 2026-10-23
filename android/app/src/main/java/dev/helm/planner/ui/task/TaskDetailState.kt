@@ -3,6 +3,7 @@ package dev.helm.planner.ui.task
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.HistoryEntry
 import dev.helm.planner.sync.HistoryState
@@ -23,6 +24,8 @@ sealed interface TaskDetailUiState {
         val pendingChanges: Int,
         /** Every label in use, offered when adding one. */
         val knownLabels: List<String>,
+        /** The default reminders from the settings, in minutes before the due time. */
+        val defaultReminders: List<Int> = emptyList(),
     ) : TaskDetailUiState
 }
 
@@ -34,6 +37,12 @@ interface TaskDetailActions {
     fun setRepeat(localId: String, rule: RepeatRule?) {}
     fun setLabels(localId: String, labels: List<String>) {}
     fun setLinks(localId: String, links: List<TaskLink>) {}
+    fun setReminders(localId: String, reminders: List<TaskReminder>?) {}
+    fun toggleItem(localId: String, itemId: String) {}
+    fun addItem(localId: String, title: String) {}
+    fun renameItem(localId: String, itemId: String, title: String) {}
+    fun removeItem(localId: String, itemId: String) {}
+    fun moveItem(localId: String, itemId: String, by: Int) {}
     fun move(localId: String, status: TaskStatus) {}
     fun setNow(localId: String) {}
     fun clearNow() {}

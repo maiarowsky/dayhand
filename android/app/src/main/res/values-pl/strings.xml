@@ -280,4 +280,99 @@
     <string name="settings_about">O aplikacji</string>
     <string name="about_text">Helm to otwarte oprogramowanie na licencji Apache 2.0. Bez analityki i reklam; plan zostaje na Twoim serwerze.</string>
     <string name="about_license">Przeczytaj licencję</string>
+
+    <!-- Reguły powtarzania (0.6) -->
+    <string name="repeat_on_month">Którego dnia</string>
+    <string name="repeat_from">Następny termin liczony od</string>
+    <string name="repeat_from_due">Terminu zadania</string>
+    <string name="repeat_from_completion">Dnia, w którym je wykonam</string>
+    <string name="repeat_ends">Koniec</string>
+    <string name="repeat_ends_never">Nigdy</string>
+    <string name="repeat_ends_until">W wybranym dniu</string>
+    <string name="repeat_ends_on">Do %1$s</string>
+    <string name="repeat_ends_count">Po określonej liczbie razy</string>
+    <string name="repeat_count">Ile razy, licząc to zadanie</string>
+    <string name="repeat_month_same_day">Dzień %1$d</string>
+    <string name="repeat_month_day">dzień %1$d</string>
+    <string name="repeat_month_last_day">Ostatni dzień miesiąca</string>
+    <string name="repeat_month_nth">%1$s %2$s miesiąca</string>
+    <string name="repeat_month_nth_from_end">%2$s, %1$d. od końca miesiąca</string>
+    <string name="repeat_label_last_day">ostatni dzień</string>
+    <string name="repeat_label_nth">%1$s %2$s</string>
+    <string name="repeat_label_from_completion">od wykonania</string>
+    <string name="repeat_label_until">do %1$s</string>
+    <plurals name="repeat_label_count">
+        <item quantity="one">został %d raz</item>
+        <item quantity="few">zostały %d razy</item>
+        <item quantity="many">zostało %d razy</item>
+        <item quantity="other">zostało %d razy</item>
+    </plurals>
+    <string-array name="repeat_ordinals">
+        <item>1.</item>
+        <item>2.</item>
+        <item>3.</item>
+        <item>4.</item>
+        <item>5.</item>
+    </string-array>
+    <string-array name="repeat_last_weekday">
+        <item>Ostatni poniedziałek</item>
+        <item>Ostatni wtorek</item>
+        <item>Ostatnia środa</item>
+        <item>Ostatni czwartek</item>
+        <item>Ostatni piątek</item>
+        <item>Ostatnia sobota</item>
+        <item>Ostatnia niedziela</item>
+    </string-array>
+    <string-array name="repeat_last_weekday_short">
+        <item>ostatni pon.</item>
+        <item>ostatni wt.</item>
+        <item>ostatnia śr.</item>
+        <item>ostatni czw.</item>
+        <item>ostatni pt.</item>
+        <item>ostatnia sob.</item>
+        <item>ostatnia niedz.</item>
+    </string-array>
+
+    <!-- Lista kontrolna -->
+    <string name="detail_checklist">Lista kontrolna</string>
+    <string name="checklist_title_progress">%1$s · %2$d z %3$d zrobione</string>
+    <string name="checklist_empty">Brak pozycji</string>
+    <string name="checklist_add">Dodaj pozycję</string>
+    <string name="checklist_edit_item">Edytuj pozycję</string>
+    <string name="checklist_item">Pozycja listy</string>
+    <string name="checklist_move_up">W górę</string>
+    <string name="checklist_move_down">W dół</string>
+    <string name="checklist_remove">Usuń</string>
+
+    <!-- Przypomnienia jednego zadania -->
+    <string name="detail_reminders">Przypomnienia</string>
+    <string name="edit_reminders">Przypomnienia</string>
+    <string name="reminders_default_value">Domyślne: %1$s</string>
+    <string name="reminders_none">Brak</string>
+    <string name="reminders_none_lower">brak</string>
+    <string name="reminders_mode_default">Jak w Ustawieniach</string>
+    <string name="reminders_mode_none">Bez przypomnień</string>
+    <string name="reminders_mode_custom">Własne</string>
+    <string name="reminders_before_title">Przed godziną terminu</string>
+    <string name="reminders_needs_time">Dzwonią tylko wtedy, gdy zadanie ma godzinę.</string>
+    <string name="reminders_times_title">O wybranej godzinie</string>
+    <string name="reminders_add_on_day">Dodaj godzinę w dniu terminu</string>
+    <string name="reminders_add_day_before">Dodaj godzinę dzień wcześniej</string>
+    <string name="reminders_too_many">Najwyżej %1$d przypomnień</string>
+    <string name="reminder_remove">Usuń przypomnienie: %1$s</string>
+    <string name="reminder_time_on_day">%1$s w dniu terminu</string>
+    <plurals name="reminder_time_before">
+        <item quantity="one">%2$s, dzień wcześniej</item>
+        <item quantity="few">%2$s, %1$d dni wcześniej</item>
+        <item quantity="many">%2$s, %1$d dni wcześniej</item>
+        <item quantity="other">%2$s, %1$d dnia wcześniej</item>
+    </plurals>
+    <string name="reminder_due">Termin: %1$s</string>
+    <string name="reminder_due_at">Termin: %1$s o %2$s</string>
+    <plurals name="reminder_in_days">
+        <item quantity="one">za %d dzień</item>
+        <item quantity="few">za %d dni</item>
+        <item quantity="many">za %d dni</item>
+        <item quantity="other">za %d dnia</item>
+    </plurals>
 </resources>
