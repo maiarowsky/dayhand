@@ -6,16 +6,19 @@ import type { MutationCtx } from "../_generated/server";
 import type { args } from "./args";
 import {
   appliedOperation,
+  checkChecklist,
   checkClientId,
   checkDueDate,
   checkDueTime,
   checkLabels,
   checkLinks,
+  checkReminders,
   checkRepeat,
   checkSchedule,
   checkText,
   checkTitle,
   fail,
+  loadSettings,
   loadTask,
   nextTaskRef,
   patchTask,
@@ -24,7 +27,8 @@ import {
   todayFor,
   type Identity,
 } from "./core";
-import { nextOccurrence } from "./repeat";
+import { localDate } from "./dates";
+import { advance } from "./repeat";
 import type { Status } from "./validators";
 
 export const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -54,7 +58,8 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
       .first();
     if (existing) return toTask(existing);
   }
-  const today = await todayFor(ctx, identity.userId, Date.now());
+  const { timezone } = await loadSettings(ctx, identity.userId);
+  const today = localDate(Date.now(), timezone);
   const dueDate = input.dueDate === undefined ? undefined : checkDueDate(input.dueDate, today);
   const dueTime = input.dueTime === undefined ? undefined : checkDueTime(input.dueTime);
   checkSchedule(dueDate, dueTime);
@@ -67,9 +72,11 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     status: input.status ?? ("todo" as Status),
     isNow: false,
     resumeNote: input.resumeNote === undefined ? undefined : checkText("resumeNote", input.resumeNote),
-    repeat: input.repeat === undefined ? undefined : checkRepeat(input.repeat),
+    repeat: input.repeat === undefined ? undefined : checkRepeat(input.repeat, timezone),
     labels: checkLabels(input.labels ?? []),
     links: checkLinks(input.links ?? []),
+    checklist: input.checklist === undefined ? undefined : checkChecklist(input.checklist),
+    reminders: input.reminders === undefined ? undefined : checkReminders(input.reminders),
     createdAt: now,
     updatedAt: now,
     clientId,
@@ -85,7 +92,8 @@ export async function updateTask(ctx: MutationCtx, identity: Identity, input: Ar
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
   const task = activeTask(await loadTask(ctx, identity.userId, input.taskId));
-  const today = await todayFor(ctx, identity.userId, Date.now());
+  const { timezone } = await loadSettings(ctx, identity.userId);
+  const today = localDate(Date.now(), timezone);
   const patch: Partial<Doc<"tasks">> = {};
   if (input.title !== undefined) patch.title = checkTitle(input.title);
   if (input.note !== undefined) patch.note = input.note === null ? undefined : checkText("note", input.note);
@@ -97,9 +105,11 @@ export async function updateTask(ctx: MutationCtx, identity: Identity, input: Ar
     if (input.dueDate === null) patch.dueTime = undefined;
   }
   if (input.dueTime !== undefined) patch.dueTime = input.dueTime === null ? undefined : checkDueTime(input.dueTime);
-  if (input.repeat !== undefined) patch.repeat = input.repeat === null ? undefined : checkRepeat(input.repeat);
+  if (input.repeat !== undefined) patch.repeat = input.repeat === null ? undefined : checkRepeat(input.repeat, timezone);
   if (input.labels !== undefined) patch.labels = checkLabels(input.labels);
   if (input.links !== undefined) patch.links = checkLinks(input.links);
+  if (input.checklist !== undefined) patch.checklist = input.checklist === null ? undefined : checkChecklist(input.checklist);
+  if (input.reminders !== undefined) patch.reminders = input.reminders === null ? undefined : checkReminders(input.reminders);
   checkSchedule(
     "dueDate" in patch ? patch.dueDate : task.dueDate,
     "dueTime" in patch ? patch.dueTime : task.dueTime,
@@ -122,7 +132,11 @@ async function clearNow(ctx: MutationCtx, identity: Identity, exceptId?: Id<"tas
   }
 }
 
-/** Marks a task done; a repeating task gets its next occurrence. */
+/**
+ * Marks a task done. A repeating task gets its next occurrence, unless its
+ * series has ended (`until`, `count`): same title, note, labels, links and
+ * reminders, the checklist unticked, counted on per the rule (lib/repeat.ts).
+ */
 export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) {
@@ -147,17 +161,21 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
   if (!task.repeat) return { task: toTask(done), next: null };
 
   const today = await todayFor(ctx, identity.userId, Date.now());
+  const occurrence = advance(task.repeat, task.dueDate, today);
+  if (!occurrence) return { task: toTask(done), next: null };
   const now = Date.now();
   const nextFields = {
     title: task.title,
     note: task.note,
-    dueDate: nextOccurrence(task.repeat, task.dueDate, today),
+    dueDate: occurrence.dueDate,
     dueTime: task.dueTime,
     status: "todo" as Status,
     isNow: false,
-    repeat: task.repeat,
+    repeat: occurrence.repeat,
     labels: task.labels,
     links: task.links,
+    checklist: task.checklist?.map((item) => ({ ...item, done: false })),
+    reminders: task.reminders,
     createdAt: now,
     updatedAt: now,
   };

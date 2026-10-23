@@ -8,6 +8,7 @@ import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.remote.RemoteEvent
 import dev.helm.planner.data.remote.RemoteHistoryEntry
@@ -17,6 +18,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -100,6 +103,7 @@ class TaskEditingTest {
         repository.setRepeat(a.localId, RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 3)))
         val repeat = lastArgs().getValue("repeat").jsonObject
         assertEquals("week", repeat.getValue("every").jsonPrimitive.content)
+        assertEquals("the server requires interval, even 1", 1, repeat.getValue("interval").jsonPrimitive.int)
         assertEquals(2, repeat.getValue("weekdays").jsonArray.size)
         repository.setRepeat(a.localId, null)
         assertEquals(JsonNull, lastArgs()["repeat"])
@@ -127,6 +131,62 @@ class TaskEditingTest {
         }
         assertThrows(IllegalArgumentException::class.java) {
             kotlinx.coroutines.runBlocking { repository.setRepeat(a.localId, RepeatRule(RepeatEvery.DAY, 0)) }
+        }
+        assertEquals(before, db.outbox().count())
+    }
+
+    @Test
+    fun checklistEditsSendTheWholeListInItsOrder() = runTest {
+        val a = repository.add("Shopping", null, null, null)
+        repository.addItem(a.localId, "Milk")
+        repository.addItem(a.localId, "Bread")
+        repository.addItem(a.localId, "Eggs")
+        var items = db.tasks().byLocalId(a.localId)!!.checklist
+        assertEquals(listOf("Milk", "Bread", "Eggs"), items.map { it.title })
+        val (milk, bread, eggs) = items.map { it.id }
+
+        repository.toggleItem(a.localId, bread)
+        var sent = lastArgs().getValue("checklist").jsonArray.map { it.jsonObject }
+        assertEquals(listOf(false, true, false), sent.map { it.getValue("done").jsonPrimitive.boolean })
+        assertEquals(listOf(milk, bread, eggs), sent.map { it.getValue("id").jsonPrimitive.content })
+
+        repository.moveItem(a.localId, eggs, -1)
+        repository.renameItem(a.localId, milk, "Oat milk")
+        repository.removeItem(a.localId, bread)
+        items = db.tasks().byLocalId(a.localId)!!.checklist
+        assertEquals(listOf("Oat milk", "Eggs"), items.map { it.title })
+        sent = lastArgs().getValue("checklist").jsonArray.map { it.jsonObject }
+        assertEquals(listOf("Oat milk", "Eggs"), sent.map { it.getValue("title").jsonPrimitive.content })
+
+        // Nothing to move or tick: no new change is queued.
+        val before = db.outbox().count()
+        repository.moveItem(a.localId, milk, -1)
+        repository.toggleItem(a.localId, "missing")
+        assertEquals(before, db.outbox().count())
+        assertTrue(db.outbox().all().all { it.mutation == Mutations.ADD || it.mutation == Mutations.UPDATE })
+    }
+
+    @Test
+    fun remindersEditsSendOwnNoneOrBackToTheDefaults() = runTest {
+        val a = repository.add("Dentist", "2026-10-22", "13:15", null)
+        repository.setReminders(a.localId, listOf(TaskReminder.before(60), TaskReminder.at("18:00", 1)))
+        assertEquals(
+            Json.parseToJsonElement("""[{"minutesBefore":60},{"time":"18:00","daysBefore":1}]"""),
+            lastArgs().getValue("reminders"),
+        )
+        assertEquals(2, db.tasks().byLocalId(a.localId)!!.reminders!!.size)
+
+        repository.setReminders(a.localId, emptyList())
+        assertEquals(0, lastArgs().getValue("reminders").jsonArray.size)
+        assertEquals(emptyList<TaskReminder>(), db.tasks().byLocalId(a.localId)!!.reminders)
+
+        repository.setReminders(a.localId, null)
+        assertEquals(JsonNull, lastArgs()["reminders"])
+        assertNull(db.tasks().byLocalId(a.localId)!!.reminders)
+
+        val before = db.outbox().count()
+        assertThrows(IllegalArgumentException::class.java) {
+            kotlinx.coroutines.runBlocking { repository.setReminders(a.localId, (1..6).map(TaskReminder::before)) }
         }
         assertEquals(before, db.outbox().count())
     }

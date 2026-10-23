@@ -7,11 +7,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.data.local.WeekdayOfMonth
 import dev.helm.planner.domain.Actor
 import dev.helm.planner.domain.BoardColumns
 import dev.helm.planner.domain.FieldChange
@@ -22,6 +25,8 @@ import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardTags
 import dev.helm.planner.ui.board.BoardUiState
+import dev.helm.planner.ui.task.ChecklistTags
+import dev.helm.planner.ui.task.EditorTags
 import dev.helm.planner.ui.task.TaskDetailActions
 import dev.helm.planner.ui.task.TaskDetailScreen
 import dev.helm.planner.ui.task.TaskDetailTags
@@ -30,12 +35,12 @@ import dev.helm.planner.ui.today.ConnectionStatus
 import dev.helm.planner.ui.trash.TrashActions
 import dev.helm.planner.ui.trash.TrashScreen
 import dev.helm.planner.ui.trash.TrashUiState
-import java.time.LocalDate
-import java.time.ZoneId
-import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
+import java.time.ZoneId
+import kotlinx.serialization.json.JsonPrimitive
 
 /** The board, task details and trash for the before/after screenshots; see [ScreenTour]. Sample data is Polish. */
 @RunWith(AndroidJUnit4::class)
@@ -79,6 +84,12 @@ class BoardTour {
             serverId = "s1", note = "Zapytać o VAT za wrzesień i termin zeznania.", dueDate = "2026-10-23", dueTime = "09:30",
             repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), labels = listOf("Helm", "finanse"),
             links = listOf(TaskLink("https://example.com/umowa", "Umowa"), TaskLink("https://example.com/faktury")),
+            checklist = listOf(
+                ChecklistItem("c1", "Wyciągi z banku", done = true),
+                ChecklistItem("c2", "Faktury kosztowe"),
+                ChecklistItem("c3", "Pytania o ulgę"),
+            ),
+            reminders = listOf(TaskReminder.before(15), TaskReminder.at("18:00", 1)),
         )
     }
 
@@ -88,7 +99,8 @@ class BoardTour {
         HistoryEntry(1_792_500_000_000, Actor.APP, "create", emptyList()),
     )
 
-    private fun detail(task: Task) = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, HistoryState.FRESH, 1, listOf("Helm", "dom", "praca"))
+    private fun detail(task: Task) =
+        TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, HistoryState.FRESH, 1, listOf("Helm", "dom", "praca"), listOf(0, 30))
 
     @Test
     fun board() {
@@ -106,6 +118,25 @@ class BoardTour {
         shot("13-details-history")
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         shot("14-dialog-repeat")
+    }
+
+    @Test
+    fun detailsRepeatAndReminders() {
+        val monthly = detailTask.copy(dueDate = "2026-10-30", repeat = RepeatRule(RepeatEvery.MONTH, weekdayOfMonth = WeekdayOfMonth(-1, 5), count = 6))
+        show { TaskDetailScreen(detail(monthly), object : TaskDetailActions {}) }
+        compose.onNodeWithTag(ChecklistTags.SECTION).performScrollTo()
+        shot("17-details-checklist")
+        compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
+        shot("18-dialog-repeat-month")
+        compose.onNodeWithTag(EditorTags.END_COUNT).performScrollTo()
+        shot("19-dialog-repeat-ends")
+    }
+
+    @Test
+    fun detailsReminders() {
+        show { TaskDetailScreen(detail(detailTask), object : TaskDetailActions {}) }
+        compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().performClick()
+        shot("20-dialog-reminders")
     }
 
     @Test

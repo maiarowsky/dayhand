@@ -74,6 +74,7 @@ object TaskDetailTags {
     const val NOTE = "detail-note"
     const val DUE = "detail-due"
     const val REPEAT = "detail-repeat"
+    const val REMINDERS = "detail-reminders"
     const val LABELS = "detail-labels"
     const val LINKS = "detail-links"
     const val TRASH = "detail-trash"
@@ -125,8 +126,10 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
     StatusSection(task, editable, actions)
     CardSection(stringResource(R.string.detail_due)) {
         DueSection(task, today, editable, actions)
-        RepeatSection(task, editable, actions)
+        RepeatSection(task, today, editable, actions)
+        RemindersRow(task, state.defaultReminders, editable, actions)
     }
+    ChecklistSection(task, editable, actions)
     LabelsSection(task, state.knownLabels, editable, actions)
     LinksSection(task, editable, actions)
     HelmCard { NoteSection(task, editable, actions) }
@@ -293,7 +296,7 @@ private fun DueSection(task: Task, today: LocalDate, editable: Boolean, actions:
 }
 
 @Composable
-private fun RepeatSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
+private fun RepeatSection(task: Task, today: LocalDate, editable: Boolean, actions: TaskDetailActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
     ValueRow(
         label = stringResource(R.string.detail_repeat),
@@ -307,6 +310,8 @@ private fun RepeatSection(task: Task, editable: Boolean, actions: TaskDetailActi
     if (editing) {
         RepeatDialog(
             initial = task.repeat,
+            due = task.dueDate?.let(LocalDate::parse) ?: today,
+            today = today,
             onDismiss = { editing = false },
             onSave = {
                 actions.setRepeat(task.localId, it)
@@ -437,7 +442,7 @@ private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailAction
 
 /** A labelled value inside a card that opens its editor when tapped. */
 @Composable
-private fun ValueRow(
+internal fun ValueRow(
     label: String,
     value: String,
     placeholder: Boolean,

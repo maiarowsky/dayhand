@@ -34,6 +34,7 @@ import type * as lib_oauthPage from "../lib/oauthPage.js";
 import type * as lib_oauthRules from "../lib/oauthRules.js";
 import type * as lib_outputSchemas from "../lib/outputSchemas.js";
 import type * as lib_repeat from "../lib/repeat.js";
+import type * as lib_rrule from "../lib/rrule.js";
 import type * as lib_secrets from "../lib/secrets.js";
 import type * as lib_settingsOps from "../lib/settingsOps.js";
 import type * as lib_taskOps from "../lib/taskOps.js";
@@ -80,6 +81,7 @@ declare const fullApi: ApiFromModules<{
   "lib/oauthRules": typeof lib_oauthRules;
   "lib/outputSchemas": typeof lib_outputSchemas;
   "lib/repeat": typeof lib_repeat;
+  "lib/rrule": typeof lib_rrule;
   "lib/secrets": typeof lib_secrets;
   "lib/settingsOps": typeof lib_settingsOps;
   "lib/taskOps": typeof lib_taskOps;

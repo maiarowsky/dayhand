@@ -262,4 +262,93 @@
     <string name="settings_about">About</string>
     <string name="about_text">Helm is open source under the Apache License 2.0. No analytics and no ads; your plan stays on your server.</string>
     <string name="about_license">Read the license</string>
+
+    <!-- Repeat rules (0.6) -->
+    <string name="repeat_on_month">On</string>
+    <string name="repeat_from">Count the next date from</string>
+    <string name="repeat_from_due">The due date</string>
+    <string name="repeat_from_completion">The day I complete it</string>
+    <string name="repeat_ends">Ends</string>
+    <string name="repeat_ends_never">Never</string>
+    <string name="repeat_ends_until">On a day</string>
+    <string name="repeat_ends_on">Until %1$s</string>
+    <string name="repeat_ends_count">After a number of times</string>
+    <string name="repeat_count">How many times, this one included</string>
+    <string name="repeat_month_same_day">Day %1$d</string>
+    <string name="repeat_month_day">day %1$d</string>
+    <string name="repeat_month_last_day">The last day of the month</string>
+    <string name="repeat_month_nth">The %1$s %2$s</string>
+    <string name="repeat_month_nth_from_end">%2$s, %1$d from the end</string>
+    <string name="repeat_label_last_day">last day</string>
+    <string name="repeat_label_nth">%1$s %2$s</string>
+    <string name="repeat_label_from_completion">counted from completion</string>
+    <string name="repeat_label_until">until %1$s</string>
+    <plurals name="repeat_label_count">
+        <item quantity="one">%d time left</item>
+        <item quantity="other">%d times left</item>
+    </plurals>
+    <string-array name="repeat_ordinals">
+        <item>1st</item>
+        <item>2nd</item>
+        <item>3rd</item>
+        <item>4th</item>
+        <item>5th</item>
+    </string-array>
+    <string-array name="repeat_last_weekday">
+        <item>The last Monday</item>
+        <item>The last Tuesday</item>
+        <item>The last Wednesday</item>
+        <item>The last Thursday</item>
+        <item>The last Friday</item>
+        <item>The last Saturday</item>
+        <item>The last Sunday</item>
+    </string-array>
+    <string-array name="repeat_last_weekday_short">
+        <item>last Mon</item>
+        <item>last Tue</item>
+        <item>last Wed</item>
+        <item>last Thu</item>
+        <item>last Fri</item>
+        <item>last Sat</item>
+        <item>last Sun</item>
+    </string-array>
+
+    <!-- Checklist -->
+    <string name="detail_checklist">Checklist</string>
+    <string name="checklist_title_progress">%1$s · %2$d of %3$d done</string>
+    <string name="checklist_empty">No items yet</string>
+    <string name="checklist_add">Add item</string>
+    <string name="checklist_edit_item">Edit item</string>
+    <string name="checklist_item">Checklist item</string>
+    <string name="checklist_move_up">Move up</string>
+    <string name="checklist_move_down">Move down</string>
+    <string name="checklist_remove">Remove</string>
+
+    <!-- Reminders of one task -->
+    <string name="detail_reminders">Reminders</string>
+    <string name="edit_reminders">Reminders</string>
+    <string name="reminders_default_value">Default: %1$s</string>
+    <string name="reminders_none">None</string>
+    <string name="reminders_none_lower">none</string>
+    <string name="reminders_mode_default">As in Settings</string>
+    <string name="reminders_mode_none">No reminders</string>
+    <string name="reminders_mode_custom">Custom</string>
+    <string name="reminders_before_title">Before the due time</string>
+    <string name="reminders_needs_time">These ring only when the task has a time.</string>
+    <string name="reminders_times_title">At a time of day</string>
+    <string name="reminders_add_on_day">Add a time on the due day</string>
+    <string name="reminders_add_day_before">Add a time the day before</string>
+    <string name="reminders_too_many">At most %1$d reminders</string>
+    <string name="reminder_remove">Remove reminder: %1$s</string>
+    <string name="reminder_time_on_day">%1$s on the due day</string>
+    <plurals name="reminder_time_before">
+        <item quantity="one">%2$s, the day before</item>
+        <item quantity="other">%2$s, %1$d days before</item>
+    </plurals>
+    <string name="reminder_due">Due %1$s</string>
+    <string name="reminder_due_at">Due %1$s at %2$s</string>
+    <plurals name="reminder_in_days">
+        <item quantity="one">in %d day</item>
+        <item quantity="other">in %d days</item>
+    </plurals>
 </resources>

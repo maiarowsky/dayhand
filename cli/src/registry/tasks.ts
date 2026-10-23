@@ -4,7 +4,8 @@ import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import { applyDue } from "./dates.js";
 import { FILTER_OPTIONS, hasFilters, listTasks, parseStatuses } from "./filters.js";
 import { eachRef, oneOrMany, tool, userTimezone } from "./ops.js";
-import { parseLink, parseRepeat, resolveRef } from "./parse.js";
+import { checklistOf, editChecklist, REMINDER_OPTIONS, remindersInput, REPEAT_OPTIONS, repeatInput } from "./model.js";
+import { parseLink, resolveRef } from "./parse.js";
 import type { CommandSpec, OptSpec, Opts, RunContext } from "./types.js";
 
 const REF = { name: "ref", description: "Task: #42 or 42 (its number), now, or its id", required: true };
@@ -13,9 +14,7 @@ const REFS = { name: "refs", description: "Tasks: #42 or 42, now, or ids", requi
 const SCHEDULE_OPTIONS: OptSpec[] = [
   { flags: "--due <when>", description: "Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (hlm help dates)" },
   { flags: "--time <HH:MM>", description: "Due time, 24h, in your time zone" },
-  { flags: "--every <unit>", description: "Repeat every day, week, month or year", choices: ["day", "week", "month", "year"] },
-  { flags: "--interval <n>", description: "Repeat interval (2 = every other)", kind: "int" },
-  { flags: "--on <days>", description: "Weekly repeat days, e.g. mon,thu" },
+  ...REPEAT_OPTIONS,
 ];
 
 type TaskPair = { task: Task; next: Task | null };
@@ -73,6 +72,8 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--status <status>", description: "Initial status", choices: ["todo", "doing"] },
       { flags: "--resume-note <text>", description: "Where you stopped / next step" },
       { flags: "--link <url>", description: 'Link, optionally followed by a title: "https://… Title" (repeatable)', kind: "list" },
+      { flags: "--item <text>", description: "Checklist item (repeatable, in order)", kind: "list" },
+      ...REMINDER_OPTIONS,
     ],
     tools: ["add_task"],
     fields: "task",
@@ -80,6 +81,9 @@ export const taskCommands: CommandSpec[] = [
       'hlm add Call the accountant --due "fri 2pm" -l home',
       'hlm add Pay rent --due "1 nov" --dry-run',
       'hlm add "Review the plan" --time 09:00 --every week --on mon,thu',
+      'hlm add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 -1d"',
+      "hlm add Water plants --every day --interval 3 --from-completion",
+      "hlm add Pack --due fri --item passport --item charger",
       "hlm add Buy a present --no-due --json",
     ],
     run: async (ctx, args, opts) => {
@@ -88,8 +92,11 @@ export const taskCommands: CommandSpec[] = [
       if (opts.due !== false) await applyDue(ctx, input, (opts.due as string | undefined) ?? "today", opts);
       if ((opts.label as string[]).length) input.labels = opts.label;
       if ((opts.link as string[]).length) input.links = (opts.link as string[]).map(parseLink);
-      const repeat = parseRepeat(opts as never);
+      const repeat = await repeatInput(ctx, opts);
       if (repeat) input.repeat = repeat;
+      if ((opts.item as string[]).length) input.checklist = checklistOf(opts.item as string[]);
+      const reminders = remindersInput(opts);
+      if (reminders) input.reminders = reminders;
       const task = await tool<Task>(ctx, "add_task", input);
       return { value: task, view: { kind: "task", verb: "Added", task } };
     },
@@ -172,10 +179,22 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--clear-labels", description: "Remove all labels" },
       { flags: "--link <url>", description: 'Replace all links: "https://… Title" (repeatable)', kind: "list" },
       { flags: "--clear-links", description: "Remove all links" },
+      { flags: "--item <text>", description: "Replace the checklist (repeatable; hlm checklist edits single items)", kind: "list" },
+      { flags: "--clear-checklist", description: "Remove the checklist" },
+      ...REMINDER_OPTIONS,
+      { flags: "--default-reminders", description: "Back to the default reminders from settings" },
     ],
     tools: ["update_task"],
     fields: "task",
-    examples: ['hlm edit 42 --title "Call the bank" --due "tomorrow 10:00"', "hlm edit 42 --add-label work --rm-label home", "hlm edit 42 --clear-repeat", "hlm edit 42"],
+    examples: [
+      'hlm edit 42 --title "Call the bank" --due "tomorrow 10:00"',
+      "hlm edit 42 --add-label work --rm-label home",
+      "hlm edit 42 --every month --month-day last --until 2027-06-30",
+      'hlm edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"',
+      "hlm edit 42 --remind 15m --remind 1d",
+      "hlm edit 42 --clear-repeat",
+      "hlm edit 42",
+    ],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const input = await editArgs(ctx, taskId, opts);
@@ -210,6 +229,34 @@ export const taskCommands: CommandSpec[] = [
       }
       const task = await tool<Task>(ctx, "update_task", { taskId, note, clientId: ctx.clientId() });
       return { value: task, view: { kind: "task", verb: "Note updated", task } };
+    },
+  },
+  {
+    name: "checklist",
+    schema: ["task-detail.schema.json", "task.schema.json"],
+    summary: "Print a task's checklist, or tick, untick, move, remove and add items",
+    description: "Items are numbered from 1 as printed. Changes apply in this order: --check, --uncheck, --move, --rm, then --add.",
+    args: [REF],
+    options: [
+      { flags: "--add <text>", description: "Add an item at the end (repeatable)", kind: "list" },
+      { flags: "--check <n>", description: "Tick items: 2, 1,3 or all (repeatable)", kind: "list" },
+      { flags: "--uncheck <n>", description: "Untick items (repeatable)", kind: "list" },
+      { flags: "--move <from:to>", description: "Move an item, e.g. 3:1 (repeatable)", kind: "list" },
+      { flags: "--rm <n>", description: "Remove items (repeatable)", kind: "list" },
+      { flags: "--clear", description: "Remove the whole checklist" },
+    ],
+    tools: ["get_task", "update_task"],
+    fields: "task",
+    examples: ["hlm checklist 42", 'hlm checklist 42 --add "Book the hotel" --add "Pack"', "hlm checklist 42 --check 1,2", "hlm checklist 42 --move 3:1 --rm 4"],
+    run: async (ctx, args, opts) => {
+      const taskId = await resolveRef(ctx, args.ref as string);
+      const detail = await tool<Detail>(ctx, "get_task", { taskId });
+      const edits = ["add", "check", "uncheck", "move", "rm"].some((name) => (opts[name] as string[]).length > 0);
+      if (!edits && !opts.clear) return { value: detail, view: { kind: "text", text: checklistText(detail.task) } };
+      if (edits && opts.clear) throw usageError("--clear cannot be combined with other changes");
+      const checklist = opts.clear ? null : editChecklist(detail.task.checklist ?? [], opts);
+      const task = await tool<Task>(ctx, "update_task", { taskId, checklist, clientId: ctx.clientId() });
+      return { value: task, view: { kind: "text", text: checklistText(task) } };
     },
   },
   {
@@ -328,6 +375,15 @@ export const taskCommands: CommandSpec[] = [
   },
 ];
 
+/** "#42 Pack (1/2)" and the numbered items, as `hlm checklist` prints them. */
+function checklistText(task: Task): string {
+  const items = task.checklist ?? [];
+  const ref = task.ref !== undefined ? `#${task.ref}` : task.id;
+  if (items.length === 0) return `${ref} ${task.title}: (no checklist)`;
+  const done = items.filter((item) => item.done).length;
+  return [`${ref} ${task.title} (${done}/${items.length})`, ...items.map((item, i) => `  ${i + 1}. ${item.done ? "[x]" : "[ ]"} ${item.title}`)].join("\n");
+}
+
 /** Copies defined options to tool argument names. */
 function copy(opts: Opts, input: Record<string, unknown>, names: Record<string, string>) {
   for (const [from, to] of Object.entries(names)) if (opts[from] !== undefined) input[to] = opts[from];
@@ -343,9 +399,15 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
     if (input[field] !== undefined) throw usageError(`--${kebab(flag)} cannot be combined with a new value for it`);
     input[field] = null;
   }
-  const repeat = parseRepeat(opts as never);
-  if (repeat && opts.clearRepeat) throw usageError("--clear-repeat cannot be combined with --every, --interval or --on");
+  const repeat = await repeatInput(ctx, opts);
+  if (repeat && opts.clearRepeat) throw usageError("--clear-repeat cannot be combined with the repeat options");
   if (repeat) input.repeat = repeat;
+  const items = opts.item as string[];
+  if (items.length && opts.clearChecklist) throw usageError("--item cannot be combined with --clear-checklist");
+  if (items.length) input.checklist = checklistOf(items);
+  if (opts.clearChecklist) input.checklist = null;
+  const reminders = remindersInput(opts);
+  if (reminders !== undefined) input.reminders = reminders;
 
   const set = opts.label as string[];
   const added = opts.addLabel as string[];

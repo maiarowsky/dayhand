@@ -21,6 +21,20 @@ class HistoryEntriesTest {
     }
 
     @Test
+    fun `checklist and reminder changes keep the whole list before and after`() {
+        val entry = historyEntry(
+            event(
+                "cli", "update",
+                """{"checklist":[{"id":"c1","title":"Milk","done":false}]}""",
+                """{"checklist":[{"id":"c1","title":"Milk","done":true}],"reminders":[{"minutesBefore":15}]}""",
+            ),
+        )
+        assertEquals(listOf(HistoryField.CHECKLIST, HistoryField.REMINDERS), entry.changes.map { it.field })
+        assertEquals("true", entry.changes.first().after.toString().substringAfter("\"done\":").substringBefore("}"))
+        assertEquals(JsonNull, entry.changes.last().before)
+    }
+
+    @Test
     fun `creation shows the fields it set and timestamps are left out`() {
         val entry = historyEntry(event("app", "create", null, """{"title":"A","labels":["home"],"isNow":false,"deletedAt":7}"""))
         assertEquals(Actor.APP, entry.actor)

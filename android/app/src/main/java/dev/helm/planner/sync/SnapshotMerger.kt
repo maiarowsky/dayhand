@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
 /** Groups of task fields that one kind of change touches. */
-enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED }
+enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS }
 
 data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
 
@@ -71,6 +71,8 @@ object SnapshotMerger {
             labels = r.labels,
             links = r.links,
             deletedAt = r.deletedAt,
+            checklist = r.checklist,
+            reminders = r.reminders,
         )
         if (row == null || keepLocal.isEmpty()) return task
         if (Field.TITLE in keepLocal) task = task.copy(title = row.title)
@@ -84,6 +86,8 @@ object SnapshotMerger {
         if (Field.LABELS in keepLocal) task = task.copy(labels = row.labels)
         if (Field.LINKS in keepLocal) task = task.copy(links = row.links)
         if (Field.DELETED in keepLocal) task = task.copy(deletedAt = row.deletedAt)
+        if (Field.CHECKLIST in keepLocal) task = task.copy(checklist = row.checklist)
+        if (Field.REMINDERS in keepLocal) task = task.copy(reminders = row.reminders)
         return task.copy(updatedAt = maxOf(row.updatedAt, r.updatedAt))
     }
 }
@@ -138,6 +142,8 @@ class DirtyFields private constructor(
                 if ("repeat" in keys) add(Field.REPEAT)
                 if ("labels" in keys) add(Field.LABELS)
                 if ("links" in keys) add(Field.LINKS)
+                if ("checklist" in keys) add(Field.CHECKLIST)
+                if ("reminders" in keys) add(Field.REMINDERS)
             }
         }
     }

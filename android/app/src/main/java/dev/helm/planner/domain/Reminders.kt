@@ -1,20 +1,25 @@
 package dev.helm.planner.domain
 
 import dev.helm.planner.data.local.Task
+import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import java.time.DateTimeException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 
-/** One ring: a timed task, [minutesBefore] minutes before its due time, at instant [at] (Unix ms). */
+/**
+ * One ring at instant [at] (Unix ms): [minutesBefore] minutes before a timed task's due time, or (with [minutesBefore]
+ * null) at a time of day on the due day or [daysBefore] days earlier, from the task's own reminders.
+ */
 data class Reminder(
     val taskLocalId: String,
     val title: String,
     val dueDate: String,
-    val dueTime: String,
-    val minutesBefore: Int,
+    val dueTime: String?,
+    val minutesBefore: Int?,
     val at: Long,
+    val daysBefore: Int = 0,
 )
 
 /** The morning notification: how much is on today, how much is overdue and where to start. */
@@ -51,20 +56,35 @@ object ReminderRules {
     }
 
     /**
-     * Every reminder of the open timed tasks, earliest first. A reminder whose moment had already
-     * passed when the task was last changed is left out: setting a task for 13:15 at 13:10 does
-     * not ring the 30-minute reminder.
+     * Every reminder of the open tasks with a due day, earliest first: a task's own reminders, or the default
+     * [minutesBefore] when it has none of its own (null). Minutes before ring only for timed tasks; a time of day
+     * rings for any task with a day. A reminder whose moment had already passed when the task was last changed is
+     * left out: setting a task for 13:15 at 13:10 does not ring the 30-minute reminder.
      */
     fun reminders(tasks: List<Task>, minutesBefore: List<Int>, timezone: String?): List<Reminder> =
         tasks
-            .filter { it.status != TaskStatus.DONE && it.isActive }
+            .filter { it.status != TaskStatus.DONE && it.isActive && it.dueDate != null }
             .flatMap { task ->
-                val due = dueAt(task, timezone) ?: return@flatMap emptyList()
-                minutesBefore.distinct().map { minutes ->
-                    Reminder(task.localId, task.title, task.dueDate!!, task.dueTime!!, minutes, due - minutes * MINUTE_MS)
-                }.filter { it.at > task.updatedAt }
+                val own = task.reminders ?: minutesBefore.map(TaskReminder::before)
+                own.distinct().mapNotNull { reminderOf(task, it, timezone) }.filter { it.at > task.updatedAt }
             }
             .sortedWith(compareBy({ it.at }, { it.taskLocalId }))
+
+    private fun reminderOf(task: Task, reminder: TaskReminder, timezone: String?): Reminder? {
+        val date = task.dueDate ?: return null
+        reminder.minutesBefore?.let { minutes ->
+            val due = dueAt(task, timezone) ?: return null
+            return Reminder(task.localId, task.title, date, task.dueTime, minutes, due - minutes * MINUTE_MS)
+        }
+        val days = reminder.daysBefore ?: 0
+        val at = try {
+            LocalDate.parse(date).minusDays(days.toLong()).atTime(LocalTime.parse(reminder.time ?: return null))
+                .atZone(HelmDates.zone(timezone)).toInstant().toEpochMilli()
+        } catch (_: DateTimeException) {
+            return null
+        }
+        return Reminder(task.localId, task.title, date, task.dueTime, null, at, days)
+    }
 
     /** When the reminder alarm should fire next: the first reminder not handled yet and not too late. */
     fun nextAlarm(reminders: List<Reminder>, now: Long, handledUntil: Long): Long? {

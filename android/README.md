@@ -7,7 +7,7 @@ code from `hlm pair`, and approves and disconnects **agent connections** such as
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.6.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.7.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -53,9 +53,19 @@ get the same moves as actions on the card. Tap a card for its details. The bin i
 trash.
 
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
-optional time, repeat (every N days, weeks on chosen weekdays, months or years), labels (which
-are also the projects: the backend has one list for both), links (http/https only; no files in
-version 1) and the note. Each field is edited in place or in a small dialog and checked against
+optional time, repeat, reminders, a checklist, labels (which are also the projects: the backend has
+one list for both), links (http/https only; no files in version 1) and the note.
+**Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on the due
+date's day, the last day of the month, or an nth weekday ("the 2nd Tuesday", "the last Friday");
+the next date counted from the due date or from the day you complete it; ending never, on a day
+or after a number of times. A day the month lacks (the 31st in April) falls on its last day. The
+dates are those of `domain/Recurrence.kt`, which mirrors the backend's `lib/repeat.ts` case for
+case (the server stores and exports the rule as RFC 5545 RRULE).
+**Checklist**: items with a checkbox, in order; tap the box to tick, tap the text to rename, move
+up or down, or remove. Ticking items does not complete the task; the next task of a repeating
+series starts with every item unticked.
+**Reminders**: as in Settings (the default), none, or the task's own: minutes before the due time
+and times of day on the due day or a day before (at most five). Each field is edited in place or in a small dialog and checked against
 the backend's limits before it is queued, so a change the server would refuse is never queued.
 **Move to trash** keeps the task for 30 days; a task in the trash is read-only until restored.
 **Change history** lists who changed what, newest first: **You (app)**, **You (CLI)** (`hlm` with a
@@ -109,8 +119,10 @@ snapshot does not undo it while it waits.
 
 Computed on the phone from Room, with no server and no foreground service:
 
-- A task **rings** when it has a day and a time, is not done and not archived: once for each
-  default reminder (minutes before the due time). Tasks without a time never ring.
+- A task **rings** when it has a day, is not done and not archived: once for each of its own
+  reminders, or of the default reminders from Settings when it has none of its own. Minutes before
+  the due time need a time; a time of day ("18:00, the day before") rings for a task without one
+  too. A task whose own reminders are "none" never rings.
 - **Overdue tasks never ring**; they wait at the top of Today. A reminder that would come more
   than 15 minutes late (phone off, Doze) is dropped instead, and so is one whose moment had
   already passed when the task was set.
@@ -119,7 +131,8 @@ Computed on the phone from Room, with no server and no foreground service:
   else the first of today). Its channel is quiet, so it waits on the lock screen instead of
   waking you at 05:00.
 - Times are read in the **time zone from the server settings**, the same zone that decides
-  "today", so the phone and the agent agree.
+  "today", so the phone and the agent agree. A time of day the spring clock change skips rings
+  after the gap (01:30 on 29 Mar in London rings at 02:30 BST).
 
 How: `ReminderEngine` keeps exactly **two alarms** in AlarmManager, the next reminder and the
 next summary. When one fires, `AlarmReceiver` shows what is due and arms the next one. Alarms
@@ -242,7 +255,7 @@ is set in `app/build.gradle.kts` (`helm.serverUrl`).
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM: dates, Today, board, rules, history, reminders, outbox, merge,
+./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, board, rules, history, reminders, outbox, merge,
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
                                             # agent connections (answers, code input, approval flow)
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync,

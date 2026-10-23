@@ -4,16 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,13 +16,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,17 +28,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.RepeatEvery
-import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.domain.TaskRules
-import dev.helm.planner.ui.common.appLocale
-import dev.helm.planner.ui.common.weekdayName
 import dev.helm.planner.ui.components.ActionChip
-import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.HelmDialog
 import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.helmFieldColors
-import dev.helm.planner.ui.components.helmRadioColors
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
@@ -57,8 +44,24 @@ object EditorTags {
     const val LINK_TITLE = "editor-link-title"
     const val SAVE = "editor-save"
     const val INTERVAL = "editor-interval"
+    const val COUNT = "editor-count"
+    const val FROM_DUE = "editor-from-due"
+    const val FROM_COMPLETION = "editor-from-completion"
+    const val END_NEVER = "editor-end-never"
+    const val END_UNTIL = "editor-end-until"
+    const val END_COUNT = "editor-end-count"
+    const val REMINDERS_DEFAULT = "editor-reminders-default"
+    const val REMINDERS_NONE = "editor-reminders-none"
+    const val REMINDERS_CUSTOM = "editor-reminders-custom"
+    const val REMINDER_ON_DAY = "editor-reminder-on-day"
+    const val REMINDER_DAY_BEFORE = "editor-reminder-day-before"
+    const val ITEM_UP = "editor-item-up"
+    const val ITEM_DOWN = "editor-item-down"
+    const val ITEM_REMOVE = "editor-item-remove"
     fun every(every: RepeatEvery?) = "editor-every-${every?.name ?: "none"}"
     fun weekday(day: Int) = "editor-weekday-$day"
+    fun month(key: String) = "editor-month-$key"
+    fun before(minutes: Int) = "editor-before-$minutes"
 }
 
 /** One text field in a dialog: the title (one line, required) or the note (many lines, may be empty). */
@@ -71,6 +74,8 @@ fun TextEditDialog(
     allowEmpty: Boolean,
     onDismiss: () -> Unit,
     onSave: (String) -> Unit,
+    /** More actions under the field (a checklist item's move and remove). */
+    extra: (@Composable () -> Unit)? = null,
 ) {
     // Opens focused with the cursor after the existing text, ready to type or delete.
     var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -90,102 +95,30 @@ fun TextEditDialog(
     ) {
         // Inside the dialog's own window, where the field is attached.
         LaunchedEffect(Unit) { focus.requestFocus() }
-        // Material's field, not HelmTextField: it needs a TextFieldValue to place the cursor after the text.
-        OutlinedTextField(
-            value = field,
-            onValueChange = { if (it.text.length <= maxLength) field = it },
-            singleLine = singleLine,
-            minLines = if (singleLine) 1 else 4,
-            textStyle = helmType.body,
-            shape = HelmShapes.field,
-            colors = helmFieldColors(),
-            isError = !valid,
-            supportingText = if (!valid) {
-                { Text(stringResource(R.string.title_required)) }
-            } else {
-                null
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focus)
-                .testTag(EditorTags.FIELD),
-        )
-    }
-}
-
-/** Repeat: never, or every N days / weeks (optionally on chosen weekdays) / months / years. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun RepeatDialog(initial: RepeatRule?, onDismiss: () -> Unit, onSave: (RepeatRule?) -> Unit) {
-    var every by rememberSaveable { mutableStateOf(initial?.every) }
-    var interval by rememberSaveable { mutableStateOf((initial?.interval ?: 1).toString()) }
-    var weekdays by rememberSaveable { mutableStateOf(initial?.weekdays.orEmpty()) }
-    val rule = every?.let { unit ->
-        RepeatRule(unit, interval.toIntOrNull() ?: 0, weekdays.sorted().takeIf { unit == RepeatEvery.WEEK && it.isNotEmpty() })
-    }
-    val valid = rule == null || TaskRules.isValid(rule)
-    val p = palette
-    HelmDialog(
-        title = stringResource(R.string.edit_repeat),
-        onDismiss = onDismiss,
-        confirm = stringResource(R.string.save),
-        onConfirm = { onSave(rule) },
-        dismiss = stringResource(R.string.cancel),
-        confirmEnabled = valid,
-        confirmTag = EditorTags.SAVE,
-    ) {
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            (listOf(null) + RepeatEvery.entries).forEach { unit ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .selectable(selected = every == unit, role = Role.RadioButton, onClick = { every = unit })
-                        .testTag(EditorTags.every(unit)),
-                ) {
-                    RadioButton(selected = every == unit, onClick = null, colors = helmRadioColors())
-                    Text(stringResource(everyLabel(unit)), style = helmType.body, color = p.text, modifier = Modifier.padding(start = 12.dp))
-                }
-            }
-            if (every != null) {
-                HelmTextField(
-                    value = interval,
-                    onValueChange = { value -> if (value.length <= 3 && value.all(Char::isDigit)) interval = value },
-                    label = stringResource(R.string.repeat_interval),
-                    singleLine = true,
-                    isError = !valid,
-                    supportingText = if (!valid) stringResource(R.string.repeat_interval_invalid, TaskRules.MAX_REPEAT_INTERVAL) else null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier
-                        .padding(top = 8.dp)
-                        .testTag(EditorTags.INTERVAL),
-                )
-            }
-            if (every == RepeatEvery.WEEK) {
-                Text(stringResource(R.string.repeat_on), style = helmType.smallStrong, color = p.textMuted, modifier = Modifier.padding(vertical = 8.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    (1..7).forEach { day ->
-                        HelmChip(
-                            weekdayName(day, appLocale()),
-                            selected = day in weekdays,
-                            onClick = { weekdays = if (day in weekdays) weekdays - day else weekdays + day },
-                            multiple = true,
-                            modifier = Modifier.testTag(EditorTags.weekday(day)),
-                        )
-                    }
-                }
-            }
+        Column {
+            // Material's field, not HelmTextField: it needs a TextFieldValue to place the cursor after the text.
+            OutlinedTextField(
+                value = field,
+                onValueChange = { if (it.text.length <= maxLength) field = it },
+                singleLine = singleLine,
+                minLines = if (singleLine) 1 else 4,
+                textStyle = helmType.body,
+                shape = HelmShapes.field,
+                colors = helmFieldColors(),
+                isError = !valid,
+                supportingText = if (!valid) {
+                    { Text(stringResource(R.string.title_required)) }
+                } else {
+                    null
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focus)
+                    .testTag(EditorTags.FIELD),
+            )
+            extra?.invoke()
         }
     }
-}
-
-private fun everyLabel(every: RepeatEvery?) = when (every) {
-    null -> R.string.repeat_none
-    RepeatEvery.DAY -> R.string.repeat_unit_day
-    RepeatEvery.WEEK -> R.string.repeat_unit_week
-    RepeatEvery.MONTH -> R.string.repeat_unit_month
-    RepeatEvery.YEAR -> R.string.repeat_unit_year
 }
 
 /** A new label (or project): type one or pick one already in use. */

@@ -264,8 +264,52 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
               "minimum": 1,
               "maximum": 7
             }
+          },
+          "from": {
+            "enum": [
+              "due",
+              "completion"
+            ],
+            "description": "Next date counted from the due date (default) or from the day the task was completed"
+          },
+          "monthDay": {
+            "type": "integer",
+            "description": "Monthly rules: day 1-31 (a shorter month's last day when it lacks the day) or -1 for the last day"
+          },
+          "weekdayOfMonth": {
+            "type": "object",
+            "required": [
+              "nth",
+              "weekday"
+            ],
+            "properties": {
+              "nth": {
+                "type": "integer",
+                "description": "1-5, or -1 (last) to -5 counted from the month's end"
+              },
+              "weekday": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 7
+              }
+            },
+            "description": "Monthly rules: e.g. the 2nd Tuesday or the last Friday"
+          },
+          "until": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "Last date the series may fall on"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Occurrences left, this one included"
           }
         }
+      },
+      "rrule": {
+        "type": "string",
+        "description": "The repeat rule as an RFC 5545 RRULE value, e.g. FREQ=WEEKLY;BYDAY=MO,TH; only on repeating tasks"
       },
       "labels": {
         "type": "array",
@@ -288,6 +332,67 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
               "type": "string"
             }
           }
+        }
+      },
+      "checklist": {
+        "type": "array",
+        "description": "Checklist items in order; missing when the task has none",
+        "items": {
+          "type": "object",
+          "required": [
+            "id",
+            "title",
+            "done"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "done": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "reminders": {
+        "type": "array",
+        "description": "This task's own reminders; missing = the default reminders from settings, [] = none",
+        "items": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "minutesBefore"
+              ],
+              "properties": {
+                "minutesBefore": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Minutes before the due time (timed tasks only)"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "time"
+              ],
+              "properties": {
+                "time": {
+                  "type": "string",
+                  "pattern": "^\\d{2}:\\d{2}$"
+                },
+                "daysBefore": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Days before the due day; missing = on the due day"
+                }
+              }
+            }
+          ]
         }
       },
       "completedAt": {

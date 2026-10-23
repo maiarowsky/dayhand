@@ -18,7 +18,11 @@ const FIELD_DOCS: Record<string, string> = {
   status: "todo, doing (in progress) or done.",
   resumeNote: '"Where I stopped / next step" note shown on the Today screen.',
   repeat:
-    "Repeat rule: every day/week/month/year with an interval (1 = every time); weekly rules may list weekdays 1 (Mon) to 7 (Sun). Completing a repeating task creates the next occurrence.",
+    'Repeat rule: every day/week/month/year with an interval (1 = every time); weekly rules may list weekdays 1 (Mon) to 7 (Sun); monthly rules may set monthDay (1-31, -1 = last day) or weekdayOfMonth {nth: 1-5 or -1 (last), weekday: 1-7}. from: "due" (default, next date after the due date) or "completion" (counted from the day it is done). End with until (YYYY-MM-DD) or count (occurrences left, this one included). Or give an RFC 5545 RRULE string, e.g. "FREQ=MONTHLY;BYDAY=-1FR". Completing a repeating task creates the next occurrence. Null clears it.',
+  checklist:
+    "Checklist items in order: {title, done?, id?}. The whole list is replaced; keep the ids of existing items (new items get one). Null or [] removes the checklist.",
+  reminders:
+    'Reminders of this task, replacing the default ones from settings: {minutesBefore} (before the due time; only timed tasks) or {time: "HH:MM", daysBefore?} (on the due day, or that many days before). [] = no reminders; null = back to the defaults.',
   labels: "Labels (projects).",
   links: "Links attached to the task (URL and optional title). Files are not supported.",
   clientId:
@@ -111,7 +115,7 @@ export const TOOLS: Tool[] = [
   }),
   write("update_task", {
     title: "Update task",
-    description: "Change a task's title, note, due date/time, resume note, repeat rule, labels or links.",
+    description: "Change a task's title, note, due date/time, resume note, repeat rule, labels, links, checklist or reminders.",
     fields: args.update,
     output: "task",
     ref: internal.ops.update,
@@ -133,7 +137,8 @@ export const TOOLS: Tool[] = [
   }),
   write("complete_task", {
     title: "Complete task",
-    description: "Mark a task done. A repeating task gets its next occurrence, returned as `next`.",
+    description:
+      "Mark a task done. A repeating task gets its next occurrence (checklist unticked), returned as `next`; null when its series has ended.",
     fields: args.complete,
     output: "complete",
     ref: internal.ops.complete,

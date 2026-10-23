@@ -5,6 +5,8 @@ import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
 import { loadSettings, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
+import { toRRule } from "./rrule";
+import type { Reminder } from "./validators";
 
 export const EXPORT_VERSION = 1;
 
@@ -14,13 +16,24 @@ function taskLine(task: Doc<"tasks">, timezone: string): string {
   const parts = [`- ${box}`, when, task.title].filter(Boolean);
   if (task.status === "doing") parts.push("(in progress)");
   if (task.completedAt) parts.push(`(done ${localDate(task.completedAt, timezone)})`);
-  if (task.repeat) parts.push(`(repeats every ${task.repeat.interval} ${task.repeat.every})`);
+  if (task.repeat) {
+    const from = task.repeat.from === "completion" ? ", counted from completion" : "";
+    parts.push(`(repeats ${toRRule(task.repeat, task.dueDate)}${from})`);
+  }
   parts.push(...task.labels.map((label) => `#${label.replace(/\s+/g, "-")}`));
   const lines = [parts.join(" ")];
   if (task.resumeNote) lines.push(`  - Next step: ${task.resumeNote}`);
+  for (const item of task.checklist ?? []) lines.push(`  - ${item.done ? "[x]" : "[ ]"} ${item.title}`);
+  if (task.reminders) lines.push(`  - Reminders: ${task.reminders.length ? task.reminders.map(reminderText).join(", ") : "none"}`);
   if (task.note) lines.push(...task.note.split("\n").map((line) => `  > ${line}`));
   for (const link of task.links) lines.push(`  - [${link.title ?? link.url}](${link.url})`);
   return lines.join("\n");
+}
+
+function reminderText(reminder: Reminder): string {
+  if ("minutesBefore" in reminder) return reminder.minutesBefore === 0 ? "at the due time" : `${reminder.minutesBefore} min before`;
+  const days = reminder.daysBefore ?? 0;
+  return days === 0 ? `${reminder.time} on the day` : `${reminder.time}, ${days} day${days === 1 ? "" : "s"} before`;
 }
 
 function section(title: string, tasks: Doc<"tasks">[], timezone: string): string[] {

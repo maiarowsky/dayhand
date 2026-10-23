@@ -89,6 +89,7 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `hlm show <ref>` | One task with its change history (who changed what, when) |
 | `hlm edit <ref>` | Change a task's fields; --clear-* removes one; on a terminal without options, edit title and note in $EDITOR |
 | `hlm note <ref> [text...]` | Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it |
+| `hlm checklist <ref>` | Print a task's checklist, or tick, untick, move, remove and add items |
 | `hlm move <ref> <date>` | Move a task to another day, optionally with a time (none removes the date) |
 | `hlm done <refs...>` | Mark tasks done; a repeating task gets its next occurrence |
 | `hlm start <refs...>` | Set tasks to doing |

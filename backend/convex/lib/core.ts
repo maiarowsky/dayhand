@@ -5,7 +5,8 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { isValidDate, isValidTime, localDate, resolveDate } from "./dates";
 import { validateRepeat } from "./repeat";
-import type { Actor, Link, RepeatRule } from "./validators";
+import { RRuleError, parseRRule, toRRule } from "./rrule";
+import type { Actor, ChecklistInput, ChecklistItem, Link, Reminder, RepeatInput, RepeatRule } from "./validators";
 
 /**
  * Who is acting. Thin layers (app, MCP) establish it; the domain trusts it.
@@ -62,10 +63,13 @@ export async function todayFor(ctx: QueryCtx, userId: string, at: number): Promi
   return localDate(at, timezone);
 }
 
-/** A task as returned to clients: stable `id` and `ref`, no internal fields. */
+/**
+ * A task as returned to clients: stable `id` and `ref`, no internal fields.
+ * A repeating task also carries its rule as an RFC 5545 RRULE (`rrule`).
+ */
 export function toTask(doc: Doc<"tasks">) {
   const { _id, _creationTime, userId, ...fields } = doc;
-  return { id: _id, ...fields };
+  return fields.repeat ? { id: _id, ...fields, rrule: toRRule(fields.repeat, fields.dueDate) } : { id: _id, ...fields };
 }
 export type TaskView = ReturnType<typeof toTask>;
 
@@ -164,7 +168,21 @@ export async function appliedOperation(ctx: QueryCtx, userId: string, clientId?:
 
 // ---- Input checks shared by all operations ----
 
-const LIMITS = { title: 500, note: 20_000, resumeNote: 2_000, label: 50, labels: 20, links: 20, url: 2_048, clientId: 128 };
+const LIMITS = {
+  title: 500,
+  note: 20_000,
+  resumeNote: 2_000,
+  label: 50,
+  labels: 20,
+  links: 20,
+  url: 2_048,
+  clientId: 128,
+  checklist: 100,
+  checklistId: 64,
+  reminders: 5,
+  reminderMinutes: 7 * 24 * 60,
+  reminderDays: 30,
+};
 
 export function checkTitle(title: string): string {
   const trimmed = title.trim();
@@ -213,10 +231,76 @@ export function checkLinks(links: Link[]): Link[] {
   });
 }
 
-export function checkRepeat(rule: RepeatRule): RepeatRule {
-  const error = validateRepeat(rule);
+/** A rule object, or an RFC 5545 RRULE string read in the user's time zone. */
+export function checkRepeat(input: RepeatInput, timezone: string): RepeatRule {
+  if (typeof input === "string") {
+    try {
+      return parseRRule(input, timezone);
+    } catch (error) {
+      if (error instanceof RRuleError) fail("invalid_argument", `repeat: ${error.message}`);
+      throw error;
+    }
+  }
+  const error = validateRepeat(input);
   if (error) fail("invalid_argument", error);
-  return rule;
+  return input;
+}
+
+/**
+ * The checklist as stored: trimmed titles in the given order, `done` false
+ * unless set, and an id for every item. New items get the next free `c<n>`.
+ * An empty list is no checklist.
+ */
+export function checkChecklist(items: ChecklistInput[]): ChecklistItem[] | undefined {
+  if (items.length > LIMITS.checklist) fail("invalid_argument", `at most ${LIMITS.checklist} checklist items`);
+  const given = items.map((item) => item.id).filter((id): id is string => id !== undefined);
+  if (given.some((id) => id.trim() === "" || id.length > LIMITS.checklistId)) {
+    fail("invalid_argument", `checklist item ids must be 1 to ${LIMITS.checklistId} characters`);
+  }
+  if (new Set(given).size !== given.length) fail("invalid_argument", "checklist item ids must be distinct");
+  const used = new Set(given);
+  let next = 1;
+  const freeId = () => {
+    while (used.has(`c${next}`)) next++;
+    used.add(`c${next}`);
+    return `c${next}`;
+  };
+  const checked = items.map((item) => {
+    const title = item.title.trim();
+    if (!title) fail("invalid_argument", "checklist items need a title");
+    if (title.length > LIMITS.title) fail("invalid_argument", `checklist items are at most ${LIMITS.title} characters`);
+    return { id: item.id ?? "", title, done: item.done ?? false };
+  });
+  const result = checked.map((item) => (item.id ? item : { ...item, id: freeId() }));
+  return result.length > 0 ? result : undefined;
+}
+
+/** Reminders as stored: checked, without duplicates, `daysBefore` only when not 0. Empty = none. */
+export function checkReminders(reminders: Reminder[]): Reminder[] {
+  if (reminders.length > LIMITS.reminders) fail("invalid_argument", `at most ${LIMITS.reminders} reminders per task`);
+  const seen = new Set<string>();
+  const result: Reminder[] = [];
+  for (const reminder of reminders) {
+    let clean: Reminder;
+    if ("minutesBefore" in reminder) {
+      const m = reminder.minutesBefore;
+      if (!Number.isInteger(m) || m < 0 || m > LIMITS.reminderMinutes) {
+        fail("invalid_argument", `reminders: minutesBefore must be whole minutes from 0 to ${LIMITS.reminderMinutes}`);
+      }
+      clean = { minutesBefore: m };
+    } else {
+      if (!isValidTime(reminder.time)) fail("invalid_argument", `reminders: time must be HH:MM (24h), got "${reminder.time}"`);
+      const days = reminder.daysBefore ?? 0;
+      if (!Number.isInteger(days) || days < 0 || days > LIMITS.reminderDays) {
+        fail("invalid_argument", `reminders: daysBefore must be a whole number from 0 to ${LIMITS.reminderDays}`);
+      }
+      clean = days === 0 ? { time: reminder.time } : { time: reminder.time, daysBefore: days };
+    }
+    const key = JSON.stringify(clean);
+    if (!seen.has(key)) result.push(clean);
+    seen.add(key);
+  }
+  return result;
 }
 
 export function checkClientId(clientId?: string): string | undefined {

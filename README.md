@@ -2,7 +2,8 @@
 
 Helm is a personal task manager and day plan. Its main screen is **Today**: overdue
 tasks on top, then today's tasks, then what is already done. A three-column board,
-labels, repeating tasks, links and a 30-day trash complete it.
+labels, repeating tasks (also RFC 5545 RRULE), checklists, per-task reminders, links and a
+30-day trash complete it.
 
 The app and an AI agent are two clients of the same operations: the agent connects over
 [MCP](https://modelcontextprotocol.io) with a personal, revocable API key and can do

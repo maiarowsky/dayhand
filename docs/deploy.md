@@ -33,23 +33,39 @@ npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"a
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
-## Upgrading to 0.5.0
+## Upgrading to 0.6.0
 
-0.5.0 adds OAuth for the Claude apps ([oauth.md](oauth.md)): the tables `oauthClients`,
+0.6.0 adds OAuth for the Claude apps ([oauth.md](oauth.md)): the tables `oauthClients`,
 `oauthRequests`, `oauthGrants` and `oauthTokens`, the optional field `connectionId` in
 `taskEvents` and `callLimits` (where `keyId` becomes optional), and a daily cron
 (`oauth.purgeExpired`, 04:00 UTC). Existing rows stay valid, so there is no migration and no
-new secret: `npx convex deploy` is enough. API keys, the app and `hlm` 0.4 keep working; the
+new secret: `npx convex deploy` is enough. API keys, the app and `hlm` 0.5 keep working; the
 only visible change for them is a longer `WWW-Authenticate` header on `401` from `/mcp`.
 Connecting the Claude app afterwards is a manual step done once on the phone
-([oauth.md](oauth.md#connecting-the-claude-app-manual-procedure)). The Android app needs 0.6.0
+([oauth.md](oauth.md#connecting-the-claude-app-manual-procedure)). The Android app needs 0.7.0
 for Settings → Agent connections; older apps keep working without it.
 
-Rollback: revoke the connections first (`hlm connection revoke <id>`), then deploy 0.4.0
+Rollback: revoke the connections first (`hlm connection revoke <id>`), then deploy 0.5.0
 again. Its schema has no OAuth tables and no `connectionId`; if Convex refuses the push because
-of rows in them, empty the four `oauth*` tables and `callLimits` the same way as below. History
-entries written through a connection keep their `connectionId` and would block the push too;
-they are rare enough to delete by hand (`npx convex data taskEvents`), or stay on 0.5.0.
+of rows in them, empty the four `oauth*` tables and `callLimits` the same way as for 0.4.0
+below. History entries written through a connection keep their `connectionId` and would block
+the push too; they are rare enough to delete by hand (`npx convex data taskEvents`), or stay on
+0.6.0.
+
+## Upgrading to 0.5.0
+
+0.5.0 adds `checklist` and `reminders` to tasks and new optional fields to `repeat` (`from`,
+`monthDay`, `weekdayOfMonth`, `until`, `count`). All of them are optional in the schema, so the
+deploy accepts existing data and needs no migration: a task without them repeats, rings and
+exports as before. Deploy with `npx convex deploy`.
+
+Clients: the CLI and the agent keep working unchanged. An app older than 0.6.0 shows repeat rules
+with the new fields as their plain unit and does not show checklists or per-task reminders;
+changing such a task's repeat rule in that app replaces the rule with what it shows.
+
+Rollback: deploying 0.4.0 again fails schema validation once any task uses a new field. Roll
+forward with a fix, or remove the new fields from those tasks first (or restore a snapshot taken
+before the deploy with `npx convex export`).
 
 ## Upgrading to 0.4.0
 

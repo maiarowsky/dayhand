@@ -1,6 +1,6 @@
 // Small text formatters shared by the human and plain renderers. English only in v1.
 import { addDays, daysBetween, yearOf } from "../when/calendar.js";
-import type { Repeat, Task } from "./model.js";
+import type { Reminder, Repeat, Task } from "./model.js";
 import { PLAIN_STYLE, type Style } from "./style.js";
 import { cellOf, type Cell } from "./table.js";
 
@@ -50,10 +50,36 @@ export function formatTimestamp(ms: number, timezone?: string): string {
   return timezone ? text : `${text} UTC`;
 }
 
+const NTH = ["", "1st", "2nd", "3rd", "4th", "5th"];
+
+/** "every 2 weeks on Mon, Thu", "every month on the last day, 5 times", "every 3 days from completion". */
 export function describeRepeat(repeat: Repeat): string {
   const unit = repeat.interval === 1 ? repeat.every : `${repeat.interval} ${repeat.every}s`;
-  const days = repeat.weekdays?.length ? ` on ${repeat.weekdays.map((d) => ISO_WEEKDAYS[d] ?? d).join(", ")}` : "";
-  return `every ${unit}${days}`;
+  const parts = [`every ${unit}`];
+  if (repeat.weekdays?.length) parts[0] += ` on ${repeat.weekdays.map((d) => ISO_WEEKDAYS[d] ?? d).join(", ")}`;
+  if (repeat.monthDay !== undefined) parts[0] += repeat.monthDay === -1 ? " on the last day" : ` on day ${repeat.monthDay}`;
+  if (repeat.weekdayOfMonth) {
+    const { nth, weekday } = repeat.weekdayOfMonth;
+    const position = nth === -1 ? "last" : nth < 0 ? `${-nth}th from last` : (NTH[nth] ?? `${nth}th`);
+    parts[0] += ` on the ${position} ${ISO_WEEKDAYS[weekday] ?? weekday}`;
+  }
+  if (repeat.from === "completion") parts.push("from completion");
+  if (repeat.until) parts.push(`until ${repeat.until}`);
+  if (repeat.count !== undefined) parts.push(repeat.count === 1 ? "last time" : `${repeat.count} times`);
+  return parts.join(", ");
+}
+
+/** "15 min before", "at the due time", "09:00", "18:00 1 day before". */
+export function describeReminder(reminder: Reminder): string {
+  if ("minutesBefore" in reminder) {
+    const m = reminder.minutesBefore;
+    if (m === 0) return "at the due time";
+    if (m % 1440 === 0) return `${m / 1440} day${m === 1440 ? "" : "s"} before`;
+    if (m % 60 === 0) return `${m / 60} h before`;
+    return `${m} min before`;
+  }
+  const days = reminder.daysBefore ?? 0;
+  return days ? `${reminder.time} ${days} day${days === 1 ? "" : "s"} before` : reminder.time;
 }
 
 export const refOf = (task: Task) => (task.ref !== undefined ? `#${task.ref}` : task.id);
@@ -81,6 +107,7 @@ export function taskCells(task: Task, options: TaskRowOptions = {}): Cell[] {
   const marks = [
     task.isNow ? style.green("now") : "",
     task.repeat ? "↻" : "",
+    task.checklist?.length ? `${task.checklist.filter((i) => i.done).length}/${task.checklist.length}` : "",
     task.overdue ? style.red("overdue") : "",
   ].filter(Boolean);
   const labels = task.labels.map((l) => style.magenta(`#${l}`));
