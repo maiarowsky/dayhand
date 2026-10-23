@@ -9,22 +9,16 @@
 // <file> holds a private JWK, or an object with a `privateJwk` field (the
 // format of `new` and of backend/.local-backend/app-signing-key.json).
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { generateSigningKey } from "./jwt.mjs";
+import { generateSigningKey, jwksDataUri, privateJwkOf, publishesKey } from "./jwt.mjs";
 
 const USAGE = "Usage: node scripts/signing-key.mjs new|private|jwks|check <file>";
 
 function readPrivateJwk(file) {
-  const content = JSON.parse(readFileSync(file, "utf8"));
-  const jwk = content.privateJwk ?? content;
-  if (jwk.kty !== "EC" || jwk.crv !== "P-256" || !jwk.d || !jwk.kid) {
-    throw new Error(`${file} does not hold a P-256 private JWK with a kid`);
+  try {
+    return privateJwkOf(JSON.parse(readFileSync(file, "utf8")));
+  } catch (error) {
+    throw new Error(`${file} does not hold a P-256 private JWK with a kid`, { cause: error });
   }
-  return jwk;
-}
-
-function jwksDataUri({ kty, crv, x, y, kid }) {
-  const jwks = JSON.stringify({ keys: [{ kty, crv, x, y, kid, alg: "ES256", use: "sig" }] });
-  return `data:application/json;base64,${Buffer.from(jwks).toString("base64")}`;
 }
 
 async function readStdin() {
@@ -34,12 +28,8 @@ async function readStdin() {
 }
 
 function checkPublished(dataUri, jwk) {
-  const match = /^data:application\/json;base64,(.+)$/.exec(dataUri);
-  if (!match) throw new Error("stdin is not a HELM_JWKS data URI");
-  const published = JSON.parse(Buffer.from(match[1], "base64").toString()).keys.find((k) => k.kid === jwk.kid);
-  if (!published || published.x !== jwk.x || published.y !== jwk.y) {
-    throw new Error(`HELM_JWKS does not publish this key (kid ${jwk.kid})`);
-  }
+  if (!/^data:application\/json;base64,/.test(dataUri)) throw new Error("stdin is not a HELM_JWKS data URI");
+  if (!publishesKey(dataUri, jwk)) throw new Error(`HELM_JWKS does not publish this key (kid ${jwk.kid})`);
   console.log(`OK: HELM_JWKS publishes this key (kid ${jwk.kid})`);
 }
 

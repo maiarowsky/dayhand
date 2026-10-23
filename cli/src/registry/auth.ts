@@ -13,7 +13,7 @@ import type { CommandSpec, Opts, RunContext } from "./types.js";
 
 const KEY = /^[\x21-\x7e]{8,512}$/;
 
-const PROFILE = /^[A-Za-z0-9_-]{1,64}$/;
+export const PROFILE = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** The URL to sign in to: --url, HLM_URL, config.toml, or asked for on a terminal. */
 async function loginTarget(ctx: RunContext): Promise<{ url: string; urlSource: string; profile?: string }> {
@@ -37,8 +37,8 @@ async function readKey(ctx: RunContext, opts: Opts): Promise<string> {
   return key;
 }
 
-/** --store, else the first store that accepts the key; the keychain is preferred. */
-async function store(ctx: RunContext, url: string, key: string, choice: unknown): Promise<KeyStore> {
+/** --store, else the first store that accepts the key; the keychain is preferred. Also used by hlm server. */
+export async function storeKey(ctx: RunContext, url: string, key: string, choice: unknown): Promise<KeyStore> {
   const stores = ctx.keyStores().filter((s) => choice === undefined || s.name === choice);
   if (stores.length === 0) throw usageError(`--store ${String(choice)} is not allowed by HLM_CREDENTIAL_STORE`);
   const reasons: string[] = [];
@@ -75,7 +75,7 @@ const login: CommandSpec = {
     const target = await loginTarget(ctx);
     const key = await readKey(ctx, opts);
     const settings = (await ctx.clientFor(target.url, key).callTool("get_settings")).structured as { timezone?: string };
-    const used = await store(ctx, target.url, key, opts.store);
+    const used = await storeKey(ctx, target.url, key, opts.store);
     // A URL given on the command line or at the prompt is remembered in config.toml.
     const config = ctx.config();
     const profile = ctx.flags.profile ?? target.profile ?? config.defaultProfile ?? "default";

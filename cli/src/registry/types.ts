@@ -60,7 +60,8 @@ export type RunContext = {
   edit(initial: string, fileName: string): string;
 };
 
-export type Outcome = { value: unknown; view: View };
+/** printed: the command already printed its result (hlm server start, before it waits). */
+export type Outcome = { value: unknown; view: View; printed?: boolean };
 
 export type Args = Record<string, string | string[] | undefined>;
 export type Opts = Record<string, unknown>;

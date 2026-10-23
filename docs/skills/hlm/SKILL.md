@@ -133,6 +133,8 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `hlm webhook deliveries <webhookId>` | The delivery log: newest first, each attempt's HTTP status or error |
 | `hlm import <file>` | Import tasks from Helm's JSON export, an iCalendar file or a Todoist CSV export |
 | `hlm whoami` | Which deployment, profile, key source and config file hlm uses, checked against the server |
+| `hlm server deploy` | Set up or update your server on your own Convex account, sign hlm in and make a pairing code |
+| `hlm server start` | Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign hlm in |
 | `hlm prime` | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...>` | Show the day (and time) a date phrase means in your time zone, without changing anything |
 

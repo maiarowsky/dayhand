@@ -34,11 +34,15 @@ async function waitForVersion(url, child, timeoutMs = 30_000) {
 }
 
 /**
+ * `convexOrigin` and `convexSite` are the URLs the backend gives out for itself
+ * (CONVEX_CLOUD_URL, CONVEX_SITE_URL), when clients reach it through a proxy
+ * such as `tailscale serve`; by default its own 127.0.0.1 addresses.
  * @param {{ dataDir: string, port: number, sitePort: number,
- *           instanceName: string, instanceSecret: string }} options
+ *           instanceName: string, instanceSecret: string,
+ *           convexOrigin?: string, convexSite?: string }} options
  */
 export async function startLocalBackend(options) {
-  const { dataDir, port, sitePort, instanceName, instanceSecret } = options;
+  const { dataDir, port, sitePort, instanceName, instanceSecret, convexOrigin, convexSite } = options;
   const bin = await fetchLocalBackend();
   mkdirSync(dataDir, { recursive: true });
   const { stdout } = await execFileAsync(bin, [
@@ -67,6 +71,8 @@ export async function startLocalBackend(options) {
       "--local-storage",
       join(dataDir, "storage"),
       "--disable-beacon",
+      ...(convexOrigin ? ["--convex-origin", convexOrigin] : []),
+      ...(convexSite ? ["--convex-site", convexSite] : []),
       join(dataDir, "db.sqlite3"),
     ],
     { cwd: dataDir, stdio: ["ignore", log, log] },

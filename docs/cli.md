@@ -68,6 +68,8 @@ Without a command, `hlm` shows Today.
 | `hlm login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
 | `hlm logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
 | `hlm whoami` | `initialize`, `get_settings` | [whoami](schemas/whoami.schema.json) | Which deployment, profile, key source and config file hlm uses, checked against the server |
+| `hlm server deploy [options]` | `get_settings` | [server](schemas/server.schema.json), [server-plan](schemas/server-plan.schema.json) | Set up or update your server on your own Convex account, sign hlm in and make a pairing code |
+| `hlm server start [options]` | `get_settings` | [server](schemas/server.schema.json), [server-plan](schemas/server-plan.schema.json) | Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign hlm in |
 | `hlm prime` | `list_today` | [today](schemas/today.schema.json) | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...> [options]` | `get_settings` | [when](schemas/when.schema.json) | Show the day (and time) a date phrase means in your time zone, without changing anything |
 | `hlm completion <shell>` | - | [completion](schemas/completion.schema.json) | Print the shell completion script for bash, zsh, fish or powershell (hlm help completion) |
@@ -1220,6 +1222,54 @@ hlm whoami
 ```sh
 hlm whoami
 hlm whoami --json
+```
+
+### hlm server deploy
+
+Set up or update your server on your own Convex account, sign hlm in and make a pairing code
+
+Logs in to Convex in the browser, creates a project with a production deployment (or uses --deployment), sets the app-signing key and HELM_* variables, deploys, checks /api/v1/openapi.json, /auth/token and /mcp, and makes a CLI key and a pairing code. Run it again to update: keys, the CLI key and the data are kept; a different signing key is replaced only after a question, the issuer never. --dry-run shows the steps without network.
+
+```
+hlm server deploy [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--team <slug>` | Convex team (default: your only team; asked when you have several) |
+| `--project <name>` | Name of the new Convex project (default: helm) |
+| `--deployment <name>` | Use this existing production deployment instead of a new project |
+| `--issuer <url>` | HELM_JWT_ISSUER for a new server (default: the server's address) |
+| `--backend <folder>` | The Helm repository's backend/ folder (default: found from here) |
+
+```sh
+hlm server deploy
+hlm server deploy --team my-team --project helm
+hlm server deploy --dry-run
+```
+
+### hlm server start
+
+Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign hlm in
+
+macOS and Linux. Data and keys stay in HELM_SERVER_CONFIG_DIR/local, so the same command starts the server again. A phone with a release build needs HTTPS: put the ports behind tailscale serve and pass --public-url (docs/deploy.md). With --json the result is printed when the server is ready.
+
+```
+hlm server start [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--port <n>` | Convex API port (default: 3210) |
+| `--site-port <n>` | HTTP actions port (default: 3211) |
+| `--public-url <url>` | The HTTPS address phones use, e.g. https://<machine>.<tailnet>.ts.net |
+| `--public-api-url <url>` | The Convex API's HTTPS address (default: --public-url at port 8443) |
+| `--backend <folder>` | The Helm repository's backend/ folder (default: found from here) |
+
+```sh
+hlm server start
+hlm server start --public-url https://laptop.tail1234.ts.net
+hlm server start --json --yes
 ```
 
 ### hlm prime

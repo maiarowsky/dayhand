@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/server.schema.json",
+  "title": "Server",
+  "description": "hlm server deploy and hlm server start (and npm run setup -- --json, without login): the server that was set up, a pairing code and where its keys are. Never contains a key.",
+  "type": "object",
+  "required": [
+    "mode",
+    "url",
+    "convexUrl",
+    "deployment",
+    "issuer",
+    "userId",
+    "server",
+    "pairing",
+    "key",
+    "env",
+    "files",
+    "running"
+  ],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "cloud",
+        "local"
+      ],
+      "description": "cloud: the user's Convex account; local: the Convex local backend on this computer"
+    },
+    "url": {
+      "type": "string",
+      "description": "The server address (HTTP actions URL) for the app's Connect screen and hlm"
+    },
+    "convexUrl": {
+      "type": "string",
+      "description": "The Convex API URL the app's client uses"
+    },
+    "deployment": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The Convex deployment name; null for local"
+    },
+    "issuer": {
+      "type": "string",
+      "description": "HELM_JWT_ISSUER in force"
+    },
+    "userId": {
+      "type": "string",
+      "description": "The app user, <issuer>|owner, that the CLI key and the phone share"
+    },
+    "server": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "openapi"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "helm"
+        },
+        "version": {
+          "type": "string",
+          "description": "serverInfo.version from /mcp"
+        },
+        "openapi": {
+          "type": "string",
+          "description": "The OpenAPI version /api/v1/openapi.json answered with"
+        }
+      }
+    },
+    "pairing": {
+      "type": "object",
+      "required": [
+        "code",
+        "expiresAt",
+        "link"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "One-time pairing code, valid 10 minutes"
+        },
+        "expiresAt": {
+          "type": "number",
+          "description": "Unix ms"
+        },
+        "link": {
+          "type": "string",
+          "description": "helm://pair?url=…&code=… (docs/pairing.md)"
+        }
+      }
+    },
+    "key": {
+      "type": "object",
+      "required": [
+        "file",
+        "created"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "The private file (mode 600) holding the CLI key"
+        },
+        "created": {
+          "type": "boolean",
+          "description": "false: the saved key still worked and was kept"
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "required": [
+        "issuer",
+        "keys"
+      ],
+      "properties": {
+        "issuer": {
+          "type": "string",
+          "enum": [
+            "set",
+            "keep",
+            "adopt"
+          ],
+          "description": "adopt: the deployment had another issuer, which was kept"
+        },
+        "keys": {
+          "type": "string",
+          "enum": [
+            "set",
+            "keep",
+            "complete",
+            "replaced",
+            "kept"
+          ],
+          "description": "What happened to HELM_JWKS and HELM_JWT_PRIVATE_JWK; kept: the deployment's different key was left as it was"
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "required": [
+        "dir",
+        "state",
+        "signingKey",
+        "cliKey"
+      ],
+      "properties": {
+        "dir": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "signingKey": {
+          "type": "string"
+        },
+        "cliKey": {
+          "type": "string"
+        }
+      }
+    },
+    "running": {
+      "type": "boolean",
+      "description": "true: the local server runs until Ctrl+C or SIGTERM"
+    },
+    "local": {
+      "type": "object",
+      "description": "Local mode: the backend's own addresses on this computer",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "convexUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "login": {
+      "type": "object",
+      "description": "hlm only: where the CLI key was stored, as hlm login reports it",
+      "required": [
+        "profile",
+        "store",
+        "location",
+        "config",
+        "timezone"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string"
+        },
+        "store": {
+          "type": "string",
+          "enum": [
+            "keychain",
+            "file"
+          ]
+        },
+        "location": {
+          "type": "string"
+        },
+        "config": {
+          "type": "string",
+          "enum": [
+            "created",
+            "added",
+            "unchanged"
+          ]
+        },
+        "timezone": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

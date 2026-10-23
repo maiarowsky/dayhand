@@ -55,6 +55,7 @@ export async function execute(io: Io, setup: Setup, spec: CommandSpec, name: str
       else out.text(renderDryRun(held, format));
       return EXIT.ok;
     }
+    if (outcome.printed) return EXIT.ok;
     const value = fields && spec.fields ? projectFields(outcome.value, spec.fields, fields) : outcome.value;
     if (format === "json") out.json(value);
     else if (format === "plain") out.text(renderPlain(outcome.view, value, fields));

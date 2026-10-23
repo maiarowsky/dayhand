@@ -19,6 +19,42 @@ export async function generateSigningKey() {
   return { kid, privateJwk, jwksDataUri: `data:application/json;base64,${Buffer.from(jwks).toString("base64")}` };
 }
 
+/** The private JWK in a key file's content: the JWK itself or `{ privateJwk }`. */
+export function privateJwkOf(content) {
+  const jwk = content?.privateJwk ?? content;
+  if (jwk?.kty !== "EC" || jwk.crv !== "P-256" || !jwk.d || !jwk.kid) {
+    throw new Error("not a P-256 private JWK with a kid");
+  }
+  return jwk;
+}
+
+/**
+ * HELM_JWKS for a key: its public half as a JWKS data URI.
+ * @param {JsonWebKey & { kid: string }} jwk
+ */
+export function jwksDataUri({ kty, crv, x, y, kid }) {
+  const jwks = JSON.stringify({ keys: [{ kty, crv, x, y, kid, alg: "ES256", use: "sig" }] });
+  return `data:application/json;base64,${Buffer.from(jwks).toString("base64")}`;
+}
+
+/**
+ * Whether a HELM_JWKS value publishes this key's public half under its kid.
+ * @param {string} dataUri
+ * @param {JsonWebKey & { kid: string }} jwk
+ */
+export function publishesKey(dataUri, jwk) {
+  const match = /^data:application\/json;base64,(.+)$/.exec(String(dataUri).trim());
+  if (!match) return false;
+  let keys;
+  try {
+    keys = JSON.parse(Buffer.from(match[1], "base64").toString()).keys;
+  } catch {
+    return false;
+  }
+  const published = Array.isArray(keys) ? keys.find((k) => k?.kid === jwk.kid) : undefined;
+  return Boolean(published && published.x === jwk.x && published.y === jwk.y);
+}
+
 export async function signAppToken({ privateJwk, issuer, subject, ttlSeconds = 3600 }) {
   const key = await subtle.importKey("jwk", privateJwk, ALGORITHM, false, ["sign"]);
   const now = Math.floor(Date.now() / 1000);
