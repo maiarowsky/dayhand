@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/tool-error.schema.json",
+  "title": "Tool error",
+  "description": "structuredContent of a failed MCP tool call (isError: true). hlm turns it into its own error on stderr (error.schema.json).",
+  "type": "object",
+  "required": [
+    "error"
+  ],
+  "properties": {
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "invalid_argument, not_found, unauthenticated, rate_limited, internal (values may be added; treat an unknown code like internal)"
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryAfterMs": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Only with rate_limited: milliseconds until the key may call again"
+        }
+      }
+    }
+  }
+}

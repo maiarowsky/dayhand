@@ -26,8 +26,9 @@ Dates are English phrases resolved in your time zone (`hlm help dates`, `hlm whe
 For agents and scripts: `HLM_URL` and `HLM_API_KEY` win over the file and the keychain,
 `--json` prints exactly the tool's `structuredContent` (schemas in
 [docs/schemas](../docs/schemas)), errors are one JSON line on stderr, exit codes are distinct
-(2 usage, 3 key, 4 not found, 5 server unavailable: retry with the same `--client-id`),
-`--dry-run` shows a change without sending it, and `hlm` never prompts without a terminal.
+(2 usage, 3 key, 4 not found, 5 server unavailable or rate limited: retry with the same
+`--client-id`), `--dry-run` shows a change checked by the backend without saving it, and `hlm`
+never prompts without a terminal.
 Give each agent its own key of kind `agent`; history then shows its changes as `agent: <key name>`.
 `hlm prime` prints Today and these rules as plain text for an agent's session-start hook, and
 [docs/skills/hlm/SKILL.md](../docs/skills/hlm/SKILL.md) is the same guidance as an Agent Skill.

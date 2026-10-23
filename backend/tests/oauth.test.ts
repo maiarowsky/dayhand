@@ -24,6 +24,7 @@ import {
   site,
 } from "./oauthClient";
 
+const hashKeyForTest = async (key: string) => (await import("node:crypto")).createHash("sha256").update(key).digest("hex");
 const listTools = (token: string) => mcpRequest(token, { jsonrpc: "2.0", id: 1, method: "tools/list" });
 const callToolRaw = (token: string, name: string, args: Record<string, unknown> = {}) =>
   mcpRequest(token, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name, arguments: args } });
@@ -156,6 +157,32 @@ describe("the flow with a Client ID Metadata Document", () => {
     expect(challenge).toContain('error="insufficient_scope"');
     expect(challenge).toContain('scope="tasks:read tasks:write"');
     expect((await callToolRaw(tokens.access_token, "list_today")).status).toBe(200);
+  });
+
+  test("a write-only connection cannot read the plan through tools, resources or prompts", async () => {
+    const { tokens } = await connect({ grant: ["tasks:write"] });
+    expect(tokens.scope).toBe("tasks:write");
+    const rpc = (method: string, params: Record<string, unknown>) => mcpRequest(tokens.access_token, { jsonrpc: "2.0", id: 3, method, params });
+    expect((await callToolRaw(tokens.access_token, "list_today")).status).toBe(403);
+    expect((await rpc("resources/read", { uri: "helm://today" })).status).toBe(403);
+    expect((await rpc("prompts/get", { name: (await (await rpc("prompts/list", {})).json()).result.prompts[0].name })).status).toBe(403);
+    // The guide holds no user data.
+    expect((await rpc("resources/read", { uri: "helm://guide" })).status).toBe(200);
+    expect((await callToolRaw(tokens.access_token, "add_task", { title: "Written blind" })).status).toBe(200);
+  });
+
+  test("calls are limited per connection, apart from API keys", async () => {
+    const { owner } = await connect();
+    const [connection] = await owner.connections();
+    const key = await createKey(owner.userId, "agent-key");
+    const keyId = (await admin().query(internal.apiKeys.verify, { hash: await hashKeyForTest(key) }))!.keyId;
+    for (let i = 0; i < 60; i++) {
+      expect((await admin().mutation(internal.callLimits.consume, { connectionId: connection.id, kind: "write" })).ok).toBe(true);
+    }
+    expect(await admin().mutation(internal.callLimits.consume, { connectionId: connection.id, kind: "write" })).toMatchObject({ ok: false, limit: 60 });
+    expect((await admin().mutation(internal.callLimits.consume, { keyId, kind: "write" })).ok).toBe(true);
+    await admin().mutation(internal.callLimits.reset, { connectionId: connection.id });
+    expect((await admin().mutation(internal.callLimits.consume, { connectionId: connection.id, kind: "write" })).ok).toBe(true);
   });
 
   test("a request without scope asks for reading only", async () => {

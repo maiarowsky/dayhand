@@ -139,7 +139,7 @@ describe("MCP over Streamable HTTP", () => {
     expect(note.status).toBe(202);
     const get = await fetch(mcpUrl(), { headers: { Authorization: `Bearer ${key}` } });
     expect(get.status).toBe(405);
-    const unknown = await rpc(key, { jsonrpc: "2.0", id: 7, method: "resources/list" });
+    const unknown = await rpc(key, { jsonrpc: "2.0", id: 7, method: "completion/complete" });
     expect(unknown.headers.get("content-type")).toMatch(/application\/json/);
     expect(await unknown.json()).toMatchObject({ id: 7, error: { code: -32601 } });
   });

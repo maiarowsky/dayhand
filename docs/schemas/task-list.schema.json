@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.helm.invalid/task-list.schema.json",
   "title": "Task list",
-  "description": "list_all and list_trash (hlm list, hlm trash): a list tool's array wrapped as `result`.",
+  "description": "list_all and list_trash (hlm list, hlm trash): the tasks as `result`. list_all also gives `total` (all matches) and `nextCursor` (the next page, or null on the last one).",
   "type": "object",
   "required": [
     "result"
@@ -13,6 +13,18 @@
       "items": {
         "$ref": "task.schema.json"
       }
+    },
+    "nextCursor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "list_all only: pass as cursor for the next page; null when this is the last page"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "list_all only: number of matching tasks on all pages"
     }
   }
 }

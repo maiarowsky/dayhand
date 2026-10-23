@@ -10,6 +10,9 @@ repository holds no secrets: everything below goes into the deployment's environ
 | `HELM_JWT_ISSUER` | Issuer of app tokens, e.g. `https://helm.example` | `auth.config.ts`, token signing |
 | `HELM_JWKS` | Public key(s) as a JWKS data URI (`data:application/json;base64,…`) | `auth.config.ts` (Convex verifies app JWTs) |
 | `HELM_JWT_PRIVATE_JWK` | Private ES256 key as a JWK with `kid`; its public half must be in `HELM_JWKS` under the same `kid` | `POST /auth/token` only; never returned |
+| `HELM_MCP_ALLOWED_ORIGINS` | Optional. Comma-separated browser origins allowed to call `/mcp`, e.g. `https://inspector.example`. Unset: any request with an `Origin` header gets `403` | `POST /mcp` |
+| `HELM_PUBLIC_URL` | Optional. The URL users add in Claude, without `/mcp`, when it is not the Convex site URL (a custom domain). Unset: `CONVEX_SITE_URL` | OAuth issuer and resource ([oauth.md](oauth.md#configuration)) |
+| `HELM_OAUTH_CIMD_ORIGINS` | Optional. Comma-separated origins whose OAuth client metadata documents are fetched. Unset: `https://claude.ai`; production should leave it unset | `GET /oauth/authorize` |
 
 App users are `<HELM_JWT_ISSUER>|<subject>` (single-user deployments use `owner` as subject).
 Personal API keys for the CLI and agent should belong to that same user, so the phone, the CLI
@@ -29,6 +32,36 @@ npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"a
 
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
+
+## Upgrading to 0.5.0
+
+0.5.0 adds OAuth for the Claude apps ([oauth.md](oauth.md)): the tables `oauthClients`,
+`oauthRequests`, `oauthGrants` and `oauthTokens`, the optional field `connectionId` in
+`taskEvents` and `callLimits` (where `keyId` becomes optional), and a daily cron
+(`oauth.purgeExpired`, 04:00 UTC). Existing rows stay valid, so there is no migration and no
+new secret: `npx convex deploy` is enough. API keys, the app and `hlm` 0.4 keep working; the
+only visible change for them is a longer `WWW-Authenticate` header on `401` from `/mcp`.
+Connecting the Claude app afterwards is a manual step done once on the phone
+([oauth.md](oauth.md#connecting-the-claude-app-manual-procedure)). The Android app needs 0.6.0
+for Settings → Agent connections; older apps keep working without it.
+
+Rollback: revoke the connections first (`hlm connection revoke <id>`), then deploy 0.4.0
+again. Its schema has no OAuth tables and no `connectionId`; if Convex refuses the push because
+of rows in them, empty the four `oauth*` tables and `callLimits` the same way as below. History
+entries written through a connection keep their `connectionId` and would block the push too;
+they are rare enough to delete by hand (`npx convex data taskEvents`), or stay on 0.5.0.
+
+## Upgrading to 0.4.0
+
+0.4.0 adds the table `callLimits` (MCP calls per key and minute) and changes nothing in the
+existing tables, so there is no migration: `npx convex deploy` is enough, and 0.3 clients (the
+app, `hlm` 0.3, agents) keep working. Calls are now limited per key (120 reads and 60 changes a
+minute), and `/mcp` refuses requests with a browser `Origin` that is not in
+`HELM_MCP_ALLOWED_ORIGINS`; MCP clients outside a browser send no `Origin`.
+
+Rollback: deploy 0.3.0 again. Its schema does not define `callLimits`; if Convex refuses the
+push because that table holds rows, empty it first (`npx convex import --table callLimits
+--replace --yes empty.jsonl` with an empty file). The rows only count calls, so nothing is lost.
 
 ## Upgrading to 0.3.0
 

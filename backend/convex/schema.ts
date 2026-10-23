@@ -212,6 +212,19 @@ export default defineSchema({
     .index("by_grant", ["grantId"])
     .index("by_expiresAt", ["expiresAt"]),
 
+  // MCP calls per API key in the current one-minute window, one row per key
+  // and kind of call (read or write).
+  callLimits: defineTable({
+    // One of the two: an API key, or an agent connection (OAuth).
+    keyId: v.optional(v.id("apiKeys")),
+    connectionId: v.optional(v.id("oauthGrants")),
+    kind: v.union(v.literal("read"), v.literal("write")),
+    windowStart: v.number(),
+    calls: v.number(),
+  })
+    .index("by_key_kind", ["keyId", "kind"])
+    .index("by_connection_kind", ["connectionId", "kind"]),
+
   settings: defineTable({
     userId: v.string(),
     timezone: v.string(),

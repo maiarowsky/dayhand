@@ -6,11 +6,16 @@
 Android app ──(Convex client, JWT)──> convex/app.ts ─┐
                                                       ├─> domain operations (convex/lib/*.ts)
 AI agent ──(MCP, API key)──> /mcp (convex/mcp.ts) ───┤      registered as internal functions
-helm CLI ──(MCP tools/call, API key)─────────────────┘      in convex/ops.ts
+Claude app ──(MCP, OAuth access token)──> /mcp ──────┤      in convex/ops.ts
+helm CLI ──(MCP tools/call, API key)─────────────────┘
 
 Android app ──(device token)──> /auth/token ─┐
             ──(pairing code)──> /auth/pair  ─┼─> convex/pairing.ts ──> convex/devices.ts
 helm CLI ──(API key)──> /devices/* ──────────┘
+
+Claude app ──> /.well-known/*, /oauth/* (convex/oauthHttp.ts) ──> convex/oauth.ts
+Android app ──(JWT)──> app.lookup/decideConnectionRequest ─┐
+helm CLI ──(API key)──> /connections* ─────────────────────┴──> convex/oauthOwner.ts
 ```
 
 - Domain operations take the acting identity explicitly: `userId` and `actor` (`app`, `cli` or
@@ -18,8 +23,16 @@ helm CLI ──(API key)──> /devices/* ──────────┘
   Convex **internal** functions (`convex/ops.ts`), so no client can call them directly.
 - `convex/app.ts` takes `userId` from the signed-in user (`ctx.auth`) and sets `actor: "app"`.
 - `convex/mcp.ts` takes `userId` from the personal API key and sets `actor` to the key's kind
-  (`cli` or `agent`), `actorName` to its name and `keyId` to its id. Arguments that try to set
-  any of these are rejected. The `/devices/*` endpoints do the same.
+  (`cli` or `agent`), `actorName` to its name and `keyId` to its id; for an OAuth access token
+  it sets `actor: "agent"`, `actorName` to the client's name and `connectionId` to the
+  connection, and allows only the tools of the token's scopes ([oauth.md](oauth.md)). Arguments that try to set
+  any of these are rejected. The `/devices/*` endpoints do the same. Around it:
+  `lib/mcpTools.ts` (tool catalog, input schemas from the validators, output schemas from
+  `docs/schemas` via the generated `lib/outputSchemas.ts`, behaviour hints),
+  `lib/mcpContent.ts` (resources and prompts, read through the same internal queries) and
+  `lib/mcpProtocol.ts` (the 2025 and 2026-07-28 protocol eras on one endpoint).
+- `dryRun` exists only on the MCP layer: the internal mutation runs the operation, every check
+  included, then throws its result, so Convex rolls the transaction back (`convex/ops.ts`).
 - The CLI is an MCP client too, so app, agent and CLI run exactly the same code.
 
 ## Data model (`convex/schema.ts`)
@@ -27,12 +40,17 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 | Table | Purpose |
 |---|---|
 | `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
-| `taskEvents` | History: `actor`, `keyId` and `actorName` (the API key behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId` |
+| `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId` |
 | `taskCounters` | Last task number given per user (`lastRef`) |
 | `apiKeys` | `name`, `kind` (`cli` or `agent`), SHA-256 `hash` of the key, `createdAt`, `revokedAt` |
 | `pairingCodes` | One-time pairing codes: public `selector`, SHA-256 `secretHash` of the secret part, `createdBy`, `expiresAt` (10 minutes), `usedAt`, `failedAttempts` |
 | `devices` | Paired phones: `name`, token `selector`, SHA-256 `secretHash`, `pairedBy`, `createdAt`, `lastUsedAt`, `revokedAt` |
-| `authLimits` | Failed-attempt counter of `POST /auth/pair` (one row per bucket) |
+| `authLimits` | Fixed-window counters, one row per bucket: failed `POST /auth/pair` attempts, and the OAuth limits (`oauth:*`: requests per client, registrations, wrong codes typed on the phone) |
+| `callLimits` | MCP calls per API key or agent connection in the current one-minute window: `keyId` or `connectionId`, `kind` (`read` or `write`), `windowStart`, `calls` |
+| `oauthClients` | Clients from Dynamic Client Registration: `clientId` (`helmc_…`), `name`, `redirectUris`, `createdAt`, `lastUsedAt` (clients with a metadata document URL are not stored) |
+| `oauthRequests` | Authorization requests waiting for the phone: browser handle `selector` + `secretHash`, SHA-256 of the code shown (`userCodeHash`), client, `redirectUri`, `state`, PKCE `codeChallenge`, `scopes`, `resource`, then the decision (`userId`, `grantedScopes`, `approvedAt`/`deniedAt`) and the single-use authorization code (`codeHash`, `codeExpiresAt`, `codeUsedAt`) |
+| `oauthGrants` | Agent connections: `userId`, client (`clientId`, `clientType`, `clientName`), `redirectUri`, `scopes`, `resource`, `createdAt`, `lastUsedAt`, `refreshExpiresAt`, `revokedAt` |
+| `oauthTokens` | Access and refresh tokens of a connection: `kind`, `selector`, SHA-256 `secretHash`, `expiresAt`, `rotatedAt` (refresh), `scopes` (after a narrowing refresh) |
 | `settings` | `timezone` (default `Europe/London`), `summaryTime` (default `05:00`), `defaultReminderMinutes` (default `[0]`) |
 
 ## Rules
@@ -53,7 +71,7 @@ helm CLI ──(API key)──> /devices/* ──────────┘
   the user's `taskCounters` row. Numbers only grow, so a purged task's number is never given
   again. Every operation that takes a `taskId` also accepts `"#<number>"`.
 - **History.** Every change writes a `taskEvents` row with the actor and only the changed
-  fields. History is shown as `app`, `cli` or `agent: <key name>`. Settings, API key and device changes are recorded without a task id.
+  fields. History is shown as `app`, `cli` or `agent: <key or client name>`. Settings, API key and device changes are recorded without a task id.
 - **Idempotency.** Every mutation accepts an optional `clientId`. Adding a task with a
   `clientId` that already exists returns the existing task; any other operation whose
   `clientId` is already in the history is not applied again. The Android outbox relies on this.
@@ -63,7 +81,14 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 - **Agent and CLI:** personal API keys (`helm_` + 32 random bytes, base64url), each with a
   name and a kind (`cli` or `agent`, default `agent`) that becomes the actor of its changes. Keys are generated in an
   action (mutations have a deterministic random source), shown once, and stored as SHA-256 only.
-  A missing, wrong or revoked key gets HTTP 401.
+  A missing, wrong or revoked key gets HTTP 401. Each key may make 120 reads and 60 changes a
+  minute over MCP (`convex/callLimits.ts`); a call over the limit is refused before it runs.
+- **Agent connections (OAuth 2.1):** the Claude apps and other MCP clients get an access token
+  (`helmat_…`, one hour) and a rotating refresh token (`helmrt_…`, 60 days) through an
+  authorization code with PKCE, after the owner approves the request on the paired phone by the
+  code its sign-in page shows. Tokens are selector + secret, stored as SHA-256, bound to
+  `<issuer>/mcp`, and stop at once when the connection is revoked. Protocol and limits:
+  [oauth.md](oauth.md); threats: [oauth-threat-model.md](oauth-threat-model.md).
 - **App:** a custom ES256 JWT. The deployment trusts the public key given in `HELM_JWKS`
   (a JWKS `data:` URI) for issuer `HELM_JWT_ISSUER`, audience `helm`; `userId` is the token
   identifier `<issuer>|<subject>`. The deployment itself signs these tokens with

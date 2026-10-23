@@ -126,20 +126,21 @@ describe("dates in plain English", () => {
     expect(jsonError(await hlm(key, ["add", "X", "--due", "fri 2pm", "--time", "10:00", "--json"]))).toMatchObject({ exitCode: 2 });
   });
 
-  test("--dry-run shows the resolved change and sends nothing", async () => {
+  test("--dry-run shows the resolved change, checked by the backend, and saves nothing", async () => {
     const { key } = await newUser();
     const run = await hlm(key, ["add", "Pay", "rent", "--due", "tomorrow 9am", "--dry-run", "--json", "--client-id", "c1"]);
     const value = JSON.parse(run.stdout);
     expect(validate("dry-run.schema.json", value)).toEqual([]);
+    const args = { title: "Pay rent", clientId: "c1", dueDate: london("tomorrow").date, dueTime: "09:00" };
     expect(value).toEqual({
       dryRun: true,
-      calls: [{ tool: "add_task", arguments: { title: "Pay rent", clientId: "c1", dueDate: london("tomorrow").date, dueTime: "09:00" } }],
+      calls: [{ tool: "add_task", arguments: args, result: expect.objectContaining({ ...args, ref: 1, dryRun: true }) }],
     });
     expect((await hlmJson(key, ["list"])).result).toEqual([]);
     const human = await hlm(key, ["add", "Pay", "--dry-run"]);
-    expect(human.stdout).toMatch(/^Dry run: nothing was sent\. Would call:\n {2}add_task \{"title":"Pay","clientId":"[^"]+","dueDate":"\d{4}-\d{2}-\d{2}"\}\n$/);
+    expect(human.stdout).toMatch(/^Dry run: nothing was changed\. Would call:\n {2}add_task \{"title":"Pay","clientId":"[^"]+","dueDate":"\d{4}-\d{2}-\d{2}"\}\n {4}→ #1 Pay \(todo\)\n$/);
     // A command that only reads ignores --dry-run.
-    expect((await hlm(key, ["list", "--dry-run", "--json"])).stdout).toBe('{"result":[]}\n');
+    expect((await hlm(key, ["list", "--dry-run", "--json"])).stdout).toBe('{"nextCursor":null,"result":[],"total":0}\n');
   });
 
   test("hlm when uses the server's zone, --timezone or --now; without a server, this computer's zone", async () => {

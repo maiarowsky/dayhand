@@ -83,7 +83,10 @@ Only tasks due after this day, e.g. today
 Only tasks whose title, note, resume note or labels contain the text (any case)
 .TP
 .B \-\-limit <n>
-At most this many tasks
+At most this many tasks; the JSON's nextCursor continues the list
+.TP
+.B \-\-cursor <cursor>
+Continue a list cut by \-\-limit: the nextCursor of the previous page
 .RE
 .TP
 .B hlm board
@@ -346,7 +349,7 @@ Confirm changing many tasks at once
 Never prompt (also HLM_NO_INPUT=1); prompts need a terminal anyway
 .TP
 .B \-\-dry\-run
-Show the changes a command would send (dates resolved) and send nothing
+Show the changes a command would make (dates resolved), checked by the backend, and save nothing
 .TP
 .B \-\-url <url>
 Deployment HTTP actions URL (default: HLM_URL, then config.toml)
@@ -385,7 +388,7 @@ Authentication: no key (hlm login or HLM_API_KEY), or a wrong or revoked one
 Not found: no such task (#n), device or now task
 .TP
 .B 5
-Server unavailable (network, timeout, HTTP 5xx or 429): the change may have been applied; retry with the same \-\-client\-id
+Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same \-\-client\-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names
 .TP
 .B 130
 Interrupted (Ctrl\-C)

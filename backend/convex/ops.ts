@@ -1,12 +1,13 @@
 // Domain operations as internal functions. Each takes the acting identity
 // (userId, actor) explicitly; the app layer (app.ts) and the MCP endpoint
 // (mcp.ts) only establish who is calling and then run the same code.
-import { v } from "convex/values";
+import { ConvexError, v, type ObjectType, type PropertyValidators } from "convex/values";
 import { internal } from "./_generated/api";
-import { internalMutation, internalQuery } from "./_generated/server";
-import { args } from "./lib/args";
-import { identityOf as who } from "./lib/core";
+import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
+import { args, DRY_RUN_CODE, dryRunArgs } from "./lib/args";
+import { identityOf as who, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
+import { findTasks as findTasksOp } from "./lib/findTasks";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
 import {
   addTask,
@@ -29,46 +30,35 @@ import {
   listTrash as listTrashOp,
 } from "./lib/views";
 
-export const add = internalMutation({
-  args: { ...identity, ...args.add },
-  handler: (ctx, a) => addTask(ctx, who(a), a),
-});
-export const update = internalMutation({
-  args: { ...identity, ...args.update },
-  handler: (ctx, a) => updateTask(ctx, who(a), a),
-});
-export const setStatus = internalMutation({
-  args: { ...identity, ...args.setStatus },
-  handler: (ctx, a) => setStatusOp(ctx, who(a), a),
-});
-export const setNow = internalMutation({
-  args: { ...identity, ...args.setNow },
-  handler: (ctx, a) => setNowOp(ctx, who(a), a),
-});
-export const complete = internalMutation({
-  args: { ...identity, ...args.complete },
-  handler: (ctx, a) => completeTask(ctx, who(a), a),
-});
-export const reschedule = internalMutation({
-  args: { ...identity, ...args.reschedule },
-  handler: (ctx, a) => rescheduleTask(ctx, who(a), a),
-});
-export const archive = internalMutation({
-  args: { ...identity, ...args.archive },
-  handler: (ctx, a) => archiveTask(ctx, who(a), a),
-});
-export const softDelete = internalMutation({
-  args: { ...identity, ...args.softDelete },
-  handler: (ctx, a) => softDeleteTask(ctx, who(a), a),
-});
-export const restore = internalMutation({
-  args: { ...identity, ...args.restore },
-  handler: (ctx, a) => restoreTask(ctx, who(a), a),
-});
-export const updateSettings = internalMutation({
-  args: { ...identity, ...args.updateSettings },
-  handler: (ctx, a) => updateSettingsOp(ctx, who(a), a),
-});
+/**
+ * A change as an internal mutation. With `dryRun` the change runs, every check
+ * included, and is then rolled back by throwing its result: nothing is saved
+ * and nothing enters the history.
+ */
+function change<F extends PropertyValidators>(
+  fields: F,
+  apply: (ctx: MutationCtx, identity: Identity, input: ObjectType<F>) => Promise<unknown>,
+) {
+  return internalMutation({
+    args: { ...identity, ...fields, ...dryRunArgs },
+    handler: async (ctx, a) => {
+      const result = await apply(ctx, who(a), a as ObjectType<F>);
+      if (a.dryRun) throw new ConvexError({ code: DRY_RUN_CODE, result: JSON.parse(JSON.stringify(result ?? null)) });
+      return result;
+    },
+  });
+}
+
+export const add = change(args.add, addTask);
+export const update = change(args.update, updateTask);
+export const setStatus = change(args.setStatus, setStatusOp);
+export const setNow = change(args.setNow, setNowOp);
+export const complete = change(args.complete, completeTask);
+export const reschedule = change(args.reschedule, rescheduleTask);
+export const archive = change(args.archive, archiveTask);
+export const softDelete = change(args.softDelete, softDeleteTask);
+export const restore = change(args.restore, restoreTask);
+export const updateSettings = change(args.updateSettings, updateSettingsOp);
 
 export const listToday = internalQuery({
   args: { ...identity, ...args.listToday },
@@ -77,6 +67,10 @@ export const listToday = internalQuery({
 export const listAll = internalQuery({
   args: { ...identity, ...args.listAll },
   handler: (ctx, a) => listAllOp(ctx, who(a), a),
+});
+export const findTasks = internalQuery({
+  args: { ...identity, ...args.findTasks },
+  handler: (ctx, a) => findTasksOp(ctx, who(a), a),
 });
 export const listTrash = internalQuery({
   args: { ...identity, ...args.listTrash },

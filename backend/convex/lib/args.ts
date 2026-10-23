@@ -47,6 +47,20 @@ export const args = {
     includeArchived: v.optional(v.boolean()),
     at,
   },
+  // list_all through MCP: listAll plus search, filters and pages.
+  findTasks: {
+    labels: v.optional(v.array(v.string())),
+    includeDone: v.optional(v.boolean()),
+    includeArchived: v.optional(v.boolean()),
+    query: v.optional(v.string()),
+    status: v.optional(v.array(statusValidator)),
+    dueBefore: v.optional(v.string()),
+    dueAfter: v.optional(v.string()),
+    overdue: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+    at,
+  },
   listTrash: {},
   board: { doneLimit: v.optional(v.number()), at },
   getTask: { taskId, at },
@@ -62,3 +76,9 @@ export const args = {
   listApiKeys: {},
   createApiKey: { name: v.string(), kind: v.optional(keyKindValidator) },
 };
+
+// Only the MCP endpoint offers a dry run: the app always applies its changes.
+export const dryRunArgs = { dryRun: v.optional(v.boolean()) };
+
+/** Code of the error that rolls a dry run back; its data carries the result the change would have had. */
+export const DRY_RUN_CODE = "dry_run";

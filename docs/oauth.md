@@ -53,10 +53,17 @@ All on the deployment's HTTP actions URL (`https://<name>.convex.site`, locally
 A client is identified in one of two ways:
 
 - **Client ID Metadata Document** (Claude's "Use Claude's published identity"): `client_id` is
-  an HTTPS URL that Helm fetches. Only URLs on the allowed origins are fetched, by default only
-  `https://claude.ai`; no redirects are followed, the answer is limited to 16 KB and 5 seconds.
-  The document's `client_id` must equal its URL, `token_endpoint_auth_method` must be `none` (or
-  absent), and its `redirect_uris` must all be Claude's (below).
+  an HTTPS URL that Helm fetches. The Claude apps use
+  `https://claude.ai/oauth/mcp-oauth-client-metadata`, Claude Code
+  `https://claude.ai/oauth/claude-code-client-metadata`. Only URLs on the allowed origins are
+  fetched, by default only `https://claude.ai`; no redirects are followed, the answer is limited
+  to 16 KB and 5 seconds. The document's `client_id` must equal its URL,
+  `token_endpoint_auth_method` must be `none` (or absent), `grant_types` and `response_types`
+  (when given) must include `authorization_code` and `code`, and its `redirect_uris` must all be
+  Claude's (below). Other grant types the document lists, such as the JWT bearer grant in
+  Claude's, are ignored: the token endpoint offers only `authorization_code` and
+  `refresh_token`. Claude uses this method only because the metadata advertises
+  `client_id_metadata_document_supported` and the auth method `none`.
 - **Dynamic Client Registration** (Claude's "Register automatically"): `POST /oauth/register`
   with `redirect_uris` (Claude's only), optional `client_name`; no client secret is ever issued.
   Registrations nobody used are deleted after 7 days.
@@ -82,7 +89,9 @@ client or a wrong redirect URI gets an error page and is never redirected.
   asks for `tasks:read` only; unknown scopes are refused (`invalid_scope`); `offline_access` is
   ignored. The phone may grant a non-empty part of what was asked, never more. `tools/list`
   shows only the tools the token's scopes allow; calling another tool gets
-  `403` with `WWW-Authenticate: Bearer error="insufficient_scope", scope="…"`.
+  `403` with `WWW-Authenticate: Bearer error="insufficient_scope", scope="…"`. Reading the
+  user's data through `resources/read` (all but `helm://guide`) and `prompts/get` needs
+  `tasks:read` the same way.
 - **Resource indicators** ([RFC 8707](https://www.rfc-editor.org/rfc/rfc8707)): `resource`, when
   sent to `/oauth/authorize` or `/oauth/token`, must be `<issuer>/mcp`; every token is bound to
   it and `/mcp` refuses a token bound to anything else.
@@ -91,8 +100,12 @@ client or a wrong redirect URI gets an error page and is never redirected.
 - **The authorization code** is valid 2 minutes and dies on its first presentation, right or
   wrong. Presenting a used code again revokes the connection it created.
 - **Access tokens** (`helmat_…`) last one hour; **refresh tokens** (`helmrt_…`) 60 days and are
-  rotated on every refresh. Using a refresh token a second time revokes the whole connection.
-  Both are a selector plus a 256-bit secret stored as SHA-256 only, like device tokens.
+  rotated on every refresh. Using a refresh token a second time revokes the whole connection,
+  unless it comes back within 30 seconds of its first use: that is a client retrying after a
+  lost answer, so it gets a new pair and the pair it never saw stops refreshing. A refresh may
+  ask for fewer scopes (`scope`), and the narrower scopes stay with the tokens that follow; it
+  can never ask for more (`invalid_scope`). Both tokens are a selector plus a 256-bit secret
+  stored as SHA-256 only, like device tokens.
 - The token answer carries `Cache-Control: no-store`. Errors follow RFC 6749 (`invalid_grant`,
   `invalid_request`, `invalid_client` for a client secret, `unsupported_grant_type`,
   `invalid_scope`, `invalid_target`).
@@ -118,12 +131,17 @@ are refused at once (unlike a revoked phone's app JWT, which lives up to an hour
 
 | What | Limit | Over the limit |
 |---|---|---|
-| Waiting requests (whole deployment) | 10 at a time, 30 started per 10 minutes | `429` page; `npx convex run oauth:resetLimits` clears the counters |
-| Registrations | 20 per hour | `429` (`rate_limited`) |
-| Failed code exchanges | 30 per 10 minutes | `429` for `authorization_code` grants |
+| Waiting requests per client (`client_id`) | 5 at a time, 20 started per 10 minutes | `429` page |
+| Waiting requests, whole deployment | 300 started per 10 minutes (a flood guard) | `429` page |
+| Registrations | 100 per hour, whole deployment | `429` (`rate_limited`) |
 | Wrong codes typed on the phone | 10 per 10 minutes per user | the app says so |
+| MCP calls per connection | 120 reads and 60 changes a minute, as for an API key ([mcp.md](mcp.md#limits)) | tool error `rate_limited` or `429` |
 
-An attacker can therefore block new connections for a few minutes, but cannot get one: see
+`npx convex run oauth:resetLimits` clears all OAuth counters. The token endpoint has no lockout:
+codes and tokens carry 256 bits, so guessing is hopeless, and a lockout would only let anyone
+block real clients. Someone who floods the authorization endpoint with Claude's own `client_id`
+can delay new Claude connections for up to ten minutes, never get one; registering
+automatically (Dynamic Client Registration) is the way around it. See
 [oauth-threat-model.md](oauth-threat-model.md).
 
 ## Configuration
@@ -160,8 +178,9 @@ Anthropic's network and needs public HTTPS.
 4. **Connect**: Claude opens Helm's page in a browser view. It shows a code like `K7QF-M2XA`.
 5. **Approve on the phone**: switch to the Helm app → Settings → **Agent connections** →
    **Approve a connection** → type the code → check that it says *Identified by claude.ai* and
-   *Answer goes to claude.ai* → leave both permissions on (or switch off *Change tasks and
-   settings* for read only) → **Approve**.
+   *Answer goes to claude.ai*, that *Asked* is a moment ago and that there is no red warning →
+   leave both permissions on (or switch off *Change tasks and settings* for read only) →
+   **Approve**.
 6. **Back to the browser view**: within two seconds it continues by itself (or tap
    **Continue**) and Claude shows Helm as connected.
 7. **Try it**: ask Claude "What is on my Helm list today?" (it calls `list_today`), then "Add

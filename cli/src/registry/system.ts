@@ -135,6 +135,8 @@ export const systemCommands: CommandSpec[] = [
           // A clientId in the arguments is reported like the other commands' own.
           throw error instanceof CliError && typeof toolArgs.clientId === "string" ? error.with({ clientId: toolArgs.clientId }) : error;
         });
+      // A Markdown export reads as Markdown; with --json it is {format, content} (backend 0.4.0).
+      if (result.structured?.format === "markdown") return { value: result.structured, view: { kind: "text", text: result.text } };
       if (result.structured) return { value: result.structured, view: { kind: "json" } };
       return { value: { content: result.content }, view: { kind: "text", text: result.text } };
     },
