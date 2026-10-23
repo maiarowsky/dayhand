@@ -760,7 +760,7 @@ hlm devices
 
 Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke
 
-An app such as Claude connects through OAuth: its sign-in page shows a code, and you approve it in the Helm app (Settings → Agent connections). API keys are not connections; see hlm whoami.
+An app such as Claude connects through OAuth: its sign-in page shows a code, and you approve it in the Helm app (Settings → Agent connections). API keys are not connections; see hlm whoami. Needs backend 0.5.0 or later (hlm version).
 
 ```
 hlm connection
