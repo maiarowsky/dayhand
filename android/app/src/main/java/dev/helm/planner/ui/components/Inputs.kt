@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButtonColors
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
@@ -198,13 +199,22 @@ fun ActionChip(
 
 data class SegmentOption(val id: String, val label: String)
 
-/** One of a few options in a pill (Mussh "Segmented"): the selected one raised and in the accent colour. */
+/**
+ * One of a few options in a pill (Mussh "Segmented"): a sunken track on the screen colour with a border, so it reads as
+ * one control on a card too; the selected option is raised on the accent's soft colour, in bold accent text.
+ */
 @Composable
 fun Segmented(options: List<SegmentOption>, selected: String, onSelect: (String) -> Unit, tagFor: (String) -> String, modifier: Modifier = Modifier) {
     val p = palette
     Row(
-        modifier.fillMaxWidth().background(p.surface, HelmShapes.pill).padding(4.dp).selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        modifier
+            .fillMaxWidth()
+            .clip(HelmShapes.pill)
+            .background(p.background)
+            .border(1.dp, p.border, HelmShapes.pill)
+            .padding(4.dp)
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         options.forEach { option ->
@@ -214,9 +224,10 @@ fun Segmented(options: List<SegmentOption>, selected: String, onSelect: (String)
                     .weight(1f)
                     .heightIn(min = HelmDimens.touchTarget)
                     .clip(HelmShapes.pill)
-                    .background(if (active) p.surfaceRaised else Color.Transparent)
+                    .background(if (active) p.accentSoft else Color.Transparent)
+                    .then(if (active) Modifier.border(1.dp, p.accent, HelmShapes.pill) else Modifier)
                     .selectable(selected = active, role = Role.RadioButton) { onSelect(option.id) }
-                    .padding(horizontal = 4.dp, vertical = 10.dp)
+                    .padding(horizontal = 6.dp, vertical = 10.dp)
                     .testTag(tagFor(option.id)),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -258,15 +269,21 @@ fun SwitchRow(
             onCheckedChange = null,
             enabled = enabled,
             interactionSource = interaction,
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = p.accent,
-                checkedThumbColor = p.onAccent,
-                uncheckedTrackColor = p.surfaceRaised,
-                uncheckedThumbColor = p.textMuted,
-                uncheckedBorderColor = p.border,
-            ),
+            colors = helmSwitchColors(),
         )
     }
+}
+
+/** Switch colours: the accent track with an on-accent thumb when on, a raised track with a muted thumb when off. */
+@Composable
+fun helmSwitchColors(): SwitchColors = palette.let { p ->
+    SwitchDefaults.colors(
+        checkedTrackColor = p.accent,
+        checkedThumbColor = p.onAccent,
+        uncheckedTrackColor = p.surfaceRaised,
+        uncheckedThumbColor = p.textMuted,
+        uncheckedBorderColor = p.border,
+    )
 }
 
 /** Radio button colours: the accent when chosen, muted otherwise. */

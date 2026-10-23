@@ -3,10 +3,15 @@ package dev.helm.planner.ui
 import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -26,12 +31,14 @@ import dev.helm.planner.ui.settings.ExportStatus
 import dev.helm.planner.ui.settings.NotificationAccess
 import dev.helm.planner.ui.settings.SettingsActions
 import dev.helm.planner.ui.settings.SettingsData
+import dev.helm.planner.ui.settings.SettingsLoading
 import dev.helm.planner.ui.settings.SettingsScreen
 import dev.helm.planner.ui.settings.SettingsTags
 import dev.helm.planner.ui.settings.SettingsUiState
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.ConnectionStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -122,6 +129,25 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun permissionsShowTheirStateAtAGlance() {
+        show(state(notifications = NotificationAccess.BLOCKED, exact = true))
+        compose.onNode(hasText(text(R.string.settings_state_off)) and hasAnyAncestor(hasTestTag(SettingsTags.NOTIFICATIONS_ROW)))
+            .assertIsDisplayed()
+        compose.onNode(hasText(text(R.string.settings_state_on)) and hasAnyAncestor(hasTestTag(SettingsTags.EXACT_ROW)))
+            .assertIsDisplayed()
+        compose.onNodeWithTag(SettingsTags.EXACT).assertDoesNotExist()
+    }
+
+    @Test
+    fun whileLoadingTheHeaderAndASpinnerShow() {
+        var back = false
+        compose.setContent { HelmTheme { SettingsLoading(onBack = { back = true }) } }
+        compose.onNodeWithContentDescription(text(R.string.settings_loading)).assertIsDisplayed()
+        compose.onNodeWithTag("back").performClick()
+        assertTrue(back)
+    }
+
+    @Test
     fun blockedNotificationsLeadToTheSystemSettings() {
         show(state(notifications = NotificationAccess.BLOCKED))
         compose.onNodeWithTag(SettingsTags.NOTIFICATIONS).assertTextContains(text(R.string.settings_open_system))
@@ -153,6 +179,14 @@ class SettingsScreenTest {
         compose.onNodeWithTag(SettingsTags.EXPORT_JSON).performScrollTo().performClick()
         compose.onNodeWithTag(SettingsTags.EXPORT_STATUS).assertTextContains(text(R.string.export_failed))
         assertEquals(listOf("export:MARKDOWN", "export:JSON"), actions.calls)
+    }
+
+    @Test
+    fun exportRowsWaitWhileAnExportRuns() {
+        show(state(export = ExportStatus.Working))
+        compose.onNodeWithTag(SettingsTags.EXPORT_MARKDOWN).performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag(SettingsTags.EXPORT_JSON).assertIsNotEnabled()
+        compose.onNodeWithTag(SettingsTags.EXPORT_STATUS).performScrollTo().assertTextContains(text(R.string.export_working))
     }
 
     @Test

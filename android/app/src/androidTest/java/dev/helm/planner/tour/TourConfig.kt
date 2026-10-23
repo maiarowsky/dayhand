@@ -10,10 +10,17 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 
 /**
- * One screenshot run, from `-e tourVariant <name> -e tourMode light|dark -e tourDark <id> -e tourLight <id>`.
+ * One screenshot run, from `-e tourVariant <name> -e tourMode light|dark -e tourDark <id> -e tourLight <id>` and
+ * optionally `-e tourFont <id>`.
  * Screenshots are whole device screens (UiAutomation), so sheets, dialogs and system bars are in them.
  */
-data class TourConfig(val variant: String, val dark: Boolean, val darkPalette: String?, val lightPalette: String?) {
+data class TourConfig(
+    val variant: String,
+    val dark: Boolean,
+    val darkPalette: String?,
+    val lightPalette: String?,
+    val font: String? = null,
+) {
     companion object {
         fun fromArguments(): TourConfig {
             val args = InstrumentationRegistry.getArguments()
@@ -22,6 +29,7 @@ data class TourConfig(val variant: String, val dark: Boolean, val darkPalette: S
                 dark = args.getString("tourMode") == "dark",
                 darkPalette = args.getString("tourDark"),
                 lightPalette = args.getString("tourLight"),
+                font = args.getString("tourFont"),
             )
         }
     }

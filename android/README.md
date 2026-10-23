@@ -7,8 +7,8 @@ code from `hlm pair`.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.5.0 (`versionName`: 0.x, MINOR for each step that adds screens); `versionCode` is the
-  number of commits on `HEAD`.
+- Version 0.5.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+  polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
   and descriptions for screen readers.
@@ -67,7 +67,8 @@ the backend's limits before it is queued, so a change the server would refuse is
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
 keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
 
-**Settings**, top to bottom:
+**Settings**, top to bottom, each section a group of rows: an icon tile (coloured by state where
+there is one), the name with a line under it and the control at the end:
 
 1. **Notifications**: whether Helm may post them, with a button that asks Android (13+) or opens
    the system settings after a refusal; whether exact alarms are allowed, with a button to allow

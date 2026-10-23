@@ -2,6 +2,7 @@ package dev.helm.planner.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,13 +12,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.export.ExportFormat
@@ -32,13 +38,19 @@ object SettingsTags {
     const val OFFLINE = "settings_offline"
     const val CONNECTION = "settings_connection"
     const val NOTIFICATIONS = "settings_notifications"
+    const val NOTIFICATIONS_ROW = "settings_notifications_row"
     const val EXACT = "settings_exact"
+    const val EXACT_ROW = "settings_exact_row"
     const val SUMMARY_TIME = "settings_summary_time"
+    const val REMINDERS_ROW = "settings_reminders_row"
     const val REMINDER = "settings_reminder_"
+    const val LANGUAGE_ROW = "settings_language_row"
     const val LANGUAGE = "settings_language_"
+    const val TIMEZONE = "settings_timezone"
     const val EXPORT_MARKDOWN = "settings_export_markdown"
     const val EXPORT_JSON = "settings_export_json"
     const val EXPORT_STATUS = "settings_export_status"
+    const val VERSION = "settings_version"
     const val LICENSE = "settings_license"
     const val LICENSES = "settings_licenses"
 }
@@ -85,7 +97,8 @@ interface SettingsActions {
 
 /**
  * Settings, the fifth screen of version 1: notifications, appearance, morning summary, default reminders,
- * language, server and connection, export, about. Each section is a labelled card, as in Mussh.
+ * language, server and connection, export, about. Each section is a labelled group of rows, as in Mussh: an icon tile
+ * that also shows the state, the name with a line under it, and the control at the end.
  */
 @Composable
 fun SettingsScreen(state: SettingsUiState, actions: SettingsActions) {
@@ -108,6 +121,21 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions) {
             ExportSection(state.data.export, actions::export)
             AboutSection(state.versionName, actions)
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/** Settings while their values are read: the header, so Back works, and a spinner. */
+@Composable
+fun SettingsLoading(onBack: () -> Unit) {
+    val description = stringResource(R.string.settings_loading)
+    Column(Modifier.fillMaxSize().background(palette.background).testTag(SettingsTags.SCREEN)) {
+        ScreenHeader(stringResource(R.string.settings_title), onBack = onBack)
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(
+                color = palette.accent,
+                modifier = Modifier.size(32.dp).semantics { contentDescription = description },
+            )
         }
     }
 }

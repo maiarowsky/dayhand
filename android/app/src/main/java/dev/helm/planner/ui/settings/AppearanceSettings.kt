@@ -59,6 +59,7 @@ import dev.helm.planner.ui.theme.palette
 
 object AppearanceTags {
     const val GROUP = "appearance"
+    const val MODE = "appearance_mode"
     const val COLORS = "appearance_colors"
     const val FONT = "appearance_font"
     const val PREVIEW = "appearance_preview"
@@ -72,7 +73,10 @@ object AppearanceTags {
 /** Font sample: letters, Polish characters and characters that are easy to confuse. */
 private const val FONT_SAMPLE = "Aa ąę 0O il1"
 
-/** The "Appearance" group of Settings: theme mode in place, colours and font on their own sub-screens. */
+/**
+ * The "Appearance" group of Settings: theme mode in place, colours and font on their own sub-screens. The colours row
+ * shows both chosen palettes as swatches and the font row a sample in the chosen font, so each says what it is set to.
+ */
 @Composable
 fun AppearanceGroup(appearance: Appearance, onChange: (Appearance) -> Unit, onOpenColors: () -> Unit, onOpenFont: () -> Unit) {
     ListGroup(
@@ -84,25 +88,58 @@ fun AppearanceGroup(appearance: Appearance, onChange: (Appearance) -> Unit, onOp
                 ListRow(
                     stringResource(R.string.appearance_colors),
                     AppearanceTags.COLORS,
-                    value = "${stringResource(paletteName(appearance.darkPalette))} · ${stringResource(paletteName(appearance.lightPalette))}",
+                    icon = SettingsIcons.Palette,
+                    subtitle = "${stringResource(paletteName(appearance.darkPalette))} · ${stringResource(paletteName(appearance.lightPalette))}",
                     onClick = onOpenColors,
+                    trailing = { PaletteDots(appearance.darkPalette, appearance.lightPalette) },
                 )
             },
-            { ListRow(stringResource(R.string.appearance_font), AppearanceTags.FONT, value = fontName(appearance.font), onClick = onOpenFont) },
+            {
+                ListRow(
+                    stringResource(R.string.appearance_font),
+                    AppearanceTags.FONT,
+                    icon = SettingsIcons.TextFields,
+                    subtitle = fontName(appearance.font),
+                    onClick = onOpenFont,
+                    trailing = {
+                        Text("Aa", style = TextStyle(fontFamily = appearance.font.family, fontSize = 22.sp), color = palette.text, maxLines = 1)
+                    },
+                )
+            },
         ),
     )
 }
 
 @Composable
 private fun ModeRow(appearance: Appearance, onChange: (Appearance) -> Unit) {
-    Column(Modifier.padding(HelmDimens.cardPadding), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.appearance_mode), style = helmType.body, color = palette.text)
+    Column {
+        ListRow(stringResource(R.string.appearance_mode), AppearanceTags.MODE, icon = SettingsIcons.Contrast)
         Segmented(
             options = ThemeMode.entries.map { SegmentOption(it.id, stringResource(modeName(it))) },
             selected = appearance.mode.id,
             onSelect = { id -> onChange(appearance.copy(mode = ThemeMode.byId(id))) },
             tagFor = { "mode-$it" },
+            modifier = Modifier.padding(start = HelmDimens.rowPadding, end = HelmDimens.rowPadding, bottom = 16.dp),
         )
+    }
+}
+
+/** Each chosen palette as a small round swatch: its background with its accent in the middle, the two overlapping. */
+@Composable
+private fun PaletteDots(dark: Palette, light: Palette) {
+    Box(Modifier.width(48.dp)) {
+        listOf(dark, light).forEachIndexed { i, option ->
+            Box(
+                Modifier
+                    .align(if (i == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .size(28.dp)
+                    .background(option.background, CircleShape)
+                    .border(1.5.dp, option.border, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.size(12.dp).background(option.accent, CircleShape))
+            }
+        }
     }
 }
 

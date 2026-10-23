@@ -55,7 +55,9 @@
     <string name="settings_backend">Serwer</string>
     <string name="settings_offline">Testowy tryb offline</string>
     <string name="settings_offline_hint">Gdy jest włączony, nic nie jest wysyłane ani pobierane; zmiany czekają w kolejce.</string>
-    <string name="settings_timezone">Strefa czasowa (z serwera): %1$s</string>
+    <string name="settings_timezone_title">Strefa czasowa</string>
+    <string name="settings_timezone">%1$s, z serwera</string>
+    <string name="settings_loading">Wczytywanie ustawień</string>
     <string name="settings_version">Helm %1$s</string>
 
     <!-- Tablica, szczegóły zadania i kosz (0.2) -->
@@ -215,22 +217,29 @@
     </plurals>
 
     <string name="settings_notifications">Powiadomienia</string>
-    <string name="settings_notifications_on">Powiadomienia są włączone.</string>
+    <string name="settings_notifications_title">Powiadomienia aplikacji</string>
+    <string name="settings_notifications_on">Przypomnienia i poranne podsumowanie mogą się pokazać.</string>
     <string name="settings_notifications_off">Powiadomienia są wyłączone, więc przypomnienia i poranne podsumowanie się nie pokażą.</string>
     <string name="settings_notifications_allow">Zezwól na powiadomienia</string>
     <string name="settings_open_system">Otwórz ustawienia systemu</string>
+    <string name="settings_exact_title">Dokładne alarmy</string>
+    <string name="settings_state_on">Włączone</string>
+    <string name="settings_state_off">Wyłączone</string>
     <string name="settings_exact_on">Przypomnienia dzwonią co do minuty.</string>
     <string name="settings_exact_off">Dokładne alarmy są niedozwolone, więc przypomnienia mogą przyjść kilka minut później.</string>
     <string name="settings_exact_allow">Zezwól na dokładne alarmy</string>
     <string name="settings_summary">Poranne podsumowanie</string>
     <string name="settings_summary_hint">Codziennie o tej godzinie: zadania na dziś, zaległe i od czego zacząć.</string>
+    <string name="settings_summary_time">Godzina</string>
     <string name="settings_summary_change">Zmień godzinę porannego podsumowania</string>
     <string name="settings_reminders">Domyślne przypomnienia</string>
+    <string name="settings_reminders_title">Kiedy przypominać</string>
     <string name="settings_reminders_hint">Dzwonią tylko zadania z godziną. Zaległe nie dzwonią, czekają na ekranie Dzisiaj.</string>
     <string name="settings_reminders_none">Bez przypomnień.</string>
     <string name="reminder_at_due">W chwili terminu</string>
     <string name="reminder_before">%1$s przed</string>
     <string name="settings_language">Język</string>
+    <string name="settings_language_title">Język aplikacji</string>
     <string name="language_system">Język telefonu</string>
     <string name="settings_language_unsupported">Helm używa języka telefonu.</string>
     <string name="connection_label">Stan: %1$s</string>

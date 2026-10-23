@@ -57,7 +57,9 @@
     <string name="settings_backend">Server</string>
     <string name="settings_offline">Offline test mode</string>
     <string name="settings_offline_hint">Nothing is sent or received while it is on; changes wait in the queue.</string>
-    <string name="settings_timezone">Time zone (from the server): %1$s</string>
+    <string name="settings_timezone_title">Time zone</string>
+    <string name="settings_timezone">%1$s, from the server</string>
+    <string name="settings_loading">Loading settings</string>
     <string name="settings_version">Helm %1$s</string>
 
     <!-- Board, task details and trash (0.2) -->
@@ -199,22 +201,29 @@
     </plurals>
 
     <string name="settings_notifications">Notifications</string>
-    <string name="settings_notifications_on">Notifications are on.</string>
+    <string name="settings_notifications_title">App notifications</string>
+    <string name="settings_notifications_on">Reminders and the morning summary can appear.</string>
     <string name="settings_notifications_off">Notifications are off, so reminders and the morning summary cannot appear.</string>
     <string name="settings_notifications_allow">Allow notifications</string>
     <string name="settings_open_system">Open system settings</string>
+    <string name="settings_exact_title">Exact alarms</string>
+    <string name="settings_state_on">On</string>
+    <string name="settings_state_off">Off</string>
     <string name="settings_exact_on">Reminders ring on the minute.</string>
     <string name="settings_exact_off">Exact alarms are not allowed, so reminders may come a few minutes late.</string>
     <string name="settings_exact_allow">Allow exact alarms</string>
     <string name="settings_summary">Morning summary</string>
     <string name="settings_summary_hint">Every day at this time: tasks for today, overdue tasks and where to start.</string>
+    <string name="settings_summary_time">Time</string>
     <string name="settings_summary_change">Change the morning summary time</string>
     <string name="settings_reminders">Default reminders</string>
+    <string name="settings_reminders_title">When to ring</string>
     <string name="settings_reminders_hint">Only tasks with a time ring. Overdue tasks never ring; they wait on Today.</string>
     <string name="settings_reminders_none">No reminders.</string>
     <string name="reminder_at_due">At the due time</string>
     <string name="reminder_before">%1$s before</string>
     <string name="settings_language">Language</string>
+    <string name="settings_language_title">App language</string>
     <string name="language_system">Phone language</string>
     <string name="language_polish" translatable="false">Polski</string>
     <string name="language_english" translatable="false">English</string>

@@ -32,7 +32,12 @@ object HelmDimens {
     val screenMargin = 20.dp
     val cardPadding = 18.dp
     val sectionGap = 12.dp
-    val rowMinHeight = 60.dp
+    val rowMinHeight = 64.dp
+
+    /** Side padding of a list row, the icon tile at its start and where the line between rows starts. */
+    val rowPadding = 16.dp
+    val rowIcon = 40.dp
+    val rowInset = 72.dp
     val iconSize = 24.dp
     val iconTile = 48.dp
 }

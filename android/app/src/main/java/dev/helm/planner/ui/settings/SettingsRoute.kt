@@ -131,7 +131,7 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
     when (page) {
         SettingsPage.MAIN -> data?.let {
             SettingsScreen(SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance), actions)
-        }
+        } ?: SettingsLoading(onBack)
         SettingsPage.COLORS -> PaletteScreen(appearance, container.appearance::save, onBack = toMain)
         SettingsPage.FONT -> FontScreen(appearance, container.appearance::save, onBack = toMain)
         SettingsPage.LICENSES -> LicensesScreen(onBack = toMain)
