@@ -43,7 +43,7 @@
     <string name="calendar_feed_google_note">Opens Google Calendar on the web (the phone app cannot add calendars by address). Google refreshes subscribed calendars on its own schedule, usually every few hours, so changes show up late there.</string>
     <string name="calendar_feed_apple">Add to Apple Calendar</string>
     <string name="calendar_feed_apple_note">Sends the webcal address to your iPhone or Mac (Messages, Mail, AirDrop…); open it there to subscribe.</string>
-    <string name="calendar_feed_manage">Address</string>
+    <string name="calendar_feed_manage">Manage</string>
     <string name="calendar_feed_rotate">Create a new address</string>
     <string name="calendar_feed_rotate_confirm_title">Create a new address?</string>
     <string name="calendar_feed_rotate_confirm">The current address stops working at once. Calendars subscribed to it stop updating until you add the new one.</string>

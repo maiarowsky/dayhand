@@ -43,7 +43,7 @@
     <string name="calendar_feed_google_note">Otwiera Kalendarz Google w przeglądarce (aplikacja na telefon nie dodaje kalendarzy z adresu). Google odświeża subskrybowane kalendarze we własnym rytmie, zwykle co kilka godzin, więc zmiany pojawiają się tam z opóźnieniem.</string>
     <string name="calendar_feed_apple">Dodaj do Kalendarza Apple</string>
     <string name="calendar_feed_apple_note">Wysyła adres webcal na Twojego iPhone’a lub Maca (Wiadomości, Mail, AirDrop…); otwórz go tam, aby zasubskrybować.</string>
-    <string name="calendar_feed_manage">Adres</string>
+    <string name="calendar_feed_manage">Zarządzanie</string>
     <string name="calendar_feed_rotate">Utwórz nowy adres</string>
     <string name="calendar_feed_rotate_confirm_title">Utworzyć nowy adres?</string>
     <string name="calendar_feed_rotate_confirm">Obecny adres od razu przestanie działać. Kalendarze, które go subskrybują, przestaną się odświeżać, dopóki nie dodasz nowego.</string>

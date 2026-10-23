@@ -1,13 +1,13 @@
 package dev.helm.planner.ui.calendar
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -45,7 +45,7 @@ import java.time.format.DateTimeFormatter
  * Moves one task: a day of its week (or any other day) and a time or none. Nothing changes until Move; the screen
  * then offers Undo. [onMove] gets the new day and time.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MoveSheet(entry: CalendarEntry, onDismiss: () -> Unit, onMove: (date: String, time: String?) -> Unit) {
     val p = palette
@@ -78,7 +78,8 @@ fun MoveSheet(entry: CalendarEntry, onDismiss: () -> Unit, onMove: (date: String
                 modifier = Modifier.semantics { heading() },
             )
             SectionLabel(stringResource(R.string.calendar_move_day), color = p.textMuted)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Every day in view (wrapped), so the chosen one is never scrolled away.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 (0L until 7L).map { week.plusDays(it) }.forEach { date ->
                     HelmChip(
                         date.format(chipFormat),

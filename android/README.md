@@ -1,13 +1,14 @@
 # Helm for Android
 
-Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **board**,
-**task details** and the **trash**, works offline, rings reminders and a morning summary computed
+Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **calendar**
+(week and day), the **board**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
 on the phone, has the **Settings** screen, connects to a server by **pairing** with a one-time
-code from `hlm pair`, and approves and disconnects **agent connections** such as the Claude app.
+code from `hlm pair`, approves and disconnects **agent connections** such as the Claude app, and
+turns on the read-only **calendar address** for Google and Apple Calendar.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.7.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.8.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -42,7 +43,22 @@ from Settings, and from a `helm://pair` link (the QR code of `hlm pair`):
    (with the wait); no network; the server cannot be reached; no Helm server at the address;
    a problem on the server.
 
-Tapping a task opens its details. The bar at the bottom switches between Today and the board.
+Tapping a task opens its details. The bar at the bottom switches between Today (where the app
+opens), the calendar and the board.
+
+**Calendar**: the week (Monday to Sunday) on an hour grid, or one day. Tasks with a time are
+blocks at their hour (30 minutes tall, side by side when they overlap); tasks without a time sit in
+a band above the hours (two per day, then "+N", which opens the day). The day view lists overdue
+tasks (on today) and tasks without a time above its hours. Today's column is highlighted with a
+line at the current time; overdue tasks are in the danger colour and marked "!", later dates of a
+repeating task "↻" (computed by `domain/Recurrence.kt`, from today on), done tasks "✓". Swipe or
+use the arrows for the previous or next week or day; **Today** comes back, a day's header opens
+that day. A tap opens the task's details. A **long press** (or the screen reader's "Move" action)
+opens a sheet to pick another day of the week or any day and a time or "No time"; **Move** changes
+Room and queues `setDue` through the outbox like any other change, and the snackbar offers
+**Undo**, which sends the old day and time back the same way. Later dates of a series and done
+tasks do not move (move the task itself). Dragging a block to another hour or day is not there
+yet: the sheet is the robust path, with undo and the same thing for screen readers.
 
 **Board**: three columns, **To do / In progress / Done** (the 50 most recently done). On a phone
 one column shows at a time under tabs; from 600 dp wide the columns sit side by side. The "now"
@@ -94,7 +110,13 @@ in its preview and on the other screens. Top to bottom:
    05:00, picked on a clock); **Default reminders** (at the due time, 5, 10, 15, 30 min, 1 h, 2 h
    or 1 day before, any number of them or none).
 3. **Data**: **Export**, the whole plan as Markdown or JSON, saved where you choose in the system
-   dialog.
+   dialog. **Calendar**: the read-only iCalendar address of the plan
+   ([docs/calendar.md](../docs/calendar.md)): turn it on, then copy it, add it to Google Calendar
+   ("From URL", opened in the browser) or share the `webcal://` address to Apple Calendar;
+   **Create a new address** replaces it (the old one stops working) and **Turn off** removes it,
+   each after a confirmation. The address is a secret and the page says so; it is read from the
+   server each time the page opens, never stored on the phone. **Export .ics** makes a one-time
+   file of the plan and hands it to the share sheet (to import into any calendar).
 4. **Connection**: **Server**, with the connection status (connected, connecting, no network,
    offline test mode, not connected, signed out, cannot reach the server) and the number of
    changes waiting; the server and this phone's name with **Disconnect** (after a confirmation
@@ -255,11 +277,11 @@ is set in `app/build.gradle.kts` (`helm.serverUrl`).
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, board, rules, history, reminders, outbox, merge,
+./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
-                                            # agent connections (answers, code input, approval flow)
+                                            # agent connections (answers, code input, approval flow), calendar address
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync,
-                                            # Compose (Today, board, details, Settings, Connect, agent connections), encrypted pairing
+                                            # Compose (Today, calendar, board, details, Settings, Settings → Calendar, Connect, agent connections), encrypted pairing
                                             # storage, and a real alarm + notification (ReminderDeliveryTest, about 80 s)
 ```
 

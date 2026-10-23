@@ -129,7 +129,7 @@ fun EntryBlock(
             .testTag(CalendarTags.entry(entry.key)),
     ) {
         Box(Modifier.width(3.dp).fillMaxHeight().background(colors.bar))
-        Column(Modifier.padding(horizontal = 4.dp, vertical = 3.dp)) {
+        Column(Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp, vertical = 3.dp)) {
             if (showTime && entry.time != null) Text(entry.time, style = helmType.small, color = p.textMuted, maxLines = 1)
             Text(
                 markedTitle(entry),

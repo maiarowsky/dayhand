@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -46,6 +47,13 @@ import java.time.format.TextStyle
 /** An hour is two touch targets high, so a 30-minute task is one. */
 val HOUR_HEIGHT: Dp = HelmDimens.touchTarget * 2
 val GUTTER_WIDTH: Dp = 48.dp
+
+/** Room above the first hour shown, so its label (drawn just above its line) is not cut off. */
+val HOUR_LABEL_ROOM: Dp = 16.dp
+
+/** The gutter grows with the system font size, so "10:00" stays on one line. */
+@Composable
+fun gutterWidth(): Dp = GUTTER_WIDTH * LocalDensity.current.fontScale.coerceAtLeast(1f)
 private const val HOURS = 24
 private val BLOCK_HEIGHT = HOUR_HEIGHT * CalendarDays.EVENT_MINUTES / 60
 
@@ -63,7 +71,7 @@ fun HourGrid(
     showTime: Boolean = false,
 ) {
     Row(modifier.fillMaxWidth().height(HOUR_HEIGHT * HOURS)) {
-        HourLabels(Modifier.width(GUTTER_WIDTH).fillMaxHeight())
+        HourLabels(Modifier.width(gutterWidth()).fillMaxHeight())
         days.forEach { day -> DayColumn(day, nowMinute, onOpen, onMove, showTime, Modifier.weight(1f).fillMaxHeight()) }
     }
 }
@@ -74,7 +82,7 @@ private fun HourLabels(modifier: Modifier) {
     Column(modifier) {
         repeat(HOURS) { hour ->
             Box(Modifier.height(HOUR_HEIGHT).fillMaxWidth().padding(end = 6.dp), contentAlignment = Alignment.TopEnd) {
-                if (hour > 0) Text("%02d:00".format(hour), style = helmType.small, color = p.textFaint, modifier = Modifier.offset(y = (-9).dp))
+                if (hour > 0) Text("%02d:00".format(hour), style = helmType.small, color = p.textFaint, maxLines = 1, softWrap = false, modifier = Modifier.offset(y = (-9).dp))
             }
         }
     }
@@ -181,7 +189,7 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
 @Composable
 fun DayHeaders(days: List<CalendarDay>, onOpenDay: (String) -> Unit) {
     Row(Modifier.fillMaxWidth()) {
-        Spacer(Modifier.width(GUTTER_WIDTH))
+        Spacer(Modifier.width(gutterWidth()))
         days.forEach { DayHeader(it, onOpenDay, Modifier.weight(1f)) }
     }
 }
@@ -192,7 +200,7 @@ fun UntimedBand(days: List<CalendarDay>, onOpen: (CalendarEntry) -> Unit, onMove
     if (days.all { it.untimed.isEmpty() }) return
     val p = palette
     Row(Modifier.fillMaxWidth().background(p.surface).padding(vertical = 2.dp)) {
-        Box(Modifier.width(GUTTER_WIDTH).padding(end = 6.dp, top = 4.dp), contentAlignment = Alignment.TopEnd) {
+        Box(Modifier.width(gutterWidth()).padding(end = 6.dp, top = 4.dp), contentAlignment = Alignment.TopEnd) {
             Text(stringResource(R.string.calendar_no_time_short), style = helmType.small, color = p.textFaint, textAlign = TextAlign.End)
         }
         days.forEach { day ->

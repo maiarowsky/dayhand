@@ -206,7 +206,7 @@ private fun WeekPage(
     onMove: (CalendarEntry) -> Unit,
     onOpenDay: (String) -> Unit,
 ) {
-    val start = with(LocalDensity.current) { (HOUR_HEIGHT * firstHour(days.firstOrNull { it.isToday }, nowMinute)).roundToPx() }
+    val start = with(LocalDensity.current) { (HOUR_HEIGHT * firstHour(days.firstOrNull { it.isToday }, nowMinute) - HOUR_LABEL_ROOM).roundToPx().coerceAtLeast(0) }
     Column(Modifier.fillMaxSize()) {
         DayHeaders(days, onOpenDay)
         UntimedBand(days, onOpen, onMove, onOpenDay)
@@ -228,7 +228,8 @@ private fun DayPage(
 ) {
     val p = palette
     val listed = overdue.isNotEmpty() || day.untimed.isNotEmpty()
-    val start = with(LocalDensity.current) { if (listed) 0 else (HOUR_HEIGHT * firstHour(day, nowMinute)).roundToPx() }
+    // Lists (or the "nothing planned" line) start at the top; otherwise the hours start near now or 07:00.
+    val start = with(LocalDensity.current) { if (listed || day.timed.isEmpty()) 0 else (HOUR_HEIGHT * firstHour(day, nowMinute) - HOUR_LABEL_ROOM).roundToPx().coerceAtLeast(0) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(start))) {
         if (overdue.isNotEmpty()) {
             DaySection(stringResource(R.string.section_overdue, overdue.size), p.danger)
