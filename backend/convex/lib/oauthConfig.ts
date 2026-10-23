@@ -17,6 +17,8 @@ export const REQUEST_TTL_MS = 10 * 60 * 1000;
 export const CODE_TTL_MS = 2 * 60 * 1000;
 export const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
 export const REFRESH_TOKEN_TTL_MS = 60 * 24 * 60 * 60 * 1000;
+/** How rarely /mcp records the use of a connection, so that reads stay cheap. */
+export const TOUCH_INTERVAL_MS = 10 * 60 * 1000;
 
 /** Redirect URI of the hosted Claude apps (web, desktop, mobile, Cowork): claude.com/docs/connectors/building/authentication. */
 export const CLAUDE_APP_CALLBACK = "https://claude.ai/api/mcp/auth_callback";

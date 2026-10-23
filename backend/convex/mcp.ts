@@ -13,7 +13,15 @@ import { args } from "./lib/args";
 import type { ErrorCode } from "./lib/core";
 import { bearerToken } from "./lib/http";
 import { objectSchema } from "./lib/jsonSchema";
-import { CHALLENGE_SCOPES, publicUrl, resourceFor, resourceMetadataFor, SCOPES, type Scope } from "./lib/oauthConfig";
+import {
+  CHALLENGE_SCOPES,
+  publicUrl,
+  resourceFor,
+  resourceMetadataFor,
+  SCOPES,
+  TOUCH_INTERVAL_MS,
+  type Scope,
+} from "./lib/oauthConfig";
 import { formatScopes } from "./lib/oauthRules";
 import { parseSelectorToken, sha256Hex } from "./lib/secrets";
 
@@ -170,8 +178,11 @@ async function authenticate(ctx: ActionCtx, presented: string): Promise<Caller |
     });
     // The token must have been issued for this server (RFC 8707 audience).
     const base = publicUrl();
-    if (!connection || !base || connection.resource !== resourceFor(base)) return null;
-    if (connection.stale) await ctx.runMutation(internal.oauth.touchConnection, { connectionId: connection.connectionId });
+    const now = Date.now();
+    if (!connection || connection.expiresAt <= now || !base || connection.resource !== resourceFor(base)) return null;
+    if (now - (connection.lastUsedAt ?? 0) > TOUCH_INTERVAL_MS) {
+      await ctx.runMutation(internal.oauth.touchConnection, { connectionId: connection.connectionId });
+    }
     return {
       userId: connection.userId,
       actor: "agent",

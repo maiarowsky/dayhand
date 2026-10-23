@@ -285,18 +285,21 @@ describe("authorization request errors", () => {
     expect((await (await phone()).lookup(page.userCode!)).status).toBe("found");
   });
 
-  test("too many waiting requests are refused with 429", async () => {
+  test("too many waiting requests of one client are refused with 429; other clients are not affected", async () => {
     const owner = await phone();
     const codes: string[] = [];
     let refused = null;
-    for (let i = 0; i < 12 && !refused; i++) {
+    for (let i = 0; i < 8 && !refused; i++) {
       const page = await openAuthorize(authorizeParams(cimdClientId(), pkce().challenge));
       if (page.status === 429) refused = page;
       else codes.push(page.userCode!);
     }
     expect(refused?.status).toBe(429);
-    expect(codes.length).toBeLessThanOrEqual(10);
-    for (const code of codes) await owner.decide(code, false); // free the slots for the other tests
+    expect(codes.length).toBeLessThanOrEqual(5);
+    const other = await registerClient({ client_name: "Another client", redirect_uris: [CLAUDE_CALLBACK] });
+    const page = await openAuthorize(authorizeParams(other.body.client_id, pkce().challenge));
+    expect(page.status).toBe(200);
+    for (const code of [...codes, page.userCode!]) await owner.decide(code, false); // free the slots for the other tests
   });
 });
 
@@ -358,25 +361,71 @@ describe("the token endpoint", () => {
     expect(grant.body.error).toBe("unsupported_grant_type");
   });
 
-  test("refresh rotates; reusing an old refresh token revokes the connection", async () => {
-    const { owner, clientId, tokens } = await connect();
+  test("refresh rotates; a retry at once gets a new pair instead of revoking the connection", async () => {
+    const { clientId, tokens } = await connect();
     const next = await refreshTokens(tokens.refresh_token, clientId);
     expect(next.status).toBe(200);
     expect(next.body.scope).toBe("tasks:read tasks:write");
     expect((await listTools(next.body.access_token)).status).toBe(200);
     expect((await refreshTokens(next.body.refresh_token, "helmc_other")).body.error).toBe("invalid_grant");
 
-    const replay = await refreshTokens(tokens.refresh_token, clientId);
+    // The client lost the answer and retries with the token it still has.
+    const retry = await refreshTokens(tokens.refresh_token, clientId);
+    expect(retry.status).toBe(200);
+    expect((await listTools(retry.body.access_token)).status).toBe(200);
+    expect((await refreshTokens(retry.body.refresh_token, clientId)).status).toBe(200);
+  });
+
+  test("reusing a refresh token rotated long ago revokes the connection", async () => {
+    const { owner, clientId, tokens } = await connect();
+    const [connection] = await owner.connections();
+    const { createHash } = await import("node:crypto");
+    const { importRows } = await import("./helpers");
+    const selector = "R".repeat(21) + Math.floor(Math.random() * 10);
+    const secret = "r".repeat(42) + Math.floor(Math.random() * 10);
+    await importRows("oauthTokens", [
+      {
+        grantId: connection.id,
+        kind: "refresh",
+        selector,
+        secretHash: createHash("sha256").update(secret).digest("hex"),
+        createdAt: Date.now() - 120_000,
+        expiresAt: Date.now() + 60_000,
+        rotatedAt: Date.now() - 60_000,
+      },
+    ]);
+    const replay = await refreshTokens(`helmrt_${selector}.${secret}`, clientId);
     expect(replay.body.error).toBe("invalid_grant");
-    expect((await listTools(next.body.access_token)).status).toBe(401);
-    expect((await refreshTokens(next.body.refresh_token, clientId)).body.error).toBe("invalid_grant");
+    expect((await listTools(tokens.access_token)).status).toBe(401);
+    expect((await refreshTokens(tokens.refresh_token, clientId)).body.error).toBe("invalid_grant");
     expect((await owner.connections())[0].active).toBe(false);
   });
 
-  test("a refresh may narrow the scopes but not widen them", async () => {
+  test("a refresh may narrow the scopes, the narrowing sticks, and it cannot widen them", async () => {
     const read = await connect({ grant: ["tasks:read"] });
     const wider = await refreshTokens(read.tokens.refresh_token, read.clientId, { scope: "tasks:read tasks:write" });
     expect(wider.body.error).toBe("invalid_scope");
+
+    const both = await connect();
+    const narrowed = await refreshTokens(both.tokens.refresh_token, both.clientId, { scope: "tasks:read" });
+    expect(narrowed.body.scope).toBe("tasks:read");
+    const tools = (await (await listTools(narrowed.body.access_token)).json()).result.tools.map((t: { name: string }) => t.name);
+    expect(tools).toContain("list_today");
+    expect(tools).not.toContain("add_task");
+    expect((await callToolRaw(narrowed.body.access_token, "add_task", { title: "x" })).status).toBe(403);
+    const later = await refreshTokens(narrowed.body.refresh_token, both.clientId);
+    expect(later.body.scope).toBe("tasks:read");
+    const back = await refreshTokens(later.body.refresh_token, both.clientId, { scope: "tasks:read tasks:write" });
+    expect(back.body.error).toBe("invalid_scope");
+  });
+
+  test("failed code exchanges do not lock the token endpoint for anyone", async () => {
+    for (let i = 0; i < 35; i++) {
+      const wrong = await exchangeCode({ code: `helmac_${"x".repeat(43)}${i}`, verifier: pkce().verifier, clientId: cimdClientId() });
+      expect(wrong.status).toBe(400);
+    }
+    const { verifier, code } = await approvedCode();
+    expect((await exchangeCode({ code, verifier, clientId: cimdClientId() })).status).toBe(200);
   });
 });
 

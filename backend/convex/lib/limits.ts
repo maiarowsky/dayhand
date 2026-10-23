@@ -27,8 +27,16 @@ export async function countHit(ctx: MutationCtx, { bucket, windowMs }: Limit, no
   else await ctx.db.patch(current._id, { failures: current.failures + 1 });
 }
 
-/** Empties a bucket (admin, after someone filled it on purpose). */
-export async function resetBucket(ctx: MutationCtx, bucket: string) {
-  const current = await row(ctx, bucket);
-  if (current) await ctx.db.delete(current._id);
+/**
+ * Deletes the buckets whose names start with `prefix` and whose window started before `before`:
+ * every one of them when an admin clears limits someone filled on purpose, the old ones daily.
+ */
+export async function deleteBuckets(ctx: MutationCtx, prefix: string, before: number, max: number) {
+  const rows = await ctx.db
+    .query("authLimits")
+    .withIndex("by_bucket", (q) => q.gte("bucket", prefix).lt("bucket", `${prefix}\uffff`))
+    .take(max);
+  const old = rows.filter((r) => r.windowStart < before);
+  for (const r of old) await ctx.db.delete(r._id);
+  return old.length;
 }

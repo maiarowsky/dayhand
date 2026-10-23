@@ -260,10 +260,7 @@ async function tokenHashes(pair: ReturnType<typeof newTokenPair>) {
   };
 }
 
-type GrantResult =
-  | { ok: true; scopes: Scope[] }
-  | { ok: false; reason: "rate_limited"; retryAfterMs: number }
-  | { ok: false; error: string; description: string };
+type GrantResult = { ok: true; scopes: Scope[] } | { ok: false; error: string; description: string };
 
 function tokenAnswer(result: GrantResult, pair: ReturnType<typeof newTokenPair>): Response {
   if (result.ok) {
@@ -278,11 +275,6 @@ function tokenAnswer(result: GrantResult, pair: ReturnType<typeof newTokenPair>)
       200,
       noStore,
     );
-  }
-  if ("reason" in result) {
-    return tokenError(429, "rate_limited", "Too many failed attempts; try again later", {
-      "Retry-After": String(Math.ceil(result.retryAfterMs / 1000)),
-    });
   }
   return tokenError(400, result.error, result.description);
 }

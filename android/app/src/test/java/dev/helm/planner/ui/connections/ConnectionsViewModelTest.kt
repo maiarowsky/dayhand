@@ -21,7 +21,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ConnectionsViewModelTest {
     private val decisions = mutableListOf<JsonObject>()
-    private var lookupAnswer = """{"status":"found","request":{"clientName":"Claude","clientHost":"claude.ai","redirectHost":"claude.ai","loopback":false,"scopes":["tasks:read","tasks:write"],"expiresAt":1}}"""
+    private var lookupAnswer = """{"status":"found","request":{"clientName":"Claude","clientHost":"claude.ai","redirectHost":"claude.ai","loopback":false,"scopes":["tasks:read","tasks:write"],"createdAt":1000,"expiresAt":601000}}"""
 
     private val api = AgentConnectionsApi(
         queries = { _, _ -> SendResult.Applied(Json.parseToJsonElement("[]")) },
@@ -82,6 +82,23 @@ class ConnectionsViewModelTest {
         assertEquals(ApproveError.NOT_FOUND, (vm.ui.value.approve as ApproveState.Entry).error)
         vm.codeChanged("K7QF-M2X")
         assertEquals(null, (vm.ui.value.approve as ApproveState.Entry).error)
+    }
+
+    @Test
+    fun `a request minutes old is flagged on the consent`() {
+        var clock = 1000 + 60_000L
+        val vm = ConnectionsViewModel(api = { api }, now = { clock })
+        vm.startApprove()
+        vm.codeChanged("K7QF-M2XA")
+        vm.lookup()
+        assertEquals(false, (vm.ui.value.approve as ApproveState.Consent).old)
+
+        clock = 1000 + 4 * 60_000L
+        vm.closeApprove()
+        vm.startApprove()
+        vm.codeChanged("K7QF-M2XA")
+        vm.lookup()
+        assertEquals(true, (vm.ui.value.approve as ApproveState.Consent).old)
     }
 
     @Test

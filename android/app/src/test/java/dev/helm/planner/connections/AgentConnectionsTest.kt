@@ -47,10 +47,10 @@ class AgentConnectionsTest {
     fun `lookup answers`() {
         val found = AgentConnectionsJson.lookup(
             "K7QF-M2XA",
-            json("""{"status":"found","request":{"requestId":"r","clientName":"Claude","clientType":"cimd","clientHost":"claude.ai","redirectHost":"claude.ai","loopback":false,"scopes":["tasks:read","tasks:write"],"expiresAt":5}}"""),
+            json("""{"status":"found","request":{"requestId":"r","clientName":"Claude","clientType":"cimd","clientHost":"claude.ai","redirectHost":"claude.ai","loopback":false,"scopes":["tasks:read","tasks:write"],"createdAt":2,"expiresAt":5}}"""),
         )
         assertEquals(
-            Lookup.Found(ConnectionRequest("K7QF-M2XA", "Claude", "claude.ai", "claude.ai", false, setOf(AgentScope.READ, AgentScope.WRITE), 5)),
+            Lookup.Found(ConnectionRequest("K7QF-M2XA", "Claude", "claude.ai", "claude.ai", false, setOf(AgentScope.READ, AgentScope.WRITE), 2, 5)),
             found,
         )
         assertEquals(Lookup.NotFound, AgentConnectionsJson.lookup("c", json("""{"status":"not_found"}""")))

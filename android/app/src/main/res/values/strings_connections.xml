@@ -33,6 +33,8 @@
     <string name="approve_client_verified">Identified by %1$s</string>
     <string name="approve_client_registered">Registered itself (its name is not verified)</string>
     <string name="approve_returns_to">Answer goes to %1$s</string>
+    <string name="approve_asked_at">Asked %1$s</string>
+    <string name="approve_old_warning">This request is several minutes old. Approve only a sign-in page you opened yourself just now; if someone sent you this code, refuse.</string>
     <string name="approve_loopback_warning">The answer goes to a program on the computer that opened the page (Claude Code). Approve only if you started it yourself just now.</string>
     <string name="approve_allow">Allow</string>
     <string name="approve_scope_read">Read tasks and settings</string>

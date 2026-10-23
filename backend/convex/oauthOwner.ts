@@ -26,6 +26,8 @@ export type ConnectionRequestView = {
   redirectHost: string;
   loopback: boolean;
   scopes: Scope[];
+  /** When the browser asked: a request the owner did not just start is a warning sign. */
+  createdAt: number;
   expiresAt: number;
 };
 
@@ -43,6 +45,7 @@ function viewOf(request: Doc<"oauthRequests">): ConnectionRequestView {
     redirectHost: redirectHost(request.redirectUri),
     loopback: redirectKind(request.redirectUri) === "loopback",
     scopes: request.scopes,
+    createdAt: request.createdAt,
     expiresAt: request.expiresAt,
   };
 }

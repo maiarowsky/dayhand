@@ -105,16 +105,21 @@ function checkRedirectUris(value: unknown): string[] | string {
   return value as string[];
 }
 
+/**
+ * A public client that uses the authorization code. Grant and response types Helm does not offer
+ * are ignored, not refused: Claude's own metadata also lists the JWT bearer grant, which Helm
+ * simply never honours (the token endpoint knows only authorization_code and refresh_token).
+ */
 function checkPublicClient(doc: Record<string, unknown>): string | null {
   const method = doc.token_endpoint_auth_method;
   if (method !== undefined && method !== "none") return "Only public clients (token_endpoint_auth_method none) are supported";
   const grants = doc.grant_types;
-  if (grants !== undefined && (!Array.isArray(grants) || grants.some((g) => g !== "authorization_code" && g !== "refresh_token"))) {
-    return "grant_types may only be authorization_code and refresh_token";
+  if (grants !== undefined && (!Array.isArray(grants) || !grants.includes("authorization_code"))) {
+    return "grant_types must include authorization_code";
   }
   const responses = doc.response_types;
-  if (responses !== undefined && (!Array.isArray(responses) || responses.some((r) => r !== "code"))) {
-    return "response_types may only be code";
+  if (responses !== undefined && (!Array.isArray(responses) || !responses.includes("code"))) {
+    return "response_types must include code";
   }
   return null;
 }

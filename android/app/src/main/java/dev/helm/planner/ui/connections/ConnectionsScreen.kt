@@ -54,6 +54,7 @@ object ConnectionsTags {
     const val SCOPE = "approve_scope_"
     const val CONFIRM = "approve_confirm"
     const val REFUSE = "approve_refuse"
+    const val OLD_WARNING = "approve_old_warning"
     const val MESSAGE = "approve_message"
 }
 
@@ -74,6 +75,8 @@ sealed interface ApproveState {
         val request: ConnectionRequest,
         /** What the owner allows; starts as what the agent asked for. */
         val scopes: Set<AgentScope> = request.scopes,
+        /** The page asked minutes ago: perhaps someone else's page, so the screen warns. */
+        val old: Boolean = false,
         val busy: Boolean = false,
         val error: ApproveError? = null,
     ) : ApproveState
@@ -204,7 +207,7 @@ private fun ApprovePage(state: ApproveState, actions: ConnectionsActions) {
     SettingsPage(stringResource(R.string.approve_title), actions::closeApprove, ConnectionsTags.APPROVE_PAGE) {
         when (state) {
             is ApproveState.Entry -> CodeEntry(state, actions)
-            is ApproveState.Consent -> Consent(state, actions)
+            is ApproveState.Consent -> Consent(approve, state.timeLabel, actions)
             is ApproveState.Finished -> Finished(state.outcome, actions)
         }
     }
@@ -249,7 +252,7 @@ private fun CodeEntry(state: ApproveState.Entry, actions: ConnectionsActions) {
 }
 
 @Composable
-private fun Consent(state: ApproveState.Consent, actions: ConnectionsActions) {
+private fun Consent(state: ApproveState.Consent, timeLabel: (Long) -> String, actions: ConnectionsActions) {
     val request = state.request
     Text(
         stringResource(R.string.approve_asks, request.clientName),
@@ -266,6 +269,10 @@ private fun Consent(state: ApproveState.Consent, actions: ConnectionsActions) {
                 ListRow(who, "approve_client", icon = LineIcon.Globe)
             }
             add { ListRow(stringResource(R.string.approve_returns_to, request.redirectHost), "approve_redirect", icon = LineIcon.Link) }
+            add { ListRow(stringResource(R.string.approve_asked_at, timeLabel(request.createdAt)), "approve_asked", icon = LineIcon.Clock) }
+            if (state.old) {
+                add { ListRow(stringResource(R.string.approve_old_warning), ConnectionsTags.OLD_WARNING, icon = LineIcon.Warning, titleColor = palette.danger) }
+            }
             if (request.loopback) {
                 add { ListRow(stringResource(R.string.approve_loopback_warning), "approve_loopback", icon = LineIcon.Warning, titleColor = palette.danger) }
             }

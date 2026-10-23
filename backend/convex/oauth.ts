@@ -8,13 +8,21 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { ACCESS_TOKEN_TTL_MS, CODE_TTL_MS, REFRESH_TOKEN_TTL_MS, REQUEST_TTL_MS, scopeValidator, type Scope } from "./lib/oauthConfig";
-import { countHit, resetBucket, retryAfter, type Limit } from "./lib/limits";
+import { countHit, deleteBuckets, retryAfter, type Limit } from "./lib/limits";
 import { timingSafeEqual } from "./lib/secrets";
 
-const MAX_PENDING_REQUESTS = 10;
-const AUTHORIZE_LIMIT: Limit = { bucket: "oauth:authorize", limit: 30, windowMs: 10 * 60 * 1000 };
-const REGISTER_LIMIT: Limit = { bucket: "oauth:register", limit: 20, windowMs: 60 * 60 * 1000 };
-const TOKEN_LIMIT: Limit = { bucket: "oauth:token", limit: 30, windowMs: 10 * 60 * 1000 };
+// Limits on what unauthenticated callers can create. Per client, so that a stranger flooding the
+// endpoint with their own (or Claude Code's) client cannot block another client; the global
+// buckets only guard the database against floods. There is no lockout on the token endpoint:
+// codes and tokens are 256-bit random, and a lockout would only let anyone block real clients.
+const MAX_PENDING_PER_CLIENT = 5;
+const LIMIT_PREFIX = "oauth:";
+const AUTHORIZE_WINDOW_MS = 10 * 60 * 1000;
+const authorizeLimit = (clientId: string): Limit => ({ bucket: `oauth:authorize|${clientId}`, limit: 20, windowMs: AUTHORIZE_WINDOW_MS });
+const AUTHORIZE_FLOOD_LIMIT: Limit = { bucket: "oauth:authorize", limit: 300, windowMs: AUTHORIZE_WINDOW_MS };
+const REGISTER_LIMIT: Limit = { bucket: "oauth:register", limit: 100, windowMs: 60 * 60 * 1000 };
+/** A rotated refresh token presented again this soon is a retry (a lost answer), not a theft. */
+const REFRESH_RETRY_MS = 30 * 1000;
 const RETENTION_MS = 24 * 60 * 60 * 1000;
 const UNUSED_CLIENT_MS = 7 * 24 * 60 * 60 * 1000;
 const PURGE_BATCH = 500;
@@ -68,7 +76,7 @@ export function requestStatusOf(request: Doc<"oauthRequests">, now: number): Req
   return request.approvedAt !== undefined ? "approved" : "pending";
 }
 
-/** Starts a request; refused while too many are waiting or too many were started lately. */
+/** Starts a request; refused while too many of this client's are waiting or were started lately. */
 export const createRequest = internalMutation({
   args: {
     ...secretArgs,
@@ -87,15 +95,17 @@ export const createRequest = internalMutation({
     const live = await ctx.db
       .query("oauthRequests")
       .withIndex("by_expiresAt", (q) => q.gt("expiresAt", now))
-      .take(MAX_PENDING_REQUESTS * 4);
-    const waiting = live.filter((r) => requestStatusOf(r, now) === "pending");
-    const wait = await retryAfter(ctx, AUTHORIZE_LIMIT, now);
-    if (wait !== null || waiting.length >= MAX_PENDING_REQUESTS) {
+      .take(AUTHORIZE_FLOOD_LIMIT.limit * 2);
+    const waiting = live.filter((r) => r.clientId === input.clientId && requestStatusOf(r, now) === "pending");
+    const limit = authorizeLimit(input.clientId);
+    const wait = (await retryAfter(ctx, limit, now)) ?? (await retryAfter(ctx, AUTHORIZE_FLOOD_LIMIT, now));
+    if (wait !== null || waiting.length >= MAX_PENDING_PER_CLIENT) {
       const oldest = Math.min(...waiting.map((r) => r.expiresAt), now + REQUEST_TTL_MS);
       return { ok: false, reason: "rate_limited", retryAfterMs: wait ?? oldest - now };
     }
     if (live.some((r) => r.userCodeHash === input.userCodeHash)) return { ok: false, reason: "collision" };
-    await countHit(ctx, AUTHORIZE_LIMIT, now);
+    await countHit(ctx, limit, now);
+    await countHit(ctx, AUTHORIZE_FLOOD_LIMIT, now);
     const expiresAt = now + REQUEST_TTL_MS;
     await ctx.db.insert("oauthRequests", { ...input, createdAt: now, expiresAt });
     return { ok: true, expiresAt };
@@ -134,7 +144,7 @@ export const finishRequest = internalMutation({
 
 // ---- Token endpoint ----
 
-type TokenFailure = { ok: false; error: "invalid_grant" | "invalid_target"; description: string } | Limited;
+type TokenFailure = { ok: false; error: "invalid_grant" | "invalid_target"; description: string };
 type TokenSuccess = { ok: true; scopes: Scope[] };
 const newTokens = {
   accessSelector: v.string(),
@@ -144,11 +154,16 @@ const newTokens = {
 };
 const INVALID_GRANT = { ok: false, error: "invalid_grant", description: "The code or token is not valid" } as const;
 
+/** A token's own scopes (after a narrowing refresh) never exceed the grant's. */
+const grantedScopes = (token: Scope[] | undefined, grant: Scope[]) => (token ? grant.filter((s) => token.includes(s)) : grant);
+
+/** A new token pair; `scopes` is set only when a refresh narrowed the grant's scopes. */
 async function insertTokens(
   ctx: MutationCtx,
   grantId: Id<"oauthGrants">,
   tokens: { accessSelector: string; accessHash: string; refreshSelector: string; refreshHash: string },
   now: number,
+  scopes?: Scope[],
 ) {
   const refreshExpiresAt = now + REFRESH_TOKEN_TTL_MS;
   await ctx.db.insert("oauthTokens", {
@@ -158,6 +173,7 @@ async function insertTokens(
     secretHash: tokens.accessHash,
     createdAt: now,
     expiresAt: now + ACCESS_TOKEN_TTL_MS,
+    scopes,
   });
   await ctx.db.insert("oauthTokens", {
     grantId,
@@ -166,6 +182,7 @@ async function insertTokens(
     secretHash: tokens.refreshHash,
     createdAt: now,
     expiresAt: refreshExpiresAt,
+    scopes,
   });
   await ctx.db.patch(grantId, { refreshExpiresAt });
 }
@@ -173,11 +190,6 @@ async function insertTokens(
 async function revokeGrant(ctx: MutationCtx, grantId: Id<"oauthGrants">, now: number) {
   const grant = await ctx.db.get(grantId);
   if (grant && grant.revokedAt === undefined) await ctx.db.patch(grantId, { revokedAt: now });
-}
-
-async function failToken(ctx: MutationCtx, now: number): Promise<TokenFailure> {
-  await countHit(ctx, TOKEN_LIMIT, now);
-  return INVALID_GRANT;
 }
 
 /**
@@ -188,16 +200,14 @@ export const exchangeCode = internalMutation({
   args: { codeHash: v.string(), clientId: v.string(), redirectUri: v.string(), challenge: v.string(), resource: v.string(), ...newTokens },
   handler: async (ctx, input): Promise<TokenSuccess | TokenFailure> => {
     const now = Date.now();
-    const wait = await retryAfter(ctx, TOKEN_LIMIT, now);
-    if (wait !== null) return { ok: false, reason: "rate_limited", retryAfterMs: wait };
     const request = await ctx.db
       .query("oauthRequests")
       .withIndex("by_codeHash", (q) => q.eq("codeHash", input.codeHash))
       .unique();
-    if (!request || request.codeExpiresAt === undefined || request.userId === undefined) return failToken(ctx, now);
+    if (!request || request.codeExpiresAt === undefined || request.userId === undefined) return INVALID_GRANT;
     if (request.codeUsedAt !== undefined) {
       if (request.grantId) await revokeGrant(ctx, request.grantId, now);
-      return failToken(ctx, now);
+      return INVALID_GRANT;
     }
     await ctx.db.patch(request._id, { codeUsedAt: now });
     const matches =
@@ -205,7 +215,7 @@ export const exchangeCode = internalMutation({
       request.clientId === input.clientId &&
       request.redirectUri === input.redirectUri &&
       timingSafeEqual(request.codeChallenge, input.challenge);
-    if (!matches) return failToken(ctx, now);
+    if (!matches) return INVALID_GRANT;
     if (request.resource !== input.resource) {
       return { ok: false, error: "invalid_target", description: "The resource is not the one this code was issued for" };
     }
@@ -241,19 +251,33 @@ async function tokenBySelector(ctx: QueryCtx, selector: string) {
     .unique();
 }
 
+/** Ends the grant's live refresh tokens, so that a connection has only one at a time. */
+async function retireRefreshTokens(ctx: MutationCtx, grantId: Id<"oauthGrants">, now: number) {
+  const tokens = await ctx.db
+    .query("oauthTokens")
+    .withIndex("by_grant", (q) => q.eq("grantId", grantId))
+    .collect();
+  for (const token of tokens) {
+    if (token.kind === "refresh" && token.rotatedAt === undefined) await ctx.db.patch(token._id, { rotatedAt: now });
+  }
+}
+
 /**
  * refresh_token grant with rotation: the old refresh token dies, and using a dead one again
- * revokes the whole connection (it may have been stolen). `scopes`, when given, may only narrow.
+ * revokes the whole connection (it may have been stolen). The exception is a retry within
+ * REFRESH_RETRY_MS, when the client most likely lost the answer: it gets a new pair, and the pair
+ * it never saw dies instead. `scopes`, when given, may only narrow, and the narrowing sticks to
+ * the new tokens.
  */
 export const refresh = internalMutation({
   args: { ...secretArgs, clientId: v.string(), resource: v.string(), scopes: v.optional(v.array(scopeValidator)), ...newTokens },
   handler: async (ctx, input): Promise<TokenSuccess | TokenFailure | { ok: false; error: "invalid_scope"; description: string }> => {
     const now = Date.now();
     const token = await tokenBySelector(ctx, input.selector);
-    if (!token || token.kind !== "refresh" || !timingSafeEqual(token.secretHash, input.secretHash)) return failToken(ctx, now);
+    if (!token || token.kind !== "refresh" || !timingSafeEqual(token.secretHash, input.secretHash)) return INVALID_GRANT;
     const grant = await ctx.db.get(token.grantId);
     if (!grant || grant.revokedAt !== undefined || grant.clientId !== input.clientId) return INVALID_GRANT;
-    if (token.rotatedAt !== undefined) {
+    if (token.rotatedAt !== undefined && now - token.rotatedAt > REFRESH_RETRY_MS) {
       await revokeGrant(ctx, grant._id, now);
       return INVALID_GRANT;
     }
@@ -261,12 +285,15 @@ export const refresh = internalMutation({
     if (grant.resource !== input.resource) {
       return { ok: false, error: "invalid_target", description: "The resource is not the one this token was issued for" };
     }
-    if (input.scopes && input.scopes.some((s) => !grant.scopes.includes(s))) {
+    const allowed = grantedScopes(token.scopes, grant.scopes);
+    if (input.scopes && input.scopes.some((s) => !allowed.includes(s))) {
       return { ok: false, error: "invalid_scope", description: "A refresh cannot add scopes" };
     }
-    await ctx.db.patch(token._id, { rotatedAt: now });
-    await insertTokens(ctx, grant._id, input, now);
-    return { ok: true, scopes: grant.scopes };
+    const scopes = input.scopes ? allowed.filter((s) => input.scopes!.includes(s)) : allowed;
+    await retireRefreshTokens(ctx, grant._id, now);
+    if (token.rotatedAt === undefined) await ctx.db.patch(token._id, { rotatedAt: now });
+    await insertTokens(ctx, grant._id, input, now, scopes.length < grant.scopes.length ? scopes : undefined);
+    return { ok: true, scopes };
   },
 });
 
@@ -283,33 +310,35 @@ export const revokeToken = internalMutation({
 
 // ---- The protected resource (/mcp) ----
 
-const TOUCH_INTERVAL_MS = 10 * 60 * 1000;
-
 export type Connection = {
   userId: string;
   connectionId: Id<"oauthGrants">;
   clientName: string;
   scopes: Scope[];
   resource: string;
-  stale: boolean;
+  expiresAt: number;
+  lastUsedAt: number | null;
 };
 
-/** The connection behind a live access token; null when unknown, wrong, expired or revoked. */
+/**
+ * The connection behind an access token; null when unknown, wrong or revoked. Expiry is checked
+ * by the caller against `expiresAt`: a query's clock is not reliable, as its result may be cached.
+ */
 export const verifyAccessToken = internalQuery({
   args: secretArgs,
   handler: async (ctx, { selector, secretHash }): Promise<Connection | null> => {
     const token = await tokenBySelector(ctx, selector);
-    const now = Date.now();
-    if (!token || token.kind !== "access" || token.expiresAt <= now || !timingSafeEqual(token.secretHash, secretHash)) return null;
+    if (!token || token.kind !== "access" || !timingSafeEqual(token.secretHash, secretHash)) return null;
     const grant = await ctx.db.get(token.grantId);
     if (!grant || grant.revokedAt !== undefined) return null;
     return {
       userId: grant.userId,
       connectionId: grant._id,
       clientName: grant.clientName,
-      scopes: grant.scopes,
+      scopes: grantedScopes(token.scopes, grant.scopes),
       resource: grant.resource,
-      stale: now - (grant.lastUsedAt ?? 0) > TOUCH_INTERVAL_MS,
+      expiresAt: token.expiresAt,
+      lastUsedAt: grant.lastUsedAt ?? null,
     };
   },
 });
@@ -334,6 +363,7 @@ export const purgeExpired = internalMutation({
       .withIndex("by_expiresAt", (q) => q.lt("expiresAt", cutoff))
       .take(PURGE_BATCH);
     for (const request of requests) await ctx.db.delete(request._id);
+    await deleteBuckets(ctx, LIMIT_PREFIX, cutoff, PURGE_BATCH);
     const tokens = await ctx.db
       .query("oauthTokens")
       .withIndex("by_expiresAt", (q) => q.lt("expiresAt", cutoff))
@@ -353,6 +383,6 @@ export const purgeExpired = internalMutation({
 export const resetLimits = internalMutation({
   args: {},
   handler: async (ctx) => {
-    for (const { bucket } of [AUTHORIZE_LIMIT, REGISTER_LIMIT, TOKEN_LIMIT]) await resetBucket(ctx, bucket);
+    await deleteBuckets(ctx, LIMIT_PREFIX, Infinity, PURGE_BATCH);
   },
 });

@@ -45,6 +45,8 @@ data class ConnectionRequest(
     /** The answer goes to a program on the computer that opened the page (Claude Code). */
     val loopback: Boolean,
     val scopes: Set<AgentScope>,
+    /** When the page asked: an old request is one the owner may not have started. */
+    val createdAt: Long,
     val expiresAt: Long,
 )
 
@@ -126,6 +128,7 @@ object AgentConnectionsJson {
                         redirectHost = r.string("redirectHost").orEmpty(),
                         loopback = (r["loopback"] as? JsonPrimitive)?.booleanOrNull ?: false,
                         scopes = scopes(r["scopes"]),
+                        createdAt = r.long("createdAt") ?: 0,
                         expiresAt = r.long("expiresAt") ?: 0,
                     ),
                 )

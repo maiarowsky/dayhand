@@ -205,6 +205,8 @@ export default defineSchema({
     expiresAt: v.number(),
     // A refresh token used once; using it again revokes the connection.
     rotatedAt: v.optional(v.number()),
+    // Set when a refresh narrowed the scopes; otherwise the grant's apply.
+    scopes: v.optional(v.array(scopeValidator)),
   })
     .index("by_selector", ["selector"])
     .index("by_grant", ["grantId"])

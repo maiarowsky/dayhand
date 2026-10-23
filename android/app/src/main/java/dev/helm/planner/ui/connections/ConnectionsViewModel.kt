@@ -28,7 +28,10 @@ import kotlinx.coroutines.launch
  * The connections page and the approval of a new connection. Nothing is cached: the list is read when the page opens
  * and after every change. [api] is null while the phone is not paired.
  */
-class ConnectionsViewModel(private val api: suspend () -> AgentConnectionsApi?) : ViewModel() {
+class ConnectionsViewModel(
+    private val api: suspend () -> AgentConnectionsApi?,
+    private val now: () -> Long = System::currentTimeMillis,
+) : ViewModel() {
     private val state = MutableStateFlow(ConnectionsUiState())
     val ui: StateFlow<ConnectionsUiState> = state.asStateFlow()
 
@@ -66,7 +69,7 @@ class ConnectionsViewModel(private val api: suspend () -> AgentConnectionsApi?) 
         val remote = api() ?: return@launch setApprove(entry.copy(busy = false, error = ApproveError.FAILED))
         setApprove(
             when (val found = remote.lookup(code)) {
-                is Lookup.Found -> ApproveState.Consent(found.request)
+                is Lookup.Found -> ApproveState.Consent(found.request, old = now() - found.request.createdAt > OLD_REQUEST_MS)
                 Lookup.NotFound -> entry.copy(busy = false, error = ApproveError.NOT_FOUND)
                 is Lookup.RateLimited -> entry.copy(busy = false, error = ApproveError.RATE_LIMITED)
                 Lookup.Unauthorized, is Lookup.Failed -> entry.copy(busy = false, error = ApproveError.FAILED)
@@ -115,6 +118,9 @@ class ConnectionsViewModel(private val api: suspend () -> AgentConnectionsApi?) 
 
     private companion object {
         const val MAX_CODE_INPUT = 20
+
+        /** A sign-in page the owner opened themselves is a minute or two old when its code is typed. */
+        const val OLD_REQUEST_MS = 3 * 60 * 1000L
     }
 }
 
