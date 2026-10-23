@@ -11,17 +11,24 @@ val commitCount = providers.exec {
     isIgnoreExitValue = true
 }.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }
 
-// The server the Connect screen offers first (HTTP actions URL); -Phelm.serverUrl=… for another deployment.
-val defaultServerUrl = providers.gradleProperty("helm.serverUrl")
-    .orElse("https://impressive-grouse-796.eu-west-1.convex.site")
+// The server the Connect screen offers first (HTTP actions URL), -Phelm.serverUrl=…; empty by default, so a
+// public build starts with an empty address and the offline choice.
+val defaultServerUrl = providers.gradleProperty("helm.serverUrl").orElse("")
+
+// Release signing from a keystore kept outside the repository: HELM_RELEASE_KEYSTORE (PKCS12),
+// HELM_RELEASE_PASSWORD_FILE (one line; store and key password) and HELM_RELEASE_KEY_ALIAS (default helm).
+// Without HELM_RELEASE_KEYSTORE the release build stays unsigned; debug builds never use it.
+val releaseKeystore = providers.environmentVariable("HELM_RELEASE_KEYSTORE").orNull?.let(::File)
+val releasePassword = providers.environmentVariable("HELM_RELEASE_PASSWORD_FILE").orNull
+    ?.let { path -> providers.fileContents(layout.projectDirectory.file(path)).asText.map { it.trim() } }
 
 android {
     namespace = "dev.helm.planner"
     compileSdk = 36
 
     defaultConfig {
-        // Working id; change it before any store release (android/README.md).
-        applicationId = "dev.helm.planner"
+        // The code keeps the dev.helm.planner namespace; the installed app is this id.
+        applicationId = "io.github.maiarowsky.dayhand"
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount.get()
@@ -35,9 +42,24 @@ android {
         }
     }
 
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                require(releaseKeystore.isFile) { "HELM_RELEASE_KEYSTORE is not a file: $releaseKeystore" }
+                val password = requireNotNull(releasePassword) { "HELM_RELEASE_PASSWORD_FILE is not set" }.get()
+                storeFile = releaseKeystore
+                storeType = "PKCS12"
+                storePassword = password
+                keyAlias = providers.environmentVariable("HELM_RELEASE_KEY_ALIAS").getOrElse("helm")
+                keyPassword = password
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

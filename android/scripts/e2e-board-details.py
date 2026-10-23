@@ -39,6 +39,7 @@ def type_text(value):
     for start in range(0, len(value), 10):
         shell("input", "text", value[start:start + 10].replace(" ", "%s"))
 PACKAGE = base.PACKAGE
+ACTIVITY = base.ACTIVITY
 SYNC_TIMEOUT = 150
 
 
@@ -226,7 +227,7 @@ def main():
     log("server: task is in the trash (sent by WorkManager after the network came back)")
 
     # Restore from the Trash screen. Android brings back the screens open before the kill.
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    shell("am", "start", "-n", ACTIVITY)
     find(text=renamed, timeout=60)
     log("after the kill the app reopened on the same task's details")
     shell("input", "keyevent", "KEYCODE_BACK")

@@ -31,6 +31,7 @@ adb, shell, log, find, tap, find_button, find_scrolling = (
     base.adb, base.shell, base.log, base.find, base.tap, base.find_button, base.find_scrolling,
 )
 PACKAGE = base.PACKAGE
+ACTIVITY = base.ACTIVITY
 HLM = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "cli", "dist", "bin", "hlm.js")
 
 
@@ -82,11 +83,11 @@ def main():
     base.set_network(True)
     adb("install", "-r", args.apk)
     shell("pm", "clear", PACKAGE)
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    shell("am", "start", "-n", ACTIVITY)
 
-    # 1. First start: Connect comes first, with the built-in server address.
+    # 1. First start: Connect comes first; a public build has no built-in server address.
     find(text="Pairing code", timeout=120)
-    find(text="convex.site")
+    find(text="Server address")
     shot("01-first-start-connect.png")
     tap(find(text="Not now"))
     base.add_task(before)

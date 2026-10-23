@@ -6,8 +6,17 @@ on the phone, has the **Settings** screen, connects to a server by **pairing** w
 code from `hlm pair`, approves and disconnects **agent connections** such as the Claude app, and
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
-- Package and application id: `dev.helm.planner`. This is a **working id: change it before any
-  store release** (it cannot change after the first upload).
+**Install**: download the `.apk` from the
+[latest release](https://github.com/maiarowsky/helm/releases/latest), allow your browser or file
+manager to install apps when Android asks, and on the first start tap **Not now, use Helm
+offline** to use Helm without a server. What works offline, what needs a server and how to
+connect your own: [Install on Android](../README.md#install-on-android). To build it yourself,
+see [Run it locally](#run-it-locally) and [Release build](#release-build).
+
+- Application id `io.github.maiarowsky.dayhand` (fixed from the first public release; it cannot
+  change once people have installed it). The code keeps the namespace `dev.helm.planner`, so
+  the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
+  with the earlier id `dev.helm.planner` are a different app and install side by side.
 - Version 0.8.3 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
@@ -34,9 +43,12 @@ signed the phone out, or when no server is connected.
 **Connect to server** opens by itself at the first start (with **Not now, use Helm offline**),
 from Settings, and from a `helm://pair` link (the QR code of `hlm pair`):
 
-1. **Server address**, filled in with the built-in server (`BuildConfig.DEFAULT_SERVER_URL`,
-   the production HTTP actions URL; another with `-Phelm.serverUrl=…`), the last server used or
-   the link's `url`. A `.convex.cloud` address is turned into its `.convex.site` one.
+1. **Server address**: the link's `url`, else the last server used, else the built-in default
+   (`BuildConfig.DEFAULT_SERVER_URL`), which is **empty** unless the build sets
+   `-Phelm.serverUrl=…`. Public builds leave it empty, so a new phone starts with an empty
+   address and the offline choice; the author builds their own copy with
+   `-Phelm.serverUrl=https://impressive-grouse-796.eu-west-1.convex.site`. A `.convex.cloud`
+   address is turned into its `.convex.site` one.
 2. **Pairing code** from `hlm pair` (or `npx helm pair` in `backend/`): any case, with or
    without dashes; `O` is read as `0`, `I` and `L` as `1`.
 3. **Connect**. Errors are said in words: a wrong, used or expired code; too many wrong codes
@@ -291,7 +303,24 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
 5. Check from the computer: `npx helm today` and `npx helm devices`.
 
 For a production deployment see [docs/deploy.md](../docs/deploy.md); the app's default server
-is set in `app/build.gradle.kts` (`helm.serverUrl`).
+(empty unless set) is `-Phelm.serverUrl=…`, read in `app/build.gradle.kts`.
+
+## Release build
+
+The APK on the releases page is `assembleRelease` signed with the project's release key, which
+is kept outside the repository. Point the build at the keystore with environment variables:
+
+```sh
+export HELM_RELEASE_KEYSTORE=~/.config/helm/release/helm-release.p12   # PKCS12
+export HELM_RELEASE_PASSWORD_FILE=~/.config/helm/release/keystore-password  # one line, store and key password
+# HELM_RELEASE_KEY_ALIAS defaults to helm
+./gradlew :app:assembleRelease
+$ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+```
+
+Without `HELM_RELEASE_KEYSTORE` the release APK is left unsigned; debug builds and tests never
+use the key. Every update must be signed with the same key, or Android refuses to install it
+over the installed app: keep a copy of the keystore and its password somewhere safe.
 
 ## Tests
 

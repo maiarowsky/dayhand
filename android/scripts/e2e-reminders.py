@@ -31,6 +31,7 @@ adb, shell, log, find, tap, find_scrolling, configure = (
     base.adb, base.shell, base.log, base.find, base.tap, base.find_scrolling, base.configure,
 )
 PACKAGE = base.PACKAGE
+ACTIVITY = base.ACTIVITY
 USER = "https://helm.local|me"
 _ui_nodes = base.ui_nodes
 
@@ -161,7 +162,7 @@ def main():
     base.screenshot(args.shots, "notifications-reminder-summary.png")
     shell("cmd", "statusbar", "collapse")
 
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    shell("am", "start", "-n", ACTIVITY)
     tap(find(desc="Settings"))
     find(text=hhmm)
     log(f"Settings shows the summary time {hhmm} from the server")

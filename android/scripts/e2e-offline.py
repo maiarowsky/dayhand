@@ -22,7 +22,9 @@ import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 
-PACKAGE = "dev.helm.planner"
+PACKAGE = "io.github.maiarowsky.dayhand"
+# The code's namespace, which differs from the application id.
+ACTIVITY = f"{PACKAGE}/dev.helm.planner.MainActivity"
 BACKEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "backend")
 
 
@@ -200,7 +202,7 @@ def main():
     log("helm today lists both tasks:\n" + today)
 
     # Round 2: force-stop. Android cancels the app's jobs until it is opened again.
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    shell("am", "start", "-n", ACTIVITY)
     find(text=online)
     set_network(False)
     add_task(stopped)
@@ -209,7 +211,7 @@ def main():
     set_network(True)
     time.sleep(20)
     log(f"after 20 s with network, force-stopped task on server: {stopped in server_titles()}")
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    shell("am", "start", "-n", ACTIVITY)
     if not wait_on_server({stopped}, 120):
         raise RuntimeError("the force-stopped task did not reach the server after opening the app")
     log("server has the force-stopped task after the app was opened")

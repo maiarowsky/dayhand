@@ -39,6 +39,7 @@ adb, shell, log, find, tap, find_button, find_scrolling = (
     base.adb, base.shell, base.log, base.find, base.tap, base.find_button, base.find_scrolling,
 )
 PACKAGE = base.PACKAGE
+ACTIVITY = base.ACTIVITY
 CALLBACK = "https://claude.ai/api/mcp/auth_callback"
 
 
@@ -146,7 +147,7 @@ def main():
     base.set_network(True)
     adb("install", "-r", args.apk)
     shell("pm", "clear", PACKAGE)
-    shell("am", "start", "-n", f"{PACKAGE}/.MainActivity")
+    shell("am", "start", "-n", ACTIVITY)
     find(text="Pairing code", timeout=120)
     base.configure(args.server_url, args.shots)
 

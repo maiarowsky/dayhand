@@ -30,6 +30,35 @@ man/       hlm(1), generated from the CLI's command registry
 packaging/ Homebrew formula template
 ```
 
+## Install on Android
+
+You need Android 8.0 or newer. No server is needed to start.
+
+1. On the phone, open the [latest release](https://github.com/maiarowsky/helm/releases/latest)
+   and download the `.apk` file under **Assets**.
+2. Open the downloaded file. Android asks whether to allow apps from this source (your browser
+   or file manager); allow it, go back and tap **Install**.
+3. Open Helm. It starts on **Connect to server**; tap **Not now, use Helm offline**.
+
+**Offline, on the phone alone**, you have Today with quick add, the calendar, the board, task
+details (repeat, checklist, labels, links, reminders), the trash, reminders and the morning
+summary, and the appearance and notification settings. What needs a server: sync with other
+devices and the `hlm` CLI, an AI agent over MCP or the Claude app, the calendar address for
+Google or Apple Calendar, Export (Markdown, JSON, .ics) and any copy of your tasks. Offline the
+tasks exist only on this phone: Android backups are switched off for Helm, so uninstalling the
+app or losing the phone loses them. The time zone also comes from the server; until you connect
+one, Helm counts "today" and reminder times in `Europe/London`.
+
+Helm runs no public server: the address on Connect is empty in the downloaded app. The author's
+own server lets a phone in only with a pairing code from that account's owner. To sync, run your
+own server ([Run your own server in 5 minutes](#run-your-own-server-in-5-minutes) or
+[Deploy your own copy](#deploy-your-own-copy)), then in Helm open **Settings → Server →
+Connect to server** and type your server's address (`https://<deployment>.convex.site`) and a
+pairing code from it (`hlm server deploy` prints both; `hlm pair` makes a new code). Tasks you
+added offline are sent to it.
+
+More about the app: [android/README.md](android/README.md).
+
 ## The `hlm` command line
 
 `hlm` needs Node.js 22.12 or newer and runs on macOS, Linux and Windows. It is not on npm or
@@ -133,8 +162,7 @@ npm test        # needs backend/node_modules; tests hlm against a throwaway back
 
 ## Deploy your own copy
 
-The repository holds no secrets. The Android app connects by default to the author's own
-deployment, which lets a phone in only with a pairing code from that account's owner. Your own
+The repository holds no secrets, and the Android app has no built-in server. Your own
 server comes from `hlm server deploy` (above), or by hand: deploy the `backend/` folder to your
 own Convex project (`npx convex deploy`) or to a self-hosted Convex backend, and set
 `HELM_JWT_ISSUER`, `HELM_JWKS` and `HELM_JWT_PRIVATE_JWK` in its environment (see
