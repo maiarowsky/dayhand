@@ -8,7 +8,7 @@ turns on the read-only **calendar address** for Google and Apple Calendar.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.8.2 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.8.3 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -47,13 +47,18 @@ Tapping a task opens its details. The bar at the bottom switches between Today (
 opens), the calendar and the board.
 
 **Calendar**: the week on an hour grid, or one day, switched by two text tabs (**Week** / **Day**).
-The week shows as many days side by side as fit at least 104 dp each (more with a larger font):
-three on a phone, starting with today, which a swipe moves day by day (a fling at most a screen on).
-When seven fit (about 780 dp: a tablet, a large phone on its side) it shows Monday to Sunday and a
-swipe turns the week. The arrows go a week back or on, and in the day view a day. A title breaks
-only between words: what does not fit ends in "…" (`wordLines`), never "Zadzw / onić". Tasks with a time are
-blocks at their hour (30 minutes tall, side by side when they overlap); tasks without a time sit in
-a band above the hours (two per day, then "+N", which opens the day). The day view lists overdue
+The week always shows Monday to Sunday; a swipe or the arrows turn it (in the day view the arrows go
+a day). With at least 80 dp a day (from about 610 dp wide: a tablet, a phone on its side) the tasks
+have their titles. A title breaks only between words: what does not fit ends in "…" (`wordLines`),
+never "Zadzw / onić". Tasks with a time are blocks at their hour (30 minutes tall, side by side when
+they overlap); tasks without a time sit in a band above the hours (two per day, then "+N", which
+opens the day). On a phone held upright (`barsOnly`) the tasks are **bars without titles**, in the
+same colours and with the same marks: a bar at its hour per timed task, a short bar per task without
+a time in the band (three, then "+N"). A tap on a bar opens the task; a tap on a day (its column or
+its part of the band) opens the day with the titles; a **long press on a day** opens a sheet of its
+tasks with their titles, each with **Move**, for bars too small to read or hold. Bars drag like
+blocks (the lifted task is drawn at least 72 dp wide with its time and title); the left and right
+edges that turn the week are 12 dp there instead of 32 dp, so a task can be dropped on Sunday. The day view lists overdue
 tasks (on today) and tasks without a time above its hours. Today's header is in the accent and
 underlined, its column lightly tinted, with a line at the current time; overdue tasks are in the
 danger colour and marked "!", later dates of a repeating task "↻" (computed by
@@ -64,8 +69,7 @@ that day, and leaving a day for the week shows that day in it. A tap opens the t
 in the hours' column shows where it lands. Dropped over the day headers or the band (in the day
 view, the "All day" row that appears at the top while dragging, or the lists above the hours), it
 loses its time; a task from the band dropped in the hours gets one. Held at the left or right edge
-the days move on (a day at a time on a phone, a week with seven columns; the day view turns the
-day), and near the top or bottom of the hours they scroll. The gesture is followed by the
+the days move on (the week turns; the day view turns the day), and near the top or bottom of the hours they scroll. The gesture is followed by the
 calendar, not the block (`CalendarDrag.kt`), so it goes on when the block's own day leaves the
 screen; the snapping and the edges are plain functions (`DropMath`). A long press let go without
 moving (or the screen reader's long press and "Move" action) opens a sheet, laid out like Settings, to

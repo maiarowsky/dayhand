@@ -1,7 +1,10 @@
 package dev.helm.planner.ui.calendar
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -16,8 +19,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,9 +33,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -42,6 +49,7 @@ import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -136,6 +144,11 @@ private fun Modifier.dragGuide(date: String): Modifier {
 
 private val GUIDE_WIDTH = 2.dp
 
+/** In the week of bars, what a finger on a day does away from its bars: a tap opens the day, a long press its tasks. */
+class DayTouch(val open: () -> Unit, val hold: (() -> Unit)?)
+
+/** One day's hours: its timed tasks as blocks with titles, or with [touch] as bars without them. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun DayColumn(
     day: CalendarDay,
@@ -144,6 +157,7 @@ internal fun DayColumn(
     onMove: (CalendarEntry) -> Unit,
     showTime: Boolean,
     modifier: Modifier,
+    touch: DayTouch? = null,
 ) {
     val p = palette
     BoxWithConstraints(
@@ -160,6 +174,10 @@ internal fun DayColumn(
     ) {
         val laneSpace = maxWidth
         val bottom = HOUR_HEIGHT * HOURS - BLOCK_HEIGHT
+        // Under the bars, for the finger only: the header says the same to a screen reader.
+        if (touch != null) {
+            Box(Modifier.fillMaxSize().combinedClickable(onLongClick = touch.hold, onClick = touch.open).clearAndSetSemantics {})
+        }
         CalendarDays.lanes(day.timed).forEach { placed ->
             val width = laneSpace / placed.lanes
             val top = minOf(HOUR_HEIGHT * placed.startMinute / 60, bottom)
@@ -173,6 +191,7 @@ internal fun DayColumn(
                     .height(BLOCK_HEIGHT),
                 showTime = showTime,
                 maxLines = if (showTime) 1 else 2,
+                bar = touch != null,
             )
         }
         if (day.isToday) {
@@ -188,9 +207,12 @@ internal fun DayColumn(
     }
 }
 
-/** A day above the week's columns: short weekday and number; today in the accent, underlined; a tap opens the day. */
+/**
+ * A day above the week's columns: short weekday (or its first letter when the short names do not fit, [narrow]) and
+ * number; today in the accent, underlined; a tap opens the day.
+ */
 @Composable
-fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier) {
+fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier, narrow: Boolean = false) {
     val p = palette
     val date = LocalDate.parse(day.date)
     val locale = appLocale()
@@ -212,7 +234,7 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val color = if (day.isToday) p.accent else p.textMuted
-        Text(date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale), style = helmType.small, color = color, maxLines = 1)
+        Text(date.dayOfWeek.getDisplayName(if (narrow) TextStyle.NARROW else TextStyle.SHORT, locale), style = helmType.small, color = color, maxLines = 1, softWrap = false)
         Text(
             date.dayOfMonth.toString(),
             style = if (day.isToday) helmType.bodyStrong else helmType.body,
@@ -230,6 +252,21 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
         )
     }
 }
+
+/** Whether every short weekday name ("pon.", "niedz.") fits a column [width] wide. */
+@Composable
+fun shortWeekdaysFit(width: Dp): Boolean {
+    val measurer = rememberTextMeasurer()
+    val locale = appLocale()
+    val style = helmType.small
+    val room = with(LocalDensity.current) { (width - HEADER_SPACE).roundToPx() }
+    return remember(locale, style, room) {
+        DayOfWeek.entries.all { measurer.measure(it.getDisplayName(TextStyle.SHORT, locale), style, softWrap = false).size.width <= room }
+    }
+}
+
+/** Space kept either side of a weekday in its header. */
+private val HEADER_SPACE = 4.dp
 
 /** "All day" in the hours' column, beside the band of tasks without a time. */
 @Composable
@@ -254,6 +291,48 @@ fun UntimedDay(
         shown.forEach { EntryBlock(it, onOpen, onMove, Modifier.fillMaxWidth().padding(vertical = 1.dp)) }
         val hidden = day.untimed.size - shown.size
         if (hidden > 0) MoreEntries(hidden, day.date, onOpenDay)
+    }
+}
+
+/** How high a task without a time is in the week of bars, and how its corners are rounded. */
+private val SHORT_BAR = 6.dp
+private val SHORT_BAR_SHAPE = RoundedCornerShape(2.dp)
+
+/**
+ * One day's tasks without a time in the week of bars: a short bar each in its colour, [visible] at most, then "+n".
+ * A tap opens the day; a long press, its tasks with their titles.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun UntimedBars(day: CalendarDay, onOpenDay: (String) -> Unit, onHoldDay: (CalendarDay) -> Unit, modifier: Modifier = Modifier, visible: Int = 3) {
+    val p = palette
+    val untimed = day.untimed
+    val touch = if (untimed.isEmpty()) {
+        Modifier
+    } else {
+        val description = stringResource(R.string.calendar_untimed_described, untimed.joinToString(", ") { it.task.title })
+        Modifier
+            .combinedClickable(
+                onClickLabel = stringResource(R.string.calendar_open_day),
+                onLongClickLabel = stringResource(R.string.calendar_day_tasks),
+                onLongClick = { onHoldDay(day) },
+                onClick = { onOpenDay(day.date) },
+            )
+            .semantics(mergeDescendants = true) { contentDescription = description }
+    }
+    Column(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = HelmDimens.touchTarget)
+            .then(touch)
+            .padding(horizontal = 4.dp, vertical = 6.dp)
+            .testTag(CalendarTags.untimedBars(day.date)),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        val shown = if (untimed.size > visible) untimed.take(visible - 1) else untimed
+        shown.forEach { Box(Modifier.fillMaxWidth().height(SHORT_BAR).clip(SHORT_BAR_SHAPE).background(p.colorsOf(it).bar)) }
+        val hidden = untimed.size - shown.size
+        if (hidden > 0) Text(stringResource(R.string.calendar_more, hidden), style = helmType.small, color = p.textMuted, maxLines = 1, softWrap = false)
     }
 }
 

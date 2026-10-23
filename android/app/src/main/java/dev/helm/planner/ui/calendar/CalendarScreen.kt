@@ -73,13 +73,13 @@ enum class CalendarMode { WEEK, DAY }
 /** Pages either side of this week (or today); far more than anyone swipes. */
 private const val PAGES = 10_000
 private const val CENTER = PAGES / 2
-private const val WEEK_DAYS = 7
 
 /**
- * The calendar: the week's hours (tasks with a time on the hours, the rest in a band on top) or one day. On a phone the
- * week shows three days at a time and swipes day by day, with the arrows a week back or on; from tablet width it
- * shows Monday to Sunday and swipes week by week. A tap on a task opens its details; a long press lifts it to drag to
- * another day and time (or, let go without moving, opens the move sheet), with Undo.
+ * The calendar: the week's hours, Monday to Sunday (tasks with a time on the hours, the rest in a band on top), or one
+ * day. A swipe or the arrows turn the week. On a tablet or a phone on its side the week's tasks have their titles; on a
+ * phone held upright they are bars (see [barsOnly]): a tap on a day opens it with the titles, a long press lists its
+ * tasks ([DaySheet]). A tap on a task opens its details; a long press lifts it to drag to another day and time (or, let
+ * go without moving, opens the move sheet), with Undo.
  */
 @Composable
 fun CalendarScreen(
@@ -90,8 +90,7 @@ fun CalendarScreen(
     bottomBar: @Composable () -> Unit = {},
 ) {
     BoxWithConstraints(modifier) {
-        val days = visibleDays(maxWidth, gutterWidth(), LocalDensity.current.fontScale)
-        CalendarContent(state, actions, days, initialMode, bottomBar)
+        CalendarContent(state, actions, barsOnly(maxWidth, gutterWidth()), initialMode, bottomBar)
     }
 }
 
@@ -99,7 +98,7 @@ fun CalendarScreen(
 private fun CalendarContent(
     state: CalendarUiState,
     actions: CalendarActions,
-    days: Int,
+    bars: Boolean,
     initialMode: CalendarMode,
     bottomBar: @Composable () -> Unit,
 ) {
@@ -109,10 +108,11 @@ private fun CalendarContent(
     var mode by rememberSaveable { mutableStateOf(initialMode) }
     var dayPage by rememberSaveable { mutableIntStateOf(CENTER) }
     var moving by remember { mutableStateOf<CalendarEntry?>(null) }
+    var holding by rememberSaveable { mutableStateOf<String?>(null) }
     val drag = remember { CalendarDragState() }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val strip = rememberWeekStripState(today, days)
+    val strip = rememberWeekStripState(today)
     val dayPager = rememberPagerState(initialPage = dayPage) { PAGES }
     LaunchedEffect(dayPager.settledPage) { dayPage = dayPager.settledPage }
     SideEffect { drag.surfaceKey = { if (mode == CalendarMode.WEEK) WEEK_SURFACE else dayPager.currentPage } }
@@ -127,12 +127,12 @@ private fun CalendarContent(
     // Back in the week, the day just looked at is in view.
     val showWeek = {
         val index = strip.indexOf(dayOf(dayPager.currentPage))
-        if (index !in strip.firstDay until strip.firstDay + days) strip.snapTo(strip.startOfStep(index, days))
+        if (index !in strip.firstDay until strip.firstDay + WEEK_DAYS) strip.snapTo(strip.weekOf(index))
         mode = CalendarMode.WEEK
     }
     val week = mode == CalendarMode.WEEK
     val subtitle = if (week) {
-        dateRange(strip.date(strip.firstDay), strip.date(strip.firstDay + days - 1))
+        dateRange(strip.date(strip.firstDay), strip.date(strip.firstDay + WEEK_DAYS - 1))
     } else {
         dayOf(dayPager.currentPage).format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", locale))
     }
@@ -141,8 +141,8 @@ private fun CalendarContent(
             if (week) strip.animateTo(strip.firstDay + by * WEEK_DAYS) else dayPager.animateScrollToPage(dayPager.currentPage + by)
         }
     }
-    val atHome = if (week) strip.firstDay == strip.home(today, days) else dayPager.currentPage == CENTER
-    val goHome = { scope.launch { if (week) strip.animateTo(strip.home(today, days)) else dayPager.animateScrollToPage(CENTER) } }
+    val atHome = if (week) strip.firstDay == strip.home(today) else dayPager.currentPage == CENTER
+    val goHome = { scope.launch { if (week) strip.animateTo(strip.home(today)) else dayPager.animateScrollToPage(CENTER) } }
     BackHandler(enabled = !week) { showWeek() }
     val moved = stringResource(R.string.calendar_moved)
     val undo = stringResource(R.string.calendar_undo)
@@ -188,17 +188,24 @@ private fun CalendarContent(
         bottomBar = bottomBar,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        CalendarDragHost(drag, onDrop = { entry, at -> onMove(entry, at.date, at.time) }, onHold = { moving = it }, Modifier.padding(padding).fillMaxSize()) {
+        CalendarDragHost(
+            drag,
+            onDrop = { entry, at -> onMove(entry, at.date, at.time) },
+            onHold = { moving = it },
+            Modifier.padding(padding).fillMaxSize(),
+            sideEdge = if (week && bars) NARROW_DRAG_EDGE else DRAG_EDGE,
+        ) {
             if (week) {
                 WeekView(
                     strip,
-                    days,
+                    bars,
                     state.tasks,
                     state.today,
                     state.nowMinute,
                     { actions.openTask(it.task.localId) },
                     { moving = it },
                     openDay,
+                    { holding = it.date },
                     Modifier.fillMaxSize().testTag(CalendarTags.WEEK),
                 )
             } else {
@@ -213,6 +220,25 @@ private fun CalendarContent(
                 if (drag.moved) UntimedDrop(drag.target.let { it != null && it.time == null })
             }
         }
+    }
+    holding?.let { date ->
+        val day = remember(state.tasks, state.today, date) { CalendarDays.days(state.tasks, LocalDate.parse(date), 1, state.today).single() }
+        DaySheet(
+            day,
+            onDismiss = { holding = null },
+            onOpen = {
+                holding = null
+                actions.openTask(it.task.localId)
+            },
+            onMove = {
+                holding = null
+                moving = it
+            },
+            onOpenDay = {
+                holding = null
+                openDay(it)
+            },
+        )
     }
     moving?.let { entry -> MoveSheet(entry, onDismiss = { moving = null }) { date, time -> onMove(entry, date, time) } }
 }

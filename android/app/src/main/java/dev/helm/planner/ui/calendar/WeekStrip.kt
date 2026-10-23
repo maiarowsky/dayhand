@@ -2,8 +2,6 @@ package dev.helm.planner.ui.calendar
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.calculateTargetValue
-import androidx.compose.animation.core.exponentialDecay
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
@@ -26,13 +24,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,27 +51,22 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 
-/** Narrowest a day column gets at the normal font size, so a title shows a word or two per line, not syllables. */
-val MIN_DAY_WIDTH: Dp = 104.dp
-private const val MIN_DAYS = 3
-private const val WEEK = 7
+/**
+ * Narrowest a day column gets for its tasks' titles. Narrower (a phone held upright: about 50 dp), the week shows its
+ * tasks as bars without titles; a tablet or a phone on its side (from about 610 dp wide) keeps the titles.
+ */
+val TITLED_DAY_WIDTH: Dp = 80.dp
+const val WEEK_DAYS = 7
 
 /** A swipe faster than this turns the week even when it moved less than half of it (as the pager did). */
 private val FLING_VELOCITY = 400.dp
 
-/**
- * How many days sit side by side in [width] next to the hours' [gutter]: as many as are at least [MIN_DAY_WIDTH] wide
- * (wider with a larger font), at least three (a phone) and at most a week (a tablet, a phone on its side).
- */
-fun visibleDays(width: Dp, gutter: Dp, fontScale: Float): Int =
-    ((width - gutter) / (MIN_DAY_WIDTH * fontScale.coerceAtLeast(1f))).toInt().coerceIn(MIN_DAYS, WEEK)
-
-/** A week of columns turns a week at a time, Monday to Sunday; fewer columns move a day at a time. */
-fun stepOf(days: Int): Int = if (days >= WEEK) WEEK else 1
+/** Whether the week's seven columns in [width] next to the hours' [gutter] are too narrow for titles: bars instead. */
+fun barsOnly(width: Dp, gutter: Dp): Boolean = (width - gutter) / WEEK_DAYS < TITLED_DAY_WIDTH
 
 /**
  * Where the week view is: the column [offset] days after [anchor] (the epoch day of a Monday) comes first, with a
- * fraction while the days move. Swipes drag it; [settle], [animateTo] and [snapTo] put it back on a whole day.
+ * fraction while the days move. Swipes drag it; [settle], [animateTo] and [snapTo] put it back on a Monday.
  */
 @Stable
 class WeekStripState(val anchor: Long, offset: Float) : DraggableState {
@@ -96,11 +87,11 @@ class WeekStripState(val anchor: Long, offset: Float) : DraggableState {
     fun date(index: Int): LocalDate = LocalDate.ofEpochDay(anchor + index)
     fun indexOf(date: LocalDate): Int = (date.toEpochDay() - anchor).toInt()
 
-    /** Where "Today" goes: today first, or with a week of columns the week that has today. */
-    fun home(today: LocalDate, days: Int): Int = indexOf(if (stepOf(days) == WEEK) CalendarDays.weekStart(today) else today)
+    /** Where "Today" goes: the week that has today. */
+    fun home(today: LocalDate): Int = indexOf(CalendarDays.weekStart(today))
 
-    /** A column index that starts a step: any day, or a Monday with a week of columns. */
-    fun startOfStep(index: Int, days: Int): Int = Math.floorDiv(index, stepOf(days)) * stepOf(days)
+    /** The Monday of the week of a column index. */
+    fun weekOf(index: Int): Int = Math.floorDiv(index, WEEK_DAYS) * WEEK_DAYS
 
     override fun dispatchRawDelta(delta: Float) {
         offset -= delta / dayPx
@@ -118,56 +109,47 @@ class WeekStripState(val anchor: Long, offset: Float) : DraggableState {
         animate(offset, index.toFloat(), velocity, spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> offset = value }
     }
 
-    /**
-     * After a swipe that started on [from] at [velocityPx]: single days glide on (a fling at most a screen of [days]
-     * further) and stop on a whole day; a week of columns turns to the next or previous week, or back.
-     */
-    suspend fun settle(velocityPx: Float, from: Int, days: Int, flingPx: Float) {
-        val velocity = -velocityPx / dayPx
-        val target = if (stepOf(days) == 1) {
-            exponentialDecay<Float>().calculateTargetValue(offset, velocity).roundToInt().coerceIn(from - days, from + days)
-        } else {
-            val weeks = offset / WEEK
-            WEEK * when {
-                velocityPx < -flingPx -> floor(weeks + 1).toInt()
-                velocityPx > flingPx -> ceil(weeks - 1).toInt()
-                else -> weeks.roundToInt()
-            }
+    /** After a swipe at [velocityPx]: on to the next or previous week, or back. */
+    suspend fun settle(velocityPx: Float, flingPx: Float) {
+        val weeks = offset / WEEK_DAYS
+        val target = WEEK_DAYS * when {
+            velocityPx < -flingPx -> floor(weeks + 1).toInt()
+            velocityPx > flingPx -> ceil(weeks - 1).toInt()
+            else -> weeks.roundToInt()
         }
-        animateTo(target, velocity)
+        animateTo(target, -velocityPx / dayPx)
     }
 }
 
-/** The week view's position, kept across rotation; with a week of columns it starts on Monday. */
+/** The week view's position, kept across rotation, on the Monday of a week. */
 @Composable
-fun rememberWeekStripState(today: LocalDate, days: Int): WeekStripState {
-    val state = rememberSaveable(
+fun rememberWeekStripState(today: LocalDate): WeekStripState =
+    rememberSaveable(
         saver = listSaver<WeekStripState, Any>(
             save = { listOf(it.anchor, it.firstDay) },
-            restore = { WeekStripState(it[0] as Long, (it[1] as Int).toFloat()) },
+            restore = { WeekStripState(it[0] as Long, 0f).apply { snapTo(weekOf(it[1] as Int)) } },
         ),
     ) {
-        WeekStripState(CalendarDays.weekStart(today).toEpochDay(), 0f).apply { snapTo(home(today, days)) }
+        WeekStripState(CalendarDays.weekStart(today).toEpochDay(), 0f).apply { snapTo(home(today)) }
     }
-    // More or fewer columns (rotation, a resized window) keep the same days in view.
-    LaunchedEffect(days) { state.snapTo(state.startOfStep(state.firstDay, days)) }
-    return state
-}
 
 /**
- * The week: [days] columns of hours side by side with the times on the left, the day headers and the tasks without a
- * time pinned above them. Swiping moves the columns; the headers, the band and the hours move together.
+ * The week, Monday to Sunday: seven columns of hours side by side with the times on the left, the day headers and the
+ * tasks without a time pinned above them. Swiping turns the week; the headers, the band and the hours move together.
+ * With [bars] (a phone held upright) the tasks are bars without titles, a tap on a day opens it and a long press on a
+ * day opens its tasks with their titles ([onHoldDay]).
  */
 @Composable
 fun WeekView(
     state: WeekStripState,
-    days: Int,
+    bars: Boolean,
     tasks: List<Task>,
     today: String,
     nowMinute: Int,
     onOpen: (CalendarEntry) -> Unit,
     onMove: (CalendarEntry) -> Unit,
     onOpenDay: (String) -> Unit,
+    onHoldDay: (CalendarDay) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val p = palette
@@ -176,17 +158,11 @@ fun WeekView(
     val gutter = gutterWidth()
     // The days drawn: those in view and the one coming in from the right while the strip moves.
     val first by remember(state) { derivedStateOf { floor(state.offset).toInt() } }
-    val shown = remember(tasks, today, first, days) { CalendarDays.days(tasks, state.date(first), days + 1, today) }
-    var dragFrom by remember { mutableIntStateOf(0) }
+    val shown = remember(tasks, today, first) { CalendarDays.days(tasks, state.date(first), WEEK_DAYS + 1, today) }
     BoxWithConstraints(
-        modifier.draggable(
-            state,
-            Orientation.Horizontal,
-            onDragStarted = { dragFrom = state.firstDay },
-            onDragStopped = { velocity -> state.settle(velocity, dragFrom, days, flingPx) },
-        ),
+        modifier.draggable(state, Orientation.Horizontal, onDragStopped = { velocity -> state.settle(velocity, flingPx) }),
     ) {
-        val dayWidth = (maxWidth - gutter) / days
+        val dayWidth = (maxWidth - gutter) / WEEK_DAYS
         state.dayPx = with(density) { dayWidth.toPx() }
         val start = with(density) {
             (HOUR_HEIGHT * firstHour(shown.firstOrNull { it.isToday }, nowMinute) - HOUR_LABEL_ROOM).roundToPx().coerceAtLeast(0)
@@ -197,25 +173,33 @@ fun WeekView(
             WEEK_SURFACE,
             scroll,
             band = 0.dp,
-            dateAt = { x -> state.date(DropMath.column(x, state.dayPx, state.offset, days)).toString() },
-            step = { by -> state.animateTo(state.firstDay + by * stepOf(days)) },
+            dateAt = { x -> state.date(DropMath.column(x, state.dayPx, state.offset, WEEK_DAYS)).toString() },
+            step = { by -> state.animateTo(state.firstDay + by * WEEK_DAYS) },
         )
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(gutter))
-                DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { DayHeader(it, onOpenDay, Modifier.fillMaxWidth().untimedDrop(it.date)) }
+                val narrow = !shortWeekdaysFit(dayWidth)
+                DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { DayHeader(it, onOpenDay, Modifier.fillMaxWidth().untimedDrop(it.date), narrow) }
             }
             if (shown.any { it.untimed.isNotEmpty() }) {
                 Row(Modifier.fillMaxWidth().background(p.surface)) {
                     UntimedLabel(Modifier.width(gutter))
-                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { UntimedDay(it, onOpen, onMove, onOpenDay, Modifier.untimedDrop(it.date)) }
+                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) {
+                        if (bars) {
+                            UntimedBars(it, onOpenDay, onHoldDay, Modifier.untimedDrop(it.date))
+                        } else {
+                            UntimedDay(it, onOpen, onMove, onOpenDay, Modifier.untimedDrop(it.date))
+                        }
+                    }
                 }
             }
             Column(Modifier.weight(1f).onPlaced { hours.viewport = it }.verticalScroll(scroll)) {
                 Row(Modifier.fillMaxWidth().height(HOUR_HEIGHT * HOURS)) {
                     HourLabels(Modifier.width(gutter).fillMaxHeight(), shown.map { it.date })
-                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f).fillMaxHeight().onPlaced { hours.hours = it }, Modifier.fillMaxHeight()) {
-                        DayColumn(it, nowMinute, onOpen, onMove, showTime = false, Modifier.fillMaxSize())
+                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f).fillMaxHeight().onPlaced { hours.hours = it }, Modifier.fillMaxHeight()) { day ->
+                        val touch = if (bars) DayTouch({ onOpenDay(day.date) }, if (day.hasTasks) ({ onHoldDay(day) }) else null) else null
+                        DayColumn(day, nowMinute, onOpen, onMove, showTime = false, Modifier.fillMaxSize(), touch)
                     }
                 }
                 Spacer(Modifier.height(24.dp))

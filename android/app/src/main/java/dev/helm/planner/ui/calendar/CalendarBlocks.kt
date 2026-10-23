@@ -63,30 +63,38 @@ object CalendarTags {
     const val MOVE_OTHER_DAY = "calendar_move_other_day"
     const val DROP_UNTIMED = "calendar_drop_untimed"
     const val DRAG_GUIDE = "calendar_drag_guide"
+    const val DAY_SHEET = "calendar_day_sheet"
+    const val DAY_SHEET_OPEN_DAY = "calendar_day_sheet_open_day"
 
     fun entry(key: String) = "calendar_entry:$key"
     fun dayHeader(date: String) = "calendar_day_header:$date"
     fun moveDay(date: String) = "calendar_move_day:$date"
+    fun untimedBars(date: String) = "calendar_untimed_bars:$date"
+    fun sheetEntry(key: String) = "calendar_sheet_entry:$key"
+    fun sheetMove(key: String) = "calendar_sheet_move:$key"
 }
 
 /** Colours of an entry: overdue in the danger colour, done and later dates of a series quiet, the rest in the accent. */
-private data class EntryColors(val background: Color, val bar: Color, val text: Color)
+internal data class EntryColors(val background: Color, val bar: Color, val text: Color)
 
-private fun Palette.colorsOf(entry: CalendarEntry) = when {
+internal fun Palette.colorsOf(entry: CalendarEntry) = when {
     entry.done -> EntryColors(surfaceRaised, textFaint, textMuted)
     entry.overdue -> EntryColors(dangerSoft, danger, text)
     entry.repeat -> EntryColors(surfaceRaised, accentDim, textMuted)
     else -> EntryColors(accentSoft, accent, text)
 }
 
-/** The title with a mark that does not rely on colour: "!" overdue, "↻" a later date of a series, "✓" done. */
+/** A mark that does not rely on colour: "!" overdue, "↻" a later date of a series, "✓" done; none for the rest. */
+private fun markOf(entry: CalendarEntry): String? = when {
+    entry.done -> "✓"
+    entry.overdue -> "!"
+    entry.repeat -> "↻"
+    else -> null
+}
+
+/** The title with its mark. */
 private fun markedTitle(entry: CalendarEntry): String {
-    val mark = when {
-        entry.done -> "✓"
-        entry.overdue -> "!"
-        entry.repeat -> "↻"
-        else -> return entry.task.title
-    }
+    val mark = markOf(entry) ?: return entry.task.title
     // A no-break space keeps the mark on the line of the first word.
     return "$mark\u00A0${entry.task.title.trimStart()}"
 }
@@ -109,7 +117,7 @@ fun entryDescription(entry: CalendarEntry): String {
 /**
  * One task in the calendar, at least 48 dp high: a tap opens its details; a long press lifts it to drag to another
  * day or time (see [CalendarDragHost]), and let go without moving (or the screen reader's "Move" action) opens the move
- * sheet; only when it is the task's own date and not done.
+ * sheet; only when it is the task's own date and not done. A [bar] has no title (the week on a phone held upright).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -120,31 +128,29 @@ fun EntryBlock(
     modifier: Modifier = Modifier,
     showTime: Boolean = false,
     maxLines: Int = 2,
+    bar: Boolean = false,
+    tag: String = CalendarTags.entry(entry.key),
 ) {
     val description = entryDescription(entry)
     val moveLabel = stringResource(R.string.calendar_move_action)
     val drag = LocalCalendarDrag.current
     val placed = remember { Placed() }
-    EntryFace(
-        entry,
-        if (showTime) entry.time else null,
-        maxLines,
-        modifier
-            .onPlaced { placed.coordinates = it }
-            .graphicsLayer { alpha = if (drag?.entry?.key == entry.key) DRAGGED_ALPHA else 1f },
-        Modifier
-            .combinedClickable(
-                onClickLabel = stringResource(R.string.calendar_open),
-                onLongClickLabel = if (entry.movable) moveLabel else null,
-                onLongClick = if (entry.movable) ({ if (drag?.lift(entry, placed.coordinates) != true) onMove(entry) }) else null,
-                onClick = { onOpen(entry) },
-            )
-            .semantics(mergeDescendants = true) {
-                contentDescription = description
-                if (entry.movable) customActions = listOf(CustomAccessibilityAction(moveLabel) { onMove(entry); true })
-            }
-            .testTag(CalendarTags.entry(entry.key)),
-    )
+    val outer = modifier
+        .onPlaced { placed.coordinates = it }
+        .graphicsLayer { alpha = if (drag?.entry?.key == entry.key) DRAGGED_ALPHA else 1f }
+    val behaviour = Modifier
+        .combinedClickable(
+            onClickLabel = stringResource(R.string.calendar_open),
+            onLongClickLabel = if (entry.movable) moveLabel else null,
+            onLongClick = if (entry.movable) ({ if (drag?.lift(entry, placed.coordinates) != true) onMove(entry) }) else null,
+            onClick = { onOpen(entry) },
+        )
+        .semantics(mergeDescendants = true) {
+            contentDescription = description
+            if (entry.movable) customActions = listOf(CustomAccessibilityAction(moveLabel) { onMove(entry); true })
+        }
+        .testTag(tag)
+    if (bar) BarFace(entry, outer, behaviour) else EntryFace(entry, if (showTime) entry.time else null, maxLines, outer, behaviour)
 }
 
 /** Where a block is, for lifting it. */
@@ -177,6 +183,23 @@ internal fun EntryFace(entry: CalendarEntry, time: String?, maxLines: Int, modif
                 textDecoration = if (entry.done) TextDecoration.LineThrough else null,
             )
         }
+    }
+}
+
+/** How a bar looks: a block's colours and edge, with only its mark (if any) where the title would be. */
+@Composable
+private fun BarFace(entry: CalendarEntry, modifier: Modifier, behaviour: Modifier) {
+    val colors = palette.colorsOf(entry)
+    Box(
+        modifier
+            .heightIn(min = HelmDimens.touchTarget)
+            .clip(HelmShapes.badge)
+            .background(colors.background)
+            .drawBehind { drawRect(colors.bar, size = Size(BAR_WIDTH.toPx(), size.height)) }
+            .then(behaviour),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        markOf(entry)?.let { Text(it, style = helmType.small, color = colors.bar, maxLines = 1, softWrap = false, modifier = Modifier.padding(start = BAR_WIDTH, top = 2.dp)) }
     }
 }
 

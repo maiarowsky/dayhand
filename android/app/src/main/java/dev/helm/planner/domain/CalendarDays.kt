@@ -25,7 +25,9 @@ data class CalendarEntry(
 }
 
 /** A day of the calendar: its tasks without a time (in the band at the top) and with a time (on the hours). */
-data class CalendarDay(val date: String, val isToday: Boolean, val untimed: List<CalendarEntry>, val timed: List<CalendarEntry>)
+data class CalendarDay(val date: String, val isToday: Boolean, val untimed: List<CalendarEntry>, val timed: List<CalendarEntry>) {
+    val hasTasks: Boolean get() = untimed.isNotEmpty() || timed.isNotEmpty()
+}
 
 /** A timed entry on the hour grid: [startMinute] of the day, in [lane] of [lanes] side by side. */
 data class PlacedEntry(val entry: CalendarEntry, val startMinute: Int, val lane: Int, val lanes: Int)

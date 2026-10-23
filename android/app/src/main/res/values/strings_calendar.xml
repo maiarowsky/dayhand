@@ -14,6 +14,8 @@
     <string name="calendar_more">+%1$d</string>
     <string name="calendar_more_described">%1$d more: open the day</string>
     <string name="calendar_open_day">Open the day</string>
+    <string name="calendar_day_tasks">Show the day’s tasks</string>
+    <string name="calendar_untimed_described">All day: %1$s</string>
     <string name="calendar_empty_day">Nothing planned for this day.</string>
     <string name="calendar_open">Open</string>
     <string name="calendar_move_action">Move to another day or time</string>

@@ -11,7 +11,7 @@ import java.io.File
 
 /**
  * One screenshot run, from `-e tourVariant <name> -e tourMode light|dark -e tourDark <id> -e tourLight <id>` and
- * optionally `-e tourFont <id>`.
+ * optionally `-e tourFont <id>` and `-e tourOrientation landscape` (tours that support it).
  * Screenshots are whole device screens (UiAutomation), so sheets, dialogs and system bars are in them.
  */
 data class TourConfig(
@@ -20,6 +20,7 @@ data class TourConfig(
     val darkPalette: String?,
     val lightPalette: String?,
     val font: String? = null,
+    val landscape: Boolean = false,
 ) {
     companion object {
         fun fromArguments(): TourConfig {
@@ -30,6 +31,7 @@ data class TourConfig(
                 darkPalette = args.getString("tourDark"),
                 lightPalette = args.getString("tourLight"),
                 font = args.getString("tourFont"),
+                landscape = args.getString("tourOrientation") == "landscape",
             )
         }
     }

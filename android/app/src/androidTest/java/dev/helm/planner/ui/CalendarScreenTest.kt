@@ -19,6 +19,7 @@ import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -74,7 +75,7 @@ class CalendarScreenTest {
         override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) { kinds += hapticFeedbackType }
     }
 
-    /** A phone-wide screen (three days in the week) unless a test asks for a tablet's [width]. */
+    /** A phone held upright (the week's tasks as bars) unless a test asks for a wider screen's [width]. */
     private fun show(tasks: List<Task>, actions: CalendarActions = Recorder(), width: Dp = 400.dp, haptics: HapticFeedback = Haptics()) {
         compose.setContent {
             HelmTheme {
@@ -85,8 +86,23 @@ class CalendarScreenTest {
         }
     }
 
-    /** One day column on the 400 dp phone: the width less the 48 dp of hours, in three. */
-    private val dayWidth = (400.dp - 48.dp) / 3
+    /** One day column on the 400 dp phone: the width less the 48 dp of hours, in seven. */
+    private val dayWidth = (400.dp - 48.dp) / 7
+
+    /** Taps (or long-presses) the hours of [date]'s column in the week at [hour], away from its tasks. */
+    private fun touchDay(date: String, hour: Float, long: Boolean = false) {
+        val header = compose.onNodeWithTag(CalendarTags.dayHeader(date)).fetchSemanticsNode().boundsInRoot
+        val week = compose.onNodeWithTag(CalendarTags.WEEK).fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput {
+            // The hours start scrolled to an hour before now (10:00): 09:00 at the top, under the headers.
+            val at = Offset(header.center.x - week.left, header.bottom - week.top + (hour - 9f) * HOUR_HEIGHT.toPx())
+            if (long) longClick(at) else click(at)
+        }
+    }
+
+    /** The text a node shows (its own and its children's), or "" without any. */
+    private fun shownText(tag: String): String =
+        compose.onNodeWithTag(tag).fetchSemanticsNode().config.getOrElse(SemanticsProperties.Text) { emptyList() }.joinToString("\n") { it.text }
 
     /** Long-presses the block [key] and moves the finger by [dx], [dy] in small steps, as a finger does; it stays down. */
     private fun drag(key: String, dx: Dp, dy: Dp) {
@@ -101,24 +117,33 @@ class CalendarScreenTest {
     private fun letGo() = compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { up() }
 
     @Test
-    fun aPhoneShowsThreeDaysFromTodayAndTheArrowsMoveAWeek() {
+    fun aPhoneShowsTheWholeWeekAsBarsAndTheArrowsTurnIt() {
         show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23"), task("c", "2026-10-29", "14:00")))
 
         compose.onNodeWithTag(CalendarTags.WEEK).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-24")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-21")).assertDoesNotExist()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertIsNotDisplayed()
-        compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertExists()
-        compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).assertIsDisplayed()
+        (19..25).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertIsDisplayed() }
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertIsNotDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-18")).assertDoesNotExist()
+        // A bar: no title on it, the title for a screen reader.
+        compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22"))
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+            .assertContentDescriptionContains("Task a", substring = true)
+        assertEquals("", shownText(CalendarTags.entry("a@2026-10-22")))
+        compose.onNodeWithText("Task a").assertDoesNotExist()
+        // The band: a short bar for the task without a time.
+        compose.onNodeWithTag(CalendarTags.untimedBars("2026-10-23"))
+            .assertIsDisplayed()
+            .assertContentDescriptionContains("Task b", substring = true)
+        compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).assertDoesNotExist()
         compose.onNodeWithTag(CalendarTags.NOW_LINE).assertExists()
         compose.onNodeWithTag(CalendarTags.TODAY).assertDoesNotExist()
         compose.onNodeWithTag(CalendarTags.entry("c@2026-10-29")).assertDoesNotExist()
 
-        // A week on: Thursday to Saturday of the next week.
         compose.onNodeWithTag(CalendarTags.NEXT).performClick()
-        compose.onNodeWithTag(CalendarTags.entry("c@2026-10-29")).assertExists()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-29")).assertIsDisplayed()
+        (26..31).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertIsDisplayed() }
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.entry("c@2026-10-29")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertDoesNotExist()
         compose.onNodeWithTag(CalendarTags.TODAY).performClick()
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertExists()
@@ -126,18 +151,83 @@ class CalendarScreenTest {
     }
 
     @Test
-    fun swipingMovesByDaysAndBack() {
+    fun swipingTurnsTheWeekAndBack() {
         show(listOf(task("a", "2026-10-22", "09:00")))
 
-        // A third of the screen (a day or so, and a little glide): today goes out on the left.
-        compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeLeft(startX = right - 10f, endX = right - width / 3f, durationMillis = 600) }
+        // A third of the screen, quickly: the next week.
+        compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeLeft(startX = right - 10f, endX = right - width / 3f, durationMillis = 200) }
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertDoesNotExist()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.TODAY).assertIsDisplayed()
 
-        // Nearly the whole width back: three days at most, so today and the day before are in view again.
-        compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeRight(startX = left + 10f, endX = right - 10f, durationMillis = 600) }
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-21")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeRight(startX = left + 10f, endX = left + width / 3f, durationMillis = 200) }
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-19")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.TODAY).assertDoesNotExist()
+    }
+
+    @Test
+    fun tappingADayOfBarsOpensItWithTheTitles() {
+        show(listOf(task("a", "2026-10-24", "09:30"), task("b", "2026-10-24")))
+
+        touchDay("2026-10-24", 12f)
+        compose.onNodeWithTag(CalendarTags.DAY).assertIsDisplayed()
+        compose.onNodeWithText("Task b").assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.entry("a@2026-10-24")).assertExists()
+        compose.onNodeWithText("Task a").assertExists()
+
+        // The band opens the day too.
+        compose.onNodeWithTag(CalendarTags.MODE_WEEK).performClick()
+        compose.onNodeWithTag(CalendarTags.untimedBars("2026-10-24")).performClick()
+        compose.onNodeWithTag(CalendarTags.DAY).assertIsDisplayed()
+        compose.onNodeWithText("Task b").assertIsDisplayed()
+    }
+
+    @Test
+    fun aLongPressOnADayListsItsTasksToOpenOrMove() {
+        val actions = Recorder()
+        val title = "Zadzwonić do dentysty w sprawie wizyty"
+        show(listOf(task("a", "2026-10-23", "09:00") { copy(title = title) }, task("b", "2026-10-23"), task("r", "2026-10-22") { copy(repeat = RepeatRule(RepeatEvery.DAY)) }), actions)
+
+        touchDay("2026-10-23", 13f, long = true)
+        compose.onNodeWithTag(CalendarTags.DAY_SHEET).assertIsDisplayed()
+        // Without a time first (the later date of a series does not move), then by time, each with its title in whole
+        // words and Move.
+        compose.onNodeWithTag(CalendarTags.sheetEntry("b@2026-10-23")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.sheetEntry("r@2026-10-23")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.sheetMove("r@2026-10-23")).assertDoesNotExist()
+        val shown = shownText(CalendarTags.sheetEntry("a@2026-10-23"))
+        assertTrue(shown, shown.startsWith("09:00\n"))
+        shown.lines().drop(1).forEach { line ->
+            val words = line.removeSuffix("…").split(" ")
+            words.dropLast(1).forEach { assertTrue("'$it' in '$shown'", it in title.split(" ")) }
+            assertTrue(shown, words.last() in title.split(" ") || line.endsWith("…"))
+        }
+
+        compose.onNodeWithTag(CalendarTags.sheetMove("a@2026-10-23")).performClick()
+        compose.onNodeWithTag(CalendarTags.DAY_SHEET).assertDoesNotExist()
+        compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.moveDay("2026-10-24")).performClick()
+        compose.onNodeWithTag(CalendarTags.MOVE_CONFIRM).performClick()
+        assertEquals(listOf("move:a:2026-10-24:09:00"), actions.calls)
+
+        // The band's long press lists the day the same way; a tap on a task there opens it.
+        compose.onNodeWithTag(CalendarTags.untimedBars("2026-10-23")).performTouchInput { longClick() }
+        compose.onNodeWithTag(CalendarTags.sheetEntry("b@2026-10-23")).performClick()
+        compose.onNodeWithTag(CalendarTags.DAY_SHEET).assertDoesNotExist()
+        assertEquals("open:b", actions.calls.last())
+    }
+
+    @Test
+    fun aPhoneOnItsSideKeepsTheTitles() {
+        // Wider than the test device's screen, so parts of it are off screen: they exist rather than show.
+        show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), width = 700.dp)
+
+        (19..25).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertExists() }
+        assertEquals("Task a", shownText(CalendarTags.entry("a@2026-10-22")))
+        compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).assertExists()
+        compose.onNodeWithTag(CalendarTags.untimedBars("2026-10-23")).assertDoesNotExist()
     }
 
     @Test
@@ -156,7 +246,8 @@ class CalendarScreenTest {
     @Test
     fun longTitlesBreakBetweenWordsOnly() {
         val title = "Zadzwonić do dentysty w sprawie wizyty"
-        show(listOf(task("z", "2026-10-22", "09:00") { copy(title = title) }, task("r", "2026-10-23") { copy(title = "Raport kwartalny") }))
+        // The narrowest columns with titles: a small phone on its side.
+        show(listOf(task("z", "2026-10-22", "09:00") { copy(title = title) }, task("r", "2026-10-23") { copy(title = "Raport kwartalny") }), width = 610.dp)
 
         listOf("z@2026-10-22" to title, "r@2026-10-23" to "Raport kwartalny").forEach { (key, full) ->
             val words = full.split(" ")
@@ -180,12 +271,13 @@ class CalendarScreenTest {
         repeat(4) { compose.onNodeWithTag(CalendarTags.NEXT).performClick() }
         compose.onNodeWithTag(CalendarTags.MODE_WEEK).performClick()
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
     }
 
     @Test
     fun tapOpensTheTask() {
         val actions = Recorder()
-        show(listOf(task("b", "2026-10-23")), actions)
+        show(listOf(task("b", "2026-10-23", "10:00")), actions)
         compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23"))
             .assertHeightIsAtLeast(48.dp)
             .assertContentDescriptionContains("Task b", substring = true)
@@ -196,7 +288,8 @@ class CalendarScreenTest {
     @Test
     fun longPressMovesAndUndoPutsItBack() {
         val actions = Recorder()
-        show(listOf(task("b", "2026-10-23")), actions)
+        // With titles (a tablet), where a task without a time is a block of its own.
+        show(listOf(task("b", "2026-10-23")), actions, width = 900.dp)
 
         compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).performTouchInput { longClick() }
         compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
@@ -231,9 +324,22 @@ class CalendarScreenTest {
     }
 
     @Test
+    fun aBarHeldStillOpensTheMoveSheet() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00")), actions)
+        compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).performTouchInput { longClick() }
+        compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.moveDay("2026-10-22")).assertIsSelected()
+        compose.onNodeWithTag(CalendarTags.moveDay("2026-10-19")).performClick()
+        compose.onNodeWithTag(CalendarTags.MOVE_CONFIRM).performClick()
+        assertEquals(listOf("move:a:2026-10-19:09:00"), actions.calls)
+    }
+
+    @Test
     fun aTaskDraggedIntoTheHoursGetsATimeAndOntoTheBandLosesIt() {
         val actions = Recorder()
-        show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), actions)
+        // From the band with titles (a tablet); on a phone held upright the band's tasks move from the day's sheet.
+        show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), actions, width = 900.dp)
 
         // From the band of tasks without a time down into the hours.
         drag("b@2026-10-23", 0.dp, 200.dp)
@@ -247,22 +353,48 @@ class CalendarScreenTest {
     }
 
     @Test
-    fun holdingAtTheEdgeMovesTheDaysOn() {
+    fun aBarDraggedOntoAHeaderLosesItsTime() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), actions)
+        // From Thursday's 09:00 up and a column left, over Wednesday's header.
+        drag("a@2026-10-22", -dayWidth, (-100).dp)
+        letGo()
+        assertEquals(listOf("move:a:2026-10-21:null"), actions.calls)
+    }
+
+    @Test
+    fun holdingAtTheEdgeTurnsTheWeek() {
         val actions = Recorder()
         show(listOf(task("a", "2026-10-22", "09:00")), actions)
 
-        // To the right edge of the screen, held there a second: one day on (Friday to Sunday in view); then back into
-        // the last column, and let go when the days have stopped. While the finger is at the edge the calendar runs
-        // frames and is never idle, so the test moves the clock itself.
-        drag("a@2026-10-22", dayWidth * 2.5f, 0.dp)
+        // From Thursday to the last few dp of the screen, held there a second: the next week; then back into Sunday's
+        // column, and let go when the days have stopped. While the finger is at the edge the calendar runs frames and is
+        // never idle, so the test moves the clock itself.
+        drag("a@2026-10-22", dayWidth * 3.5f - 6.dp, 0.dp)
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { moveBy(Offset(-dayWidth.toPx() / 3, 0f)) }
+        compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { moveBy(Offset(-dayWidth.toPx() / 2, 0f)) }
         compose.mainClock.advanceTimeBy(800)
         letGo()
         compose.mainClock.autoAdvance = true
+        assertEquals(listOf("move:a:2026-11-01:09:00"), actions.calls)
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
+    }
+
+    @Test
+    fun aBarHeldOverSundayStaysInTheWeek() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00")), actions)
+
+        // Into the middle of Sunday's narrow column and held there: closer to the edge than a wider layout allows, but
+        // the week does not turn.
+        drag("a@2026-10-22", dayWidth * 3f, 0.dp)
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(1_500)
+        letGo()
+        compose.mainClock.autoAdvance = true
         assertEquals(listOf("move:a:2026-10-25:09:00"), actions.calls)
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertIsDisplayed()
     }
 
     @Test
@@ -300,7 +432,7 @@ class CalendarScreenTest {
     @Test
     fun screenReadersMoveThroughTheSheet() {
         val actions = Recorder()
-        show(listOf(task("b", "2026-10-23")), actions)
+        show(listOf(task("b", "2026-10-23", "10:00")), actions)
         val node = compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23"))
 
         // The screen reader's long press (no finger on the screen) and its "Move" action both open the sheet.
@@ -314,12 +446,12 @@ class CalendarScreenTest {
         assertEquals(text(R.string.calendar_move_action), move.label)
         compose.runOnIdle { move.action() }
         compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
-        assertEquals(listOf("move:b:2026-10-24:null"), actions.calls)
+        assertEquals(listOf("move:b:2026-10-24:10:00"), actions.calls)
     }
 
     @Test
     fun laterDatesOfASeriesOpenButDoNotMove() {
-        show(listOf(task("r", "2026-10-22") { copy(repeat = RepeatRule(RepeatEvery.DAY)) }))
+        show(listOf(task("r", "2026-10-22", "08:00") { copy(repeat = RepeatRule(RepeatEvery.DAY)) }))
 
         compose.onNodeWithTag(CalendarTags.entry("r@2026-10-22"))
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.CustomActions))

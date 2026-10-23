@@ -1,5 +1,7 @@
 package dev.helm.planner.tour
 
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -8,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.semantics.SemanticsActions
@@ -34,11 +37,15 @@ import dev.helm.planner.ui.settings.CalendarFeedPage
 import dev.helm.planner.ui.settings.CalendarFeedUiState
 import dev.helm.planner.ui.settings.FeedView
 import dev.helm.planner.ui.today.ConnectionStatus
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** The calendar (week, day, moving and dragging a task) and Settings → Calendar; see [ScreenTour]. Sample data is Polish. */
+/**
+ * The calendar (week, day, moving and dragging a task, a day's tasks from the week of bars) and Settings → Calendar;
+ * see [ScreenTour]. Sample data is Polish. Run upright and on its side: upright the week is bars, on its side titles.
+ */
 @RunWith(AndroidJUnit4::class)
 class CalendarTour {
     @get:Rule
@@ -47,9 +54,20 @@ class CalendarTour {
     private val config = TourConfig.fromArguments()
 
     private fun show(content: @Composable () -> Unit) {
+        if (config.landscape) turnToLandscape()
         compose.runOnUiThread { compose.activity.tourBars(config.dark) }
         compose.setContent { TourTheme(config, content) }
         compose.waitForIdle()
+    }
+
+    /** On its side (the emulator's own rotation setting does not hold from one test's activity to the next). */
+    private fun turnToLandscape() {
+        compose.runOnUiThread { compose.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+        val until = System.currentTimeMillis() + ROTATION_TIMEOUT_MS
+        while (compose.activity.resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE) {
+            check(System.currentTimeMillis() < until) { "the activity did not turn" }
+            Thread.sleep(100)
+        }
     }
 
     private fun shot(name: String) {
@@ -108,6 +126,14 @@ class CalendarTour {
         repeat(STEPS) { moveBy(total / STEPS.toFloat()) }
     }
 
+    /** Scrolls the hours inside [view] so that the task [key] is [at] its height. */
+    private fun centre(key: String, view: String, at: Float = 0.5f) {
+        val hours = compose.onAllNodes(hasScrollAction() and hasAnyAncestor(hasTestTag(view))).onFirst()
+        val page = hours.fetchSemanticsNode().boundsInRoot
+        val task = compose.onNodeWithTag(CalendarTags.entry(key)).fetchSemanticsNode().boundsInRoot
+        hours.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, task.center.y - (page.top + page.height * at)) }
+    }
+
     private fun letGo() = compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { up() }
 
     @Test
@@ -116,30 +142,43 @@ class CalendarTour {
         show { CalendarScreen(CalendarUiState(live.tasks, "2026-10-22", 10 * 60 + 15, ConnectionStatus.SYNCED, 0), live) }
         val day = compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-24")).fetchSemanticsNode().boundsInRoot.left -
             compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-23")).fetchSemanticsNode().boundsInRoot.left
-        // "Raport kwartalny" (Friday 10:00) a day on and two hours and a quarter later: the guide says 12:15.
-        lift("e@2026-10-23") { hour -> Offset(day, hour * 2.25f) }
+        // "Raport kwartalny" (Friday 10:00) a day on and two hours and a quarter later (12:15). On its side the hours
+        // show barely more than an hour, all of it near an edge that scrolls them: the task is brought to their middle
+        // and only goes a day on (10:00).
+        val down = if (config.landscape) 0f else 2.25f
+        if (config.landscape) centre("e@2026-10-23", CalendarTags.WEEK)
+        lift("e@2026-10-23") { hour -> Offset(day, hour * down) }
         shot("55-calendar-drag")
         // Up over Saturday's header: no time.
         val header = compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-24")).fetchSemanticsNode().boundsInRoot.center.y
         val block = compose.onNodeWithTag(CalendarTags.entry("e@2026-10-23")).fetchSemanticsNode().boundsInRoot.center.y
-        moveFinger { hour -> Offset(0f, header - block - hour * 2.25f) }
+        moveFinger { hour -> Offset(0f, header - block - hour * down) }
         shot("56-calendar-drag-untimed")
-        moveFinger { hour -> Offset(0f, block - header + hour * 2.25f) }
+        moveFinger { hour -> Offset(0f, block - header + hour * down) }
         letGo()
         shot("57-calendar-dropped")
         compose.mainClock.advanceTimeBy(SNACKBAR_GONE_MS)
+        // On its side the day's hours are too short to drag in.
+        if (config.landscape) return
 
         compose.onNodeWithTag(CalendarTags.MODE_DAY).performClick()
         // The task in the middle of the day's page, away from the edges that scroll it.
         compose.onNodeWithTag(CalendarTags.entry("c@2026-10-22")).performScrollTo()
-        val page = compose.onNodeWithTag(CalendarTags.DAY).fetchSemanticsNode().boundsInRoot
-        val task = compose.onNodeWithTag(CalendarTags.entry("c@2026-10-22")).fetchSemanticsNode().boundsInRoot
-        compose.onAllNodes(hasScrollAction() and hasAnyAncestor(hasTestTag(CalendarTags.DAY))).onFirst()
-            .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, task.center.y - (page.top + page.height * 0.4f)) }
+        centre("c@2026-10-22", CalendarTags.DAY, at = 0.4f)
         // "Przegląd tygodnia" (11:00) an hour later, with the row for "no time" over the top of the day.
         lift("c@2026-10-22") { hour -> Offset(0f, hour) }
         shot("58-calendar-day-drag")
         letGo()
+    }
+
+    /** Upright only: a long press on a day of bars lists its tasks (on its side the week has titles and no such sheet). */
+    @Test
+    fun daySheet() {
+        show { CalendarScreen(CalendarUiState(tasks, "2026-10-22", 10 * 60 + 15, ConnectionStatus.SYNCED, 0), object : CalendarActions {}) }
+        val band = compose.onAllNodesWithTag(CalendarTags.untimedBars("2026-10-22"))
+        assumeTrue(band.fetchSemanticsNodes().isNotEmpty())
+        band.onFirst().performTouchInput { longClick() }
+        shot("59-calendar-day-sheet")
     }
 
     @Test
@@ -152,6 +191,7 @@ class CalendarTour {
 
     private companion object {
         const val STEPS = 12
+        const val ROTATION_TIMEOUT_MS = 5_000L
 
         /** A long snackbar (the drop's Undo) is gone after 10 s. */
         const val SNACKBAR_GONE_MS = 11_000L

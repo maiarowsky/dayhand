@@ -46,7 +46,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** How close to an edge of the calendar the finger turns the days (left, right) or scrolls the hours (top, bottom). */
-private val EDGE = 32.dp
+internal val DRAG_EDGE = 32.dp
+
+/**
+ * The left and right edges in the week of bars: the last day's column is narrow, so a wider edge would turn the week
+ * under a task dropped on Sunday.
+ */
+internal val NARROW_DRAG_EDGE = 12.dp
+
+/** The narrowest the lifted task gets under the finger, so its time and a word of its title can be read. */
+private val GHOST_MIN_WIDTH = 72.dp
 
 /** The fastest the hours scroll under a dragged task, per frame. */
 private val SCROLL_STEP = 14.dp
@@ -181,20 +190,21 @@ class CalendarDragState {
     }
 
     /**
-     * While a task is lifted: holding the finger at the left or right edge moves the days on (after [EDGE_DWELL_MS];
-     * for a task lifted at an edge, once the finger has been away from it), near the top or bottom of the hours they scroll
-     * every frame (after [SCROLL_DELAY_MS]). Elsewhere this waits for the finger instead of running frames.
+     * While a task is lifted: holding the finger within [sideEdge] of the left or right edge moves the days on (after
+     * [EDGE_DWELL_MS]; for a task lifted at an edge, once the finger has been away from it), within [edge] of the top or
+     * bottom of the hours they scroll every frame (after [SCROLL_DELAY_MS]). Elsewhere this waits for the finger instead
+     * of running frames.
      */
-    internal suspend fun follow(edge: Float, maxStep: Float) = coroutineScope {
+    internal suspend fun follow(edge: Float, sideEdge: Float, maxStep: Float) = coroutineScope {
         var side = 0
         var since = 0L
-        var armed = host?.let { DropMath.edge(start.x, it.size.width.toFloat(), edge) == 0 } ?: false
+        var armed = host?.let { DropMath.edge(start.x, it.size.width.toFloat(), sideEdge) == 0 } ?: false
         var scrollSince = -1L
         var stepping: Job? = null
         while (entry != null) {
             val host = host?.takeIf { it.isAttached }
             val hours = surface
-            val at = if (host == null || !moved) 0 else DropMath.edge(pointer.x, host.size.width.toFloat(), edge)
+            val at = if (host == null || !moved) 0 else DropMath.edge(pointer.x, host.size.width.toFloat(), sideEdge)
             if (moved && at == 0) armed = true
             val span = if (host == null) null else hours?.span(host)
             val dy = if (span == null || !moved) 0f else DropMath.scrollStep(pointer.y, span.start, span.endInclusive, edge, maxStep)
@@ -230,7 +240,8 @@ val LocalCalendarDrag = staticCompositionLocalOf<CalendarDragState?> { null }
 /**
  * The calendar's views under one finger: after a long press lifts a block, this follows the finger (before the
  * scrolling and swiping inside see it), draws the lifted block under it and, on letting go, calls [onDrop] with where
- * it landed, or [onHold] when the finger did not move (the move sheet, as before dragging existed).
+ * it landed, or [onHold] when the finger did not move (the move sheet, as before dragging existed). Held within
+ * [sideEdge] of the left or right edge, the days move on.
  */
 @Composable
 fun CalendarDragHost(
@@ -238,6 +249,7 @@ fun CalendarDragHost(
     onDrop: (CalendarEntry, DropTarget) -> Unit,
     onHold: (CalendarEntry) -> Unit,
     modifier: Modifier = Modifier,
+    sideEdge: Dp = DRAG_EDGE,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -247,7 +259,7 @@ fun CalendarDragHost(
     drag.maxGrab = with(density) { (HOUR_HEIGHT / 2).toPx() }
     val lifted = drag.entry != null
     LaunchedEffect(drag, lifted) {
-        if (lifted) drag.follow(with(density) { EDGE.toPx() }, with(density) { SCROLL_STEP.toPx() })
+        if (lifted) drag.follow(with(density) { DRAG_EDGE.toPx() }, with(density) { sideEdge.toPx() }, with(density) { SCROLL_STEP.toPx() })
     }
     Box(
         modifier
@@ -292,7 +304,10 @@ fun CalendarDragHost(
     }
 }
 
-/** The lifted block under the finger, raised, saying where it would land. */
+/**
+ * The lifted block under the finger, raised, saying where it would land; a narrow bar is drawn wider (at least
+ * [GHOST_MIN_WIDTH], centred on where it was) with its time and title.
+ */
 @Composable
 private fun DragGhost(drag: CalendarDragState) {
     val entry = drag.entry ?: return
@@ -300,6 +315,8 @@ private fun DragGhost(drag: CalendarDragState) {
     val untimed = stringResource(R.string.calendar_no_time_short)
     val target = drag.target
     val label = if (target == null) entry.time else target.time ?: untimed
+    val width = maxOf(with(density) { drag.size.width.toDp() }, GHOST_MIN_WIDTH)
+    val wider = with(density) { width.toPx() } - drag.size.width
     EntryFace(
         entry,
         label,
@@ -307,9 +324,9 @@ private fun DragGhost(drag: CalendarDragState) {
         Modifier
             .offset {
                 val at = drag.pointer - drag.grab
-                IntOffset(at.x.roundToInt(), at.y.roundToInt())
+                IntOffset((at.x - wider / 2).roundToInt(), at.y.roundToInt())
             }
-            .size(with(density) { drag.size.width.toDp() }, with(density) { drag.size.height.toDp() })
+            .size(width, with(density) { drag.size.height.toDp() })
             .shadow(8.dp, HelmShapes.badge)
             .clearAndSetSemantics {},
     )
