@@ -8,7 +8,7 @@ turns on the read-only **calendar address** for Google and Apple Calendar.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.8.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.8.2 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -59,12 +59,21 @@ underlined, its column lightly tinted, with a line at the current time; overdue 
 danger colour and marked "!", later dates of a repeating task "↻" (computed by
 `domain/Recurrence.kt`, from today on), done tasks "✓". **Today** comes back, a day's header opens
 that day, and leaving a day for the week shows that day in it. A tap opens the task's details. A
-**long press** (or the screen reader's "Move" action) opens a sheet, laid out like Settings, to
-pick a day of the task's week, another day or a time or "No time"; **Move** changes
-Room and queues `setDue` through the outbox like any other change, and the snackbar offers
+**long press** lifts a block (with a tap of haptic feedback); dragging it moves it to another day
+(column) and time: its top snaps to a quarter of an hour, and a line in its column with the time
+in the hours' column shows where it lands. Dropped over the day headers or the band (in the day
+view, the "All day" row that appears at the top while dragging, or the lists above the hours), it
+loses its time; a task from the band dropped in the hours gets one. Held at the left or right edge
+the days move on (a day at a time on a phone, a week with seven columns; the day view turns the
+day), and near the top or bottom of the hours they scroll. The gesture is followed by the
+calendar, not the block (`CalendarDrag.kt`), so it goes on when the block's own day leaves the
+screen; the snapping and the edges are plain functions (`DropMath`). A long press let go without
+moving (or the screen reader's long press and "Move" action) opens a sheet, laid out like Settings, to
+pick a day of the task's week, another day or a time or "No time". A drop and **Move** change
+Room and queue `setDue` through the outbox like any other change, and the snackbar offers
 **Undo**, which sends the old day and time back the same way. Later dates of a series and done
-tasks do not move (move the task itself). Dragging a block to another hour or day is not there
-yet: the sheet is the robust path, with undo and the same thing for screen readers.
+tasks do not move. Moving a repeating task moves its own (current) date, as editing its due date
+does; its later dates follow from the rule and that date.
 
 **Board**: three columns, **To do / In progress / Done** (the 50 most recently done). On a phone
 one column shows at a time under tabs; from 600 dp wide the columns sit side by side. The "now"

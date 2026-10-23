@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -74,22 +76,65 @@ fun HourGrid(
     showTime: Boolean = false,
 ) {
     Row(modifier.fillMaxWidth().height(HOUR_HEIGHT * HOURS)) {
-        HourLabels(Modifier.width(gutterWidth()).fillMaxHeight())
+        HourLabels(Modifier.width(gutterWidth()).fillMaxHeight(), days.map { it.date })
         days.forEach { day -> DayColumn(day, nowMinute, onOpen, onMove, showTime, Modifier.weight(1f).fillMaxHeight()) }
     }
 }
 
+/** The hours' times; while a task is dragged over one of [dates], the time it would get, over them. */
 @Composable
-internal fun HourLabels(modifier: Modifier) {
+internal fun HourLabels(modifier: Modifier, dates: List<String>) {
     val p = palette
-    Column(modifier) {
-        repeat(HOURS) { hour ->
-            Box(Modifier.height(HOUR_HEIGHT).fillMaxWidth().padding(end = 6.dp), contentAlignment = Alignment.TopEnd) {
-                if (hour > 0) Text("%02d:00".format(hour), style = helmType.small, color = p.textFaint, maxLines = 1, softWrap = false, modifier = Modifier.offset(y = (-9).dp))
+    Box(modifier) {
+        Column(Modifier.fillMaxSize()) {
+            repeat(HOURS) { hour ->
+                Box(Modifier.height(HOUR_HEIGHT).fillMaxWidth().padding(end = 6.dp), contentAlignment = Alignment.TopEnd) {
+                    if (hour > 0) Text("%02d:00".format(hour), style = helmType.small, color = p.textFaint, maxLines = 1, softWrap = false, modifier = Modifier.offset(y = LABEL_SHIFT))
+                }
             }
         }
+        GuideTime(dates)
     }
 }
+
+/** Hour labels sit centred on their line. */
+private val LABEL_SHIFT = (-9).dp
+
+@Composable
+private fun GuideTime(dates: List<String>) {
+    val p = palette
+    val drag = LocalCalendarDrag.current ?: return
+    val time = drag.target?.takeIf { drag.moved && it.date in dates }?.time ?: return
+    Text(
+        time,
+        style = helmType.smallStrong,
+        color = p.text,
+        maxLines = 1,
+        softWrap = false,
+        textAlign = TextAlign.End,
+        modifier = Modifier
+            .offset(y = HOUR_HEIGHT * CalendarDays.minuteOf(time) / 60 + LABEL_SHIFT)
+            .fillMaxWidth()
+            .background(p.background)
+            .padding(end = 6.dp)
+            .testTag(CalendarTags.DRAG_GUIDE),
+    )
+}
+
+/** While a task is dragged over [date] at a time, a line where its block would start. */
+@Composable
+private fun Modifier.dragGuide(date: String): Modifier {
+    val drag = LocalCalendarDrag.current ?: return this
+    val color = palette.text
+    return drawWithContent {
+        drawContent()
+        val time = drag.target?.takeIf { drag.moved && it.date == date }?.time ?: return@drawWithContent
+        val y = HOUR_HEIGHT.toPx() * CalendarDays.minuteOf(time) / 60
+        drawLine(color, Offset(0f, y), Offset(size.width, y), strokeWidth = GUIDE_WIDTH.toPx())
+    }
+}
+
+private val GUIDE_WIDTH = 2.dp
 
 @Composable
 internal fun DayColumn(
@@ -104,6 +149,7 @@ internal fun DayColumn(
     BoxWithConstraints(
         modifier
             .background(if (day.isToday) p.accentSoft.copy(alpha = TODAY_TINT) else p.background)
+            .dragGuide(day.date)
             .drawBehind {
                 val hour = HOUR_HEIGHT.toPx()
                 for (h in 0 until HOURS) {
@@ -195,11 +241,26 @@ fun UntimedLabel(modifier: Modifier = Modifier) {
 
 /** One day's tasks without a time, in the band over the hours: [visible] of them, then "+n" that opens the day. */
 @Composable
-fun UntimedDay(day: CalendarDay, onOpen: (CalendarEntry) -> Unit, onMove: (CalendarEntry) -> Unit, onOpenDay: (String) -> Unit, visible: Int = 2) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = 1.dp, vertical = 2.dp)) {
+fun UntimedDay(
+    day: CalendarDay,
+    onOpen: (CalendarEntry) -> Unit,
+    onMove: (CalendarEntry) -> Unit,
+    onOpenDay: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    visible: Int = 2,
+) {
+    Column(modifier.fillMaxWidth().padding(horizontal = 1.dp, vertical = 2.dp)) {
         val shown = if (day.untimed.size > visible) day.untimed.take(visible - 1) else day.untimed
         shown.forEach { EntryBlock(it, onOpen, onMove, Modifier.fillMaxWidth().padding(vertical = 1.dp)) }
         val hidden = day.untimed.size - shown.size
         if (hidden > 0) MoreEntries(hidden, day.date, onOpenDay)
     }
+}
+
+/** While a task is dragged over [date] without a time (the headers, the band), that day is tinted there. */
+@Composable
+fun Modifier.untimedDrop(date: String): Modifier {
+    val drag = LocalCalendarDrag.current ?: return this
+    val tint = palette.accentSoft
+    return drawBehind { if (drag.moved && drag.target == DropTarget(date, null)) drawRect(tint) }
 }

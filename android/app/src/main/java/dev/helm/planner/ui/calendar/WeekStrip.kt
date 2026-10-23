@@ -39,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -190,21 +191,30 @@ fun WeekView(
         val start = with(density) {
             (HOUR_HEIGHT * firstHour(shown.firstOrNull { it.isToday }, nowMinute) - HOUR_LABEL_ROOM).roundToPx().coerceAtLeast(0)
         }
+        val scroll = rememberScrollState(start)
+        // A task dragged above the hours (over the headers or the band) loses its time.
+        val hours = rememberHoursDrop(
+            WEEK_SURFACE,
+            scroll,
+            band = 0.dp,
+            dateAt = { x -> state.date(DropMath.column(x, state.dayPx, state.offset, days)).toString() },
+            step = { by -> state.animateTo(state.firstDay + by * stepOf(days)) },
+        )
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(gutter))
-                DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { DayHeader(it, onOpenDay, Modifier.fillMaxWidth()) }
+                DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { DayHeader(it, onOpenDay, Modifier.fillMaxWidth().untimedDrop(it.date)) }
             }
             if (shown.any { it.untimed.isNotEmpty() }) {
                 Row(Modifier.fillMaxWidth().background(p.surface)) {
                     UntimedLabel(Modifier.width(gutter))
-                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { UntimedDay(it, onOpen, onMove, onOpenDay) }
+                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f)) { UntimedDay(it, onOpen, onMove, onOpenDay, Modifier.untimedDrop(it.date)) }
                 }
             }
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState(start))) {
+            Column(Modifier.weight(1f).onPlaced { hours.viewport = it }.verticalScroll(scroll)) {
                 Row(Modifier.fillMaxWidth().height(HOUR_HEIGHT * HOURS)) {
-                    HourLabels(Modifier.width(gutter).fillMaxHeight())
-                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f).fillMaxHeight(), Modifier.fillMaxHeight()) {
+                    HourLabels(Modifier.width(gutter).fillMaxHeight(), shown.map { it.date })
+                    DayStrip(state, first, shown, dayWidth, Modifier.weight(1f).fillMaxHeight().onPlaced { hours.hours = it }, Modifier.fillMaxHeight()) {
                         DayColumn(it, nowMinute, onOpen, onMove, showTime = false, Modifier.fillMaxSize())
                     }
                 }
@@ -213,6 +223,9 @@ fun WeekView(
         }
     }
 }
+
+/** The week's hours in the drag. */
+internal const val WEEK_SURFACE = "week"
 
 /** One row of the week (headers, band or hours): each day at its place for the strip's offset, cut at the edges. */
 @Composable

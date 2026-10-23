@@ -1,6 +1,7 @@
 package dev.helm.planner.ui.calendar
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +42,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -73,7 +78,8 @@ private const val WEEK_DAYS = 7
 /**
  * The calendar: the week's hours (tasks with a time on the hours, the rest in a band on top) or one day. On a phone the
  * week shows three days at a time and swipes day by day, with the arrows a week back or on; from tablet width it
- * shows Monday to Sunday and swipes week by week. A tap on a task opens its details; a long press moves it, with Undo.
+ * shows Monday to Sunday and swipes week by week. A tap on a task opens its details; a long press lifts it to drag to
+ * another day and time (or, let go without moving, opens the move sheet), with Undo.
  */
 @Composable
 fun CalendarScreen(
@@ -103,11 +109,13 @@ private fun CalendarContent(
     var mode by rememberSaveable { mutableStateOf(initialMode) }
     var dayPage by rememberSaveable { mutableIntStateOf(CENTER) }
     var moving by remember { mutableStateOf<CalendarEntry?>(null) }
+    val drag = remember { CalendarDragState() }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val strip = rememberWeekStripState(today, days)
     val dayPager = rememberPagerState(initialPage = dayPage) { PAGES }
     LaunchedEffect(dayPager.settledPage) { dayPage = dayPager.settledPage }
+    SideEffect { drag.surfaceKey = { if (mode == CalendarMode.WEEK) WEEK_SURFACE else dayPager.currentPage } }
 
     val dayOf = { page: Int -> today.plusDays((page - CENTER).toLong()) }
     val openDay = { date: String ->
@@ -180,7 +188,7 @@ private fun CalendarContent(
         bottomBar = bottomBar,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
+        CalendarDragHost(drag, onDrop = { entry, at -> onMove(entry, at.date, at.time) }, onHold = { moving = it }, Modifier.padding(padding).fillMaxSize()) {
             if (week) {
                 WeekView(
                     strip,
@@ -198,8 +206,11 @@ private fun CalendarContent(
                     val date = dayOf(page)
                     val day = remember(state.tasks, state.today, page) { CalendarDays.days(state.tasks, date, 1, state.today).single() }
                     val overdue = remember(state.tasks, state.today, page) { CalendarDays.overdueBefore(state.tasks, date.toString(), state.today) }
-                    DayPage(day, overdue, state.today, state.nowMinute, { actions.openTask(it.task.localId) }, { moving = it })
+                    DayPage(page, day, overdue, state.today, state.nowMinute, { actions.openTask(it.task.localId) }, { moving = it }) { by ->
+                        dayPager.animateScrollToPage(page + by)
+                    }
                 }
+                if (drag.moved) UntimedDrop(drag.target.let { it != null && it.time == null })
             }
         }
     }
@@ -265,20 +276,45 @@ private fun dateRange(first: LocalDate, last: LocalDate): String {
     return "${first.format(DateTimeFormatter.ofPattern(startPattern, locale))} – $end"
 }
 
+/**
+ * While a task is dragged in the day view, a row over the top of the day: dropped there (or on the lists above the
+ * hours), it has no time. [hovered] when the task is over it.
+ */
+@Composable
+private fun UntimedDrop(hovered: Boolean) {
+    val p = palette
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(HelmDimens.touchTarget)
+            .background(if (hovered) p.accentSoft else p.surface)
+            .drawBehind { drawLine(p.border, Offset(0f, size.height), Offset(size.width, size.height), strokeWidth = 1.dp.toPx()) }
+            .padding(horizontal = HelmDimens.screenMargin)
+            .testTag(CalendarTags.DROP_UNTIMED),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(stringResource(R.string.calendar_no_time_short), style = helmType.smallStrong, color = if (hovered) p.text else p.textMuted)
+    }
+}
+
 @Composable
 private fun DayPage(
+    page: Int,
     day: CalendarDay,
     overdue: List<dev.helm.planner.data.local.Task>,
     today: String,
     nowMinute: Int,
     onOpen: (CalendarEntry) -> Unit,
     onMove: (CalendarEntry) -> Unit,
+    step: suspend (by: Int) -> Unit,
 ) {
     val p = palette
     val listed = overdue.isNotEmpty() || day.untimed.isNotEmpty()
     // Lists (or the "nothing planned" line) start at the top; otherwise the hours start near now or 07:00.
     val start = with(LocalDensity.current) { if (listed || day.timed.isEmpty()) 0 else (HOUR_HEIGHT * firstHour(day, nowMinute) - HOUR_LABEL_ROOM).roundToPx().coerceAtLeast(0) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState(start))) {
+    val scroll = rememberScrollState(start)
+    val hours = rememberHoursDrop(page, scroll, band = HelmDimens.touchTarget, dateAt = { day.date }, step = step)
+    Column(Modifier.fillMaxSize().onPlaced { hours.viewport = it }.verticalScroll(scroll)) {
         if (overdue.isNotEmpty()) {
             DaySection(stringResource(R.string.section_overdue, overdue.size), p.danger)
             overdue.forEach { task ->
@@ -299,7 +335,7 @@ private fun DayPage(
             )
         }
         if (listed) Spacer(Modifier.height(12.dp))
-        HourGrid(listOf(day), nowMinute, onOpen, onMove, showTime = true)
+        HourGrid(listOf(day), nowMinute, onOpen, onMove, Modifier.onPlaced { hours.hours = it }, showTime = true)
         Spacer(Modifier.height(24.dp))
     }
 }

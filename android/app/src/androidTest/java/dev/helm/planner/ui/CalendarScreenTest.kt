@@ -2,7 +2,12 @@ package dev.helm.planner.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -12,6 +17,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -19,6 +25,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -34,6 +41,7 @@ import dev.helm.planner.ui.calendar.CalendarActions
 import dev.helm.planner.ui.calendar.CalendarScreen
 import dev.helm.planner.ui.calendar.CalendarTags
 import dev.helm.planner.ui.calendar.CalendarUiState
+import dev.helm.planner.ui.calendar.HOUR_HEIGHT
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.ConnectionStatus
 import org.junit.Assert.assertEquals
@@ -61,14 +69,36 @@ class CalendarScreenTest {
         override fun openSettings() { calls += "settings" }
     }
 
+    private class Haptics : HapticFeedback {
+        val kinds = mutableListOf<HapticFeedbackType>()
+        override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) { kinds += hapticFeedbackType }
+    }
+
     /** A phone-wide screen (three days in the week) unless a test asks for a tablet's [width]. */
-    private fun show(tasks: List<Task>, actions: CalendarActions = Recorder(), width: Dp = 400.dp) {
+    private fun show(tasks: List<Task>, actions: CalendarActions = Recorder(), width: Dp = 400.dp, haptics: HapticFeedback = Haptics()) {
         compose.setContent {
             HelmTheme {
-                CalendarScreen(CalendarUiState(tasks, "2026-10-22", 600, ConnectionStatus.SYNCED, 0), actions, Modifier.requiredWidth(width))
+                CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                    CalendarScreen(CalendarUiState(tasks, "2026-10-22", 600, ConnectionStatus.SYNCED, 0), actions, Modifier.requiredWidth(width))
+                }
             }
         }
     }
+
+    /** One day column on the 400 dp phone: the width less the 48 dp of hours, in three. */
+    private val dayWidth = (400.dp - 48.dp) / 3
+
+    /** Long-presses the block [key] and moves the finger by [dx], [dy] in small steps, as a finger does; it stays down. */
+    private fun drag(key: String, dx: Dp, dy: Dp) {
+        compose.onNodeWithTag(CalendarTags.entry(key)).performTouchInput {
+            down(center)
+            advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+            val by = Offset(dx.toPx(), dy.toPx())
+            repeat(STEPS) { moveBy(by / STEPS.toFloat()) }
+        }
+    }
+
+    private fun letGo() = compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { up() }
 
     @Test
     fun aPhoneShowsThreeDaysFromTodayAndTheArrowsMoveAWeek() {
@@ -182,6 +212,112 @@ class CalendarScreenTest {
     }
 
     @Test
+    fun dragMovesATaskToAnotherDayAndTimeAndUndoPutsItBack() {
+        val actions = Recorder()
+        val haptics = Haptics()
+        show(listOf(task("a", "2026-10-22", "09:00")), actions, haptics = haptics)
+
+        // A column on (Friday) and an hour and a quarter down: the block's top at 10:15.
+        drag("a@2026-10-22", dayWidth, HOUR_HEIGHT * 1.25f)
+        compose.onNodeWithTag(CalendarTags.DRAG_GUIDE).assertTextEquals("10:15")
+        assertEquals(emptyList<String>(), actions.calls)
+        letGo()
+
+        assertEquals(listOf("move:a:2026-10-23:10:15"), actions.calls)
+        compose.onNodeWithTag(CalendarTags.DRAG_GUIDE).assertDoesNotExist()
+        assertEquals(listOf(HapticFeedbackType.LongPress, HapticFeedbackType.Confirm), haptics.kinds)
+        compose.onNodeWithText(text(R.string.calendar_undo)).performClick()
+        assertEquals("move:a:2026-10-22:09:00", actions.calls.last())
+    }
+
+    @Test
+    fun aTaskDraggedIntoTheHoursGetsATimeAndOntoTheBandLosesIt() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), actions)
+
+        // From the band of tasks without a time down into the hours.
+        drag("b@2026-10-23", 0.dp, 200.dp)
+        letGo()
+        assertTrue(actions.calls.toString(), actions.calls.single().matches(Regex("move:b:2026-10-23:\\d\\d:(00|15|30|45)")))
+
+        // From the hours up over the band and the day's header: no time.
+        drag("a@2026-10-22", 0.dp, (-100).dp)
+        letGo()
+        assertEquals("move:a:2026-10-22:null", actions.calls.last())
+    }
+
+    @Test
+    fun holdingAtTheEdgeMovesTheDaysOn() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00")), actions)
+
+        // To the right edge of the screen, held there a second: one day on (Friday to Sunday in view); then back into
+        // the last column, and let go when the days have stopped. While the finger is at the edge the calendar runs
+        // frames and is never idle, so the test moves the clock itself.
+        drag("a@2026-10-22", dayWidth * 2.5f, 0.dp)
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { moveBy(Offset(-dayWidth.toPx() / 3, 0f)) }
+        compose.mainClock.advanceTimeBy(800)
+        letGo()
+        compose.mainClock.autoAdvance = true
+        assertEquals(listOf("move:a:2026-10-25:09:00"), actions.calls)
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertIsDisplayed()
+    }
+
+    @Test
+    fun aDropWhereItWasChangesNothing() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00")), actions)
+        drag("a@2026-10-22", 0.dp, 40.dp)
+        compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { moveBy(Offset(0f, -40.dp.toPx())) }
+        letGo()
+        assertEquals(emptyList<String>(), actions.calls)
+        compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertDoesNotExist()
+    }
+
+    @Test
+    fun theDayViewDragsToAnotherTimeAndToTheRowWithoutATime() {
+        val actions = Recorder()
+        show(listOf(task("a", "2026-10-22", "09:00")), actions)
+        compose.onNodeWithTag(CalendarTags.MODE_DAY).performClick()
+
+        drag("a@2026-10-22", 0.dp, HOUR_HEIGHT)
+        compose.onNodeWithTag(CalendarTags.DROP_UNTIMED).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.DRAG_GUIDE).assertTextEquals("10:00")
+        letGo()
+        assertEquals(listOf("move:a:2026-10-22:10:00"), actions.calls)
+        compose.onNodeWithTag(CalendarTags.DROP_UNTIMED).assertDoesNotExist()
+
+        // Up onto the row that appears over the top of the day while dragging.
+        val top = compose.onNodeWithTag(CalendarTags.DAY).fetchSemanticsNode().boundsInRoot.top
+        val block = compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).fetchSemanticsNode().boundsInRoot.center.y
+        drag("a@2026-10-22", 0.dp, with(compose.density) { (top - block).toDp() } + 20.dp)
+        letGo()
+        assertEquals("move:a:2026-10-22:null", actions.calls.last())
+    }
+
+    @Test
+    fun screenReadersMoveThroughTheSheet() {
+        val actions = Recorder()
+        show(listOf(task("b", "2026-10-23")), actions)
+        val node = compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23"))
+
+        // The screen reader's long press (no finger on the screen) and its "Move" action both open the sheet.
+        node.performSemanticsAction(SemanticsActions.OnLongClick)
+        compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.moveDay("2026-10-24")).performClick()
+        compose.onNodeWithTag(CalendarTags.MOVE_CONFIRM).performClick()
+        compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertDoesNotExist()
+
+        val move = node.fetchSemanticsNode().config[SemanticsActions.CustomActions].single()
+        assertEquals(text(R.string.calendar_move_action), move.label)
+        compose.runOnIdle { move.action() }
+        compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
+        assertEquals(listOf("move:b:2026-10-24:null"), actions.calls)
+    }
+
+    @Test
     fun laterDatesOfASeriesOpenButDoNotMove() {
         show(listOf(task("r", "2026-10-22") { copy(repeat = RepeatRule(RepeatEvery.DAY)) }))
 
@@ -219,5 +355,9 @@ class CalendarScreenTest {
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-24")).performClick()
         compose.onNodeWithTag(CalendarTags.DAY).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.entry("b@2026-10-24")).assertIsDisplayed()
+    }
+
+    private companion object {
+        const val STEPS = 12
     }
 }

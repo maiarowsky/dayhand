@@ -122,6 +122,25 @@ class TaskEditingTest {
     }
 
     @Test
+    fun aCalendarDropAndItsUndoQueueTheDayAndTime() = runTest {
+        val a = repository.add("A", "2026-10-22", null, null)
+        val before = db.outbox().count()
+
+        // Dragged from the band into the hours of the next day, then Undo.
+        repository.setDue(a.localId, "2026-10-23", "10:15")
+        var row = db.tasks().byLocalId(a.localId)!!
+        assertEquals("2026-10-23", row.dueDate)
+        assertEquals("10:15", row.dueTime)
+        assertEquals("10:15", lastArgs().getValue("dueTime").jsonPrimitive.content)
+        repository.setDue(a.localId, "2026-10-22", null)
+        row = db.tasks().byLocalId(a.localId)!!
+        assertEquals("2026-10-22", row.dueDate)
+        assertNull(row.dueTime)
+        assertEquals(JsonNull, lastArgs()["dueTime"])
+        assertEquals(listOf(Mutations.UPDATE, Mutations.UPDATE), db.outbox().all().drop(before).map { it.mutation })
+    }
+
+    @Test
     fun invalidEditsNeverReachTheOutbox() = runTest {
         val a = repository.add("A", null, null, null)
         val before = db.outbox().count()

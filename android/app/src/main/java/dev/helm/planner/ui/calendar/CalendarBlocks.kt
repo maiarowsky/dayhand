@@ -10,12 +10,16 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -38,6 +42,9 @@ import java.time.format.DateTimeFormatter
 /** The coloured edge of a block, which carries its state (accent, danger, quiet). */
 private val BAR_WIDTH = 3.dp
 
+/** The block left in place while it is dragged. */
+private const val DRAGGED_ALPHA = 0.4f
+
 object CalendarTags {
     const val SCREEN = "calendar"
     const val WEEK = "calendar_week"
@@ -54,6 +61,8 @@ object CalendarTags {
     const val MOVE_NO_TIME = "calendar_move_no_time"
     const val MOVE_TIME = "calendar_move_time"
     const val MOVE_OTHER_DAY = "calendar_move_other_day"
+    const val DROP_UNTIMED = "calendar_drop_untimed"
+    const val DRAG_GUIDE = "calendar_drag_guide"
 
     fun entry(key: String) = "calendar_entry:$key"
     fun dayHeader(date: String) = "calendar_day_header:$date"
@@ -98,8 +107,9 @@ fun entryDescription(entry: CalendarEntry): String {
 }
 
 /**
- * One task in the calendar, at least 48 dp high: a tap opens its details; a long press (or the screen reader's
- * "Move" action) moves it, when it is the task's own date and not done.
+ * One task in the calendar, at least 48 dp high: a tap opens its details; a long press lifts it to drag to another
+ * day or time (see [CalendarDragHost]), and let go without moving (or the screen reader's "Move" action) opens the move
+ * sheet; only when it is the task's own date and not done.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -111,20 +121,22 @@ fun EntryBlock(
     showTime: Boolean = false,
     maxLines: Int = 2,
 ) {
-    val p = palette
-    val colors = p.colorsOf(entry)
     val description = entryDescription(entry)
     val moveLabel = stringResource(R.string.calendar_move_action)
-    Box(
+    val drag = LocalCalendarDrag.current
+    val placed = remember { Placed() }
+    EntryFace(
+        entry,
+        if (showTime) entry.time else null,
+        maxLines,
         modifier
-            .heightIn(min = HelmDimens.touchTarget)
-            .clip(HelmShapes.badge)
-            .background(colors.background)
-            .drawBehind { drawRect(colors.bar, size = Size(BAR_WIDTH.toPx(), size.height)) }
+            .onPlaced { placed.coordinates = it }
+            .graphicsLayer { alpha = if (drag?.entry?.key == entry.key) DRAGGED_ALPHA else 1f },
+        Modifier
             .combinedClickable(
                 onClickLabel = stringResource(R.string.calendar_open),
                 onLongClickLabel = if (entry.movable) moveLabel else null,
-                onLongClick = if (entry.movable) ({ onMove(entry) }) else null,
+                onLongClick = if (entry.movable) ({ if (drag?.lift(entry, placed.coordinates) != true) onMove(entry) }) else null,
                 onClick = { onOpen(entry) },
             )
             .semantics(mergeDescendants = true) {
@@ -132,11 +144,31 @@ fun EntryBlock(
                 if (entry.movable) customActions = listOf(CustomAccessibilityAction(moveLabel) { onMove(entry); true })
             }
             .testTag(CalendarTags.entry(entry.key)),
+    )
+}
+
+/** Where a block is, for lifting it. */
+private class Placed {
+    var coordinates: LayoutCoordinates? = null
+}
+
+/** How a block looks: its colours and edge, [time] (if any) over the title. [behaviour] goes inside the clip. */
+@Composable
+internal fun EntryFace(entry: CalendarEntry, time: String?, maxLines: Int, modifier: Modifier, behaviour: Modifier = Modifier) {
+    val p = palette
+    val colors = p.colorsOf(entry)
+    Box(
+        modifier
+            .heightIn(min = HelmDimens.touchTarget)
+            .clip(HelmShapes.badge)
+            .background(colors.background)
+            .drawBehind { drawRect(colors.bar, size = Size(BAR_WIDTH.toPx(), size.height)) }
+            .then(behaviour),
         contentAlignment = Alignment.CenterStart,
     ) {
         // No padding above and below: the lines are centred, and a half-hour block keeps two lines at a larger font.
         Column(Modifier.padding(start = BAR_WIDTH + 5.dp, end = 4.dp)) {
-            if (showTime && entry.time != null) Text(entry.time, style = helmType.small, color = p.textMuted, maxLines = 1)
+            if (time != null) Text(time, style = helmType.small, color = p.textMuted, maxLines = 1)
             WordTitle(
                 markedTitle(entry),
                 style = helmType.smallStrong,
