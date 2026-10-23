@@ -17,8 +17,9 @@ import dev.helm.planner.ui.theme.palette
 import dev.helm.planner.ui.today.ConnectionStatus
 
 /**
- * The Settings list: Appearance, Notifications, Data (export, calendar), Connection and About, each a group of equal rows that show only
- * a short current value. What a value means, warnings and the buttons that fix them live on the row's page.
+ * The Settings list: Appearance, Notifications, Data (backup; with a server also export and calendar), Connection and About, each a
+ * group of equal rows that show only a short current value. What a value means, warnings and the buttons that fix them live on the
+ * row's page.
  */
 @Composable
 internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, open: (SettingsPane) -> Unit) {
@@ -73,27 +74,47 @@ internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, 
             },
         ),
     )
+    // The server's export, its calendar address and agent connections need a server; on this phone only they are not offered.
+    val connected = !settings.isLocal
     ListGroup(
         stringResource(R.string.settings_data),
-        rows = listOf(
-            { ListRow(stringResource(R.string.settings_export), SettingsTags.ROW_EXPORT, icon = LineIcon.Download) { open(SettingsPane.EXPORT) } },
-            { ListRow(stringResource(R.string.calendar_feed_title), SettingsTags.ROW_CALENDAR, icon = LineIcon.Calendar) { open(SettingsPane.CALENDAR) } },
-        ),
+        rows = buildList<@Composable () -> Unit> {
+            add { ListRow(stringResource(R.string.settings_backup), SettingsTags.ROW_BACKUP, icon = LineIcon.Document) { open(SettingsPane.BACKUP) } }
+            if (connected) {
+                add { ListRow(stringResource(R.string.settings_export), SettingsTags.ROW_EXPORT, icon = LineIcon.Download) { open(SettingsPane.EXPORT) } }
+                add { ListRow(stringResource(R.string.calendar_feed_title), SettingsTags.ROW_CALENDAR, icon = LineIcon.Calendar) { open(SettingsPane.CALENDAR) } }
+            }
+            if (state.data.sample) {
+                add {
+                    ListRow(
+                        stringResource(R.string.sample_row),
+                        SettingsTags.ROW_SAMPLE,
+                        icon = LineIcon.List,
+                        titleColor = palette.danger,
+                        chevron = false,
+                        onClick = actions::removeSample,
+                    )
+                }
+            }
+        },
     )
     ListGroup(
         stringResource(R.string.settings_connection),
-        rows = listOf(
-            {
-                ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = LineIcon.Cloud, value = connectionValue(state.data.connection)) {
+        rows = buildList<@Composable () -> Unit> {
+            add {
+                val icon = if (connected) LineIcon.Cloud else LineIcon.Phone
+                ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = icon, value = connectionValue(state.data.connection)) {
                     open(SettingsPane.SERVER)
                 }
-            },
-            {
-                ListRow(stringResource(R.string.connections_title), SettingsTags.ROW_CONNECTIONS, icon = LineIcon.Link) {
-                    open(SettingsPane.CONNECTIONS)
+            }
+            if (connected) {
+                add {
+                    ListRow(stringResource(R.string.connections_title), SettingsTags.ROW_CONNECTIONS, icon = LineIcon.Link) {
+                        open(SettingsPane.CONNECTIONS)
+                    }
                 }
-            },
-        ),
+            }
+        },
     )
     ListGroup(
         stringResource(R.string.settings_about),

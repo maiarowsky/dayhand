@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="connect_title">Połącz z serwerem</string>
+    <string name="connect_title">Połącz z moim serwerem</string>
     <string name="connect_intro">Na komputerze uruchom hlm pair (albo npx helm pair) i wpisz kod, który się pojawi. Kod działa raz, przez 10 minut.</string>
     <string name="connect_address">Adres serwera</string>
     <string name="connect_address_hint">Adres HTTP actions, np. https://nazwa.convex.site</string>
@@ -8,7 +8,6 @@
     <string name="connect_code_hint">12 liter i cyfr, np. ABCD-EFGH-JKMN</string>
     <string name="connect_button">Połącz</string>
     <string name="connect_working">Łączę…</string>
-    <string name="connect_skip">Nie teraz, używaj Helm offline</string>
     <string name="connect_done">Połączono. Synchronizuję zadania…</string>
     <string name="connect_error_address">Wpisz adres serwera zaczynający się od https://</string>
     <string name="connect_error_code">Kod ma 12 liter i cyfr, np. ABCD-EFGH-JKMN.</string>
@@ -28,12 +27,11 @@
     <string name="server_connected_to">Połączono z %1$s</string>
     <string name="server_device">Ten telefon: %1$s</string>
     <string name="server_app_token">Zalogowano tokenem aplikacji. Lepiej sparuj telefon kodem; token przestanie działać, gdy wygaśnie.</string>
-    <string name="server_not_connected">Ten telefon nie jest połączony z serwerem. Zadania zostają w telefonie, dopóki się nie połączysz.</string>
     <string name="server_signed_out">Serwer wylogował ten telefon. Połącz ponownie nowym kodem.</string>
-    <string name="server_connect">Połącz z serwerem</string>
+    <string name="server_connect">Połącz z moim serwerem</string>
     <string name="server_connect_code">Połącz kodem</string>
     <string name="server_disconnect">Rozłącz</string>
     <string name="server_disconnect_title">Rozłączyć ten telefon?</string>
-    <string name="server_disconnect_text">Helm zapomni logowanie na tym telefonie. Zadania zostaną tutaj, a niewysłane zmiany poczekają do ponownego połączenia. Aby odwołać telefon także na serwerze, uruchom: hlm revoke %1$s</string>
-    <string name="server_disconnect_text_no_id">Helm zapomni logowanie na tym telefonie. Zadania zostaną tutaj, a niewysłane zmiany poczekają do ponownego połączenia.</string>
+    <string name="server_disconnect_text">Helm zapomni logowanie na tym telefonie, a telefon będzie dalej prowadził plan sam. Zadania zostaną tutaj, a niewysłane zmiany poczekają, aż znów połączysz się z tym serwerem; połączenie z innym serwerem zastąpi ten plan. Aby odwołać telefon także na serwerze, uruchom: hlm revoke %1$s</string>
+    <string name="server_disconnect_text_no_id">Helm zapomni logowanie na tym telefonie, a telefon będzie dalej prowadził plan sam. Zadania zostaną tutaj, a niewysłane zmiany poczekają, aż znów połączysz się z tym serwerem; połączenie z innym serwerem zastąpi ten plan.</string>
 </resources>

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.domain.todaySections
+import dev.helm.planner.sample.SamplePlan
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
 import dev.helm.planner.sync.NetworkMonitor
@@ -30,7 +31,7 @@ class TodayViewModel(
             connectionStatus(settings.settings, network.online, liveSync.state),
             repository.pendingChanges,
         ) { tasks, s, now, c, pending ->
-            TodayUiState(todaySections(tasks, now, s.timezone), c, pending)
+            TodayUiState(todaySections(tasks, now, s.timezone), c, pending, sample = tasks.any { SamplePlan.isSample(it.localId) })
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
     override fun complete(localId: String) = launch { repository.complete(localId) }
@@ -42,6 +43,7 @@ class TodayViewModel(
     override fun saveResumeNote(localId: String, note: String) = launch { repository.setResumeNote(localId, note) }
     override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) =
         launch { repository.add(title, dueDate, dueTime, note) }
+    override fun removeSample() = launch { repository.removeSample() }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }

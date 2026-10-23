@@ -1,57 +1,69 @@
 package dev.helm.planner.ui.settings
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import dev.helm.planner.R
 import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.ListGroup
+import dev.helm.planner.ui.components.ListNote
 import dev.helm.planner.ui.components.ListRow
-import dev.helm.planner.ui.components.helmSwitchColors
+import dev.helm.planner.ui.theme.palette
 import dev.helm.planner.ui.connect.DisconnectDialog
 import dev.helm.planner.ui.connect.serverRows
 import dev.helm.planner.ui.today.ConnectionStatus
 
 /**
- * The Server page: the connection state, the paired server with Connect / Disconnect, then the offline test switch
- * and the time zone.
+ * The Server page. On this phone only: that it is so, Connect, and how a server of one's own is set up. Connected:
+ * the connection state, the paired server with Disconnect. Then the time zone: the phone's without a server, the
+ * server's with one (and, when they differ, a row that sets the server's to the phone's).
  */
 @Composable
 internal fun ServerOptions(data: SettingsData, actions: SettingsActions) {
     val settings = data.settings
     var confirming by rememberSaveable { mutableStateOf(false) }
     val rows = buildList<@Composable () -> Unit> {
-        add { ConnectionRow(data.connection, data.pendingChanges) }
+        // On its own the phone has no connection to describe, only changes that wait for the server it had.
+        if (!settings.isLocal || settings.pairingLost) add { ConnectionRow(data.connection, data.pendingChanges) }
         addAll(serverRows(settings, onConnect = actions::openConnect, onDisconnect = { confirming = true }))
     }
     ListGroup(null, rows)
-    ListGroup(
-        null,
-        rows = listOf(
-            { OfflineRow(settings.offlineMode, actions::setOfflineMode) },
-            {
+    if (settings.isLocal) ListNote(stringResource(R.string.server_local_how))
+    val zoneRows = buildList<@Composable () -> Unit> {
+        add {
+            ListRow(
+                stringResource(R.string.settings_timezone_title),
+                tag = SettingsTags.TIMEZONE,
+                icon = LineIcon.Globe,
+                note = stringResource(
+                    if (settings.isLocal) R.string.settings_timezone_phone else R.string.settings_timezone,
+                    settings.timezone,
+                ),
+            )
+        }
+        if (!settings.isLocal && settings.timezone != settings.phoneTimezone) {
+            add {
                 ListRow(
-                    stringResource(R.string.settings_timezone_title),
-                    tag = SettingsTags.TIMEZONE,
-                    icon = LineIcon.Globe,
-                    note = stringResource(R.string.settings_timezone, settings.timezone),
+                    stringResource(R.string.settings_timezone_use_phone, settings.phoneTimezone),
+                    tag = SettingsTags.USE_PHONE_TIMEZONE,
+                    icon = LineIcon.Refresh,
+                    titleColor = palette.accent,
+                    note = stringResource(R.string.settings_timezone_differs),
+                    onClick = actions::usePhoneTimezone,
+                    chevron = false,
                 )
-            },
-        ),
-    )
+            }
+        }
+    }
+    ListGroup(null, zoneRows)
     if (confirming) {
         DisconnectDialog(settings, onDismiss = { confirming = false }, onConfirm = {
             confirming = false
@@ -65,7 +77,7 @@ internal fun ServerOptions(data: SettingsData, actions: SettingsActions) {
 private fun ConnectionRow(connection: ConnectionStatus, pending: Int) {
     val icon = when (connection) {
         ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING -> LineIcon.Cloud
-        ConnectionStatus.OFFLINE, ConnectionStatus.OFFLINE_MODE, ConnectionStatus.NOT_CONFIGURED -> LineIcon.CloudOff
+        ConnectionStatus.OFFLINE, ConnectionStatus.LOCAL -> LineIcon.CloudOff
         ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> LineIcon.Warning
     }
     ListRow(
@@ -77,39 +89,11 @@ private fun ConnectionRow(connection: ConnectionStatus, pending: Int) {
     )
 }
 
-/** The offline test switch: the whole row toggles it and a screen reader hears one switch; only the switch shows the press. */
-@Composable
-private fun OfflineRow(checked: Boolean, onChange: (Boolean) -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    ListRow(
-        stringResource(R.string.settings_offline),
-        tag = SettingsTags.OFFLINE,
-        modifier = Modifier.toggleable(
-            value = checked,
-            interactionSource = interaction,
-            indication = null,
-            role = Role.Switch,
-            onValueChange = onChange,
-        ),
-        icon = LineIcon.CloudOff,
-        note = stringResource(R.string.settings_offline_hint),
-        trailing = {
-            Switch(
-                checked = checked,
-                onCheckedChange = null,
-                interactionSource = interaction,
-                colors = helmSwitchColors(),
-            )
-        },
-    )
-}
-
 internal fun connectionText(connection: ConnectionStatus): Int = when (connection) {
     ConnectionStatus.SYNCED -> R.string.connection_synced
     ConnectionStatus.CONNECTING -> R.string.connection_connecting
     ConnectionStatus.OFFLINE -> R.string.connection_offline
-    ConnectionStatus.OFFLINE_MODE -> R.string.connection_offline_mode
-    ConnectionStatus.NOT_CONFIGURED -> R.string.connection_not_configured
+    ConnectionStatus.LOCAL -> R.string.connection_local
     ConnectionStatus.UNAUTHORIZED -> R.string.connection_unauthorized
     ConnectionStatus.ERROR -> R.string.connection_error
 }

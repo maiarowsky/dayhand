@@ -57,6 +57,7 @@ class TodayScreenTest {
         override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) { calls += "add:$title:$dueDate:$dueTime" }
         override fun openSettings() { calls += "settings" }
         override fun openTask(localId: String) { calls += "open:$localId" }
+        override fun removeSample() { calls += "sample:remove" }
     }
 
     private fun show(state: TodayUiState, actions: TodayActions = Recorder()) {
@@ -134,12 +135,20 @@ class TodayScreenTest {
     }
 
     @Test
-    fun missingServerLeadsToSettings() {
+    fun onThisPhoneOnlyIsNotAWarning() {
+        // Changes queue up for a server that may never come; nothing is said about them.
+        show(TodayUiState(sections(today = listOf(task("t", "2026-10-22"))), ConnectionStatus.LOCAL, 5))
+        compose.onNodeWithTag(TodayTags.STATUS).assertDoesNotExist()
+        compose.onNodeWithTag(TodayTags.SAMPLE).assertDoesNotExist()
+    }
+
+    @Test
+    fun sampleTasksSaySoAndGoWithOneTap() {
         val actions = Recorder()
-        show(TodayUiState(sections(), ConnectionStatus.NOT_CONFIGURED, 0), actions)
-        compose.onNodeWithTag(TodayTags.STATUS).assertTextContains(text(R.string.status_not_configured))
-        compose.onNodeWithText(text(R.string.open_settings)).performClick()
-        assertEquals(listOf("settings"), actions.calls)
+        show(TodayUiState(sections(today = listOf(task("sample-1", "2026-10-22"))), ConnectionStatus.LOCAL, 0, sample = true), actions)
+        compose.onNodeWithTag(TodayTags.SAMPLE).assertTextContains(text(R.string.sample_banner), substring = true)
+        compose.onNodeWithText(text(R.string.sample_remove)).assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf("sample:remove"), actions.calls)
     }
 
     @Test

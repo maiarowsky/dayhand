@@ -31,8 +31,8 @@ import kotlinx.coroutines.withContext
 fun CalendarFeedRoute(container: AppContainer, onBack: () -> Unit) {
     val viewModel = viewModel {
         CalendarFeedViewModel(
-            api = { container.settings.current().let { s -> s.backend?.takeUnless { s.offlineMode }?.let(container::calendarFeedApi) } },
-            exporter = { container.settings.current().let { s -> s.backend?.takeUnless { s.offlineMode }?.let(container::exporter) } },
+            api = { container.settings.current().backend?.let(container::calendarFeedApi) },
+            exporter = { container.settings.current().backend?.let(container::exporter) },
             today = { HelmDates.localDate(System.currentTimeMillis(), container.settings.current().timezone) },
         )
     }

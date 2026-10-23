@@ -34,6 +34,8 @@ object SettingsTags {
     const val ROW_SUMMARY = "settings_row_summary"
     const val ROW_REMINDERS = "settings_row_reminders"
     const val ROW_EXPORT = "settings_row_export"
+    const val ROW_BACKUP = "settings_row_backup"
+    const val ROW_SAMPLE = "settings_row_sample"
     const val ROW_SERVER = "settings_row_server"
     const val ROW_CONNECTIONS = "settings_row_connections"
     const val ROW_CALENDAR = "settings_row_calendar"
@@ -49,6 +51,7 @@ object SettingsTags {
     const val LANGUAGE_PAGE = "settings_language_page"
     const val EXPORT_PAGE = "settings_export_page"
     const val SERVER_PAGE = "settings_server_page"
+    const val BACKUP_PAGE = "settings_backup_page"
     const val NOTIFICATIONS = "settings_notifications"
     const val NOTIFICATIONS_ROW = "settings_notifications_row"
     const val EXACT = "settings_exact"
@@ -56,9 +59,14 @@ object SettingsTags {
     const val SUMMARY_TIME = "settings_summary_time"
     const val REMINDER = "settings_reminder_"
     const val LANGUAGE = "settings_language_"
-    const val OFFLINE = "settings_offline"
     const val CONNECTION = "settings_connection"
     const val TIMEZONE = "settings_timezone"
+    const val USE_PHONE_TIMEZONE = "settings_use_phone_timezone"
+    const val BACKUP_SAVE = "settings_backup_save"
+    const val BACKUP_SHARE = "settings_backup_share"
+    const val BACKUP_RESTORE = "settings_backup_restore"
+    const val BACKUP_LAST = "settings_backup_last"
+    const val BACKUP_STATUS = "settings_backup_status"
     const val EXPORT_MARKDOWN = "settings_export_markdown"
     const val EXPORT_JSON = "settings_export_json"
     const val EXPORT_STATUS = "settings_export_status"
@@ -89,20 +97,24 @@ data class SettingsUiState(
 interface SettingsActions {
     fun openConnect() {}
     fun disconnect() {}
-    fun setOfflineMode(enabled: Boolean) {}
+    fun usePhoneTimezone() {}
     fun setSummaryTime(time: String) {}
     fun setReminderMinutes(minutes: List<Int>) {}
     fun setLanguage(language: AppLanguage) {}
     fun allowNotifications() {}
     fun allowExactAlarms() {}
     fun export(format: ExportFormat) {}
+    fun saveBackup() {}
+    fun shareBackup() {}
+    fun restoreBackup() {}
+    fun removeSample() {}
     fun openLicense() {}
     fun setAppearance(appearance: Appearance) {}
     fun back() {}
 }
 
 /** The Settings list ([MAIN]) and the pages its rows open. */
-enum class SettingsPane { MAIN, THEME, PALETTE, FONT, LANGUAGE, NOTIFICATIONS, SUMMARY, REMINDERS, EXPORT, CALENDAR, SERVER, CONNECTIONS, LICENSES }
+enum class SettingsPane { MAIN, THEME, PALETTE, FONT, LANGUAGE, NOTIFICATIONS, SUMMARY, REMINDERS, BACKUP, EXPORT, CALENDAR, SERVER, CONNECTIONS, LICENSES }
 
 /**
  * Settings, the fifth screen of version 1, laid out as Mussh's: groups under upper-case labels, one row per setting
@@ -143,6 +155,9 @@ fun SettingsScreen(
         }
         SettingsPane.REMINDERS -> SettingsPage(stringResource(R.string.settings_reminders), toMain, SettingsTags.REMINDERS_PAGE) {
             RemindersOptions(settings.reminderMinutes, actions::setReminderMinutes)
+        }
+        SettingsPane.BACKUP -> SettingsPage(stringResource(R.string.settings_backup), toMain, SettingsTags.BACKUP_PAGE) {
+            BackupOptions(state.data.backup, settings.lastBackupAt, settings.timezone, actions)
         }
         SettingsPane.EXPORT -> SettingsPage(stringResource(R.string.settings_export), toMain, SettingsTags.EXPORT_PAGE) {
             ExportOptions(state.data.export, actions::export)

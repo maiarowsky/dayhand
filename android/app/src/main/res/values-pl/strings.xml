@@ -44,8 +44,6 @@
     <string name="title_too_long">Najwyżej %1$d znaków</string>
 
     <string name="status_offline">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</string>
-    <string name="status_offline_mode">Włączony testowy tryb offline. Zmiany czekają w telefonie (w kolejce: %1$d).</string>
-    <string name="status_not_configured">Brak połączenia z serwerem. Połącz w Ustawieniach kodem z hlm pair.</string>
     <string name="status_unauthorized">Serwer wylogował ten telefon. Połącz ponownie w Ustawieniach.</string>
     <string name="status_error">Nie mogę połączyć się z serwerem. Helm próbuje dalej.</string>
     <string name="status_sending">Wysyłanie zmian: %1$d…</string>
@@ -53,8 +51,6 @@
     <string name="settings_title">Ustawienia</string>
     <string name="back">Wstecz</string>
     <string name="settings_backend">Serwer</string>
-    <string name="settings_offline">Testowy tryb offline</string>
-    <string name="settings_offline_hint">Gdy jest włączony, nic nie jest wysyłane ani pobierane; zmiany czekają w kolejce.</string>
     <string name="settings_timezone_title">Strefa czasowa</string>
     <string name="settings_timezone">%1$s, z serwera</string>
     <string name="settings_loading">Wczytywanie ustawień</string>
@@ -257,8 +253,7 @@
     <string name="connection_synced">połączono</string>
     <string name="connection_connecting">łączenie…</string>
     <string name="connection_offline">brak sieci</string>
-    <string name="connection_offline_mode">testowy tryb offline</string>
-    <string name="connection_not_configured">brak połączenia</string>
+    <string name="connection_local">tylko na tym telefonie</string>
     <string name="connection_unauthorized">serwer odrzucił logowanie</string>
     <string name="connection_error">nie można połączyć się z serwerem</string>
     <plurals name="connection_pending">
@@ -275,10 +270,10 @@
     <string name="export_saved">Zapisano %1$s</string>
     <string name="export_failed">Eksport się nie udał: brak połączenia z serwerem.</string>
     <string name="export_unauthorized">Eksport się nie udał: serwer odrzucił token.</string>
-    <string name="export_not_configured">Najpierw ustaw serwer.</string>
+    <string name="export_not_configured">Najpierw połącz się z serwerem.</string>
     <string name="export_write_failed">Nie udało się zapisać pliku.</string>
     <string name="settings_about">O aplikacji</string>
-    <string name="about_text">Helm to otwarte oprogramowanie na licencji Apache 2.0. Bez analityki i reklam; plan zostaje na Twoim serwerze.</string>
+    <string name="about_text">Helm to otwarte oprogramowanie na licencji Apache 2.0. Bez analityki i reklam; plan zostaje na tym telefonie albo na Twoim serwerze.</string>
     <string name="about_license">Przeczytaj licencję</string>
 
     <!-- Reguły powtarzania (0.6) -->

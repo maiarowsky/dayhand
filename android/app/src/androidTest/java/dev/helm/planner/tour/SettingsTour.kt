@@ -47,7 +47,6 @@ class SettingsTour {
                     "https://helm.example.convex.site",
                     Credential.Device("https://helm.example.convex.site", "jd7device", "Pixel 9 Pro XL", "helmdev_secret.secret"),
                 ),
-                offlineMode = false,
                 timezone = "Europe/Warsaw",
                 summaryTime = "05:00",
                 reminderMinutes = listOf(0, 5),

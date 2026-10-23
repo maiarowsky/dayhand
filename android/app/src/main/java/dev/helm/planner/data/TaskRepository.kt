@@ -1,6 +1,7 @@
 package dev.helm.planner.data
 
 import androidx.room.withTransaction
+import dev.helm.planner.backup.BackupTask
 import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.FieldJson
 import dev.helm.planner.data.local.HelmDatabase
@@ -14,10 +15,13 @@ import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.remote.RemoteEvent
 import dev.helm.planner.data.remote.RemoteHistoryEntry
+import dev.helm.planner.domain.Recurrence
 import dev.helm.planner.domain.TaskRules
+import dev.helm.planner.sample.SamplePlan
 import dev.helm.planner.sync.SnapshotMerger
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -28,16 +32,24 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
+/** What a restore did: tasks [added], tasks [alreadyHere] (same id on the phone) and skipped. */
+data class RestoreResult(val added: Int, val alreadyHere: Int)
+
 /**
  * Every user action changes the local row and appends its server mutation to the outbox in
  * one Room transaction, so the screen updates at once and the change cannot be lost or sent
- * without being shown.
+ * without being shown. Sample tasks ([SamplePlan]) change only on the phone.
  */
 class TaskRepository(
     private val db: HelmDatabase,
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val onOutboxChanged: () -> Unit = {},
+    /**
+     * Today (YYYY-MM-DD in the user's zone) while the phone has no server, which then makes a repeating task's next
+     * occurrence itself; null when a server does it on `complete`.
+     */
+    private val repeatsOnPhone: suspend () -> String? = { null },
 ) {
     val tasks: Flow<List<Task>> = db.tasks().observeAll()
     val pendingChanges: Flow<Int> = db.outbox().observeCount()
@@ -82,8 +94,49 @@ class TaskRepository(
         return task
     }
 
-    suspend fun complete(localId: String) = edit(localId, Mutations.COMPLETE) { task, now ->
-        task.copy(status = TaskStatus.DONE, completedAt = now, isNow = false)
+    /**
+     * Marks a task done. Without a server the phone adds a repeating task's next occurrence itself (as the backend's
+     * `complete` would) and queues it as a task of its own; the done task loses its rule first, so the server, once
+     * connected, does not add another one.
+     */
+    suspend fun complete(localId: String) {
+        val today = repeatsOnPhone()
+        val now = clock()
+        val changed = db.withTransaction {
+            val task = db.tasks().byLocalId(localId) ?: return@withTransaction false
+            if (task.inTrash) return@withTransaction false
+            val done = task.copy(status = TaskStatus.DONE, completedAt = now, isNow = false, updatedAt = now)
+            val rule = task.repeat
+            if (today == null || rule == null || task.status == TaskStatus.DONE) {
+                db.tasks().upsert(listOf(done))
+                enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now)
+                return@withTransaction true
+            }
+            val next = Recurrence.advance(rule, task.dueDate, today)?.let { occurrence ->
+                val id = if (SamplePlan.isSample(localId)) SamplePlan.ID_PREFIX + newId() else newId()
+                Task(
+                    localId = id,
+                    clientId = id,
+                    title = task.title,
+                    note = task.note,
+                    dueDate = occurrence.dueDate,
+                    dueTime = task.dueTime,
+                    repeat = occurrence.repeat,
+                    labels = task.labels,
+                    links = task.links,
+                    checklist = task.checklist.map { it.copy(done = false) },
+                    reminders = task.reminders,
+                    createdAt = now,
+                    updatedAt = now,
+                )
+            }
+            db.tasks().upsert(listOfNotNull(done.copy(repeat = null), next))
+            enqueue(Mutations.UPDATE, localId, buildJsonObject { put("repeat", JsonNull) }, now = now)
+            enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now)
+            next?.let { enqueue(Mutations.ADD, it.localId, addArgs(it), clientId = it.localId, now = now) }
+            true
+        }
+        if (changed) onOutboxChanged()
     }
 
     /** Back from done to the to-do list. */
@@ -242,7 +295,14 @@ class TaskRepository(
                 others.map { it.copy(isNow = false, updatedAt = now) } +
                     target.copy(isNow = true, status = TaskStatus.DOING, completedAt = null, updatedAt = now),
             )
-            enqueue(Mutations.SET_NOW, localId, JsonObject(emptyMap()), now = now)
+            // A sample task stays on the phone; the server only hears that a task of its own is not "now" any more.
+            if (SamplePlan.isSample(localId)) {
+                if (others.any { !SamplePlan.isSample(it.localId) }) {
+                    enqueue(Mutations.SET_NOW, null, buildJsonObject { put("taskId", JsonNull) }, now = now)
+                }
+            } else {
+                enqueue(Mutations.SET_NOW, localId, JsonObject(emptyMap()), now = now)
+            }
             true
         }
         if (changed) onOutboxChanged()
@@ -269,6 +329,87 @@ class TaskRepository(
 
     /** True while a settings change waits in the outbox, so a snapshot must not overwrite it. */
     suspend fun hasPendingSettingsChange(): Boolean = db.outbox().countFor(Mutations.UPDATE_SETTINGS) > 0
+
+    /** Sample tasks on the phone, if any ([SamplePlan]). */
+    val hasSample: Flow<Boolean> = db.tasks().observeSampleCount(SAMPLE_PATTERN).map { it > 0 }
+
+    /** Puts the sample plan on the phone, without queueing anything for a server. */
+    suspend fun loadSample(tasks: List<Task>) {
+        require(tasks.all { SamplePlan.isSample(it.localId) }) { "not sample tasks" }
+        db.tasks().upsert(tasks)
+    }
+
+    /** Removes every sample task (and anything queued for one, which there should not be). */
+    suspend fun removeSample() = db.withTransaction {
+        db.outbox().deleteForTasksLike(SAMPLE_PATTERN)
+        db.tasks().deleteLike(SAMPLE_PATTERN)
+    }
+
+    /** The tasks a backup holds: everything on the phone except the sample plan. */
+    suspend fun backupTasks(): List<Task> = db.tasks().all().filterNot { SamplePlan.isSample(it.localId) }
+
+    /** How much of the plan a switch to another server would remove: tasks (sample ones not counted) and waiting changes. */
+    suspend fun planSize(): Pair<Int, Int> = db.withTransaction {
+        db.tasks().all().count { !SamplePlan.isSample(it.localId) } to db.outbox().count()
+    }
+
+    /**
+     * Restores tasks from a backup as new tasks on the phone, each queued for the server like a task added here. A
+     * task whose id is already on the phone (as its local, server or client id) is skipped, so restoring the same file
+     * twice adds nothing; otherwise the file's id becomes the local id, and a server that already knows it as a
+     * `clientId` keeps one copy. A done task is queued without its repeat rule, so the server does not add its next
+     * occurrence again; archived tasks are archived.
+     */
+    suspend fun restore(tasks: List<BackupTask>): RestoreResult {
+        val now = clock()
+        val result = db.withTransaction {
+            val known = db.tasks().all().flatMap { listOfNotNull(it.localId, it.serverId, it.clientId) }.toMutableSet()
+            var added = 0
+            for (item in tasks) {
+                if (item.id in known) continue
+                val id = item.id.takeUnless { SamplePlan.isSample(it) } ?: newId()
+                known += id
+                val done = item.status == TaskStatus.DONE
+                val task = Task(
+                    localId = id,
+                    clientId = id,
+                    title = item.title,
+                    note = item.note,
+                    dueDate = item.dueDate,
+                    dueTime = item.dueTime,
+                    status = item.status,
+                    resumeNote = item.resumeNote,
+                    completedAt = if (done) item.completedAt ?: now else null,
+                    archivedAt = item.archivedAt,
+                    createdAt = now,
+                    updatedAt = now,
+                    repeat = item.repeat.takeUnless { done },
+                    labels = item.labels,
+                    links = item.links,
+                    checklist = item.checklist,
+                    reminders = item.reminders,
+                )
+                db.tasks().upsert(listOf(task))
+                enqueue(Mutations.ADD, id, addArgs(task.copy(status = if (done) TaskStatus.TODO else task.status)), clientId = id, now = now)
+                if (done) enqueue(Mutations.COMPLETE, id, JsonObject(emptyMap()), now = now)
+                if (item.archivedAt != null) enqueue(Mutations.ARCHIVE, id, JsonObject(emptyMap()), now = now)
+                added++
+            }
+            RestoreResult(added, tasks.size - added)
+        }
+        if (result.added > 0) onOutboxChanged()
+        return result
+    }
+
+    /**
+     * Empties the phone: tasks, history and waiting changes. Used before the phone pairs with another server, so
+     * the plan and the unsent changes of the old one cannot reach the new one.
+     */
+    suspend fun clearAll() = db.withTransaction {
+        db.outbox().deleteAll()
+        db.events().deleteAll()
+        db.tasks().deleteAll()
+    }
 
     /** Writes a server snapshot into Room (see [SnapshotMerger]). */
     suspend fun applySnapshot(snapshot: RemoteEvent.Snapshot) {
@@ -300,8 +441,27 @@ class TaskRepository(
         if (changed) onOutboxChanged()
     }
 
-    /** Appends a change; its `clientId` makes the server apply it once however often it is sent. */
+    /** The arguments of `app:add` for a task with all its fields (a restored task, a repeat made on the phone). */
+    private fun addArgs(task: Task): JsonObject = buildJsonObject {
+        put("title", task.title)
+        task.note?.let { put("note", it) }
+        task.dueDate?.let { put("dueDate", it) }
+        task.dueTime?.let { put("dueTime", it) }
+        if (task.status == TaskStatus.DOING) put("status", TaskStatus.DOING.wire)
+        task.resumeNote?.let { put("resumeNote", it) }
+        task.repeat?.let { put("repeat", FieldJson.wireRepeat(it)) }
+        if (task.labels.isNotEmpty()) put("labels", JsonArray(task.labels.map(::JsonPrimitive)))
+        if (task.links.isNotEmpty()) put("links", JsonArray(task.links.map { Json.encodeToJsonElement(TaskLink.serializer(), it) }))
+        if (task.checklist.isNotEmpty()) put("checklist", FieldJson.wireChecklist(task.checklist))
+        task.reminders?.let { put("reminders", FieldJson.wireReminders(it)) }
+    }
+
+    /**
+     * Appends a change; its `clientId` makes the server apply it once however often it is sent. A change of a sample
+     * task is not queued: sample tasks never reach a server.
+     */
     private suspend fun enqueue(mutation: String, taskLocalId: String?, args: JsonObject, now: Long, clientId: String = newId()) {
+        if (taskLocalId != null && SamplePlan.isSample(taskLocalId)) return
         val withClientId = JsonObject(args + ("clientId" to JsonPrimitive(clientId)))
         db.outbox().insert(
             OutboxOp(
@@ -322,5 +482,8 @@ class TaskRepository(
         const val MAX_TITLE = TaskRules.MAX_TITLE
         const val MAX_NOTE = TaskRules.MAX_NOTE
         const val MAX_RESUME_NOTE = TaskRules.MAX_RESUME_NOTE
+
+        /** SQL `LIKE` pattern of the sample tasks' ids. */
+        private const val SAMPLE_PATTERN = SamplePlan.ID_PREFIX + "%"
     }
 }

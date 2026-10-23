@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sample plan (SamplePlan), one string per SampleText. -->
+<resources>
+    <string name="sample_plan_week">Plan the week</string>
+    <string name="sample_plan_week_resume">Monday and Tuesday are done; next: the budget</string>
+    <string name="sample_bill">Pay the electricity bill</string>
+    <string name="sample_reply">Reply to Anna about the trip</string>
+    <string name="sample_dentist">Call the dentist</string>
+    <string name="sample_standup">Team stand-up</string>
+    <string name="sample_groceries">Buy groceries</string>
+    <string name="sample_milk">Milk</string>
+    <string name="sample_eggs">Eggs</string>
+    <string name="sample_bread">Bread</string>
+    <string name="sample_coffee">Coffee</string>
+    <string name="sample_plants">Water the plants</string>
+    <string name="sample_run">Morning run</string>
+    <string name="sample_proposal">Write the project proposal</string>
+    <string name="sample_proposal_note">Two pages: the goal, the plan and the cost.</string>
+    <string name="sample_link_title">How Helm works</string>
+    <string name="sample_holiday">Ideas for the holiday</string>
+    <string name="sample_holiday_note">The mountains in June? Ask Tom about the cabin.</string>
+    <string name="sample_monday">Team planning</string>
+    <string name="sample_tuesday">Car service</string>
+    <string name="sample_wednesday">Lunch with Marta</string>
+    <string name="sample_thursday">Gym</string>
+    <string name="sample_friday">Review the quarterly report</string>
+    <string name="sample_saturday">Farmers\' market</string>
+    <string name="sample_sunday">Call grandma</string>
+    <string name="sample_home">Home</string>
+    <string name="sample_work">Work</string>
+    <string name="sample_health">Health</string>
+</resources>

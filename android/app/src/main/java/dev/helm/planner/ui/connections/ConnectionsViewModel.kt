@@ -130,7 +130,7 @@ fun ConnectionsRoute(container: AppContainer, onBack: () -> Unit) {
     val viewModel = viewModel {
         ConnectionsViewModel(api = {
             val settings = container.settings.current()
-            settings.backend?.takeUnless { settings.offlineMode }?.let(container::connectionsApi)
+            settings.backend?.let(container::connectionsApi)
         })
     }
     val ui by viewModel.ui.collectAsStateWithLifecycle()

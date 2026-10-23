@@ -8,16 +8,22 @@ turns on the read-only **calendar address** for Google and Apple Calendar.
 
 **Install**: download the `.apk` from the
 [latest release](https://github.com/maiarowsky/helm/releases/latest), allow your browser or file
-manager to install apps when Android asks, and on the first start tap **Not now, use Helm
-offline** to use Helm without a server. What works offline, what needs a server and how to
-connect your own: [Install on Android](../README.md#install-on-android). To build it yourself,
-see [Run it locally](#run-it-locally) and [Release build](#release-build).
+manager to install apps when Android asks, and on the first start choose **On this phone only**
+to use Helm without a server. What works without a server, what needs one and how to connect
+your own: [Install on Android](../README.md#install-on-android). To build it yourself, see
+[Run it locally](#run-it-locally) and [Release build](#release-build).
+
+Helm works **on this phone only**, without an account or a server, and that is what the first
+start offers first: the plan lives in Room, reminders and the morning summary ring from the phone,
+and a **backup file** (Helm's JSON export format) can be saved, shared and restored. A server of
+your own can be connected later; everything made on the phone then goes to it
+(["On this phone only"](#on-this-phone-only)).
 
 - Application id `io.github.maiarowsky.dayhand` (fixed from the first public release; it cannot
   change once people have installed it). The code keeps the namespace `dev.helm.planner`, so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.8.3 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.8.4 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -37,23 +43,37 @@ see [Run it locally](#run-it-locally) and [Release build](#release-build).
 4. **Done (n)**: collapsed by default.
 
 With nothing to do, one sentence and an **Add task** button. A line at the top says when the
-phone is offline (and how many changes wait), while changes are being sent, when the server
-signed the phone out, or when no server is connected.
+phone is offline (and how many changes wait), while changes are being sent, or when the server
+signed the phone out; on this phone only there is no such line. While the sample plan is on the
+phone, a line says so with **Remove them**, which removes every sample task.
 
-**Connect to server** opens by itself at the first start (with **Not now, use Helm offline**),
-from Settings, and from a `helm://pair` link (the QR code of `hlm pair`):
+**First start** asks where the plan lives (**Welcome to Helm**), on two cards, the phone first:
+
+1. **On this phone only**: no account and no server. **Start with an empty plan**, or **Try with
+   sample data**: two overdue tasks, the "now" task with its note, today's tasks (a checklist, a
+   repeating stand-up, a task with its own reminder), something done, a timed task on every other
+   day of this week (done before today), a task in progress with a link, one without a day and
+   the labels Home, Work and Health, in the app's language. Sample tasks (`sample-` ids,
+   `sample/SamplePlan.kt`) change only on the phone: the outbox never sends them, and they go with
+   one tap (Today's line or Settings → Data) or when the phone connects to a server.
+2. **Connect to my server** opens the pairing form below. Back returns to the two cards; leaving
+   the first start any other way is on this phone only.
+
+**Connect to my server** (the form) opens from the first start, from Settings and from a
+`helm://pair` link (the QR code of `hlm pair`):
 
 1. **Server address**: the link's `url`, else the last server used, else the built-in default
    (`BuildConfig.DEFAULT_SERVER_URL`), which is **empty** unless the build sets
-   `-Phelm.serverUrl=…`. Public builds leave it empty, so a new phone starts with an empty
-   address and the offline choice; the author builds their own copy with
+   `-Phelm.serverUrl=…`. Public builds leave it empty, so the form starts with an empty address;
+   the author builds their own copy with
    `-Phelm.serverUrl=https://impressive-grouse-796.eu-west-1.convex.site`. A `.convex.cloud`
    address is turned into its `.convex.site` one.
 2. **Pairing code** from `hlm pair` (or `npx helm pair` in `backend/`): any case, with or
    without dashes; `O` is read as `0`, `I` and `L` as `1`.
 3. **Connect**. Errors are said in words: a wrong, used or expired code; too many wrong codes
    (with the wait); no network; the server cannot be reached; no Helm server at the address;
-   a problem on the server.
+   a problem on the server. A code for **another server** than the one whose plan is on the
+   phone first asks **Replace the plan on this phone?** (see ["On this phone only"](#on-this-phone-only)).
 
 Tapping a task opens its details. The bar at the bottom switches between Today (where the app
 opens), the calendar and the board.
@@ -140,7 +160,12 @@ in its preview and on the other screens. Top to bottom:
    the system settings, and one that allows exact alarms); **Morning summary** (the time, default
    05:00, picked on a clock); **Default reminders** (at the due time, 5, 10, 15, 30 min, 1 h, 2 h
    or 1 day before, any number of them or none).
-3. **Data**: **Export**, the whole plan as Markdown or JSON, saved where you choose in the system
+3. **Data**: **Backup**, the plan on this phone as a file in Helm's JSON export format: **Save a
+   backup file** (the system save dialog), **Share a backup** (the share sheet, from the app's
+   cache through its `FileProvider`) and **Restore from a file**, with the time of the last
+   backup and what the last action did; see [Backups](#backups). **Remove sample tasks** while
+   the sample plan is on the phone. With a server also: **Export**, the whole plan from the
+   server as Markdown or JSON (with the change history), saved where you choose in the system
    dialog. **Calendar**: the read-only iCalendar address of the plan
    ([docs/calendar.md](../docs/calendar.md)): turn it on, then copy it, add it to Google Calendar
    ("From URL", opened in the browser) or share the `webcal://` address to Apple Calendar;
@@ -148,11 +173,13 @@ in its preview and on the other screens. Top to bottom:
    each after a confirmation. The address is a secret and the page says so; it is read from the
    server each time the page opens, never stored on the phone. **Export .ics** makes a one-time
    file of the plan and hands it to the share sheet (to import into any calendar).
-4. **Connection**: **Server**, with the connection status (connected, connecting, no network,
-   offline test mode, not connected, signed out, cannot reach the server) and the number of
-   changes waiting; the server and this phone's name with **Disconnect** (after a confirmation
-   that names the `hlm revoke <deviceId>` command), or **Connect to server**; the offline test
-   switch and the time zone from the server. **Agent connections**: the agents connected with
+4. **Connection**: **Server**. On this phone only: that it is so (and, after a Disconnect, the
+   server its changes wait for), **Connect to my server**, and how a server of your own is set
+   up; the time zone is the phone's. Connected: the status (connected, connecting, no network,
+   signed out, cannot reach the server) and the number of changes waiting, the server and this
+   phone's name with **Disconnect** (after a confirmation that names the `hlm revoke <deviceId>`
+   command); the time zone is the server's, with **Use this phone's time zone** when the two
+   differ. **Agent connections** (with a server): the agents connected with
    OAuth, such as the Claude app ([docs/oauth.md](../docs/oauth.md)), each with where it comes
    from, read only or read and change, and its last use; tapping one disconnects it after a
    confirmation. **Approve a connection** takes the code the agent's sign-in page shows, then
@@ -163,10 +190,11 @@ in its preview and on the other screens. Top to bottom:
 5. **About**: the Apache License 2.0, the licenses of the bundled fonts (SIL Open Font License
    1.1) and the version.
 
-The summary time and default reminders are server settings (`summaryTime`,
-`defaultReminderMinutes`), so the agent sees and can change them too. A change on the phone is
-stored at once and sent through the outbox (`app:updateSettings`) like any other change; a
-snapshot does not undo it while it waits.
+The summary time and default reminders are kept on the phone with or without a server. With a
+server they are server settings (`summaryTime`, `defaultReminderMinutes`), so the agent sees and
+can change them too: a change on the phone is stored at once and sent through the outbox
+(`app:updateSettings`) like any other change, and a snapshot does not undo it while it waits.
+Changes made on this phone only wait in the outbox too and reach the first server connected.
 
 ## Reminders and the morning summary
 
@@ -183,9 +211,10 @@ Computed on the phone from Room, with no server and no foreground service:
   task included), how many overdue, and where to start (the now task, else the first overdue,
   else the first of today). Its channel is quiet, so it waits on the lock screen instead of
   waking you at 05:00.
-- Times are read in the **time zone from the server settings**, the same zone that decides
-  "today", so the phone and the agent agree. A time of day the spring clock change skips rings
-  after the gap (01:30 on 29 Mar in London rings at 02:30 BST).
+- Times are read in the zone that decides "today": on this phone only the **phone's own time
+  zone** (followed when it changes, `TIMEZONE_CHANGED`), with a server the **server's**, so the
+  phone and the agent agree. A time of day the spring clock change skips rings after the gap
+  (01:30 on 29 Mar in London rings at 02:30 BST).
 
 How: `ReminderEngine` keeps exactly **two alarms** in AlarmManager, the next reminder and the
 next summary. When one fires, `AlarmReceiver` shows what is due and arms the next one. Alarms
@@ -231,8 +260,56 @@ Convex subscription (app:listAll, app:listTrash, app:getSettings) ──> Snapsh
   takes the server value, but only from a server copy newer than the one merged before, so a
   late snapshot never undoes a newer state.
 - **Today and overdue** are computed on the phone by `HelmDates` and `todaySections`, the same
-  rules as `backend/convex/lib/dates.ts`, in the time zone from your server settings (default
-  `Europe/London`, as on the backend). The screen moves on at local midnight.
+  rules as `backend/convex/lib/dates.ts`, in the phone's time zone on this phone only and in the
+  server's when connected (default `Europe/London`, as on the backend). The screen moves on at
+  local midnight.
+
+## On this phone only
+
+Without a server Room is the whole plan, and every change still goes into the outbox, where it
+waits (WorkManager finds no server and stops). Nothing leaves the phone.
+
+- **Repeating tasks**: the server adds a repeating task's next occurrence when it is completed;
+  without one the phone does (`Recurrence.advance`, the backend's `advance`). The done task
+  loses its rule and the next one is queued as a task of its own (`app:update {repeat: null}`,
+  `app:complete`, `app:add` with every field), so a server connected later does not add another.
+- **Connecting later** (the first server): the outbox sends everything in order, the tasks made
+  on the phone included (their `clientId` is their local id, which is also how the server copy
+  finds its row), then the live subscription brings the server's plan. Sample tasks stay behind
+  and are removed before the sign-in is stored. Settings changes made on the phone reach the
+  server; its time zone then applies, and Settings offers the phone's when they differ.
+- **Disconnect** keeps the plan and its waiting changes: they belong to that server and go there
+  when the phone connects to it again (no question asked).
+- **Another server**: a code for another address than the server last paired with (`serverUrl`,
+  kept after Disconnect) is not used before the user agrees to **Replace the plan on this
+  phone?**, which says how many tasks go from the phone and how many changes would never be
+  sent, and how to keep them (a backup, or connecting to the old server). **Replace and connect**
+  empties the phone (tasks, history, outbox) before the new sign-in is stored, so nothing of the
+  old plan reaches the new server; **Cancel** leaves everything as it was. A phone that never had
+  a server needs no question. (One deployment has one owner, so another account is another
+  address; `auth/PlanSwitch.kt`.)
+
+## Backups
+
+**Android's Auto Backup is off** (`android:allowBackup="false"`, and `data_extraction_rules.xml`
+excludes every domain from cloud backup and device transfer), so the Room database, the settings
+and the encrypted device token go neither to Google Drive nor to a new phone. On this phone only
+that makes the backup file the only copy outside the phone, and Settings → Data → Backup says so.
+Why: "nothing leaves the phone" is what on this phone only promises; the device token and its
+Tink keyset are bound to a Keystore key that a restore cannot bring back; and a restored outbox
+and server copy of another phone would be hard to reason about.
+
+The **backup file** (`backup/PlanBackup.kt`) is Helm's JSON export format, version 1, as
+`app:exportPlan` and `hlm export --format json` write it (`docs/schemas/export.schema.json`):
+`version`, `exportedAt`, `settings`, `tasks` (with the server id where the server knows a task,
+else the phone's) and an empty `events` (the phone has no history and no task numbers, so `ref`
+is left out). Sample tasks are not in it. A server reads it (`hlm import`, `POST /api/v1/import`,
+format `helm-json`), and so does **Restore from a file**: every task the backend's rules accept
+is added as a new task and queued like one added on the phone (a done task without its rule, so
+a server does not repeat it again; archived tasks archived); one whose id is already on the
+phone is skipped, so the same file restores once; tasks in the trash and tasks that fail a check
+are counted, not restored. On this phone only the backup's summary time and default reminders
+are restored too; with a server its settings stay. At most 2000 tasks, as the server's import.
 
 ## Signing in
 
@@ -246,7 +323,8 @@ Convex client and HTTP API with that JWT       ──> app.* as the owner
 ```
 
 - The **device token** is encrypted with AES-256-GCM by Tink under a key in the Android
-  Keystore and never logged or shown. Backups and device transfers are switched off for the app.
+  Keystore and never logged or shown. Backups and device transfers are switched off for the app
+  ([Backups](#backups)).
   The device name sent is the phone model (`Build.MODEL`); `hlm devices` shows it.
 - `DeviceTokens` keeps one JWT for the live feed, the outbox and the export, and fetches a new
   one when less than 5 minutes are left. The Convex client gets the new token before the old
@@ -264,8 +342,10 @@ Convex client and HTTP API with that JWT       ──> app.* as the owner
   disconnected; pasting tokens is no longer offered.
 
 What happens after connecting: the outbox starts at once and sends every change made before,
-in order (tasks added offline before any server was known included), and the live Convex
-subscription downloads the whole plan into Room. The connection line shows the progress.
+in order (tasks added on this phone only before any server was known included), and the live
+Convex subscription downloads the whole plan into Room. The connection line shows the progress.
+Sample tasks are not sent, and a code for another server than the one whose plan is on the
+phone asks first ([On this phone only](#on-this-phone-only)).
 
 ## Run it locally
 
@@ -327,17 +407,26 @@ over the installed app: keep a copy of the keystore and its password somewhere s
 ```sh
 ./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
-                                            # agent connections (answers, code input, approval flow), calendar address
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync,
-                                            # Compose (Today, calendar, board, details, Settings, Settings → Calendar, Connect, agent connections), encrypted pairing
-                                            # storage, and a real alarm + notification (ReminderDeliveryTest, about 80 s)
+                                            # agent connections (answers, code input, approval flow), calendar address,
+                                            # backup file (write, read, the server's export), sample plan, another server
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync and the phone's zone,
+                                            # on this phone only (repeats made on the phone, sample tasks, restore, emptying),
+                                            # Compose (Today, calendar, board, details, Settings, Settings → Calendar and Backup, Connect,
+                                            # agent connections), encrypted pairing storage, and a real alarm + notification
+                                            # (ReminderDeliveryTest, about 80 s, with no server configured)
 ```
 
 `ReminderDeliveryTest` speeds time up by setting a task and the summary to the next whole
 minute: Android fires the real alarm, the test checks both notifications and taps **Done**.
 
 The end-to-end checks drive the app on an emulator against the local backend and pair it with
-a code from the CLI. `e2e-pairing.py`: first start opens Connect, a task added before pairing,
+a code from the CLI. `e2e-local.py`: the first start offers on this phone only first; the sample
+plan on Today, the calendar and the board, removed with one tap; a task of one's own next to the
+sample plan, a shared backup (pulled with `run-as`, optionally dry-run through the server's
+import with `--import-check`); pairing sends the own task and none of the sample tasks; after
+Disconnect a code for another address asks before replacing the plan, Cancel keeps it, Replace
+empties the phone first so the waiting task never reaches the server; the same server again
+needs no question. `e2e-pairing.py`: first start, on this phone only, a task added before pairing,
 a wrong code refused, the right one typed by hand, the CLI's task on the phone and the phone's
 on the server, a task added in airplane mode reaching the server when the network is back,
 Disconnect. `e2e-offline.py`: the same offline path with a killed and a force-stopped app. With
@@ -346,6 +435,7 @@ the backend running, `HELM_URL`/`HELM_API_KEY` set and the CLI built (`cli/`: `n
 
 ```sh
 ./gradlew :app:assembleDebug
+python3 scripts/e2e-local.py --apk app/build/outputs/apk/debug/app-debug.apk --shots /tmp/shots --import-check
 python3 scripts/e2e-pairing.py --apk app/build/outputs/apk/debug/app-debug.apk --shots /tmp/shots
 python3 scripts/e2e-offline.py --apk app/build/outputs/apk/debug/app-debug.apk
 ```

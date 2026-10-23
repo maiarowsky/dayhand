@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """End-to-end pairing check on an emulator against a local Helm backend.
 
-1. First start: Helm opens Connect by itself; "Not now" goes on offline and a task is added
-   on the phone before any server is known.
+1. First start: Helm asks where the plan lives; "Start with an empty plan" (on this phone only)
+   goes on without a server and a task is added on the phone before any server is known.
 2. The CLI adds a task and prints a one-time code (`hlm pair`). A wrong code is refused with a
    readable message; the right one, typed by hand in lower case without dashes, pairs the phone.
 3. Sync both ways: the CLI's task appears on the phone, the phone's earlier task on the server.
@@ -85,15 +85,14 @@ def main():
     shell("pm", "clear", PACKAGE)
     shell("am", "start", "-n", ACTIVITY)
 
-    # 1. First start: Connect comes first; a public build has no built-in server address.
-    find(text="Pairing code", timeout=120)
-    find(text="Server address")
+    # 1. First start: on this phone only comes first; the server is the second choice.
+    find(text="Welcome to Helm", timeout=120)
+    find(text="Connect to my server")
     shot("01-first-start-connect.png")
-    tap(find(text="Not now"))
+    tap(find(text="Start with an empty plan"))
     base.add_task(before)
-    find(text="Not connected to a server")
     shot("02-offline-before-pairing.png")
-    log("first start: Connect shown, skipped, task added without a server")
+    log("first start: on this phone only chosen, task added without a server")
 
     # 2. A task from the CLI, a wrong code, then the right one.
     hlm("add", from_cli)
@@ -147,7 +146,7 @@ def main():
     find(text="hlm revoke")
     shot("08-disconnect-dialog.png")
     tap(find_button("Disconnect"))
-    find_scrolling(text="This phone is not connected")
+    find_scrolling(text="On this phone only")
     tap(find(desc="Back"))
     find(text=offline)
     shot("09-after-disconnect.png")

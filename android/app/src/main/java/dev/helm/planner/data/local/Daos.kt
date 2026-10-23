@@ -32,6 +32,15 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET serverId = :serverId WHERE localId = :localId")
     suspend fun setServerId(localId: String, serverId: String)
+
+    @Query("SELECT COUNT(*) FROM tasks WHERE localId LIKE :pattern")
+    fun observeSampleCount(pattern: String): Flow<Int>
+
+    @Query("DELETE FROM tasks WHERE localId LIKE :pattern")
+    suspend fun deleteLike(pattern: String)
+
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -63,6 +72,12 @@ interface OutboxDao {
     @Query("DELETE FROM outbox WHERE taskLocalId = :taskLocalId")
     suspend fun deleteForTask(taskLocalId: String)
 
+    @Query("DELETE FROM outbox WHERE taskLocalId LIKE :pattern")
+    suspend fun deleteForTasksLike(pattern: String)
+
+    @Query("DELETE FROM outbox")
+    suspend fun deleteAll()
+
     @Query("UPDATE outbox SET attempts = attempts + 1, lastError = :error WHERE seq = :seq")
     suspend fun recordFailure(seq: Long, error: String)
 }
@@ -84,6 +99,9 @@ interface TaskEventDao {
         deleteFor(taskServerId)
         insert(events)
     }
+
+    @Query("DELETE FROM task_events")
+    suspend fun deleteAll()
 
     /** History of tasks that no longer exist on the phone. */
     @Query("DELETE FROM task_events WHERE taskServerId NOT IN (SELECT serverId FROM tasks WHERE serverId IS NOT NULL)")

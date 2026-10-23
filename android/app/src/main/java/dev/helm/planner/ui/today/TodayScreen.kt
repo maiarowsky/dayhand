@@ -38,6 +38,7 @@ import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmFab
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.common.SampleBanner
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.palette
@@ -47,6 +48,7 @@ import java.util.Locale
 
 object TodayTags {
     const val STATUS = "status"
+    const val SAMPLE = "sample_banner"
     const val EMPTY = "empty"
     const val OVERDUE = "overdue"
     const val NOW = "now"
@@ -106,9 +108,10 @@ private fun TodayList(
     modifier: Modifier,
     onAdd: () -> Unit,
 ) {
-    // The banner stays above the list: as a list item it could appear above the first visible row, off screen.
+    // The banners stay above the list: as list items they could appear above the first visible row, off screen.
     Column(modifier.fillMaxSize()) {
         StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS))
+        if (state.sample) SampleBanner(actions::removeSample, Modifier.testTag(TodayTags.SAMPLE))
         TodayItems(state, actions, today, contentPadding, onAdd)
     }
 }

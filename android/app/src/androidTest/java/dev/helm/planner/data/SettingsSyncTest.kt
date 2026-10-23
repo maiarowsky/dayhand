@@ -54,7 +54,7 @@ class SettingsSyncTest {
         assertTrue(repository.hasPendingSettingsChange())
         store.applyServer(RemoteEvent.Snapshot(emptyList(), "Europe/London", "05:00", listOf(0)), repository.hasPendingSettingsChange())
         assertEquals("06:15", store.current().summaryTime)
-        assertEquals("Europe/London", store.current().timezone)
+        assertEquals("Europe/London", store.current().serverTimezone)
 
         // Sent: the next snapshot is the truth again.
         db.outbox().delete(op.seq)
@@ -62,6 +62,32 @@ class SettingsSyncTest {
         store.applyServer(RemoteEvent.Snapshot(emptyList(), "Europe/Warsaw", "06:15", listOf(10, 0)), repository.hasPendingSettingsChange())
         assertEquals("06:15", store.current().summaryTime)
         assertEquals(listOf(10, 0), store.current().reminderMinutes)
+    }
+
+    @Test
+    fun withoutAServerTodayAndTheRemindersFollowThePhonesZone() = runTest {
+        val phone = store.current().phoneTimezone
+        try {
+            store.applyServer(RemoteEvent.Snapshot(emptyList(), "Europe/London", "05:00", listOf(0)), keepLocalChanges = false)
+            store.setPhoneTimezone("Asia/Tokyo")
+            val settings = store.current()
+            assertTrue(settings.isLocal)
+            assertEquals("Asia/Tokyo", settings.timezone)
+            assertEquals("Asia/Tokyo", settings.reminders.timezone)
+            assertEquals("Europe/London", settings.serverTimezone)
+        } finally {
+            store.setPhoneTimezone(phone)
+        }
+    }
+
+    @Test
+    fun withoutAServerSettingsChangesAreKeptOnThePhone() = runTest {
+        store.setSummaryTime("07:45")
+        store.setReminderMinutes(listOf(10))
+        val settings = store.current()
+        assertTrue(settings.isLocal)
+        assertEquals("07:45", settings.reminders.summaryTime)
+        assertEquals(listOf(10), settings.reminders.reminderMinutes)
     }
 
     @Test

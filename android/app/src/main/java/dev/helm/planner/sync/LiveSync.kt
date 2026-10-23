@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 /** What the server connection is doing, for the status line on the Today screen. */
-enum class FeedState { NOT_CONFIGURED, OFFLINE_MODE, CONNECTING, SYNCED, UNAUTHORIZED, ERROR }
+enum class FeedState { NOT_CONFIGURED, CONNECTING, SYNCED, UNAUTHORIZED, ERROR }
 
 /**
  * While the app is in the foreground, keeps one feed per backend configuration open and writes
@@ -32,14 +32,10 @@ class LiveSync(
 
     suspend fun run() {
         settings.settings
-            .map { it.backend to it.offlineMode }
+            .map { it.backend }
             .distinctUntilChanged()
-            .collectLatest { (backend, offline) ->
-                when {
-                    backend == null -> _state.value = FeedState.NOT_CONFIGURED
-                    offline -> _state.value = FeedState.OFFLINE_MODE
-                    else -> follow(backend)
-                }
+            .collectLatest { backend ->
+                if (backend == null) _state.value = FeedState.NOT_CONFIGURED else follow(backend)
             }
     }
 

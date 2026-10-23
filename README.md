@@ -18,7 +18,7 @@ import from Helm JSON, iCalendar or Todoist CSV. Every change is recorded with w
 
 Status: the backend (Convex), the MCP endpoint, the `hlm` CLI, phone pairing and the Android
 app (Today with quick add, the board, task details and the trash, reminders and Settings, all
-working offline) are in place; iOS comes later.
+working offline, on the phone alone or with a server) are in place; iOS comes later.
 
 ```
 backend/   Convex backend: data model, domain operations, MCP endpoint, REST API, webhooks, old CLI (helm)
@@ -38,24 +38,26 @@ You need Android 8.0 or newer. No server is needed to start.
    and download the `.apk` file under **Assets**.
 2. Open the downloaded file. Android asks whether to allow apps from this source (your browser
    or file manager); allow it, go back and tap **Install**.
-3. Open Helm. It starts on **Connect to server**; tap **Not now, use Helm offline**.
+3. Open Helm. It starts on **Welcome to Helm**; under **On this phone only** tap **Start with an
+   empty plan**, or **Try with sample data** to look around first (one tap removes it).
 
-**Offline, on the phone alone**, you have Today with quick add, the calendar, the board, task
+**On this phone only**, you have Today with quick add, the calendar, the board, task
 details (repeat, checklist, labels, links, reminders), the trash, reminders and the morning
-summary, and the appearance and notification settings. What needs a server: sync with other
-devices and the `hlm` CLI, an AI agent over MCP or the Claude app, the calendar address for
-Google or Apple Calendar, Export (Markdown, JSON, .ics) and any copy of your tasks. Offline the
-tasks exist only on this phone: Android backups are switched off for Helm, so uninstalling the
-app or losing the phone loses them. The time zone also comes from the server; until you connect
-one, Helm counts "today" and reminder times in `Europe/London`.
+summary, the appearance and notification settings, and a backup file of your plan (**Settings →
+Data → Backup**: save, share or restore it). What needs a server: sync with other devices and
+the `hlm` CLI, an AI agent over MCP or the Claude app, the calendar address for Google or Apple
+Calendar and Export (Markdown, JSON, .ics). Without a server the tasks exist only on this phone:
+Android backups are switched off for Helm, so uninstalling the app or losing the phone loses
+whatever is not in a backup file. "Today" and reminder times follow the phone's time zone until
+you connect a server, then the server's.
 
 Helm runs no public server: the address on Connect is empty in the downloaded app. The author's
 own server lets a phone in only with a pairing code from that account's owner. To sync, run your
 own server ([Run your own server in 5 minutes](#run-your-own-server-in-5-minutes) or
 [Deploy your own copy](#deploy-your-own-copy)), then in Helm open **Settings → Server →
-Connect to server** and type your server's address (`https://<deployment>.convex.site`) and a
-pairing code from it (`hlm server deploy` prints both; `hlm pair` makes a new code). Tasks you
-added offline are sent to it.
+Connect to my server** and type your server's address (`https://<deployment>.convex.site`) and
+a pairing code from it (`hlm server deploy` prints both; `hlm pair` makes a new code). Tasks you
+added on the phone are sent to it (sample tasks are not).
 
 More about the app: [android/README.md](android/README.md).
 

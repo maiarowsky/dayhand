@@ -21,11 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.helm.planner.AppContainer
+import dev.helm.planner.R
 import dev.helm.planner.export.ExportFormat
 import dev.helm.planner.notify.AndroidAlarmScheduler
 import dev.helm.planner.notify.AndroidNotifier
@@ -33,11 +36,16 @@ import dev.helm.planner.settings.AppLanguage
 import dev.helm.planner.settings.AppLanguages
 import dev.helm.planner.ui.connections.ConnectionsRoute
 import dev.helm.planner.ui.theme.Appearance
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val LICENSE_URL = "https://www.apache.org/licenses/LICENSE-2.0"
+private const val BACKUP_MIME = "application/json"
+
+/** The cache folder of shared backups (`res/xml/shared_files.xml`). */
+private const val BACKUP_DIR = "backup"
 
 /**
  * Settings with what only the system knows: permissions, the per-app language, the save dialog. [SettingsScreen]
@@ -50,7 +58,9 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
     val context = LocalContext.current
     val activity = LocalActivity.current
     val appContext = context.applicationContext
-    val viewModel = viewModel { SettingsViewModel(container, writeFile = { uri, text -> writeText(appContext, uri, text) }) }
+    val viewModel = viewModel {
+        SettingsViewModel(container, writeFile = { uri, text -> writeText(appContext, uri, text) }, readFile = { uri -> readText(appContext, uri) })
+    }
     val data by viewModel.state.collectAsStateWithLifecycle()
 
     // Permissions can change in the system settings while Helm is in the background.
@@ -79,6 +89,21 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
     val saveJson = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(ExportFormat.JSON.mimeType)) {
         viewModel.saveExport(it)
     }
+    val saveBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_MIME)) { viewModel.saveBackupTo(it) }
+    // Files apps label JSON differently; anything can be picked and the content decides.
+    val pickBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { viewModel.restoreFrom(it) }
+    val shareTitle = stringResource(R.string.backup_share_title)
+    val backup = data?.backup
+    LaunchedEffect(backup) {
+        when (backup) {
+            is BackupStatus.ReadyToSave -> if (!backup.dialogOpen) {
+                viewModel.backupDialogOpened()
+                saveBackup.launch(backup.fileName)
+            }
+            is BackupStatus.ReadyToShare -> viewModel.backupShared(shareBackup(context, backup.fileName, backup.content, shareTitle))
+            else -> {}
+        }
+    }
     val export = data?.export
     LaunchedEffect(export) {
         if (export is ExportStatus.Ready && !export.dialogOpen) {
@@ -92,7 +117,11 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
         object : SettingsActions {
             override fun openConnect() = onConnect()
             override fun disconnect() = viewModel.disconnect()
-            override fun setOfflineMode(enabled: Boolean) = viewModel.setOfflineMode(enabled)
+            override fun usePhoneTimezone() = viewModel.usePhoneTimezone()
+            override fun saveBackup() = viewModel.saveBackup()
+            override fun shareBackup() = viewModel.shareBackup()
+            override fun restoreBackup() = pickBackup.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+            override fun removeSample() = viewModel.removeSample()
             override fun setSummaryTime(time: String) = viewModel.setSummaryTime(time)
             override fun setReminderMinutes(minutes: List<Int>) = viewModel.setReminderMinutes(minutes)
             override fun export(format: ExportFormat) = viewModel.export(format)
@@ -152,6 +181,30 @@ private fun open(context: Context, intent: Intent) {
 private suspend fun writeText(context: Context, uri: Uri, text: String) = withContext(Dispatchers.IO) {
     val stream = context.contentResolver.openOutputStream(uri, "wt") ?: throw IOException("no output stream for $uri")
     stream.use { it.write(text.toByteArray()) }
+}
+
+private suspend fun readText(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
+    val stream = context.contentResolver.openInputStream(uri) ?: throw IOException("no input stream for $uri")
+    stream.use { String(it.readBytes(), Charsets.UTF_8) }
+}
+
+/** Writes the backup into the app's cache (the folder the provider shares) and offers it to other apps; false when it could not be written. */
+private suspend fun shareBackup(context: Context, fileName: String, content: String, title: String): Boolean {
+    val file = try {
+        withContext(Dispatchers.IO) {
+            File(context.cacheDir, BACKUP_DIR).apply { mkdirs() }.resolve(fileName).apply { writeText(content) }
+        }
+    } catch (_: IOException) {
+        return false
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = Intent(Intent.ACTION_SEND)
+        .setType(BACKUP_MIME)
+        .putExtra(Intent.EXTRA_STREAM, uri)
+        .putExtra(Intent.EXTRA_SUBJECT, title)
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    open(context, Intent.createChooser(send, title))
+    return true
 }
 
 /** True on Android 13+ while Helm may not post notifications yet. */

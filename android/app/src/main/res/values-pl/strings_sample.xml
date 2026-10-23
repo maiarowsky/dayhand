@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sample plan (SamplePlan), one string per SampleText. -->
+<resources>
+    <string name="sample_plan_week">Zaplanować tydzień</string>
+    <string name="sample_plan_week_resume">Poniedziałek i wtorek gotowe, dalej: budżet</string>
+    <string name="sample_bill">Zapłacić rachunek za prąd</string>
+    <string name="sample_reply">Odpisać Annie w sprawie wyjazdu</string>
+    <string name="sample_dentist">Zadzwonić do dentysty</string>
+    <string name="sample_standup">Codzienne spotkanie zespołu</string>
+    <string name="sample_groceries">Zrobić zakupy</string>
+    <string name="sample_milk">Mleko</string>
+    <string name="sample_eggs">Jajka</string>
+    <string name="sample_bread">Chleb</string>
+    <string name="sample_coffee">Kawa</string>
+    <string name="sample_plants">Podlać kwiaty</string>
+    <string name="sample_run">Poranny bieg</string>
+    <string name="sample_proposal">Napisać propozycję projektu</string>
+    <string name="sample_proposal_note">Dwie strony: cel, plan i koszt.</string>
+    <string name="sample_link_title">Jak działa Helm</string>
+    <string name="sample_holiday">Pomysły na urlop</string>
+    <string name="sample_holiday_note">Góry w czerwcu? Zapytać Tomka o domek.</string>
+    <string name="sample_monday">Planowanie w zespole</string>
+    <string name="sample_tuesday">Przegląd samochodu</string>
+    <string name="sample_wednesday">Obiad z Martą</string>
+    <string name="sample_thursday">Siłownia</string>
+    <string name="sample_friday">Przejrzeć raport kwartalny</string>
+    <string name="sample_saturday">Targ warzywny</string>
+    <string name="sample_sunday">Zadzwonić do babci</string>
+    <string name="sample_home">Dom</string>
+    <string name="sample_work">Praca</string>
+    <string name="sample_health">Zdrowie</string>
+</resources>

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import dev.helm.planner.AppContainer
 import dev.helm.planner.HelmApplication
+import java.time.ZoneId
 import kotlinx.coroutines.launch
 
 /** Runs [block] off the main thread while Android keeps the receiver alive (goAsync). */
@@ -50,7 +51,12 @@ class AlarmReceiver : BroadcastReceiver() {
  */
 class SystemEventsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action in RESCHEDULE_ACTIONS) handle(context) { reminders.reschedule() }
+        if (intent.action !in RESCHEDULE_ACTIONS) return
+        handle(context) {
+            // Without a server the reminders ring in the phone's zone, so a new zone is stored before they are armed.
+            if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) settings.setPhoneTimezone(ZoneId.systemDefault().id)
+            reminders.reschedule()
+        }
     }
 
     private companion object {

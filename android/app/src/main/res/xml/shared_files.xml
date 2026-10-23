@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Files the app shares with other apps: only the calendar export in the cache. -->
+<!-- Files the app shares with other apps: the calendar export and the backup, both in the cache. -->
 <paths>
     <cache-path name="calendar" path="calendar/" />
+    <cache-path name="backup" path="backup/" />
 </paths>

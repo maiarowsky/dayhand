@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">Welcome to Helm</string>
+    <string name="welcome_intro">Today, a calendar and a board for your tasks. Choose where Helm keeps your plan; you can change it later in Settings.</string>
+    <string name="local_title">On this phone only</string>
+    <string name="local_body">No account and no server. Your plan stays on this phone, reminders and the morning summary included. Back it up to a file in Settings → Data.</string>
+    <string name="local_start">Start with an empty plan</string>
+    <string name="local_sample">Try with sample data</string>
+    <string name="server_title">Connect to my server</string>
+    <string name="server_body">Your own Helm server keeps the plan in sync with your other devices and lets AI agents work with it. On your computer run hlm pair and type the code it shows.</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">Replace the plan on this phone?</string>
+    <string name="replace_text">This phone holds the plan of %1$s. Connecting to %2$s replaces it with the plan there and removes %3$s from this phone. What reached %1$s stays there.</string>
+    <string name="replace_pending">%1$s not sent to %2$s yet will be lost.</string>
+    <string name="replace_keep">To keep them, save a backup first (Settings → Data → Backup) or connect to %1$s again.</string>
+    <string name="replace_confirm">Replace and connect</string>
+    <plurals name="replace_tasks">
+        <item quantity="one">%d task</item>
+        <item quantity="other">%d tasks</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="one">%d change</item>
+        <item quantity="other">%d changes</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">The plan is kept on this phone and nothing is sent anywhere.</string>
+    <string name="server_local_was">Last connected to %1$s. Changes made since then go there when you connect to it again.</string>
+    <string name="server_local_how">A server of your own keeps Helm in sync across your devices and lets AI agents read and change the plan. Set one up as described at github.com/maiarowsky/helm (docs/deploy.md), run hlm pair on your computer and connect with the code. Everything on this phone then goes to the server.</string>
+    <string name="settings_timezone_phone">%1$s, this phone\'s time zone</string>
+    <string name="settings_timezone_use_phone">Use this phone\'s time zone (%1$s)</string>
+    <string name="settings_timezone_differs">The server\'s time zone decides what today is and when reminders ring.</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">Backup</string>
+    <string name="backup_save">Save a backup file</string>
+    <string name="backup_share">Share a backup</string>
+    <string name="backup_restore">Restore from a file</string>
+    <string name="backup_last">Last backup: %1$s</string>
+    <string name="backup_never">No backup made on this phone yet</string>
+    <string name="backup_hint">A backup is the whole plan on this phone in Helm\'s JSON format: tasks with their checklists, reminders and repeat rules, and the settings, without the change history. Helm does not copy your plan to Google or anywhere else, so keep the file somewhere safe. A Helm server reads it too (hlm import).</string>
+    <string name="backup_working">Preparing the backup…</string>
+    <string name="backup_saved">Saved %1$s</string>
+    <string name="backup_write_failed">Could not save the file.</string>
+    <string name="backup_read_failed">Could not read the file.</string>
+    <string name="backup_not_helm">This file is not a Helm backup (Helm\'s JSON export, version 1).</string>
+    <string name="backup_too_many">The file has more than %1$d tasks; Helm restores at most %1$d at once.</string>
+    <plurals name="backup_restored">
+        <item quantity="one">Restored %d task.</item>
+        <item quantity="other">Restored %d tasks.</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="one">%d was already on the phone.</item>
+        <item quantity="other">%d were already on the phone.</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="one">%d could not be read.</item>
+        <item quantity="other">%d could not be read.</item>
+    </plurals>
+    <string name="backup_settings_restored">The settings were restored too.</string>
+    <string name="backup_share_title">Helm backup</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">These are sample tasks to show what Helm can do.</string>
+    <string name="sample_remove">Remove them</string>
+    <string name="sample_row">Remove sample tasks</string>
+</resources>

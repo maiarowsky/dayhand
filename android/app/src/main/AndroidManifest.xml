@@ -42,7 +42,7 @@
             </intent-filter>
         </activity>
 
-        <!-- The one-time .ics export is shared from the app's cache through this provider (res/xml/shared_files.xml). -->
+        <!-- The one-time .ics export and the backup are shared from the app's cache through this provider (res/xml/shared_files.xml). -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

@@ -99,7 +99,7 @@ class ScreenTour {
 
     @Test
     fun todayEmpty() {
-        val empty = TodayUiState(TodaySections("2026-10-22", emptyList(), null, emptyList(), emptyList()), ConnectionStatus.NOT_CONFIGURED, 0)
+        val empty = TodayUiState(TodaySections("2026-10-22", emptyList(), null, emptyList(), emptyList()), ConnectionStatus.LOCAL, 0)
         show { TodayScreen(empty, object : TodayActions {}) }
         shot("03-today-empty")
     }
@@ -124,7 +124,6 @@ class ScreenTour {
         data = SettingsData(
             settings = AppSettings(
                 backend = BackendConfig("https://helm.example.convex.site", Credential.Device("https://helm.example.convex.site", "jd7device", "Pixel 7", "helmdev_secret.secret")),
-                offlineMode = false,
                 timezone = "Europe/Warsaw",
                 summaryTime = "05:00",
                 reminderMinutes = listOf(0, 15),

@@ -6,8 +6,8 @@ import dev.helm.planner.sync.FeedState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
-/** The connection line at the top of Today and in Settings. */
-enum class ConnectionStatus { SYNCED, CONNECTING, OFFLINE, OFFLINE_MODE, NOT_CONFIGURED, UNAUTHORIZED, ERROR }
+/** The connection line at the top of Today and in Settings; [LOCAL] is "on this phone only", without a server. */
+enum class ConnectionStatus { SYNCED, CONNECTING, OFFLINE, LOCAL, UNAUTHORIZED, ERROR }
 
 /** What the user should know about the server connection, most important first. */
 fun connectionStatus(
@@ -17,8 +17,7 @@ fun connectionStatus(
 ): Flow<ConnectionStatus> = combine(settings, online, feed) { s, isOnline, state ->
     when {
         // A phone the server signed out says so until it is paired again.
-        s.backend == null -> if (s.pairingLost) ConnectionStatus.UNAUTHORIZED else ConnectionStatus.NOT_CONFIGURED
-        s.offlineMode -> ConnectionStatus.OFFLINE_MODE
+        s.backend == null -> if (s.pairingLost) ConnectionStatus.UNAUTHORIZED else ConnectionStatus.LOCAL
         !isOnline -> ConnectionStatus.OFFLINE
         state == FeedState.UNAUTHORIZED -> ConnectionStatus.UNAUTHORIZED
         state == FeedState.ERROR -> ConnectionStatus.ERROR
@@ -31,6 +30,8 @@ data class TodayUiState(
     val sections: TodaySections,
     val connection: ConnectionStatus,
     val pendingChanges: Int,
+    /** The sample plan is on the phone: a line says so, with a button that removes it. */
+    val sample: Boolean = false,
 )
 
 /** What the user can do on Today; every call changes Room first and queues the server change. */
@@ -45,4 +46,5 @@ interface TodayActions {
     fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {}
     fun openSettings() {}
     fun openTask(localId: String) {}
+    fun removeSample() {}
 }

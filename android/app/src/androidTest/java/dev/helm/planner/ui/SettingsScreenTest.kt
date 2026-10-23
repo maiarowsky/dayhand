@@ -5,7 +5,6 @@ import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
@@ -27,6 +26,7 @@ import dev.helm.planner.settings.BackendConfig
 import dev.helm.planner.settings.Credential
 import dev.helm.planner.ui.connect.ServerTags
 import dev.helm.planner.ui.settings.AppearanceTags
+import dev.helm.planner.ui.settings.BackupStatus
 import dev.helm.planner.ui.settings.ExportFailure
 import dev.helm.planner.ui.settings.ExportStatus
 import dev.helm.planner.ui.settings.NotificationAccess
@@ -64,6 +64,11 @@ class SettingsScreenTest {
         override fun openLicense() { calls += "license" }
         override fun openConnect() { calls += "connect" }
         override fun disconnect() { calls += "disconnect" }
+        override fun usePhoneTimezone() { calls += "phone-timezone" }
+        override fun saveBackup() { calls += "backup:save" }
+        override fun shareBackup() { calls += "backup:share" }
+        override fun restoreBackup() { calls += "backup:restore" }
+        override fun removeSample() { calls += "sample:remove" }
     }
 
     private fun state(
@@ -75,19 +80,28 @@ class SettingsScreenTest {
         minutes: List<Int> = listOf(0),
         backend: BackendConfig? = BackendConfig("http://10.0.2.2:3210", DEVICE),
         pairingLost: Boolean = false,
+        backup: BackupStatus = BackupStatus.Idle,
+        sample: Boolean = false,
+        serverUrl: String? = null,
+        phoneTimezone: String = "Europe/Warsaw",
+        lastBackupAt: Long? = null,
     ) = SettingsUiState(
         data = SettingsData(
             settings = AppSettings(
                 backend = backend,
-                offlineMode = false,
                 timezone = "Europe/Warsaw",
                 summaryTime = "05:00",
                 reminderMinutes = minutes,
                 pairingLost = pairingLost,
+                serverUrl = serverUrl,
+                phoneTimezone = phoneTimezone,
+                lastBackupAt = lastBackupAt,
             ),
             connection = connection,
             pendingChanges = pending,
             export = export,
+            backup = backup,
+            sample = sample,
         ),
         versionName = "0.2.0",
         notifications = notifications,
@@ -119,6 +133,7 @@ class SettingsScreenTest {
             SettingsTags.ROW_NOTIFICATIONS to SettingsTags.NOTIFICATIONS_PAGE,
             SettingsTags.ROW_SUMMARY to SettingsTags.SUMMARY_PAGE,
             SettingsTags.ROW_REMINDERS to SettingsTags.REMINDERS_PAGE,
+            SettingsTags.ROW_BACKUP to SettingsTags.BACKUP_PAGE,
             SettingsTags.ROW_EXPORT to SettingsTags.EXPORT_PAGE,
             SettingsTags.ROW_SERVER to SettingsTags.SERVER_PAGE,
             SettingsTags.LICENSES to "licenses",
@@ -284,10 +299,83 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun offlineSwitchReflectsTheSetting() {
-        show(state(), start = SettingsPane.SERVER)
-        compose.onNodeWithTag(SettingsTags.OFFLINE).performScrollTo().assertIsOff()
-        compose.onNodeWithTag(SettingsTags.OFFLINE).assertHeightIsAtLeast(48.dp)
+    fun onThisPhoneOnlyNeedsNoServerRows() {
+        show(state(backend = null, connection = ConnectionStatus.LOCAL))
+        value(SettingsTags.ROW_SERVER).performScrollTo().assertTextEquals(text(R.string.local_title))
+        compose.onNodeWithTag(SettingsTags.ROW_BACKUP).performScrollTo().assertIsDisplayed()
+        // The server's export, calendar address and agent connections need a server.
+        compose.onNodeWithTag(SettingsTags.ROW_EXPORT).assertDoesNotExist()
+        compose.onNodeWithTag(SettingsTags.ROW_CALENDAR).assertDoesNotExist()
+        compose.onNodeWithTag(SettingsTags.ROW_CONNECTIONS).assertDoesNotExist()
+        compose.onNodeWithTag(SettingsTags.ROW_SAMPLE).assertDoesNotExist()
+    }
+
+    @Test
+    fun onThisPhoneOnlySaysHowToConnectLaterAndUsesThePhonesZone() {
+        show(state(backend = null, connection = ConnectionStatus.LOCAL, pending = 4), start = SettingsPane.SERVER)
+        compose.onNodeWithText(text(R.string.local_title)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.server_local_note)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.server_local_how)).performScrollTo().assertIsDisplayed()
+        // No connection to describe and no changes "waiting" for a server that does not exist.
+        compose.onNodeWithTag(SettingsTags.CONNECTION).assertDoesNotExist()
+        compose.onNodeWithTag(SettingsTags.TIMEZONE).performScrollTo()
+            .assertTextContains(text(R.string.settings_timezone_phone, "Europe/Warsaw"), substring = true)
+        compose.onNodeWithTag(SettingsTags.USE_PHONE_TIMEZONE).assertDoesNotExist()
+    }
+
+    @Test
+    fun aDisconnectedPhoneNamesTheServerItsChangesWaitFor() {
+        show(state(backend = null, connection = ConnectionStatus.LOCAL, serverUrl = "https://old-name.convex.site"), start = SettingsPane.SERVER)
+        compose.onNodeWithText(text(R.string.server_local_was, "old-name.convex.site")).assertIsDisplayed()
+    }
+
+    @Test
+    fun aServerInAnotherZoneOffersThePhonesZone() {
+        val actions = Recorder()
+        show(state(phoneTimezone = "America/New_York"), actions, start = SettingsPane.SERVER)
+        compose.onNodeWithTag(SettingsTags.TIMEZONE).performScrollTo()
+            .assertTextContains(text(R.string.settings_timezone, "Europe/Warsaw"), substring = true)
+        compose.onNodeWithTag(SettingsTags.USE_PHONE_TIMEZONE).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf("phone-timezone"), actions.calls)
+    }
+
+    @Test
+    fun backupPageSavesSharesAndRestores() {
+        val actions = Recorder()
+        show(state(backend = null, connection = ConnectionStatus.LOCAL), actions)
+        open(SettingsTags.ROW_BACKUP, SettingsTags.BACKUP_PAGE)
+        compose.onNodeWithTag(SettingsTags.BACKUP_LAST).assertTextContains(text(R.string.backup_never))
+        compose.onNodeWithTag(SettingsTags.BACKUP_SAVE).assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag(SettingsTags.BACKUP_SHARE).performClick()
+        compose.onNodeWithTag(SettingsTags.BACKUP_RESTORE).performClick()
+        assertEquals(listOf("backup:save", "backup:share", "backup:restore"), actions.calls)
+        compose.onNodeWithText(text(R.string.backup_hint)).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun backupResultsAreSaidInWords() {
+        show(state(backup = BackupStatus.Restored(added = 3, alreadyHere = 2, invalid = 1, settings = true), lastBackupAt = 0), start = SettingsPane.BACKUP)
+        compose.onNodeWithTag(SettingsTags.BACKUP_STATUS)
+            .assertTextContains(context.resources.getQuantityString(R.plurals.backup_restored, 3, 3), substring = true)
+            .assertTextContains(context.resources.getQuantityString(R.plurals.backup_already_here, 2, 2), substring = true)
+            .assertTextContains(text(R.string.backup_settings_restored), substring = true)
+        compose.onNodeWithTag(SettingsTags.BACKUP_LAST).assertTextContains("1970", substring = true)
+    }
+
+    @Test
+    fun backupRowsWaitWhileABackupIsMade() {
+        show(state(backup = BackupStatus.Working), start = SettingsPane.BACKUP)
+        compose.onNodeWithTag(SettingsTags.BACKUP_SAVE).assertIsNotEnabled()
+        compose.onNodeWithTag(SettingsTags.BACKUP_RESTORE).assertIsNotEnabled()
+        compose.onNodeWithTag(SettingsTags.BACKUP_STATUS).assertTextContains(text(R.string.backup_working))
+    }
+
+    @Test
+    fun sampleTasksGoWithOneTap() {
+        val actions = Recorder()
+        show(state(backend = null, connection = ConnectionStatus.LOCAL, sample = true), actions)
+        compose.onNodeWithTag(SettingsTags.ROW_SAMPLE).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf("sample:remove"), actions.calls)
     }
 
     @Test
@@ -308,8 +396,8 @@ class SettingsScreenTest {
     @Test
     fun withoutServerTheConnectButtonOpensPairing() {
         val actions = Recorder()
-        show(state(backend = null, connection = ConnectionStatus.NOT_CONFIGURED), actions, start = SettingsPane.SERVER)
-        compose.onNodeWithText(text(R.string.server_not_connected)).assertIsDisplayed()
+        show(state(backend = null, connection = ConnectionStatus.LOCAL), actions, start = SettingsPane.SERVER)
+        compose.onNodeWithText(text(R.string.local_title)).assertIsDisplayed()
         compose.onNodeWithTag(ServerTags.DISCONNECT).assertDoesNotExist()
         compose.onNodeWithTag(ServerTags.CONNECT).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
         assertEquals(listOf("connect"), actions.calls)

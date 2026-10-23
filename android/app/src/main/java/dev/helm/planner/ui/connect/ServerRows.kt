@@ -22,8 +22,9 @@ object ServerTags {
 }
 
 /**
- * The rows of a server group: which server this phone is paired with, then Connect and / or Disconnect as rows that
- * act. [onDisconnect] only asks: the caller shows [DisconnectDialog] before anything is removed.
+ * The rows of a server group: which server this phone is paired with (or that it works on its own), then Connect
+ * and / or Disconnect as rows that act. [onDisconnect] only asks: the caller shows [DisconnectDialog] before
+ * anything is removed.
  */
 fun serverRows(settings: AppSettings, onConnect: () -> Unit, onDisconnect: () -> Unit): List<@Composable () -> Unit> {
     val credential = settings.backend?.credential
@@ -69,11 +70,17 @@ private fun ServerRow(settings: AppSettings) {
             tag = ServerTags.SUMMARY,
             icon = LineIcon.Phone,
         )
-        null -> ListRow(
-            stringResource(if (settings.pairingLost) R.string.server_signed_out else R.string.server_not_connected),
-            tag = ServerTags.SUMMARY,
-            icon = if (settings.pairingLost) LineIcon.Warning else LineIcon.Phone,
-        )
+        null -> if (settings.pairingLost) {
+            ListRow(stringResource(R.string.server_signed_out), tag = ServerTags.SUMMARY, icon = LineIcon.Warning)
+        } else {
+            ListRow(
+                stringResource(R.string.local_title),
+                tag = ServerTags.SUMMARY,
+                icon = LineIcon.Phone,
+                note = settings.serverUrl?.let { stringResource(R.string.server_local_was, hostOf(it)) }
+                    ?: stringResource(R.string.server_local_note),
+            )
+        }
     }
 }
 
@@ -98,7 +105,7 @@ fun DisconnectDialog(settings: AppSettings, onDismiss: () -> Unit, onConfirm: ()
     }
 }
 
-private fun hostOf(url: String): String = try {
+internal fun hostOf(url: String): String = try {
     URI(url).host ?: url
 } catch (_: URISyntaxException) {
     url

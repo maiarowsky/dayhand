@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">Witaj w Helmie</string>
+    <string name="welcome_intro">Dziś, kalendarz i tablica na Twoje zadania. Wybierz, gdzie Helm ma trzymać plan; możesz to później zmienić w Ustawieniach.</string>
+    <string name="local_title">Tylko na tym telefonie</string>
+    <string name="local_body">Bez konta i bez serwera. Plan zostaje na tym telefonie, razem z przypomnieniami i porannym podsumowaniem. Kopię zapasową zrobisz w Ustawieniach → Dane.</string>
+    <string name="local_start">Zacznij od pustego planu</string>
+    <string name="local_sample">Wypróbuj na przykładowych danych</string>
+    <string name="server_title">Połącz z moim serwerem</string>
+    <string name="server_body">Własny serwer Helma synchronizuje plan z innymi urządzeniami i pozwala pracować z nim agentom AI. Na komputerze uruchom hlm pair i wpisz pokazany kod.</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">Zastąpić plan na tym telefonie?</string>
+    <string name="replace_text">Na tym telefonie jest plan z %1$s. Połączenie z %2$s zastąpi go planem stamtąd i usunie z telefonu: %3$s. To, co dotarło do %1$s, tam zostaje.</string>
+    <string name="replace_pending">Niewysłane jeszcze do %2$s zmiany przepadną (%1$s).</string>
+    <string name="replace_keep">Aby je zachować, najpierw zapisz kopię (Ustawienia → Dane → Kopia zapasowa) albo połącz się znów z %1$s.</string>
+    <string name="replace_confirm">Zastąp i połącz</string>
+    <plurals name="replace_tasks">
+        <item quantity="one">%d zadanie</item>
+        <item quantity="few">%d zadania</item>
+        <item quantity="many">%d zadań</item>
+        <item quantity="other">%d zadania</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="one">%d zmiana</item>
+        <item quantity="few">%d zmiany</item>
+        <item quantity="many">%d zmian</item>
+        <item quantity="other">%d zmiany</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">Plan jest na tym telefonie i nic nie jest nigdzie wysyłane.</string>
+    <string name="server_local_was">Ostatnio połączony z %1$s. Zmiany zrobione od tamtej pory trafią tam, gdy znów się z nim połączysz.</string>
+    <string name="server_local_how">Własny serwer synchronizuje Helma między urządzeniami i pozwala agentom AI czytać i zmieniać plan. Postaw go według opisu na github.com/maiarowsky/helm (docs/deploy.md), uruchom hlm pair na komputerze i połącz się kodem. Wtedy wszystko z tego telefonu trafi na serwer.</string>
+    <string name="settings_timezone_phone">%1$s, strefa tego telefonu</string>
+    <string name="settings_timezone_use_phone">Użyj strefy tego telefonu (%1$s)</string>
+    <string name="settings_timezone_differs">Strefa serwera decyduje, który dzień jest dziś i kiedy dzwonią przypomnienia.</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">Kopia zapasowa</string>
+    <string name="backup_save">Zapisz kopię do pliku</string>
+    <string name="backup_share">Udostępnij kopię</string>
+    <string name="backup_restore">Przywróć z pliku</string>
+    <string name="backup_last">Ostatnia kopia: %1$s</string>
+    <string name="backup_never">Na tym telefonie nie zrobiono jeszcze kopii</string>
+    <string name="backup_hint">Kopia to cały plan z tego telefonu w formacie JSON Helma: zadania z listami kontrolnymi, przypomnieniami i regułami powtarzania oraz ustawienia, bez historii zmian. Helm nie kopiuje planu do Google ani nigdzie indziej, więc trzymaj plik w bezpiecznym miejscu. Serwer Helma też go odczyta (hlm import).</string>
+    <string name="backup_working">Przygotowuję kopię…</string>
+    <string name="backup_saved">Zapisano %1$s</string>
+    <string name="backup_write_failed">Nie udało się zapisać pliku.</string>
+    <string name="backup_read_failed">Nie udało się odczytać pliku.</string>
+    <string name="backup_not_helm">To nie jest kopia Helma (eksport JSON Helma, wersja 1).</string>
+    <string name="backup_too_many">Plik ma więcej niż %1$d zadań; Helm przywraca najwyżej %1$d naraz.</string>
+    <plurals name="backup_restored">
+        <item quantity="one">Przywrócono %d zadanie.</item>
+        <item quantity="few">Przywrócono %d zadania.</item>
+        <item quantity="many">Przywrócono %d zadań.</item>
+        <item quantity="other">Przywrócono %d zadania.</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="one">%d już było na telefonie.</item>
+        <item quantity="few">%d już były na telefonie.</item>
+        <item quantity="many">%d już było na telefonie.</item>
+        <item quantity="other">%d już było na telefonie.</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="one">%d nie dało się odczytać.</item>
+        <item quantity="few">%d nie dało się odczytać.</item>
+        <item quantity="many">%d nie dało się odczytać.</item>
+        <item quantity="other">%d nie dało się odczytać.</item>
+    </plurals>
+    <string name="backup_settings_restored">Przywrócono też ustawienia.</string>
+    <string name="backup_share_title">Kopia zapasowa Helma</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">To przykładowe zadania, które pokazują, co potrafi Helm.</string>
+    <string name="sample_remove">Usuń je</string>
+    <string name="sample_row">Usuń przykładowe zadania</string>
+</resources>

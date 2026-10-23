@@ -20,9 +20,8 @@ class OutboxWorker(context: Context, params: WorkerParameters) : CoroutineWorker
     override suspend fun doWork(): Result {
         val container = (applicationContext as HelmApplication).container
         val settings = container.settings.current()
-        // Without a token or in the offline test mode the changes wait; saving settings schedules again.
+        // Without a server (on this phone only) the changes wait; pairing schedules again.
         val backend = settings.backend ?: return Result.success()
-        if (settings.offlineMode) return Result.success()
         val processor = OutboxProcessor(container.outboxStore, container.mutationSender(backend))
         return when (processor.drain()) {
             DrainResult.DONE -> Result.success()

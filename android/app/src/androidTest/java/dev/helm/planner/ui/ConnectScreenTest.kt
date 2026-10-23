@@ -5,12 +5,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
@@ -18,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
 import dev.helm.planner.auth.ConnectError
+import dev.helm.planner.auth.PlanReplace
 import dev.helm.planner.ui.connect.ConnectActions
 import dev.helm.planner.ui.connect.ConnectPhase
 import dev.helm.planner.ui.connect.ConnectScreen
@@ -25,6 +30,7 @@ import dev.helm.planner.ui.connect.ConnectTags
 import dev.helm.planner.ui.connect.ConnectUiState
 import dev.helm.planner.ui.theme.HelmTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,6 +46,9 @@ class ConnectScreenTest {
     private class Recorder : ConnectActions {
         val calls = mutableListOf<String>()
         override fun connect(address: String, code: String) { calls += "connect:$address:$code" }
+        override fun confirmReplace() { calls += "replace" }
+        override fun cancelReplace() { calls += "keep" }
+        override fun useLocally(sample: Boolean) { calls += "local:$sample" }
         override fun close() { calls += "close" }
     }
 
@@ -98,11 +107,52 @@ class ConnectScreenTest {
     }
 
     @Test
-    fun atFirstStartHelmCanBeUsedWithoutAServer() {
+    fun atFirstStartOnThisPhoneOnlyComesFirst() {
         val actions = Recorder()
         show(state(firstRun = true), actions)
-        compose.onNodeWithTag(ConnectTags.SKIP).assertHeightIsAtLeast(48.dp).performClick()
-        assertEquals(listOf("close"), actions.calls)
+        compose.onNodeWithText(text(R.string.welcome_title)).assertIsDisplayed()
+        val local = compose.onNodeWithTag(ConnectTags.LOCAL_CARD).getUnclippedBoundsInRoot()
+        val server = compose.onNodeWithTag(ConnectTags.SERVER_CARD).getUnclippedBoundsInRoot()
+        assertTrue("the phone is the first choice", local.bottom <= server.top)
+        // The form waits behind its card, so a new user sees two choices, not a server address.
+        compose.onNodeWithTag(ConnectTags.ADDRESS).assertDoesNotExist()
+        compose.onNodeWithTag(ConnectTags.LOCAL).assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag(ConnectTags.SAMPLE).assertHeightIsAtLeast(48.dp).performClick()
+        assertEquals(listOf("local:false", "local:true"), actions.calls)
+    }
+
+    @Test
+    fun atFirstStartTheServerCardOpensTheFormAndBackReturns() {
+        val actions = Recorder()
+        show(state(firstRun = true), actions)
+        compose.onNodeWithTag(ConnectTags.OPEN_FORM).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag(ConnectTags.ADDRESS).assertTextContains(DEFAULT)
+        compose.onNodeWithText(text(R.string.connect_title)).assertIsDisplayed()
+        compose.onNodeWithTag("back").performClick()
+        compose.onNodeWithTag(ConnectTags.LOCAL_CARD).assertIsDisplayed()
+        assertEquals(emptyList<String>(), actions.calls)
+    }
+
+    @Test
+    fun aPairingLinkAtFirstStartShowsTheFormFilledIn() {
+        show(state(firstRun = true, code = "E6M8-FE02-XSNT"))
+        compose.onNodeWithTag(ConnectTags.CODE).assertTextContains("E6M8-FE02-XSNT")
+        compose.onNodeWithTag(ConnectTags.CONNECT).assertIsEnabled()
+    }
+
+    @Test
+    fun anotherServerAsksBeforeReplacingThePlan() {
+        val actions = Recorder()
+        val replace = PlanReplace("https://old-one.convex.site", "https://new-one.convex.site", tasks = 7, pending = 2)
+        show(state(phase = ConnectPhase.ConfirmReplace(replace), code = "E6M8-FE02-XSNT"), actions)
+        compose.onNodeWithText(text(R.string.replace_title)).assertIsDisplayed()
+        val tasks = context.resources.getQuantityString(R.plurals.replace_tasks, 7, 7)
+        compose.onNodeWithText(context.getString(R.string.replace_text, "old-one.convex.site", "new-one.convex.site", tasks)).assertIsDisplayed()
+        val changes = context.resources.getQuantityString(R.plurals.replace_changes, 2, 2)
+        compose.onNodeWithText(context.getString(R.string.replace_pending, changes, "old-one.convex.site")).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.cancel)).performClick()
+        compose.onNodeWithTag(ConnectTags.REPLACE_CONFIRM).performClick()
+        assertEquals(listOf("keep", "replace"), actions.calls)
     }
 
     private companion object {

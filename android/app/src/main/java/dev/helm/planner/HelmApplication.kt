@@ -18,6 +18,7 @@ import dev.helm.planner.data.remote.ConvexTaskFeed
 import dev.helm.planner.data.remote.HttpTaskRemote
 import dev.helm.planner.data.remote.MutationSender
 import dev.helm.planner.data.remote.TaskFeed
+import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.ReminderRules
 import dev.helm.planner.export.PlanExporter
 import dev.helm.planner.notify.AndroidAlarmScheduler
@@ -33,6 +34,7 @@ import dev.helm.planner.sync.OutboxScheduler
 import dev.helm.planner.sync.RoomOutboxStore
 import dev.helm.planner.sync.TaskHistorySync
 import dev.helm.planner.ui.theme.AppearanceStore
+import java.time.ZoneId
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,6 +52,8 @@ class HelmApplication : Application() {
         // Changes left from an earlier run (killed app, reboot) go out as soon as there is a network.
         container.outboxScheduler.restart()
         container.notifier.createChannels()
+        // Without a server "today" follows the phone's time zone.
+        container.backgroundScope.launch { container.settings.setPhoneTimezone(ZoneId.systemDefault().id) }
         // Alarms follow every change of the timed tasks or the reminder settings, from any source.
         container.backgroundScope.launch {
             combine(container.repository.tasks, container.settings.settings) { tasks, s ->
@@ -74,14 +78,18 @@ class AppContainer(context: Context) {
     val network = NetworkMonitor(context)
     val outboxScheduler = OutboxScheduler(context)
     val outboxStore = RoomOutboxStore(database)
-    val repository = TaskRepository(database, onOutboxChanged = outboxScheduler::schedule)
+    val repository = TaskRepository(
+        database,
+        onOutboxChanged = outboxScheduler::schedule,
+        repeatsOnPhone = { settings.current().takeIf { it.isLocal }?.let { HelmDates.localDate(System.currentTimeMillis(), it.timezone) } },
+    )
     val liveSync = LiveSync(settings, repository, ::feedFor)
 
     /** A task's change history is read over plain HTTP when its details are open, cached in Room. */
     val historySync = TaskHistorySync(
         runner = {
             val current = settings.current()
-            current.backend?.takeUnless { current.offlineMode }?.let { HttpTaskRemote(it.url, tokensFor(it)) }
+            current.backend?.let { HttpTaskRemote(it.url, tokensFor(it)) }
         },
         save = repository::saveHistory,
     )

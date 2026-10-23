@@ -5,6 +5,7 @@ import android.util.Base64
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.crypto.tink.Aead
@@ -17,6 +18,7 @@ import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.ReminderRules
 import dev.helm.planner.notify.ReminderSettings
 import java.security.GeneralSecurityException
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -44,9 +46,10 @@ data class BackendConfig(val url: String, val credential: Credential)
 
 data class AppSettings(
     val backend: BackendConfig?,
-    /** Test switch: behave as if there were no network (nothing is sent or received). */
-    val offlineMode: Boolean,
-    /** The user's time zone as the backend last reported it. */
+    /**
+     * The zone that decides "today" and when reminders ring: the server's while the phone is connected, the
+     * phone's own while it works on its own ([isLocal]).
+     */
     val timezone: String,
     /** HH:MM of the morning summary, in [timezone] (server setting `summaryTime`). */
     val summaryTime: String = ReminderRules.DEFAULT_SUMMARY_TIME,
@@ -58,8 +61,17 @@ data class AppSettings(
     val pairingLost: Boolean = false,
     /** The Connect screen was shown at first start (and connected or skipped); it does not open by itself again. */
     val connectPromptDone: Boolean = false,
+    /** The phone's own time zone (Android's), used while there is no server. */
+    val phoneTimezone: String = timezone,
+    /** The server's time zone as it last reported it (or the backend default), used while connected. */
+    val serverTimezone: String = timezone,
+    /** When the last backup file was made on this phone (Settings → Data → Backup), if ever. */
+    val lastBackupAt: Long? = null,
 ) {
     val hasToken: Boolean get() = backend != null
+
+    /** "On this phone only": no server; the plan lives in Room and nothing is sent anywhere. */
+    val isLocal: Boolean get() = backend == null
 
     val reminders: ReminderSettings get() = ReminderSettings(timezone, summaryTime, reminderMinutes)
 }
@@ -70,9 +82,10 @@ private val Context.helmSettings by preferencesDataStore(name = "helm_settings")
  * App settings in DataStore. The device token (and a pasted app token of version 0.2) is
  * encrypted with AES-256-GCM by Tink under a master key that lives in the Android Keystore, so
  * the file alone does not reveal it; the app also opts out of backups. Tokens are never logged
- * or shown.
+ * or shown. The summary time and default reminders are kept here with or without a server; the
+ * server's copy replaces them only while no change of them waits in the outbox.
  */
-class SettingsStore(context: Context) {
+class SettingsStore(context: Context, private val systemZone: () -> String = { ZoneId.systemDefault().id }) {
     private val dataStore = context.applicationContext.helmSettings
     private val aead: Aead by lazy { createAead(context.applicationContext) }
 
@@ -113,8 +126,18 @@ class SettingsStore(context: Context) {
         dataStore.edit { it[KEY_CONNECT_PROMPT_DONE] = true }
     }
 
-    suspend fun setOfflineMode(enabled: Boolean) {
-        dataStore.edit { it[KEY_OFFLINE] = enabled }
+    /** Android's time zone changed (or the app started): "today" and the reminders follow it while there is no server. */
+    suspend fun setPhoneTimezone(zone: String) {
+        dataStore.edit { if (it[KEY_PHONE_TIMEZONE] != zone) it[KEY_PHONE_TIMEZONE] = zone }
+    }
+
+    /** The server's time zone changed on the phone ("use this phone's time zone"); the outbox sends it. */
+    suspend fun setServerTimezone(zone: String) {
+        dataStore.edit { it[KEY_TIMEZONE] = zone }
+    }
+
+    suspend fun setLastBackup(at: Long) {
+        dataStore.edit { it[KEY_LAST_BACKUP] = at }
     }
 
     suspend fun setSummaryTime(time: String) {
@@ -128,6 +151,7 @@ class SettingsStore(context: Context) {
     /**
      * The settings from a server snapshot. With [keepLocalChanges] (a settings change still waits
      * in the outbox) only the time zone is taken, so the snapshot does not undo the user's change.
+     * A time zone change from the phone ([setServerTimezone]) may show the old zone until it is sent.
      */
     suspend fun applyServer(snapshot: RemoteEvent.Snapshot, keepLocalChanges: Boolean) {
         dataStore.edit { prefs ->
@@ -140,15 +164,20 @@ class SettingsStore(context: Context) {
     }
 
     private fun read(prefs: Preferences): AppSettings {
+        val backend = backend(prefs)
+        val phoneZone = prefs[KEY_PHONE_TIMEZONE] ?: systemZone()
+        val serverZone = prefs[KEY_TIMEZONE] ?: HelmDates.DEFAULT_TIMEZONE
         return AppSettings(
-            backend = backend(prefs),
-            offlineMode = prefs[KEY_OFFLINE] ?: false,
-            timezone = prefs[KEY_TIMEZONE] ?: HelmDates.DEFAULT_TIMEZONE,
+            backend = backend,
+            timezone = if (backend == null) phoneZone else serverZone,
             summaryTime = prefs[KEY_SUMMARY_TIME] ?: ReminderRules.DEFAULT_SUMMARY_TIME,
             reminderMinutes = prefs[KEY_REMINDER_MINUTES]?.let(::decodeMinutes) ?: ReminderRules.DEFAULT_REMINDER_MINUTES,
             serverUrl = prefs[KEY_SERVER_URL],
             pairingLost = prefs[KEY_PAIRING_LOST] ?: false,
             connectPromptDone = prefs[KEY_CONNECT_PROMPT_DONE] ?: false,
+            phoneTimezone = phoneZone,
+            serverTimezone = serverZone,
+            lastBackupAt = prefs[KEY_LAST_BACKUP],
         )
     }
 
@@ -184,8 +213,9 @@ class SettingsStore(context: Context) {
     companion object {
         private val KEY_URL = stringPreferencesKey("backend_url")
         private val KEY_TOKEN = stringPreferencesKey("app_token_encrypted")
-        private val KEY_OFFLINE = booleanPreferencesKey("offline_mode")
         private val KEY_TIMEZONE = stringPreferencesKey("timezone")
+        private val KEY_PHONE_TIMEZONE = stringPreferencesKey("phone_timezone")
+        private val KEY_LAST_BACKUP = longPreferencesKey("last_backup_at")
         private val KEY_SUMMARY_TIME = stringPreferencesKey("summary_time")
         private val KEY_REMINDER_MINUTES = stringPreferencesKey("reminder_minutes")
         private val KEY_SERVER_URL = stringPreferencesKey("server_url")

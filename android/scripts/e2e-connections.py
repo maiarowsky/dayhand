@@ -148,7 +148,7 @@ def main():
     adb("install", "-r", args.apk)
     shell("pm", "clear", PACKAGE)
     shell("am", "start", "-n", ACTIVITY)
-    find(text="Pairing code", timeout=120)
+    find(text="Welcome to Helm", timeout=120)
     base.configure(args.server_url, args.shots)
 
     # 1. Nothing connected yet.
