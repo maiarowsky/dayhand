@@ -38,17 +38,13 @@ import kotlinx.coroutines.withContext
 
 private const val LICENSE_URL = "https://www.apache.org/licenses/LICENSE-2.0"
 
-/** The Settings list and the pages it opens. */
-private enum class SettingsPage { MAIN, COLORS, FONT, LICENSES }
-
 /**
- * Settings with what only the system knows: permissions, the per-app language, the save dialog; and its sub-pages
- * (colors, font, licenses), which change the appearance at once.
+ * Settings with what only the system knows: permissions, the per-app language, the save dialog. [SettingsScreen]
+ * opens its own pages; Back from the list leaves Settings.
  */
 @Composable
 fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Unit, onConnect: () -> Unit) {
-    var page by rememberSaveable { mutableStateOf(SettingsPage.MAIN) }
-    BackHandler { if (page == SettingsPage.MAIN) onBack() else page = SettingsPage.MAIN }
+    BackHandler(onBack = onBack)
     val appearance by container.appearance.appearance.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -122,20 +118,11 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
 
             override fun openLicense() = open(context, Intent(Intent.ACTION_VIEW, Uri.parse(LICENSE_URL)))
             override fun setAppearance(appearance: Appearance) = container.appearance.save(appearance)
-            override fun openColors() { page = SettingsPage.COLORS }
-            override fun openFont() { page = SettingsPage.FONT }
-            override fun openLicenses() { page = SettingsPage.LICENSES }
         }
     }
-    val toMain = { page = SettingsPage.MAIN }
-    when (page) {
-        SettingsPage.MAIN -> data?.let {
-            SettingsScreen(SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance), actions)
-        } ?: SettingsLoading(onBack)
-        SettingsPage.COLORS -> PaletteScreen(appearance, container.appearance::save, onBack = toMain)
-        SettingsPage.FONT -> FontScreen(appearance, container.appearance::save, onBack = toMain)
-        SettingsPage.LICENSES -> LicensesScreen(onBack = toMain)
-    }
+    data?.let {
+        SettingsScreen(SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance), actions)
+    } ?: SettingsLoading(onBack)
 }
 
 private fun hasPermission(context: Context): Boolean =

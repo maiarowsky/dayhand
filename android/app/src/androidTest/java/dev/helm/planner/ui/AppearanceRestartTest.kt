@@ -25,12 +25,14 @@ import dev.helm.planner.ui.theme.AppearanceStore
 import dev.helm.planner.ui.theme.HelmFont
 import dev.helm.planner.ui.theme.Palettes
 import dev.helm.planner.ui.theme.ThemeMode
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
 import org.junit.runner.RunWith
 import kotlin.math.abs
 
@@ -40,11 +42,21 @@ import kotlin.math.abs
  */
 @RunWith(AndroidJUnit4::class)
 class AppearanceRestartTest {
-    @get:Rule
-    val compose = createAndroidComposeRule<MainActivity>()
-
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val store get() = (context.applicationContext as HelmApplication).container.appearance
+    private val container get() = (context.applicationContext as HelmApplication).container
+    private val store get() = container.appearance
+
+    /**
+     * A fresh install without a server opens Connect first, which has no tab bar; this test starts on Today, as after
+     * "Not now". Set before the activity starts, because the app checks it once at launch.
+     */
+    @get:Rule(order = 0)
+    val connectPromptDone = object : ExternalResource() {
+        override fun before() = runBlocking { container.settings.setConnectPromptDone() }
+    }
+
+    @get:Rule(order = 1)
+    val compose = createAndroidComposeRule<MainActivity>()
 
     @Before
     fun startFromDefaultsInDarkMode() {

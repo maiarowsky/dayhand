@@ -5,7 +5,7 @@
     <string name="appearance_mode_system">Systemowy</string>
     <string name="appearance_mode_light">Jasny</string>
     <string name="appearance_mode_dark">Ciemny</string>
-    <string name="appearance_colors">Kolory</string>
+    <string name="appearance_colors">Paleta kolorów</string>
     <string name="appearance_font">Czcionka</string>
     <string name="appearance_palettes_dark">Paleta ciemna (motyw ciemny)</string>
     <string name="appearance_palettes_light">Paleta jasna (motyw jasny)</string>

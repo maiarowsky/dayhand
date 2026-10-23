@@ -9,6 +9,7 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -80,23 +81,27 @@ class AppearanceScreensTest {
     }
 
     @Test
-    fun choosingAFontChangesTheTextOnScreen() {
+    fun choosingAFontChangesThePreviewAndSettingsStaySans() {
         var appearance by mutableStateOf(Appearance(mode = ThemeMode.Dark))
         compose.setContent {
             HelmTheme(appearance, systemDark = true) {
                 FontScreen(appearance, onChange = { appearance = it }, onBack = {})
             }
         }
+        // The first of the two preview cards (dark, then light).
+        val sample = compose.onAllNodesWithText(context.getString(R.string.appearance_preview_task))[0]
         val title = compose.onNodeWithText(context.getString(R.string.appearance_font))
-        assertEquals(FontFamily.Default, title.fontFamily())
-        val before = title.layout().getLineRight(0)
+        assertEquals(FontFamily.Default, sample.fontFamily())
+        val before = sample.layout().getLineRight(0)
 
         compose.onNodeWithTag(AppearanceTags.font(HelmFont.Mono)).performScrollTo().performClick()
         compose.waitForIdle()
 
         assertEquals(HelmFont.Mono, appearance.font)
-        assertEquals(HelmFont.Mono.family, title.fontFamily())
-        assertNotEquals("the title is drawn in another font", before, title.layout().getLineRight(0))
+        assertEquals(HelmFont.Mono.family, sample.fontFamily())
+        assertNotEquals("the preview is drawn in another font", before, sample.layout().getLineRight(0))
+        // Settings themselves keep the system sans, as on Mussh.
+        assertEquals(FontFamily.Default, title.fontFamily())
     }
 
     private fun background(): Color {

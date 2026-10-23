@@ -2,8 +2,6 @@ package dev.helm.planner.ui.settings
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,7 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import dev.helm.planner.R
-import dev.helm.planner.ui.components.IconTone
+import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.ListGroup
 import dev.helm.planner.ui.components.ListRow
 import dev.helm.planner.ui.components.helmSwitchColors
@@ -27,26 +25,33 @@ import dev.helm.planner.ui.connect.DisconnectDialog
 import dev.helm.planner.ui.connect.serverRows
 import dev.helm.planner.ui.today.ConnectionStatus
 
-/** Connection status, the paired server with Connect / Disconnect, the offline test switch and the time zone. */
+/**
+ * The Server page: the connection state, the paired server with Connect / Disconnect, then the offline test switch
+ * and the time zone.
+ */
 @Composable
-internal fun ServerSection(data: SettingsData, actions: SettingsActions) {
+internal fun ServerOptions(data: SettingsData, actions: SettingsActions) {
     val settings = data.settings
     var confirming by rememberSaveable { mutableStateOf(false) }
     val rows = buildList<@Composable () -> Unit> {
         add { ConnectionRow(data.connection, data.pendingChanges) }
         addAll(serverRows(settings, onConnect = actions::openConnect, onDisconnect = { confirming = true }))
-        add { OfflineRow(settings.offlineMode, actions::setOfflineMode) }
-        add {
-            ListRow(
-                stringResource(R.string.settings_timezone_title),
-                tag = SettingsTags.TIMEZONE,
-                icon = SettingsIcons.Public,
-                tone = IconTone.Neutral,
-                subtitle = stringResource(R.string.settings_timezone, settings.timezone),
-            )
-        }
     }
-    ListGroup(stringResource(R.string.settings_backend), rows)
+    ListGroup(null, rows)
+    ListGroup(
+        null,
+        rows = listOf(
+            { OfflineRow(settings.offlineMode, actions::setOfflineMode) },
+            {
+                ListRow(
+                    stringResource(R.string.settings_timezone_title),
+                    tag = SettingsTags.TIMEZONE,
+                    icon = LineIcon.Globe,
+                    note = stringResource(R.string.settings_timezone, settings.timezone),
+                )
+            },
+        ),
+    )
     if (confirming) {
         DisconnectDialog(settings, onDismiss = { confirming = false }, onConfirm = {
             confirming = false
@@ -55,23 +60,20 @@ internal fun ServerSection(data: SettingsData, actions: SettingsActions) {
     }
 }
 
-/** The connection state as the row's icon colour and its words, read out when it changes. */
+/** The connection state in words, with the changes still waiting, read out when it changes. */
 @Composable
 private fun ConnectionRow(connection: ConnectionStatus, pending: Int) {
-    val (icon, tone) = when (connection) {
-        ConnectionStatus.SYNCED -> SettingsIcons.CloudDone to IconTone.Success
-        ConnectionStatus.CONNECTING -> SettingsIcons.Cloud to IconTone.Accent
-        ConnectionStatus.OFFLINE, ConnectionStatus.OFFLINE_MODE -> SettingsIcons.CloudOff to IconTone.Warning
-        ConnectionStatus.NOT_CONFIGURED -> SettingsIcons.CloudOff to IconTone.Neutral
-        ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> Icons.Filled.Warning to IconTone.Danger
+    val icon = when (connection) {
+        ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING -> LineIcon.Cloud
+        ConnectionStatus.OFFLINE, ConnectionStatus.OFFLINE_MODE, ConnectionStatus.NOT_CONFIGURED -> LineIcon.CloudOff
+        ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> LineIcon.Warning
     }
     ListRow(
         stringResource(R.string.connection_label, stringResource(connectionText(connection))),
         tag = SettingsTags.CONNECTION,
         modifier = Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         icon = icon,
-        tone = tone,
-        subtitle = if (pending > 0) pluralStringResource(R.plurals.connection_pending, pending, pending) else null,
+        note = if (pending > 0) pluralStringResource(R.plurals.connection_pending, pending, pending) else null,
     )
 }
 
@@ -89,9 +91,8 @@ private fun OfflineRow(checked: Boolean, onChange: (Boolean) -> Unit) {
             role = Role.Switch,
             onValueChange = onChange,
         ),
-        icon = SettingsIcons.CloudOff,
-        tone = IconTone.Neutral,
-        subtitle = stringResource(R.string.settings_offline_hint),
+        icon = LineIcon.CloudOff,
+        note = stringResource(R.string.settings_offline_hint),
         trailing = {
             Switch(
                 checked = checked,
@@ -103,7 +104,7 @@ private fun OfflineRow(checked: Boolean, onChange: (Boolean) -> Unit) {
     )
 }
 
-private fun connectionText(connection: ConnectionStatus): Int = when (connection) {
+internal fun connectionText(connection: ConnectionStatus): Int = when (connection) {
     ConnectionStatus.SYNCED -> R.string.connection_synced
     ConnectionStatus.CONNECTING -> R.string.connection_connecting
     ConnectionStatus.OFFLINE -> R.string.connection_offline

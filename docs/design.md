@@ -34,7 +34,7 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 | One palette for the whole app | Dark palette + light palette + mode | Mussh has no light/dark mode; Helm needs one, so it keeps one choice per variant. |
 | `AppTheme`, `LocalPalette`, `palette` | `HelmTheme(appearance)`, `LocalPalette`, `palette` | Plus `LocalHelmType`/`helmType`, the Material type scale and shapes. |
 | `colorScheme(palette)` | `colorScheme(palette)` | Same mapping, also the Material 1.4 container roles. |
-| `AppType` (Headline 30, Title 18, Body 15, Small 13, Label mono 12 / 2 sp tracking) | `HelmType` | Same sizes and weights, in the chosen font; adds `screenTitle` (22 sp, Mussh's settings title) and the strong variants. |
+| `AppType` (Headline 30, Title 18, Body 15, Small 13, Label mono 12 / 2 sp tracking) | `HelmType` | Same sizes and weights, in the chosen font; adds `screenTitle` (22 sp, Mussh's settings title) and the strong variants. Settings use it in the system sans whatever the font, as Mussh's settings do (`SettingsType`). |
 | `ChatFont` (System, Inter, IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4, JetBrains Mono) | `HelmFont` | Same list and ids, for the whole app; default System like Mussh's screens. The ten code fonts are terminal-only in Mussh and not used. Mussh has no font import, so Helm has none. |
 | `CardShape` 20 dp, option 16 dp, field 14 dp, icon tile 14 dp, swatch 12 dp, badge 8 dp, pills round | `HelmShapes` | Same radii; also the Material `Shapes`. |
 | `AccentButton` (56 dp accent pill) | `PrimaryButton` | Minimum height instead of a fixed one, optional icon. |
@@ -47,16 +47,15 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 | `IconTile` | `IconTile` | |
 | `MonoLabel` | `SectionLabel` | Also a heading for screen readers. |
 | `Pill` | `Pill` | |
-| `Segmented` | `Segmented` | A sunken track on the screen colour with a border, so it reads as one control on a card; the selected option on `accentSoft` with an accent border. |
-| filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (reminders, weekdays). |
+| filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (weekdays). |
 | outlined action pill | `ActionChip` | Pick a day, add or remove a label; 48 dp, optional leading and trailing icon. |
 | `SettingsSwitchRow` | `SwitchRow`, `helmSwitchColors()` | Same switch colours, one toggle for screen readers. |
 | `fieldColors()` + `OutlinedTextField`, 14 dp | `HelmTextField`, `helmFieldColors()` | Radio buttons and checkboxes take `helmRadioColors()` / `helmCheckboxColors()`. |
-| `SettingsPage` header (back + 22 sp title) | `ScreenHeader` | |
+| `SettingsPage` (back + 22 sp title, scrolling column, pinned preview) | `ScreenHeader`, `SettingsPage` | `SettingsPage` is the Settings list and each of its pages. |
 | Top-level screen title | `LargeHeader` | Headline 30 sp with a subtitle and actions (Today, Board). |
 | Bottom navigation | `HelmTabBar`, `HelmTab` | Bar on `surface`, the selected tab in the accent on `accentSoft`. |
 | Accent "new" button | `HelmFab` | Accent pill with the on-accent icon (Today, Board). |
-| `SettingsGroup`, `SettingsRow`, `SettingsNote` | `ListGroup`, `ListRow`, `RowIcon`, `ListNote` | Accent section label; rows at least 64 dp with a 40 dp icon tile tinted by `IconTone` (accent for a setting, success, warning or danger for a state), the name with a line under it, a trailing control and an optional slot under the text; lines between rows start at the text. Settings is built from these. |
+| `SettingsGroup`, `SettingsRow`, `SettingsNote`, `SettingsIcon` | `ListGroup`, `ListRow`, `ChoiceRow`, `ListNote`, `LineIcon` | Muted upper-case label over a 20 dp card on `surface`, rows split by thin full-width lines. A row is at least 60 dp: a 22 dp outline icon (no tile, no state colour), the name, a short muted value (at most 190 dp) and a thin "›"; an optional muted note under the name or a control at the end. From font scale 1.5 the value goes under the name. `ChoiceRow` is a choice with an accent check mark. Settings is built from these: one row per setting, each opening its page. |
 | `OptionRow` (palette and font choice) | `OptionCard` | |
 | `AppearancePreview`, palette swatches, font sample "Aa ąę 0O il1" | `AppearancePreview`, `Swatches`, `FontOption` | Preview is a small Today screen in both chosen palettes. |
 | Connection notice, `successSoft` result card | `StatusBanner(tone)` | Soft background per tone, text colour kept for contrast, read out when it changes. |

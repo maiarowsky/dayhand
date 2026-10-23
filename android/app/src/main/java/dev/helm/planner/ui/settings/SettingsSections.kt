@@ -1,241 +1,130 @@
 package dev.helm.planner.ui.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Text
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
-import dev.helm.planner.notify.AndroidNotifier
 import dev.helm.planner.settings.AppLanguage
-import dev.helm.planner.ui.components.HelmChip
-import dev.helm.planner.ui.components.IconTone
+import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.ListGroup
+import dev.helm.planner.ui.components.ListNote
 import dev.helm.planner.ui.components.ListRow
-import dev.helm.planner.ui.components.Pill
-import dev.helm.planner.ui.components.SecondaryButton
-import dev.helm.planner.ui.components.SegmentOption
-import dev.helm.planner.ui.components.Segmented
-import dev.helm.planner.ui.theme.HelmDimens
-import dev.helm.planner.ui.theme.HelmShapes
-import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
-import dev.helm.planner.ui.today.TimePickerDialog
-import java.time.DateTimeException
-import java.time.LocalTime
-
-/** Offered reminder offsets in minutes; values set elsewhere (e.g. by the agent) are shown too. */
-val REMINDER_OPTIONS = listOf(0, 5, 10, 15, 30, 60, 120, 1440)
-
-/** A muted line in a section, under its rows. */
-@Composable
-internal fun Hint(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = helmType.small, color = palette.textMuted, modifier = modifier)
-}
-
-/** "On" or "Off" as a small pill in the state colour, so a permission reads at a glance, not from a sentence. */
-@Composable
-internal fun StatePill(on: Boolean, offTone: IconTone = IconTone.Danger) {
-    val p = palette
-    val color = when {
-        on -> p.success
-        offTone == IconTone.Warning -> p.warning
-        else -> p.danger
-    }
-    Pill(stringResource(if (on) R.string.settings_state_on else R.string.settings_state_off), color)
-}
+import dev.helm.planner.ui.today.ConnectionStatus
 
 /**
- * Notifications and exact alarms, one row each: the state as an icon and a pill, what it means under the name and,
- * while something is missing, the one button that fixes it (both buttons the same width).
+ * The Settings list: Appearance, Notifications, Data, Connection and About, each a group of equal rows that show only
+ * a short current value. What a value means, warnings and the buttons that fix them live on the row's page.
  */
 @Composable
-internal fun NotificationsSection(access: NotificationAccess, exactAlarms: Boolean, actions: SettingsActions) {
-    val p = palette
-    val allowed = access == NotificationAccess.ALLOWED
+internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, open: (SettingsPane) -> Unit) {
+    val settings = state.data.settings
+    val appearance = state.appearance
+    ListGroup(
+        stringResource(R.string.settings_appearance),
+        modifier = Modifier.testTag(AppearanceTags.GROUP),
+        rows = listOf(
+            {
+                ListRow(stringResource(R.string.appearance_mode), AppearanceTags.MODE, icon = LineIcon.Contrast, value = stringResource(modeName(appearance.mode))) {
+                    open(SettingsPane.THEME)
+                }
+            },
+            {
+                // The palette on screen now: the dark one in dark mode, the light one in light mode.
+                ListRow(stringResource(R.string.appearance_colors), AppearanceTags.COLORS, icon = LineIcon.Palette, value = stringResource(paletteName(palette))) {
+                    open(SettingsPane.PALETTE)
+                }
+            },
+            {
+                ListRow(stringResource(R.string.appearance_font), AppearanceTags.FONT, icon = LineIcon.Font, value = fontName(appearance.font)) {
+                    open(SettingsPane.FONT)
+                }
+            },
+            {
+                val language = stringResource(languageName(state.language ?: AppLanguage.SYSTEM))
+                ListRow(stringResource(R.string.settings_language), SettingsTags.LANGUAGE_ROW, icon = LineIcon.Globe, value = language) {
+                    open(SettingsPane.LANGUAGE)
+                }
+            },
+        ),
+    )
     ListGroup(
         stringResource(R.string.settings_notifications),
         rows = listOf(
             {
-                ListRow(
-                    stringResource(R.string.settings_notifications_title),
-                    tag = SettingsTags.NOTIFICATIONS_ROW,
-                    icon = if (allowed) Icons.Filled.Notifications else SettingsIcons.NotificationsOff,
-                    tone = if (allowed) IconTone.Success else IconTone.Danger,
-                    subtitle = stringResource(if (allowed) R.string.settings_notifications_on else R.string.settings_notifications_off),
-                    badge = { StatePill(allowed) },
-                    below = if (allowed) {
-                        null
-                    } else {
-                        {
-                            SecondaryButton(
-                                stringResource(
-                                    if (access == NotificationAccess.ASK) R.string.settings_notifications_allow else R.string.settings_open_system,
-                                ),
-                                onClick = actions::allowNotifications,
-                                color = p.accent,
-                                modifier = Modifier.fillMaxWidth().testTag(SettingsTags.NOTIFICATIONS),
-                            )
-                        }
-                    },
-                )
+                val value = stringResource(notificationsValue(state.notifications, state.exactAlarms))
+                ListRow(stringResource(R.string.settings_notifications_row), SettingsTags.ROW_NOTIFICATIONS, icon = LineIcon.Bell, value = value) {
+                    open(SettingsPane.NOTIFICATIONS)
+                }
             },
             {
-                ListRow(
-                    stringResource(R.string.settings_exact_title),
-                    tag = SettingsTags.EXACT_ROW,
-                    icon = SettingsIcons.Alarm,
-                    tone = if (exactAlarms) IconTone.Success else IconTone.Warning,
-                    subtitle = stringResource(if (exactAlarms) R.string.settings_exact_on else R.string.settings_exact_off),
-                    badge = { StatePill(exactAlarms, offTone = IconTone.Warning) },
-                    below = if (exactAlarms) {
-                        null
-                    } else {
-                        {
-                            SecondaryButton(
-                                stringResource(R.string.settings_exact_allow),
-                                onClick = actions::allowExactAlarms,
-                                color = p.accent,
-                                modifier = Modifier.fillMaxWidth().testTag(SettingsTags.EXACT),
-                            )
-                        }
-                    },
-                )
+                ListRow(stringResource(R.string.settings_summary), SettingsTags.ROW_SUMMARY, icon = LineIcon.Sun, value = settings.summaryTime) {
+                    open(SettingsPane.SUMMARY)
+                }
+            },
+            {
+                ListRow(stringResource(R.string.settings_reminders), SettingsTags.ROW_REMINDERS, icon = LineIcon.Clock, value = remindersValue(settings.reminderMinutes)) {
+                    open(SettingsPane.REMINDERS)
+                }
             },
         ),
     )
-}
-
-/** The summary time as a value chip at the end of its row; the whole row opens the clock. */
-@Composable
-internal fun SummarySection(summaryTime: String, onPick: (String) -> Unit) {
-    val p = palette
-    var picking by rememberSaveable { mutableStateOf(false) }
     ListGroup(
-        stringResource(R.string.settings_summary),
+        stringResource(R.string.settings_data),
+        rows = listOf { ListRow(stringResource(R.string.settings_export), SettingsTags.ROW_EXPORT, icon = LineIcon.Download) { open(SettingsPane.EXPORT) } },
+    )
+    ListGroup(
+        stringResource(R.string.settings_connection),
         rows = listOf {
-            ListRow(
-                stringResource(R.string.settings_summary_time),
-                tag = SettingsTags.SUMMARY_TIME,
-                icon = SettingsIcons.Sunny,
-                subtitle = stringResource(R.string.settings_summary_hint),
-                onClick = { picking = true },
-                clickLabel = stringResource(R.string.settings_summary_change),
-                chevron = false,
-                trailing = {
-                    Text(
-                        summaryTime,
-                        style = helmType.title,
-                        color = p.accent,
-                        modifier = Modifier.background(p.accentSoft, HelmShapes.pill).padding(horizontal = 14.dp, vertical = 6.dp),
-                    )
-                },
-            )
+            ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = LineIcon.Cloud, value = connectionValue(state.data.connection)) {
+                open(SettingsPane.SERVER)
+            }
         },
     )
-    if (picking) {
-        val initial = try {
-            LocalTime.parse(summaryTime)
-        } catch (_: DateTimeException) {
-            LocalTime.of(5, 0)
-        }
-        TimePickerDialog(initial = initial, onDismiss = { picking = false }, onPick = { picking = false; onPick(it) })
+    ListGroup(
+        stringResource(R.string.settings_about),
+        rows = listOf(
+            { ListRow(stringResource(R.string.about_license), SettingsTags.LICENSE, icon = LineIcon.Document, onClick = actions::openLicense) },
+            { ListRow(stringResource(R.string.licenses_title), SettingsTags.LICENSES, icon = LineIcon.List) { open(SettingsPane.LICENSES) } },
+            { ListRow(stringResource(R.string.settings_version_title), SettingsTags.VERSION, icon = LineIcon.Info, value = state.versionName) },
+        ),
+    )
+    ListNote(stringResource(R.string.about_text))
+}
+
+/** On, off, or "needs fixing" when notifications may show but reminders could come late. */
+@StringRes
+internal fun notificationsValue(access: NotificationAccess, exactAlarms: Boolean): Int = when {
+    access != NotificationAccess.ALLOWED -> R.string.settings_state_off
+    !exactAlarms -> R.string.settings_state_fix
+    else -> R.string.settings_state_on
+}
+
+/** The one reminder by its name, a count of several, or "none". */
+@Composable
+private fun remindersValue(minutes: List<Int>): String = when (minutes.size) {
+    0 -> stringResource(R.string.settings_reminders_value_none)
+    1 -> reminderLabel(minutes.first())
+    else -> pluralStringResource(R.plurals.settings_reminders_count, minutes.size, minutes.size)
+}
+
+/** The connection in a word or two; a refused sign-in or an unreachable server is something to fix. */
+@Composable
+private fun connectionValue(connection: ConnectionStatus): String = when (connection) {
+    ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> stringResource(R.string.settings_state_fix)
+    else -> {
+        val locale = LocalConfiguration.current.locales[0]
+        stringResource(connectionText(connection)).replaceFirstChar { it.titlecase(locale) }
     }
 }
 
-/** The offered offsets as chips under a row that says which tasks ring. */
-@Composable
-internal fun RemindersSection(minutes: List<Int>, onChange: (List<Int>) -> Unit) {
-    val resources = LocalResources.current
-    ListGroup(
-        stringResource(R.string.settings_reminders),
-        rows = listOf {
-            Column {
-                ListRow(
-                    stringResource(R.string.settings_reminders_title),
-                    tag = SettingsTags.REMINDERS_ROW,
-                    icon = SettingsIcons.Schedule,
-                    subtitle = stringResource(R.string.settings_reminders_hint),
-                )
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(start = HelmDimens.rowPadding, end = HelmDimens.rowPadding, bottom = 16.dp),
-                ) {
-                    for (option in (REMINDER_OPTIONS + minutes).distinct().sorted()) {
-                        val selected = option in minutes
-                        val label = if (option == 0) {
-                            stringResource(R.string.reminder_at_due)
-                        } else {
-                            stringResource(R.string.reminder_before, AndroidNotifier.durationLabel(resources, option))
-                        }
-                        HelmChip(
-                            label,
-                            selected = selected,
-                            onClick = { onChange(if (selected) minutes - option else minutes + option) },
-                            multiple = true,
-                            modifier = Modifier.testTag(SettingsTags.REMINDER + option),
-                        )
-                    }
-                }
-                if (minutes.isEmpty()) {
-                    Hint(
-                        stringResource(R.string.settings_reminders_none),
-                        Modifier.padding(start = HelmDimens.rowPadding, end = HelmDimens.rowPadding, bottom = 16.dp),
-                    )
-                }
-            }
-        },
-    )
-}
-
-@Composable
-internal fun LanguageSection(language: AppLanguage?, onChange: (AppLanguage) -> Unit) {
-    ListGroup(
-        stringResource(R.string.settings_language),
-        rows = listOf {
-            Column {
-                ListRow(
-                    stringResource(R.string.settings_language_title),
-                    tag = SettingsTags.LANGUAGE_ROW,
-                    icon = SettingsIcons.Language,
-                    subtitle = if (language == null) stringResource(R.string.settings_language_unsupported) else null,
-                )
-                if (language != null) {
-                    Segmented(
-                        options = AppLanguage.entries.map { option ->
-                            SegmentOption(
-                                option.name,
-                                stringResource(
-                                    when (option) {
-                                        AppLanguage.SYSTEM -> R.string.language_system
-                                        AppLanguage.POLISH -> R.string.language_polish
-                                        AppLanguage.ENGLISH -> R.string.language_english
-                                    },
-                                ),
-                            )
-                        },
-                        selected = language.name,
-                        onSelect = { onChange(AppLanguage.valueOf(it)) },
-                        tagFor = { SettingsTags.LANGUAGE + it },
-                        modifier = Modifier.padding(start = HelmDimens.rowPadding, end = HelmDimens.rowPadding, bottom = 16.dp),
-                    )
-                }
-            }
-        },
-    )
+@StringRes
+internal fun languageName(language: AppLanguage): Int = when (language) {
+    AppLanguage.SYSTEM -> R.string.language_system
+    AppLanguage.POLISH -> R.string.language_polish
+    AppLanguage.ENGLISH -> R.string.language_english
 }

@@ -7,7 +7,7 @@ code from `hlm pair`.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.5.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.5.2 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -67,28 +67,31 @@ the backend's limits before it is queued, so a change the server would refuse is
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
 keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
 
-**Settings**, top to bottom, each section a group of rows: an icon tile (coloured by state where
-there is one), the name with a line under it and the control at the end:
+**Settings** is laid out like Mussh's: groups under upper-case labels, one row per setting with a
+thin outline icon, the name, a short current value and "›". Each row opens its own page with the
+choice, what it means and, where something is missing, the one button that fixes it; Back returns
+to the list. Settings are drawn in the system sans whatever the font (as in Mussh); the font shows
+in its preview and on the other screens. Top to bottom:
 
-1. **Notifications**: whether Helm may post them, with a button that asks Android (13+) or opens
-   the system settings after a refusal; whether exact alarms are allowed, with a button to allow
-   them.
-2. **Appearance**: theme (system, light or dark), **Colors** (a dark and a light palette, each
-   from the Mussh palettes, with a preview of both) and **Font** (system, Inter, IBM Plex Sans,
-   Atkinson Hyperlegible, Geist, Source Serif 4 or JetBrains Mono, each shown in itself). The
-   choice is stored on the phone and applies at once, without a restart.
-3. **Morning summary**: the time (default 05:00); tap to change it on a clock.
-4. **Default reminders**: at the due time, 5, 10, 15, 30 min, 1 h, 2 h or 1 day before, any
-   number of them or none.
-5. **Language**: phone language, Polski or English (Android 13+ per-app language).
-6. **Server**: connection status (connected, connecting, no network, offline test mode, not
-   connected, signed out, cannot reach the server) with the number of changes waiting; the
-   server and this phone's name with **Disconnect** (after a confirmation that names the
-   `hlm revoke <deviceId>` command), or **Connect to server**; the offline test switch and the
-   time zone from the server.
-7. **Export**: the whole plan as Markdown or JSON, saved where you choose in the system dialog.
-8. **About**: version, Apache License 2.0, and the licenses of the bundled fonts (SIL Open
-   Font License 1.1).
+1. **Appearance**: **Theme** (system, light or dark), **Color palette** (a dark and a light
+   palette, each from the Mussh palettes, with a preview of both) and **Font** (system, Inter,
+   IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4 or JetBrains Mono, each shown in
+   itself); **Language** (phone language, Polski or English, Android 13+ per-app language). The
+   appearance is stored on the phone and applies at once, without a restart.
+2. **Notifications**: **Notifications and alarms** (on, off, or "needs fixing" when exact alarms
+   are missing; the page says what each means and has a button that asks Android (13+) or opens
+   the system settings, and one that allows exact alarms); **Morning summary** (the time, default
+   05:00, picked on a clock); **Default reminders** (at the due time, 5, 10, 15, 30 min, 1 h, 2 h
+   or 1 day before, any number of them or none).
+3. **Data**: **Export**, the whole plan as Markdown or JSON, saved where you choose in the system
+   dialog.
+4. **Connection**: **Server**, with the connection status (connected, connecting, no network,
+   offline test mode, not connected, signed out, cannot reach the server) and the number of
+   changes waiting; the server and this phone's name with **Disconnect** (after a confirmation
+   that names the `hlm revoke <deviceId>` command), or **Connect to server**; the offline test
+   switch and the time zone from the server.
+5. **About**: the Apache License 2.0, the licenses of the bundled fonts (SIL Open Font License
+   1.1) and the version.
 
 The summary time and default reminders are server settings (`summaryTime`,
 `defaultReminderMinutes`), so the agent sees and can change them too. A change on the phone is

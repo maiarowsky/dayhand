@@ -1,7 +1,5 @@
 package dev.helm.planner.ui.connect
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -9,9 +7,8 @@ import dev.helm.planner.R
 import dev.helm.planner.settings.AppSettings
 import dev.helm.planner.settings.Credential
 import dev.helm.planner.ui.components.HelmDialog
-import dev.helm.planner.ui.components.IconTone
+import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.ListRow
-import dev.helm.planner.ui.settings.SettingsIcons
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.net.URI
@@ -37,7 +34,7 @@ fun serverRows(settings: AppSettings, onConnect: () -> Unit, onDisconnect: () ->
                 ListRow(
                     stringResource(if (credential == null) R.string.server_connect else R.string.server_connect_code),
                     tag = ServerTags.CONNECT,
-                    icon = SettingsIcons.Link,
+                    icon = LineIcon.Link,
                     titleColor = palette.accent,
                     onClick = onConnect,
                 )
@@ -48,8 +45,7 @@ fun serverRows(settings: AppSettings, onConnect: () -> Unit, onDisconnect: () ->
                 ListRow(
                     stringResource(R.string.server_disconnect),
                     tag = ServerTags.DISCONNECT,
-                    icon = SettingsIcons.LinkOff,
-                    tone = IconTone.Danger,
+                    icon = LineIcon.Unlink,
                     titleColor = palette.danger,
                     onClick = onDisconnect,
                     chevron = false,
@@ -65,22 +61,18 @@ private fun ServerRow(settings: AppSettings) {
         is Credential.Device -> ListRow(
             stringResource(R.string.server_connected_to, hostOf(credential.serverUrl)),
             tag = ServerTags.SUMMARY,
-            icon = SettingsIcons.Cloud,
-            tone = IconTone.Neutral,
-            subtitle = stringResource(R.string.server_device, credential.deviceName),
+            icon = LineIcon.Phone,
+            note = stringResource(R.string.server_device, credential.deviceName),
         )
         is Credential.AppToken -> ListRow(
             stringResource(R.string.server_app_token),
             tag = ServerTags.SUMMARY,
-            icon = SettingsIcons.Cloud,
-            tone = IconTone.Neutral,
+            icon = LineIcon.Phone,
         )
         null -> ListRow(
             stringResource(if (settings.pairingLost) R.string.server_signed_out else R.string.server_not_connected),
             tag = ServerTags.SUMMARY,
-            icon = if (settings.pairingLost) Icons.Filled.Warning else SettingsIcons.CloudOff,
-            tone = if (settings.pairingLost) IconTone.Danger else IconTone.Neutral,
-            titleColor = if (settings.pairingLost) palette.danger else palette.text,
+            icon = if (settings.pairingLost) LineIcon.Warning else LineIcon.Phone,
         )
     }
 }

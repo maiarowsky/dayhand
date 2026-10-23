@@ -60,7 +60,16 @@
     <string name="settings_timezone_title">Time zone</string>
     <string name="settings_timezone">%1$s, from the server</string>
     <string name="settings_loading">Loading settings</string>
-    <string name="settings_version">Helm %1$s</string>
+    <string name="settings_version_title">Version</string>
+    <string name="settings_notifications_row">Notifications and alarms</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_connection">Connection</string>
+    <string name="settings_state_fix">Needs fixing</string>
+    <string name="settings_reminders_value_none">None</string>
+    <plurals name="settings_reminders_count">
+        <item quantity="one">%d reminder</item>
+        <item quantity="other">%d reminders</item>
+    </plurals>
 
     <!-- Board, task details and trash (0.2) -->
     <string name="board_title">Board</string>

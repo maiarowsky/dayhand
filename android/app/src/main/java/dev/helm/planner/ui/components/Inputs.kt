@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -194,47 +192,6 @@ fun ActionChip(
         icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
         Text(text, style = helmType.smallStrong, color = if (enabled) p.text else p.textMuted)
         trailingIcon?.let { Icon(it, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(18.dp)) }
-    }
-}
-
-data class SegmentOption(val id: String, val label: String)
-
-/**
- * One of a few options in a pill (Mussh "Segmented"): a sunken track on the screen colour with a border, so it reads as
- * one control on a card too; the selected option is raised on the accent's soft colour, in bold accent text.
- */
-@Composable
-fun Segmented(options: List<SegmentOption>, selected: String, onSelect: (String) -> Unit, tagFor: (String) -> String, modifier: Modifier = Modifier) {
-    val p = palette
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(HelmShapes.pill)
-            .background(p.background)
-            .border(1.dp, p.border, HelmShapes.pill)
-            .padding(4.dp)
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        options.forEach { option ->
-            val active = option.id == selected
-            Column(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = HelmDimens.touchTarget)
-                    .clip(HelmShapes.pill)
-                    .background(if (active) p.accentSoft else Color.Transparent)
-                    .then(if (active) Modifier.border(1.dp, p.accent, HelmShapes.pill) else Modifier)
-                    .selectable(selected = active, role = Role.RadioButton) { onSelect(option.id) }
-                    .padding(horizontal = 6.dp, vertical = 10.dp)
-                    .testTag(tagFor(option.id)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(option.label, style = helmType.smallStrong, color = if (active) p.accent else p.textMuted, textAlign = TextAlign.Center)
-            }
-        }
     }
 }
 

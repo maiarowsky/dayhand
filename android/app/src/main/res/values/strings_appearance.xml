@@ -5,7 +5,7 @@
     <string name="appearance_mode_system">System</string>
     <string name="appearance_mode_light">Light</string>
     <string name="appearance_mode_dark">Dark</string>
-    <string name="appearance_colors">Colors</string>
+    <string name="appearance_colors">Color palette</string>
     <string name="appearance_font">Font</string>
     <string name="appearance_palettes_dark">Dark palette (dark theme)</string>
     <string name="appearance_palettes_light">Light palette (light theme)</string>

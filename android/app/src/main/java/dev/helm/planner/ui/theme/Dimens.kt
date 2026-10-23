@@ -34,10 +34,10 @@ object HelmDimens {
     val sectionGap = 12.dp
     val rowMinHeight = 64.dp
 
-    /** Side padding of a list row, the icon tile at its start and where the line between rows starts. */
-    val rowPadding = 16.dp
-    val rowIcon = 40.dp
-    val rowInset = 72.dp
+    /** A list row (Mussh settings row): its minimum height, side padding and the outline icon at its start. */
+    val listRowMinHeight = 60.dp
+    val rowPadding = 18.dp
+    val lineIcon = 22.dp
     val iconSize = 24.dp
     val iconTile = 48.dp
 }

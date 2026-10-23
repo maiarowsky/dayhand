@@ -9,23 +9,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,19 +29,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.helm.planner.R
+import dev.helm.planner.ui.components.ChoiceRow
 import dev.helm.planner.ui.components.LARGE_TEXT_SCALE
 import dev.helm.planner.ui.components.ListGroup
-import dev.helm.planner.ui.components.ListRow
 import dev.helm.planner.ui.components.OptionCard
 import dev.helm.planner.ui.components.Pill
-import dev.helm.planner.ui.components.ScreenHeader
 import dev.helm.planner.ui.components.SectionLabel
-import dev.helm.planner.ui.components.SegmentOption
-import dev.helm.planner.ui.components.Segmented
 import dev.helm.planner.ui.theme.Appearance
-import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmFont
 import dev.helm.planner.ui.theme.HelmShapes
+import dev.helm.planner.ui.theme.HelmType
+import dev.helm.planner.ui.theme.LocalHelmType
 import dev.helm.planner.ui.theme.LocalPalette
 import dev.helm.planner.ui.theme.Palette
 import dev.helm.planner.ui.theme.Palettes
@@ -63,6 +53,7 @@ object AppearanceTags {
     const val COLORS = "appearance_colors"
     const val FONT = "appearance_font"
     const val PREVIEW = "appearance_preview"
+    const val THEME_SCREEN = "theme_screen"
     const val PALETTE_SCREEN = "palette_screen"
     const val FONT_SCREEN = "font_screen"
     fun mode(mode: ThemeMode) = "mode-${mode.id}"
@@ -73,74 +64,17 @@ object AppearanceTags {
 /** Font sample: letters, Polish characters and characters that are easy to confuse. */
 private const val FONT_SAMPLE = "Aa ąę 0O il1"
 
-/**
- * The "Appearance" group of Settings: theme mode in place, colours and font on their own sub-screens. The colours row
- * shows both chosen palettes as swatches and the font row a sample in the chosen font, so each says what it is set to.
- */
+/** Theme: system, light or dark, as a choice of rows. */
 @Composable
-fun AppearanceGroup(appearance: Appearance, onChange: (Appearance) -> Unit, onOpenColors: () -> Unit, onOpenFont: () -> Unit) {
+internal fun ThemeOptions(appearance: Appearance, onChange: (Appearance) -> Unit) {
     ListGroup(
-        title = stringResource(R.string.settings_appearance),
-        modifier = Modifier.testTag(AppearanceTags.GROUP),
-        rows = listOf(
-            { ModeRow(appearance, onChange) },
+        null,
+        rows = ThemeMode.entries.map { mode ->
             {
-                ListRow(
-                    stringResource(R.string.appearance_colors),
-                    AppearanceTags.COLORS,
-                    icon = SettingsIcons.Palette,
-                    subtitle = "${stringResource(paletteName(appearance.darkPalette))} · ${stringResource(paletteName(appearance.lightPalette))}",
-                    onClick = onOpenColors,
-                    trailing = { PaletteDots(appearance.darkPalette, appearance.lightPalette) },
-                )
-            },
-            {
-                ListRow(
-                    stringResource(R.string.appearance_font),
-                    AppearanceTags.FONT,
-                    icon = SettingsIcons.TextFields,
-                    subtitle = fontName(appearance.font),
-                    onClick = onOpenFont,
-                    trailing = {
-                        Text("Aa", style = TextStyle(fontFamily = appearance.font.family, fontSize = 22.sp), color = palette.text, maxLines = 1)
-                    },
-                )
-            },
-        ),
-    )
-}
-
-@Composable
-private fun ModeRow(appearance: Appearance, onChange: (Appearance) -> Unit) {
-    Column {
-        ListRow(stringResource(R.string.appearance_mode), AppearanceTags.MODE, icon = SettingsIcons.Contrast)
-        Segmented(
-            options = ThemeMode.entries.map { SegmentOption(it.id, stringResource(modeName(it))) },
-            selected = appearance.mode.id,
-            onSelect = { id -> onChange(appearance.copy(mode = ThemeMode.byId(id))) },
-            tagFor = { "mode-$it" },
-            modifier = Modifier.padding(start = HelmDimens.rowPadding, end = HelmDimens.rowPadding, bottom = 16.dp),
-        )
-    }
-}
-
-/** Each chosen palette as a small round swatch: its background with its accent in the middle, the two overlapping. */
-@Composable
-private fun PaletteDots(dark: Palette, light: Palette) {
-    Box(Modifier.width(48.dp)) {
-        listOf(dark, light).forEachIndexed { i, option ->
-            Box(
-                Modifier
-                    .align(if (i == 0) Alignment.CenterStart else Alignment.CenterEnd)
-                    .size(28.dp)
-                    .background(option.background, CircleShape)
-                    .border(1.5.dp, option.border, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(Modifier.size(12.dp).background(option.accent, CircleShape))
+                ChoiceRow(stringResource(modeName(mode)), mode == appearance.mode, AppearanceTags.mode(mode), { onChange(appearance.copy(mode = mode)) })
             }
-        }
-    }
+        },
+    )
 }
 
 /** Colours: the dark and the light palette, each list under a pinned preview of both. */
@@ -174,26 +108,13 @@ fun FontScreen(appearance: Appearance, onChange: (Appearance) -> Unit, onBack: (
     }
 }
 
-/** A sub-screen with the preview pinned above the scrolling choices (at large text it scrolls with them). */
+/** A settings page with the preview pinned above the scrolling choices (at large text it scrolls with them). */
 @Composable
 private fun AppearancePage(title: String, onBack: () -> Unit, tag: String, appearance: Appearance, content: @Composable ColumnScope.() -> Unit) {
-    val p = palette
     val pinned = LocalDensity.current.fontScale < LARGE_TEXT_SCALE
-    Column(Modifier.fillMaxSize().background(p.background).testTag(tag)) {
-        ScreenHeader(title, onBack)
-        if (pinned) Box(Modifier.padding(horizontal = HelmDimens.screenMargin).padding(bottom = 12.dp)) { AppearancePreview(appearance) }
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                .padding(horizontal = HelmDimens.screenMargin),
-            verticalArrangement = Arrangement.spacedBy(HelmDimens.sectionGap),
-        ) {
-            if (!pinned) AppearancePreview(appearance)
-            content()
-            Spacer(Modifier.height(24.dp))
-        }
+    SettingsPage(title, onBack, tag, pinned = if (pinned) ({ AppearancePreview(appearance) }) else null) {
+        if (!pinned) AppearancePreview(appearance)
+        content()
     }
 }
 
@@ -205,7 +126,8 @@ private fun OptionSection(title: String, options: @Composable () -> Unit) {
 
 /**
  * The dark and the light palette side by side (stacked with large text), each a small Today screen in the chosen
- * font, so a change is visible whichever mode is on.
+ * font, so a change is visible whichever mode is on. Settings itself stays in the system sans ([SettingsType]); the
+ * preview is where the font shows.
  */
 @Composable
 fun AppearancePreview(appearance: Appearance) {
@@ -213,20 +135,21 @@ fun AppearancePreview(appearance: Appearance) {
     val modifier = Modifier.testTag(AppearanceTags.PREVIEW)
     if (large) {
         Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            PreviewCard(appearance.darkPalette, Modifier.fillMaxWidth())
-            PreviewCard(appearance.lightPalette, Modifier.fillMaxWidth())
+            PreviewCard(appearance.darkPalette, appearance.font, Modifier.fillMaxWidth())
+            PreviewCard(appearance.lightPalette, appearance.font, Modifier.fillMaxWidth())
         }
     } else {
         Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PreviewCard(appearance.darkPalette, Modifier.weight(1f))
-            PreviewCard(appearance.lightPalette, Modifier.weight(1f))
+            PreviewCard(appearance.darkPalette, appearance.font, Modifier.weight(1f))
+            PreviewCard(appearance.lightPalette, appearance.font, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun PreviewCard(option: Palette, modifier: Modifier) {
-    CompositionLocalProvider(LocalPalette provides option) {
+private fun PreviewCard(option: Palette, font: HelmFont, modifier: Modifier) {
+    val type = remember(font) { HelmType(font.family) }
+    CompositionLocalProvider(LocalPalette provides option, LocalHelmType provides type) {
         val p = palette
         Column(
             modifier
@@ -318,7 +241,7 @@ private fun FontOption(font: HelmFont, selected: Boolean, onSelect: () -> Unit) 
 }
 
 @StringRes
-private fun modeName(mode: ThemeMode): Int = when (mode) {
+internal fun modeName(mode: ThemeMode): Int = when (mode) {
     ThemeMode.System -> R.string.appearance_mode_system
     ThemeMode.Light -> R.string.appearance_mode_light
     ThemeMode.Dark -> R.string.appearance_mode_dark

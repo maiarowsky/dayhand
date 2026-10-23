@@ -58,7 +58,18 @@
     <string name="settings_timezone_title">Strefa czasowa</string>
     <string name="settings_timezone">%1$s, z serwera</string>
     <string name="settings_loading">Wczytywanie ustawień</string>
-    <string name="settings_version">Helm %1$s</string>
+    <string name="settings_version_title">Wersja</string>
+    <string name="settings_notifications_row">Powiadomienia i alarmy</string>
+    <string name="settings_data">Dane</string>
+    <string name="settings_connection">Połączenie</string>
+    <string name="settings_state_fix">Do naprawy</string>
+    <string name="settings_reminders_value_none">Brak</string>
+    <plurals name="settings_reminders_count">
+        <item quantity="one">%d przypomnienie</item>
+        <item quantity="few">%d przypomnienia</item>
+        <item quantity="many">%d przypomnień</item>
+        <item quantity="other">%d przypomnienia</item>
+    </plurals>
 
     <!-- Tablica, szczegóły zadania i kosz (0.2) -->
     <string name="board_title">Tablica</string>

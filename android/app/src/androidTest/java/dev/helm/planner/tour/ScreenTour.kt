@@ -143,10 +143,10 @@ class ScreenTour {
     fun settings() {
         show { SettingsScreen(settingsState(), object : SettingsActions {}) }
         shot("06-settings")
-        compose.onNodeWithTag(SettingsTags.OFFLINE).performScrollTo()
-        shot("07-settings-server")
-        compose.onNodeWithTag(SettingsTags.LICENSE).performScrollTo()
-        shot("08-settings-about")
+        compose.onNodeWithTag(SettingsTags.VERSION).performScrollTo()
+        shot("07-settings-about")
+        compose.onNodeWithTag(SettingsTags.ROW_SERVER).performScrollTo().performClick()
+        shot("08-settings-server")
     }
 
     @Test
