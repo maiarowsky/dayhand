@@ -20,7 +20,7 @@ call of a Helm MCP tool, so the user sees your changes in the app at once, recor
 
 - Pass --json and read stdout; on failure stdout is empty and stderr has one line {"error":{"code","message","exitCode","retryable","clientId"}}.
 - Refer to tasks by number: #42 or 42 (stable, never reused), or now for the now task.
-- Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable.
+- Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun).
 - After exit 5 the change may have been applied: rerun the same command line with --client-id <the clientId from the error>; it is never applied twice.
 - hlm never prompts without a terminal; changing 3 or more tasks at once needs --yes.
 - Dates are English phrases in the user's time zone: today, tomorrow, fri 14:00, in 3 days, 2026-10-23. Check one with hlm when "<phrase>" or add --dry-run.
@@ -32,7 +32,7 @@ call of a Helm MCP tool, so the user sees your changes in the app at once, recor
 | Command | What it does |
 |---|---|
 | `hlm today --json` | Today: now task with its resume note, overdue, today, done today |
-| `hlm list --json --status todo,doing --search <text>` | Find tasks (also --overdue, --due-before eow, -l <label>, --limit) |
+| `hlm list --json --status todo,doing --search <text>` | Find tasks on the server (also --overdue, --due-before eow, -l <label>, --limit, --cursor) |
 | `hlm show <ref> --json` | One task with its history |
 | `hlm add "<title>" --due "fri 14:00" -l <label> --json` | Add a task (due today unless --due or --no-due) |
 | `hlm now <ref> --note "<next step>" --json` | Make a task the now task and leave a resume note |
@@ -68,7 +68,7 @@ hlm call update_task '{"taskId":"#42","note":null}'
 | 2 | Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml |
 | 3 | Authentication: no key (hlm login or HLM_API_KEY), or a wrong or revoked one |
 | 4 | Not found: no such task (#n), device or now task |
-| 5 | Server unavailable (network, timeout, HTTP 5xx or 429): the change may have been applied; retry with the same --client-id |
+| 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
 | 130 | Interrupted (Ctrl-C) |
 
 ## JSON

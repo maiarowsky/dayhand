@@ -89,7 +89,8 @@ The user id `https://helm.local|me` is the app user of the local backend (issuer
 [docs/pairing.md](docs/pairing.md) for the pairing protocol.
 
 Connect an MCP client to `http://127.0.0.1:3211/mcp` with the header
-`Authorization: Bearer <the key>`. See [docs/mcp.md](docs/mcp.md) for the tools.
+`Authorization: Bearer <the key>`. See [docs/mcp.md](docs/mcp.md) for the tools, resources,
+prompts, limits and protocol versions.
 
 Run the tests (they start their own throwaway backend):
 

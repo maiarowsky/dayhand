@@ -27,7 +27,7 @@ export type Link = Infer<typeof linkValidator>;
 
 // Repeat every `interval` days/weeks/months/years. For weekly rules,
 // `weekdays` (1 = Monday ... 7 = Sunday) picks the days of the week.
-// Since 0.4.0: `from` counts the next date from the due date (default) or
+// Since 0.5.0: `from` counts the next date from the due date (default) or
 // from the day the task was completed; monthly rules may pin `monthDay`
 // (1-31, -1 = last day) or `weekdayOfMonth` (2nd Tuesday, last Friday);
 // `until` (last allowed date) or `count` (occurrences left, this one

@@ -8,7 +8,7 @@ export const EXIT_CODES: [number, string][] = [
   [2, "Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml"],
   [3, "Authentication: no key (hlm login or HLM_API_KEY), or a wrong or revoked one"],
   [4, "Not found: no such task (#n), device or now task"],
-  [5, "Server unavailable (network, timeout, HTTP 5xx or 429): the change may have been applied; retry with the same --client-id"],
+  [5, "Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names"],
   [130, "Interrupted (Ctrl-C)"],
 ];
 

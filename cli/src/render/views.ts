@@ -130,7 +130,18 @@ export function renderDryRun(held: HeldCall[], format: "human" | "plain"): strin
     "tool" in call ? [call.tool, JSON.stringify(call.arguments)] : [`POST ${call.endpoint}`, JSON.stringify(call.body)],
   );
   if (format === "plain") return tsv(lines);
-  return ["Dry run: nothing was sent. Would call:", ...lines.map(([what, args]) => `  ${what} ${args}`)].join("\n");
+  const calls = held.map((call, i) => {
+    const line = `  ${lines[i]![0]} ${lines[i]![1]}`;
+    const task = "tool" in call ? previewTask(call.result) : undefined;
+    return task ? `${line}\n    → ${refOf(task)} ${task.title} (${task.status})` : line;
+  });
+  return ["Dry run: nothing was changed. Would call:", ...calls].join("\n");
+}
+
+/** The task a checked change would give (complete_task returns it as `task`). */
+function previewTask(result: Record<string, unknown> | undefined): Task | undefined {
+  const task = (result && "task" in result ? result.task : result) as Partial<Task> | undefined;
+  return task && typeof task.title === "string" && typeof task.status === "string" ? (task as Task) : undefined;
 }
 
 function renderToday(view: TodayView, fields: string[] | undefined, options: RenderOptions): string {

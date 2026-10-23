@@ -22,6 +22,7 @@ export type ErrorCode =
   | "invalid_argument"
   | "not_found"
   | "unauthenticated"
+  | "rate_limited"
   | "unavailable"
   | "interrupted"
   | "internal";
@@ -32,6 +33,8 @@ const EXIT_BY_CODE: Record<ErrorCode, number> = {
   invalid_argument: EXIT.usage,
   not_found: EXIT.notFound,
   unauthenticated: EXIT.auth,
+  // Too many calls with the key: nothing was applied; wait, then run it again.
+  rate_limited: EXIT.unavailable,
   unavailable: EXIT.unavailable,
   interrupted: EXIT.interrupted,
   internal: EXIT.failed,

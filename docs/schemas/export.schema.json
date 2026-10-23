@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.helm.invalid/export.schema.json",
   "title": "Export",
-  "description": "export_plan (hlm export --json). A Markdown export has no structured content; hlm prints it as {format: markdown, content: <text>}. With -o, the JSON is {written: <file>, format}.",
+  "description": "export_plan (hlm export --json): {format: markdown, content: <text>} or {format: json, content: <copy>}. With -o, hlm prints {written: <file>, format}.",
   "oneOf": [
     {
       "type": "object",

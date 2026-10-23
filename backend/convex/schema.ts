@@ -31,7 +31,7 @@ export default defineSchema({
     repeat: v.optional(repeatValidator),
     labels: v.array(v.string()),
     links: v.array(linkValidator),
-    // Since 0.4.0, optional so older tasks stay valid. Absent = no checklist.
+    // Since 0.5.0, optional so older tasks stay valid. Absent = no checklist.
     checklist: v.optional(v.array(checklistItemValidator)),
     // Absent = the default reminders from settings; [] = no reminders.
     reminders: v.optional(v.array(reminderValidator)),
@@ -135,6 +135,15 @@ export default defineSchema({
     windowStart: v.number(),
     failures: v.number(),
   }).index("by_bucket", ["bucket"]),
+
+  // MCP calls per API key in the current one-minute window, one row per key
+  // and kind of call (read or write).
+  callLimits: defineTable({
+    keyId: v.id("apiKeys"),
+    kind: v.union(v.literal("read"), v.literal("write")),
+    windowStart: v.number(),
+    calls: v.number(),
+  }).index("by_key_kind", ["keyId", "kind"]),
 
   settings: defineTable({
     userId: v.string(),

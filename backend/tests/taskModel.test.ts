@@ -1,4 +1,4 @@
-// The task model of 0.4.0 on the local backend: checklists, per-task reminders,
+// The task model of 0.5.0 on the local backend: checklists, per-task reminders,
 // richer repeat rules given as objects or RRULE text, the end of a series, and
 // tasks stored by older versions.
 import { describe, expect, test } from "vitest";

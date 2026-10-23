@@ -114,7 +114,9 @@ describe("board", () => {
 test("dry run lists the held changes", () => {
   const held = [{ tool: "add_task", arguments: { title: "A", dueDate: "2026-10-23" } }, { endpoint: "/devices/revoke", body: { deviceId: "d1" } }];
   expect(renderDryRun(held, "human")).toBe(
-    'Dry run: nothing was sent. Would call:\n  add_task {"title":"A","dueDate":"2026-10-23"}\n  POST /devices/revoke {"deviceId":"d1"}',
+    'Dry run: nothing was changed. Would call:\n  add_task {"title":"A","dueDate":"2026-10-23"}\n  POST /devices/revoke {"deviceId":"d1"}',
   );
+  const checked = [{ tool: "complete_task", arguments: { taskId: "#4" }, result: { task: { ref: 4, title: "Pay", status: "done" }, next: null, dryRun: true } }];
+  expect(renderDryRun(checked as never, "human")).toBe('Dry run: nothing was changed. Would call:\n  complete_task {"taskId":"#4"}\n    → #4 Pay (done)');
   expect(renderDryRun(held, "plain")).toBe('add_task\t{"title":"A","dueDate":"2026-10-23"}\nPOST /devices/revoke\t{"deviceId":"d1"}');
 });
