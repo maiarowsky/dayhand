@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Downloads the open-source Convex local backend binary (pinned release,
-// SHA-256 verified) into backend/.local-backend/. No Convex account needed.
+// Downloads the Convex local backend binary (source-available under
+// FSL-1.1-Apache-2.0; pinned release, SHA-256 verified) into
+// backend/.local-backend/. No Convex account needed.
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync, writeFileSync, chmodSync } from "node:fs";

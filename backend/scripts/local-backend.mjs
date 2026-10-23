@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Runs a persistent local Helm backend: the open-source Convex local backend
+// Runs a persistent local Helm backend: the Convex local backend
 // binary with data in backend/.local-backend/, this project's functions
 // deployed to it, and backend/.env.local pointing the Convex CLI at it.
 // Stop with Ctrl+C; data and keys survive restarts.

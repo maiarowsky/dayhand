@@ -63,10 +63,31 @@ For AI agents: give each agent its own key (kind `agent`) in `HLM_API_KEY`, use 
 [docs/skills/hlm/SKILL.md](docs/skills/hlm/SKILL.md) is a ready Agent Skill: copy the folder
 to `~/.claude/skills/hlm/` (or your agent's skills folder).
 
+## Run your own server in 5 minutes
+
+Helm has no shared server to sign up for: you run your own, on your own free Convex account,
+with one command. It gives the phone app its sync, AI agents the MCP endpoint, and `hlm` and
+other tools the REST API. Needs Node.js 22.12+ and git (macOS, Linux or Windows):
+
+```sh
+git clone https://github.com/maiarowsky/helm.git
+cd helm/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+hlm server deploy      # logs in to Convex in the browser, deploys, signs hlm in
+```
+
+It prints the server address and a pairing code for the phone app's Connect screen, and how to
+add Helm to Claude. Run it again to update; keys and data are kept. `cd backend && npm run setup`
+does the same without `hlm`, and `hlm server start` runs the server on this computer without an
+account. What it does, where the keys are kept, what it costs (nothing on Convex's Free plan),
+backups and a phone with a server on your computer (Tailscale): [docs/deploy.md](docs/deploy.md).
+
 ## Run the backend locally
 
 Requirements: Node.js 20 or newer, macOS or Linux (arm64 or x64). No Convex account is needed:
-the open-source Convex local backend binary runs on your machine.
+the Convex local backend binary runs on your machine. It is downloaded once from Convex's GitHub
+releases (pinned version, checksum verified) and is source-available under the
+FSL-1.1-Apache-2.0 licence, not open source. `hlm server start` sets up the same in one step
+(with its data in its own folder, see [docs/deploy.md](docs/deploy.md)); by hand:
 
 ```sh
 cd backend
@@ -113,12 +134,20 @@ npm test        # needs backend/node_modules; tests hlm against a throwaway back
 ## Deploy your own copy
 
 The repository holds no secrets. The Android app connects by default to the author's own
-deployment, which lets a phone in only with a pairing code from that account's owner. Deploy
-the `backend/` folder to your own Convex project (`npx convex deploy`) or to a self-hosted
-Convex backend, and set `HELM_JWT_ISSUER`, `HELM_JWKS` and `HELM_JWT_PRIVATE_JWK` in its
-environment (see [docs/deploy.md](docs/deploy.md)). Type your server's address on the
-Connect screen, or build the app with `-Phelm.serverUrl=https://<deployment>.convex.site` to
-make it the default ([android/README.md](android/README.md)).
+deployment, which lets a phone in only with a pairing code from that account's owner. Your own
+server comes from `hlm server deploy` (above), or by hand: deploy the `backend/` folder to your
+own Convex project (`npx convex deploy`) or to a self-hosted Convex backend, and set
+`HELM_JWT_ISSUER`, `HELM_JWKS` and `HELM_JWT_PRIVATE_JWK` in its environment (see
+[docs/deploy.md](docs/deploy.md)). Type your server's address on the Connect screen, or build
+the app with `-Phelm.serverUrl=https://<deployment>.convex.site` to make it the default
+([android/README.md](android/README.md)).
+
+## Help
+
+Questions and problems with your own server: open an issue at
+[github.com/maiarowsky/helm/issues](https://github.com/maiarowsky/helm/issues). Helm is a
+personal project, so there is no support promise or response time. Security problems go
+privately, never in an issue ([SECURITY.md](SECURITY.md)).
 
 ## License
 
