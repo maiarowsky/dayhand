@@ -1,0 +1,7 @@
+# SwiftPM and Xcode build output
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj/xcuserdata/
+# The assembled app (scripts/build-app.sh)
+dist/
