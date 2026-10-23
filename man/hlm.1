@@ -33,6 +33,24 @@ Repeat interval (2 = every other)
 .B \-\-on <days>
 Weekly repeat days, e.g. mon,thu
 .TP
+.B \-\-month\-day <day>
+Monthly repeat on day 1\-31 (a shorter month: its last day) or last
+.TP
+.B \-\-month\-weekday <day>
+Monthly repeat on a weekday: "2 tue", "last fri"
+.TP
+.B \-\-from\-completion
+Count the next date from the day the task is done, not its due date
+.TP
+.B \-\-until <date>
+Last date the repeat may fall on (hlm help dates)
+.TP
+.B \-\-count <n>
+How many times it repeats, this one included
+.TP
+.B \-\-rrule <rule>
+The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=\-1FR"
+.TP
 .B \-\-no\-due
 No due day: the task shows only in list and board
 .TP
@@ -50,6 +68,15 @@ Where you stopped / next step
 .TP
 .B \-\-link <url>
 Link, optionally followed by a title: "https://… Title" (repeatable)
+.TP
+.B \-\-item <text>
+Checklist item (repeatable, in order)
+.TP
+.B \-\-remind <when>
+This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due time), 09:00 or "18:00 \-1d" (repeatable)
+.TP
+.B \-\-no\-reminders
+No reminders for this task
 .RE
 .TP
 .B hlm list
@@ -125,6 +152,24 @@ Repeat interval (2 = every other)
 .B \-\-on <days>
 Weekly repeat days, e.g. mon,thu
 .TP
+.B \-\-month\-day <day>
+Monthly repeat on day 1\-31 (a shorter month: its last day) or last
+.TP
+.B \-\-month\-weekday <day>
+Monthly repeat on a weekday: "2 tue", "last fri"
+.TP
+.B \-\-from\-completion
+Count the next date from the day the task is done, not its due date
+.TP
+.B \-\-until <date>
+Last date the repeat may fall on (hlm help dates)
+.TP
+.B \-\-count <n>
+How many times it repeats, this one included
+.TP
+.B \-\-rrule <rule>
+The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=\-1FR"
+.TP
 .B \-\-clear\-due
 Remove the due day (and time)
 .TP
@@ -157,6 +202,21 @@ Replace all links: "https://… Title" (repeatable)
 .TP
 .B \-\-clear\-links
 Remove all links
+.TP
+.B \-\-item <text>
+Replace the checklist (repeatable; hlm checklist edits single items)
+.TP
+.B \-\-clear\-checklist
+Remove the checklist
+.TP
+.B \-\-remind <when>
+This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due time), 09:00 or "18:00 \-1d" (repeatable)
+.TP
+.B \-\-no\-reminders
+No reminders for this task
+.TP
+.B \-\-default\-reminders
+Back to the default reminders from settings
 .RE
 .TP
 .B hlm note <ref> [text...]
@@ -165,6 +225,31 @@ Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text 
 .TP
 .B \-\-clear
 Remove the note
+.RE
+.TP
+.B hlm checklist <ref>
+Print a task's checklist, or tick, untick, move, remove and add items
+.br
+Items are numbered from 1 as printed. Changes apply in this order: \-\-check, \-\-uncheck, \-\-move, \-\-rm, then \-\-add.
+.RS
+.TP
+.B \-\-add <text>
+Add an item at the end (repeatable)
+.TP
+.B \-\-check <n>
+Tick items: 2, 1,3 or all (repeatable)
+.TP
+.B \-\-uncheck <n>
+Untick items (repeatable)
+.TP
+.B \-\-move <from:to>
+Move an item, e.g. 3:1 (repeatable)
+.TP
+.B \-\-rm <n>
+Remove items (repeatable)
+.TP
+.B \-\-clear
+Remove the whole checklist
 .RE
 .TP
 .B hlm move <ref> <date>

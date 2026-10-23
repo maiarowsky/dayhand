@@ -26,7 +26,7 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 
 | Table | Purpose |
 |---|---|
-| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
+| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
 | `taskEvents` | History: `actor`, `keyId` and `actorName` (the API key behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId` |
 | `taskCounters` | Last task number given per user (`lastRef`) |
 | `apiKeys` | `name`, `kind` (`cli` or `agent`), SHA-256 `hash` of the key, `createdAt`, `revokedAt` |
@@ -44,8 +44,13 @@ helm CLI ──(API key)──> /devices/* ──────────┘
   Convex caches queries, so a subscribed client should pass the current time.
 - **One now task.** `setNow` clears `isNow` on every other task of the user and moves the
   chosen task to `doing`. Leaving `doing`, completing, archiving or deleting clears it.
-- **Repeat.** Completing a repeating task creates the next occurrence: the first date after
-  the due date that is also after today (a late completion does not create an overdue task).
+- **Repeat.** Completing a repeating task creates the next occurrence: the first date of the
+  series after the due date that is also after today (a late completion does not create an
+  overdue task), or, for a rule counted from completion, the first date after today. A series
+  ends with `until` or `count`. The logic is one pure module, `convex/lib/repeat.ts`: `advance`
+  for completing and `occurrences` for listing a series ahead; `convex/lib/rrule.ts` maps rules
+  to and from RFC 5545 RRULE ([mcp.md](mcp.md#repeat-rules)). The Android app has the same
+  logic in `domain/Recurrence.kt`.
 - **Trash.** `softDelete` sets `deletedAt`; `restore` clears it. A daily cron
   (`convex/crons.ts`, 03:30 UTC) permanently removes tasks deleted more than 30 days ago,
   with their history.
@@ -85,6 +90,7 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 ## Reminders
 
 Reminders and the morning summary are computed on the phone, not on the server: the server
-stores only the settings (`summaryTime`, `defaultReminderMinutes`), and the Android app arms
-AlarmManager from its Room copy of the tasks, in the time zone from these settings. See
+stores only the settings (`summaryTime`, `defaultReminderMinutes`) and each task's own
+`reminders` (which replace the defaults for that task), and the Android app arms AlarmManager
+from its Room copy of the tasks, in the time zone from these settings. See
 [android/README.md](../android/README.md#reminders-and-the-morning-summary).

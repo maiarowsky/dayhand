@@ -1,6 +1,14 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { actorValidator, keyKindValidator, linkValidator, repeatValidator, statusValidator } from "./lib/validators";
+import {
+  actorValidator,
+  checklistItemValidator,
+  keyKindValidator,
+  linkValidator,
+  reminderValidator,
+  repeatValidator,
+  statusValidator,
+} from "./lib/validators";
 
 export default defineSchema({
   tasks: defineTable({
@@ -23,6 +31,10 @@ export default defineSchema({
     repeat: v.optional(repeatValidator),
     labels: v.array(v.string()),
     links: v.array(linkValidator),
+    // Since 0.4.0, optional so older tasks stay valid. Absent = no checklist.
+    checklist: v.optional(v.array(checklistItemValidator)),
+    // Absent = the default reminders from settings; [] = no reminders.
+    reminders: v.optional(v.array(reminderValidator)),
     completedAt: v.optional(v.number()),
     archivedAt: v.optional(v.number()),
     // Soft delete: the task sits in the trash for 30 days, then a cron purges it.

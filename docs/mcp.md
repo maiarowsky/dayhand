@@ -11,7 +11,7 @@
   `agent` for an AI agent) and the key's name; see [Keys and actors](#keys-and-actors).
 - Pass a `clientId` (e.g. a UUID) with changes you might retry; a repeated `clientId` is not
   applied twice.
-- `initialize` returns `serverInfo: { "name": "helm", "version": "0.3.0" }`; see
+- `initialize` returns `serverInfo: { "name": "helm", "version": "0.4.0" }`; see
   [Versions](#versions).
 
 ## Tools
@@ -25,11 +25,11 @@ as `"#42"`.
 
 | Tool | Operation |
 |---|---|
-| `add_task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links) |
+| `add_task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders) |
 | `update_task` | Change fields; `null` clears an optional field |
 | `set_status` | `todo` / `doing` / `done` |
 | `set_now` | Make one task the "now" task, optionally with a resume note; `taskId: null` clears it |
-| `complete_task` | Mark done; repeating tasks return their next occurrence |
+| `complete_task` | Mark done; repeating tasks return their next occurrence (`next: null` when the series has ended) |
 | `reschedule_task` | Move to another day/time; `dueDate: null` removes the date |
 | `archive_task` | Archive |
 | `delete_task` | Move to the trash (purged after 30 days) |
@@ -42,6 +42,59 @@ as `"#42"`.
 | `export_plan` | Markdown or JSON export of the whole plan |
 | `get_settings` | Time zone, summary time, default reminders |
 | `update_settings` | Change them |
+
+## Repeat rules
+
+`repeat` is an object, or an [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545#section-3.3.10)
+RRULE string (with or without `RRULE:`) that the server reads into the object. Every repeating
+task also comes back with its rule as an RRULE in `rrule`, e.g. `"FREQ=WEEKLY;BYDAY=MO,TH"`.
+
+| Field | Meaning | RRULE |
+|---|---|---|
+| `every`, `interval` | every day, week, month or year; `interval` 2 = every other (1 to 366) | `FREQ`, `INTERVAL` |
+| `weekdays` | weekly rules: days 1 (Monday) to 7 (Sunday) | `BYDAY=MO,TH` |
+| `monthDay` | monthly rules: day 1 to 31, or -1 for the last day | `BYMONTHDAY=15`, `BYMONTHDAY=-1` |
+| `weekdayOfMonth` | monthly rules: `{ nth, weekday }`, nth 1 to 5 or -1 (last) to -5 | `BYDAY=2TU`, `BYDAY=-1FR` (or `BYDAY=TU;BYSETPOS=2`) |
+| `from` | `"due"` (default): the next date follows the due date; `"completion"`: it is counted from the day the task is done | none |
+| `until` | last date the series may fall on, YYYY-MM-DD | `UNTIL=20261231` (a UTC date-time is read in the user's time zone) |
+| `count` | occurrences left, this one included; `1` = the last one | `COUNT` |
+
+`until` and `count` cannot be combined (as in RFC 5545). Completing a task counted from the due
+date creates the first date of the series after today, so a late completion skips the dates it
+missed, and those count against `count`. When the series has ended, `complete_task` returns
+`next: null`. The next occurrence keeps the title, note, labels, links and reminders, with the
+checklist unticked.
+
+Helm reads `FREQ` (DAILY, WEEKLY, MONTHLY, YEARLY), `INTERVAL`, `BYDAY`, `BYMONTHDAY`,
+`BYSETPOS`, `UNTIL`, `COUNT` and `WKST`; anything else (`BYHOUR`, `BYMONTH`, …) is an
+`invalid_argument` naming the part. Where Helm differs from RFC 5545:
+
+- A day the month does not have (31 in April) falls on the month's last day; RFC 5545 skips the
+  month. `rrule` writes such days as `BYMONTHDAY=28,29,30,31;BYSETPOS=-1`, which means the same
+  in both, and reads that form back as `monthDay: 31`. A plain `BYMONTHDAY=31` is read as
+  `monthDay: 31` too, with Helm's meaning.
+- A plain monthly rule takes its day from the due date; after a shorter month the next
+  occurrence keeps that day as `monthDay` (31 Jan, 28 Feb, 31 Mar).
+- A yearly rule from 29 February falls on 28 February in other years and stays there.
+- `from: "completion"` has no RRULE form; `rrule` describes the dates only.
+- Weeks start on Monday; another `WKST` is refused only where it would change the dates (several
+  days every two or more weeks).
+
+The rule logic is in `backend/convex/lib/repeat.ts` (`advance`, and `occurrences` to list a series
+ahead, e.g. for a calendar) and `lib/rrule.ts` (`toRRule`, `parseRRule`).
+
+## Checklists and reminders
+
+- `checklist`: items `{ id, title, done }` in the order shown. `update_task` replaces the whole
+  list: send the items you keep with their ids, new items without one (the server gives `c1`,
+  `c2`, …). `null` or `[]` removes it. At most 100 items of up to 500 characters. History records
+  the list before and after each change.
+- `reminders`: the task's own reminders instead of the default ones from settings. Each is
+  `{ minutesBefore }` (before the due time; rings only for timed tasks) or `{ time: "HH:MM",
+  daysBefore? }` (that time on the due day, or up to 30 days before; works for untimed tasks
+  too). A task without `reminders` uses the defaults; `[]` means no reminders for this task;
+  `null` in `update_task` goes back to the defaults. At most 5. Reminders ring on the phone
+  ([architecture.md](architecture.md#reminders)).
 
 ## Errors
 
@@ -105,6 +158,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.4.0 | Repeat rules: `from`, `monthDay`, `weekdayOfMonth`, `until`, `count`, RRULE strings in `repeat` and `rrule` on repeating tasks; `checklist` and `reminders` on tasks; `complete_task` may return `next: null` |
 | 0.3.0 | Task numbers (`ref`, `taskId: "#42"`); error codes in `structuredContent.error`; key kinds and named actors in history (`actor: "cli"`, `actorName`, `by`) |
 | 0.2.0 | Phone pairing endpoints (`/devices/*`, `/auth/*`) |
 | 0.1.0 | MCP endpoint with 17 tools |

@@ -30,6 +30,21 @@ npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"a
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.4.0
+
+0.4.0 adds `checklist` and `reminders` to tasks and new optional fields to `repeat` (`from`,
+`monthDay`, `weekdayOfMonth`, `until`, `count`). All of them are optional in the schema, so the
+deploy accepts existing data and needs no migration: a task without them repeats, rings and
+exports as before. Deploy with `npx convex deploy`.
+
+Clients: the CLI and the agent keep working unchanged. An app older than 0.6.0 shows repeat rules
+with the new fields as their plain unit and does not show checklists or per-task reminders;
+changing such a task's repeat rule in that app replaces the rule with what it shows.
+
+Rollback: deploying 0.3.0 again fails schema validation once any task uses a new field. Roll
+forward with a fix, or remove the new fields from those tasks first (or restore a snapshot taken
+before the deploy with `npx convex export`).
+
 ## Upgrading to 0.3.0
 
 0.3.0 adds task numbers (`tasks.ref`, new table `taskCounters`) and key kinds (`apiKeys.kind`,

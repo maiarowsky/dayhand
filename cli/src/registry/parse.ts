@@ -44,15 +44,64 @@ export function parseLink(text: string): Link {
 
 const UNITS = ["day", "week", "month", "year"] as const;
 
-/** --every / --interval / --on → a repeat rule, or undefined when none of them is given. */
-export function parseRepeat(opts: { every?: string; interval?: number; on?: string }): Repeat | undefined {
-  if (opts.every === undefined && opts.interval === undefined && opts.on === undefined) return undefined;
-  const every = (opts.every ?? "week") as Repeat["every"];
+type RepeatOpts = {
+  every?: string;
+  interval?: number;
+  on?: string;
+  monthDay?: string;
+  monthWeekday?: string;
+  fromCompletion?: boolean;
+  until?: string;
+  count?: number;
+};
+
+/**
+ * The repeat options → a repeat rule, or undefined when none of them is given.
+ * Without --every the rule is monthly with --month-day/--month-weekday, else
+ * weekly. --until is a date phrase the caller resolves (see model.ts).
+ */
+export function parseRepeat(opts: RepeatOpts): Repeat | undefined {
+  const keys = ["every", "interval", "on", "monthDay", "monthWeekday", "until", "count"] as const;
+  if (keys.every((key) => opts[key] === undefined) && !opts.fromCompletion) return undefined;
+  const monthly = opts.monthDay !== undefined || opts.monthWeekday !== undefined;
+  const every = (opts.every ?? (monthly ? "month" : "week")) as Repeat["every"];
   if (!UNITS.includes(every)) throw usageError("--every must be day, week, month or year", { valid: [...UNITS] });
   if (opts.on !== undefined && every !== "week") throw usageError("--on works only with --every week");
+  if (monthly && every !== "month") throw usageError("--month-day and --month-weekday work only with --every month");
+  if (opts.monthDay !== undefined && opts.monthWeekday !== undefined) throw usageError("Use --month-day or --month-weekday, not both");
   const rule: Repeat = { every, interval: opts.interval ?? 1 };
   if (opts.on !== undefined) rule.weekdays = parseWeekdays(opts.on);
+  if (opts.monthDay !== undefined) rule.monthDay = parseMonthDay(opts.monthDay);
+  if (opts.monthWeekday !== undefined) rule.weekdayOfMonth = parseMonthWeekday(opts.monthWeekday);
+  if (opts.fromCompletion) rule.from = "completion";
+  if (opts.count !== undefined) {
+    if (opts.count < 1) throw usageError("--count must be 1 or more");
+    rule.count = opts.count;
+  }
   return rule;
+}
+
+/** "15" → 15, "last" → -1. */
+export function parseMonthDay(text: string): number {
+  const word = text.trim().toLowerCase();
+  if (word === "last" || word === "-1") return -1;
+  if (/^\d{1,2}$/.test(word) && Number(word) >= 1 && Number(word) <= 31) return Number(word);
+  throw usageError("--month-day takes a day 1 to 31 or last");
+}
+
+const ORDINALS: Record<string, number> = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, last: -1 };
+
+/** "2 tue", "2nd tuesday", "2tue", "last fri", "-1 fri" → { nth, weekday }. */
+export function parseMonthWeekday(text: string): { nth: number; weekday: number } {
+  const match = /^(-?\d|first|second|third|fourth|fifth|last)(?:st|nd|rd|th)?\s*([a-z]+)$/i.exec(text.trim());
+  const position = match?.[1]?.toLowerCase();
+  const nth = position === undefined ? NaN : (ORDINALS[position] ?? Number(position));
+  if (!match || !Number.isInteger(nth) || nth === 0 || nth < -5 || nth > 5) {
+    throw usageError('--month-weekday takes a position and a day, e.g. "2 tue" or "last fri"');
+  }
+  const days = parseWeekdays(match[2]!);
+  if (days.length !== 1) throw usageError("--month-weekday takes one day");
+  return { nth, weekday: days[0]! };
 }
 
 export function parseInt0(text: string): number {

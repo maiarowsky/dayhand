@@ -1,7 +1,15 @@
 // Argument validators of every domain operation, shared by the internal
 // domain functions, the app layer and the MCP tool schemas.
 import { v } from "convex/values";
-import { clearable, keyKindValidator, linkValidator, repeatValidator, statusValidator } from "./validators";
+import {
+  checklistInputValidator,
+  clearable,
+  keyKindValidator,
+  linkValidator,
+  reminderValidator,
+  repeatInputValidator,
+  statusValidator,
+} from "./validators";
 
 const clientId = v.optional(v.string());
 // A task id, or the task's number written as "#42".
@@ -16,9 +24,11 @@ export const args = {
     dueTime: v.optional(v.string()),
     status: v.optional(v.union(v.literal("todo"), v.literal("doing"))),
     resumeNote: v.optional(v.string()),
-    repeat: v.optional(repeatValidator),
+    repeat: v.optional(repeatInputValidator),
     labels: v.optional(v.array(v.string())),
     links: v.optional(v.array(linkValidator)),
+    checklist: v.optional(v.array(checklistInputValidator)),
+    reminders: v.optional(v.array(reminderValidator)),
     clientId,
   },
   update: {
@@ -28,9 +38,11 @@ export const args = {
     dueDate: clearable(v.string()),
     dueTime: clearable(v.string()),
     resumeNote: clearable(v.string()),
-    repeat: clearable(repeatValidator),
+    repeat: clearable(repeatInputValidator),
     labels: v.optional(v.array(v.string())),
     links: v.optional(v.array(linkValidator)),
+    checklist: clearable(v.array(checklistInputValidator)),
+    reminders: clearable(v.array(reminderValidator)),
     clientId,
   },
   setStatus: { taskId, status: statusValidator, clientId },

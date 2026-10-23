@@ -1,8 +1,19 @@
 // Shapes of the backend results the renderers read. The JSON contract itself
 // is docs/schemas; these types only name the fields the text output uses.
 
-export type Repeat = { every: "day" | "week" | "month" | "year"; interval: number; weekdays?: number[] };
+export type Repeat = {
+  every: "day" | "week" | "month" | "year";
+  interval: number;
+  weekdays?: number[];
+  from?: "due" | "completion";
+  monthDay?: number;
+  weekdayOfMonth?: { nth: number; weekday: number };
+  until?: string;
+  count?: number;
+};
 export type Link = { url: string; title?: string };
+export type ChecklistItem = { id: string; title: string; done: boolean };
+export type Reminder = { minutesBefore: number } | { time: string; daysBefore?: number };
 
 export type Task = {
   id: string;
@@ -15,8 +26,11 @@ export type Task = {
   dueTime?: string;
   resumeNote?: string;
   repeat?: Repeat;
+  rrule?: string;
   labels: string[];
   links: Link[];
+  checklist?: ChecklistItem[];
+  reminders?: Reminder[];
   completedAt?: number;
   archivedAt?: number;
   deletedAt?: number;
@@ -53,8 +67,11 @@ export const TASK_FIELDS = [
   "dueTime",
   "resumeNote",
   "repeat",
+  "rrule",
   "labels",
   "links",
+  "checklist",
+  "reminders",
   "completedAt",
   "archivedAt",
   "deletedAt",

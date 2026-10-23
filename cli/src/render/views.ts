@@ -3,7 +3,7 @@
 // The human format is the same on a terminal and in a pipe, except that a
 // terminal gets colors (unless turned off) and long titles cut to its width.
 import type { HeldCall } from "../transport/client.js";
-import { cell, describeRepeat, fieldCells, formatDay, formatTimestamp, refOf, relativeDate, taskCells, taskRow, tsv } from "./format.js";
+import { cell, describeReminder, describeRepeat, fieldCells, formatDay, formatTimestamp, refOf, relativeDate, taskCells, taskRow, tsv } from "./format.js";
 import type { Device, HistoryEntry, Task, TodayView } from "./model.js";
 import { PLAIN_STYLE, type Style } from "./style.js";
 import { cellOf, padTo, table } from "./table.js";
@@ -183,12 +183,16 @@ function renderDetail(task: Task, history: HistoryEntry[], timezone: string | un
   const relative = task.dueDate && options.today ? relativeDate(task.dueDate, options.today) : undefined;
   add("due", due ? (relative && relative !== task.dueDate ? `${due} (${relative})` : due) : "no date");
   add("repeat", task.repeat ? describeRepeat(task.repeat) : undefined);
+  add("remind", task.reminders ? (task.reminders.length ? task.reminders.map(describeReminder).join(", ") : "none") : undefined);
   add("labels", task.labels.join(", "));
   add("links", task.links.map((l) => (l.title ? `${l.title} <${l.url}>` : l.url)).join(", "));
   add("next", task.resumeNote);
   add("archived", task.archivedAt ? formatTimestamp(task.archivedAt, timezone) : undefined);
   add("deleted", task.deletedAt ? formatTimestamp(task.deletedAt, timezone) : undefined);
   add("id", task.id);
+  if (task.checklist?.length) {
+    lines.push(style.dim("checklist:"), ...task.checklist.map((item, i) => `  ${i + 1}. ${item.done ? "[x]" : "[ ]"} ${item.title}`));
+  }
   if (task.note) lines.push(style.dim("note:"), ...task.note.split("\n").map((l) => `  ${l}`));
   lines.push(style.dim("history:"));
   for (const h of history) {

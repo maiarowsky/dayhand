@@ -19,6 +19,7 @@ Without a command, `hlm` shows Today.
 | `hlm show <ref>` | `get_task` | [task-detail](schemas/task-detail.schema.json) | One task with its change history (who changed what, when) |
 | `hlm edit <ref> [options]` | `update_task` | [task](schemas/task.schema.json) | Change a task's fields; --clear-* removes one; on a terminal without options, edit title and note in $EDITOR |
 | `hlm note <ref> [text...] [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it |
+| `hlm checklist <ref> [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's checklist, or tick, untick, move, remove and add items |
 | `hlm move <ref> <date> [options]` | `reschedule_task` | [task](schemas/task.schema.json) | Move a task to another day, optionally with a time (none removes the date) |
 | `hlm done <refs...>` | `complete_task` | [complete](schemas/complete.schema.json) | Mark tasks done; a repeating task gets its next occurrence |
 | `hlm start <refs...>` | `set_status` | [task](schemas/task.schema.json) | Set tasks to doing |
@@ -283,17 +284,29 @@ hlm add <title...> [options]
 | `--every <unit>` | Repeat every day, week, month or year (day, week, month, year) |
 | `--interval <n>` | Repeat interval (2 = every other) |
 | `--on <days>` | Weekly repeat days, e.g. mon,thu |
+| `--month-day <day>` | Monthly repeat on day 1-31 (a shorter month: its last day) or last |
+| `--month-weekday <day>` | Monthly repeat on a weekday: "2 tue", "last fri" |
+| `--from-completion` | Count the next date from the day the task is done, not its due date |
+| `--until <date>` | Last date the repeat may fall on (hlm help dates) |
+| `--count <n>` | How many times it repeats, this one included |
+| `--rrule <rule>` | The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=-1FR" |
 | `--no-due` | No due day: the task shows only in list and board |
 | `-l, --label <label>` | Label (repeatable) |
 | `--note <text>` | Note |
 | `--status <status>` | Initial status (todo, doing) |
 | `--resume-note <text>` | Where you stopped / next step |
 | `--link <url>` | Link, optionally followed by a title: "https://… Title" (repeatable) |
+| `--item <text>` | Checklist item (repeatable, in order) |
+| `--remind <when>` | This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due time), 09:00 or "18:00 -1d" (repeatable) |
+| `--no-reminders` | No reminders for this task |
 
 ```sh
 hlm add Call the accountant --due "fri 2pm" -l home
 hlm add Pay rent --due "1 nov" --dry-run
 hlm add "Review the plan" --time 09:00 --every week --on mon,thu
+hlm add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 -1d"
+hlm add Water plants --every day --interval 3 --from-completion
+hlm add Pack --due fri --item passport --item charger
 hlm add Buy a present --no-due --json
 ```
 
@@ -376,6 +389,12 @@ hlm edit <ref> [options]
 | `--every <unit>` | Repeat every day, week, month or year (day, week, month, year) |
 | `--interval <n>` | Repeat interval (2 = every other) |
 | `--on <days>` | Weekly repeat days, e.g. mon,thu |
+| `--month-day <day>` | Monthly repeat on day 1-31 (a shorter month: its last day) or last |
+| `--month-weekday <day>` | Monthly repeat on a weekday: "2 tue", "last fri" |
+| `--from-completion` | Count the next date from the day the task is done, not its due date |
+| `--until <date>` | Last date the repeat may fall on (hlm help dates) |
+| `--count <n>` | How many times it repeats, this one included |
+| `--rrule <rule>` | The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=-1FR" |
 | `--clear-due` | Remove the due day (and time) |
 | `--clear-time` | Remove the due time |
 | `--clear-repeat` | Stop repeating |
@@ -387,10 +406,18 @@ hlm edit <ref> [options]
 | `--clear-labels` | Remove all labels |
 | `--link <url>` | Replace all links: "https://… Title" (repeatable) |
 | `--clear-links` | Remove all links |
+| `--item <text>` | Replace the checklist (repeatable; hlm checklist edits single items) |
+| `--clear-checklist` | Remove the checklist |
+| `--remind <when>` | This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due time), 09:00 or "18:00 -1d" (repeatable) |
+| `--no-reminders` | No reminders for this task |
+| `--default-reminders` | Back to the default reminders from settings |
 
 ```sh
 hlm edit 42 --title "Call the bank" --due "tomorrow 10:00"
 hlm edit 42 --add-label work --rm-label home
+hlm edit 42 --every month --month-day last --until 2027-06-30
+hlm edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"
+hlm edit 42 --remind 15m --remind 1d
 hlm edit 42 --clear-repeat
 hlm edit 42
 ```
@@ -414,6 +441,34 @@ hlm note <ref> [text...] [options]
 hlm note 42
 hlm note 42 "Account number is in the email"
 hlm note 42 --clear
+```
+
+### hlm checklist
+
+Print a task's checklist, or tick, untick, move, remove and add items
+
+Items are numbered from 1 as printed. Changes apply in this order: --check, --uncheck, --move, --rm, then --add.
+
+```
+hlm checklist <ref> [options]
+```
+
+- `ref`: Task: #42 or 42 (its number), now, or its id
+
+| Option | Meaning |
+|---|---|
+| `--add <text>` | Add an item at the end (repeatable) |
+| `--check <n>` | Tick items: 2, 1,3 or all (repeatable) |
+| `--uncheck <n>` | Untick items (repeatable) |
+| `--move <from:to>` | Move an item, e.g. 3:1 (repeatable) |
+| `--rm <n>` | Remove items (repeatable) |
+| `--clear` | Remove the whole checklist |
+
+```sh
+hlm checklist 42
+hlm checklist 42 --add "Book the hotel" --add "Pack"
+hlm checklist 42 --check 1,2
+hlm checklist 42 --move 3:1 --rm 4
 ```
 
 ### hlm move
