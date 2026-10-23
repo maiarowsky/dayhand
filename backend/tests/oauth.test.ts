@@ -460,8 +460,9 @@ describe("tokens at the protected resource", () => {
   async function insertToken(grantId: string, fields: Record<string, unknown>) {
     const { importRows } = await import("./helpers");
     const { createHash } = await import("node:crypto");
-    const selector = "S".repeat(21) + Math.floor(Math.random() * 10);
-    const secret = "s".repeat(42) + Math.floor(Math.random() * 10);
+    // Random enough that two tokens of one run never share a selector (lookups use .unique()).
+    const selector = "S".repeat(16) + String(Math.floor(Math.random() * 1e6)).padStart(6, "0");
+    const secret = "s".repeat(37) + String(Math.floor(Math.random() * 1e6)).padStart(6, "0");
     await importRows("oauthTokens", [
       {
         grantId,

@@ -62,7 +62,7 @@ function normalize(value: unknown, ids = new Map<string, string>()): unknown {
         return [key, ids.get(v)];
       }
       if (TIME_FIELDS.has(key) && typeof v === "number") return [key, "<time>"];
-      if (key === "content" && typeof v === "string") return [key, v.replace(/DTSTAMP:\d{8}T\d{6}Z/g, "DTSTAMP:<time>").replace(/UID:[^\r\n]+/g, "UID:<uid>")];
+      if (key === "content" && typeof v === "string") return [key, v.replace(/(DTSTAMP|CREATED|LAST-MODIFIED):\d{8}T\d{6}Z/g, "$1:<time>").replace(/UID:[^\r\n]+/g, "UID:<uid>")];
       return [key, normalize(v, ids)];
     }),
   );
