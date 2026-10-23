@@ -145,6 +145,18 @@ export default defineSchema({
     calls: v.number(),
   }).index("by_key_kind", ["keyId", "kind"]),
 
+  // The read-only calendar feed of a user, at most one: GET /cal/<selector><secret>.ics.
+  // The secret is kept (not hashed) so the address can be shown again; it
+  // only reads the plan stored next to it. A new address replaces the row.
+  calendarFeeds: defineTable({
+    userId: v.string(),
+    selector: v.string(),
+    secret: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_selector", ["selector"]),
+
   settings: defineTable({
     userId: v.string(),
     timezone: v.string(),

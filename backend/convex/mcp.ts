@@ -115,14 +115,14 @@ function dryRunResult(error: unknown): { result: unknown } | undefined {
  * A successful tool call. structuredContent is the result (a list or null
  * wrapped as `{ result }`); the text block is the result as JSON, as before
  * 0.4.0: an unpaged list_all gives the plain task array there, so text-only
- * clients keep working. A Markdown export's text is the Markdown itself.
+ * clients keep working. A Markdown or iCalendar export's text is the export itself.
  */
 function toolSuccess(tool: Tool, value: unknown, options: { dryRun?: boolean; paged?: boolean } = {}) {
   const plain = value !== null && typeof value === "object" && !Array.isArray(value);
   const structured: Record<string, unknown> = { ...(plain ? (value as Record<string, unknown>) : { result: value }) };
   if (options.dryRun) structured.dryRun = true;
   let text: string;
-  if (tool.name === "export_plan" && structured.format === "markdown") text = String(structured.content);
+  if (tool.name === "export_plan" && (structured.format === "markdown" || structured.format === "ics")) text = String(structured.content);
   else if (tool.name === "list_all" && !options.paged) text = JSON.stringify(structured.result, null, 2);
   else text = JSON.stringify(options.dryRun ? structured : value, null, 2);
   return { content: [{ type: "text", text }], structuredContent: structured };

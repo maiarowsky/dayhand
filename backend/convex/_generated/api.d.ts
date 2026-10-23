@@ -10,6 +10,8 @@
 
 import type * as apiKeys from "../apiKeys.js";
 import type * as app from "../app.js";
+import type * as calendar from "../calendar.js";
+import type * as calendarFeeds from "../calendarFeeds.js";
 import type * as callLimits from "../callLimits.js";
 import type * as crons from "../crons.js";
 import type * as devices from "../devices.js";
@@ -22,6 +24,7 @@ import type * as lib_exportPlan from "../lib/exportPlan.js";
 import type * as lib_findTasks from "../lib/findTasks.js";
 import type * as lib_guide from "../lib/guide.js";
 import type * as lib_http from "../lib/http.js";
+import type * as lib_ical from "../lib/ical.js";
 import type * as lib_jsonSchema from "../lib/jsonSchema.js";
 import type * as lib_mcpContent from "../lib/mcpContent.js";
 import type * as lib_mcpProtocol from "../lib/mcpProtocol.js";
@@ -34,6 +37,7 @@ import type * as lib_settingsOps from "../lib/settingsOps.js";
 import type * as lib_taskOps from "../lib/taskOps.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_views from "../lib/views.js";
+import type * as lib_vtimezone from "../lib/vtimezone.js";
 import type * as mcp from "../mcp.js";
 import type * as migrations from "../migrations.js";
 import type * as ops from "../ops.js";
@@ -48,6 +52,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   app: typeof app;
+  calendar: typeof calendar;
+  calendarFeeds: typeof calendarFeeds;
   callLimits: typeof callLimits;
   crons: typeof crons;
   devices: typeof devices;
@@ -60,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   "lib/findTasks": typeof lib_findTasks;
   "lib/guide": typeof lib_guide;
   "lib/http": typeof lib_http;
+  "lib/ical": typeof lib_ical;
   "lib/jsonSchema": typeof lib_jsonSchema;
   "lib/mcpContent": typeof lib_mcpContent;
   "lib/mcpProtocol": typeof lib_mcpProtocol;
@@ -72,6 +79,7 @@ declare const fullApi: ApiFromModules<{
   "lib/taskOps": typeof lib_taskOps;
   "lib/validators": typeof lib_validators;
   "lib/views": typeof lib_views;
+  "lib/vtimezone": typeof lib_vtimezone;
   mcp: typeof mcp;
   migrations: typeof migrations;
   ops: typeof ops;

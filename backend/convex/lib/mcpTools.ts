@@ -211,7 +211,7 @@ export const TOOLS: Tool[] = [
   }),
   read("export_plan", {
     title: "Export plan",
-    description: "Export the whole plan as Markdown or JSON.",
+    description: "Export the whole plan as Markdown, JSON (a full copy with history) or iCalendar (ics, the dated tasks as calendar events).",
     fields: args.exportPlan,
     output: "export",
     ref: internal.ops.exportPlan,

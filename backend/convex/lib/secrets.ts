@@ -71,3 +71,21 @@ export function parseDeviceToken(token: string): { selector: string; secret: str
   const match = /^helmdev_([A-Za-z0-9_-]{22})\.([A-Za-z0-9_-]{43})$/.exec(token);
   return match ? { selector: match[1], secret: match[2] } : null;
 }
+
+// ---- Calendar feed tokens ----
+// <selector><secret>, 12 + 32 base64url characters (72 + 192 random bits), in
+// the feed URL /cal/<token>.ics. Unlike the other secrets the server keeps the
+// secret itself, so the address can be shown again (docs/calendar.md).
+
+const CALENDAR_SELECTOR_LENGTH = 12;
+
+export function newCalendarToken(): { token: string; selector: string; secret: string } {
+  const selector = randomBase64url(9);
+  const secret = randomBase64url(24);
+  return { token: selector + secret, selector, secret };
+}
+
+export function parseCalendarToken(token: string): { selector: string; secret: string } | null {
+  if (!/^[A-Za-z0-9_-]{44}$/.test(token)) return null;
+  return { selector: token.slice(0, CALENDAR_SELECTOR_LENGTH), secret: token.slice(CALENDAR_SELECTOR_LENGTH) };
+}

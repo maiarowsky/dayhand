@@ -7,7 +7,7 @@
 // specification and the official SDK decide it.
 import { json } from "./http";
 
-export const SERVER_INFO = { name: "helm", version: "0.5.0" };
+export const SERVER_INFO = { name: "helm", version: "0.6.0" };
 
 export const MODERN_VERSIONS = ["2026-07-28"];
 export const LEGACY_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];

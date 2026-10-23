@@ -91,23 +91,24 @@ export const token = httpAction(async (ctx, request) => {
 });
 
 // ---- Device management with a personal API key (helm pair / devices / revoke) ----
+// keyOwner, keyIdentity and unauthorized serve the calendar feed endpoints too (calendar.ts).
 
 type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
 
-async function keyOwner(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
+export async function keyOwner(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
   const key = bearerToken(request);
   return key ? ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) }) : null;
 }
 
 /** The key's identity for the domain: its owner, its kind as the actor, and the key itself. */
-const keyIdentity = (owner: KeyOwner) => ({
+export const keyIdentity = (owner: KeyOwner) => ({
   userId: owner.userId,
   actor: owner.kind,
   keyId: owner.keyId,
   actorName: owner.name,
 });
 
-const unauthorized = () =>
+export const unauthorized = () =>
   errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="helm"' });
 
 /** Domain errors as 400/404 with their message; anything else is rethrown. */

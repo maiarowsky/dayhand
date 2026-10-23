@@ -76,7 +76,7 @@ export const args = {
   listTrash: {},
   board: { doneLimit: v.optional(v.number()), at },
   getTask: { taskId, at },
-  exportPlan: { format: v.union(v.literal("markdown"), v.literal("json")), at },
+  exportPlan: { format: v.union(v.literal("markdown"), v.literal("json"), v.literal("ics")), at },
   getSettings: {},
   updateSettings: {
     timezone: v.optional(v.string()),

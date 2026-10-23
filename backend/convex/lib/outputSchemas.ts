@@ -58,7 +58,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "export": {
     "title": "Export",
-    "description": "export_plan (hlm export --json): {format: markdown, content: <text>} or {format: json, content: <copy>}. With -o, hlm prints {written: <file>, format}.",
+    "description": "export_plan (hlm export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, hlm prints {written: <file>, format}.",
     "oneOf": [
       {
         "type": "object",
@@ -124,6 +124,22 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       {
         "type": "object",
         "required": [
+          "format",
+          "content"
+        ],
+        "properties": {
+          "format": {
+            "const": "ics"
+          },
+          "content": {
+            "type": "string",
+            "description": "RFC 5545 iCalendar text with CRLF line ends"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "required": [
           "written",
           "format"
         ],
@@ -134,7 +150,8 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
           "format": {
             "enum": [
               "markdown",
-              "json"
+              "json",
+              "ics"
             ]
           }
         }

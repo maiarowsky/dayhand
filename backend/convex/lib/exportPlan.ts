@@ -1,10 +1,12 @@
-// Export of the whole plan: Markdown to read, JSON as a full copy.
+// Export of the whole plan: Markdown to read, JSON as a full copy, iCalendar
+// (lib/ical.ts) for a calendar app.
 import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
 import { loadSettings, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
+import { renderCalendar } from "./ical";
 import { toRRule } from "./rrule";
 import type { Reminder } from "./validators";
 
@@ -76,6 +78,7 @@ export async function exportPlan(ctx: QueryCtx, identity: Identity, input: Args)
   if (input.format === "markdown") {
     return { format: "markdown" as const, content: renderMarkdown(tasks, settings.timezone, at) };
   }
+  if (input.format === "ics") return { format: "ics" as const, content: renderCalendar(tasks, { ...settings, at }) };
   const events = await ctx.db
     .query("taskEvents")
     .withIndex("by_user", (q) => q.eq("userId", identity.userId))

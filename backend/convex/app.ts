@@ -2,8 +2,10 @@
 // the actor is "app". Every function delegates to the domain layer.
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { v } from "convex/values";
 import { action, mutation, query } from "./_generated/server";
 import { listKeys } from "./apiKeys";
+import { getFeed, revokeFeed, type CalendarFeed } from "./calendarFeeds";
 import { args } from "./lib/args";
 import { fail, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
@@ -97,4 +99,18 @@ export const revokeApiKey = mutation({
 export const listApiKeys = query({
   args: args.listApiKeys,
   handler: async (ctx) => listKeys(ctx, (await appUser(ctx)).userId),
+});
+
+// The calendar feed (calendarFeeds.ts): its addresses, turning it on, a new address, off.
+export const getCalendarFeed = query({
+  args: {},
+  handler: async (ctx): Promise<CalendarFeed | null> => getFeed(ctx, await appUser(ctx)),
+});
+export const createCalendarFeed = action({
+  args: { replace: v.optional(v.boolean()) },
+  handler: async (ctx, a): Promise<CalendarFeed> => ctx.runAction(internal.calendarFeeds.create, { ...(await appUser(ctx)), ...a }),
+});
+export const revokeCalendarFeed = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ revoked: boolean }> => revokeFeed(ctx, await appUser(ctx)),
 });

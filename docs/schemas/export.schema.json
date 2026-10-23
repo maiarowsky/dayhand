@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.helm.invalid/export.schema.json",
   "title": "Export",
-  "description": "export_plan (hlm export --json): {format: markdown, content: <text>} or {format: json, content: <copy>}. With -o, hlm prints {written: <file>, format}.",
+  "description": "export_plan (hlm export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, hlm prints {written: <file>, format}.",
   "oneOf": [
     {
       "type": "object",
@@ -68,6 +68,22 @@
     {
       "type": "object",
       "required": [
+        "format",
+        "content"
+      ],
+      "properties": {
+        "format": {
+          "const": "ics"
+        },
+        "content": {
+          "type": "string",
+          "description": "RFC 5545 iCalendar text with CRLF line ends"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
         "written",
         "format"
       ],
@@ -78,7 +94,8 @@
         "format": {
           "enum": [
             "markdown",
-            "json"
+            "json",
+            "ics"
           ]
         }
       }
