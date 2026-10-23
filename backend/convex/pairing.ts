@@ -13,6 +13,7 @@ import { hashKey } from "./apiKeys";
 import { checkDeviceName, PAIRING_CODE_TTL_MS } from "./devices";
 import { APP_TOKEN_TTL_SECONDS, appSubject, signAppToken, signingConfig, SigningConfigError } from "./lib/appToken";
 import { bearerToken, errorResponse, json, readJsonBody } from "./lib/http";
+import type { KeyScope } from "./lib/validators";
 import { newDeviceToken, parseDeviceToken, parsePairingCode, sha256Hex } from "./lib/secrets";
 
 const DEFAULT_DEVICE_NAME = "Phone";
@@ -91,14 +92,35 @@ export const token = httpAction(async (ctx, request) => {
 });
 
 // ---- Device management with a personal API key (helm pair / devices / revoke) ----
-// keyOwner, keyIdentity and unauthorized serve the calendar feed endpoints too (calendar.ts).
+// accountOwner, keyIdentity and unauthorized serve the calendar feed and
+// connection endpoints too (calendar.ts, connections.ts).
 
-type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
+export type KeyOwner = {
+  userId: string;
+  keyId: Id<"apiKeys">;
+  name: string;
+  kind: "cli" | "agent";
+  scope: KeyScope;
+  expiresAt: number | null;
+};
 
-/** The owner of the personal API key in the request; OAuth access tokens are not accepted here. */
+/** The owner of the working personal API key in the request; OAuth access tokens are not accepted here. */
 export async function keyOwner(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
   const key = bearerToken(request);
-  return key ? ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) }) : null;
+  return key ? ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key), now: Date.now() }) : null;
+}
+
+/**
+ * The owner of a full key, or the answer that refuses the request: managing
+ * the account (devices, connections, the calendar feed) needs scope full.
+ */
+export async function accountOwner(ctx: ActionCtx, request: Request): Promise<KeyOwner | Response> {
+  const owner = await keyOwner(ctx, request);
+  if (!owner) return unauthorized();
+  if (owner.scope !== "full") {
+    return errorResponse(403, "insufficient_scope", `This needs an API key with scope full; this key has scope ${owner.scope}`);
+  }
+  return owner;
 }
 
 /** The key's identity for the domain: its owner, its kind as the actor, and the key itself. */
@@ -120,8 +142,8 @@ export function domainError(error: unknown) {
 }
 
 export const createCode = httpAction(async (ctx, request) => {
-  const owner = await keyOwner(ctx, request);
-  if (!owner) return unauthorized();
+  const owner = await accountOwner(ctx, request);
+  if (owner instanceof Response) return owner;
   try {
     const created = await ctx.runAction(internal.devices.createPairingCode, {
       ...keyIdentity(owner),
@@ -134,14 +156,14 @@ export const createCode = httpAction(async (ctx, request) => {
 });
 
 export const listDevices = httpAction(async (ctx, request) => {
-  const owner = await keyOwner(ctx, request);
-  if (!owner) return unauthorized();
+  const owner = await accountOwner(ctx, request);
+  if (owner instanceof Response) return owner;
   return json({ devices: await ctx.runQuery(internal.devices.list, keyIdentity(owner)) });
 });
 
 export const revokeDevice = httpAction(async (ctx, request) => {
-  const owner = await keyOwner(ctx, request);
-  if (!owner) return unauthorized();
+  const owner = await accountOwner(ctx, request);
+  if (owner instanceof Response) return owner;
   const body = await readJsonBody(request);
   if (!body || typeof body.deviceId !== "string") {
     return errorResponse(400, "invalid_request", "Body must be JSON with a string `deviceId`");

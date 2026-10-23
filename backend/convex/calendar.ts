@@ -10,7 +10,7 @@ import type { CalendarFeed } from "./calendarFeeds";
 import { httpAction } from "./_generated/server";
 import { json } from "./lib/http";
 import { parseCalendarToken } from "./lib/secrets";
-import { keyIdentity, keyOwner, unauthorized } from "./pairing";
+import { accountOwner, keyIdentity } from "./pairing";
 
 const FEED_PATH = /^\/cal\/([^/]+)\.ics$/;
 const noStore = { "Cache-Control": "no-store" };
@@ -37,15 +37,15 @@ export const feed = httpAction(async (ctx, request) => {
 });
 
 export const getFeed = httpAction(async (ctx, request) => {
-  const owner = await keyOwner(ctx, request);
-  if (!owner) return unauthorized();
+  const owner = await accountOwner(ctx, request);
+  if (owner instanceof Response) return owner;
   return json({ feed: await ctx.runQuery(internal.calendarFeeds.get, keyIdentity(owner)) }, 200, noStore);
 });
 
 const create = (replace: boolean) =>
   httpAction(async (ctx, request) => {
-    const owner = await keyOwner(ctx, request);
-    if (!owner) return unauthorized();
+    const owner = await accountOwner(ctx, request);
+    if (owner instanceof Response) return owner;
     const created: CalendarFeed = await ctx.runAction(internal.calendarFeeds.create, { ...keyIdentity(owner), replace });
     return json({ feed: created }, 200, noStore);
   });
@@ -54,8 +54,8 @@ export const enableFeed = create(false);
 export const rotateFeed = create(true);
 
 export const revokeFeed = httpAction(async (ctx, request) => {
-  const owner = await keyOwner(ctx, request);
-  if (!owner) return unauthorized();
+  const owner = await accountOwner(ctx, request);
+  if (owner instanceof Response) return owner;
   return json(await ctx.runMutation(internal.calendarFeeds.revoke, keyIdentity(owner)), 200, noStore);
 });
 

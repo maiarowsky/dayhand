@@ -1,7 +1,7 @@
 // MCP server for the agent: stateless Streamable HTTP with JSON responses,
 // serving the 2026-07-28 protocol and the 2025 ones before it (lib/mcpProtocol.ts).
 // The caller is a personal API key (actor: the key's kind, "cli" or "agent",
-// and its name; everything) or an OAuth access token of an agent connection
+// and its name; everything, or only reading for a key with scope read) or an OAuth access token of an agent connection
 // (actor "agent" with the client's name; what its scopes allow, docs/oauth.md).
 // Tools map 1:1 onto the domain operations in ops.ts (lib/mcpTools.ts);
 // resources and prompts read through the same operations (lib/mcpContent.ts).
@@ -28,6 +28,7 @@ import {
 } from "./lib/oauthConfig";
 import { formatScopes } from "./lib/oauthRules";
 import { parseSelectorToken, sha256Hex } from "./lib/secrets";
+import type { KeyScope } from "./lib/validators";
 import {
   checkModernRequest,
   eraOf,
@@ -112,9 +113,12 @@ async function authenticate(ctx: ActionCtx, presented: string): Promise<Caller |
       scopes: connection.scopes,
     };
   }
-  const key = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(presented) });
-  return key ? { userId: key.userId, actor: key.kind, actorName: key.name, keyId: key.keyId, scopes: SCOPES } : null;
+  const key = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(presented), now: Date.now() });
+  return key ? { userId: key.userId, actor: key.kind, actorName: key.name, keyId: key.keyId, scopes: KEY_SCOPES[key.scope] } : null;
 }
+
+/** What an API key's scope allows on /mcp: a read key only reads; write and full keys do everything there. */
+const KEY_SCOPES: Record<KeyScope, readonly Scope[]> = { read: ["tasks:read"], write: SCOPES, full: SCOPES };
 
 const identityOf = (owner: Caller): Identity => ({
   userId: owner.userId,

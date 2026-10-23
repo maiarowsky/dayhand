@@ -5,6 +5,7 @@ import {
   checklistInputValidator,
   clearable,
   keyKindValidator,
+  keyScopeValidator,
   linkValidator,
   reminderValidator,
   repeatInputValidator,
@@ -86,7 +87,12 @@ export const args = {
   },
   revokeApiKey: { keyId: v.id("apiKeys") },
   listApiKeys: {},
-  createApiKey: { name: v.string(), kind: v.optional(keyKindValidator) },
+  createApiKey: {
+    name: v.string(),
+    kind: v.optional(keyKindValidator),
+    scope: v.optional(keyScopeValidator),
+    expiresAt: v.optional(v.number()),
+  },
 };
 
 // Only the MCP endpoint offers a dry run: the app always applies its changes.

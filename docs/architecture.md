@@ -46,7 +46,7 @@ helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
 | `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
 | `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId` |
 | `taskCounters` | Last task number given per user (`lastRef`) |
-| `apiKeys` | `name`, `kind` (`cli` or `agent`), SHA-256 `hash` of the key, `createdAt`, `revokedAt` |
+| `apiKeys` | `name`, `kind` (`cli` or `agent`), `scope` (`read`, `write` or `full`; absent = `full`), `expiresAt`, `parentKeyId` (the key that created it through `/api/v1/keys`), SHA-256 `hash` of the key, `createdAt`, `revokedAt` |
 | `pairingCodes` | One-time pairing codes: public `selector`, SHA-256 `secretHash` of the secret part, `createdBy`, `expiresAt` (10 minutes), `usedAt`, `failedAttempts` |
 | `devices` | Paired phones: `name`, token `selector`, SHA-256 `secretHash`, `pairedBy`, `createdAt`, `lastUsedAt`, `revokedAt` |
 | `authLimits` | Fixed-window counters, one row per bucket: failed `POST /auth/pair` attempts, and the OAuth limits (`oauth:*`: requests per client, registrations, wrong codes typed on the phone) |

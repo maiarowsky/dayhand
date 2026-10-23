@@ -5,6 +5,7 @@ import {
   actorValidator,
   checklistItemValidator,
   keyKindValidator,
+  keyScopeValidator,
   linkValidator,
   reminderValidator,
   repeatValidator,
@@ -92,6 +93,13 @@ export default defineSchema({
     // key are recorded with this actor. Keys created before 0.3.0 have no
     // kind until migrations:backfillKeyKinds runs and count as agent.
     kind: v.optional(keyKindValidator),
+    // Since 0.8.0: read, write or full; absent = full, as every key before.
+    scope: v.optional(keyScopeValidator),
+    // Since 0.8.0: the key stops working at this time; absent = never.
+    expiresAt: v.optional(v.number()),
+    // Since 0.8.0: the key that created this one (POST /api/v1/keys); it
+    // works only while that key works, so it cannot outlive its revocation.
+    parentKeyId: v.optional(v.id("apiKeys")),
     // SHA-256 of the key, hex. The key itself is never stored.
     hash: v.string(),
     createdAt: v.number(),

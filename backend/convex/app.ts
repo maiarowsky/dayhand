@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { action, mutation, query } from "./_generated/server";
-import { listKeys } from "./apiKeys";
+import { listKeys, type CreatedKey } from "./apiKeys";
 import { getFeed, revokeFeed, type CalendarFeed } from "./calendarFeeds";
 import {
   decideRequest,
@@ -95,8 +95,7 @@ export const getSettings = query({ args: args.getSettings, handler: async (ctx) 
 
 export const createApiKey = action({
   args: args.createApiKey,
-  handler: async (ctx, a): Promise<{ id: Id<"apiKeys">; name: string; kind: "cli" | "agent"; key: string }> =>
-    ctx.runAction(internal.apiKeys.create, { ...(await appUser(ctx)), ...a }),
+  handler: async (ctx, a): Promise<CreatedKey> => ctx.runAction(internal.apiKeys.create, { ...(await appUser(ctx)), ...a }),
 });
 export const revokeApiKey = mutation({
   args: args.revokeApiKey,

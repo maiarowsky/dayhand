@@ -287,9 +287,27 @@ npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"
 The app does the same with `app.createApiKey({ name, kind })`; `app.listApiKeys` returns each
 key's `kind`.
 
-Creating and revoking API keys is not exposed to the agent on purpose: a key that can mint
-keys could outlive its own revocation. Keys are managed by the app (`app.createApiKey`,
-`app.revokeApiKey`) or by the deployment admin (`npx convex run apiKeys:create`).
+Since 0.8.0 a key also has a **scope** and may **expire**:
+
+| Scope | On `/mcp` | REST `/api/v1` ([api.md](api.md)) | Account: keys, webhooks, devices, connections, calendar feed |
+|---|---|---|---|
+| `read` | only the reading tools (`tools/list` shows only them; a change gets `403 insufficient_scope`) | `GET` routes | no (`403`) |
+| `write` | every tool | every task and settings route | no (`403`) |
+| `full` | every tool | everything | yes |
+
+Keys without a scope (every key made before 0.8.0) are `full` keys; nothing changes for them.
+`expiresAt` (Unix milliseconds) ends a key: after it the key gets `401` like a revoked one.
+
+```sh
+npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"n8n","scope":"read","expiresAt":1798761600000}'
+```
+
+Creating and revoking API keys is not an MCP tool on purpose: a key that can mint keys could
+outlive its own revocation. Keys are managed by the app (`app.createApiKey`,
+`app.revokeApiKey`), by the deployment admin (`npx convex run apiKeys:create`), or with a full
+key through `POST /api/v1/keys` (`hlm key create`). A key made that way can only have scope
+`read` or `write`, expires no later than the key that made it, and works only while that key
+works: revoking the parent stops it too ([api.md](api.md#api-keys)).
 
 Phone pairing is not an MCP tool either. The CLI pairs phones through separate endpoints
 (`/devices/*`, see [pairing.md](pairing.md)) that accept the same API key.

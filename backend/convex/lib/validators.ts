@@ -11,6 +11,12 @@ export type Actor = Infer<typeof actorValidator>;
 export const keyKindValidator = v.union(v.literal("cli"), v.literal("agent"));
 export type KeyKind = Infer<typeof keyKindValidator>;
 
+// What an API key may do (since 0.8.0): read the plan, also change it, or
+// everything including the account (keys, webhooks, devices, calendar feed).
+// Keys without a scope (all keys before 0.8.0) are full keys.
+export const keyScopeValidator = v.union(v.literal("read"), v.literal("write"), v.literal("full"));
+export type KeyScope = Infer<typeof keyScopeValidator>;
+
 /**
  * Acting identity of internal functions. Callers with an API key also pass the key's id and name;
  * callers with an OAuth access token pass the connection's id and the client's name.

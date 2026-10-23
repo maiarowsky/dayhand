@@ -174,7 +174,16 @@ describe("MCP authentication", () => {
     expect(JSON.stringify(exported)).not.toContain(key);
     const listed = (await admin().query(internal.apiKeys.list, { userId, actor: "app" })) as any[];
     expect(listed).toEqual([
-      { id: expect.any(String), name: "laptop", kind: "agent", createdAt: expect.any(Number), revokedAt: null },
+      {
+        id: expect.any(String),
+        name: "laptop",
+        kind: "agent",
+        scope: "full",
+        createdAt: expect.any(Number),
+        expiresAt: null,
+        revokedAt: null,
+        createdWith: null,
+      },
     ]);
     expect(JSON.stringify(listed)).not.toContain(key);
   });
