@@ -70,10 +70,10 @@ this repository (it needs a real Google account and time); treat both as reporte
 | Method and path | Key | Answer |
 |---|---|---|
 | `GET /cal/<token>.ics` | the token in the path | `200 text/calendar; charset=utf-8`; `404` for any wrong, old, malformed or revoked token |
-| `GET /calendar/feed` | personal API key | `{ "feed": { url, webcalUrl, googleCalendarUrl, createdAt } }`, or `{ "feed": null }` when off |
-| `POST /calendar/feed` | personal API key | turns it on (keeps an existing address) and returns it |
-| `POST /calendar/feed/rotate` | personal API key | a new address; the old one answers `404` at once |
-| `POST /calendar/feed/revoke` | personal API key | `{ "revoked": true }` (or `false` when it was off) |
+| `GET /calendar/feed` | personal API key, scope full | `{ "feed": { url, webcalUrl, googleCalendarUrl, createdAt } }`, or `{ "feed": null }` when off |
+| `POST /calendar/feed` | personal API key, scope full | turns it on (keeps an existing address) and returns it |
+| `POST /calendar/feed/rotate` | personal API key, scope full | a new address; the old one answers `404` at once |
+| `POST /calendar/feed/revoke` | personal API key, scope full | `{ "revoked": true }` (or `false` when it was off) |
 
 The app uses `app:getCalendarFeed`, `app:createCalendarFeed` (`{ replace: true }` for a new
 address) and `app:revokeCalendarFeed`. The export is `export_plan` with `format: "ics"` (MCP,
@@ -94,7 +94,7 @@ changes, no undated or archived tasks, no history, settings or keys.
 | Logs | Helm's code never logs the address or writes it to the history; the feed sends `Referrer-Policy: no-referrer` and `X-Robots-Tag: noindex` | **The hosting platform logs request paths, the token included**: the Convex local backend writes `GET /cal/<token>.ics` to its access log (seen in testing), and Convex Cloud and any proxy in between can see it too. Calendar providers (Google, Apple) store the address to poll it. This is inherent to a secret URL, which is what calendar apps support; Google's own "secret address in iCal format" has the same property |
 | Caches | `Cache-Control: private, max-age=300`; `no-store` on the management endpoints | A client may keep a copy for 5 minutes |
 | Stored secret | The server keeps the secret itself (not a hash) so the address can be shown again on the phone and in `hlm`. Whoever can read the database already reads the plan the address opens | Database backups contain the address too |
-| Someone else's key manages your feed | `/calendar/feed*` need a personal API key and act only on its owner's feed; OAuth connections (agents) cannot reach them | An API key can show the address, as it can read the plan |
+| Someone else's key manages your feed | `/calendar/feed*` need a personal API key with scope full and act only on its owner's feed; OAuth connections (agents) cannot reach them | An API key can show the address, as it can read the plan |
 
 ## Out of scope
 

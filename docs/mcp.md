@@ -213,6 +213,7 @@ for people; `structuredContent.error` holds the same message and a code for prog
 | `not_found` | No such task (or API key, device) for this user | `Task #404 not found` |
 | `rate_limited` | Too many calls with this key or connection; `retryAfterMs` says when to try again | `Too many changes with this API key: at most 60 a minute. Try again in 12 s.` |
 | `unauthenticated` | Reserved for identity errors inside a tool; a missing, wrong or revoked key or token gets HTTP 401 before any tool runs | |
+| `precondition_failed` | Only through the REST API: `If-Match` names a version the task is no longer at ([api.md](api.md#idempotency-versions-and-dry-runs)) | `The task has changed since that version (it is now "1793011200000"); read it again` |
 | `internal` | Anything unexpected; the message says only `Internal error` | `Internal error` |
 
 New codes may be added in a minor version; treat an unknown code like `internal`.
@@ -321,6 +322,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.8.0 | API keys with a `scope` (`read`, `write`, `full`) and `expiresAt` (a read key sees and calls only reading tools); the error code `precondition_failed` (REST `If-Match` only); the REST API `/api/v1` with OpenAPI 3.1 ([api.md](api.md)), webhooks ([webhooks.md](webhooks.md)) and import. Devices, connections and the calendar feed need a full key |
 | 0.7.0 | `export_plan` format `ics`; the read-only calendar feed `GET /cal/<token>.ics` and its endpoints `/calendar/feed*` ([calendar.md](calendar.md)) |
 | 0.6.0 | OAuth 2.1 for the Claude apps and other MCP clients: access tokens next to API keys, `WWW-Authenticate` with `resource_metadata`, scopes `tasks:read` and `tasks:write` (`tools/list` filtered, `403 insufficient_scope`), limits per connection ([oauth.md](oauth.md)) |
 | 0.5.0 | Repeat rules: `from`, `monthDay`, `weekdayOfMonth`, `until`, `count`, RRULE strings in `repeat` and `rrule` on repeating tasks; `checklist` and `reminders` on tasks; `complete_task` returns `next: null` when a series has ended |

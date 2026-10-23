@@ -13,6 +13,8 @@ repository holds no secrets: everything below goes into the deployment's environ
 | `HELM_MCP_ALLOWED_ORIGINS` | Optional. Comma-separated browser origins allowed to call `/mcp`, e.g. `https://inspector.example`. Unset: any request with an `Origin` header gets `403` | `POST /mcp` |
 | `HELM_PUBLIC_URL` | Optional. The URL users add in Claude, without `/mcp`, when it is not the Convex site URL (a custom domain). Unset: `CONVEX_SITE_URL` | OAuth issuer and resource ([oauth.md](oauth.md#configuration)) |
 | `HELM_OAUTH_CIMD_ORIGINS` | Optional. Comma-separated origins whose OAuth client metadata documents are fetched. Unset: `https://claude.ai`; production should leave it unset | `GET /oauth/authorize` |
+| `HELM_WEBHOOK_ALLOWED_ORIGINS` | Optional. Comma-separated origins exempt from the webhook address rules (HTTPS, public hosts), e.g. a receiver on a self-hosted deployment's own network. Unset: none; production should leave it unset | Webhooks ([webhooks.md](webhooks.md#security)) |
+| `HELM_WEBHOOK_RETRY_DELAYS` | Optional. Comma-separated seconds before each webhook retry. Unset: `5,300,1800,7200,18000,36000,36000` | Webhook delivery |
 
 App users are `<HELM_JWT_ISSUER>|<subject>` (single-user deployments use `owner` as subject).
 Personal API keys for the CLI and agent should belong to that same user, so the phone, the CLI
@@ -32,6 +34,57 @@ npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"a
 
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
+
+## Upgrading to 0.8.0
+
+0.8.0 adds the REST API for integrations ([api.md](api.md)), webhooks
+([webhooks.md](webhooks.md)), import, and API keys with a scope and an expiry date:
+
+- new optional fields in `apiKeys`: `scope`, `expiresAt`, `parentKeyId`;
+- new tables `webhooks` and `webhookDeliveries`, and a daily cron
+  (`webhooks.purgeDeliveries`, 04:15 UTC) that drops delivery log entries older than 30 days;
+- new routes under `/api/v1/` (`/api/v1/openapi.json` is public);
+- the optional variables `HELM_WEBHOOK_ALLOWED_ORIGINS` and `HELM_WEBHOOK_RETRY_DELAYS`
+  (leave both unset in production).
+
+Every new field is optional and every key without a scope is a full key, so there is **no
+migration** and no new secret: existing keys, the app, agents and `hlm` 0.7 keep working.
+Nothing sends webhooks until a user adds one. One behaviour tightens: `/devices*`,
+`/connections*` and `/calendar/feed*` now need a full key; since every existing key is full,
+this only affects the new `read` and `write` keys.
+
+1. Take a snapshot to roll back to: `npx convex export --path helm-before-0.8.0.zip` (it holds
+   the user's tasks; keep it out of the repository).
+2. Deploy: `npx convex deploy`.
+3. Check, with the key `hlm` uses (`hlm whoami` shows the URL):
+
+   ```sh
+   curl -s https://<name>.convex.site/api/v1/openapi.json | head -c 200        # public, "openapi": "3.1.0"
+   curl -s -o /dev/null -w '%{http_code}\n' https://<name>.convex.site/api/v1/today \
+     -H "Authorization: Bearer $HLM_API_KEY"                                    # 200
+   curl -s -o /dev/null -w '%{http_code}\n' https://<name>.convex.site/api/v1/today   # 401
+   ```
+
+   `npx convex logs` shows any error. The MCP endpoint reports `serverInfo.version` `0.8.0`.
+4. Optional: give each integration its own key with the smallest scope and an expiry, from a
+   full key (`hlm key create n8n --scope read --expires 90d`, hlm 0.8.0) or as the admin
+   (`npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"n8n","scope":"read","expiresAt":<ms>}'`).
+
+Rollback: first remove what 0.7.0 does not know, then deploy 0.7.0 again.
+
+1. Remove the webhooks (`hlm webhook rm <id> --yes` for each, which also deletes their
+   delivery logs) and revoke the keys that have a scope or an expiry date, or were created with a
+   key (`hlm key list`, `hlm key revoke <id>`).
+2. Deploy 0.7.0. Its schema has no `webhooks`, `webhookDeliveries`, `scope`, `expiresAt` or
+   `parentKeyId`, so Convex refuses the push while any row has them. Empty a table the same
+   way as `callLimits` for 0.4.0 below (`npx convex import --table webhookDeliveries --replace
+   --yes empty.jsonl`, likewise `webhooks`). A revoked key still carries its `scope`: delete
+   those rows by hand (`npx convex data apiKeys` shows them) or restore the snapshot from
+   step 1 of the upgrade (`npx convex import --replace-all helm-before-0.8.0.zip`, which drops
+   changes made since).
+3. Tasks created by an import and history entries with the actions `import`, `webhook.*` and
+   `apiKey.*` are ordinary rows that 0.7.0 reads as they are; nothing else needs to change.
+   Integrations that use `/api/v1` then get `404` until 0.8.0 is back.
 
 ## Upgrading to 0.7.0
 
