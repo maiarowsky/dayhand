@@ -2,12 +2,12 @@
 
 Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **board**,
 **task details** and the **trash**, works offline, rings reminders and a morning summary computed
-on the phone, has the **Settings** screen and connects to a server by **pairing** with a one-time
-code from `hlm pair`.
+on the phone, has the **Settings** screen, connects to a server by **pairing** with a one-time
+code from `hlm pair`, and approves and disconnects **agent connections** such as the Claude app.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.6.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.7.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -99,7 +99,14 @@ in its preview and on the other screens. Top to bottom:
    offline test mode, not connected, signed out, cannot reach the server) and the number of
    changes waiting; the server and this phone's name with **Disconnect** (after a confirmation
    that names the `hlm revoke <deviceId>` command), or **Connect to server**; the offline test
-   switch and the time zone from the server.
+   switch and the time zone from the server. **Agent connections**: the agents connected with
+   OAuth, such as the Claude app ([docs/oauth.md](../docs/oauth.md)), each with where it comes
+   from, read only or read and change, and its last use; tapping one disconnects it after a
+   confirmation. **Approve a connection** takes the code the agent's sign-in page shows, then
+   shows who asks (identified by its host, or "registered itself" with an unverified name),
+   where the answer goes, when it asked (with a warning when the request is minutes old or the
+   answer goes to a program on the computer) and a switch per permission; **Approve** or
+   **Refuse** answers the page, which continues by itself.
 5. **About**: the Apache License 2.0, the licenses of the bundled fonts (SIL Open Font License
    1.1) and the version.
 
@@ -249,9 +256,10 @@ is set in `app/build.gradle.kts` (`helm.serverUrl`).
 
 ```sh
 ./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, board, rules, history, reminders, outbox, merge,
-                                            # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh
+                                            # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
+                                            # agent connections (answers, code input, approval flow)
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync,
-                                            # Compose (Today, board, details, Settings, Connect), encrypted pairing
+                                            # Compose (Today, board, details, Settings, Connect, agent connections), encrypted pairing
                                             # storage, and a real alarm + notification (ReminderDeliveryTest, about 80 s)
 ```
 
@@ -278,6 +286,13 @@ label, a time and a link; offline it goes to the trash and the change reaches th
 app was killed; it is restored from the Trash screen, and an agent edit shows in its history as
 the agent's. Every step is checked on the server through MCP, with an agent key of the same user
 in `HELM_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
+
+`scripts/e2e-connections.py` (same arguments, plus `--site-url` for the HTTP actions URL as the
+computer sees it) plays the Claude app over HTTP: it registers, opens the authorization page and
+reads its code; the code is typed in Settings → Agent connections, the consent is checked and
+approved; the script exchanges the code with PKCE, adds a task through `/mcp` with the access
+token and checks it on the phone with the history `agent: <client name>`; a second request is
+refused on the phone (`access_denied`), and disconnecting on the phone makes `/mcp` answer `401`.
 
 ## Dependencies
 

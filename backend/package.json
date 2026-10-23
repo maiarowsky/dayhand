@@ -1,6 +1,6 @@
 {
   "name": "helm-backend",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "Helm backend: Convex data model, domain operations, MCP endpoint and CLI",
   "license": "Apache-2.0",

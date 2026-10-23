@@ -7,7 +7,10 @@ labels, repeating tasks (also RFC 5545 RRULE), checklists, per-task reminders, l
 
 The app and an AI agent are two clients of the same operations: the agent connects over
 [MCP](https://modelcontextprotocol.io) with a personal, revocable API key and can do
-everything the user can. Every change is recorded with who made it (`app` or `agent`).
+everything the user can. The Claude apps connect as a custom connector instead: they sign in
+with OAuth, and the owner approves each connection on the paired phone and can disconnect it
+there ([docs/oauth.md](docs/oauth.md)). Every change is recorded with who made it (`app`,
+`cli` or `agent: <name>`).
 
 Status: the backend (Convex), the MCP endpoint, the `hlm` CLI, phone pairing and the Android
 app (Today with quick add, the board, task details and the trash, reminders and Settings, all
@@ -18,7 +21,7 @@ backend/   Convex backend: data model, domain operations, MCP endpoint, old CLI 
 cli/       hlm, the command line client for people and agents; see cli/README.md
 android/   Android app (Kotlin, Compose): Today, board, task details, reminders, settings, offline outbox; see android/README.md
 ios/       iOS app (Swift), later
-docs/      Architecture, MCP, phone pairing, deployment and release notes
+docs/      Architecture, MCP, OAuth for the Claude apps, phone pairing, deployment and release notes
 man/       hlm(1), generated from the CLI's command registry
 packaging/ Homebrew formula template
 ```
@@ -90,7 +93,9 @@ The user id `https://helm.local|me` is the app user of the local backend (issuer
 
 Connect an MCP client to `http://127.0.0.1:3211/mcp` with the header
 `Authorization: Bearer <the key>`. See [docs/mcp.md](docs/mcp.md) for the tools, resources,
-prompts, limits and protocol versions.
+prompts, limits and protocol versions. To add Helm to the Claude app, see
+[docs/oauth.md](docs/oauth.md#connecting-the-claude-app-manual-procedure); the Claude apps
+reach the server from Anthropic's network, so this needs a public HTTPS deployment.
 
 Run the tests (they start their own throwaway backend):
 

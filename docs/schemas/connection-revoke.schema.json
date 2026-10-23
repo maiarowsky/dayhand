@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/connection-revoke.schema.json",
+  "title": "Revoked connection",
+  "description": "POST /connections/revoke (hlm connection revoke).",
+  "type": "object",
+  "required": [
+    "id",
+    "revokedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "revokedAt": {
+      "type": "number",
+      "description": "Unix time in milliseconds"
+    }
+  }
+}

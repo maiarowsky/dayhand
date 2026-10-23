@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -132,4 +132,44 @@ export function schemaValidator() {
     }
     return errors;
   };
+}
+
+/**
+ * An agent connection made the way the Claude app makes one (docs/oauth.md): it registers
+ * itself, opens the authorization page, the owner approves the page's code (here through the
+ * domain function the phone uses), and the code is exchanged with PKCE.
+ */
+export async function connectAgent(userId: string, clientName = "Claude") {
+  const site = helm().siteUrl;
+  const callback = "https://claude.ai/api/mcp/auth_callback";
+  const registered = await (
+    await fetch(`${site}/oauth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_name: clientName, redirect_uris: [callback] }),
+    })
+  ).json() as { client_id: string };
+  const verifier = randomBytes(32).toString("base64url");
+  const authorize = new URL(`${site}/oauth/authorize`);
+  Object.entries({
+    response_type: "code",
+    client_id: registered.client_id,
+    redirect_uri: callback,
+    code_challenge: createHash("sha256").update(verifier).digest("base64url"),
+    code_challenge_method: "S256",
+    scope: "tasks:read",
+  }).forEach(([k, v]) => authorize.searchParams.set(k, v));
+  const page = await (await fetch(authorize)).text();
+  const userCode = /<div class="code"[^>]*>([0-9A-Z-]+)<\/div>/.exec(page)![1];
+  const handle = /name="request" value="([^"]+)"/.exec(page)![1];
+  await admin("mutation", "oauthOwner:decide", { userId, actor: "app", code: userCode, approve: true });
+  const form = { "Content-Type": "application/x-www-form-urlencoded" };
+  const back = await fetch(`${site}/oauth/authorize/continue`, { method: "POST", headers: form, body: new URLSearchParams({ request: handle }), redirect: "manual" });
+  const code = new URL(back.headers.get("location")!).searchParams.get("code")!;
+  const tokens = await fetch(`${site}/oauth/token`, {
+    method: "POST",
+    headers: form,
+    body: new URLSearchParams({ grant_type: "authorization_code", code, code_verifier: verifier, client_id: registered.client_id, redirect_uri: callback }),
+  });
+  return (await tokens.json()) as { access_token: string; refresh_token: string };
 }

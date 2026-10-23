@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/connections.schema.json",
+  "title": "Agent connections",
+  "description": "GET /connections (hlm connection list): OAuth connections approved on the phone, newest first.",
+  "type": "object",
+  "required": [
+    "connections"
+  ],
+  "properties": {
+    "connections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "clientName",
+          "clientType",
+          "clientHost",
+          "redirectHost",
+          "scopes",
+          "createdAt",
+          "lastUsedAt",
+          "expiresAt",
+          "revokedAt",
+          "active"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "clientName": {
+            "type": "string",
+            "description": "The client's own name (self-asserted), also the actorName of its changes"
+          },
+          "clientType": {
+            "type": "string",
+            "description": "cimd: identified by a metadata document from clientHost; dcr: registered itself (values may be added)"
+          },
+          "clientHost": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Host of the client's metadata document; null for a client that registered itself"
+          },
+          "redirectHost": {
+            "type": "string",
+            "description": "Where the authorization went back to: claude.ai, localhost or 127.0.0.1"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "tasks:read or tasks:write (values may be added)"
+            }
+          },
+          "createdAt": {
+            "type": "number",
+            "description": "Unix time in milliseconds"
+          },
+          "lastUsedAt": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Unix time in milliseconds, updated at most every 10 minutes"
+          },
+          "expiresAt": {
+            "type": "number",
+            "description": "When the current refresh token expires (Unix ms); unused connections end then"
+          },
+          "revokedAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Not revoked and not expired"
+          }
+        }
+      }
+    }
+  }
+}

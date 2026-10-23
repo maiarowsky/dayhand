@@ -1,9 +1,10 @@
 // MCP server for the agent: stateless Streamable HTTP with JSON responses,
 // serving the 2026-07-28 protocol and the 2025 ones before it (lib/mcpProtocol.ts).
-// The personal API key establishes the user and the actor: the key's kind
-// ("cli" or "agent") and name. Tools map 1:1 onto the domain operations in
-// ops.ts (lib/mcpTools.ts); resources and prompts read through the same
-// operations (lib/mcpContent.ts).
+// The caller is a personal API key (actor: the key's kind, "cli" or "agent",
+// and its name; everything) or an OAuth access token of an agent connection
+// (actor "agent" with the client's name; what its scopes allow, docs/oauth.md).
+// Tools map 1:1 onto the domain operations in ops.ts (lib/mcpTools.ts);
+// resources and prompts read through the same operations (lib/mcpContent.ts).
 import { ConvexError } from "convex/values";
 import type { FunctionReference } from "convex/server";
 import { internal } from "./_generated/api";
@@ -16,6 +17,17 @@ import type { ErrorCode, Identity } from "./lib/core";
 import { INSTRUCTIONS } from "./lib/guide";
 import { bearerToken } from "./lib/http";
 import { getPrompt, PromptArgumentError, PROMPTS, readResource, readsUserData, RESOURCE_TEMPLATES, RESOURCES } from "./lib/mcpContent";
+import {
+  CHALLENGE_SCOPES,
+  publicUrl,
+  resourceFor,
+  resourceMetadataFor,
+  SCOPES,
+  TOUCH_INTERVAL_MS,
+  type Scope,
+} from "./lib/oauthConfig";
+import { formatScopes } from "./lib/oauthRules";
+import { parseSelectorToken, sha256Hex } from "./lib/secrets";
 import {
   checkModernRequest,
   eraOf,
@@ -33,46 +45,99 @@ import {
   type Era,
   type RpcRequest,
 } from "./lib/mcpProtocol";
-import { findTool, listTools, type Tool } from "./lib/mcpTools";
+import { findTool, listTools, scopeOf, type Tool } from "./lib/mcpTools";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const CAPABILITIES = { tools: { listChanged: false }, resources: {}, prompts: { listChanged: false } };
 
-function unauthorized() {
-  return new Response(JSON.stringify({ error: "invalid_token", error_description: "Missing, invalid or revoked API key" }), {
-    status: 401,
-    headers: { "Content-Type": "application/json", "WWW-Authenticate": 'Bearer realm="helm"' },
+// ---- Authentication ----
+
+/** The Bearer challenge: where OAuth clients find the authorization server (RFC 9728) and what to ask for. */
+function challenge(fields: Record<string, string>): string {
+  const base = publicUrl();
+  const all = { realm: "helm", ...fields, ...(base ? { resource_metadata: resourceMetadataFor(base) } : {}) };
+  return "Bearer " + Object.entries(all).map(([key, value]) => `${key}="${value}"`).join(", ");
+}
+
+/** 401 before anything runs; a credential that was sent but is not valid also gets error="invalid_token". */
+function unauthorized(presented: boolean) {
+  const fields: Record<string, string> = presented ? { error: "invalid_token" } : {};
+  return new Response(
+    JSON.stringify({ error: "invalid_token", error_description: "Missing, invalid, expired or revoked API key or access token" }),
+    {
+      status: 401,
+      headers: { "Content-Type": "application/json", "WWW-Authenticate": challenge({ ...fields, scope: formatScopes(CHALLENGE_SCOPES) }) },
+    },
+  );
+}
+
+/** 403 for something outside the token's scopes: the client may ask the owner again for more (step-up). */
+function insufficientScope(needed: Scope, granted: readonly Scope[]) {
+  const scopes = SCOPES.filter((s) => s === needed || granted.includes(s));
+  return new Response(JSON.stringify({ error: "insufficient_scope", error_description: `This needs the ${needed} scope` }), {
+    status: 403,
+    headers: { "Content-Type": "application/json", "WWW-Authenticate": challenge({ error: "insufficient_scope", scope: formatScopes(scopes) }) },
   });
 }
 
-type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
+/** Who is calling: the identity for the domain and the scopes the credential carries. */
+type Caller = {
+  userId: string;
+  actor: "cli" | "agent";
+  actorName: string;
+  keyId?: Id<"apiKeys">;
+  connectionId?: Id<"oauthGrants">;
+  scopes: readonly Scope[];
+};
 
-async function authenticate(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
-  const key = bearerToken(request);
-  if (!key) return null;
-  return ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) });
+async function authenticate(ctx: ActionCtx, presented: string): Promise<Caller | null> {
+  const access = parseSelectorToken("helmat_", presented);
+  if (access) {
+    const connection = await ctx.runQuery(internal.oauth.verifyAccessToken, {
+      selector: access.selector,
+      secretHash: await sha256Hex(access.secret),
+    });
+    // The token must be live and issued for this server (RFC 8707 audience).
+    const base = publicUrl();
+    const now = Date.now();
+    if (!connection || connection.expiresAt <= now || !base || connection.resource !== resourceFor(base)) return null;
+    if (now - (connection.lastUsedAt ?? 0) > TOUCH_INTERVAL_MS) {
+      await ctx.runMutation(internal.oauth.touchConnection, { connectionId: connection.connectionId });
+    }
+    return {
+      userId: connection.userId,
+      actor: "agent",
+      actorName: connection.clientName,
+      connectionId: connection.connectionId,
+      scopes: connection.scopes,
+    };
+  }
+  const key = await ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(presented) });
+  return key ? { userId: key.userId, actor: key.kind, actorName: key.name, keyId: key.keyId, scopes: SCOPES } : null;
 }
 
-const identityOf = (owner: KeyOwner): Identity => ({
+const identityOf = (owner: Caller): Identity => ({
   userId: owner.userId,
-  actor: owner.kind,
+  actor: owner.actor,
   keyId: owner.keyId,
-  actorName: owner.name,
+  connectionId: owner.connectionId,
+  actorName: owner.actorName,
 });
 
 // ---- Limits ----
 
 type Refusal = { retryAfterMs: number; message: string };
 
-/** Counts the call against the key's limit; a refusal says when to try again. */
-async function overLimit(ctx: ActionCtx, owner: KeyOwner, kind: CallKind): Promise<Refusal | null> {
-  const allowance = await ctx.runMutation(internal.callLimits.consume, { keyId: owner.keyId, kind });
+/** Counts the call against the key's or connection's limit; a refusal says when to try again. */
+async function overLimit(ctx: ActionCtx, owner: Caller, kind: CallKind): Promise<Refusal | null> {
+  const allowance = await ctx.runMutation(internal.callLimits.consume, { keyId: owner.keyId, connectionId: owner.connectionId, kind });
   if (allowance.ok) return null;
   const seconds = Math.max(1, Math.ceil(allowance.retryAfterMs / 1000));
   const what = kind === "read" ? "reads" : "changes";
+  const via = owner.keyId ? "this API key" : "this connection";
   return {
     retryAfterMs: allowance.retryAfterMs,
-    message: `Too many ${what} with this API key: at most ${allowance.limit} a minute. Try again in ${seconds} s.`,
+    message: `Too many ${what} with ${via}: at most ${allowance.limit} a minute. Try again in ${seconds} s.`,
   };
 }
 
@@ -83,7 +148,7 @@ const retryAfter = (refusal: Refusal) => ({ "Retry-After": String(Math.max(1, Ma
 type ToolErrorCode = ErrorCode | "rate_limited" | "internal";
 type ToolError = { code: ToolErrorCode; message: string; retryAfterMs?: number };
 const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated"];
-const IDENTITY_FIELDS = ["userId", "actor", "keyId", "actorName"];
+const IDENTITY_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName"];
 
 /** A failed tool call: the message as text, and `{ error: { code, message } }` for programs. */
 function toolError(error: ToolError) {
@@ -136,14 +201,14 @@ type Outcome = {
   headers?: Record<string, string>;
 };
 
-async function callTool(ctx: ActionCtx, owner: KeyOwner, params: any): Promise<Outcome> {
+async function callTool(ctx: ActionCtx, owner: Caller, params: any): Promise<Outcome> {
   const tool = findTool(params?.name);
   if (!tool) return { error: { code: RPC.invalidParams, message: `Unknown tool: ${params?.name}` } };
   const input = params.arguments ?? {};
   if (typeof input !== "object" || Array.isArray(input)) {
     return { result: toolError({ code: "invalid_argument", message: "arguments must be an object" }) };
   }
-  // Identity always comes from the key, never from the arguments.
+  // Identity always comes from the key or token, never from the arguments.
   if (IDENTITY_FIELDS.some((field) => field in input)) {
     return { result: toolError({ code: "invalid_argument", message: `${IDENTITY_FIELDS.join(", ")} are set by the server` }) };
   }
@@ -183,7 +248,7 @@ function missingResource(error: unknown): boolean {
   return code === "not_found" || code === "invalid_argument";
 }
 
-async function readResourceCall(ctx: ActionCtx, owner: KeyOwner, params: any, era: Era): Promise<Outcome> {
+async function readResourceCall(ctx: ActionCtx, owner: Caller, params: any, era: Era): Promise<Outcome> {
   const uri = params?.uri;
   if (typeof uri !== "string") return { error: { code: RPC.invalidParams, message: "uri must be a string" } };
   if (readsUserData(uri)) {
@@ -204,7 +269,7 @@ async function readResourceCall(ctx: ActionCtx, owner: KeyOwner, params: any, er
   return { result: { contents: [contents] }, cache: uri === "helm://guide" ? PUBLIC_LIST : PRIVATE_LIVE };
 }
 
-async function getPromptCall(ctx: ActionCtx, owner: KeyOwner, params: any): Promise<Outcome> {
+async function getPromptCall(ctx: ActionCtx, owner: Caller, params: any): Promise<Outcome> {
   const name = params?.name;
   const args = params?.arguments ?? {};
   const strings = typeof args === "object" && !Array.isArray(args) && Object.values(args).every((v) => typeof v === "string");
@@ -224,11 +289,28 @@ async function getPromptCall(ctx: ActionCtx, owner: KeyOwner, params: any): Prom
 
 // ---- JSON-RPC over HTTP ----
 
+// The tool list of a token with fewer scopes is this caller's own.
+const PRIVATE_LIST: CacheHint = { ...PUBLIC_LIST, cacheScope: "private" };
+
+/**
+ * The scope a request needs beyond what the caller has, or null. A tool needs its kind's scope;
+ * reading the user's data through a resource or a prompt needs tasks:read.
+ */
+function missingScope(owner: Caller, message: RpcRequest): Scope | null {
+  let needed: Scope | null = null;
+  if (message.method === "tools/call") {
+    const tool = findTool(message.params?.name);
+    needed = tool ? scopeOf(tool) : null;
+  } else if (message.method === "resources/read" && readsUserData(message.params?.uri)) needed = "tasks:read";
+  else if (message.method === "prompts/get") needed = "tasks:read";
+  return needed && !owner.scopes.includes(needed) ? needed : null;
+}
+
 /** The outcome of a request, or null when the method does not exist in the request's era. */
-async function dispatch(ctx: ActionCtx, owner: KeyOwner, message: RpcRequest, era: Era): Promise<Outcome | null> {
+async function dispatch(ctx: ActionCtx, owner: Caller, message: RpcRequest, era: Era): Promise<Outcome | null> {
   switch (message.method) {
     case "tools/list":
-      return { result: { tools: listTools() }, cache: PUBLIC_LIST };
+      return { result: { tools: listTools(owner.scopes) }, cache: owner.scopes.length === SCOPES.length ? PUBLIC_LIST : PRIVATE_LIST };
     case "tools/call":
       return callTool(ctx, owner, message.params);
     case "resources/list":
@@ -263,7 +345,7 @@ async function dispatch(ctx: ActionCtx, owner: KeyOwner, message: RpcRequest, er
   return null;
 }
 
-async function handleMessage(ctx: ActionCtx, owner: KeyOwner, request: Request, message: RpcRequest): Promise<Response> {
+async function handleMessage(ctx: ActionCtx, owner: Caller, request: Request, message: RpcRequest): Promise<Response> {
   if (message?.jsonrpc !== "2.0" || typeof message.method !== "string") {
     // Responses from the client, or anything that is not a request.
     if (message && message.id !== undefined && message.method === undefined) return new Response(null, { status: 202 });
@@ -275,6 +357,8 @@ async function handleMessage(ctx: ActionCtx, owner: KeyOwner, request: Request, 
     const rejected = checkModernRequest(request, message);
     if (rejected) return rejected;
   }
+  const missing = missingScope(owner, message);
+  if (missing) return insufficientScope(missing, owner.scopes);
   const outcome = await dispatch(ctx, owner, message, era);
   if (!outcome) {
     // A modern server answers an unknown method with HTTP 404.
@@ -291,8 +375,9 @@ async function handleMessage(ctx: ActionCtx, owner: KeyOwner, request: Request, 
 export const handlePost = httpAction(async (ctx, request) => {
   // Browsers may call only from allowed origins (DNS rebinding, cross-site requests).
   if (!originAllowed(request)) return rpcError(null, RPC.invalidRequest, "Origin not allowed", 403);
-  const owner = await authenticate(ctx, request);
-  if (!owner) return unauthorized();
+  const presented = bearerToken(request);
+  const owner = presented ? await authenticate(ctx, presented) : null;
+  if (!owner) return unauthorized(presented !== null);
   const body = await request.text();
   if (body.length > MAX_BODY_BYTES) return rpcError(null, RPC.invalidRequest, "Request too large", 413);
   let message: RpcRequest;

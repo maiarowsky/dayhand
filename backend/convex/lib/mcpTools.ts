@@ -6,6 +6,7 @@ import type { FunctionReference } from "convex/server";
 import { internal } from "../_generated/api";
 import { args, dryRunArgs } from "./args";
 import { objectSchema } from "./jsonSchema";
+import { SCOPES, type Scope } from "./oauthConfig";
 import { SCHEMA_DEFS } from "./outputSchemas";
 
 const FIELD_DOCS: Record<string, string> = {
@@ -263,8 +264,12 @@ export function outputSchema(name: string) {
   };
 }
 
-export function listTools() {
-  return TOOLS.map((t) => ({
+/** The OAuth scope a tool needs (docs/oauth.md): reading tools tasks:read, every other tool tasks:write. */
+export const scopeOf = (tool: Tool): Scope => (tool.kind === "read" ? "tasks:read" : "tasks:write");
+
+/** The tools a caller with these scopes may see and call; an API key has all scopes. */
+export function listTools(scopes: readonly Scope[] = SCOPES) {
+  return TOOLS.filter((t) => scopes.includes(scopeOf(t))).map((t) => ({
     name: t.name,
     title: t.title,
     description: t.description,

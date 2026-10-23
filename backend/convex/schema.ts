@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { scopeValidator } from "./lib/oauthConfig";
 import {
   actorValidator,
   checklistItemValidator,
@@ -9,6 +10,8 @@ import {
   repeatValidator,
   statusValidator,
 } from "./lib/validators";
+
+const clientTypeValidator = v.union(v.literal("cimd"), v.literal("dcr"));
 
 export default defineSchema({
   tasks: defineTable({
@@ -60,6 +63,8 @@ export default defineSchema({
     actor: actorValidator,
     // The API key behind a cli or agent change, and its name at the time.
     keyId: v.optional(v.id("apiKeys")),
+    // The OAuth connection behind an agent change made through a connector.
+    connectionId: v.optional(v.id("oauthGrants")),
     actorName: v.optional(v.string()),
     action: v.string(),
     // Changed fields only: values before and after the change.
@@ -129,21 +134,108 @@ export default defineSchema({
     .index("by_selector", ["selector"])
     .index("by_user", ["userId"]),
 
-  // Failed-attempt counters of unauthenticated endpoints, one row per bucket.
+  // Failed-attempt (and OAuth creation) counters, one row per bucket.
   authLimits: defineTable({
     bucket: v.string(),
     windowStart: v.number(),
     failures: v.number(),
   }).index("by_bucket", ["bucket"]),
 
+  // ---- OAuth for MCP clients such as the Claude apps (docs/oauth.md) ----
+
+  // Clients registered with Dynamic Client Registration; public clients only.
+  // Clients identified by a metadata document URL are not stored.
+  oauthClients: defineTable({
+    clientId: v.string(),
+    name: v.string(),
+    redirectUris: v.array(v.string()),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+  })
+    .index("by_clientId", ["clientId"])
+    .index("by_createdAt", ["createdAt"]),
+
+  // One authorization request from the browser, waiting for the phone (10
+  // minutes), then carrying its single-use authorization code (2 minutes).
+  oauthRequests: defineTable({
+    // The browser's handle on the request: selector + SHA-256 of the secret.
+    selector: v.string(),
+    secretHash: v.string(),
+    // SHA-256 of the code shown in the browser and typed on the phone.
+    userCodeHash: v.string(),
+    clientId: v.string(),
+    clientType: clientTypeValidator,
+    clientName: v.string(),
+    redirectUri: v.string(),
+    state: v.optional(v.string()),
+    codeChallenge: v.string(),
+    scopes: v.array(scopeValidator),
+    resource: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    // Set on the phone: the approving user and what they granted, or a refusal.
+    userId: v.optional(v.string()),
+    grantedScopes: v.optional(v.array(scopeValidator)),
+    approvedAt: v.optional(v.number()),
+    deniedAt: v.optional(v.number()),
+    // The authorization code (SHA-256), given once to the browser.
+    codeHash: v.optional(v.string()),
+    codeExpiresAt: v.optional(v.number()),
+    codeUsedAt: v.optional(v.number()),
+    grantId: v.optional(v.id("oauthGrants")),
+  })
+    .index("by_selector", ["selector"])
+    .index("by_userCodeHash", ["userCodeHash"])
+    .index("by_codeHash", ["codeHash"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  // Agent connections: what one approval granted to one client. Revoking a
+  // connection stops all its tokens on the next request.
+  oauthGrants: defineTable({
+    userId: v.string(),
+    clientId: v.string(),
+    clientType: clientTypeValidator,
+    clientName: v.string(),
+    redirectUri: v.string(),
+    scopes: v.array(scopeValidator),
+    resource: v.string(),
+    createdAt: v.number(),
+    lastUsedAt: v.optional(v.number()),
+    // When the current refresh token expires; the connection ends with it.
+    refreshExpiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  }).index("by_user", ["userId"]),
+
+  // Access tokens (one hour) and refresh tokens (60 days, rotated on use) of
+  // a connection: selector + SHA-256 of the secret.
+  oauthTokens: defineTable({
+    grantId: v.id("oauthGrants"),
+    kind: v.union(v.literal("access"), v.literal("refresh")),
+    selector: v.string(),
+    secretHash: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    // A refresh token used once; using it again revokes the connection.
+    rotatedAt: v.optional(v.number()),
+    // Set when a refresh narrowed the scopes; otherwise the grant's apply.
+    scopes: v.optional(v.array(scopeValidator)),
+  })
+    .index("by_selector", ["selector"])
+    .index("by_grant", ["grantId"])
+    .index("by_expiresAt", ["expiresAt"]),
+
   // MCP calls per API key in the current one-minute window, one row per key
   // and kind of call (read or write).
   callLimits: defineTable({
-    keyId: v.id("apiKeys"),
+    // One of the two: an API key, or an agent connection (OAuth).
+    keyId: v.optional(v.id("apiKeys")),
+    connectionId: v.optional(v.id("oauthGrants")),
     kind: v.union(v.literal("read"), v.literal("write")),
     windowStart: v.number(),
     calls: v.number(),
-  }).index("by_key_kind", ["keyId", "kind"]),
+  })
+    .index("by_key_kind", ["keyId", "kind"])
+    .index("by_connection_kind", ["connectionId", "kind"]),
 
   // The read-only calendar feed of a user, at most one: GET /cal/<selector><secret>.ics.
   // The secret is kept (not hashed) so the address can be shown again; it

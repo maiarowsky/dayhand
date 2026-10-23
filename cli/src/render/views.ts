@@ -4,7 +4,7 @@
 // terminal gets colors (unless turned off) and long titles cut to its width.
 import type { HeldCall } from "../transport/client.js";
 import { cell, describeReminder, describeRepeat, fieldCells, formatDay, formatTimestamp, refOf, relativeDate, taskCells, taskRow, tsv } from "./format.js";
-import type { Device, HistoryEntry, Task, TodayView } from "./model.js";
+import type { Connection, Device, HistoryEntry, Task, TodayView } from "./model.js";
 import { PLAIN_STYLE, type Style } from "./style.js";
 import { cellOf, padTo, table } from "./table.js";
 
@@ -18,6 +18,7 @@ export type View =
   | { kind: "detail"; task: Task; history: HistoryEntry[]; timezone?: string }
   | { kind: "pairs"; pairs: [string, unknown][] }
   | { kind: "devices"; devices: Device[]; timezone?: string }
+  | { kind: "connections"; connections: Connection[]; timezone?: string }
   | { kind: "text"; text: string }
   | { kind: "json" };
 
@@ -69,6 +70,8 @@ export function renderHuman(view: View, value: unknown, fields?: string[], optio
     }
     case "devices":
       return renderDevices(view.devices, view.timezone);
+    case "connections":
+      return renderConnections(view.connections, view.timezone);
     case "text":
       return view.text;
     case "json":
@@ -115,6 +118,17 @@ export function renderPlain(view: View, value: unknown, fields?: string[]): stri
           d.revokedAt ? "revoked" : "active",
           new Date(d.createdAt).toISOString(),
           d.lastUsedAt ? new Date(d.lastUsedAt).toISOString() : "",
+        ]),
+      );
+    case "connections":
+      return tsv(
+        view.connections.map((c) => [
+          c.id,
+          cell(c.clientName),
+          connectionState(c),
+          c.scopes.join(" "),
+          new Date(c.createdAt).toISOString(),
+          c.lastUsedAt ? new Date(c.lastUsedAt).toISOString() : "",
         ]),
       );
     case "text":
@@ -217,6 +231,28 @@ function describeChange(before: Record<string, unknown> | null, after: Record<st
   return Object.keys(after)
     .map((k) => (before && k in before ? `${k}: ${JSON.stringify(before[k])} → ${JSON.stringify(after[k])}` : `${k}: ${JSON.stringify(after[k])}`))
     .join("; ");
+}
+
+const connectionState = (c: Connection) => (c.revokedAt ? "revoked" : c.active ? "active" : "expired");
+
+/** Where a connection comes from: the host Helm fetched its metadata from, or that it registered itself. */
+const connectionOrigin = (c: Connection) => (c.clientHost ? `from ${c.clientHost}` : `registered itself, returns to ${c.redirectHost}`);
+
+function renderConnections(connections: Connection[], timezone?: string): string {
+  if (connections.length === 0) return "(no agent connections)";
+  return connections
+    .map((c) => {
+      const state = c.revokedAt
+        ? `revoked ${formatTimestamp(c.revokedAt, timezone)}`
+        : !c.active
+          ? `expired ${formatTimestamp(c.expiresAt, timezone)}`
+          : c.lastUsedAt
+            ? `last used ${formatTimestamp(c.lastUsedAt, timezone)}`
+            : "never used";
+      const access = c.scopes.includes("tasks:write") ? "read and change" : "read only";
+      return `  ${c.clientName} (${connectionOrigin(c)})  ${access}, connected ${formatTimestamp(c.createdAt, timezone)}, ${state} (${c.id})`;
+    })
+    .join("\n");
 }
 
 function renderDevices(devices: Device[], timezone?: string): string {

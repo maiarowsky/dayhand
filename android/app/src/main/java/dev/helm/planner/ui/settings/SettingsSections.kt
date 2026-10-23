@@ -79,11 +79,18 @@ internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, 
     )
     ListGroup(
         stringResource(R.string.settings_connection),
-        rows = listOf {
-            ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = LineIcon.Cloud, value = connectionValue(state.data.connection)) {
-                open(SettingsPane.SERVER)
-            }
-        },
+        rows = listOf(
+            {
+                ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = LineIcon.Cloud, value = connectionValue(state.data.connection)) {
+                    open(SettingsPane.SERVER)
+                }
+            },
+            {
+                ListRow(stringResource(R.string.connections_title), SettingsTags.ROW_CONNECTIONS, icon = LineIcon.Link) {
+                    open(SettingsPane.CONNECTIONS)
+                }
+            },
+        ),
     )
     ListGroup(
         stringResource(R.string.settings_about),

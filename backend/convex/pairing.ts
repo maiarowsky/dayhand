@@ -95,6 +95,7 @@ export const token = httpAction(async (ctx, request) => {
 
 type KeyOwner = { userId: string; keyId: Id<"apiKeys">; name: string; kind: "cli" | "agent" };
 
+/** The owner of the personal API key in the request; OAuth access tokens are not accepted here. */
 export async function keyOwner(ctx: ActionCtx, request: Request): Promise<KeyOwner | null> {
   const key = bearerToken(request);
   return key ? ctx.runQuery(internal.apiKeys.verify, { hash: await hashKey(key) }) : null;
@@ -112,7 +113,7 @@ export const unauthorized = () =>
   errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="helm"' });
 
 /** Domain errors as 400/404 with their message; anything else is rethrown. */
-function domainError(error: unknown) {
+export function domainError(error: unknown) {
   if (!(error instanceof ConvexError)) throw error;
   const { code, message } = error.data as { code: string; message: string };
   return errorResponse(code === "not_found" ? 404 : 400, code, message);

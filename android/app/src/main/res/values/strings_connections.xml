@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Agent connections (OAuth, docs/oauth.md): the Settings row, the list and the approval of a new one. -->
+<resources>
+    <string name="connections_title">Agent connections</string>
+    <string name="connections_approve_row">Approve a connection</string>
+    <string name="connections_approve_note">Type the code from the sign-in page of Claude or another agent</string>
+    <string name="connections_active">Connected</string>
+    <string name="connections_none">No agent is connected. When Claude asks to connect to Helm, its page shows a code: approve it here.</string>
+    <string name="connections_hint">An agent connected here reads and changes your plan as itself; its changes show in history under its name. Disconnecting stops it at once. API keys for the terminal are not listed here.</string>
+    <string name="connections_loading">Loading connections…</string>
+    <string name="connections_failed">Could not load the connections. Check the connection to the server.</string>
+    <string name="connections_unauthorized">The server refused this phone. Pair it again under Server.</string>
+    <string name="connections_from">from %1$s</string>
+    <string name="connections_registered">registered itself, returns to %1$s</string>
+    <string name="connections_read_only">Read only</string>
+    <string name="connections_read_write">Read and change</string>
+    <string name="connections_last_used">last used %1$s</string>
+    <string name="connections_never_used">not used yet</string>
+    <string name="connections_disconnect_title">Disconnect %1$s?</string>
+    <string name="connections_disconnect_text">It stops working at once. To use it again, connect it again from its app.</string>
+    <string name="connections_disconnect">Disconnect</string>
+    <string name="connections_disconnect_failed">Could not disconnect. Try again.</string>
+
+    <string name="approve_title">Approve a connection</string>
+    <string name="approve_code_label">Code from the sign-in page</string>
+    <string name="approve_code_hint">The page that asks for access shows a code like K7QF-M2XA. Only approve a code you see on your own screen right now.</string>
+    <string name="approve_continue">Continue</string>
+    <string name="approve_checking">Checking the code…</string>
+    <string name="approve_not_found">No waiting request has this code. Check it, or start connecting again: a code is valid for 10 minutes.</string>
+    <string name="approve_rate_limited">Too many wrong codes. Try again in a few minutes.</string>
+    <string name="approve_failed">Could not reach the server. Try again.</string>
+    <string name="approve_asks">%1$s asks for access to your Helm plan</string>
+    <string name="approve_client_verified">Identified by %1$s</string>
+    <string name="approve_client_registered">Registered itself (its name is not verified)</string>
+    <string name="approve_returns_to">Answer goes to %1$s</string>
+    <string name="approve_asked_at">Asked %1$s</string>
+    <string name="approve_old_warning">This request is several minutes old. Approve only a sign-in page you opened yourself just now; if someone sent you this code, refuse.</string>
+    <string name="approve_loopback_warning">The answer goes to a program on the computer that opened the page (Claude Code). Approve only if you started it yourself just now.</string>
+    <string name="approve_allow">Allow</string>
+    <string name="approve_scope_read">Read tasks and settings</string>
+    <string name="approve_scope_write">Change tasks and settings</string>
+    <string name="approve_scope_write_note">Add, edit, complete and delete tasks; change settings</string>
+    <string name="approve_confirm">Approve</string>
+    <string name="approve_refuse">Refuse</string>
+    <string name="approve_nothing_chosen">Choose at least one thing to allow, or refuse.</string>
+    <string name="approve_done">Approved. Go back to the sign-in page: it continues on its own.</string>
+    <string name="approve_refused">Refused. The sign-in page tells the agent no.</string>
+    <string name="approve_gone">This request has expired or was already decided.</string>
+</resources>

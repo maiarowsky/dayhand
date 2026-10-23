@@ -31,6 +31,7 @@ import dev.helm.planner.notify.AndroidAlarmScheduler
 import dev.helm.planner.notify.AndroidNotifier
 import dev.helm.planner.settings.AppLanguage
 import dev.helm.planner.settings.AppLanguages
+import dev.helm.planner.ui.connections.ConnectionsRoute
 import dev.helm.planner.ui.theme.Appearance
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -121,7 +122,9 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
         }
     }
     data?.let {
-        SettingsScreen(SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance), actions)
+        SettingsScreen(SettingsUiState(it, versionName, notifications, exactAlarms, language, appearance), actions) { back ->
+            ConnectionsRoute(container, back)
+        }
     } ?: SettingsLoading(onBack)
 }
 
