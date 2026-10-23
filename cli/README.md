@@ -2,8 +2,10 @@
 
 `hlm` is the Helm command line client. Every command is one or more calls of the MCP tools the
 agent uses (`/mcp`), so the terminal, the app and an agent share one set of operations, and
-`hlm call <tool> '<json>'` reaches any tool directly. It replaces the old `helm` command
-(`backend/cli/helm.mjs`).
+`hlm call <tool> '<json>'` reaches any tool directly. `hlm key`, `hlm webhook` and `hlm import`
+use the REST API instead (`/api/v1`, backend 0.8.0, [docs/api.md](../docs/api.md)): keys that
+only read or write and expire, for other tools; signed webhooks; importing Helm JSON,
+iCalendar or Todoist CSV. It replaces the old `helm` command (`backend/cli/helm.mjs`).
 
 Requires Node.js 22.12 or newer; runs on macOS, Linux and Windows.
 
@@ -44,7 +46,7 @@ src/bin/hlm.ts        entry point
 src/main.ts           commander program built from the registry; aliases; hlm help
 src/run.ts            runs one command: context, output format, exit codes, --dry-run
 src/registry/         the commands (single source for help, completion, docs/cli.md and tests)
-src/transport/        MCP JSON-RPC and /devices over HTTP
+src/transport/        MCP JSON-RPC, /devices and /api/v1 over HTTP
 src/config/           environment, folders per system, config.toml, profiles, aliases
 src/credentials/      API key: environment, OS keychain (@napi-rs/keyring), 0600 file
 src/when/             English date phrases and calendar arithmetic in a time zone

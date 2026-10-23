@@ -53,6 +53,18 @@ Without a command, `hlm` shows Today.
 | `hlm calendar rotate` | `/calendar/feed/rotate` | [calendar-feed](schemas/calendar-feed.schema.json) | A new secret address; the old one stops working at once |
 | `hlm calendar off` | `/calendar/feed/revoke` | [calendar-revoke](schemas/calendar-revoke.schema.json) | Turn the feed off; its address stops working |
 | `hlm calendar export [options]` | `export_plan` | [export](schemas/export.schema.json) | The plan as a one-time .ics file to import (does not need the feed) |
+| `hlm key` | `/api/v1/keys` | [api-key-list](schemas/api-key-list.schema.json) | API keys for integrations: list, create with a scope and an expiry, revoke (same as hlm key list) |
+| `hlm key list` | `/api/v1/keys` | [api-key-list](schemas/api-key-list.schema.json) | Every API key with its kind, scope and expiry (never the key itself) |
+| `hlm key create <name> [options]` | `/api/v1/keys` | [api-key-created](schemas/api-key-created.schema.json) | Create a key (printed once) that reads or writes, for an integration |
+| `hlm key revoke <keyId>` | `/api/v1/keys` | [api-key-revoke](schemas/api-key-revoke.schema.json) | Revoke a key; the keys it created stop working too |
+| `hlm webhook` | `/api/v1/webhooks` | [webhook-list](schemas/webhook-list.schema.json) | Webhooks: HTTPS addresses that get a signed message for every task change (same as hlm webhook list) |
+| `hlm webhook list` | `/api/v1/webhooks` | [webhook-list](schemas/webhook-list.schema.json) | Every webhook, whether it is on, and why it was turned off |
+| `hlm webhook add <url> [options]` | `/api/v1/webhooks` | [webhook-created](schemas/webhook-created.schema.json) | Add a webhook; prints its signing secret once |
+| `hlm webhook rm <webhookId>` | `/api/v1/webhooks` | [webhook-delete](schemas/webhook-delete.schema.json) | Remove a webhook and its delivery log |
+| `hlm webhook test <webhookId>` | `/api/v1/webhooks` | [webhook-test](schemas/webhook-test.schema.json) | Send a webhook.test message now (also to a webhook that is off) |
+| `hlm webhook enable <webhookId>` | `/api/v1/webhooks` | [webhook-one](schemas/webhook-one.schema.json) | Turn a webhook back on after it was turned off for failing |
+| `hlm webhook deliveries <webhookId> [options]` | `/api/v1/webhooks` | [webhook-delivery-list](schemas/webhook-delivery-list.schema.json) | The delivery log: newest first, each attempt's HTTP status or error |
+| `hlm import <file> [options]` | `/api/v1/import` | [import-result](schemas/import-result.schema.json) | Import tasks from Helm's JSON export, an iCalendar file or a Todoist CSV export |
 | `hlm login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
 | `hlm logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
 | `hlm whoami` | `initialize`, `get_settings` | [whoami](schemas/whoami.schema.json) | Which deployment, profile, key source and config file hlm uses, checked against the server |
@@ -965,6 +977,202 @@ hlm calendar export [options]
 ```sh
 hlm calendar export -o helm.ics
 hlm calendar export > helm.ics
+```
+
+### hlm key
+
+API keys for integrations: list, create with a scope and an expiry, revoke (same as hlm key list)
+
+A key made here reads (scope read) or also changes tasks and settings (scope write), never more; it expires no later than the key that makes it and stops working when that key is revoked. Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).
+
+```
+hlm key
+```
+
+```sh
+hlm key list
+hlm key create n8n --scope read --expires 90d
+hlm key revoke <keyId> --yes
+```
+
+### hlm key list
+
+Every API key with its kind, scope and expiry (never the key itself)
+
+```
+hlm key list
+```
+
+```sh
+hlm key list --json
+```
+
+### hlm key create
+
+Create a key (printed once) that reads or writes, for an integration
+
+```
+hlm key create <name> [options]
+```
+
+- `name`: What the key is for, shown in history (e.g. n8n)
+
+| Option | Meaning |
+|---|---|
+| `--scope <scope>` | read (default) or write (read, write) |
+| `--kind <kind>` | agent (default) or cli: the actor of its changes (agent, cli) |
+| `--expires <when>` | 90d (default), 12w, 1y, a date YYYY-MM-DD or never |
+
+```sh
+hlm key create n8n
+hlm key create shortcuts --scope write --expires 1y
+hlm key create backup --expires never --json
+```
+
+### hlm key revoke
+
+Revoke a key; the keys it created stop working too
+
+```
+hlm key revoke <keyId>
+```
+
+- `keyId`: Key id from hlm key list
+
+```sh
+hlm key revoke <keyId> --yes
+```
+
+### hlm webhook
+
+Webhooks: HTTPS addresses that get a signed message for every task change (same as hlm webhook list)
+
+Messages follow Standard Webhooks (webhook-id, webhook-timestamp, webhook-signature); see docs/webhooks.md. Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).
+
+```
+hlm webhook
+```
+
+```sh
+hlm webhook list
+hlm webhook add https://n8n.example.com/webhook/helm --event task.completed
+hlm webhook deliveries <webhookId>
+```
+
+### hlm webhook list
+
+Every webhook, whether it is on, and why it was turned off
+
+```
+hlm webhook list
+```
+
+```sh
+hlm webhook list --json
+```
+
+### hlm webhook add
+
+Add a webhook; prints its signing secret once
+
+```
+hlm webhook add <url> [options]
+```
+
+- `url`: HTTPS address on a public host
+
+| Option | Meaning |
+|---|---|
+| `-e, --event <type>` | Event to send (repeatable; default all): task.created, task.updated, task.completed, task.deleted, task.restored, now.changed (task.created, task.updated, task.completed, task.deleted, task.restored, now.changed) |
+| `-d, --description <text>` | What it is for |
+
+```sh
+hlm webhook add https://hooks.example.com/helm
+hlm webhook add https://n8n.example.com/webhook/x -e task.completed -e task.created -d n8n
+```
+
+### hlm webhook rm
+
+Remove a webhook and its delivery log
+
+```
+hlm webhook rm <webhookId>
+```
+
+- `webhookId`: Webhook id from hlm webhook list
+
+```sh
+hlm webhook rm <webhookId> --yes
+```
+
+### hlm webhook test
+
+Send a webhook.test message now (also to a webhook that is off)
+
+```
+hlm webhook test <webhookId>
+```
+
+- `webhookId`: Webhook id from hlm webhook list
+
+```sh
+hlm webhook test <webhookId>
+hlm webhook deliveries <webhookId>
+```
+
+### hlm webhook enable
+
+Turn a webhook back on after it was turned off for failing
+
+```
+hlm webhook enable <webhookId>
+```
+
+- `webhookId`: Webhook id from hlm webhook list
+
+```sh
+hlm webhook enable <webhookId>
+```
+
+### hlm webhook deliveries
+
+The delivery log: newest first, each attempt's HTTP status or error
+
+```
+hlm webhook deliveries <webhookId> [options]
+```
+
+- `webhookId`: Webhook id from hlm webhook list
+
+| Option | Meaning |
+|---|---|
+| `-n, --limit <n>` | How many (1 to 200, default 50) |
+
+```sh
+hlm webhook deliveries <webhookId>
+hlm webhook deliveries <webhookId> -n 5 --json
+```
+
+### hlm import
+
+Import tasks from Helm's JSON export, an iCalendar file or a Todoist CSV export
+
+Each task is checked like hlm add; one that fails is listed and the rest are imported. Importing the same file again imports nothing twice. --dry-run asks the server what would happen without storing anything. Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).
+
+```
+hlm import <file> [options]
+```
+
+- `file`: The file, or - for stdin
+
+| Option | Meaning |
+|---|---|
+| `--format <format>` | auto (default), helm-json, ics or todoist-csv (auto, helm-json, ics, todoist-csv) |
+
+```sh
+hlm export --format json -o helm.json && hlm import helm.json --dry-run
+hlm import todoist.csv
+hlm import calendar.ics --format ics --json
 ```
 
 ### hlm login

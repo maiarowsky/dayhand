@@ -16,7 +16,6 @@
     },
     "timestamp": {
       "type": "string",
-      "format": "date-time",
       "description": "When the change happened (ISO 8601, UTC)"
     },
     "data": {

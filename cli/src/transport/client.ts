@@ -29,10 +29,10 @@ export type ToolInfo = {
 
 export type ServerInfo = { name: string; version: string };
 
-/** A change --dry-run held back: a tool call (with the backend's preview) or a POST to a /devices endpoint. */
+/** A change --dry-run held back: a tool call (with the backend's preview) or a change sent to an endpoint. */
 export type HeldCall =
   | { tool: string; arguments: Record<string, unknown>; result?: Record<string, unknown> }
-  | { endpoint: string; body: unknown };
+  | { endpoint: string; body: unknown; method?: "PATCH" | "DELETE" };
 
 /** Tools that only read; every other tool (including unknown ones) counts as a change. */
 export const READ_ONLY_TOOLS = new Set(["list_today", "list_all", "board", "get_task", "list_trash", "get_settings", "export_plan"]);
@@ -61,10 +61,13 @@ export class HelmClient {
     return this.connection.url;
   }
 
-  /** One HTTP request; maps transport and status errors to exit codes. */
-  async request(method: "GET" | "POST", path: string, body?: unknown): Promise<any> {
-    if (this.held && method === "POST" && path !== "/mcp") {
-      this.held.push({ endpoint: path, body: body ?? null });
+  /**
+   * One HTTP request; maps transport and status errors to exit codes. With --dry-run a change
+   * is held, unless it asks the server for a dry run itself (?dryRun=true on /api/v1).
+   */
+  async request(method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<any> {
+    if (this.held && method !== "GET" && path !== "/mcp" && !/[?&]dryRun=true(&|$)/.test(path)) {
+      this.held.push({ endpoint: path, body: body ?? null, ...(method === "POST" ? {} : { method }) });
       return {};
     }
     const where = displayUrl(this.connection.url);
@@ -170,17 +173,28 @@ function rateLimited(retryAfter: string | null, message?: string): CliError {
   });
 }
 
-/** A 4xx answer other than 401: `{error, error_description}` from /devices, or a wrong URL. */
+/**
+ * A 4xx answer other than 401: `{error, error_description}` from /devices, problem details
+ * (`{code, detail}`) from /api/v1, or a wrong URL.
+ */
 function httpError(status: number, payload: any, where: string): CliError {
   const description =
     typeof payload?.error_description === "string"
       ? payload.error_description
-      : typeof payload?.error?.message === "string"
-        ? payload.error.message
-        : undefined;
-  if (payload?.error === "not_found") return new CliError("not_found", description ?? "Not found");
-  if (status === 404) return new CliError("internal", `No Helm endpoint at ${where} (HTTP 404); check the URL (hlm whoami)`);
-  if (status === 400 || status === 413) {
+      : typeof payload?.detail === "string"
+        ? payload.detail
+        : typeof payload?.error?.message === "string"
+          ? payload.error.message
+          : undefined;
+  const code = payload?.code ?? payload?.error;
+  if (code === "not_found") return new CliError("not_found", description ?? "Not found");
+  if (status === 403) {
+    return new CliError("unauthenticated", description ?? `${where} refused the request (HTTP 403)`, {
+      hint: "use a key with scope full (hlm key list shows each key's scope)",
+    });
+  }
+  if (status === 404) return new CliError("internal", `No Helm endpoint at ${where} (HTTP 404); check the URL (hlm whoami) and that the backend is 0.8.0 or later for /api/v1`);
+  if (status === 400 || status === 413 || status === 415 || status === 422) {
     return new CliError("invalid_argument", description ?? `${where} rejected the request (HTTP ${status})`);
   }
   return new CliError("internal", description ?? `${where} answered HTTP ${status}`);

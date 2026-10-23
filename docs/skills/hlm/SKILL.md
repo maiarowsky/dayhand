@@ -120,6 +120,18 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `hlm calendar rotate` | A new secret address; the old one stops working at once |
 | `hlm calendar off` | Turn the feed off; its address stops working |
 | `hlm calendar export` | The plan as a one-time .ics file to import (does not need the feed) |
+| `hlm key` | API keys for integrations: list, create with a scope and an expiry, revoke (same as hlm key list) |
+| `hlm key list` | Every API key with its kind, scope and expiry (never the key itself) |
+| `hlm key create <name>` | Create a key (printed once) that reads or writes, for an integration |
+| `hlm key revoke <keyId>` | Revoke a key; the keys it created stop working too |
+| `hlm webhook` | Webhooks: HTTPS addresses that get a signed message for every task change (same as hlm webhook list) |
+| `hlm webhook list` | Every webhook, whether it is on, and why it was turned off |
+| `hlm webhook add <url>` | Add a webhook; prints its signing secret once |
+| `hlm webhook rm <webhookId>` | Remove a webhook and its delivery log |
+| `hlm webhook test <webhookId>` | Send a webhook.test message now (also to a webhook that is off) |
+| `hlm webhook enable <webhookId>` | Turn a webhook back on after it was turned off for failing |
+| `hlm webhook deliveries <webhookId>` | The delivery log: newest first, each attempt's HTTP status or error |
+| `hlm import <file>` | Import tasks from Helm's JSON export, an iCalendar file or a Todoist CSV export |
 | `hlm whoami` | Which deployment, profile, key source and config file hlm uses, checked against the server |
 | `hlm prime` | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...>` | Show the day (and time) a date phrase means in your time zone, without changing anything |

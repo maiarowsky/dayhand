@@ -45,7 +45,14 @@
               "endpoint": {
                 "type": "string"
               },
-              "body": {}
+              "body": {},
+              "method": {
+                "enum": [
+                  "PATCH",
+                  "DELETE"
+                ],
+                "description": "The HTTP method when it is not POST (hlm key revoke, hlm webhook rm)"
+              }
             }
           }
         ]

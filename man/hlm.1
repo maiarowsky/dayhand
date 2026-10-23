@@ -400,6 +400,77 @@ The plan as a one\-time .ics file to import (does not need the feed)
 Write to a file instead of stdout (e.g. helm.ics)
 .RE
 .TP
+.B hlm key
+API keys for integrations: list, create with a scope and an expiry, revoke (same as hlm key list)
+.br
+A key made here reads (scope read) or also changes tasks and settings (scope write), never more; it expires no later than the key that makes it and stops working when that key is revoked. Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).
+.TP
+.B hlm key list
+Every API key with its kind, scope and expiry (never the key itself)
+.TP
+.B hlm key create <name>
+Create a key (printed once) that reads or writes, for an integration
+.RS
+.TP
+.B \-\-scope <scope>
+read (default) or write (read, write)
+.TP
+.B \-\-kind <kind>
+agent (default) or cli: the actor of its changes (agent, cli)
+.TP
+.B \-\-expires <when>
+90d (default), 12w, 1y, a date YYYY\-MM\-DD or never
+.RE
+.TP
+.B hlm key revoke <keyId>
+Revoke a key; the keys it created stop working too
+.TP
+.B hlm webhook
+Webhooks: HTTPS addresses that get a signed message for every task change (same as hlm webhook list)
+.br
+Messages follow Standard Webhooks (webhook\-id, webhook\-timestamp, webhook\-signature); see docs/webhooks.md. Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).
+.TP
+.B hlm webhook list
+Every webhook, whether it is on, and why it was turned off
+.TP
+.B hlm webhook add <url>
+Add a webhook; prints its signing secret once
+.RS
+.TP
+.B \-e, \-\-event <type>
+Event to send (repeatable; default all): task.created, task.updated, task.completed, task.deleted, task.restored, now.changed (task.created, task.updated, task.completed, task.deleted, task.restored, now.changed)
+.TP
+.B \-d, \-\-description <text>
+What it is for
+.RE
+.TP
+.B hlm webhook rm <webhookId>
+Remove a webhook and its delivery log
+.TP
+.B hlm webhook test <webhookId>
+Send a webhook.test message now (also to a webhook that is off)
+.TP
+.B hlm webhook enable <webhookId>
+Turn a webhook back on after it was turned off for failing
+.TP
+.B hlm webhook deliveries <webhookId>
+The delivery log: newest first, each attempt's HTTP status or error
+.RS
+.TP
+.B \-n, \-\-limit <n>
+How many (1 to 200, default 50)
+.RE
+.TP
+.B hlm import <file>
+Import tasks from Helm's JSON export, an iCalendar file or a Todoist CSV export
+.br
+Each task is checked like hlm add; one that fails is listed and the rest are imported. Importing the same file again imports nothing twice. \-\-dry\-run asks the server what would happen without storing anything. Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).
+.RS
+.TP
+.B \-\-format <format>
+auto (default), helm\-json, ics or todoist\-csv (auto, helm\-json, ics, todoist\-csv)
+.RE
+.TP
 .B hlm login
 Store an API key for the deployment in the OS keychain (or a private file)
 .br

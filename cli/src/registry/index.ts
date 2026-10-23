@@ -1,12 +1,13 @@
 import { agentCommands } from "./agents.js";
 import { authCommands } from "./auth.js";
 import { calendarCommands } from "./calendar.js";
+import { integrationCommands } from "./integrations.js";
 import { localCommands } from "./local.js";
 import { systemCommands } from "./system.js";
 import { taskCommands } from "./tasks.js";
 import type { CommandSpec } from "./types.js";
 
-export const COMMANDS: CommandSpec[] = [...taskCommands, ...systemCommands, ...calendarCommands, ...authCommands, ...agentCommands, ...localCommands];
+export const COMMANDS: CommandSpec[] = [...taskCommands, ...systemCommands, ...calendarCommands, ...integrationCommands, ...authCommands, ...agentCommands, ...localCommands];
 
 /** Top-level names and aliases (and help): config.toml aliases may not reuse them. */
 export function commandNames(): Set<string> {

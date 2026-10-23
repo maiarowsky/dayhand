@@ -1127,7 +1127,6 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "timestamp": {
         "type": "string",
-        "format": "date-time",
         "description": "When the change happened (ISO 8601, UTC)"
       },
       "data": {

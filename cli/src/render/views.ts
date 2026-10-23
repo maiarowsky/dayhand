@@ -141,7 +141,7 @@ export function renderPlain(view: View, value: unknown, fields?: string[]): stri
 /** What --dry-run held back: one line per change. */
 export function renderDryRun(held: HeldCall[], format: "human" | "plain"): string {
   const lines = held.map((call) =>
-    "tool" in call ? [call.tool, JSON.stringify(call.arguments)] : [`POST ${call.endpoint}`, JSON.stringify(call.body)],
+    "tool" in call ? [call.tool, JSON.stringify(call.arguments)] : [`${call.method ?? "POST"} ${call.endpoint}`, JSON.stringify(call.body)],
   );
   if (format === "plain") return tsv(lines);
   const calls = held.map((call, i) => {
