@@ -13,15 +13,15 @@ Everything needed to publish is in the repository, and **nothing publishes yet**
 | `release-please-config.json`, `.release-please-manifest.json` | release-please setup: only `cli/`, component `hlm`, also bumps the Homebrew formula | |
 | `.github/workflows/publish-npm.yml` | on a `hlm-v*` tag: tests, then `npm publish --provenance` with trusted publishing (OIDC, no token) | variable `HLM_PUBLISH_ENABLED=true`, the `npm` environment, and `cli/scripts/check-release.mjs` |
 | `packaging/homebrew/hlm.rb` | formula template for a tap | copied into the tap by hand |
-| `cli/package.json` | `"private": true`, name `hlm` | the captain's word |
+| `cli/package.json` | `"private": true`, name `hlm` | the maintainer's word |
 
 `check-release.mjs` stops the publish job while the package is private, when the tag does not
 match the version, when `repository.url` is missing, or when npm is older than 11.5.1.
 
-## Before the first release (on the captain's word)
+## Before the first release (on the maintainer's word)
 
 Each step changes something outside this repository or makes it public, so each needs the
-captain's explicit go-ahead.
+maintainer's explicit go-ahead.
 
 1. **Choose the npm name.** Unscoped `hlm` only if it is free (`npm view hlm` answers 404).
    Otherwise a scope you own, e.g. `@<user>/hlm`; the command stays `hlm` either way (the
@@ -36,12 +36,13 @@ captain's explicit go-ahead.
 2. **Make the repository public** on GitHub (`<owner>/helm`). Provenance and trusted publishing
    need a public repository. Before that: check that no secret was ever committed
    (`gitleaks detect` over the whole history), and replace `<owner>` in
-   `.github/CODEOWNERS`, `.github/ISSUE_TEMPLATE/config.yml` and `packaging/homebrew/hlm.rb`.
+   `packaging/homebrew/hlm.rb` (`.github/CODEOWNERS` and `.github/ISSUE_TEMPLATE/config.yml`
+   already name `maiarowsky`).
 3. **Turn on the repository settings:** Settings → Security → *Private vulnerability
    reporting* (SECURITY.md relies on it); install the [DCO app](https://github.com/apps/dco)
    (it reads `.github/dco.yml`); protect `main` with the DCO check and the tests required.
 4. **Create the `npm` environment** (Settings → Environments → New environment `npm`), with
-   *Required reviewers* = the captain and *Deployment branches and tags* = tags `hlm-v*`.
+   *Required reviewers* = the maintainer and *Deployment branches and tags* = tags `hlm-v*`.
    Every publish then waits for an approval.
 5. **Publish the first version by hand, once.** npm can attach a trusted publisher only to a
    package that exists. On a trusted machine, with 2FA: `cd cli && npm ci --ignore-scripts &&

@@ -101,10 +101,13 @@ npm test        # needs backend/node_modules; tests hlm against a throwaway back
 
 ## Deploy your own copy
 
-Helm has no hosted service and the repository holds no secrets. Deploy the `backend/`
-folder to your own Convex project (`npx convex deploy`) or to a self-hosted Convex backend,
-and set `HELM_JWT_ISSUER`, `HELM_JWKS` and `HELM_JWT_PRIVATE_JWK` in its environment (see
-[docs/deploy.md](docs/deploy.md)).
+The repository holds no secrets. The Android app connects by default to the author's own
+deployment, which lets a phone in only with a pairing code from that account's owner. Deploy
+the `backend/` folder to your own Convex project (`npx convex deploy`) or to a self-hosted
+Convex backend, and set `HELM_JWT_ISSUER`, `HELM_JWKS` and `HELM_JWT_PRIVATE_JWK` in its
+environment (see [docs/deploy.md](docs/deploy.md)). Type your server's address on the
+Connect screen, or build the app with `-Phelm.serverUrl=https://<deployment>.convex.site` to
+make it the default ([android/README.md](android/README.md)).
 
 ## License
 

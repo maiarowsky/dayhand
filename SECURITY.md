@@ -17,8 +17,10 @@ otherwise.
 ## Supported versions
 
 Fixes go into the latest release of the `hlm` CLI and the current `main` branch of the backend
-and apps. There is no hosted Helm service: each person runs their own deployment, so please
-update yours after a security release.
+and apps. The Android app connects by default to the author's own deployment, which lets a
+phone in only with a pairing code from that account's owner; everyone else runs their own
+deployment (`-Phelm.serverUrl=…` when building the app), so please update yours after a security
+release.
 
 ## Scope
 

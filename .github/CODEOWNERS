@@ -1,11 +1,10 @@
-# Reviewers requested automatically for a pull request. Replace <owner> with the
-# maintainer's GitHub user when the repository goes public (docs/release.md).
-*                       @<owner>
+# Reviewers requested automatically for a pull request.
+*                       @maiarowsky
 
 # The machine contract of the CLI: --json schemas and the command registry.
-/docs/schemas/          @<owner>
-/cli/src/registry/      @<owner>
+/docs/schemas/          @maiarowsky
+/cli/src/registry/      @maiarowsky
 
 # Release and publishing.
-/.github/               @<owner>
-/packaging/             @<owner>
+/.github/               @maiarowsky
+/packaging/             @maiarowsky

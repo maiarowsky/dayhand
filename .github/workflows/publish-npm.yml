@@ -1,5 +1,5 @@
 # Publishes hlm to npm with trusted publishing (OIDC, no npm token) and
-# provenance. Does nothing until the captain enables it (docs/release.md):
+# provenance. Does nothing until the maintainer enables it (docs/release.md):
 # the repository variable HLM_PUBLISH_ENABLED must be "true", the job runs in
 # the "npm" environment, and scripts/check-release.mjs refuses a private
 # package, a tag that does not match package.json, or a missing repository URL.

@@ -66,7 +66,7 @@ describe("release files", () => {
     expect(config.packages.cli).toMatchObject({ component: "hlm", "release-type": "node" });
   });
 
-  test("the package ships the binary and the man page, and stays private until the captain's word", () => {
+  test("the package ships the binary and the man page, and stays private until the maintainer's word", () => {
     expect(pkg).toMatchObject({ name: "hlm", private: true, bin: { hlm: "dist/bin/hlm.js" }, man: ["./man/hlm.1"], files: ["dist", "man"] });
   });
 
