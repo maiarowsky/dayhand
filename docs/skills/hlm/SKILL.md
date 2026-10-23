@@ -109,6 +109,10 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `hlm device` | Paired phones (same as hlm device list); revoke one with hlm device revoke |
 | `hlm device list` | Paired phones |
 | `hlm devices` | Same as hlm device list |
+| `hlm connection` | Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke |
+| `hlm connection list` | Agent connections |
+| `hlm connection revoke <connectionId>` | Disconnect an agent: its tokens stop working at once |
+| `hlm connections` | Same as hlm connection list |
 | `hlm whoami` | Which deployment, profile, key source and config file hlm uses, checked against the server |
 | `hlm prime` | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...>` | Show the day (and time) a date phrase means in your time zone, without changing anything |

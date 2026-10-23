@@ -1,11 +1,11 @@
 // Everything that is not a task verb: settings, export, schema introspection,
-// the raw `call` escape hatch, version and phone devices.
+// the raw `call` escape hatch, version, phone devices and agent connections.
 import { writeFile } from "node:fs/promises";
 import qrcode from "qrcode-terminal";
 import { CliError, usageError } from "../core/exit.js";
 import { readStdin } from "../core/io.js";
 import { CLI_VERSION, isCompatible, MIN_SERVER_VERSION } from "../core/version.js";
-import type { Device } from "../render/model.js";
+import type { Connection, Device } from "../render/model.js";
 import { tool, userTimezone } from "./ops.js";
 import { parseSettings } from "./parse.js";
 import type { CommandSpec, Outcome, RunContext } from "./types.js";
@@ -27,6 +27,19 @@ const revokeDevice = async (ctx: RunContext, deviceId: string): Promise<Outcome>
 };
 
 const DEVICE_ID = { name: "deviceId", description: "Device id from hlm device list", required: true };
+
+const listConnections = async (ctx: RunContext): Promise<Outcome> => {
+  const [value, timezone] = await Promise.all([(await ctx.client()).request("GET", "/connections"), userTimezone(ctx)]);
+  return { value, view: { kind: "connections", connections: value.connections as Connection[], timezone } };
+};
+
+const revokeConnection = async (ctx: RunContext, connectionId: string): Promise<Outcome> => {
+  const value = await (await ctx.client()).request("POST", "/connections/revoke", { connectionId });
+  const text = `Revoked ${value.id}: its access and refresh tokens stop working now`;
+  return { value, view: { kind: "text", text } };
+};
+
+const CONNECTION_ID = { name: "connectionId", description: "Connection id from hlm connection list", required: true };
 
 export const systemCommands: CommandSpec[] = [
   {
@@ -176,6 +189,29 @@ export const systemCommands: CommandSpec[] = [
     ],
   },
   { name: "devices", schema: "devices.schema.json", summary: "Same as hlm device list", tools: ["/devices"], examples: ["hlm devices"], run: listDevices },
+  {
+    name: "connection",
+    schema: "connections.schema.json",
+    summary: "Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke",
+    description:
+      "An app such as Claude connects through OAuth: its sign-in page shows a code, and you approve it in the Helm app (Settings → Agent connections). " +
+      "API keys are not connections; see hlm whoami.",
+    tools: ["/connections"],
+    examples: ["hlm connection", "hlm connection revoke <connectionId>"],
+    run: listConnections,
+    subcommands: [
+      { name: "list", schema: "connections.schema.json", aliases: ["ls"], summary: "Agent connections", tools: ["/connections"], examples: ["hlm connection list --json"], run: listConnections },
+      {
+        name: "revoke", schema: "connection-revoke.schema.json",
+        summary: "Disconnect an agent: its tokens stop working at once",
+        args: [CONNECTION_ID],
+        tools: ["/connections/revoke"],
+        examples: ["hlm connection revoke <connectionId>"],
+        run: (ctx, args) => revokeConnection(ctx, args.connectionId as string),
+      },
+    ],
+  },
+  { name: "connections", schema: "connections.schema.json", summary: "Same as hlm connection list", tools: ["/connections"], examples: ["hlm connections"], run: listConnections },
   {
     name: "revoke",
     schema: "device-revoke.schema.json",

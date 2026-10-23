@@ -40,6 +40,20 @@ export type TodayView = { date: string; timezone: string; now: Task | null; over
 export type Board = { todo: Task[]; doing: Task[]; done: Task[] };
 export type Detail = { task: Task; history: HistoryEntry[] };
 export type Device = { id: string; name: string; pairedBy: string; createdAt: number; lastUsedAt: number | null; revokedAt: number | null };
+/** An agent connection (OAuth), as GET /connections returns it. */
+export type Connection = {
+  id: string;
+  clientName: string;
+  clientType: "cimd" | "dcr";
+  clientHost: string | null;
+  redirectHost: string;
+  scopes: string[];
+  createdAt: number;
+  lastUsedAt: number | null;
+  expiresAt: number;
+  revokedAt: number | null;
+  active: boolean;
+};
 
 /** Fields a task can have; `--fields` accepts these. Mirrors docs/schemas/task.schema.json. */
 export const TASK_FIELDS = [

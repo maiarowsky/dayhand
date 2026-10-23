@@ -41,6 +41,10 @@ Without a command, `hlm` shows Today.
 | `hlm device list` | `/devices` | [devices](schemas/devices.schema.json) | Paired phones |
 | `hlm device revoke <deviceId>` | `/devices/revoke` | [device-revoke](schemas/device-revoke.schema.json) | Sign a phone out: it gets no new app tokens |
 | `hlm devices` | `/devices` | [devices](schemas/devices.schema.json) | Same as hlm device list |
+| `hlm connection` | `/connections` | [connections](schemas/connections.schema.json) | Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke |
+| `hlm connection list` | `/connections` | [connections](schemas/connections.schema.json) | Agent connections |
+| `hlm connection revoke <connectionId>` | `/connections/revoke` | [connection-revoke](schemas/connection-revoke.schema.json) | Disconnect an agent: its tokens stop working at once |
+| `hlm connections` | `/connections` | [connections](schemas/connections.schema.json) | Same as hlm connection list |
 | `hlm revoke <deviceId>` | `/devices/revoke` | [device-revoke](schemas/device-revoke.schema.json) | Same as hlm device revoke |
 | `hlm login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
 | `hlm logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
@@ -744,6 +748,59 @@ hlm devices
 
 ```sh
 hlm devices
+```
+
+### hlm connection
+
+Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke
+
+An app such as Claude connects through OAuth: its sign-in page shows a code, and you approve it in the Helm app (Settings → Agent connections). API keys are not connections; see hlm whoami.
+
+```
+hlm connection
+```
+
+```sh
+hlm connection
+hlm connection revoke <connectionId>
+```
+
+### hlm connection list
+
+Agent connections Aliases: `ls`.
+
+```
+hlm connection list
+```
+
+```sh
+hlm connection list --json
+```
+
+### hlm connection revoke
+
+Disconnect an agent: its tokens stop working at once
+
+```
+hlm connection revoke <connectionId>
+```
+
+- `connectionId`: Connection id from hlm connection list
+
+```sh
+hlm connection revoke <connectionId>
+```
+
+### hlm connections
+
+Same as hlm connection list
+
+```
+hlm connections
+```
+
+```sh
+hlm connections
 ```
 
 ### hlm revoke

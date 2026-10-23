@@ -268,6 +268,22 @@ Sign a phone out: it gets no new app tokens
 .B hlm devices
 Same as hlm device list
 .TP
+.B hlm connection
+Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke
+.br
+An app such as Claude connects through OAuth: its sign\-in page shows a code, and you approve it in the Helm app (Settings → Agent connections). API keys are not connections; see hlm whoami.
+.TP
+.B hlm connection list
+Agent connections
+.br
+Aliases: ls.
+.TP
+.B hlm connection revoke <connectionId>
+Disconnect an agent: its tokens stop working at once
+.TP
+.B hlm connections
+Same as hlm connection list
+.TP
 .B hlm revoke <deviceId>
 Same as hlm device revoke
 .TP

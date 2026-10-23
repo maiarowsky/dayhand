@@ -3,7 +3,7 @@
 // and every --json output follows docs/schemas.
 import { describe, expect, test } from "vitest";
 import { flatten } from "../src/registry/index.js";
-import { hlm, hlmJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
+import { connectAgent, hlm, hlmJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
 
 const validate = schemaValidator();
 const specOf = (path: string) => flatten().find((c) => c.path === path)!.spec;
@@ -88,8 +88,8 @@ describe("agent contract", () => {
     await sdk.close();
   });
 
-  test("other outputs follow their schemas: several tasks, tools, version, devices", async () => {
-    const { key } = await newUser();
+  test("other outputs follow their schemas: several tasks, tools, version, devices, connections", async () => {
+    const { userId, key } = await newUser();
     for (const title of ["A", "B", "C"]) await hlm(key, ["add", title]);
     expect(validate("results.schema.json", await hlmJson(key, ["done", "1", "2", "3", "--yes"]))).toEqual([]);
     expect(validate("results.schema.json", await hlmJson(key, ["rm", "1", "2", "3", "--yes"]))).toEqual([]);
@@ -101,5 +101,11 @@ describe("agent contract", () => {
     expect(validate(specOf("pair").schema!, pairing)).toEqual([]);
     const devices = await hlmJson(key, ["device", "list"]);
     expect(validate(specOf("device list").schema!, devices)).toEqual([]);
+    await connectAgent(userId);
+    const connections = await hlmJson(key, ["connection", "list"]);
+    expect(connections.connections).toHaveLength(1);
+    expect(validate(specOf("connection list").schema!, connections)).toEqual([]);
+    const revoked = await hlmJson(key, ["connection", "revoke", connections.connections[0].id]);
+    expect(validate(specOf("connection revoke").schema!, revoked)).toEqual([]);
   });
 });

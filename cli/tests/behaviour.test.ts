@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { flatten } from "../src/registry/index.js";
-import { helm, hlm, hlmJson, newUser } from "./helpers.js";
+import { connectAgent, helm, hlm, hlmJson, newUser } from "./helpers.js";
 
 describe("output", () => {
   test("hlm without a command shows Today", async () => {
@@ -181,5 +181,35 @@ describe("commands", () => {
     expect(pairing.stdout).toMatch(/helm:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+&code=[0-9A-Z-]{14}/);
     expect((await hlm(key, ["devices"])).stdout).toBe("(no paired devices)\n");
     expect((await hlmJson(key, ["device", "list"])).devices).toEqual([]);
+  });
+
+  test("agent connections: list, revoke, and the revoked token stops working", async () => {
+    const { userId, key } = await newUser();
+    expect((await hlm(key, ["connections"])).stdout).toBe("(no agent connections)\n");
+    const tokens = await connectAgent(userId, "Claude");
+    const listed = await hlmJson(key, ["connection", "list"]);
+    expect(listed.connections).toHaveLength(1);
+    const [connection] = listed.connections;
+    expect(connection).toMatchObject({ clientName: "Claude", clientType: "dcr", clientHost: null, redirectHost: "claude.ai", scopes: ["tasks:read"], active: true });
+    const human = (await hlm(key, ["connections"])).stdout;
+    expect(human).toContain(`Claude (registered itself, returns to claude.ai)  read only, connected `);
+    expect(human).toContain(`never used (${connection.id})`);
+
+    const mcp = (token: string) =>
+      fetch(`${helm().siteUrl}/mcp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+      });
+    expect((await mcp(tokens.access_token)).status).toBe(200);
+    // An OAuth token is not an API key: hlm cannot run on it.
+    expect((await hlm(tokens.access_token, ["connections"])).code).toBe(3);
+
+    const revoked = await hlm(key, ["connection", "revoke", connection.id]);
+    expect(revoked.code).toBe(0);
+    expect(revoked.stdout).toContain(`Revoked ${connection.id}`);
+    expect((await mcp(tokens.access_token)).status).toBe(401);
+    expect((await hlm(key, ["connections", "--plain"])).stdout).toMatch(new RegExp(`^${connection.id}\tClaude\trevoked\ttasks:read\t`));
+    expect((await hlm(key, ["connection", "revoke", "nope"])).code).toBe(4);
   });
 });
