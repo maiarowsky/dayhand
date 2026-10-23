@@ -313,11 +313,11 @@ Show settings
 Change settings: timezone, summaryTime (summary\-time), defaultReminderMinutes (reminders)
 .TP
 .B hlm export
-Export the whole plan as Markdown or JSON (with history)
+Export the whole plan as Markdown, JSON (with history) or iCalendar (ics)
 .RS
 .TP
 .B \-\-format <format>
-md or json (default: md, or json with \-\-json) (md, markdown, json)
+md, json or ics (default: md, or json with \-\-json) (md, markdown, json, ics)
 .TP
 .B \-o, \-\-output <file>
 Write to a file instead of stdout
@@ -374,6 +374,31 @@ Same as hlm connection list
 .TP
 .B hlm revoke <deviceId>
 Same as hlm device revoke
+.TP
+.B hlm calendar
+Your tasks in Google or Apple Calendar: the secret address of the read\-only feed (same as hlm calendar url)
+.br
+Dated tasks become calendar events (with a time) or all\-day events, repeating ones with their rule, reminders as alerts. The address works without a key, so treat it like a password. Needs backend 0.7.0 or later (hlm version).
+.TP
+.B hlm calendar url
+Show the feed's addresses (null when it is off)
+.TP
+.B hlm calendar on
+Turn the feed on (keeps an existing address) and show it
+.TP
+.B hlm calendar rotate
+A new secret address; the old one stops working at once
+.TP
+.B hlm calendar off
+Turn the feed off; its address stops working
+.TP
+.B hlm calendar export
+The plan as a one\-time .ics file to import (does not need the feed)
+.RS
+.TP
+.B \-o, \-\-output <file>
+Write to a file instead of stdout (e.g. helm.ics)
+.RE
 .TP
 .B hlm login
 Store an API key for the deployment in the OS keychain (or a private file)

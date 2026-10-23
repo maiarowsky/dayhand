@@ -3,7 +3,8 @@
 Helm is a personal task manager and day plan. Its main screen is **Today**: overdue
 tasks on top, then today's tasks, then what is already done. A three-column board,
 labels, repeating tasks (also RFC 5545 RRULE), checklists, per-task reminders, links and a
-30-day trash complete it.
+30-day trash complete it. A week and day calendar shows the plan on the phone, and a read-only
+iCalendar feed shows it in Google or Apple Calendar ([docs/calendar.md](docs/calendar.md)).
 
 The app and an AI agent are two clients of the same operations: the agent connects over
 [MCP](https://modelcontextprotocol.io) with a personal, revocable API key and can do
@@ -21,7 +22,7 @@ backend/   Convex backend: data model, domain operations, MCP endpoint, old CLI 
 cli/       hlm, the command line client for people and agents; see cli/README.md
 android/   Android app (Kotlin, Compose): Today, board, task details, reminders, settings, offline outbox; see android/README.md
 ios/       iOS app (Swift), later
-docs/      Architecture, MCP, OAuth for the Claude apps, phone pairing, deployment and release notes
+docs/      Architecture, MCP, OAuth for the Claude apps, the calendar feed, phone pairing, deployment and release notes
 man/       hlm(1), generated from the CLI's command registry
 packaging/ Homebrew formula template
 ```

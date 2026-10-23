@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/calendar-revoke.schema.json",
+  "title": "Calendar feed turned off",
+  "description": "POST /calendar/feed/revoke (hlm calendar off): whether a feed was on.",
+  "type": "object",
+  "required": [
+    "revoked"
+  ],
+  "properties": {
+    "revoked": {
+      "type": "boolean"
+    }
+  }
+}

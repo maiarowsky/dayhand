@@ -103,7 +103,7 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `hlm settings` | Show settings (time zone, morning summary time, default reminders) |
 | `hlm settings get` | Show settings |
 | `hlm settings set <pairs...>` | Change settings: timezone, summaryTime (summary-time), defaultReminderMinutes (reminders) |
-| `hlm export` | Export the whole plan as Markdown or JSON (with history) |
+| `hlm export` | Export the whole plan as Markdown, JSON (with history) or iCalendar (ics) |
 | `hlm tools [name]` | MCP tools and their input schemas (introspection) |
 | `hlm call <tool> [json]` | Call an MCP tool with JSON arguments, exactly as an MCP client would |
 | `hlm version` | CLI and server versions, and whether they are compatible |
@@ -114,6 +114,12 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `hlm connection list` | Agent connections |
 | `hlm connection revoke <connectionId>` | Disconnect an agent: its tokens stop working at once |
 | `hlm connections` | Same as hlm connection list |
+| `hlm calendar` | Your tasks in Google or Apple Calendar: the secret address of the read-only feed (same as hlm calendar url) |
+| `hlm calendar url` | Show the feed's addresses (null when it is off) |
+| `hlm calendar on` | Turn the feed on (keeps an existing address) and show it |
+| `hlm calendar rotate` | A new secret address; the old one stops working at once |
+| `hlm calendar off` | Turn the feed off; its address stops working |
+| `hlm calendar export` | The plan as a one-time .ics file to import (does not need the feed) |
 | `hlm whoami` | Which deployment, profile, key source and config file hlm uses, checked against the server |
 | `hlm prime` | Context for an AI agent: Today and how to use hlm (for a SessionStart hook) |
 | `hlm when <phrase...>` | Show the day (and time) a date phrase means in your time zone, without changing anything |

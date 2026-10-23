@@ -18,7 +18,7 @@
 - Pass a `clientId` (e.g. a UUID) with changes you might retry; a repeated `clientId` is not
   applied twice. Pass `dryRun: true` to check a change without saving it ([Dry runs](#dry-runs)).
 - Each key or connection may make 120 reads and 60 changes a minute ([Limits](#limits)).
-- The server identifies itself as `{ "name": "helm", "version": "0.6.0" }` (`serverInfo` of
+- The server identifies itself as `{ "name": "helm", "version": "0.7.0" }` (`serverInfo` of
   `initialize`, `_meta` of 2026-07-28 results); see [Versions](#versions).
 
 ## Tools
@@ -52,7 +52,7 @@ it with the same arguments changes nothing more), and no tool reaches outside He
 | `list_trash` | Trash | R | `task-list` | Tasks in the trash |
 | `board` | Board | R | `board` | Three columns: todo, doing, done |
 | `get_task` | Task with history | R | `task-detail` | One task with its change history |
-| `export_plan` | Export plan | R | `export` | Markdown or JSON export of the whole plan |
+| `export_plan` | Export plan | R | `export` | Markdown, JSON or iCalendar (`ics`, [calendar.md](calendar.md)) export of the whole plan |
 | `get_settings` | Settings | R | `settings` | Time zone, summary time, default reminders |
 | `update_settings` | Update settings | D | `settings` | Change them |
 
@@ -60,7 +60,8 @@ it with the same arguments changes nothing more), and no tool reaches outside He
 
 A successful call returns the result as `structuredContent` (a list as `{ "result": [...] }`,
 `null` as `{ "result": null }`) and as JSON in its text block. A Markdown export's text block is
-the Markdown itself and its `structuredContent` is `{ "format": "markdown", "content": "…" }`.
+the Markdown itself and its `structuredContent` is `{ "format": "markdown", "content": "…" }`;
+an iCalendar export (`format: "ics"`) likewise has the calendar text in both.
 
 Each tool's `outputSchema` is the result's schema from [schemas/](schemas/) or the
 [tool error](schemas/tool-error.schema.json) (`anyOf`), with every referenced schema inlined
@@ -302,6 +303,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.7.0 | `export_plan` format `ics`; the read-only calendar feed `GET /cal/<token>.ics` and its endpoints `/calendar/feed*` ([calendar.md](calendar.md)) |
 | 0.6.0 | OAuth 2.1 for the Claude apps and other MCP clients: access tokens next to API keys, `WWW-Authenticate` with `resource_metadata`, scopes `tasks:read` and `tasks:write` (`tools/list` filtered, `403 insufficient_scope`), limits per connection ([oauth.md](oauth.md)) |
 | 0.5.0 | Repeat rules: `from`, `monthDay`, `weekdayOfMonth`, `until`, `count`, RRULE strings in `repeat` and `rrule` on repeating tasks; `checklist` and `reminders` on tasks; `complete_task` returns `next: null` when a series has ended |
 | 0.4.0 | MCP 2026-07-28 next to the 2025 revisions; tool titles, all behaviour hints and output schemas; `list_all` search, filters and pages (`total`, `nextCursor`); `dryRun` on every change; resources `helm://today`, `helm://guide`, `helm://tasks/{ref}`; prompts `plan_day`, `weekly_review`, `triage_overdue`; limits per key and error `rate_limited`; structured content for a Markdown export; `Origin` check |

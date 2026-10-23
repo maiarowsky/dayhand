@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/calendar-feed.schema.json",
+  "title": "Calendar feed",
+  "description": "GET and POST /calendar/feed, POST /calendar/feed/rotate (hlm calendar, hlm calendar on, hlm calendar rotate): the feed, or null when it is off.",
+  "type": "object",
+  "required": [
+    "feed"
+  ],
+  "properties": {
+    "feed": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "url",
+            "webcalUrl",
+            "googleCalendarUrl",
+            "createdAt"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "https address of the feed; the token in it is the only key"
+            },
+            "webcalUrl": {
+              "type": "string",
+              "description": "The same address as webcal:// (Apple Calendar subscribes from it)"
+            },
+            "googleCalendarUrl": {
+              "type": "string",
+              "description": "Google Calendar's add-by-URL link for the feed"
+            },
+            "createdAt": {
+              "type": "number",
+              "description": "Unix time in milliseconds"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

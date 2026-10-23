@@ -68,21 +68,23 @@ export const systemCommands: CommandSpec[] = [
   },
   {
     name: "export", schema: "export.schema.json",
-    summary: "Export the whole plan as Markdown or JSON (with history)",
+    summary: "Export the whole plan as Markdown, JSON (with history) or iCalendar (ics)",
     options: [
-      { flags: "--format <format>", description: "md or json (default: md, or json with --json)", choices: ["md", "markdown", "json"] },
+      { flags: "--format <format>", description: "md, json or ics (default: md, or json with --json)", choices: ["md", "markdown", "json", "ics"] },
       { flags: "-o, --output <file>", description: "Write to a file instead of stdout" },
     ],
     tools: ["export_plan"],
-    examples: ["hlm export > plan.md", "hlm export --format json -o helm.json", "hlm export --json"],
+    examples: ["hlm export > plan.md", "hlm export --format json -o helm.json", "hlm export --format ics -o helm.ics", "hlm export --json"],
     run: async (ctx, _args, opts) => {
-      const format = opts.format === undefined ? (ctx.format === "json" ? "json" : "markdown") : opts.format === "json" ? "json" : "markdown";
+      const format = opts.format === undefined ? (ctx.format === "json" ? "json" : "markdown") : opts.format === "md" ? "markdown" : (opts.format as string);
       const result = await (await ctx.client()).callTool("export_plan", { format });
       // A Markdown export has no structured content; its JSON is { format, content } like the JSON export.
       const value = result.structured ?? { format: "markdown", content: result.text };
-      const text = format === "json" ? JSON.stringify((value as { content: unknown }).content, null, 2) : result.text;
+      // iCalendar text ends with CRLF; the output adds the final \n back.
+      const text =
+        format === "json" ? JSON.stringify((value as { content: unknown }).content, null, 2) : format === "ics" ? result.text.replace(/\n$/, "") : result.text;
       if (opts.output) {
-        await writeFile(opts.output as string, ctx.format === "json" ? JSON.stringify(value) : text + "\n");
+        await writeFile(opts.output as string, ctx.format === "json" ? JSON.stringify(value) : format === "ics" ? result.text : text + "\n");
         return { value: { written: opts.output, format }, view: { kind: "text", text: `Wrote ${opts.output}` } };
       }
       return { value, view: { kind: "text", text } };

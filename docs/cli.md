@@ -33,7 +33,7 @@ Without a command, `hlm` shows Today.
 | `hlm settings` | `get_settings` | [settings](schemas/settings.schema.json) | Show settings (time zone, morning summary time, default reminders) |
 | `hlm settings get` | `get_settings` | [settings](schemas/settings.schema.json) | Show settings |
 | `hlm settings set <pairs...>` | `update_settings` | [settings](schemas/settings.schema.json) | Change settings: timezone, summaryTime (summary-time), defaultReminderMinutes (reminders) |
-| `hlm export [options]` | `export_plan` | [export](schemas/export.schema.json) | Export the whole plan as Markdown or JSON (with history) |
+| `hlm export [options]` | `export_plan` | [export](schemas/export.schema.json) | Export the whole plan as Markdown, JSON (with history) or iCalendar (ics) |
 | `hlm tools [name]` | `tools/list` | [tools](schemas/tools.schema.json), [tool](schemas/tool.schema.json) | MCP tools and their input schemas (introspection) |
 | `hlm call <tool> [json]` | `*` | the tool's | Call an MCP tool with JSON arguments, exactly as an MCP client would |
 | `hlm version` | `initialize` | [version](schemas/version.schema.json) | CLI and server versions, and whether they are compatible |
@@ -47,6 +47,12 @@ Without a command, `hlm` shows Today.
 | `hlm connection revoke <connectionId>` | `/connections/revoke` | [connection-revoke](schemas/connection-revoke.schema.json) | Disconnect an agent: its tokens stop working at once |
 | `hlm connections` | `/connections` | [connections](schemas/connections.schema.json) | Same as hlm connection list |
 | `hlm revoke <deviceId>` | `/devices/revoke` | [device-revoke](schemas/device-revoke.schema.json) | Same as hlm device revoke |
+| `hlm calendar` | `/calendar/feed` | [calendar-feed](schemas/calendar-feed.schema.json) | Your tasks in Google or Apple Calendar: the secret address of the read-only feed (same as hlm calendar url) |
+| `hlm calendar url` | `/calendar/feed` | [calendar-feed](schemas/calendar-feed.schema.json) | Show the feed's addresses (null when it is off) |
+| `hlm calendar on` | `/calendar/feed` | [calendar-feed](schemas/calendar-feed.schema.json) | Turn the feed on (keeps an existing address) and show it |
+| `hlm calendar rotate` | `/calendar/feed/rotate` | [calendar-feed](schemas/calendar-feed.schema.json) | A new secret address; the old one stops working at once |
+| `hlm calendar off` | `/calendar/feed/revoke` | [calendar-revoke](schemas/calendar-revoke.schema.json) | Turn the feed off; its address stops working |
+| `hlm calendar export [options]` | `export_plan` | [export](schemas/export.schema.json) | The plan as a one-time .ics file to import (does not need the feed) |
 | `hlm login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
 | `hlm logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
 | `hlm whoami` | `initialize`, `get_settings` | [whoami](schemas/whoami.schema.json) | Which deployment, profile, key source and config file hlm uses, checked against the server |
@@ -680,7 +686,7 @@ hlm settings set reminders=0,15
 
 ### hlm export
 
-Export the whole plan as Markdown or JSON (with history)
+Export the whole plan as Markdown, JSON (with history) or iCalendar (ics)
 
 ```
 hlm export [options]
@@ -688,12 +694,13 @@ hlm export [options]
 
 | Option | Meaning |
 |---|---|
-| `--format <format>` | md or json (default: md, or json with --json) (md, markdown, json) |
+| `--format <format>` | md, json or ics (default: md, or json with --json) (md, markdown, json, ics) |
 | `-o, --output <file>` | Write to a file instead of stdout |
 
 ```sh
 hlm export > plan.md
 hlm export --format json -o helm.json
+hlm export --format ics -o helm.ics
 hlm export --json
 ```
 
@@ -876,6 +883,88 @@ hlm revoke <deviceId>
 
 ```sh
 hlm revoke <deviceId>
+```
+
+### hlm calendar
+
+Your tasks in Google or Apple Calendar: the secret address of the read-only feed (same as hlm calendar url)
+
+Dated tasks become calendar events (with a time) or all-day events, repeating ones with their rule, reminders as alerts. The address works without a key, so treat it like a password. Needs backend 0.7.0 or later (hlm version).
+
+```
+hlm calendar
+```
+
+```sh
+hlm calendar
+hlm calendar on
+hlm calendar rotate --yes
+hlm calendar export -o helm.ics
+```
+
+### hlm calendar url
+
+Show the feed's addresses (null when it is off)
+
+```
+hlm calendar url
+```
+
+```sh
+hlm calendar url --json
+```
+
+### hlm calendar on
+
+Turn the feed on (keeps an existing address) and show it
+
+```
+hlm calendar on
+```
+
+```sh
+hlm calendar on
+```
+
+### hlm calendar rotate
+
+A new secret address; the old one stops working at once
+
+```
+hlm calendar rotate
+```
+
+```sh
+hlm calendar rotate --yes
+```
+
+### hlm calendar off
+
+Turn the feed off; its address stops working
+
+```
+hlm calendar off
+```
+
+```sh
+hlm calendar off --yes
+```
+
+### hlm calendar export
+
+The plan as a one-time .ics file to import (does not need the feed)
+
+```
+hlm calendar export [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `-o, --output <file>` | Write to a file instead of stdout (e.g. helm.ics) |
+
+```sh
+hlm calendar export -o helm.ics
+hlm calendar export > helm.ics
 ```
 
 ### hlm login

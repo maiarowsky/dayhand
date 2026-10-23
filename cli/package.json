@@ -1,6 +1,6 @@
 {
   "name": "hlm",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "hlm: the Helm command line client for people and agents",
   "license": "Apache-2.0",

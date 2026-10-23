@@ -16,6 +16,10 @@ helm CLI ──(API key)──> /devices/* ──────────┘
 Claude app ──> /.well-known/*, /oauth/* (convex/oauthHttp.ts) ──> convex/oauth.ts
 Android app ──(JWT)──> app.lookup/decideConnectionRequest ─┐
 helm CLI ──(API key)──> /connections* ─────────────────────┴──> convex/oauthOwner.ts
+
+calendar app ──(secret address)──> GET /cal/<token>.ics ─┐
+Android app ──(JWT)──> app.*CalendarFeed ────────────────┼─> convex/calendarFeeds.ts ──> lib/ical.ts
+helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
 ```
 
 - Domain operations take the acting identity explicitly: `userId` and `actor` (`app`, `cli` or
@@ -51,6 +55,7 @@ helm CLI ──(API key)──> /connections* ───────────�
 | `oauthRequests` | Authorization requests waiting for the phone: browser handle `selector` + `secretHash`, SHA-256 of the code shown (`userCodeHash`), client, `redirectUri`, `state`, PKCE `codeChallenge`, `scopes`, `resource`, then the decision (`userId`, `grantedScopes`, `approvedAt`/`deniedAt`) and the single-use authorization code (`codeHash`, `codeExpiresAt`, `codeUsedAt`) |
 | `oauthGrants` | Agent connections: `userId`, client (`clientId`, `clientType`, `clientName`), `redirectUri`, `scopes`, `resource`, `createdAt`, `lastUsedAt`, `refreshExpiresAt`, `revokedAt` |
 | `oauthTokens` | Access and refresh tokens of a connection: `kind`, `selector`, SHA-256 `secretHash`, `expiresAt`, `rotatedAt` (refresh), `scopes` (after a narrowing refresh) |
+| `calendarFeeds` | The read-only calendar feed, at most one per user: `selector` and `secret` of the address `/cal/<selector><secret>.ics` (the secret is kept so the address can be shown again, [calendar.md](calendar.md#threat-model)), `createdAt` |
 | `settings` | `timezone` (default `Europe/London`), `summaryTime` (default `05:00`), `defaultReminderMinutes` (default `[0]`) |
 
 ## Rules

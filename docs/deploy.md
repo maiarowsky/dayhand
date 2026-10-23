@@ -33,6 +33,20 @@ npx convex run apiKeys:create '{"userId":"https://helm.example|owner","actor":"a
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.7.0
+
+0.7.0 adds the read-only calendar feed ([calendar.md](calendar.md)): the table `calendarFeeds`,
+the routes `GET /cal/<token>.ics` and `/calendar/feed*`, and the format `ics` of `export_plan`.
+Nothing existing changes, so there is no migration and no new environment variable:
+`npx convex deploy` is enough. The feed URL is built from `CONVEX_SITE_URL`, which Convex sets
+itself. The feed is off for every user until they turn it on (Android 0.8.0 Settings →
+Calendar, or `hlm calendar on` with hlm 0.7.0); older apps and `hlm` keep working without it.
+
+Rollback: turn the feeds off (`hlm calendar off --yes`), then deploy 0.6.0 again. Its schema
+has no `calendarFeeds`; if Convex refuses the push because the table holds rows, empty it the
+same way as `callLimits` for 0.4.0 below. Subscribed calendars then get `404` and keep their
+last copy.
+
 ## Upgrading to 0.6.0
 
 0.6.0 adds OAuth for the Claude apps ([oauth.md](oauth.md)): the tables `oauthClients`,
