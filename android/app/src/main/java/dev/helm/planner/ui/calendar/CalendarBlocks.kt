@@ -4,20 +4,17 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -26,7 +23,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarEntry
@@ -38,6 +34,9 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
+/** The coloured edge of a block, which carries its state (accent, danger, quiet). */
+private val BAR_WIDTH = 3.dp
 
 object CalendarTags {
     const val SCREEN = "calendar"
@@ -53,6 +52,8 @@ object CalendarTags {
     const val MOVE_SHEET = "calendar_move"
     const val MOVE_CONFIRM = "calendar_move_confirm"
     const val MOVE_NO_TIME = "calendar_move_no_time"
+    const val MOVE_TIME = "calendar_move_time"
+    const val MOVE_OTHER_DAY = "calendar_move_other_day"
 
     fun entry(key: String) = "calendar_entry:$key"
     fun dayHeader(date: String) = "calendar_day_header:$date"
@@ -70,11 +71,15 @@ private fun Palette.colorsOf(entry: CalendarEntry) = when {
 }
 
 /** The title with a mark that does not rely on colour: "!" overdue, "↻" a later date of a series, "✓" done. */
-private fun markedTitle(entry: CalendarEntry): String = when {
-    entry.done -> "✓ ${entry.task.title}"
-    entry.overdue -> "! ${entry.task.title}"
-    entry.repeat -> "↻ ${entry.task.title}"
-    else -> entry.task.title
+private fun markedTitle(entry: CalendarEntry): String {
+    val mark = when {
+        entry.done -> "✓"
+        entry.overdue -> "!"
+        entry.repeat -> "↻"
+        else -> return entry.task.title
+    }
+    // A no-break space keeps the mark on the line of the first word.
+    return "$mark\u00A0${entry.task.title.trimStart()}"
 }
 
 /** What a screen reader says: title, day, time (or none), and its state. */
@@ -110,12 +115,12 @@ fun EntryBlock(
     val colors = p.colorsOf(entry)
     val description = entryDescription(entry)
     val moveLabel = stringResource(R.string.calendar_move_action)
-    Row(
+    Box(
         modifier
             .heightIn(min = HelmDimens.touchTarget)
-            .height(IntrinsicSize.Min)
             .clip(HelmShapes.badge)
             .background(colors.background)
+            .drawBehind { drawRect(colors.bar, size = Size(BAR_WIDTH.toPx(), size.height)) }
             .combinedClickable(
                 onClickLabel = stringResource(R.string.calendar_open),
                 onLongClickLabel = if (entry.movable) moveLabel else null,
@@ -127,16 +132,16 @@ fun EntryBlock(
                 if (entry.movable) customActions = listOf(CustomAccessibilityAction(moveLabel) { onMove(entry); true })
             }
             .testTag(CalendarTags.entry(entry.key)),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        Box(Modifier.width(3.dp).fillMaxHeight().background(colors.bar))
-        Column(Modifier.align(Alignment.CenterVertically).padding(horizontal = 4.dp, vertical = 3.dp)) {
+        // No padding above and below: the lines are centred, and a half-hour block keeps two lines at a larger font.
+        Column(Modifier.padding(start = BAR_WIDTH + 5.dp, end = 4.dp)) {
             if (showTime && entry.time != null) Text(entry.time, style = helmType.small, color = p.textMuted, maxLines = 1)
-            Text(
+            WordTitle(
                 markedTitle(entry),
                 style = helmType.smallStrong,
                 color = colors.text,
                 maxLines = maxLines,
-                overflow = TextOverflow.Ellipsis,
                 textDecoration = if (entry.done) TextDecoration.LineThrough else null,
             )
         }

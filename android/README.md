@@ -8,7 +8,7 @@ turns on the read-only **calendar address** for Google and Apple Calendar.
 
 - Package and application id: `dev.helm.planner`. This is a **working id: change it before any
   store release** (it cannot change after the first upload).
-- Version 0.8.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.8.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -46,15 +46,21 @@ from Settings, and from a `helm://pair` link (the QR code of `hlm pair`):
 Tapping a task opens its details. The bar at the bottom switches between Today (where the app
 opens), the calendar and the board.
 
-**Calendar**: the week (Monday to Sunday) on an hour grid, or one day. Tasks with a time are
+**Calendar**: the week on an hour grid, or one day, switched by two text tabs (**Week** / **Day**).
+The week shows as many days side by side as fit at least 104 dp each (more with a larger font):
+three on a phone, starting with today, which a swipe moves day by day (a fling at most a screen on).
+When seven fit (about 780 dp: a tablet, a large phone on its side) it shows Monday to Sunday and a
+swipe turns the week. The arrows go a week back or on, and in the day view a day. A title breaks
+only between words: what does not fit ends in "…" (`wordLines`), never "Zadzw / onić". Tasks with a time are
 blocks at their hour (30 minutes tall, side by side when they overlap); tasks without a time sit in
 a band above the hours (two per day, then "+N", which opens the day). The day view lists overdue
-tasks (on today) and tasks without a time above its hours. Today's column is highlighted with a
-line at the current time; overdue tasks are in the danger colour and marked "!", later dates of a
-repeating task "↻" (computed by `domain/Recurrence.kt`, from today on), done tasks "✓". Swipe or
-use the arrows for the previous or next week or day; **Today** comes back, a day's header opens
-that day. A tap opens the task's details. A **long press** (or the screen reader's "Move" action)
-opens a sheet to pick another day of the week or any day and a time or "No time"; **Move** changes
+tasks (on today) and tasks without a time above its hours. Today's header is in the accent and
+underlined, its column lightly tinted, with a line at the current time; overdue tasks are in the
+danger colour and marked "!", later dates of a repeating task "↻" (computed by
+`domain/Recurrence.kt`, from today on), done tasks "✓". **Today** comes back, a day's header opens
+that day, and leaving a day for the week shows that day in it. A tap opens the task's details. A
+**long press** (or the screen reader's "Move" action) opens a sheet, laid out like Settings, to
+pick a day of the task's week, another day or a time or "No time"; **Move** changes
 Room and queues `setDue` through the outbox like any other change, and the snackbar offers
 **Undo**, which sends the old day and time back the same way. Later dates of a series and done
 tasks do not move (move the task itself). Dragging a block to another hour or day is not there

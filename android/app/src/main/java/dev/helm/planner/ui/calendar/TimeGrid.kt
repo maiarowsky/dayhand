@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -48,13 +48,16 @@ import java.time.format.TextStyle
 val HOUR_HEIGHT: Dp = HelmDimens.touchTarget * 2
 val GUTTER_WIDTH: Dp = 48.dp
 
+/** How strongly today's column is tinted: enough to find it, not enough to compete with its tasks. */
+private const val TODAY_TINT = 0.22f
+
 /** Room above the first hour shown, so its label (drawn just above its line) is not cut off. */
 val HOUR_LABEL_ROOM: Dp = 16.dp
 
 /** The gutter grows with the system font size, so "10:00" stays on one line. */
 @Composable
 fun gutterWidth(): Dp = GUTTER_WIDTH * LocalDensity.current.fontScale.coerceAtLeast(1f)
-private const val HOURS = 24
+const val HOURS = 24
 private val BLOCK_HEIGHT = HOUR_HEIGHT * CalendarDays.EVENT_MINUTES / 60
 
 /** Where the hours start scrolled to: an hour before now on today, else 07:00. */
@@ -77,7 +80,7 @@ fun HourGrid(
 }
 
 @Composable
-private fun HourLabels(modifier: Modifier) {
+internal fun HourLabels(modifier: Modifier) {
     val p = palette
     Column(modifier) {
         repeat(HOURS) { hour ->
@@ -89,7 +92,7 @@ private fun HourLabels(modifier: Modifier) {
 }
 
 @Composable
-private fun DayColumn(
+internal fun DayColumn(
     day: CalendarDay,
     nowMinute: Int,
     onOpen: (CalendarEntry) -> Unit,
@@ -100,7 +103,7 @@ private fun DayColumn(
     val p = palette
     BoxWithConstraints(
         modifier
-            .background(if (day.isToday) p.accentSoft.copy(alpha = 0.35f) else p.background)
+            .background(if (day.isToday) p.accentSoft.copy(alpha = TODAY_TINT) else p.background)
             .drawBehind {
                 val hour = HOUR_HEIGHT.toPx()
                 for (h in 0 until HOURS) {
@@ -139,7 +142,7 @@ private fun DayColumn(
     }
 }
 
-/** A day above the week's columns: short weekday and number, today in the accent; a tap opens the day. */
+/** A day above the week's columns: short weekday and number; today in the accent, underlined; a tap opens the day. */
 @Composable
 fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier) {
     val p = palette
@@ -158,58 +161,45 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
                 heading()
                 contentDescription = description
             }
-            .padding(vertical = 4.dp)
+            .padding(top = 4.dp)
             .testTag(CalendarTags.dayHeader(day.date)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val color = if (day.isToday) p.accent else p.textMuted
+        Text(date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale), style = helmType.small, color = color, maxLines = 1)
         Text(
-            date.dayOfWeek.getDisplayName(TextStyle.SHORT, locale),
-            style = helmType.small,
-            color = if (day.isToday) p.accent else p.textMuted,
+            date.dayOfMonth.toString(),
+            style = if (day.isToday) helmType.bodyStrong else helmType.body,
+            color = if (day.isToday) p.accent else p.text,
+            textAlign = TextAlign.Center,
             maxLines = 1,
         )
+        // Today is marked by a line as well as by colour.
         Box(
             Modifier
-                .size(30.dp)
+                .padding(top = 4.dp)
+                .size(width = 24.dp, height = 2.dp)
                 .clip(CircleShape)
-                .background(if (day.isToday) p.accent else p.background),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                date.dayOfMonth.toString(),
-                style = helmType.smallStrong,
-                color = if (day.isToday) p.onAccent else p.text,
-                textAlign = TextAlign.Center,
-            )
-        }
+                .background(if (day.isToday) p.accent else Color.Transparent),
+        )
     }
 }
 
-/** The week's day headers over the columns, with the gutter's room on the left. */
+/** "All day" in the hours' column, beside the band of tasks without a time. */
 @Composable
-fun DayHeaders(days: List<CalendarDay>, onOpenDay: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth()) {
-        Spacer(Modifier.width(gutterWidth()))
-        days.forEach { DayHeader(it, onOpenDay, Modifier.weight(1f)) }
+fun UntimedLabel(modifier: Modifier = Modifier) {
+    Box(modifier.padding(end = 6.dp, top = 8.dp), contentAlignment = Alignment.TopEnd) {
+        Text(stringResource(R.string.calendar_no_time_short), style = helmType.small, color = palette.textFaint, textAlign = TextAlign.End)
     }
 }
 
-/** Tasks without a time, a band over the week's hours: [visible] per day, then "+n" that opens the day. */
+/** One day's tasks without a time, in the band over the hours: [visible] of them, then "+n" that opens the day. */
 @Composable
-fun UntimedBand(days: List<CalendarDay>, onOpen: (CalendarEntry) -> Unit, onMove: (CalendarEntry) -> Unit, onOpenDay: (String) -> Unit, visible: Int = 2) {
-    if (days.all { it.untimed.isEmpty() }) return
-    val p = palette
-    Row(Modifier.fillMaxWidth().background(p.surface).padding(vertical = 2.dp)) {
-        Box(Modifier.width(gutterWidth()).padding(end = 6.dp, top = 4.dp), contentAlignment = Alignment.TopEnd) {
-            Text(stringResource(R.string.calendar_no_time_short), style = helmType.small, color = p.textFaint, textAlign = TextAlign.End)
-        }
-        days.forEach { day ->
-            Column(Modifier.weight(1f).padding(horizontal = 1.dp)) {
-                val shown = if (day.untimed.size > visible) day.untimed.take(visible - 1) else day.untimed
-                shown.forEach { EntryBlock(it, onOpen, onMove, Modifier.fillMaxWidth().padding(vertical = 1.dp)) }
-                val hidden = day.untimed.size - shown.size
-                if (hidden > 0) MoreEntries(hidden, day.date, onOpenDay)
-            }
-        }
+fun UntimedDay(day: CalendarDay, onOpen: (CalendarEntry) -> Unit, onMove: (CalendarEntry) -> Unit, onOpenDay: (String) -> Unit, visible: Int = 2) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 1.dp, vertical = 2.dp)) {
+        val shown = if (day.untimed.size > visible) day.untimed.take(visible - 1) else day.untimed
+        shown.forEach { EntryBlock(it, onOpen, onMove, Modifier.fillMaxWidth().padding(vertical = 1.dp)) }
+        val hidden = day.untimed.size - shown.size
+        if (hidden > 0) MoreEntries(hidden, day.date, onOpenDay)
     }
 }

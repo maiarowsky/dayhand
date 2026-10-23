@@ -1,14 +1,15 @@
 package dev.helm.planner.ui.calendar
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -18,11 +19,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,7 +52,6 @@ import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.components.HeaderIconButton
-import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.components.TextAction
@@ -64,10 +68,12 @@ enum class CalendarMode { WEEK, DAY }
 /** Pages either side of this week (or today); far more than anyone swipes. */
 private const val PAGES = 10_000
 private const val CENTER = PAGES / 2
+private const val WEEK_DAYS = 7
 
 /**
- * The calendar: a week of hours (tasks with a time on the hours, the rest in a band on top) or one day, swiped
- * week by week or day by day. A tap on a task opens its details; a long press moves it, with Undo.
+ * The calendar: the week's hours (tasks with a time on the hours, the rest in a band on top) or one day. On a phone the
+ * week shows three days at a time and swipes day by day, with the arrows a week back or on; from tablet width it
+ * shows Monday to Sunday and swipes week by week. A tap on a task opens its details; a long press moves it, with Undo.
  */
 @Composable
 fun CalendarScreen(
@@ -77,23 +83,32 @@ fun CalendarScreen(
     initialMode: CalendarMode = CalendarMode.WEEK,
     bottomBar: @Composable () -> Unit = {},
 ) {
+    BoxWithConstraints(modifier) {
+        val days = visibleDays(maxWidth, gutterWidth(), LocalDensity.current.fontScale)
+        CalendarContent(state, actions, days, initialMode, bottomBar)
+    }
+}
+
+@Composable
+private fun CalendarContent(
+    state: CalendarUiState,
+    actions: CalendarActions,
+    days: Int,
+    initialMode: CalendarMode,
+    bottomBar: @Composable () -> Unit,
+) {
     val p = palette
     val locale = appLocale()
     val today = LocalDate.parse(state.today)
     var mode by rememberSaveable { mutableStateOf(initialMode) }
-    var weekPage by rememberSaveable { mutableIntStateOf(CENTER) }
     var dayPage by rememberSaveable { mutableIntStateOf(CENTER) }
     var moving by remember { mutableStateOf<CalendarEntry?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val weekPager = rememberPagerState(initialPage = weekPage) { PAGES }
+    val strip = rememberWeekStripState(today, days)
     val dayPager = rememberPagerState(initialPage = dayPage) { PAGES }
-    LaunchedEffect(weekPager.settledPage) { weekPage = weekPager.settledPage }
     LaunchedEffect(dayPager.settledPage) { dayPage = dayPager.settledPage }
-    BackHandler(enabled = mode == CalendarMode.DAY) { mode = CalendarMode.WEEK }
 
-    val thisWeek = CalendarDays.weekStart(today)
-    val weekOf = { page: Int -> thisWeek.plusWeeks((page - CENTER).toLong()) }
     val dayOf = { page: Int -> today.plusDays((page - CENTER).toLong()) }
     val openDay = { date: String ->
         val page = CENTER + ChronoUnit.DAYS.between(today, LocalDate.parse(date)).toInt()
@@ -101,13 +116,26 @@ fun CalendarScreen(
         scope.launch { dayPager.scrollToPage(page) }
         mode = CalendarMode.DAY
     }
-    val pager = if (mode == CalendarMode.WEEK) weekPager else dayPager
-    val subtitle = if (mode == CalendarMode.WEEK) {
-        weekRange(weekOf(weekPager.currentPage))
+    // Back in the week, the day just looked at is in view.
+    val showWeek = {
+        val index = strip.indexOf(dayOf(dayPager.currentPage))
+        if (index !in strip.firstDay until strip.firstDay + days) strip.snapTo(strip.startOfStep(index, days))
+        mode = CalendarMode.WEEK
+    }
+    val week = mode == CalendarMode.WEEK
+    val subtitle = if (week) {
+        dateRange(strip.date(strip.firstDay), strip.date(strip.firstDay + days - 1))
     } else {
         dayOf(dayPager.currentPage).format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", locale))
     }
-    val step = { by: Int -> scope.launch { pager.animateScrollToPage(pager.currentPage + by) } }
+    val step = { by: Int ->
+        scope.launch {
+            if (week) strip.animateTo(strip.firstDay + by * WEEK_DAYS) else dayPager.animateScrollToPage(dayPager.currentPage + by)
+        }
+    }
+    val atHome = if (week) strip.firstDay == strip.home(today, days) else dayPager.currentPage == CENTER
+    val goHome = { scope.launch { if (week) strip.animateTo(strip.home(today, days)) else dayPager.animateScrollToPage(CENTER) } }
+    BackHandler(enabled = !week) { showWeek() }
     val moved = stringResource(R.string.calendar_moved)
     val undo = stringResource(R.string.calendar_undo)
     val noTime = stringResource(R.string.calendar_no_time)
@@ -124,12 +152,11 @@ fun CalendarScreen(
     }
 
     Scaffold(
-        modifier = modifier.testTag(CalendarTags.SCREEN),
+        modifier = Modifier.testTag(CalendarTags.SCREEN),
         containerColor = p.background,
         topBar = {
             Column {
                 LargeHeader(stringResource(R.string.calendar_title), subtitle = subtitle) {
-                    val week = mode == CalendarMode.WEEK
                     HeaderIconButton(
                         Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                         stringResource(if (week) R.string.calendar_previous_week else R.string.calendar_previous_day),
@@ -146,9 +173,7 @@ fun CalendarScreen(
                     )
                     HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
                 }
-                ModeRow(mode, onMode = { mode = it }, showToday = pager.currentPage != CENTER) {
-                    scope.launch { pager.animateScrollToPage(CENTER) }
-                }
+                ModeTabs(mode, onMode = { if (it == CalendarMode.WEEK) showWeek() else mode = it }, showToday = !atHome, onToday = { goHome() })
                 StatusBanner(state.connection, state.pendingChanges, actions::openSettings)
             }
         },
@@ -156,11 +181,18 @@ fun CalendarScreen(
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
-            if (mode == CalendarMode.WEEK) {
-                HorizontalPager(weekPager, Modifier.fillMaxSize().testTag(CalendarTags.WEEK), key = { it }) { page ->
-                    val days = remember(state.tasks, state.today, page) { CalendarDays.days(state.tasks, weekOf(page), 7, state.today) }
-                    WeekPage(days, state.nowMinute, { actions.openTask(it.task.localId) }, { moving = it }, openDay)
-                }
+            if (week) {
+                WeekView(
+                    strip,
+                    days,
+                    state.tasks,
+                    state.today,
+                    state.nowMinute,
+                    { actions.openTask(it.task.localId) },
+                    { moving = it },
+                    openDay,
+                    Modifier.fillMaxSize().testTag(CalendarTags.WEEK),
+                )
             } else {
                 HorizontalPager(dayPager, Modifier.fillMaxSize().testTag(CalendarTags.DAY), key = { it }) { page ->
                     val date = dayOf(page)
@@ -174,47 +206,63 @@ fun CalendarScreen(
     moving?.let { entry -> MoveSheet(entry, onDismiss = { moving = null }) { date, time -> onMove(entry, date, time) } }
 }
 
+/**
+ * Week or day as two text tabs with a line under the chosen one (as the board's columns), and "Today" on the right
+ * when the view is elsewhere.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModeRow(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showToday: Boolean, onToday: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = HelmDimens.screenMargin, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        HelmChip(stringResource(R.string.calendar_week), mode == CalendarMode.WEEK, { onMode(CalendarMode.WEEK) }, Modifier.testTag(CalendarTags.MODE_WEEK))
-        HelmChip(stringResource(R.string.calendar_day), mode == CalendarMode.DAY, { onMode(CalendarMode.DAY) }, Modifier.testTag(CalendarTags.MODE_DAY))
-        Spacer(Modifier.weight(1f))
-        if (showToday) TextAction(stringResource(R.string.calendar_go_today), onToday, modifier = Modifier.testTag(CalendarTags.TODAY))
-    }
-}
-
-/** "19 – 25 Oct 2026". */
-@Composable
-private fun weekRange(monday: LocalDate): String {
-    val locale = appLocale()
-    val sunday = monday.plusDays(6)
-    val end = sunday.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
-    val start = monday.format(DateTimeFormatter.ofPattern(if (monday.month == sunday.month) "d" else "d MMM", locale))
-    return "$start – $end"
-}
-
-@Composable
-private fun WeekPage(
-    days: List<CalendarDay>,
-    nowMinute: Int,
-    onOpen: (CalendarEntry) -> Unit,
-    onMove: (CalendarEntry) -> Unit,
-    onOpenDay: (String) -> Unit,
-) {
-    val start = with(LocalDensity.current) { (HOUR_HEIGHT * firstHour(days.firstOrNull { it.isToday }, nowMinute) - HOUR_LABEL_ROOM).roundToPx().coerceAtLeast(0) }
-    Column(Modifier.fillMaxSize()) {
-        DayHeaders(days, onOpenDay)
-        UntimedBand(days, onOpen, onMove, onOpenDay)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState(start))) {
-            HourGrid(days, nowMinute, onOpen, onMove)
-            Spacer(Modifier.height(24.dp))
+private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showToday: Boolean, onToday: () -> Unit) {
+    val p = palette
+    Column {
+        Row(
+            Modifier.fillMaxWidth().padding(end = HelmDimens.screenMargin - 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PrimaryScrollableTabRow(
+                selectedTabIndex = mode.ordinal,
+                modifier = Modifier.weight(1f),
+                edgePadding = HelmDimens.screenMargin - 16.dp,
+                containerColor = p.background,
+                contentColor = p.accent,
+                divider = {},
+            ) {
+                CalendarMode.entries.forEach { m ->
+                    Tab(
+                        selected = mode == m,
+                        onClick = { onMode(m) },
+                        selectedContentColor = p.accent,
+                        unselectedContentColor = p.textMuted,
+                        text = {
+                            Text(
+                                stringResource(if (m == CalendarMode.WEEK) R.string.calendar_week else R.string.calendar_day),
+                                style = helmType.smallStrong.copy(fontSize = helmType.body.fontSize),
+                                maxLines = 1,
+                            )
+                        },
+                        modifier = Modifier
+                            .heightIn(min = HelmDimens.touchTarget)
+                            .testTag(if (m == CalendarMode.WEEK) CalendarTags.MODE_WEEK else CalendarTags.MODE_DAY),
+                    )
+                }
+            }
+            if (showToday) TextAction(stringResource(R.string.calendar_go_today), onToday, modifier = Modifier.testTag(CalendarTags.TODAY))
         }
+        HorizontalDivider(color = p.border)
     }
+}
+
+/** "19 – 25 Oct 2026", "29 Oct – 1 Nov 2026", "30 Dec 2026 – 1 Jan 2027". */
+@Composable
+private fun dateRange(first: LocalDate, last: LocalDate): String {
+    val locale = appLocale()
+    val end = last.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
+    val startPattern = when {
+        first.year != last.year -> "d MMM yyyy"
+        first.month != last.month -> "d MMM"
+        else -> "d"
+    }
+    return "${first.format(DateTimeFormatter.ofPattern(startPattern, locale))} – $end"
 }
 
 @Composable
