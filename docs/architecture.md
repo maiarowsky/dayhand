@@ -7,7 +7,8 @@ Android app ──(Convex client, JWT)──> convex/app.ts ─┐
                                                       ├─> domain operations (convex/lib/*.ts)
 AI agent ──(MCP, API key)──> /mcp (convex/mcp.ts) ───┤      registered as internal functions
 Claude app ──(MCP, OAuth access token)──> /mcp ──────┤      in convex/ops.ts
-helm CLI ──(MCP tools/call, API key)─────────────────┘
+helm CLI ──(MCP tools/call, API key)─────────────────┤
+integration ──(REST /api/v1, API key)──> convex/rest.ts ┘   (same tools, lib/restRoutes.ts)
 
 Android app ──(device token)──> /auth/token ─┐
             ──(pairing code)──> /auth/pair  ─┼─> convex/pairing.ts ──> convex/devices.ts
@@ -38,6 +39,13 @@ helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
 - `dryRun` exists only on the MCP layer: the internal mutation runs the operation, every check
   included, then throws its result, so Convex rolls the transaction back (`convex/ops.ts`).
 - The CLI is an MCP client too, so app, agent and CLI run exactly the same code.
+- `convex/rest.ts` is the REST API ([api.md](api.md)): each route of `lib/restRoutes.ts` names
+  the MCP tool it runs, so it calls the same internal function with the same arguments. It adds
+  only HTTP: problem details (`lib/problem.ts`), `Idempotency-Key` as `clientId`, `ETag` and
+  `If-Match` (checked inside the mutation, `ops.ts`), `X-RateLimit-*` from the same per-key
+  counters as `/mcp`. `lib/openapi.ts` builds the OpenAPI 3.1 document from the same table,
+  validators and `docs/schemas`; `lib/toolResults.ts` holds the result and error shapes both
+  surfaces share.
 
 ## Data model (`convex/schema.ts`)
 

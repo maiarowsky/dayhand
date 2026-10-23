@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/api-key-list.schema.json",
+  "title": "API keys",
+  "description": "GET /api/v1/keys (hlm key list): every API key of the user, revoked and expired ones included.",
+  "type": "object",
+  "required": ["keys"],
+  "properties": {
+    "keys": { "type": "array", "items": { "$ref": "api-key.schema.json" } }
+  }
+}

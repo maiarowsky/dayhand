@@ -12,8 +12,7 @@ import type { Id } from "./_generated/dataModel";
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { hashKey } from "./apiKeys";
 import type { CallKind } from "./callLimits";
-import { DRY_RUN_CODE } from "./lib/args";
-import type { ErrorCode, Identity } from "./lib/core";
+import type { Identity } from "./lib/core";
 import { INSTRUCTIONS } from "./lib/guide";
 import { bearerToken } from "./lib/http";
 import { getPrompt, PromptArgumentError, PROMPTS, readResource, readsUserData, RESOURCE_TEMPLATES, RESOURCES } from "./lib/mcpContent";
@@ -47,6 +46,7 @@ import {
   type RpcRequest,
 } from "./lib/mcpProtocol";
 import { findTool, listTools, scopeOf, type Tool } from "./lib/mcpTools";
+import { describeError, dryRunResult, structuredResult, type ToolError } from "./lib/toolResults";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const CAPABILITIES = { tools: { listChanged: false }, resources: {}, prompts: { listChanged: false } };
@@ -149,35 +149,11 @@ const retryAfter = (refusal: Refusal) => ({ "Retry-After": String(Math.max(1, Ma
 
 // ---- Tools ----
 
-type ToolErrorCode = ErrorCode | "rate_limited" | "internal";
-type ToolError = { code: ToolErrorCode; message: string; retryAfterMs?: number };
-const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated"];
 const IDENTITY_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName"];
 
 /** A failed tool call: the message as text, and `{ error: { code, message } }` for programs. */
 function toolError(error: ToolError) {
   return { content: [{ type: "text", text: error.message }], structuredContent: { error }, isError: true };
-}
-
-/** Error safe to show the agent: domain errors and argument errors, nothing internal. */
-function describeError(error: unknown): ToolError {
-  if (error instanceof ConvexError) {
-    const data = error.data as { code?: string; message?: string } | string;
-    if (typeof data === "string") return { code: "internal", message: data };
-    const code = ERROR_CODES.find((c) => c === data.code) ?? "internal";
-    return { code, message: data.message ?? "Request failed" };
-  }
-  const message = error instanceof Error ? error.message : "";
-  const validation = /ArgumentValidationError:([\s\S]*?)(\n\s*\n|$)/.exec(message);
-  if (validation) return { code: "invalid_argument", message: `Invalid arguments:${validation[1]}`.trim() };
-  return { code: "internal", message: "Internal error" };
-}
-
-/** What a rolled-back dry run would have returned, or undefined for any other error. */
-function dryRunResult(error: unknown): { result: unknown } | undefined {
-  if (!(error instanceof ConvexError)) return undefined;
-  const data = error.data as { code?: string; result?: unknown };
-  return data?.code === DRY_RUN_CODE ? { result: data.result } : undefined;
 }
 
 /**
@@ -187,9 +163,7 @@ function dryRunResult(error: unknown): { result: unknown } | undefined {
  * clients keep working. A Markdown or iCalendar export's text is the export itself.
  */
 function toolSuccess(tool: Tool, value: unknown, options: { dryRun?: boolean; paged?: boolean } = {}) {
-  const plain = value !== null && typeof value === "object" && !Array.isArray(value);
-  const structured: Record<string, unknown> = { ...(plain ? (value as Record<string, unknown>) : { result: value }) };
-  if (options.dryRun) structured.dryRun = true;
+  const structured = structuredResult(value, options.dryRun);
   let text: string;
   if (tool.name === "export_plan" && (structured.format === "markdown" || structured.format === "ics")) text = String(structured.content);
   else if (tool.name === "list_all" && !options.paged) text = JSON.stringify(structured.result, null, 2);

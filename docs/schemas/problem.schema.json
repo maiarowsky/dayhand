@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/problem.schema.json",
+  "title": "Problem",
+  "description": "An error of the REST API /api/v1 as problem details (RFC 9457, application/problem+json). code is the same code as an MCP tool error.",
+  "type": "object",
+  "required": ["type", "title", "status", "detail", "code"],
+  "properties": {
+    "type": { "type": "string", "description": "https://schemas.helm.invalid/problems/<code>: an identifier, not an address to fetch" },
+    "title": { "type": "string" },
+    "status": { "type": "integer", "description": "The HTTP status" },
+    "detail": { "type": "string", "description": "What went wrong, for people" },
+    "code": {
+      "type": "string",
+      "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
+    },
+    "retryAfterMs": { "type": "integer", "minimum": 0, "description": "Only with rate_limited: milliseconds until the key may call again" }
+  }
+}

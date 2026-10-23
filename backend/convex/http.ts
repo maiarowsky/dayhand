@@ -13,6 +13,7 @@ import {
   token as oauthToken,
 } from "./oauthHttp";
 import { createCode, listDevices, pair, revokeDevice, token } from "./pairing";
+import { handle as handleRest } from "./rest";
 
 const http = httpRouter();
 
@@ -46,5 +47,10 @@ http.route({ path: "/calendar/feed", method: "GET", handler: getFeed });
 http.route({ path: "/calendar/feed", method: "POST", handler: enableFeed });
 http.route({ path: "/calendar/feed/rotate", method: "POST", handler: rotateFeed });
 http.route({ path: "/calendar/feed/revoke", method: "POST", handler: revokeFeed });
+
+// The REST API for integrations (docs/api.md); rest.ts routes below the prefix.
+for (const method of ["GET", "POST", "PATCH", "DELETE"] as const) {
+  http.route({ pathPrefix: "/api/v1/", method, handler: handleRest });
+}
 
 export default http;

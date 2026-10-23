@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/api-key.schema.json",
+  "title": "API key",
+  "description": "One personal API key as GET /api/v1/keys lists it (hlm key list). Never the key itself or its hash.",
+  "type": "object",
+  "required": ["id", "name", "kind", "scope", "createdAt", "expiresAt", "revokedAt", "createdWith"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "kind": { "enum": ["cli", "agent"], "description": "Actor of the key's changes: cli (the user at a terminal) or agent" },
+    "scope": { "enum": ["read", "write", "full"], "description": "read: only reads; write: also changes tasks and settings; full: also the account (keys, webhooks, devices, connections, calendar feed)" },
+    "createdAt": { "type": "integer", "description": "Unix milliseconds" },
+    "expiresAt": { "type": ["integer", "null"], "description": "When the key stops working, Unix milliseconds; null: never" },
+    "revokedAt": { "type": ["integer", "null"], "description": "Unix milliseconds; null while the key is not revoked" },
+    "createdWith": { "type": ["string", "null"], "description": "Id of the key that created this one (it stops with that key); null for keys made in the app or by the admin" }
+  }
+}

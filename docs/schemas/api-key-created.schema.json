@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.invalid/api-key-created.schema.json",
+  "title": "Created API key",
+  "description": "POST /api/v1/keys (hlm key create): the new key, shown only this once.",
+  "type": "object",
+  "required": ["id", "name", "kind", "scope", "expiresAt", "key"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "kind": { "enum": ["cli", "agent"] },
+    "scope": { "enum": ["read", "write", "full"] },
+    "expiresAt": { "type": ["integer", "null"], "description": "Unix milliseconds; null: never" },
+    "key": { "type": "string", "pattern": "^helm_", "description": "The API key; store it now, it cannot be shown again" }
+  }
+}

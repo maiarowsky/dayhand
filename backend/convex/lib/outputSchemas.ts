@@ -2,6 +2,149 @@
 // Run `npm run schemas` after changing a schema there.
 
 export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
+  "api-key": {
+    "title": "API key",
+    "description": "One personal API key as GET /api/v1/keys lists it (hlm key list). Never the key itself or its hash.",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "kind",
+      "scope",
+      "createdAt",
+      "expiresAt",
+      "revokedAt",
+      "createdWith"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "kind": {
+        "enum": [
+          "cli",
+          "agent"
+        ],
+        "description": "Actor of the key's changes: cli (the user at a terminal) or agent"
+      },
+      "scope": {
+        "enum": [
+          "read",
+          "write",
+          "full"
+        ],
+        "description": "read: only reads; write: also changes tasks and settings; full: also the account (keys, webhooks, devices, connections, calendar feed)"
+      },
+      "createdAt": {
+        "type": "integer",
+        "description": "Unix milliseconds"
+      },
+      "expiresAt": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "When the key stops working, Unix milliseconds; null: never"
+      },
+      "revokedAt": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "Unix milliseconds; null while the key is not revoked"
+      },
+      "createdWith": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Id of the key that created this one (it stops with that key); null for keys made in the app or by the admin"
+      }
+    }
+  },
+  "api-key-created": {
+    "title": "Created API key",
+    "description": "POST /api/v1/keys (hlm key create): the new key, shown only this once.",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "kind",
+      "scope",
+      "expiresAt",
+      "key"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "kind": {
+        "enum": [
+          "cli",
+          "agent"
+        ]
+      },
+      "scope": {
+        "enum": [
+          "read",
+          "write",
+          "full"
+        ]
+      },
+      "expiresAt": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "Unix milliseconds; null: never"
+      },
+      "key": {
+        "type": "string",
+        "pattern": "^helm_",
+        "description": "The API key; store it now, it cannot be shown again"
+      }
+    }
+  },
+  "api-key-list": {
+    "title": "API keys",
+    "description": "GET /api/v1/keys (hlm key list): every API key of the user, revoked and expired ones included.",
+    "type": "object",
+    "required": [
+      "keys"
+    ],
+    "properties": {
+      "keys": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/api-key"
+        }
+      }
+    }
+  },
+  "api-key-revoke": {
+    "title": "Revoked API key",
+    "description": "DELETE /api/v1/keys/{keyId} (hlm key revoke): the key and when it was revoked (the first time, when it already was).",
+    "type": "object",
+    "required": [
+      "id",
+      "revokedAt"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "revokedAt": {
+        "type": "integer",
+        "description": "Unix milliseconds"
+      }
+    }
+  },
   "board": {
     "title": "Board",
     "description": "board (hlm board).",
@@ -157,6 +300,44 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         }
       }
     ]
+  },
+  "problem": {
+    "title": "Problem",
+    "description": "An error of the REST API /api/v1 as problem details (RFC 9457, application/problem+json). code is the same code as an MCP tool error.",
+    "type": "object",
+    "required": [
+      "type",
+      "title",
+      "status",
+      "detail",
+      "code"
+    ],
+    "properties": {
+      "type": {
+        "type": "string",
+        "description": "https://schemas.helm.invalid/problems/<code>: an identifier, not an address to fetch"
+      },
+      "title": {
+        "type": "string"
+      },
+      "status": {
+        "type": "integer",
+        "description": "The HTTP status"
+      },
+      "detail": {
+        "type": "string",
+        "description": "What went wrong, for people"
+      },
+      "code": {
+        "type": "string",
+        "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
+      },
+      "retryAfterMs": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Only with rate_limited: milliseconds until the key may call again"
+      }
+    }
   },
   "set-now": {
     "title": "Now task",

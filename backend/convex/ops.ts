@@ -5,7 +5,7 @@ import { ConvexError, v, type ObjectType, type PropertyValidators } from "convex
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
 import { args, DRY_RUN_CODE, dryRunArgs } from "./lib/args";
-import { identityOf as who, type Identity } from "./lib/core";
+import { appliedOperation, fail, identityOf as who, loadTask, versionTag, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { findTasks as findTasksOp } from "./lib/findTasks";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
@@ -30,6 +30,22 @@ import {
   listTrash as listTrashOp,
 } from "./lib/views";
 
+// Only the REST API sends a precondition (If-Match, docs/api.md): the task's
+// version tags the change may apply to; "*" means any.
+const preconditionArgs = { ifMatch: v.optional(v.array(v.string())) };
+
+/**
+ * Refuses a change of a task that is no longer at a version the caller saw.
+ * A change already applied with the same clientId is a retry and passes, so
+ * it returns its result as before.
+ */
+async function checkPrecondition(ctx: MutationCtx, userId: string, input: { taskId?: unknown; clientId?: unknown }, tags: string[]) {
+  if (typeof input.taskId !== "string" || tags.includes("*")) return;
+  if (typeof input.clientId === "string" && (await appliedOperation(ctx, userId, input.clientId))) return;
+  const current = versionTag(await loadTask(ctx, userId, input.taskId));
+  if (!tags.includes(current)) fail("precondition_failed", `The task has changed since that version (it is now ${current}); read it again`);
+}
+
 /**
  * A change as an internal mutation. With `dryRun` the change runs, every check
  * included, and is then rolled back by throwing its result: nothing is saved
@@ -40,8 +56,9 @@ function change<F extends PropertyValidators>(
   apply: (ctx: MutationCtx, identity: Identity, input: ObjectType<F>) => Promise<unknown>,
 ) {
   return internalMutation({
-    args: { ...identity, ...fields, ...dryRunArgs },
+    args: { ...identity, ...fields, ...dryRunArgs, ...preconditionArgs },
     handler: async (ctx, a) => {
+      if (a.ifMatch !== undefined) await checkPrecondition(ctx, a.userId, a as { taskId?: unknown; clientId?: unknown }, a.ifMatch);
       const result = await apply(ctx, who(a), a as ObjectType<F>);
       if (a.dryRun) throw new ConvexError({ code: DRY_RUN_CODE, result: JSON.parse(JSON.stringify(result ?? null)) });
       return result;

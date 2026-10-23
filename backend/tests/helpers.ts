@@ -134,3 +134,31 @@ export function modern(method: string, params: Record<string, unknown> = {}, id:
     } as Record<string, string>,
   };
 }
+
+export type RestAnswer = { status: number; headers: Headers; body: any };
+
+/** One request to the REST API /api/v1 with the key (or none); a JSON body when given. */
+export async function rest(
+  key: string | null,
+  method: string,
+  path: string,
+  options: { body?: unknown; headers?: Record<string, string> } = {},
+): Promise<RestAnswer> {
+  const response = await fetch(`${helm().siteUrl}/api/v1${path}`, {
+    method,
+    headers: {
+      ...(key ? { Authorization: `Bearer ${key}` } : {}),
+      ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+    body: options.body === undefined ? undefined : typeof options.body === "string" ? options.body : JSON.stringify(options.body),
+  });
+  const text = await response.text();
+  let body: any = text;
+  try {
+    body = text === "" ? null : JSON.parse(text);
+  } catch {
+    // not JSON: kept as text
+  }
+  return { status: response.status, headers: response.headers, body };
+}

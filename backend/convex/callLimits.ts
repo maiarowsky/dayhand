@@ -1,4 +1,4 @@
-// Limits on MCP calls per API key or agent connection (OAuth): a fixed
+// Limits on MCP and REST calls per API key or agent connection (OAuth): a fixed
 // one-minute window that starts at the first call, separately for reads and writes. A call over the limit is
 // refused before it runs and says when to try again.
 import { v, type Infer } from "convex/values";
@@ -11,7 +11,8 @@ export const CALL_LIMITS = { read: 120, write: 60 } as const;
 const kindValidator = v.union(v.literal("read"), v.literal("write"));
 export type CallKind = Infer<typeof kindValidator>;
 
-export type CallAllowance = { ok: true } | { ok: false; limit: number; retryAfterMs: number };
+/** The outcome of a call against the limit, with what the REST API shows in its X-RateLimit-* headers. */
+export type CallAllowance = { limit: number; remaining: number; resetAt: number } & ({ ok: true } | { ok: false; retryAfterMs: number });
 
 type Subject = { keyId?: Id<"apiKeys">; connectionId?: Id<"oauthGrants"> };
 
@@ -36,17 +37,19 @@ export const consume = internalMutation({
     const now = Date.now();
     const limit = CALL_LIMITS[kind];
     const row = await rowsOf(ctx, subject, kind).unique();
+    const fresh = { ok: true as const, limit, remaining: limit - 1, resetAt: now + CALL_WINDOW_MS };
     if (!row) {
       await ctx.db.insert("callLimits", { ...subject, kind, windowStart: now, calls: 1 });
-      return { ok: true };
+      return fresh;
     }
     if (now - row.windowStart >= CALL_WINDOW_MS) {
       await ctx.db.patch(row._id, { windowStart: now, calls: 1 });
-      return { ok: true };
+      return fresh;
     }
-    if (row.calls >= limit) return { ok: false, limit, retryAfterMs: row.windowStart + CALL_WINDOW_MS - now };
+    const resetAt = row.windowStart + CALL_WINDOW_MS;
+    if (row.calls >= limit) return { ok: false, limit, remaining: 0, resetAt, retryAfterMs: resetAt - now };
     await ctx.db.patch(row._id, { calls: row.calls + 1 });
-    return { ok: true };
+    return { ok: true, limit, remaining: limit - row.calls - 1, resetAt };
   },
 });
 

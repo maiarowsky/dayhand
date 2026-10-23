@@ -1,5 +1,5 @@
 // Writes convex/lib/outputSchemas.ts from docs/schemas, the one contract of
-// the tool results for MCP and hlm: npm run schemas
+// the results for MCP, the REST API and hlm: npm run schemas
 // Each schema becomes a definition named after its file (task.schema.json ->
 // "task") and its references point at those definitions ("#/$defs/task"),
 // so a tool's outputSchema is self-contained: clients never fetch a URL.
@@ -8,8 +8,12 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 const SCHEMAS_DIR = new URL("../../docs/schemas/", import.meta.url);
 const OUTPUT = new URL("../convex/lib/outputSchemas.ts", import.meta.url);
 
-// The tool results (and the tool error) and what they reference.
-const ROOTS = ["task", "task-list", "today", "board", "task-detail", "complete", "set-now", "export", "settings", "tool-error"];
+// The tool results (and the tool error), the REST API's own results and its
+// problem details (lib/openapi.ts), and what they reference.
+const ROOTS = [
+  "task", "task-list", "today", "board", "task-detail", "complete", "set-now", "export", "settings", "tool-error",
+  "problem", "api-key-list", "api-key-created", "api-key-revoke",
+];
 
 const nameOf = (file) => file.replace(/\.schema\.json$/, "");
 

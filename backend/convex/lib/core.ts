@@ -31,7 +31,7 @@ export function actorLabel(event: { actor: Actor; actorName?: string }): string 
   return event.actor === "agent" && event.actorName ? `agent: ${event.actorName}` : event.actor;
 }
 
-export type ErrorCode = "invalid_argument" | "not_found" | "unauthenticated";
+export type ErrorCode = "invalid_argument" | "not_found" | "unauthenticated" | "precondition_failed";
 
 export function fail(code: ErrorCode, message: string): never {
   throw new ConvexError({ code, message });
@@ -72,6 +72,12 @@ export function toTask(doc: Doc<"tasks">) {
   return fields.repeat ? { id: _id, ...fields, rrule: toRRule(fields.repeat, fields.dueDate) } : { id: _id, ...fields };
 }
 export type TaskView = ReturnType<typeof toTask>;
+
+/**
+ * The version of a stored task as an HTTP entity tag (RFC 9110): it changes
+ * with every change to the task. Derived fields such as `overdue` are not part of it.
+ */
+export const versionTag = (task: { updatedAt: number }) => `"${task.updatedAt}"`;
 
 const TASK_REF = /^#(\d{1,15})$/;
 

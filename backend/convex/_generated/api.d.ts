@@ -35,12 +35,16 @@ import type * as lib_mcpTools from "../lib/mcpTools.js";
 import type * as lib_oauthConfig from "../lib/oauthConfig.js";
 import type * as lib_oauthPage from "../lib/oauthPage.js";
 import type * as lib_oauthRules from "../lib/oauthRules.js";
+import type * as lib_openapi from "../lib/openapi.js";
 import type * as lib_outputSchemas from "../lib/outputSchemas.js";
+import type * as lib_problem from "../lib/problem.js";
 import type * as lib_repeat from "../lib/repeat.js";
+import type * as lib_restRoutes from "../lib/restRoutes.js";
 import type * as lib_rrule from "../lib/rrule.js";
 import type * as lib_secrets from "../lib/secrets.js";
 import type * as lib_settingsOps from "../lib/settingsOps.js";
 import type * as lib_taskOps from "../lib/taskOps.js";
+import type * as lib_toolResults from "../lib/toolResults.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_views from "../lib/views.js";
 import type * as lib_vtimezone from "../lib/vtimezone.js";
@@ -51,6 +55,8 @@ import type * as oauthHttp from "../oauthHttp.js";
 import type * as oauthOwner from "../oauthOwner.js";
 import type * as ops from "../ops.js";
 import type * as pairing from "../pairing.js";
+import type * as rest from "../rest.js";
+import type * as restAccount from "../restAccount.js";
 
 import type {
   ApiFromModules,
@@ -86,12 +92,16 @@ declare const fullApi: ApiFromModules<{
   "lib/oauthConfig": typeof lib_oauthConfig;
   "lib/oauthPage": typeof lib_oauthPage;
   "lib/oauthRules": typeof lib_oauthRules;
+  "lib/openapi": typeof lib_openapi;
   "lib/outputSchemas": typeof lib_outputSchemas;
+  "lib/problem": typeof lib_problem;
   "lib/repeat": typeof lib_repeat;
+  "lib/restRoutes": typeof lib_restRoutes;
   "lib/rrule": typeof lib_rrule;
   "lib/secrets": typeof lib_secrets;
   "lib/settingsOps": typeof lib_settingsOps;
   "lib/taskOps": typeof lib_taskOps;
+  "lib/toolResults": typeof lib_toolResults;
   "lib/validators": typeof lib_validators;
   "lib/views": typeof lib_views;
   "lib/vtimezone": typeof lib_vtimezone;
@@ -102,6 +112,8 @@ declare const fullApi: ApiFromModules<{
   oauthOwner: typeof oauthOwner;
   ops: typeof ops;
   pairing: typeof pairing;
+  rest: typeof rest;
+  restAccount: typeof restAccount;
 }>;
 
 /**
