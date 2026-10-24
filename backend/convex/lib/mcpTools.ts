@@ -443,7 +443,7 @@ export const TOOLS: Tool[] = [
   read("export_backlog", {
     title: "Export as Backlog.md",
     description:
-      "The plan as Backlog.md task files (Markdown with a YAML header) plus a config.yml: status mapped to To Do, In Progress or Done, labels, acceptance criteria, plan, dependencies, links as references and proof as the final summary. Tasks imported from Backlog.md keep their ids. Returns the files to write and notes identifying tasks whose exported fields exceed Dayhand import limits, without truncating text; nothing is stored.",
+      "The plan as Backlog.md task files (Markdown with a YAML header) plus a config.yml: status mapped to To Do, In Progress or Done, labels, acceptance criteria, plan, dependencies, links as references and proof as the final summary. Tasks imported from Backlog.md keep their ids. Returns the files to write and notes identifying tasks or config.yml whose exported fields or serialized content exceed Dayhand import limits, without truncating text; nothing is stored.",
     fields: args.exportBacklog,
     output: "backlog-export",
     ref: internal.ops.exportBacklog,

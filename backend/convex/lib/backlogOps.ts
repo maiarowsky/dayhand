@@ -299,6 +299,12 @@ function fileOf(task: Doc<"tasks">, ids: Map<string, string>, timezone: string):
   return writeTask(file);
 }
 
+function fileSizeNotes(file: BacklogFile): string[] {
+  return file.content.length > BACKLOG_LIMITS.content
+    ? [`${file.path}: exported file exceeds Dayhand import limit (${BACKLOG_LIMITS.content} characters); text was not truncated`]
+    : [];
+}
+
 function overflowNotes(file: BacklogFile & { id: string }): string[] {
   const task = readTask(file);
   const done = statusFor(task.status, DEFAULT_STATUSES).status === "done";
@@ -348,5 +354,7 @@ export async function exportBacklog(ctx: QueryCtx, identity: Identity, input: Ar
   const ids = idsOf(tasks, prefix);
   const files = tasks.map((task) => ({ ...fileOf(task, ids, timezone), id: ids.get(task._id)!, taskId: task._id, ref: task.ref ?? null }));
   const labels = [...new Set(tasks.flatMap((t) => t.labels))].sort();
-  return { format: BACKLOG_KIND, prefix, total: files.length, config: writeConfig(prefix, labels), files, notes: [...exportNotes(tasks, ids), ...files.flatMap(overflowNotes)] };
+  const config = writeConfig(prefix, labels);
+  const notes = [...exportNotes(tasks, ids), ...files.flatMap(overflowNotes), ...files.flatMap(fileSizeNotes), ...fileSizeNotes(config)];
+  return { format: BACKLOG_KIND, prefix, total: files.length, config, files, notes };
 }

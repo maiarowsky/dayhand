@@ -972,7 +972,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "items": {
           "type": "string"
         },
-        "description": "Fields and dependencies left out, and tasks whose exported text exceeds Dayhand import limits (text is not truncated)"
+        "description": "Fields and dependencies left out, and tasks or config.yml whose exported text exceeds Dayhand import limits, including the file content limit (text is not truncated)"
       }
     }
   },

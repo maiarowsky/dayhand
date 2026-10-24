@@ -28,7 +28,9 @@ The same through MCP is `import_backlog` (a change, so it takes `dryRun`, obeys 
 and tool policies, and counts against the limit of changes) and `export_backlog` (a read); through
 the REST API, `POST /api/v1/import/backlog` and `GET /api/v1/export/backlog`
 ([api.md](api.md)). An agent reads files from wherever it works and sends their text; Dayhand never
-reads a disk itself.
+reads a disk itself. Selecting a subdirectory keeps paths relative to the backlog root and includes
+that project's config, found in its ancestors; without a config, the task-folder layout supplies
+the root, so nested and archived subsets keep their classification.
 
 ## The file format
 
@@ -155,5 +157,8 @@ dependencies, links and proof when the flattened fields fit the import limits; t
 checklist and the notes section as text. Export never truncates that text: its `notes` identify
 any task whose resulting note exceeds 20,000 characters or finished task's final summary exceeds
 4,000 characters, including contributions from checklists, resume notes, blocked reasons, proof
-links and checks. The CLI prints these warnings with or without a destination folder. The tests
+links and checks. It also warns when any serialized task file or the aggregated `config.yml`
+exceeds the 100,000-character file limit, preserving the complete content. File names fit a
+255-byte UTF-8 component budget including the ID and extension; only the filename slug is
+shortened, not the title in the file. The CLI prints warnings with or without a destination folder. The tests
 check the round trip and overflow warnings on synthetic data (`backend/tests/backlog.test.ts`).

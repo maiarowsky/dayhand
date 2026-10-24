@@ -4,6 +4,7 @@
 import { describe, expect, test } from "vitest";
 import { api } from "../convex/_generated/api";
 import { readTask } from "../convex/lib/backlogMd";
+import { parseFrontmatter } from "../convex/lib/frontmatter";
 import { appClient, callTool, createKey, mcpClient, newUserId, openApiChecker, rest } from "./helpers";
 
 type File = { path: string; content: string };
@@ -214,6 +215,41 @@ async function asOwnerPause(userId: string) {
 }
 
 describe("export_backlog", () => {
+  test("serialized task files over 100000 characters warn without truncation; the exact limit is importable", async () => {
+    const { client } = await owner();
+    const links = Array.from({ length: 20 }, (_, i) => ({ url: `https://example.com/${i}/`.padEnd(2_000, "x") }));
+    const acceptance = Array.from({ length: 50 }, () => ({ text: "c".repeat(500) }));
+    const task = await callTool(client, "add_task", { title: "Large file", note: "n".repeat(20_000), plan: "p".repeat(20_000), acceptance, links });
+    const exported = await callTool(client, "export_backlog");
+    const output = exported.files[0];
+    expect(output.content.length).toBeGreaterThan(100_000);
+    expect(exported.notes).toEqual([`${output.path}: exported file exceeds Dayhand import limit (100000 characters); text was not truncated`]);
+    expect(readTask(output)).toMatchObject({ description: "n".repeat(20_000), plan: "p".repeat(20_000), acceptance: acceptance.map((item) => ({ ...item, met: false })), references: links.map((link) => link.url) });
+    const target = await owner();
+    const refused = await target.client.callTool({ name: "import_backlog", arguments: { files: [{ path: output.path, content: output.content }] } });
+    expect((refused.structuredContent as any).error).toMatchObject({ code: "invalid_argument", message: expect.stringContaining("100000 characters") });
+    const excess = output.content.length - 100_000;
+    await callTool(client, "update_task", { taskId: task.id, plan: "p".repeat(20_000 - excess) });
+    const boundary = await callTool(client, "export_backlog");
+    expect(boundary.files[0].content.length).toBe(100_000);
+    expect(boundary.notes).toEqual([]);
+    expect((await callTool(target.client, "import_backlog", { files: boundary.files.map(({ path, content }: File) => ({ path, content })) })).created).toBe(1);
+  });
+
+  test("an oversized config warns and retains every aggregated label", async () => {
+    const { client } = await owner();
+    const labels = Array.from({ length: 100 }, (_, i) => Array.from({ length: 20 }, (_, j) => `label-${i}-${j}-`.padEnd(50, "x")));
+    const files = labels.map((group, i) => file(`tasks/task-${i}.md`, `id: TASK-${i}\ntitle: Labels ${i}\nlabels: ${JSON.stringify(group)}`));
+    expect((await callTool(client, "import_backlog", { files })).created).toBe(100);
+    const exported = await callTool(client, "export_backlog");
+    expect(exported.config.content.length).toBeGreaterThan(100_000);
+    expect(exported.notes).toEqual(["config.yml: exported file exceeds Dayhand import limit (100000 characters); text was not truncated"]);
+    expect(parseFrontmatter(exported.config.content).labels).toEqual(labels.flat().sort());
+    const target = await owner();
+    const refused = await target.client.callTool({ name: "import_backlog", arguments: { files: [exported.config] } });
+    expect((refused.structuredContent as any).error).toMatchObject({ code: "invalid_argument", message: expect.stringContaining("100000 characters") });
+  });
+
   test("flattened text stays complete and warnings name every task over the import limits", async () => {
     const { client } = await owner();
     const checklist = await callTool(client, "add_task", { title: "Checklist overflow", note: "n".repeat(20_000), checklist: [{ title: "Keep this item" }] });

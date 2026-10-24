@@ -2,7 +2,7 @@
 // print exactly what the official MCP SDK client gets as structuredContent,
 // and every --json output follows docs/schemas.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { dependenciesFirst, readFolder } from "../src/backlog/folder.js";
 import { flatten } from "../src/registry/index.js";
@@ -193,6 +193,44 @@ describe("agent contract", () => {
     await sdk.close();
   });
 
+  test("backlog subdirectory imports preserve every folder classification and root config", async () => {
+    const { key } = await newUser();
+    const root = join(mkdtempSync(join(TEST_HOME, "subsets-")), "backlog");
+    mkdirSync(root);
+    writeFileSync(join(root, "backlog.config.yml"), "statuses: [Queue, Middle, Shipped]\n");
+    const cases = [
+      { branch: "tasks", expected: { status: "doing" } },
+      { branch: "drafts", expected: { status: "todo", proposedAt: expect.any(Number) } },
+      { branch: "completed", expected: { status: "done" } },
+      { branch: "archive/tasks", expected: { status: "doing", archivedAt: expect.any(Number) } },
+      { branch: "archive/drafts", reason: "an archived draft, not a task" },
+      { branch: "docs", reason: "a document, not a task" },
+      { branch: "decisions", reason: "a decision record, not a task" },
+      { branch: "milestones", reason: "a milestone, not a task" },
+    ];
+    for (const [index, item] of cases.entries()) {
+      const selected = join(root, item.branch, "nested", "part");
+      mkdirSync(selected, { recursive: true });
+      writeFileSync(join(selected, "task.md"), `---\nid: TASK-${index}\ntitle: Case ${index}\nstatus: ${item.branch === "drafts" ? "Queue" : "Middle"}\n---\n`);
+      const preview = await dayhandJson(key, ["backlog", "import", selected, "--dry-run"]);
+      const imported = await dayhandJson(key, ["backlog", "import", selected]);
+      for (const report of [preview, imported]) {
+        expect(report.files).toBe(2);
+        if (item.reason) {
+          expect(report).toMatchObject({ created: 0, skipped: [{ path: `${item.branch}/nested/part/task.md`, reason: item.reason }] });
+        } else {
+          expect(report).toMatchObject({ created: 1, failed: [], warnings: [], tasks: [item.expected] });
+          if (item.branch !== "drafts") expect(report.tasks[0]).not.toHaveProperty("proposedAt");
+          if (item.branch !== "archive/tasks") expect(report.tasks[0]).not.toHaveProperty("archivedAt");
+        }
+      }
+    }
+    const noConfig = join(mkdtempSync(join(TEST_HOME, "layout-")), "backlog", "archive", "tasks", "nested", "part");
+    mkdirSync(noConfig, { recursive: true });
+    writeFileSync(join(noConfig, "task.md"), "---\nid: TASK-99\ntitle: Configless archive\n---\n");
+    expect(await dayhandJson(key, ["backlog", "import", noConfig])).toMatchObject({ created: 1, tasks: [{ archivedAt: expect.any(Number) }] });
+  });
+
   test("a backlog import under ask uses an exact one-call approval with no replay exception", async () => {
     const { userId, key } = await newUser();
     const agent = await createKey(userId, "importer", "agent");
@@ -251,6 +289,41 @@ describe("agent contract", () => {
     expect(written.code).toBe(0);
     expect(written.stdout).toContain(warning);
     expect(readFileSync(join(dir, exported.files[0].path), "utf8")).toContain(note + "\n\nChecklist:\n- [ ] Keep this item");
+    await sdk.close();
+  });
+
+  test("backlog export warns about oversized serialized files and still writes all their content", async () => {
+    const { key } = await newUser();
+    const sdk = await mcpClient(key);
+    const task = { title: "Large file", note: "n".repeat(20_000), plan: "p".repeat(20_000), acceptance: Array.from({ length: 50 }, () => ({ text: "c".repeat(500) })), links: Array.from({ length: 20 }, (_, i) => ({ url: `https://example.com/${i}/`.padEnd(2_000, "x") })) };
+    expect((await sdkCall(sdk, "add_task", task)).isError).toBe(false);
+    const exported = await dayhandJson(key, ["backlog", "export"]);
+    const warning = "exported file exceeds Dayhand import limit (100000 characters)";
+    expect(exported.notes).toContainEqual(expect.stringContaining(warning));
+    const dir = join(mkdtempSync(join(TEST_HOME, "large-")), "backlog");
+    const written = await dayhand(key, ["backlog", "export", dir]);
+    expect(written.code).toBe(0);
+    expect(written.stdout).toContain(warning);
+    const content = readFileSync(join(dir, exported.files[0].path), "utf8");
+    expect(content.length).toBeGreaterThan(100_000);
+    expect(content).toBe(exported.files[0].content);
+    const refused = await dayhand(key, ["backlog", "import", dir, "--json"]);
+    expect(refused.code).toBe(2);
+    expect(jsonError(refused).message).toContain("100000 characters");
+    await sdk.close();
+  });
+
+  test("backlog export writes a CJK filename within 255 UTF-8 bytes with the longest prefix", async () => {
+    const { key } = await newUser();
+    const sdk = await mcpClient(key);
+    const title = "界".repeat(80);
+    expect((await sdkCall(sdk, "add_task", { title })).isError).toBe(false);
+    const dir = join(mkdtempSync(join(TEST_HOME, "unicode-")), "backlog");
+    const written = await dayhandJson(key, ["backlog", "export", dir, "--prefix", "ABCDEFGHIJKLMNOP"]);
+    expect(Buffer.byteLength(basename(written.written[0]), "utf8")).toBeLessThanOrEqual(255);
+    expect(readFileSync(join(dir, written.written[0]), "utf8")).toContain(title);
+    const target = await newUser();
+    expect(await dayhandJson(target.key, ["backlog", "import", dir])).toMatchObject({ created: 1, tasks: [{ title }] });
     await sdk.close();
   });
 

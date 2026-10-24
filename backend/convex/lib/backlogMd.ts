@@ -238,18 +238,29 @@ export type TaskFile = {
 
 const FOLDERS: Record<TaskFile["place"], string> = { task: "tasks", draft: "drafts", archived: "archive/tasks", "archived-draft": "archive/drafts" };
 
+const FILENAME_BYTES = 255;
+const SLUG_CHARS = 80;
+const UTF8 = new TextEncoder();
+
 /** The file name part after the id, as Backlog.md writes it: the title with its words joined by "-". */
-export function slugOf(title: string): string {
-  const slug = title
-    .normalize("NFC")
-    .replace(/[^\p{L}\p{N}._]+/gu, "-")
-    .replace(/^[-.]+|[-.]+$/g, "")
-    .slice(0, 80)
-    .replace(/-+$/, "");
-  return slug || "task";
+export function slugOf(title: string, maxBytes = FILENAME_BYTES): string {
+  const clean = title.normalize("NFC").replace(/[^\p{L}\p{N}._]+/gu, "-").replace(/^[-.]+|[-.]+$/g, "");
+  let slug = "";
+  let bytes = 0;
+  for (const char of clean) {
+    const size = UTF8.encode(char).length;
+    if (slug.length + char.length > SLUG_CHARS || bytes + size > maxBytes) break;
+    slug += char;
+    bytes += size;
+  }
+  return slug.replace(/-+$/, "") || "task";
 }
 
-export const pathOf = (task: Pick<TaskFile, "id" | "place" | "title">) => `${FOLDERS[task.place]}/${task.id.toLowerCase()} - ${slugOf(task.title)}.md`;
+export function pathOf(task: Pick<TaskFile, "id" | "place" | "title">): string {
+  const id = task.id.toLowerCase();
+  const budget = FILENAME_BYTES - UTF8.encode(`${id} - .md`).length;
+  return `${FOLDERS[task.place]}/${id} - ${slugOf(task.title, budget)}.md`;
+}
 
 function block(title: string, marker: string | null, body: string | undefined): string[] {
   if (!body?.trim()) return [];

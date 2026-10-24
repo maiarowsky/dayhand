@@ -1,7 +1,7 @@
 // dayhand backlog and dayhand prime without a backend: the order and size of the
 // import call and its report, and the brief as text.
 import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, expect, test, vi } from "vitest";
 import { dependenciesFirst, readFolder, writeFolder, type BacklogFile } from "../src/backlog/folder.js";
 import { primeText, type AgentBrief } from "../src/registry/agents.js";
@@ -39,6 +39,34 @@ describe("import calls", () => {
     const files = [task("a.md", "id: TASK-1\ntitle: Dependent\ndependencies: ['O''Brien #42'] # outside"), task("z.md", "id: 'O''Brien #42' # outside\ntitle: Prerequisite")];
     expect(dependenciesFirst(files).map((file) => file.path)).toEqual(["z.md", "a.md"]);
   });
+
+  test.each(["config.yml", "backlog.config.yml", undefined])("selected subdirectories keep backlog paths and project config (%s)", async (configName) => inFolder(async (base) => {
+    const root = join(base, "project", "backlog");
+    const branches = ["tasks", "drafts", "completed", "archive/tasks", "archive/drafts", "docs", "decisions", "milestones"];
+    const fixtures = branches.map((branch, index) => task(`${branch}/nested/part/task-${index}.md`, `id: TASK-${index}\ntitle: T${index}\nstatus: Review`));
+    const loose = task("subsets/sprint/part/loose.md", "id: TASK-99\ntitle: Loose subset");
+    for (const file of [...fixtures, loose]) {
+      await mkdir(dirname(join(root, file.path)), { recursive: true });
+      await writeFile(join(root, file.path), file.content);
+    }
+    const config = { path: configName!, content: "statuses: [Queue, Review, Shipped]\n" };
+    if (configName) await writeFile(join(root, configName), config.content);
+    for (const [index, branch] of branches.entries()) {
+      for (const subset of [branch, `${branch}/nested/part`]) {
+        const files = await readFolder(join(root, subset));
+        expect(files).toHaveLength(configName ? 2 : 1);
+        expect(files).toContainEqual(fixtures[index]);
+        if (configName) expect(files).toContainEqual(config);
+      }
+    }
+    const subset = await readFolder(join(root, "subsets", "sprint", "part"));
+    expect(subset).toHaveLength(configName ? 2 : 1);
+    expect(subset).toContainEqual(loose);
+    const archived = await readFolder(join(root, "archive"));
+    expect(archived.filter((file) => file.path.endsWith(".md"))).toEqual(fixtures.slice(3, 5).sort((a, b) => a.path.localeCompare(b.path)));
+    const all = await readFolder(root);
+    expect(all.filter((file) => file.path.endsWith(".md"))).toHaveLength(fixtures.length + 1);
+  }));
 
   test.each([false, true])("over-limit folders fail before any request (dryRun=%s)", async (dryRun) => inFolder(async (root) => {
     const client = vi.fn();

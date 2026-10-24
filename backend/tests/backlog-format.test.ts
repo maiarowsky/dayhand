@@ -1,6 +1,7 @@
 // The Backlog.md file format without a backend: the YAML header, the sections,
 // places in the folder and the nearest status. The files are written here for
 // the tests (docs/backlog-md.md describes the format).
+import { basename } from "node:path";
 import { describe, expect, test } from "vitest";
 import { placeOf, readDate, readTask, slugOf, statusesOf, statusFor, writeTask, type TaskFile } from "../convex/lib/backlogMd";
 import { FrontmatterError, parseFrontmatter, splitFrontmatter, writeFrontmatter, yamlScalar } from "../convex/lib/frontmatter";
@@ -234,6 +235,19 @@ describe("writing", () => {
     const written = writeTask({ ...file, place: "archived-draft" });
     expect(written.path).toBe("archive/drafts/task-12 - Renew-the-domain-DNS.md");
     expect(readTask(written).place).toBe("archived-draft");
+  });
+
+  test.each(["task", "draft", "archived", "archived-draft"] as const)("%s filenames budget UTF-8 bytes for the complete component", (place) => {
+    for (const id of ["ABCDEFGHIJKLMNOP-1", `${"A".repeat(198)}-1`]) {
+      for (const title of ["界".repeat(80), "ą".repeat(80), "𠀀".repeat(80), "x".repeat(200), "***"]) {
+        const written = writeTask({ ...file, id, place, title });
+        const name = basename(written.path);
+        expect(Buffer.byteLength(name, "utf8")).toBeLessThanOrEqual(255);
+        expect(Buffer.from(name, "utf8").toString("utf8")).toBe(name);
+        expect(name.startsWith(`${id.toLowerCase()} - `)).toBe(true);
+        expect(readTask(written).title).toBe(title);
+      }
+    }
   });
 
   test("file names keep letters of any script and drop what a file system refuses", () => {

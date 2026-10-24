@@ -52,7 +52,7 @@ const importCommand: CommandSpec = {
   summary: "Import a Backlog.md folder: each task file becomes a task; files imported before are skipped",
   description:
     "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call, the tasks others depend on first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
-    "Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. " +
+    "Selected subdirectories keep backlog-relative paths and the root project's config. Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
     "Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. " +
     `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
@@ -85,7 +85,7 @@ const exportCommand: CommandSpec = {
   description:
     "One file per task in tasks/ (proposals in drafts/; with --archived, archived tasks in archive/tasks/ and archived proposals in archive/drafts/), and a config.yml with the statuses To Do, In Progress and Done. " +
     "Tasks imported from Backlog.md keep their ids; the others get <PREFIX>-<number>. The destination must be missing or empty unless --force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. " +
-    `Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks whose exported text exceeds Dayhand import limits; text is not truncated. ${NEEDS}`,
+    `Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks or config.yml whose exported text exceeds Dayhand import limits, including the 100,000-character file limit; text is not truncated. ${NEEDS}`,
   args: [{ name: "dir", description: "The folder to write into (made if missing), e.g. backlog" }],
   options: [
     { flags: "--prefix <prefix>", description: "ID prefix of tasks that did not come from Backlog.md (default task: TASK-12)" },

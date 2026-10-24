@@ -2,7 +2,7 @@
 // import` sends and the files `dayhand backlog export` writes. The server reads
 // and writes the format; this module only finds files, orders them so that a
 // task's dependencies go first, and writes an export without overwriting anything unasked.
-import { constants, existsSync } from "node:fs";
+import { constants } from "node:fs";
 import { lstat, mkdir, open, readdir, readFile, realpath } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { FrontmatterError, parseFrontmatter, splitFrontmatter } from "./frontmatter.js";
@@ -16,6 +16,9 @@ export const IMPORT_FILES = 200;
 export const FILE_CHARS = 100_000;
 
 const CONFIG = /^(backlog\.)?config\.yml$/i;
+const CONFIG_NAMES = ["config.yml", "backlog.config.yml"];
+const LAYOUT_DIRS = new Set(["tasks", "drafts", "completed", "archive"]);
+const BACKLOG_DIRS = new Set([...LAYOUT_DIRS, "docs", "decisions", "milestones"]);
 const SKIP_DIRS = new Set([".git", "node_modules"]);
 
 async function walk(dir: string): Promise<string[]> {
@@ -29,20 +32,35 @@ async function walk(dir: string): Promise<string[]> {
   return found;
 }
 
-/**
- * The Markdown files below `dir` and its config.yml (also the one next to it,
- * for dayhand backlog import backlog/tasks). Paths start with the folder's own
- * name ("backlog/tasks/task-1 - x.md"), so the server sees which folder a file is in.
- */
+async function backlogRoot(selected: string): Promise<{ root: string; config?: string }> {
+  let current = selected;
+  let layout: string | undefined;
+  while (true) {
+    for (const name of CONFIG_NAMES) {
+      const config = join(current, name);
+      if ((await stat(config))?.isFile()) return { root: current, config };
+    }
+    const parent = dirname(current);
+    if (layout === undefined) {
+      if (BACKLOG_DIRS.has(basename(current).toLowerCase())) {
+        layout = basename(parent).toLowerCase() === "archive" ? dirname(parent) : parent;
+      } else if ((await readdir(current, { withFileTypes: true })).some((entry) => entry.isDirectory() && LAYOUT_DIRS.has(entry.name.toLowerCase()))) {
+        layout = current;
+      }
+    }
+    if (parent === current || await stat(join(current, ".git"))) return { root: layout ?? selected };
+    current = parent;
+  }
+}
+
 export async function readFolder(dir: string): Promise<BacklogFile[]> {
-  const root = resolve(dir);
-  const name = basename(root);
-  const paths = await walk(root);
-  const parentConfig = ["config.yml", "backlog.config.yml"].map((f) => join(dirname(root), f)).find((f) => existsSync(f));
-  if (parentConfig && !paths.some((p) => CONFIG.test(basename(p)))) paths.push(parentConfig);
+  const selected = resolve(dir);
+  const { root, config } = await backlogRoot(selected);
+  const paths = (await walk(selected)).filter((path) => !CONFIG.test(basename(path)) || path === config);
+  if (config && !paths.includes(config)) paths.push(config);
   const files: BacklogFile[] = [];
   for (const full of paths.sort()) {
-    const path = full.startsWith(root + sep) ? `${name}/${relative(root, full).split(sep).join("/")}` : basename(full);
+    const path = relative(root, full).split(sep).join("/");
     files.push({ path, content: await readFile(full, "utf8") });
   }
   return files;
