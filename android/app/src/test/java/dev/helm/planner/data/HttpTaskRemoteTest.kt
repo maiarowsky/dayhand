@@ -44,8 +44,11 @@ class HttpTaskRemoteTest {
 
     @Test
     fun `a function error is final, except a missing sign-in`() {
-        assertTrue(classify(560, """{"status":"error","errorMessage":"title must not be empty","errorData":{"code":"invalid_argument"}}""") is SendResult.Rejected)
-        assertTrue(classify(560, """{"status":"error","errorMessage":"ArgumentValidationError"}""") is SendResult.Rejected)
+        assertEquals(
+            SendResult.Rejected("title must not be empty", "invalid_argument"),
+            classify(560, """{"status":"error","errorMessage":"title must not be empty","errorData":{"code":"invalid_argument"}}"""),
+        )
+        assertEquals(SendResult.Rejected("ArgumentValidationError"), classify(560, """{"status":"error","errorMessage":"ArgumentValidationError"}"""))
         assertEquals(SendResult.Unauthorized, classify(560, """{"status":"error","errorMessage":"Sign in required","errorData":{"code":"unauthenticated"}}"""))
     }
 

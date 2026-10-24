@@ -7,7 +7,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -23,9 +25,11 @@ import dev.helm.planner.agents.ApprovalOption
 import dev.helm.planner.agents.ApprovalRequest
 import dev.helm.planner.agents.ApprovalStatus
 import dev.helm.planner.agents.PlanHealth
+import dev.helm.planner.agents.PolicyRule
 import dev.helm.planner.agents.Proposal
 import dev.helm.planner.agents.ToolPolicy
 import dev.helm.planner.ui.agents.AgentsActions
+import dev.helm.planner.ui.agents.AgentsMessage
 import dev.helm.planner.ui.agents.AgentsPage
 import dev.helm.planner.ui.agents.AgentsScreen
 import dev.helm.planner.ui.agents.AgentsTags
@@ -61,7 +65,7 @@ class AgentsScreenTest {
     private val proposal = Proposal("t1", 7, "Fix checkout", "From the error report", "Ann", "sentry", "CHECKOUT-42", "https://sentry.example/42", 1)
 
     private val loaded = AgentsUiState(
-        controls = Section.Loaded(AgentControls(paused = true, pausedAt = 1, reason = "lunch", policies = listOf(ToolPolicy("worker", "delete_task", "deny")))),
+        controls = Section.Loaded(AgentControls(paused = true, pausedAt = 1, reason = "lunch", policies = listOf(ToolPolicy("k1", "claude", "complete_task", PolicyRule.ASK)))),
         approvals = Section.Loaded(listOf(deploy, earlier)),
         proposals = Section.Loaded(listOf(proposal)),
         targets = listOf(MergeTarget("s1", "Checkout bugs", "2026-10-25"), MergeTarget("s2", "Write the blog post", null)),
@@ -77,6 +81,7 @@ class AgentsScreenTest {
         override fun accept(proposalId: String) { calls += "accept:$proposalId" }
         override fun merge(proposalId: String, intoTaskId: String) { calls += "merge:$proposalId:$intoTaskId" }
         override fun reject(proposalId: String, reason: String?) { calls += "reject:$proposalId:$reason" }
+        override fun setPolicy(keyId: String, tool: String, rule: PolicyRule) { calls += "policy:$keyId:$tool:${rule.wire}" }
     }
 
     private fun show(state: AgentsUiState, actions: AgentsActions) = compose.setContent { HelmTheme { AgentsScreen(state, actions) } }
@@ -93,7 +98,8 @@ class AgentsScreenTest {
         compose.onNodeWithTag(AgentsTags.PROPOSAL + "t1").performScrollTo()
         compose.onNodeWithText(text(R.string.agents_from, "Ann") + " · sentry:CHECKOUT-42").assertIsDisplayed()
         compose.onNodeWithTag(AgentsTags.POLICY + "0").performScrollTo()
-        compose.onNodeWithText(text(R.string.agents_rule_deny)).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_policy_name, "claude", "complete_task")).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_rule_ask)).assertIsDisplayed()
 
         compose.onNodeWithTag(AgentsTags.PAUSE).performScrollTo().performClick()
         compose.onNodeWithTag(AgentsTags.APPROVAL + "ap1").performScrollTo().performClick()
@@ -144,6 +150,44 @@ class AgentsScreenTest {
             listOf("accept:t1", "reject:t1:Duplicate", "open:${AgentsPage.Merge("t1")}", "merge:t1:s1"),
             actions.calls,
         )
+    }
+
+    @Test
+    fun aPolicyRowOpensItsThreeRulesAndAnotherRuleIsSent() {
+        val actions = Recorder()
+        var state by mutableStateOf(loaded)
+        compose.setContent { HelmTheme { AgentsScreen(state, actions) } }
+        compose.onNodeWithTag(AgentsTags.POLICY + "0").performScrollTo().performClick()
+        assertEquals(listOf("open:${AgentsPage.Policy("k1", "complete_task")}"), actions.calls)
+
+        state = loaded.copy(page = AgentsPage.Policy("k1", "complete_task"))
+        compose.onNodeWithTag(AgentsTags.POLICY_PAGE).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_policy_name, "claude", "complete_task")).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_rule_allow_note, "claude", "complete_task")).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_rule_ask_note, "claude", "complete_task")).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_rule_deny_note, "claude", "complete_task")).assertIsDisplayed()
+        compose.onNodeWithTag(AgentsTags.RULE + "ask").assertIsSelected()
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").assertIsNotSelected()
+
+        // The rule in force sends nothing; another one goes to the server.
+        compose.onNodeWithTag(AgentsTags.RULE + "ask").performClick()
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").performClick()
+        assertEquals("policy:k1:complete_task:deny", actions.calls.last())
+        assertEquals(2, actions.calls.size)
+    }
+
+    @Test
+    fun aRefusedRuleSaysWhyOnTheList() {
+        show(loaded.copy(message = AgentsMessage.POLICY_KEY_GONE), Recorder())
+        compose.onNodeWithTag(AgentsTags.MESSAGE).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_policy_key_gone)).assertIsDisplayed()
+    }
+
+    @Test
+    fun aRuleOfARemovedKeySaysItIsGone() {
+        show(loaded.copy(page = AgentsPage.Policy("k9", "*")), Recorder())
+        compose.onNodeWithText(text(R.string.agents_gone)).assertIsDisplayed()
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").assertDoesNotExist()
     }
 
     @Test

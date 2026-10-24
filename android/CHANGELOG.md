@@ -27,6 +27,15 @@ called Helm until 0.9.0.
   dependency lookup limits are in [Screens](README.md#screens).
 - Room version 5 keeps the task's number, plan, dependencies and blocked reason (auto-migration 4
   to 5, with `MigrationTest`; the next snapshot fills them in).
+- Tool policies are edited in Settings → Agents: each rule is a row "Key claude: complete_task →
+  Ask" that opens a page with **Allow**, **Ask** and **Deny** and what each does for that key and
+  tool. Another choice goes to the server at once through `app:setToolPolicy`, and `dayhand
+  policy` shows it; a refusal is said in words (the key was revoked or removed, or the server does
+  not take the rule). New rules are still added with `dayhand policy set`.
+- `AgentsScreenTest` opens a rule, checks the three choices and sends another one;
+  `AgentsViewModelTest` and `AgentControlTest` check what goes to `app:setToolPolicy` and the
+  words for each refusal; `scripts/e2e-tool-policy.py` sets a rule on the phone and reads it back
+  with `dayhand policy` on a local backend.
 
 ## 0.10.1 (2026-10-24)
 

@@ -228,7 +228,13 @@ in its preview and on the other screens. Top to bottom:
    connection while reading still works; the approval requests **waiting for you**, each with
    who asks, the task, whether it can be undone and the time to decide by, and the ten latest
    decided or expired ones; the **proposals** with who asked and their source; and the **tool
-   policies** set with `dayhand policy set` (read-only here). A request opens on its own page in
+   policies**, one row per rule ("Key claude: complete_task → Ask"). A rule opens on its own page
+   with **Allow**, **Ask** and **Deny**, each with what it does for that key and tool; tapping
+   another one sends it to the server at once (`app:setToolPolicy`, not through the outbox, so it
+   needs a connection), the list says "Rule saved" and `dayhand policy` shows the new rule. A
+   refusal is said in words: a key revoked meanwhile ("this agent key was revoked or removed") or
+   a rule the server does not take. New rules for other keys or tools are added in the terminal
+   with `dayhand policy set`. A request opens on its own page in
    the style of a connection's approval: what the agent wants to do and why, a row per option with
    its consequence, and a confirmation with an optional word for the agent. A proposal is
    **accepted** (it becomes a task of the plan), **merged** into an open task found by its title
@@ -470,7 +476,8 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
                                             # agent connections (answers, code input, approval flow), calendar address,
                                             # backup file (write, read, the server's export), sample plan, another server,
-                                            # agents (answers, requests, proposals, the switch, the health card, new requests)
+                                            # agents (answers, requests, proposals, the switch, tool policies and their refusals,
+                                            # the health card, new requests)
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,
@@ -517,6 +524,13 @@ in `DAYHAND_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.
 and completes one of them, and the agent claims it through MCP; the phone shows "⛔" on Today and
 the board, and in the details the claim, the blocked reason, "#n … (done)" and the plan; **End the
 claim** is confirmed on the phone and `dayhand show` then has no claim.
+
+`scripts/e2e-tool-policy.py` (same arguments; `DAYHAND_API_KEY` must be a `cli` key) checks
+editing tool policies: `dayhand` creates two agent keys with `ask` for `complete_task`; on the
+phone the rule of the first is opened in Settings → Agents and set to **Deny**, and `dayhand policy`
+must then print `deny`; the second key is revoked with `dayhand key revoke` while the phone still
+lists it, and choosing a rule for it must show "The server did not change the rule: this agent
+key was revoked or removed."
 
 `scripts/e2e-connections.py` (same arguments, plus `--site-url` for the HTTP actions URL as the
 computer sees it) plays the Claude app over HTTP: it registers, opens the authorization page and

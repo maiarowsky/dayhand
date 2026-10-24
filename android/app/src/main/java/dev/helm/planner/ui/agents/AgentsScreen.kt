@@ -29,6 +29,7 @@ import dev.helm.planner.agents.AgentControls
 import dev.helm.planner.agents.ApprovalOption
 import dev.helm.planner.agents.ApprovalRequest
 import dev.helm.planner.agents.ApprovalStatus
+import dev.helm.planner.agents.PolicyRule
 import dev.helm.planner.agents.Proposal
 import dev.helm.planner.ui.components.HelmDialog
 import dev.helm.planner.ui.components.HelmTextField
@@ -50,6 +51,8 @@ object AgentsTags {
     const val EARLIER = "agents_earlier_"
     const val PROPOSAL = "agents_proposal_"
     const val POLICY = "agents_policy_"
+    const val POLICY_PAGE = "agents_policy_page"
+    const val RULE = "agents_rule_"
     const val APPROVAL_PAGE = "agents_approval_page"
     const val OPTION = "agents_option_"
     const val CHOOSE = "agents_choose"
@@ -72,16 +75,19 @@ sealed interface Section<out T> {
     data class Failed(val unauthorized: Boolean) : Section<Nothing>
 }
 
-/** The list, one approval request, one proposal, or the tasks a proposal can merge into. */
+/** The list, one approval request, one proposal, the tasks a proposal can merge into, or one tool policy. */
 sealed interface AgentsPage {
     data object Main : AgentsPage
     data class Approval(val id: String) : AgentsPage
     data class Proposal(val id: String) : AgentsPage
     data class Merge(val proposalId: String) : AgentsPage
+    data class Policy(val keyId: String, val tool: String) : AgentsPage
 }
 
 /** What happened to the owner's last change, shown on the list. */
-enum class AgentsMessage { DECIDED, DECIDE_REFUSED, ACCEPTED, MERGED, REJECTED, PROPOSAL_GONE, PAUSE_FAILED, FAILED }
+enum class AgentsMessage {
+    DECIDED, DECIDE_REFUSED, ACCEPTED, MERGED, REJECTED, PROPOSAL_GONE, PAUSE_FAILED, POLICY_SET, POLICY_KEY_GONE, POLICY_REFUSED, FAILED,
+}
 
 /** A task a proposal can be merged into: open, on the phone and known to the server. */
 data class MergeTarget(val serverId: String, val title: String, val dueDate: String?)
@@ -107,6 +113,7 @@ interface AgentsActions {
     fun accept(proposalId: String) {}
     fun merge(proposalId: String, intoTaskId: String) {}
     fun reject(proposalId: String, reason: String?) {}
+    fun setPolicy(keyId: String, tool: String, rule: PolicyRule) {}
 }
 
 /** Earlier requests shown under the waiting ones. */
@@ -114,7 +121,7 @@ private const val EARLIER_SHOWN = 10
 
 /**
  * Settings → Agents (docs/agent-work.md): pause every agent with one switch, decide approval requests in the style
- * of a new connection's approval, accept, merge or reject proposals, and see the tool policies set with
+ * of a new connection's approval, accept, merge or reject proposals, and change the tool policies set with
  * `dayhand policy`. Dayhand records a decision; an agent acts on it, and Dayhand cannot stop one outside itself.
  */
 @Composable
@@ -135,6 +142,7 @@ fun AgentsScreen(state: AgentsUiState, actions: AgentsActions) {
             }
         }
         is AgentsPage.Merge -> MergePage(page.proposalId, state, actions)
+        is AgentsPage.Policy -> PolicyPage(page, state, actions)
     }
 }
 
@@ -145,7 +153,7 @@ private fun MainPage(state: AgentsUiState, actions: AgentsActions) {
         PauseGroup(state, actions)
         ApprovalGroups(state, actions)
         ProposalGroup(state, actions)
-        PolicyGroup(state.controls)
+        PolicyGroup(state.controls, actions)
         ListNote(stringResource(R.string.agents_hint))
     }
 }
@@ -248,25 +256,6 @@ private fun ProposalGroup(state: AgentsUiState, actions: AgentsActions) {
             { ListRow(proposal.title, AgentsTags.PROPOSAL + proposal.id, icon = LineIcon.List, note = proposalOrigin(proposal)) { actions.open(AgentsPage.Proposal(proposal.id)) } }
         },
     )
-}
-
-@Composable
-private fun PolicyGroup(controls: Section<AgentControls>) {
-    val policies = (controls as? Section.Loaded)?.value?.policies ?: return
-    if (policies.isEmpty()) {
-        ListNote(stringResource(R.string.agents_no_policies))
-        return
-    }
-    ListGroup(
-        stringResource(R.string.agents_policies),
-        rows = policies.mapIndexed { index, policy ->
-            {
-                val tool = if (policy.tool == "*") stringResource(R.string.agents_policy_any_tool) else policy.tool
-                ListRow(policy.keyName, AgentsTags.POLICY + index, icon = LineIcon.Code, value = ruleText(policy.rule), note = tool)
-            }
-        },
-    )
-    ListNote(stringResource(R.string.agents_policies_hint))
 }
 
 @Composable
@@ -481,7 +470,7 @@ private fun MergePage(proposalId: String, state: AgentsUiState, actions: AgentsA
 }
 
 @Composable
-private fun Status(text: String, loading: Boolean) {
+internal fun Status(text: String, loading: Boolean) {
     ListGroup(
         null,
         rows = listOf {
@@ -516,13 +505,6 @@ private fun proposalOrigin(proposal: Proposal): String? = listOfNotNull(
 ).joinToString(" · ").ifEmpty { null }
 
 @Composable
-private fun ruleText(rule: String): String = when (rule) {
-    "deny" -> stringResource(R.string.agents_rule_deny)
-    "ask" -> stringResource(R.string.agents_rule_ask)
-    else -> stringResource(R.string.agents_rule_allow)
-}
-
-@Composable
 private fun messageText(message: AgentsMessage): String = stringResource(
     when (message) {
         AgentsMessage.DECIDED -> R.string.agents_decided
@@ -532,12 +514,15 @@ private fun messageText(message: AgentsMessage): String = stringResource(
         AgentsMessage.REJECTED -> R.string.agents_rejected
         AgentsMessage.PROPOSAL_GONE -> R.string.agents_proposal_gone
         AgentsMessage.PAUSE_FAILED -> R.string.agents_pause_failed
+        AgentsMessage.POLICY_SET -> R.string.agents_policy_set
+        AgentsMessage.POLICY_KEY_GONE -> R.string.agents_policy_key_gone
+        AgentsMessage.POLICY_REFUSED -> R.string.agents_policy_refused
         AgentsMessage.FAILED -> R.string.agents_change_failed
     },
 )
 
 private fun messageIcon(message: AgentsMessage): LineIcon = when (message) {
-    AgentsMessage.DECIDED, AgentsMessage.ACCEPTED, AgentsMessage.MERGED, AgentsMessage.REJECTED -> LineIcon.Check
+    AgentsMessage.DECIDED, AgentsMessage.ACCEPTED, AgentsMessage.MERGED, AgentsMessage.REJECTED, AgentsMessage.POLICY_SET -> LineIcon.Check
     else -> LineIcon.Warning
 }
 
