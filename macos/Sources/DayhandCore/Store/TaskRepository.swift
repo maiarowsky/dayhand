@@ -15,17 +15,20 @@ public final class TaskRepository: Sendable {
     private let clock: @Sendable () -> Int64
     private let newId: @Sendable () -> String
     private let onOutboxChanged: @Sendable () -> Void
+    private let localTimezone: @Sendable () -> String
 
     public init(
         database: AppDatabase,
         clock: @escaping @Sendable () -> Int64 = Clock.nowMs,
         newId: @escaping @Sendable () -> String = { UUID().uuidString.lowercased() },
-        onOutboxChanged: @escaping @Sendable () -> Void = {}
+        onOutboxChanged: @escaping @Sendable () -> Void = {},
+        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier }
     ) {
         self.database = database
         self.clock = clock
         self.newId = newId
         self.onOutboxChanged = onOutboxChanged
+        self.localTimezone = localTimezone
     }
 
     private var writer: DatabaseQueue { database.writer }
@@ -268,12 +271,16 @@ public final class TaskRepository: Sendable {
         }
     }
 
+    /// The server's settings; until a server has sent them (no server yet, or Not now), the day and the reminders
+    /// follow this Mac's time zone, as the Android app's on this phone only.
     public func settings() async throws -> ReminderSettings {
-        try await writer.read { db in try Meta.settings(db) }
+        let zone = localTimezone()
+        return try await writer.read { db in try Meta.settings(db, localTimezone: zone) }
     }
 
     public func observeSettings() -> AsyncValueObservation<ReminderSettings> {
-        ValueObservation.tracking { db in try Meta.settings(db) }.values(in: writer)
+        let zone = localTimezone()
+        return ValueObservation.tracking { db in try Meta.settings(db, localTimezone: zone) }.values(in: writer)
     }
 
     /// Forgets every task and waiting change (Disconnect and pairing with another account).
@@ -397,9 +404,9 @@ extension TaskRepository: OutboxStore {
 enum Meta {
     static let settingsKey = "settings"
 
-    static func settings(_ db: Database) throws -> ReminderSettings {
+    static func settings(_ db: Database, localTimezone: String) throws -> ReminderSettings {
         guard let text = try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [settingsKey]),
-              let value = JSONValue.decode(text) else { return ReminderSettings() }
+              let value = JSONValue.decode(text) else { return ReminderSettings(timezone: localTimezone) }
         return RemoteJSON.settings(value)
     }
 

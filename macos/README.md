@@ -23,7 +23,8 @@ KeyboardShortcuts are MIT). Dayhand is the new name of Helm: the app, its folder
 - **Offline first**: every change is in the local database and the outbox at once; the screens never wait for
   the network. Changes are sent in order when the server can be reached.
 - **Reminders and the morning summary** as macOS notifications, worked out on the Mac from the local database
-  with the Android app's rules, in the time zone of the server settings. A reminder's **Done** completes the task.
+  with the Android app's rules, in the time zone of the server settings (this Mac's until a server has sent them). A
+  reminder's **Done** completes the task.
 
 ## How it works
 
@@ -104,7 +105,7 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 121 tests, under a second; the live one is skipped
+swift test                        # 122 tests, under a second; the live one is skipped
 ```
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today

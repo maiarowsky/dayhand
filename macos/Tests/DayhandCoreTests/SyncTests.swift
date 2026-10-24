@@ -74,6 +74,15 @@ struct RepositoryTests {
         return TaskRepository(database: try AppDatabase.inMemory(), clock: { clock.now }, newId: { ids.next() })
     }
 
+    @Test func withoutAServerTheDayFollowsThisMacsZoneUntilTheServerSendsItsSettings() async throws {
+        let repo = TaskRepository(database: try AppDatabase.inMemory(), localTimezone: { "Europe/Warsaw" })
+        #expect(try await repo.settings() == ReminderSettings(timezone: "Europe/Warsaw"))
+        try await repo.apply(Snapshot(tasks: [], settings: ReminderSettings(timezone: "America/New_York")))
+        #expect(try await repo.settings().timezone == "America/New_York")
+        try await repo.eraseAll()
+        #expect(try await repo.settings().timezone == "Europe/Warsaw")
+    }
+
     @Test func addingWritesTheRowAndQueuesAddWithItsClientId() async throws {
         let repo = try repository()
         let added = try await repo.add(title: "  Call the accountant ", dueDate: "2026-10-23", dueTime: "14:00")
