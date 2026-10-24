@@ -507,6 +507,12 @@ app was killed; it is restored from the Trash screen, and an agent edit shows in
 the agent's. Every step is checked on the server through MCP, with an agent key of the same user
 in `DAYHAND_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
 
+`scripts/e2e-agent-work.py` (same arguments and keys) checks the agent work in the details:
+`dayhand` adds a task that waits for two others (`--depends-on`), with `--blocked` and `--plan`,
+and completes one of them, and the agent claims it through MCP; the phone shows "⛔" on Today and
+the board, and in the details the claim, the blocked reason, "#n … (done)" and the plan; **End the
+claim** is confirmed on the phone and `dayhand show` then has no claim.
+
 `scripts/e2e-connections.py` (same arguments, plus `--site-url` for the HTTP actions URL as the
 computer sees it) plays the Claude app over HTTP: it registers, opens the authorization page and
 reads its code; the code is typed in Settings → Agent connections, the consent is checked and
