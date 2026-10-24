@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.10.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.11.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
@@ -158,7 +158,18 @@ the backend's limits before it is queued, so a change the server would refuse is
 **Restore** brings one back.
 
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
-keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
+keyboard's Done key) saves it for today by default. A date phrase at the end of the title sets the day and
+time: "Call the accountant fri 2pm" is "Call the accountant" on the coming Friday at 14:00. The
+phrases are English, the grammar of `dayhand add --due` (`today`, `tomorrow 9am`, `fri`, `next mon`,
+`in 3 days`, `23 oct`, `2026-10-23`, `2pm`; all of them in `dayhand help dates`), read in the
+server's time zone, or the phone's on this phone only. The longest phrase at the end wins and at
+least one word stays the title, so a title that is only "tomorrow" stays a title. A grey line under
+the field says what will happen: "Friday 23 Oct, 14:00 · from “fri 2pm”", or "No date phrase:
+today"; **Keep in title** keeps the words as text, until the title changes. "More options" adds the
+day, a time and a note; a day or time picked there wins over the phrase, which then stays in the
+title. The grammar is ported from `cli/src/when/parse.ts` (`domain/When.kt`, `domain/QuickAdd.kt`),
+and `WhenParserTest` runs every case of `linux/tests/cases/when.json`, shared with the CLI, macOS
+and Linux.
 
 **Settings** is laid out like Mussh's: groups under upper-case labels, one row per setting with a
 thin outline icon, the name, a short current value and "›". Each row opens its own page with the

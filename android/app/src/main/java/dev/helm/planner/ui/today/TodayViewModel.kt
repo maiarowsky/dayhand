@@ -31,7 +31,13 @@ class TodayViewModel(
             connectionStatus(settings.settings, network.online, liveSync.state),
             repository.pendingChanges,
         ) { tasks, s, now, c, pending ->
-            TodayUiState(todaySections(tasks, now, s.timezone), c, pending, sample = tasks.any { SamplePlan.isSample(it.localId) })
+            TodayUiState(
+                todaySections(tasks, now, s.timezone),
+                c,
+                pending,
+                sample = tasks.any { SamplePlan.isSample(it.localId) },
+                timezone = s.timezone,
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
     override fun complete(localId: String) = launch { repository.complete(localId) }

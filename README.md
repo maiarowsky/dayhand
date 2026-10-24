@@ -120,7 +120,8 @@ mkdir -p ~/.claude/skills && cp -R docs/skills/dayhand ~/.claude/skills/
 ## On the phone
 
 The Android app starts without any server: under **On this phone only** choose **Start with an
-empty plan**, or **Try with sample data** (one tap removes it). Today with quick add, the week
+empty plan**, or **Try with sample data** (one tap removes it). Today with quick add (a date
+phrase at the end sets the day: `Call the accountant fri 2pm`), the week
 and day calendar, the board, task details with repeats, checklists and reminders, the morning
 summary and a backup file (**Settings → Data → Backup**) all work there. Without a server the
 plan lives only on the phone: Android backups are off for Dayhand, so keep a backup file.
