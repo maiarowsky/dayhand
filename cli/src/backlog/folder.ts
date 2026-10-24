@@ -1,8 +1,7 @@
 // A Backlog.md folder on disk (docs/backlog-md.md): the files `dayhand backlog
 // import` sends and the files `dayhand backlog export` writes. The server reads
 // and writes the format; this module only finds files, orders them so that a
-// task's dependencies go first, cuts them into calls that fit the server's
-// request limit, and writes an export without overwriting anything unasked.
+// task's dependencies go first, and writes an export without overwriting anything unasked.
 import { constants, existsSync } from "node:fs";
 import { lstat, mkdir, open, readdir, readFile, realpath } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
@@ -11,8 +10,8 @@ import { FrontmatterError, parseFrontmatter, splitFrontmatter } from "./frontmat
 export type BacklogFile = { path: string; content: string };
 
 /** Under the server's 256 KiB request limit, with room for the JSON around the files. */
-export const BATCH_BYTES = 200 * 1024;
-export const BATCH_FILES = 200;
+export const IMPORT_BYTES = 200 * 1024;
+export const IMPORT_FILES = 200;
 /** Longest file the server takes (characters). */
 export const FILE_CHARS = 100_000;
 
@@ -35,21 +34,18 @@ async function walk(dir: string): Promise<string[]> {
  * for dayhand backlog import backlog/tasks). Paths start with the folder's own
  * name ("backlog/tasks/task-1 - x.md"), so the server sees which folder a file is in.
  */
-export async function readFolder(dir: string): Promise<{ files: BacklogFile[]; tooLong: string[] }> {
+export async function readFolder(dir: string): Promise<BacklogFile[]> {
   const root = resolve(dir);
   const name = basename(root);
   const paths = await walk(root);
   const parentConfig = ["config.yml", "backlog.config.yml"].map((f) => join(dirname(root), f)).find((f) => existsSync(f));
   if (parentConfig && !paths.some((p) => CONFIG.test(basename(p)))) paths.push(parentConfig);
   const files: BacklogFile[] = [];
-  const tooLong: string[] = [];
   for (const full of paths.sort()) {
     const path = full.startsWith(root + sep) ? `${name}/${relative(root, full).split(sep).join("/")}` : basename(full);
-    const content = await readFile(full, "utf8");
-    if (content.length > FILE_CHARS) tooLong.push(path);
-    else files.push({ path, content });
+    files.push({ path, content: await readFile(full, "utf8") });
   }
-  return { files, tooLong };
+  return files;
 }
 
 /** The id and the dependencies in a file's YAML header, read just enough to order the files. */
@@ -80,27 +76,6 @@ export function dependenciesFirst(files: BacklogFile[]): BacklogFile[] {
     ordered.push(next!.file);
   }
   return ordered;
-}
-
-/** Calls of at most BATCH_FILES files and BATCH_BYTES of JSON, in order; the config goes with each. */
-export function batches(ordered: BacklogFile[]): BacklogFile[][] {
-  const config = ordered.filter((f) => CONFIG.test(basename(f.path)));
-  const size = (f: BacklogFile) => Buffer.byteLength(JSON.stringify(f));
-  const base = config.reduce((n, f) => n + size(f), 0);
-  const result: BacklogFile[][] = [];
-  let current: BacklogFile[] = [];
-  let bytes = base;
-  for (const file of ordered.filter((f) => !config.includes(f))) {
-    if (current.length > 0 && (bytes + size(file) > BATCH_BYTES || current.length + config.length >= BATCH_FILES)) {
-      result.push([...config, ...current]);
-      current = [];
-      bytes = base;
-    }
-    current.push(file);
-    bytes += size(file);
-  }
-  if (current.length > 0 || result.length === 0) result.push([...config, ...current]);
-  return result;
 }
 
 async function stat(path: string) {

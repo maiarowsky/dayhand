@@ -142,10 +142,7 @@ export const args = {
   // Since 0.12.0: the agent brief (agent_brief, dayhand prime).
   agentBrief: { at },
   // Since 0.12.0: Backlog.md task files in (import_backlog) and out (export_backlog), docs/backlog-md.md.
-  importBacklog: {
-    files: v.array(v.object({ path: v.string(), content: v.string() })),
-    run: v.optional(v.object({ batches: v.array(v.object({ hash: v.string(), files: v.number() })) })),
-  },
+  importBacklog: { files: v.array(v.object({ path: v.string(), content: v.string() })) },
   exportBacklog: { prefix: v.optional(v.string()), includeArchived: v.optional(v.boolean()) },
   listTrash: {},
   board: { doneLimit: v.optional(v.number()), at },

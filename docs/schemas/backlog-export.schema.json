@@ -44,7 +44,7 @@
     },
     "files": {
       "type": "array",
-      "description": "One file per task: tasks/, drafts/ (proposals) or archive/tasks/ (archived)",
+      "description": "One file per task: tasks/, drafts/ (proposals), archive/tasks/ (archived tasks) or archive/drafts/ (archived proposals)",
       "items": {
         "allOf": [
           {
@@ -94,7 +94,7 @@
       "items": {
         "type": "string"
       },
-      "description": "What Backlog.md has no place for (due dates, repeat rules, reminders) and dependencies left out"
+      "description": "Fields and dependencies left out, and tasks whose exported text exceeds Dayhand import limits (text is not truncated)"
     }
   }
 }

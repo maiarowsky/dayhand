@@ -409,6 +409,14 @@ nearest of `todo`, `doing` and `done`, criteria to `acceptance`, the implementat
 `plan`, dependencies to `dependsOn` and the final summary to proof. The full mapping, the
 decisions and the format's license and author are in [backlog-md.md](backlog-md.md).
 
+Each CLI invocation sends one import call, dependencies first; folders over 200 files or 200 KiB
+of file JSON are refused before sending anything, with a request to import by subdirectories.
+Files without an id are skipped, and an `ask` approval allows the exact call once, with no
+import-specific replay exception. Export requires a fresh destination unless `--force` explicitly
+confirms writing into an existing folder. Archived proposals are written under `archive/drafts/`
+and remain excluded from import. Export notes identify tasks whose flattened fields exceed the
+import limits, without changing field limits or truncating text.
+
 Public counterpart: [Backlog.md](https://github.com/MrLesk/Backlog.md) by Alex Gavrilescu, MIT
 License. Dayhand reads and writes its file format and shares no code with it.
 

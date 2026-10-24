@@ -116,7 +116,6 @@ describe("task files", () => {
     expect(task).toMatchObject({
       place: "task",
       id: "TASK-7",
-      ref: "TASK-7",
       title: "Sort the receipts: Q3",
       status: "In Progress",
       labels: ["finance", "q3, late"],
@@ -134,11 +133,12 @@ describe("task files", () => {
     expect(task.extra).toEqual(["## Implementation Notes\n\nJuly done, the scanner jams on thin paper.\n\n```\n## not a heading inside a code block\n```"]);
   });
 
-  test("files without a header or a title are not tasks; a file without an id is known by its path", () => {
+  test("files without a header, title or id are not tasks", () => {
     expect(() => readTask({ path: "tasks/readme.md", content: "# Tasks\n" })).toThrow(/no YAML header/);
     expect(() => readTask({ path: "tasks/x.md", content: "---\nstatus: To Do\n---\n" })).toThrow(/no title/);
-    const loose = readTask({ path: "tasks/loose.md", content: "---\ntitle: Loose\n---\nJust text before any heading.\n" });
-    expect(loose).toMatchObject({ ref: "tasks/loose.md", description: "Just text before any heading.", id: undefined });
+    for (const id of ["", "id:", "id: ' '"]) {
+      expect(() => readTask({ path: "tasks/loose.md", content: `---\n${id}\ntitle: Loose\n---\nJust text.\n` })).toThrow(/no id/);
+    }
   });
 
   test("the folder decides what a file is", () => {
@@ -224,10 +224,16 @@ describe("writing", () => {
 
   test.each(["Acceptance Criteria", "Definition of Done"])("%s ignores checkboxes and headings in fenced examples", (heading) => {
     const body = `## ${heading}\n- [x] Real criterion\n\n~~~~markdown\n- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~\n\n\`\`\`\`markdown\n\`\`\`\n- [ ] Still an example\n\`\`\`\`\n- [ ] Real second criterion`;
-    const parsed = readTask({ path: "tasks/example.md", content: `---\ntitle: Examples\n---\n${body}` });
+    const parsed = readTask({ path: "tasks/example.md", content: `---\nid: TASK-1\ntitle: Examples\n---\n${body}` });
     expect(parsed.acceptance).toEqual([{ text: "Real criterion", met: true }, { text: "Real second criterion", met: false }]);
     expect(parsed.finalSummary).toBeUndefined();
     expect(parsed.extra[0]).toContain("- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~");
+  });
+
+  test("an archived draft stays in the archived-draft classification", () => {
+    const written = writeTask({ ...file, place: "archived-draft" });
+    expect(written.path).toBe("archive/drafts/task-12 - Renew-the-domain-DNS.md");
+    expect(readTask(written).place).toBe("archived-draft");
   });
 
   test("file names keep letters of any script and drop what a file system refuses", () => {

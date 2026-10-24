@@ -1,6 +1,6 @@
 // Backlog.md import and export as domain operations (docs/backlog-md.md).
 // import_backlog reads task files (lib/backlogMd.ts) into tasks with the source
-// { kind: "backlog-md", ref: <id or path> }: one source makes one task, so a
+// { kind: "backlog-md", ref: <id> }: one source makes one task, so a
 // folder imported again brings only what is new. Dependencies are created
 // first and point at the tasks they made. export_backlog writes the plan as
 // such files, with each status mapped to the nearest Backlog.md status.
@@ -9,7 +9,6 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { checkAcceptance, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
 import type { args } from "./args";
-import { checkBacklogRun } from "./backlogApproval";
 import {
   BACKLOG_KIND,
   BacklogFormatError,
@@ -32,7 +31,7 @@ import type { Link, Status } from "./validators";
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
 
-/** Files per call and characters per file; a larger folder goes in several calls, dependencies first. */
+/** Files per call and characters per file. */
 export const BACKLOG_LIMITS = { files: 200, content: 100_000, path: 500, prefix: 16 };
 
 type Skipped = { path: string; reason: string; id?: string; title?: string; taskId?: Id<"tasks">; ref?: number };
@@ -79,12 +78,12 @@ function readFiles(files: BacklogFile[], skipped: Skipped[], warnings: Warning[]
       continue;
     }
     const why = SKIP_REASONS[task.place];
-    const first = seen.get(sourceRef(task.ref));
+    const first = seen.get(sourceRef(task.id));
     if (why || first) {
       skipped.push({ path: file.path, reason: why ?? `the same id as ${first}`, id: task.id, title: task.title });
       continue;
     }
-    seen.set(sourceRef(task.ref), file.path);
+    seen.set(sourceRef(task.id), file.path);
     tasks.push(task);
   }
   return { tasks, statuses };
@@ -94,14 +93,14 @@ const natural = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 
 /** Dependencies first, else in id order; a cycle is broken where it closes (its tasks come last). */
 function inOrder(tasks: BacklogTask[]): BacklogTask[] {
-  const pending = [...tasks].sort((a, b) => natural.compare(a.ref, b.ref));
-  const inCall = new Set(pending.map((t) => sourceRef(t.ref)));
+  const pending = [...tasks].sort((a, b) => natural.compare(a.id, b.id));
+  const inCall = new Set(pending.map((t) => sourceRef(t.id)));
   const done = new Set<string>();
   const ordered: BacklogTask[] = [];
   while (pending.length) {
     const index = pending.findIndex((t) => t.dependencies.every((d) => !inCall.has(sourceRef(d)) || done.has(sourceRef(d))));
     const [next] = pending.splice(index === -1 ? 0 : index, 1);
-    done.add(sourceRef(next!.ref));
+    done.add(sourceRef(next!.id));
     ordered.push(next!);
   }
   return ordered;
@@ -120,7 +119,8 @@ async function dependencyOf(ctx: QueryCtx, userId: string, id: string, made: Map
 const isUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
 
 /** The note: the description, then every other section and the references that are not links. */
-function noteOf(task: BacklogTask, done: boolean, others: string[]): string | undefined {
+function noteOf(task: BacklogTask, done: boolean): string | undefined {
+  const others = [...task.references.filter((r) => !isUrl(r)), ...task.references.filter(isUrl).slice(20)];
   const parts = [task.description, ...task.extra];
   if (task.finalSummary && !done) parts.push(`## Final Summary\n\n${task.finalSummary}`);
   if (others.length) parts.push(`References:\n${others.map((r) => `- ${r}`).join("\n")}`);
@@ -136,14 +136,13 @@ function fieldsOf(task: BacklogTask, statuses: string[], identity: Identity, tim
   if (task.place === "draft" && mapped.status !== "todo") warnings.push({ path: task.path, message: "a draft becomes a proposal, which starts in todo" });
   const urls = task.references.filter(isUrl);
   const links: Link[] = checkLinks(urls.slice(0, 20).map((url) => ({ url: url.trim() })));
-  const others = [...task.references.filter((r) => !isUrl(r)), ...urls.slice(20)];
   const proof = status === "done" && task.finalSummary ? checkProof({ summary: task.finalSummary }) : undefined;
   const acceptance = task.acceptance.length ? checkAcceptance(task.acceptance) : undefined;
   // An agent's import keeps the rule of complete_task: a done task with criteria needs them met and a summary.
   if (status === "done") checkCompletion({ acceptance } as Doc<"tasks">, identity, proof);
   return {
     title: checkTitle(task.title),
-    note: noteOf(task, status === "done", others),
+    note: noteOf(task, status === "done"),
     status,
     isNow: false,
     labels: checkLabels(task.labels),
@@ -155,7 +154,7 @@ function fieldsOf(task: BacklogTask, statuses: string[], identity: Identity, tim
     archivedAt: task.place === "archived" ? now : undefined,
     proposedAt: task.place === "draft" ? now : undefined,
     requestedBy: checkRequestedBy(identity, undefined, task.place === "draft"),
-    source: checkSource({ kind: BACKLOG_KIND, ref: sourceRef(task.ref) }),
+    source: checkSource({ kind: BACKLOG_KIND, ref: sourceRef(task.id) }),
   };
 }
 
@@ -185,8 +184,7 @@ async function dependenciesOf(ctx: MutationCtx, userId: string, task: BacklogTas
 }
 
 export async function importBacklog(ctx: MutationCtx, identity: Identity, input: Args<"importBacklog"> & { dryRun?: boolean }) {
-  await checkBacklogRun(input);
-  if (input.files.length > BACKLOG_LIMITS.files) fail("invalid_argument", `at most ${BACKLOG_LIMITS.files} files per call; send the rest in another call`);
+  if (input.files.length > BACKLOG_LIMITS.files) fail("invalid_argument", `at most ${BACKLOG_LIMITS.files} files per call; import it by subdirectories`);
   for (const file of input.files) {
     if (!file.path.trim() || file.path.length > BACKLOG_LIMITS.path) fail("invalid_argument", `file paths must be 1 to ${BACKLOG_LIMITS.path} characters`);
     if (file.content.length > BACKLOG_LIMITS.content) fail("invalid_argument", `${file.path} is longer than ${BACKLOG_LIMITS.content} characters`);
@@ -198,11 +196,11 @@ export async function importBacklog(ctx: MutationCtx, identity: Identity, input:
   const warnings: Warning[] = [];
   const created: ReturnType<typeof toTask>[] = [];
   const { tasks, statuses } = readFiles(input.files, skipped, warnings);
-  const made: Made = { ids: new Map(), inCall: new Set(tasks.map((t) => sourceRef(t.ref))) };
+  const made: Made = { ids: new Map(), inCall: new Set(tasks.map((t) => sourceRef(t.id))) };
   for (const task of inOrder(tasks)) {
-    const before = await importedBefore(ctx, identity.userId, task.ref);
+    const before = await importedBefore(ctx, identity.userId, task.id);
     if (before) {
-      made.ids.set(sourceRef(task.ref), before._id);
+      made.ids.set(sourceRef(task.id), before._id);
       skipped.push({ path: task.path, reason: "imported before", id: task.id, title: task.title, taskId: before._id, ref: before.ref });
       continue;
     }
@@ -218,7 +216,7 @@ export async function importBacklog(ctx: MutationCtx, identity: Identity, input:
     const taskId = await ctx.db.insert("tasks", { userId: identity.userId, ref, ...fields, createdAt: now, updatedAt: now });
     await addSource(ctx, identity.userId, fields.source, taskId);
     await recordEvent(ctx, identity, { taskId, action: "import", after: { ...fields, importedFrom: task.path } });
-    made.ids.set(sourceRef(task.ref), taskId);
+    made.ids.set(sourceRef(task.id), taskId);
     created.push(toTask((await ctx.db.get(taskId))!));
   }
   return {
@@ -284,7 +282,7 @@ function fileOf(task: Doc<"tasks">, ids: Map<string, string>, timezone: string):
   const notes = [task.resumeNote && `Resume: ${task.resumeNote}`, task.blockedReason && `Blocked: ${task.blockedReason}`].filter(Boolean).join("\n\n");
   const file: TaskFile = {
     id: ids.get(task._id)!,
-    place: task.archivedAt !== undefined ? "archived" : task.proposedAt !== undefined ? "draft" : "task",
+    place: task.archivedAt !== undefined ? task.proposedAt !== undefined ? "archived-draft" : "archived" : task.proposedAt !== undefined ? "draft" : "task",
     title: task.title,
     status,
     labels: task.labels,
@@ -299,6 +297,25 @@ function fileOf(task: Doc<"tasks">, ids: Map<string, string>, timezone: string):
     finalSummary: summaryOf(task),
   };
   return writeTask(file);
+}
+
+function overflowNotes(file: BacklogFile & { id: string }): string[] {
+  const task = readTask(file);
+  const done = statusFor(task.status, DEFAULT_STATUSES).status === "done";
+  const checks = [
+    () => noteOf(task, done),
+    () => done && task.finalSummary ? checkProof({ summary: task.finalSummary }) : undefined,
+  ];
+  const errors: string[] = [];
+  for (const check of checks) {
+    try {
+      check();
+    } catch (error) {
+      if (!(error instanceof ConvexError)) throw error;
+      errors.push((error.data as { message: string }).message);
+    }
+  }
+  return errors.length ? [`${file.id} (${task.title}): exported fields exceed Dayhand import limits (${errors.join("; ")}); text was not truncated`] : [];
 }
 
 /** What Backlog.md has no place for, as counts: "3 due dates". */
@@ -331,5 +348,5 @@ export async function exportBacklog(ctx: QueryCtx, identity: Identity, input: Ar
   const ids = idsOf(tasks, prefix);
   const files = tasks.map((task) => ({ ...fileOf(task, ids, timezone), id: ids.get(task._id)!, taskId: task._id, ref: task.ref ?? null }));
   const labels = [...new Set(tasks.flatMap((t) => t.labels))].sort();
-  return { format: BACKLOG_KIND, prefix, total: files.length, config: writeConfig(prefix, labels), files, notes: exportNotes(tasks, ids) };
+  return { format: BACKLOG_KIND, prefix, total: files.length, config: writeConfig(prefix, labels), files, notes: [...exportNotes(tasks, ids), ...files.flatMap(overflowNotes)] };
 }

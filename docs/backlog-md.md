@@ -78,7 +78,7 @@ project's statuses in order, `["To Do", "In Progress", "Done"]` unless set.
 
 | Backlog.md | Dayhand |
 |---|---|
-| `id` | the task's `source`: `{ kind: "backlog-md", ref: "TASK-12" }`, normalized to uppercase for case-insensitive identity; a file without an id is known by its path |
+| `id` | the task's `source`: `{ kind: "backlog-md", ref: "TASK-12" }`, normalized to uppercase for case-insensitive identity; a file without an id is skipped with a reason |
 | `title` | `title` |
 | `status` | the nearest status: the project's first status is `todo`, its last is `done`, any between is `doing`. A status the project does not list is read by its words (`done`, `closed`, … → `done`; `progress`, `review`, … → `doing`; else `todo`) with a warning |
 | `labels` | `labels` |
@@ -95,7 +95,7 @@ project's statuses in order, `["To Do", "In Progress", "Done"]` unless set.
 | a file in `archive/tasks/` | an archived task |
 
 Left out, with the reason in the report: files that are not Markdown, files without a YAML header
-or a title, documents, decisions, milestones and archived drafts, and a second file with an id
+or an id or title, documents, decisions, milestones and archived drafts, and a second file with an id
 already given in the same import. Header keys Dayhand has no field for (`assignee`, `priority`,
 `milestone`, `parent_task_id` and the like) are counted in one warning; `ordinal`, the order on
 the board, is ignored.
@@ -106,19 +106,17 @@ Decisions:
   ([agent-work.md](agent-work.md#7-the-proposal-inbox)), so importing a folder again skips every
   file imported before, also one whose task was rejected or merged since; the report names the task
   each such file made. It never updates a task from a changed file: that would be sync.
-- **Dependencies first.** Within one call, a task is created after the tasks it waits for, so
-  `dependsOn` can point at them. A larger folder goes in several calls (at most 200 files and
-  256 KiB each); `dayhand backlog import` orders the files the same way across calls, and an agent
-  calling the tool should too. A dry run cannot see tasks that an earlier call of the same import
-  would have made. A task with more than 50 resolved dependencies fails instead of losing edges.
-- **One approval per import run.** Under an `ask` policy, the CLI binds all batches and their
-  file counts into one approval. After the owner allows it, retry the unchanged folder with
-  `--approval <id>`: every batch runs without another question, and files imported before are
-  skipped. The count includes config.yml each time it is sent. Changing any batch or count needs
-  a new approval. Tool and REST callers can send the same `run: {batches: [{hash, files}]}` with
-  every batch: `hash` is the SHA-256 hex digest of
-  `JSON.stringify(files.map(({path, content}) => ({path, content})))`, and `files` is that batch's
-  file count. A run supports up to 256 batches; a single-call import needs no manifest.
+- **One call per invocation, dependencies first.** `dayhand backlog import` sends one call,
+  including its config: at most 200 files, 200 KiB of file JSON (leaving room within the server's
+  256 KiB request limit), and 100,000 characters per file. A larger folder fails before anything
+  is sent; import it by subdirectories. Within the call, tasks are created after their prerequisites.
+  If importing subdirectories separately, import prerequisites first; a dry run cannot see tasks
+  that a different dry run would have made. More than 50 resolved dependencies fails the task
+  instead of losing edges.
+- **One approval, one call.** Under an `ask` policy, repeat the unchanged call with
+  `--approval <id>` after the owner allows it. The approval binds the exact arguments and is used
+  once, just like every other approval-gated tool. A lost response does not make a used approval
+  reusable; obtain a new approval if needed. Source identity still skips files imported before.
 - **No new statuses.** Backlog.md lets a project name its own columns; Dayhand keeps `todo`,
   `doing` and `done` and maps each column to the nearest one.
 - **An agent's import follows an agent's rules.** A finished task with criteria not all met, or
@@ -142,7 +140,7 @@ Decisions:
 | resume note and blocked reason | Implementation Notes ("Resume: …", "Blocked: …") |
 | `proof` (summary, links, checks) | Final Summary |
 | `createdAt`, `updatedAt` | `created_date`, `updated_date`, in the user's time zone |
-| a proposal, an archived task (`--archived`) | a file in `drafts/`, in `archive/tasks/` |
+| a proposal, an archived task, an archived proposal (`--archived`) | a file in `drafts/`, `archive/tasks/`, `archive/drafts/` respectively; archived drafts are skipped on import |
 
 Due dates and times, repeat rules, reminders, the now task and claims have no place in the format;
 the result's `notes` count what was left out. Tasks in the trash are not exported.
@@ -153,5 +151,9 @@ or delete unrelated files. Destination, task-directory and file symlinks are ref
 dangling file symlinks.
 
 An export imported into another Dayhand account keeps titles, statuses, labels, criteria, plan,
-dependencies, links and proof; the note gains the checklist and the notes section as text. The
-tests check that round trip on synthetic data (`backend/tests/backlog.test.ts`).
+dependencies, links and proof when the flattened fields fit the import limits; the note gains the
+checklist and the notes section as text. Export never truncates that text: its `notes` identify
+any task whose resulting note exceeds 20,000 characters or finished task's final summary exceeds
+4,000 characters, including contributions from checklists, resume notes, blocked reasons, proof
+links and checks. The CLI prints these warnings with or without a destination folder. The tests
+check the round trip and overflow warnings on synthetic data (`backend/tests/backlog.test.ts`).

@@ -45,7 +45,7 @@
       "items": {
         "type": "string"
       },
-      "description": "What Backlog.md has no place for"
+      "description": "Fields and dependencies left out, and tasks whose exported text exceeds Dayhand import limits (text is not truncated)"
     }
   }
 }

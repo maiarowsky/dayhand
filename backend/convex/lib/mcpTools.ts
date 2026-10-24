@@ -112,7 +112,7 @@ const BACKLOG_DOCS: Record<string, string> = {
   files:
     'Backlog.md files: {path, content}, path relative to the backlog folder (e.g. "tasks/task-3 - Write docs.md", "drafts/…", "completed/…", "archive/tasks/…", "config.yml"). Up to 200 files per call; send the tasks that others depend on first, or all in one call.',
   prefix: 'ID prefix of tasks that did not come from Backlog.md, e.g. "task" gives TASK-12 for task #12 (default "task"). Proposals become drafts with DRAFT-<number>.',
-  includeArchived: "Include archived tasks, written to archive/tasks/ (default false).",
+  includeArchived: "Include archived tasks in archive/tasks/ and archived proposals in archive/drafts/ (default false).",
 };
 
 export type ToolKind = "read" | "write";
@@ -434,19 +434,16 @@ export const TOOLS: Tool[] = [
   write("import_backlog", {
     title: "Import Backlog.md tasks",
     description:
-      "Import task files in the Backlog.md format (Markdown with a YAML header) as tasks: title, status (nearest of todo, doing, done), labels, acceptance criteria, implementation plan, dependencies and the final summary as proof. Each task gets the source {kind: \"backlog-md\", ref: <id or path>}, so a file imported before is skipped. Drafts become proposals; docs, decisions and milestones are skipped. Returns what was created, skipped, failed and could not be carried over.",
+      "Import task files in the Backlog.md format (Markdown with a YAML header) as tasks: title, status (nearest of todo, doing, done), labels, acceptance criteria, implementation plan, dependencies and the final summary as proof. Each task gets the source {kind: \"backlog-md\", ref: <id>}, so a file imported before is skipped. Drafts become proposals; files without an id, docs, decisions and milestones are skipped. Returns what was created, skipped, failed and could not be carried over.",
     fields: args.importBacklog,
     output: "backlog-import",
     ref: internal.ops.importBacklog,
-    docs: {
-      ...BACKLOG_DOCS,
-      run: "For a multi-batch import, the same ordered manifest of all batches: {batches: [{hash, files}]}. hash is SHA-256 of JSON.stringify(files.map(({path, content}) => ({path, content}))); files is that batch's file count. One policy approval covers this whole manifest, including idempotent retries; each submitted batch must match it.",
-    },
+    docs: BACKLOG_DOCS,
   }),
   read("export_backlog", {
     title: "Export as Backlog.md",
     description:
-      "The plan as Backlog.md task files (Markdown with a YAML header) plus a config.yml: status mapped to To Do, In Progress or Done, labels, acceptance criteria, plan, dependencies, links as references and proof as the final summary. Tasks imported from Backlog.md keep their ids. Returns the files to write; nothing is stored.",
+      "The plan as Backlog.md task files (Markdown with a YAML header) plus a config.yml: status mapped to To Do, In Progress or Done, labels, acceptance criteria, plan, dependencies, links as references and proof as the final summary. Tasks imported from Backlog.md keep their ids. Returns the files to write and notes identifying tasks whose exported fields exceed Dayhand import limits, without truncating text; nothing is stored.",
     fields: args.exportBacklog,
     output: "backlog-export",
     ref: internal.ops.exportBacklog,

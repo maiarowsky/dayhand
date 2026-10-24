@@ -2,15 +2,12 @@
 // (Markdown task files with a YAML header, docs/backlog-md.md) in and out. The
 // server reads and writes the format (import_backlog, export_backlog); these
 // commands move the files between the folder and the server.
-import { createHash } from "node:crypto";
-import { batches, dependenciesFirst, FILE_CHARS, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
+import { dependenciesFirst, FILE_CHARS, IMPORT_BYTES, IMPORT_FILES, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
 import { CliError, usageError } from "../core/exit.js";
 import { tool } from "./ops.js";
 import type { CommandSpec, RunContext } from "./types.js";
 
 const NEEDS = "Needs backend 0.12.0 or later.";
-const MAX_IMPORT_BATCHES = 256;
-type ImportRun = { batches: { hash: string; files: number }[] };
 
 type Report = {
   format: "backlog-md";
@@ -33,26 +30,9 @@ type Export = {
 };
 
 /** One call: the tool, or with --dry-run the REST route that asks the server for a dry run (nothing is held back). */
-async function importBatch(ctx: RunContext, files: BacklogFile[], run?: ImportRun): Promise<Report> {
-  const input = { files, ...(run ? { run } : {}) };
-  if (!ctx.dryRun) return tool<Report>(ctx, "import_backlog", input);
-  return (await ctx.client()).request("POST", "/api/v1/import/backlog?dryRun=true", input);
-}
-
-/** The reports of several calls as one; a single call's report stays as the tool gave it. */
-export function mergeReports(reports: Report[], sent: number, tooLong: string[]): Report {
-  const tooLongSkips = tooLong.map((path) => ({ path, reason: `longer than ${FILE_CHARS} characters` }));
-  if (reports.length === 1 && tooLong.length === 0) return reports[0]!;
-  return {
-    format: "backlog-md",
-    dryRun: reports.some((r) => r.dryRun),
-    files: sent + tooLong.length,
-    created: reports.reduce((n, r) => n + r.created, 0),
-    tasks: reports.flatMap((r) => r.tasks),
-    skipped: [...reports.flatMap((r) => r.skipped), ...tooLongSkips],
-    failed: reports.flatMap((r) => r.failed),
-    warnings: reports.flatMap((r) => r.warnings),
-  };
+async function importFiles(ctx: RunContext, files: BacklogFile[]): Promise<Report> {
+  if (!ctx.dryRun) return tool<Report>(ctx, "import_backlog", { files });
+  return (await ctx.client()).request("POST", "/api/v1/import/backlog?dryRun=true", { files });
 }
 
 export function importText(report: Report): string {
@@ -71,28 +51,26 @@ const importCommand: CommandSpec = {
   schema: "backlog-import.schema.json",
   summary: "Import a Backlog.md folder: each task file becomes a task; files imported before are skipped",
   description:
-    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends them, the tasks others depend on first, in calls of up to 200 files. " +
+    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call, the tasks others depend on first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
     "Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
-    "Under an ask policy, one approval covers the whole import and its file count; retry the unchanged folder with --approval after the owner allows it. " +
-    `--dry-run asks the server what would happen without storing anything (a folder sent in several calls cannot see dependencies across calls). ${NEEDS}`,
+    "Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. " +
+    `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
   args: [{ name: "dir", description: "The backlog folder (backlog/, or one of its folders such as backlog/tasks)", required: true }],
   tools: ["import_backlog"],
   examples: ["dayhand backlog import backlog --dry-run", "dayhand backlog import backlog --json", "dayhand backlog import backlog/completed"],
   run: async (ctx, args) => {
     const dir = args.dir as string;
-    const { files, tooLong } = await readFolder(dir).catch(() => {
-      throw usageError(`Cannot read the folder ${dir}`);
+    const files = await readFolder(dir).catch((cause: unknown) => {
+      throw new CliError("usage", `Cannot read the folder ${dir}`, {}, { cause });
     });
-    if (files.length === 0 && tooLong.length === 0) throw usageError(`No Markdown files below ${dir}`, { hint: "point at the backlog folder, e.g. dayhand backlog import backlog" });
-    const calls = batches(dependenciesFirst(files));
-    if (calls.length > MAX_IMPORT_BATCHES) throw usageError(`An import supports at most ${MAX_IMPORT_BATCHES} batches; split the folder`);
-    const run: ImportRun | undefined = calls.length > 1 ? {
-      batches: calls.map((batch) => ({ hash: createHash("sha256").update(JSON.stringify(batch)).digest("hex"), files: batch.length })),
-    } : undefined;
-    const reports: Report[] = [];
-    for (const batch of calls) reports.push(await importBatch(ctx, batch, run));
-    const value = mergeReports(reports, files.length, tooLong);
+    if (files.length === 0) throw usageError(`No Markdown files below ${dir}`, { hint: "point at the backlog folder, e.g. dayhand backlog import backlog" });
+    if (files.length > IMPORT_FILES || Buffer.byteLength(JSON.stringify({ files })) > IMPORT_BYTES) {
+      throw usageError(`The folder exceeds one import call (${IMPORT_FILES} files or ${IMPORT_BYTES / 1024} KiB of file JSON); import it by subdirectories`);
+    }
+    const tooLong = files.find((file) => file.content.length > FILE_CHARS);
+    if (tooLong) throw usageError(`${tooLong.path} is longer than ${FILE_CHARS} characters; shorten the file before importing`);
+    const value = await importFiles(ctx, dependenciesFirst(files));
     return { value, view: { kind: "text", text: importText(value) } };
   },
 };
@@ -105,13 +83,13 @@ const exportCommand: CommandSpec = {
   schema: ["backlog-written.schema.json", "backlog-export.schema.json"],
   summary: "Write the plan as Backlog.md task files into a folder (without one, --json prints the files)",
   description:
-    "One file per task in tasks/ (proposals in drafts/, archived tasks with --archived in archive/tasks/), and a config.yml with the statuses To Do, In Progress and Done. " +
+    "One file per task in tasks/ (proposals in drafts/; with --archived, archived tasks in archive/tasks/ and archived proposals in archive/drafts/), and a config.yml with the statuses To Do, In Progress and Done. " +
     "Tasks imported from Backlog.md keep their ids; the others get <PREFIX>-<number>. The destination must be missing or empty unless --force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. " +
-    `Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). ${NEEDS}`,
+    `Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks whose exported text exceeds Dayhand import limits; text is not truncated. ${NEEDS}`,
   args: [{ name: "dir", description: "The folder to write into (made if missing), e.g. backlog" }],
   options: [
     { flags: "--prefix <prefix>", description: "ID prefix of tasks that did not come from Backlog.md (default task: TASK-12)" },
-    { flags: "--archived", description: "Also write archived tasks, to archive/tasks/" },
+    { flags: "--archived", description: "Also write archived tasks to archive/tasks/ and archived proposals to archive/drafts/" },
     { flags: "--force", description: "Confirm writing into a non-empty folder and replacing exported files, config.yml too" },
   ],
   tools: ["export_backlog"],
@@ -124,7 +102,7 @@ const exportCommand: CommandSpec = {
     });
     const dir = args.dir as string | undefined;
     if (dir === undefined) {
-      const text = [...value.files.map((f) => f.path), `${value.total} task file(s); pass a folder to write them: dayhand backlog export <dir>`].join("\n");
+      const text = [...value.files.map((f) => f.path), `${value.total} task file(s); pass a folder to write them: dayhand backlog export <dir>`, ...value.notes.map((n) => `  note: ${n}`)].join("\n");
       return { value, view: { kind: "text", text } };
     }
     await writeFolder(dir, [value.config, ...value.files], Boolean(opts.force)).catch((cause: unknown) => {

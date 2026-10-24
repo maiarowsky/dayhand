@@ -237,11 +237,15 @@ agents are paused, `nextSteps` says only that.
 
 `import_backlog` takes up to 200 files `{ path, content }` (100,000 characters each), paths relative
 to the backlog folder, and makes a task of each task file with the source
-`{ kind: "backlog-md", ref: <id, or the path without one> }`: a file imported before is skipped
-and reported with the task it made. The result lists `tasks`, `skipped` and `failed` per file and
+`{ kind: "backlog-md", ref: <id> }` (uppercase). Files without an id are skipped; a file imported
+before is skipped and reported with the task it made. The result lists `tasks`, `skipped` and `failed` per file and
 `warnings` (statuses read by their words, dependencies not found, header keys without a Dayhand
 field). `dryRun: true` stores nothing. `export_backlog` returns `files` (one per task, with `id`)
-and `config`; nothing is stored. What maps to what is in [backlog-md.md](backlog-md.md).
+and `config`; nothing is stored. Its `notes` identify tasks whose exported fields exceed Dayhand
+import limits, without truncating text. The CLI sends one call per invocation and refuses folders
+that exceed one call's limits before sending anything; import those by subdirectories. An `ask`
+approval binds the exact call and is consumed once, as for other tools. What maps to what is in
+[backlog-md.md](backlog-md.md).
 
 ### Dry runs
 

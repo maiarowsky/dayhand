@@ -23,7 +23,6 @@ import type * as lib_agentWork from "../lib/agentWork.js";
 import type * as lib_appToken from "../lib/appToken.js";
 import type * as lib_approvals from "../lib/approvals.js";
 import type * as lib_args from "../lib/args.js";
-import type * as lib_backlogApproval from "../lib/backlogApproval.js";
 import type * as lib_backlogMd from "../lib/backlogMd.js";
 import type * as lib_backlogOps from "../lib/backlogOps.js";
 import type * as lib_brief from "../lib/brief.js";
@@ -99,7 +98,6 @@ declare const fullApi: ApiFromModules<{
   "lib/appToken": typeof lib_appToken;
   "lib/approvals": typeof lib_approvals;
   "lib/args": typeof lib_args;
-  "lib/backlogApproval": typeof lib_backlogApproval;
   "lib/backlogMd": typeof lib_backlogMd;
   "lib/backlogOps": typeof lib_backlogOps;
   "lib/brief": typeof lib_brief;

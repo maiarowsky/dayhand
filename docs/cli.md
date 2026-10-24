@@ -1675,7 +1675,7 @@ dayhand import calendar.ics --format ics --json
 
 Import a Backlog.md folder: each task file becomes a task; files imported before are skipped
 
-Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends them, the tasks others depend on first, in calls of up to 200 files. Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. Under an ask policy, one approval covers the whole import and its file count; retry the unchanged folder with --approval after the owner allows it. --dry-run asks the server what would happen without storing anything (a folder sent in several calls cannot see dependencies across calls). Needs backend 0.12.0 or later.
+Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call, the tasks others depend on first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. --dry-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
 
 ```
 dayhand backlog import <dir>
@@ -1693,7 +1693,7 @@ dayhand backlog import backlog/completed
 
 Write the plan as Backlog.md task files into a folder (without one, --json prints the files)
 
-One file per task in tasks/ (proposals in drafts/, archived tasks with --archived in archive/tasks/), and a config.yml with the statuses To Do, In Progress and Done. Tasks imported from Backlog.md keep their ids; the others get <PREFIX>-<number>. The destination must be missing or empty unless --force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Needs backend 0.12.0 or later.
+One file per task in tasks/ (proposals in drafts/; with --archived, archived tasks in archive/tasks/ and archived proposals in archive/drafts/), and a config.yml with the statuses To Do, In Progress and Done. Tasks imported from Backlog.md keep their ids; the others get <PREFIX>-<number>. The destination must be missing or empty unless --force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks whose exported text exceeds Dayhand import limits; text is not truncated. Needs backend 0.12.0 or later.
 
 ```
 dayhand backlog export [dir] [options]
@@ -1704,7 +1704,7 @@ dayhand backlog export [dir] [options]
 | Option | Meaning |
 |---|---|
 | `--prefix <prefix>` | ID prefix of tasks that did not come from Backlog.md (default task: TASK-12) |
-| `--archived` | Also write archived tasks, to archive/tasks/ |
+| `--archived` | Also write archived tasks to archive/tasks/ and archived proposals to archive/drafts/ |
 | `--force` | Confirm writing into a non-empty folder and replacing exported files, config.yml too |
 
 ```sh

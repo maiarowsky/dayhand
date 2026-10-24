@@ -922,7 +922,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "files": {
         "type": "array",
-        "description": "One file per task: tasks/, drafts/ (proposals) or archive/tasks/ (archived)",
+        "description": "One file per task: tasks/, drafts/ (proposals), archive/tasks/ (archived tasks) or archive/drafts/ (archived proposals)",
         "items": {
           "allOf": [
             {
@@ -972,7 +972,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "items": {
           "type": "string"
         },
-        "description": "What Backlog.md has no place for (due dates, repeat rules, reminders) and dependencies left out"
+        "description": "Fields and dependencies left out, and tasks whose exported text exceeds Dayhand import limits (text is not truncated)"
       }
     }
   },
@@ -1017,7 +1017,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "skipped": {
         "type": "array",
-        "description": "Files not imported and why: imported before (with the task), not a task file, a draft archived, a document, a decision, a milestone, an id given twice",
+        "description": "Files not imported and why: imported before (with the task), no id, not a task file, a draft archived, a document, a decision, a milestone, an id given twice",
         "items": {
           "type": "object",
           "required": [

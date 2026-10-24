@@ -3,7 +3,7 @@
 // the REST API. The folders are synthetic, written here for the tests.
 import { describe, expect, test } from "vitest";
 import { api } from "../convex/_generated/api";
-import { sha256Hex } from "../convex/lib/secrets";
+import { readTask } from "../convex/lib/backlogMd";
 import { appClient, callTool, createKey, mcpClient, newUserId, openApiChecker, rest } from "./helpers";
 
 type File = { path: string; content: string };
@@ -127,26 +127,32 @@ describe("import_backlog", () => {
     ]);
   });
 
-  test("a run approval covers only its declared batches and counts", async () => {
+  test("one policy approval allows only the exact import call, once", async () => {
     const { client: app, userId } = await appClient();
-    const agent = await mcpClient(await createKey(userId, "batch importer", "agent"));
+    const agent = await mcpClient(await createKey(userId, "importer", "agent"));
     const keys = await app.query(api.app.listApiKeys, {}) as any[];
-    await app.mutation(api.app.setToolPolicy, { apiKeyId: keys.find((key) => key.name === "batch importer").id, toolName: "import_backlog", rule: "ask" });
-    const calls = [Array.from({ length: 200 }, (_, i) => file(`tasks/${i}.md`, `id: TASK-${i}\ntitle: T${i}`)), [file("tasks/last.md", "id: TASK-200\ntitle: Last\ndependencies: [Task-0]")]];
-    const run = { batches: await Promise.all(calls.map(async (files) => ({ hash: await sha256Hex(JSON.stringify(files)), files: files.length }))) };
-    const refused = await agent.callTool({ name: "import_backlog", arguments: { files: calls[0], run } });
+    await app.mutation(api.app.setToolPolicy, { apiKeyId: keys.find((key) => key.name === "importer").id, toolName: "import_backlog", rule: "ask" });
+    const files = [file("tasks/one.md", "id: TASK-1\ntitle: First"), file("tasks/two.md", "id: TASK-2\ntitle: Second\ndependencies: [TASK-1]")];
+    const refused = await agent.callTool({ name: "import_backlog", arguments: { files } });
     const approvalId = (refused.structuredContent as any).error.approvalId;
     expect(typeof approvalId).toBe("string");
     await app.mutation(api.app.decideApproval, { approvalId, optionId: "allow" });
-    const changedCount = { batches: run.batches.map((batch, index) => index === 1 ? { ...batch, files: 2 } : batch) };
-    const wrongCount = await agent.callTool({ name: "import_backlog", arguments: { files: calls[1], run: changedCount, approvalId } });
-    expect((wrongCount.structuredContent as any).error.code).toBe("invalid_argument");
-    const changedFile = await agent.callTool({ name: "import_backlog", arguments: { files: [file("tasks/other.md", "title: Not approved")], run, approvalId } });
-    expect((changedFile.structuredContent as any).error.code).toBe("invalid_argument");
-    expect((await callTool(agent, "import_backlog", { files: calls[0], run, approvalId })).created).toBe(200);
-    expect((await callTool(agent, "import_backlog", { files: calls[1], run, approvalId })).created).toBe(1);
-    expect((await callTool(agent, "import_backlog", { files: calls[0], run, approvalId })).created).toBe(0);
-    expect((await callTool(agent, "list_approvals")).approvals).toHaveLength(1);
+    const changed = await agent.callTool({ name: "import_backlog", arguments: { files: [file("tasks/other.md", "id: TASK-3\ntitle: Not approved")], approvalId } });
+    expect((changed.structuredContent as any).error.code).toBe("approval_required");
+    expect((await callTool(agent, "list_all"))).toEqual([]);
+    expect((await callTool(agent, "import_backlog", { files, approvalId })).created).toBe(2);
+    const repeated = await agent.callTool({ name: "import_backlog", arguments: { files, approvalId } });
+    expect((repeated.structuredContent as any).error).toMatchObject({ code: "approval_required", message: expect.stringContaining("already used") });
+    expect(await callTool(agent, "list_all")).toHaveLength(2);
+  });
+
+  test("id-less files are skipped regardless of the import directory", async () => {
+    const { client } = await owner();
+    for (const path of ["backlog/tasks/loose.md", "tasks/loose.md"]) {
+      const result = await callTool(client, "import_backlog", { files: [file(path, "title: Loose")] });
+      expect(result).toMatchObject({ created: 0, failed: [], skipped: [{ path, reason: "the header has no id" }] });
+    }
+    expect(await callTool(client, "list_all")).toEqual([]);
   });
 
   test("excess dependencies fail the task; all accepted dependencies survive readiness and export", async () => {
@@ -208,6 +214,56 @@ async function asOwnerPause(userId: string) {
 }
 
 describe("export_backlog", () => {
+  test("flattened text stays complete and warnings name every task over the import limits", async () => {
+    const { client } = await owner();
+    const checklist = await callTool(client, "add_task", { title: "Checklist overflow", note: "n".repeat(20_000), checklist: [{ title: "Keep this item" }] });
+    const resume = await callTool(client, "add_task", { title: "Resume overflow", note: "n".repeat(19_990) });
+    await callTool(client, "set_now", { taskId: resume.id, resumeNote: "Keep this checkpoint" });
+    const blocked = await callTool(client, "add_task", { title: "Blocked overflow", note: "n".repeat(19_990), blockedReason: "Keep this reason" });
+    const unfinished = await callTool(client, "add_task", { title: "Unfinished proof overflow", note: "n".repeat(19_990) });
+    await callTool(client, "complete_task", { taskId: unfinished.id, proof: { summary: "Keep this previous proof" } });
+    await callTool(client, "set_status", { taskId: unfinished.id, status: "todo" });
+    const proofLink = await callTool(client, "add_task", { title: "Proof link overflow" });
+    await callTool(client, "complete_task", { taskId: proofLink.id, proof: { summary: "s".repeat(4_000), links: [{ url: "https://example.com/evidence" }] } });
+    const proofCheck = await callTool(client, "add_task", { title: "Proof check overflow" });
+    await callTool(client, "complete_task", { taskId: proofCheck.id, proof: { summary: "s".repeat(4_000), checks: [{ name: "Keep this check", result: "pass" }] } });
+    const boundary = await callTool(client, "add_task", { title: "Exactly at the limits", note: "n".repeat(20_000) });
+    await callTool(client, "complete_task", { taskId: boundary.id, proof: { summary: "s".repeat(4_000) } });
+    const exported = await callTool(client, "export_backlog");
+    expect(exported.total).toBe(7);
+    expect(exported.notes).toHaveLength(6);
+    for (const task of [checklist, resume, blocked, unfinished, proofLink, proofCheck]) {
+      const output = exported.files.find((file: any) => file.taskId === task.id);
+      expect(exported.notes).toContainEqual(expect.stringContaining(`${output.id} (${task.title}): exported fields exceed Dayhand import limits`));
+    }
+    const parsed = new Map(exported.files.map((file: File & { taskId: string }) => [file.taskId, readTask(file)])) as Map<string, ReturnType<typeof readTask>>;
+    expect(parsed.get(checklist.id)!.description).toBe("n".repeat(20_000) + "\n\nChecklist:\n- [ ] Keep this item");
+    expect(parsed.get(resume.id)!.extra).toEqual(["## Implementation Notes\n\nResume: Keep this checkpoint"]);
+    expect(parsed.get(blocked.id)!.extra).toEqual(["## Implementation Notes\n\nBlocked: Keep this reason"]);
+    expect(parsed.get(unfinished.id)!.finalSummary).toBe("Keep this previous proof");
+    expect(parsed.get(proofLink.id)!.finalSummary).toBe("s".repeat(4_000) + "\n- https://example.com/evidence");
+    expect(parsed.get(proofCheck.id)!.finalSummary).toBe("s".repeat(4_000) + "\n- Keep this check: pass");
+    const target = await owner();
+    const imported = await callTool(target.client, "import_backlog", { files: exported.files.map(({ path, content }: File) => ({ path, content })) });
+    expect(imported).toMatchObject({ created: 1, tasks: [{ title: boundary.title }] });
+    expect(imported.failed).toHaveLength(6);
+    for (const failed of imported.failed) expect(exported.notes).toContainEqual(expect.stringContaining(failed.message));
+  });
+
+  test("archived proposals export as archived drafts and cannot reappear as ordinary tasks", async () => {
+    const { client } = await owner();
+    const proposal = await callTool(client, "add_task", { title: "Archived idea", proposal: true });
+    await callTool(client, "archive_task", { taskId: proposal.id });
+    expect((await callTool(client, "export_backlog")).files).toEqual([]);
+    const exported = await callTool(client, "export_backlog", { includeArchived: true });
+    expect(exported.files).toHaveLength(1);
+    expect(exported.files[0].path).toMatch(/^archive\/drafts\/draft-\d+ - Archived-idea\.md$/);
+    const target = await owner();
+    const result = await callTool(target.client, "import_backlog", { files: exported.files.map(({ path, content }: File) => ({ path, content })) });
+    expect(result).toMatchObject({ created: 0, skipped: [{ reason: "an archived draft, not a task" }] });
+    expect(await allTasks(target.client)).toEqual([]);
+  });
+
   test("quoted titles and narrative headings survive export and an agent's import without becoming criteria", async () => {
     const { client: source } = await owner();
     const title = "O'Brien #42";

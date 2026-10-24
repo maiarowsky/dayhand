@@ -41,7 +41,7 @@
     },
     "skipped": {
       "type": "array",
-      "description": "Files not imported and why: imported before (with the task), not a task file, a draft archived, a document, a decision, a milestone, an id given twice",
+      "description": "Files not imported and why: imported before (with the task), no id, not a task file, a draft archived, a document, a decision, a milestone, an id given twice",
       "items": {
         "type": "object",
         "required": [

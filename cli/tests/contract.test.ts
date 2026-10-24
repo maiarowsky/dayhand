@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { batches, dependenciesFirst, readFolder } from "../src/backlog/folder.js";
+import { dependenciesFirst, readFolder } from "../src/backlog/folder.js";
 import { flatten } from "../src/registry/index.js";
 import { admin, connectAgent, createKey, dayhand, dayhandJson, jsonError, mcpClient, newUser, schemaValidator, sdkCall, TEST_HOME } from "./helpers.js";
 
@@ -162,7 +162,7 @@ describe("agent contract", () => {
     expect(imported.tasks.map((t: any) => [t.title, t.status])).toEqual([["Buy a printer", "todo"], ["Print labels", "doing"]]);
     expect(imported.tasks[1].dependsOn).toEqual([imported.tasks[0].id]);
     // Again, the command and the SDK with the files the command sends: everything was imported before.
-    const [files] = batches(dependenciesFirst((await readFolder(dir)).files));
+    const files = dependenciesFirst(await readFolder(dir));
     const again = await dayhandJson(key, ["backlog", "import", dir]);
     const viaSdk = await sdkCall(sdk, "import_backlog", { files });
     expect(viaSdk.isError).toBe(false);
@@ -193,34 +193,65 @@ describe("agent contract", () => {
     await sdk.close();
   });
 
-  test("a multi-batch folder under ask needs one approval, then imports and retries the whole run", async () => {
+  test("a backlog import under ask uses an exact one-call approval with no replay exception", async () => {
     const { userId, key } = await newUser();
     const agent = await createKey(userId, "importer", "agent");
     await dayhandJson(key, ["policy", "set", agent.id, "import_backlog", "ask"]);
-    const dir = join(mkdtempSync(join(TEST_HOME, "multi-")), "backlog");
-    mkdirSync(join(dir, "tasks"), { recursive: true });
-    for (let i = 1; i <= 199; i++) writeFileSync(join(dir, "tasks", `filler-${i}.md`), `---\nid: TASK-${i}\ntitle: Filler ${i}\n---\n`);
-    writeFileSync(join(dir, "tasks", "a-dependent.md"), "---\nid: TASK-201\ntitle: Dependent\ndependencies: [TASK-200] # prerequisite\n---\n");
-    writeFileSync(join(dir, "tasks", "z-prerequisite.md"), "---\nid: 'Task-200' # source\ntitle: Prerequisite\n---\n");
-    const calls = batches(dependenciesFirst((await readFolder(dir)).files));
-    expect(calls.map((batch) => batch.length)).toEqual([200, 1]);
+    const dir = backlogFolder();
     const refused = await dayhand(agent.key, ["backlog", "import", dir, "--json"]);
     expect(refused.code).toBe(7);
     const { approvalId } = jsonError(refused);
     expect(typeof approvalId).toBe("string");
-    expect((await dayhandJson(key, ["approval", approvalId])).arguments).toContain("201 file(s) in 2 batch(es)");
+    expect(JSON.parse((await dayhandJson(key, ["approval", approvalId])).arguments)).toEqual({ files: dependenciesFirst(await readFolder(dir)) });
     expect((await dayhandJson(key, ["list"])).total).toBe(0);
     await dayhandJson(key, ["approvals", "decide", approvalId, "allow"]);
     const imported = await dayhandJson(agent.key, ["backlog", "import", dir, "--approval", approvalId]);
-    expect(imported).toMatchObject({ created: 201, failed: [], warnings: [] });
-    const prerequisite = imported.tasks.find((task: any) => task.title === "Prerequisite");
-    expect(imported.tasks.find((task: any) => task.title === "Dependent").dependsOn).toEqual([prerequisite.id]);
-    const again = await dayhandJson(agent.key, ["backlog", "import", dir, "--approval", approvalId]);
-    expect(again.created).toBe(0);
-    expect(again.skipped).toHaveLength(201);
-    expect((await dayhandJson(key, ["approvals"])).approvals).toHaveLength(1);
-    writeFileSync(join(dir, "tasks", "z-prerequisite.md"), "---\nid: TASK-999\ntitle: Changed\n---\n");
-    expect((await dayhand(agent.key, ["backlog", "import", dir, "--approval", approvalId])).code).toBe(7);
+    expect(imported).toMatchObject({ created: 2, failed: [], warnings: [] });
+    expect(imported.tasks[1].dependsOn).toEqual([imported.tasks[0].id]);
+    const again = await dayhand(agent.key, ["backlog", "import", dir, "--approval", approvalId, "--json"]);
+    expect(again.code).toBe(7);
+    expect(jsonError(again).message).toContain("already used");
+    expect((await dayhandJson(key, ["list"])).total).toBe(2);
+  });
+
+  test("backlog folders over one call's count or byte limit are refused without partial imports", async () => {
+    const { key } = await newUser();
+    const count = join(mkdtempSync(join(TEST_HOME, "count-")), "backlog");
+    mkdirSync(count);
+    for (let i = 0; i < 201; i++) writeFileSync(join(count, `${i}.md`), `---\nid: TASK-${i}\ntitle: Task ${i}\n---\n`);
+    const bytes = join(mkdtempSync(join(TEST_HOME, "bytes-")), "backlog");
+    mkdirSync(bytes);
+    for (let i = 0; i < 3; i++) writeFileSync(join(bytes, `${i}.md`), `---\nid: TASK-${i}\ntitle: Task ${i}\n---\n${"x".repeat(90_000)}`);
+    for (const dir of [count, bytes]) {
+      for (const flags of [[], ["--dry-run"]]) {
+        const refused = await dayhand(key, ["backlog", "import", dir, ...flags, "--json"]);
+        expect(refused.code).toBe(2);
+        expect(jsonError(refused).message).toContain("import it by subdirectories");
+      }
+    }
+    expect((await dayhandJson(key, ["list"])).total).toBe(0);
+  });
+
+  test("backlog export prints overflow warnings with and without a destination, without truncation", async () => {
+    const { key } = await newUser();
+    const sdk = await mcpClient(key);
+    const note = "n".repeat(20_000);
+    const added = await sdkCall(sdk, "add_task", { title: "Long note", note, checklist: [{ title: "Keep this item" }] });
+    expect(added.isError).toBe(false);
+    const exported = await dayhandJson(key, ["backlog", "export"]);
+    expect(validate("backlog-export.schema.json", exported)).toEqual([]);
+    const warning = `${exported.files[0].id} (Long note): exported fields exceed Dayhand import limits`;
+    expect(exported.notes).toContainEqual(expect.stringContaining(warning));
+    expect(exported.files[0].content).toContain(note + "\n\nChecklist:\n- [ ] Keep this item");
+    const printed = await dayhand(key, ["backlog", "export"]);
+    expect(printed.code).toBe(0);
+    expect(printed.stdout).toContain(warning);
+    const dir = join(mkdtempSync(join(TEST_HOME, "warning-")), "backlog");
+    const written = await dayhand(key, ["backlog", "export", dir]);
+    expect(written.code).toBe(0);
+    expect(written.stdout).toContain(warning);
+    expect(readFileSync(join(dir, exported.files[0].path), "utf8")).toContain(note + "\n\nChecklist:\n- [ ] Keep this item");
+    await sdk.close();
   });
 
   test("a Markdown export prints the SDK's text, and its JSON form follows the schema", async () => {

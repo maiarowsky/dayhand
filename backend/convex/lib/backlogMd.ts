@@ -18,12 +18,11 @@ export type Place = "task" | "completed" | "draft" | "archived" | "archived-draf
 
 export type Criterion = { text: string; met: boolean };
 
-/** One task file as read. `ref` is its source ref in Dayhand: the id, or the path when it has none. */
+/** One task file as read. */
 export type BacklogTask = {
   path: string;
   place: Place;
-  id?: string;
-  ref: string;
+  id: string;
   title: string;
   status?: string;
   labels: string[];
@@ -168,15 +167,15 @@ export function readTask(file: BacklogFile): BacklogTask {
     if (error instanceof FrontmatterError) throw new BacklogFormatError(error.message);
     throw error;
   }
-  const id = text(front.id)?.trim() || undefined;
+  const id = text(front.id)?.trim();
   const title = text(front.title)?.trim();
   if (!title) throw new BacklogFormatError("the header has no title");
+  if (!id) throw new BacklogFormatError("the header has no id");
   const { preamble, sections } = sectionsOf(body);
   const task: BacklogTask = {
     path: file.path,
     place: placeOf(file.path),
     id,
-    ref: id ?? file.path,
     title,
     status: text(front.status)?.trim() || undefined,
     labels: list(front.labels),
@@ -222,7 +221,7 @@ export function readDate(value: string | undefined, timezone: string): number | 
 /** A task as one Backlog.md file. */
 export type TaskFile = {
   id: string;
-  place: "task" | "draft" | "archived";
+  place: "task" | "draft" | "archived" | "archived-draft";
   title: string;
   status: string;
   labels: string[];
@@ -237,7 +236,7 @@ export type TaskFile = {
   finalSummary?: string;
 };
 
-const FOLDERS: Record<TaskFile["place"], string> = { task: "tasks", draft: "drafts", archived: "archive/tasks" };
+const FOLDERS: Record<TaskFile["place"], string> = { task: "tasks", draft: "drafts", archived: "archive/tasks", "archived-draft": "archive/drafts" };
 
 /** The file name part after the id, as Backlog.md writes it: the title with its words joined by "-". */
 export function slugOf(title: string): string {

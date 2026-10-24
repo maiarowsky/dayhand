@@ -1,11 +1,14 @@
 // dayhand backlog and dayhand prime without a backend: the order and size of the
-// import calls, merging their reports, and the brief as text.
+// import call and its report, and the brief as text.
 import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { describe, expect, test } from "vitest";
-import { BATCH_BYTES, batches, dependenciesFirst, writeFolder, type BacklogFile } from "../src/backlog/folder.js";
+import { describe, expect, test, vi } from "vitest";
+import { dependenciesFirst, readFolder, writeFolder, type BacklogFile } from "../src/backlog/folder.js";
 import { primeText, type AgentBrief } from "../src/registry/agents.js";
-import { importText, mergeReports } from "../src/registry/backlog.js";
+import { backlogCommands, importText } from "../src/registry/backlog.js";
+import type { RunContext } from "../src/registry/types.js";
+
+const importCommand = backlogCommands[0]!.subcommands!.find((command) => command.name === "import")!;
 
 const task = (path: string, header: string): BacklogFile => ({ path, content: `---\n${header}\n---\n` });
 
@@ -29,7 +32,7 @@ describe("import calls", () => {
     "dependencies: >-\n  TASK-200",
   ])("ordering uses the supported YAML for %s", (dependencies) => {
     const files = [task("a.md", `id: TASK-1\ntitle: Dependent\n${dependencies}`), task("z.md", "id: 'Task-200' # source\ntitle: Prerequisite")];
-    expect(batches(dependenciesFirst(files)).flat().map((file) => file.path)).toEqual(["z.md", "a.md"]);
+    expect(dependenciesFirst(files).map((file) => file.path)).toEqual(["z.md", "a.md"]);
   });
 
   test("quoted hashes and doubled quotes identify the same dependency in lists and scalars", () => {
@@ -37,20 +40,46 @@ describe("import calls", () => {
     expect(dependenciesFirst(files).map((file) => file.path)).toEqual(["z.md", "a.md"]);
   });
 
-  test("calls stay under 200 files and the byte limit, each with the config", () => {
-    const config = { path: "b/config.yml", content: "statuses: [To Do, Done]\n" };
-    const many = Array.from({ length: 450 }, (_, i) => task(`b/tasks/t${i}.md`, `id: TASK-${i}\ntitle: T${i}`));
-    const calls = batches([config, ...many]);
-    expect(calls.map((c) => c.length)).toEqual([200, 200, 53]);
-    for (const call of calls) expect(call[0]).toBe(config);
-    const big = Array.from({ length: 5 }, (_, i) => ({ path: `b/tasks/big${i}.md`, content: "x".repeat(90_000) }));
-    const sized = batches(big);
-    expect(sized.map((c) => c.length)).toEqual([2, 2, 1]);
-    for (const call of sized) expect(Buffer.byteLength(JSON.stringify(call))).toBeLessThan(BATCH_BYTES);
-    expect(batches([])).toEqual([[]]);
-  });
+  test.each([false, true])("over-limit folders fail before any request (dryRun=%s)", async (dryRun) => inFolder(async (root) => {
+    const client = vi.fn();
+    const ctx = { dryRun, client } as unknown as RunContext;
+    const count = join(root, "count");
+    await mkdir(count);
+    await Promise.all(Array.from({ length: 201 }, (_, i) => writeFile(join(count, `${i}.md`), `---\nid: TASK-${i}\ntitle: T${i}\n---\n`)));
+    await expect(importCommand.run!(ctx, { dir: count }, {})).rejects.toThrow(/import it by subdirectories/);
+    const bytes = join(root, "bytes");
+    await mkdir(bytes);
+    await Promise.all(["a.md", "b.md"].map((path) => writeFile(join(bytes, path), "ą".repeat(60_000))));
+    await expect(importCommand.run!(ctx, { dir: bytes }, {})).rejects.toThrow(/import it by subdirectories/);
+    const long = join(root, "long");
+    await mkdir(long);
+    await writeFile(join(long, "task.md"), "x".repeat(100_001));
+    await expect(importCommand.run!(ctx, { dir: long }, {})).rejects.toThrow(/longer than 100000 characters/);
+    expect(client).not.toHaveBeenCalled();
+  }));
 
-  test("one call's report is the tool's; several add up, with the files left out locally", () => {
+  test.each([false, true])("one invocation sends exactly one dependency-ordered call (dryRun=%s)", async (dryRun) => inFolder(async (root) => {
+    const report = { format: "backlog-md", dryRun, files: 2, created: 0, tasks: [], skipped: [], failed: [], warnings: [] };
+    await writeFile(join(root, "a.md"), "---\nid: TASK-1\ntitle: Dependent\ndependencies: [TASK-2] # prerequisite\n---\n");
+    await writeFile(join(root, "z.md"), "---\nid: Task-2\ntitle: Prerequisite\n---\n");
+    const callTool = vi.fn(async () => ({ structured: report }));
+    const request = vi.fn(async () => report);
+    const client = vi.fn(async () => ({ callTool, request }));
+    const ctx = { dryRun, client } as unknown as RunContext;
+    const outcome = await importCommand.run!(ctx, { dir: root }, {});
+    expect(outcome.value).toBe(report);
+    expect(client).toHaveBeenCalledTimes(1);
+    const files = dependenciesFirst(await readFolder(root));
+    if (dryRun) {
+      expect(request).toHaveBeenCalledExactlyOnceWith("POST", "/api/v1/import/backlog?dryRun=true", { files });
+      expect(callTool).not.toHaveBeenCalled();
+    } else {
+      expect(callTool).toHaveBeenCalledExactlyOnceWith("import_backlog", { files });
+      expect(request).not.toHaveBeenCalled();
+    }
+  }));
+
+  test("the import report prints created tasks, skips and warnings", () => {
     const report = (n: number, dryRun = false) => ({
       format: "backlog-md" as const,
       dryRun,
@@ -61,11 +90,6 @@ describe("import calls", () => {
       failed: [],
       warnings: [{ path: null, message: "Not carried over, Dayhand has no field for them: priority (1 file)" }],
     });
-    const one = report(2);
-    expect(mergeReports([one], 3, [])).toBe(one);
-    const merged = mergeReports([report(2), report(1)], 5, ["b/tasks/huge.md"]);
-    expect(merged).toMatchObject({ files: 6, created: 3, dryRun: false });
-    expect(merged.skipped.at(-1)).toEqual({ path: "b/tasks/huge.md", reason: "longer than 100000 characters" });
     expect(importText(report(1, true))).toBe(
       [
         "Dry run: nothing was stored. Would import 1 task(s) from 2 file(s) (backlog-md).",
