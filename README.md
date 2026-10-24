@@ -233,7 +233,7 @@ android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
-site/      dayhand.dev: the landing page and the docs built from docs/ (scripts/build-docs.mjs); check it with scripts/check-site.sh
+site/      dayhand.dev: the landing page and the docs from docs/, an Astro site built into site/dist; check it with scripts/check-site.sh --build
 ```
 
 The tests start their own throwaway backend:

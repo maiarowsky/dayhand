@@ -1,0 +1,29 @@
+---
+// The licence, where the code is, how to contribute, and the one part that is not Apache-2.0.
+import { REPO_URL, repoFile } from "../../site";
+---
+
+<section id="open-source" class="split-text" aria-labelledby="open-source-title">
+  <h2 id="open-source-title">Free and open source</h2>
+  <div>
+    <p>
+      Dayhand is licensed under the <a href={repoFile("LICENSE")}>Apache License 2.0</a>. The apps, the server, the
+      command line, the documentation and this site live in one public repository,
+      <a href={REPO_URL}>github.com/maiarowsky/dayhand</a>, and you may use them for your business, change them and share
+      them.
+    </p>
+    <p>
+      There is no paid plan and no hosted service, and no account to create. There is nothing to sell you and nothing
+      that only paying users get.
+    </p>
+    <p>
+      Contributions are accepted under the Developer Certificate of Origin
+      (<a href={repoFile("CONTRIBUTING.md")}>how to contribute</a>). Security problems go privately, never in an issue
+      (<a href={repoFile("SECURITY.md")}>security policy</a>).
+    </p>
+    <p class="note">
+      The Convex local backend that <code>dayhand server start</code> downloads on macOS and Linux is not part of
+      Dayhand: it is source-available under FSL-1.1-Apache-2.0, fetched at a pinned version with a verified checksum.
+    </p>
+  </div>
+</section>

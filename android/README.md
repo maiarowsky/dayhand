@@ -7,7 +7,7 @@ code from `dayhand pair`, approves and disconnects **agent connections** such as
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
 **Install**: the signed release build is ready, but no release is published yet. Once it is,
-download the `.apk` from the [latest release](https://github.com/maiarowsky/helm/releases/latest),
+download the `.apk` from the [latest release](https://github.com/maiarowsky/dayhand/releases/latest),
 allow your browser or file manager to install apps when Android asks, and on the first start
 choose **On this phone only** to use Dayhand without a server. What works without a server, what
 needs one and how to connect your own: [On the phone](../README.md#on-the-phone). To build it yourself, see
