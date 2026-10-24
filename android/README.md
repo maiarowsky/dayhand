@@ -79,7 +79,7 @@ report, and without a server it is not shown.
    (`BuildConfig.DEFAULT_SERVER_URL`), which is **empty** unless the build sets
    `-Pdayhand.serverUrl=…`. Public builds leave it empty, so the form starts with an empty address;
    the author builds their own copy with
-   `-Pdayhand.serverUrl=https://impressive-grouse-796.eu-west-1.convex.site`. A `.convex.cloud`
+   `-Pdayhand.serverUrl=https://example-deployment-123.eu-west-1.convex.site`. A `.convex.cloud`
    address is turned into its `.convex.site` one.
 2. **Pairing code** from `dayhand pair`: any case, with or
    without dashes; `O` is read as `0`, `I` and `L` as `1`.

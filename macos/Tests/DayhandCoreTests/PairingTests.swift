@@ -19,7 +19,7 @@ struct PairingInputTests {
     }
 
     @Test func serverAddressesAreTrimmedAndACloudAddressBecomesItsHTTPActionsAddress() {
-        #expect(PairingInput.normalizeServerUrl(" https://impressive-grouse-796.eu-west-1.convex.site/ ") == "https://impressive-grouse-796.eu-west-1.convex.site")
+        #expect(PairingInput.normalizeServerUrl(" https://example-deployment-123.eu-west-1.convex.site/ ") == "https://example-deployment-123.eu-west-1.convex.site")
         #expect(PairingInput.normalizeServerUrl("https://happy-otter-123.convex.cloud") == "https://happy-otter-123.convex.site")
         #expect(PairingInput.normalizeServerUrl("http://127.0.0.1:3211") == "http://127.0.0.1:3211")
     }
@@ -31,8 +31,8 @@ struct PairingInputTests {
     }
 
     @Test func aPairingLinkGivesTheServerAndTheCode() {
-        let link = PairingInput.parseLink("helm://pair?url=https%3A%2F%2Fimpressive-grouse-796.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
-        #expect(link == PairingLink(serverUrl: "https://impressive-grouse-796.eu-west-1.convex.site", code: "E6M8-FE02-XSNT"))
+        let link = PairingInput.parseLink("helm://pair?url=https%3A%2F%2Fexample-deployment-123.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
+        #expect(link == PairingLink(serverUrl: "https://example-deployment-123.eu-west-1.convex.site", code: "E6M8-FE02-XSNT"))
         #expect(PairingInput.parseLink("helm://pair?url=http://127.0.0.1:3211") == PairingLink(serverUrl: "http://127.0.0.1:3211", code: nil))
     }
 

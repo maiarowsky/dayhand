@@ -73,8 +73,8 @@ private slots:
 
     void serverAddressesAreTrimmedAndACloudAddressBecomesItsHTTPActionsAddress()
     {
-        QCOMPARE(PairingInput::normalizeServerUrl(u" https://impressive-grouse-796.eu-west-1.convex.site/ "_s),
-                 u"https://impressive-grouse-796.eu-west-1.convex.site"_s);
+        QCOMPARE(PairingInput::normalizeServerUrl(u" https://example-deployment-123.eu-west-1.convex.site/ "_s),
+                 u"https://example-deployment-123.eu-west-1.convex.site"_s);
         QCOMPARE(PairingInput::normalizeServerUrl(u"https://happy-otter-123.convex.cloud"_s), u"https://happy-otter-123.convex.site"_s);
         QCOMPARE(PairingInput::normalizeServerUrl(u"http://127.0.0.1:3211"_s), u"http://127.0.0.1:3211"_s);
         for (const QString &address : {u"10.0.2.2:3211"_s, u"ftp://example.com"_s, u"https://"_s, u"http://exa mple.com"_s,
@@ -84,8 +84,8 @@ private slots:
 
     void aPairingLinkGivesTheServerAndTheCode()
     {
-        QCOMPARE(PairingInput::parseLink(u"helm://pair?url=https%3A%2F%2Fimpressive-grouse-796.eu-west-1.convex.site&code=E6M8-FE02-XSNT"_s),
-                 (PairingLink{u"https://impressive-grouse-796.eu-west-1.convex.site"_s, u"E6M8-FE02-XSNT"_s}));
+        QCOMPARE(PairingInput::parseLink(u"helm://pair?url=https%3A%2F%2Fexample-deployment-123.eu-west-1.convex.site&code=E6M8-FE02-XSNT"_s),
+                 (PairingLink{u"https://example-deployment-123.eu-west-1.convex.site"_s, u"E6M8-FE02-XSNT"_s}));
         QCOMPARE(PairingInput::parseLink(u"helm://pair?url=http://127.0.0.1:3211"_s), (PairingLink{u"http://127.0.0.1:3211"_s, std::nullopt}));
         QCOMPARE(PairingInput::parseLink(u"dayhand://pair?url=http%3A%2F%2F127.0.0.1%3A3211&code=e6m8fe02xsnt"_s),
                  (PairingLink{u"http://127.0.0.1:3211"_s, u"E6M8-FE02-XSNT"_s}));

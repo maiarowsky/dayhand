@@ -25,7 +25,7 @@ class PairingInputTest {
 
     @Test
     fun `server addresses are trimmed and a convex cloud address becomes its HTTP actions address`() {
-        assertEquals("https://impressive-grouse-796.eu-west-1.convex.site", PairingInput.normalizeServerUrl(" https://impressive-grouse-796.eu-west-1.convex.site/ "))
+        assertEquals("https://example-deployment-123.eu-west-1.convex.site", PairingInput.normalizeServerUrl(" https://example-deployment-123.eu-west-1.convex.site/ "))
         assertEquals("https://happy-otter-123.convex.site", PairingInput.normalizeServerUrl("https://happy-otter-123.convex.cloud"))
         assertEquals("http://10.0.2.2:3211", PairingInput.normalizeServerUrl("http://10.0.2.2:3211"))
     }
@@ -41,15 +41,15 @@ class PairingInputTest {
 
     @Test
     fun `a pairing link gives the server and the code`() {
-        val link = PairingInput.parseLink("dayhand://pair?url=https%3A%2F%2Fimpressive-grouse-796.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
-        assertEquals(PairingLink("https://impressive-grouse-796.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
+        val link = PairingInput.parseLink("dayhand://pair?url=https%3A%2F%2Fexample-deployment-123.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
+        assertEquals(PairingLink("https://example-deployment-123.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
         assertEquals(PairingLink("http://10.0.2.2:3211", null), PairingInput.parseLink("dayhand://pair?url=http://10.0.2.2:3211"))
     }
 
     @Test
     fun `a helm pairing link from hlm before the rename still works`() {
-        val link = PairingInput.parseLink("helm://pair?url=https%3A%2F%2Fimpressive-grouse-796.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
-        assertEquals(PairingLink("https://impressive-grouse-796.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
+        val link = PairingInput.parseLink("helm://pair?url=https%3A%2F%2Fexample-deployment-123.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
+        assertEquals(PairingLink("https://example-deployment-123.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
     }
 
     @Test
@@ -65,8 +65,8 @@ class PairingInputTest {
         assertEquals("http://10.0.2.2:3210", PairingInput.reachableConvexUrl("http://127.0.0.1:3210", "http://10.0.2.2:3211"))
         assertEquals("http://192.168.1.20:3210", PairingInput.reachableConvexUrl("http://localhost:3210", "http://192.168.1.20:3211"))
         assertEquals(
-            "https://impressive-grouse-796.eu-west-1.convex.cloud",
-            PairingInput.reachableConvexUrl("https://impressive-grouse-796.eu-west-1.convex.cloud", "https://impressive-grouse-796.eu-west-1.convex.site"),
+            "https://example-deployment-123.eu-west-1.convex.cloud",
+            PairingInput.reachableConvexUrl("https://example-deployment-123.eu-west-1.convex.cloud", "https://example-deployment-123.eu-west-1.convex.site"),
         )
     }
 }

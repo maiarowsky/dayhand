@@ -156,6 +156,6 @@ class ConnectScreenTest {
     }
 
     private companion object {
-        const val DEFAULT = "https://impressive-grouse-796.eu-west-1.convex.site"
+        const val DEFAULT = "https://example-deployment-123.eu-west-1.convex.site"
     }
 }
