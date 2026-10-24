@@ -121,11 +121,14 @@ final class Signal: @unchecked Sendable {
 
     /// Returns after [fire] or after [timeout], whichever comes first.
     func wait(timeout: Duration) async {
+        let nanoseconds = Self.nanoseconds(timeout)
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.waitForFire() }
             group.addTask {
                 do {
-                    try await Task.sleep(for: timeout)
+                    // Not `Task.sleep(for:)`: in a release build (Swift 6.3) its specialized copy aborted in
+                    // `swift_task_dealloc` ("freed pointer was not the last allocation") when the sleep ended.
+                    try await Task.sleep(nanoseconds: nanoseconds)
                     self.fire()
                 } catch {
                     // Cancelled because a fire came first.
@@ -134,6 +137,16 @@ final class Signal: @unchecked Sendable {
             await group.next()
             group.cancelAll()
         }
+    }
+
+    /// [duration] in whole nanoseconds for `Task.sleep(nanoseconds:)`: none when it is not positive, the most there is
+    /// when it does not fit.
+    static func nanoseconds(_ duration: Duration) -> UInt64 {
+        guard duration > .zero else { return 0 }
+        let (seconds, attoseconds) = duration.components
+        let (whole, overflow) = UInt64(seconds).multipliedReportingOverflow(by: 1_000_000_000)
+        let (total, overflowAgain) = whole.addingReportingOverflow(UInt64(attoseconds / 1_000_000_000))
+        return overflow || overflowAgain ? .max : total
     }
 
     private func waitForFire() async {

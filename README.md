@@ -1,6 +1,6 @@
 # ✋ Dayhand — a day plan with a spare pair of hands
 
-[![License](https://img.shields.io/github/license/maiarowsky/helm)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/helm?style=flat)](LICENSE)
 
 Dayhand is a task list and day plan for people who run a business on their own, and for the AI
 agents that work for them. Your phone keeps the plan offline with a calendar and reminders; a
@@ -44,8 +44,10 @@ cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 
 ## Quick start
 
-Start your own server on this computer. No account: the first run downloads the Convex local
-backend once, deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
+Start your own server on this computer (macOS or Linux). On Windows, use the
+[Convex account setup](docs/deploy.md#run-your-own-server-in-5-minutes) instead.
+No account is needed for the local server: the first run downloads the Convex local backend once,
+deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
 
 ```sh
 dayhand server start
@@ -78,10 +80,10 @@ Tasks can carry acceptance criteria and a plan. An agent claims a task so other 
 alone, and a task with criteria is done only when they are met and the agent says what it did:
 
 ```sh
-dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals"
-DAYHAND_API_KEY=$AGENT_KEY dayhand claim 3 --minutes 30
-DAYHAND_API_KEY=$AGENT_KEY dayhand criteria 3 --met all
-DAYHAND_API_KEY=$AGENT_KEY dayhand done 3 --summary "3 PDFs sent" --check totals=pass
+TASK_ID=$(dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals" --json | jq -er .id)
+DAYHAND_API_KEY=$AGENT_KEY dayhand claim "$TASK_ID" --minutes 30
+DAYHAND_API_KEY=$AGENT_KEY dayhand criteria "$TASK_ID" --met all
+DAYHAND_API_KEY=$AGENT_KEY dayhand done "$TASK_ID" --summary "3 PDFs sent" --check totals=pass
 ```
 
 For agents, `--json` prints exactly what the MCP tools return ([schemas](docs/schemas)), exit
@@ -120,7 +122,8 @@ mkdir -p ~/.claude/skills && cp -R docs/skills/dayhand ~/.claude/skills/
 ## On the phone
 
 The Android app starts without any server: under **On this phone only** choose **Start with an
-empty plan**, or **Try with sample data** (one tap removes it). Today with quick add, the week
+empty plan**, or **Try with sample data** (one tap removes it). Today with quick add (a date
+phrase at the end sets the day: `Call the accountant fri 2pm`), the week
 and day calendar, the board, task details with repeats, checklists and reminders, the morning
 summary and a backup file (**Settings → Data → Backup**) all work there. Without a server the
 plan lives only on the phone: Android backups are off for Dayhand, so keep a backup file.
@@ -142,7 +145,7 @@ Tasks you added on the phone before are sent to the server. Building the app you
 Dayhand has no shared server to sign up for, and the app has no built-in server address. You
 run yours in one of two ways:
 
-- **On this computer**: `dayhand server start` (above). Data and keys stay in a private folder.
+- **On this computer**: follow [Quick start](#quick-start). Data and keys stay in a private folder.
 - **On your own free Convex account**: `dayhand server deploy` logs in to Convex in the browser,
   deploys, signs `dayhand` in and prints the server address and a pairing code. This gives a
   public HTTPS address, which the Claude apps and a phone away from home need. Run it again to
@@ -219,6 +222,7 @@ android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
+site/      the dayhand.dev landing page (static HTML and CSS); check it with scripts/check-site.sh
 ```
 
 The tests start their own throwaway backend:

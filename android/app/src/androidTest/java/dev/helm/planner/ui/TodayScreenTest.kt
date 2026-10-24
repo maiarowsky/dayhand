@@ -27,6 +27,7 @@ import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
 import dev.helm.planner.ui.today.TodayTags
 import dev.helm.planner.ui.today.TodayUiState
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -38,6 +39,7 @@ class TodayScreenTest {
     val compose = createComposeRule()
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val now = Instant.parse("2026-10-22T09:00:00Z").toEpochMilli()
     private fun text(@StringRes id: Int, vararg args: Any) = context.getString(id, *args)
 
     private fun task(id: String, due: String?, time: String? = null, block: Task.() -> Task = { this }) =
@@ -61,7 +63,7 @@ class TodayScreenTest {
     }
 
     private fun show(state: TodayUiState, actions: TodayActions = Recorder()) {
-        compose.setContent { HelmTheme { TodayScreen(state, actions) } }
+        compose.setContent { HelmTheme { TodayScreen(state, actions, now = { now }) } }
     }
 
     @Test
@@ -128,7 +130,7 @@ class TodayScreenTest {
     fun bannerThatAppearsLaterIsOnScreenWithALongList() {
         val tasks = (1..30).map { task("t$it", "2026-10-22") }
         var state by mutableStateOf(TodayUiState(sections(today = tasks), ConnectionStatus.SYNCED, 0))
-        compose.setContent { HelmTheme { TodayScreen(state, Recorder()) } }
+        compose.setContent { HelmTheme { TodayScreen(state, Recorder(), now = { now }) } }
         compose.waitForIdle()
         state = state.copy(connection = ConnectionStatus.OFFLINE)
         compose.onNodeWithTag(TodayTags.STATUS).assertIsDisplayed()

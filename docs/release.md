@@ -106,3 +106,11 @@ mkdir -p /tmp/dayhand-try && cd /tmp/dayhand-try
 npm init -y >/dev/null && npm install --ignore-scripts <path to>/dayhand-X.Y.Z.tgz
 npx dayhand --version && npx dayhand help && npx dayhand completion bash | head
 ```
+
+## After the first release
+
+The release badge is already live and updates when a release exists.
+
+- [ ] After npm publication, replace the static npm badge in the README row with
+  `[![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand)`
+  and update [badges.md](badges.md) (use the chosen npm name if it is not `dayhand`).

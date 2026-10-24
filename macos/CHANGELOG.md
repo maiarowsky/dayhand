@@ -17,6 +17,35 @@ latest one below).
 - The local database now caches server history; the cache leaves the Mac with a purged task.
   Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).
 
+## 0.2.2 (2026-10-24)
+
+### Fixed
+
+- A release build connected to a server no longer quits about 15 seconds after it starts. When the sync loop's
+  wait between two polls ended, the app aborted (`swift_task_dealloc`: "freed pointer was not the last
+  allocation"), so it closed again shortly after every start. The wait and the snapshot tool's pauses now sleep
+  with `Task.sleep(nanoseconds:)`, as planning the notifications already does.
+
+### Added
+
+- `scripts/check-sync-loop.sh` runs the release app against a server that never answers and fails when the app
+  ends before the time is up or the sync loop did not turn. `SignalTests` runs the wait many times.
+
+## 0.2.1 (2026-10-24)
+
+### Fixed
+
+- The main window's content starts below the title bar again. Once Today held tasks while the status line
+  ("Not connected to a server; tasks stay on this Mac.") was shown, the window's content grew taller than the
+  window and slid up under it: the status line and its **Connect…** button were cut off at the top and quick add sat
+  among the window buttons, next to the sidebar button and the title. The update button at the bottom of the
+  sidebar was cut off the same way.
+
+### Changed
+
+- `DayhandSnapshots` also lays out the main window in a real window with its title bar and fails when the content
+  does not fit it or quick add sits under the title bar.
+
 ## 0.2.0 (2026-10-24)
 
 ### Added

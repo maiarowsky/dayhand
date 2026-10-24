@@ -3,6 +3,20 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.11.0 (unreleased)
+
+### Added
+
+- Date phrases in quick add, as on the Mac, on Linux and in `dayhand ui`: a phrase at the end of
+  the title sets the day and time, so "Call the accountant fri 2pm" is "Call the accountant" on
+  the coming Friday at 14:00. The grammar of `dayhand` (English phrases such as `tomorrow 9am`,
+  `next mon`, `in 3 days`, `23 oct`), read in the server's time zone, or the phone's on this phone
+  only. A grey line under the title says what was understood ("Friday 23 Oct, 14:00 · from
+  “fri 2pm”", or "No date phrase: today"), **Keep in title** keeps the words as text, and a day or
+  time picked under "More options" wins over the phrase. Quick add on the board reads them too.
+- `WhenParserTest` runs every case of `linux/tests/cases/when.json`, the phrases shared with the
+  CLI, macOS and Linux; `QuickAddPhraseTest` types a phrase and checks the row in Today.
+
 ## 0.10.1 (2026-10-24)
 
 ### Added

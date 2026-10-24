@@ -57,7 +57,7 @@ public enum ScreenSnapshots {
     static func renderAll(to folder: URL) async throws {
         let model = AppModel.shared
         try await seed(model)
-        try await Task.sleep(for: .milliseconds(800))
+        try await Task.sleep(nanoseconds: 800_000_000)
         model.recompute()
         model.selection = model.sections.today.first { $0.title == "Call the accountant" }?.localId
 
@@ -67,6 +67,8 @@ public enum ScreenSnapshots {
             try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 960, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
         }
         try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 720, height: 680), false, folder.appendingPathComponent("today-compact.png"))
+        let layoutProblems = try await WindowLayoutCheck.run(MainWindow().environmentObject(model).environmentObject(updater))
+        if !layoutProblems.isEmpty { throw SnapshotError.layout(layoutProblems) }
         try await render(TodayView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("today-list.png"))
         for dark in [false, true] {
             try await render(
@@ -213,7 +215,7 @@ public enum ScreenSnapshots {
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.contentView = hosting
         hosting.layoutSubtreeIfNeeded()
-        try await Task.sleep(for: .milliseconds(600))
+        try await Task.sleep(nanoseconds: 600_000_000)
         hosting.layoutSubtreeIfNeeded()
         hosting.display()
         guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw SnapshotError.noBitmap }
@@ -223,5 +225,9 @@ public enum ScreenSnapshots {
         window.close()
     }
 
-    enum SnapshotError: Error { case noBitmap }
+    enum SnapshotError: Error {
+        case noBitmap
+        /// The main window's layout is wrong (WindowLayoutCheck).
+        case layout([String])
+    }
 }

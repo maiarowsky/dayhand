@@ -98,9 +98,10 @@ Overdue tasks never ring. The summary is quiet (`passive`), so it waits in Notif
 permission when the first reminder is planned, or from Settings.
 
 Where the app keeps things: the database in `~/Library/Application Support/Dayhand/dayhand.sqlite`, the sign-in
-in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`. To try it without
-touching those, start it with `DAYHAND_DATA_DIR=<folder>` (another database) and `DAYHAND_CREDENTIALS=memory`
-(the sign-in is forgotten when the app quits).
+in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`.
+`DAYHAND_DATA_DIR=<folder>` selects another database, and `DAYHAND_CREDENTIALS=memory` keeps the sign-in only until
+the app quits. These overrides do not isolate preferences or notifications; the [sync-loop check](#tests) uses a
+separate app identity for those.
 
 ## Build and run
 
@@ -142,7 +143,16 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 
 ```sh
 swift test                        # the live-backend test is skipped by default
+scripts/check-sync-loop.sh        # the release app with its sync loop turning, 50 seconds
 ```
+
+`scripts/check-sync-loop.sh` forces a release build of `dist/Dayhand.app`, even when `DAYHAND_CONFIGURATION` is set
+to debug. To use an existing release bundle instead, set `DAYHAND_APP=<path>/Dayhand.app`; `DAYHAND_CHECK_SECONDS`
+changes the default 50-second run. The script opens a temporary copy under a separate bundle id for notifications
+and preferences, then deletes that preferences domain on cleanup. It uses a temporary database and a process-local
+Keychain stand-in for Dayhand's sign-in, pointed at a local server that accepts and closes each connection without
+replying. It fails if the app exits early or makes too few server connections. This exercises the release-app crash
+at the end of the sync loop's wait, which unit tests and debug builds did not reproduce.
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
   (`TodaySectionsTest`), repeat (`RecurrenceTest` and the backend's `repeat.test.ts`, with the RFC 5545 dates of
@@ -154,7 +164,8 @@ swift test                        # the live-backend test is skipped by default
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
   refreshed and the call repeated. `HistoryTests.swift` checks history parsing and actor attribution, fetching
   and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
-  is erased. It also checks trash expiry and queuing an offline restore.
+  is erased. It also checks trash expiry and queuing an offline restore. The loop's wait ends at its timeout or at
+  a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
@@ -175,7 +186,9 @@ swift test                        # the live-backend test is skipped by default
   state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
-  them is missing from the string catalog.
+  them is missing from the string catalog. It also lays out the main window in a real window with its title bar
+  (wide, narrowest, sidebar closed, light and dark) and fails when the content is taller than the window or quick
+  add sits under the title bar and its window buttons.
 - **History presentation** (`DayhandUITests`): refresh-key equality and connection-recovery classification,
   placeholders for fresh, cached and local-only history, and translated, actor-neutral claim labels. These
   are unit checks, not clicks through the running app.
