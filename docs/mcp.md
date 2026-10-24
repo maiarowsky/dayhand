@@ -22,8 +22,9 @@
   and time-boxed claims; agents can ask the owner first, the owner can pause them or set a policy
   per tool, agents propose work into an inbox, and a health report shows what needs a look
   ([agent-work.md](agent-work.md)).
-- The server identifies itself as `{ "name": "dayhand", "version": "0.11.0" }` (`serverInfo` of
-  `initialize`, `_meta` of 2026-07-28 results); see [Versions](#versions).
+- The server's name and backend release version appear in `serverInfo` of `initialize` and
+  `_meta` of 2026-07-28 results. The [server identity](../backend/convex/lib/mcpProtocol.ts) is the
+  source of truth; see [Versions](#versions) for release history.
 
 ## Tools
 
@@ -75,6 +76,9 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `accept_proposal` | Accept proposal | O | `task` | A proposal joins the plan ([below](#proposals)) |
 | `merge_proposal` | Merge proposal | O | `merge` | Fold a proposal into a task already in the plan (`intoTaskId`) |
 | `reject_proposal` | Reject proposal | O, D | `task` | Move a proposal to the trash, optionally with a `reason` |
+| `agent_brief` | Agent brief | R | `agent-brief` | Start of a session: `list_today` plus claims, approvals, ready tasks and `nextSteps` ([below](#agent-brief-agent_brief)) |
+| `import_backlog` | Import Backlog.md tasks | | `backlog-import` | Backlog.md task files (`files: [{path, content}]`) as tasks, a file imported before skipped ([backlog-md.md](backlog-md.md)) |
+| `export_backlog` | Export as Backlog.md | R | `backlog-export` | The plan as Backlog.md task files and a `config.yml` (`prefix`, `includeArchived`) |
 | `plan_health` | Plan health | R | `plan-health` | What needs a look, in one read ([below](#plan-health-plan_health)) |
 
 ### Results
@@ -217,6 +221,27 @@ pending request, and `pendingApprovals` in all), `completedToday` (each with `pr
 and `oldestOpen`, the open task created longest ago with `ageDays`
 ([schema](schemas/plan-health.schema.json)). Proposals and archived tasks are not counted as open.
 
+### Agent brief (`agent_brief`)
+
+`agent_brief` (also `GET /api/v1/brief`, `dayhand prime --json`) is what an agent reads first in a
+session, as of `at` and from its own side (since 0.12.0): every field of `list_today`, then
+`caller` (`type`, `name`), `agentsPaused` and `pausedReason`, `policies` (the owner's rules for the
+caller's own key other than `allow`), `claims.active` and `claims.expired` (each claim with
+`claimedBy`, `claimExpiresAt` and `mine`), `approvals.pending` (every request waiting, `mine` when the
+caller asked) and `approvals.decided` (the caller's requests decided in the last 24 hours, with the
+`decision`), `ready` (tasks ready to work on that no other agent holds, soonest due first), each
+`{ count, items }` with the first 10; and `nextSteps`, sentences most pressing first that name the
+tools and the [phase guides](#resources) to use ([schema](schemas/agent-brief.schema.json)). While
+agents are paused, `nextSteps` says only that.
+
+### Backlog.md (`import_backlog`, `export_backlog`)
+
+`import_backlog` takes `files: [{ path, content }]`, with paths relative to the backlog folder;
+`export_backlog` returns the files and configuration to write. The result contracts are
+[backlog-import](schemas/backlog-import.schema.json) and
+[backlog-export](schemas/backlog-export.schema.json). See [backlog-md.md](backlog-md.md) for field
+mappings, source identity, limits, approvals and safe folder handling.
+
 ### Dry runs
 
 Every changing tool takes `dryRun: true`. The change runs with every check, then Dayhand rolls it
@@ -234,9 +259,12 @@ the [limits](#limits).
 | `dayhand://activity` | `application/json` | `list_events` without `since`: the newest changes and the cursor to follow from |
 | `dayhand://activity{?since}` (template) | `application/json` | `list_events` with `since`, e.g. `dayhand://activity?since=c1793011200000123` |
 | `dayhand://guide` | `text/markdown` | How an agent should work with Dayhand: numbers, the now task, retries, dry runs, limits |
+| `dayhand://workflow/intake` | `text/markdown` | Phase 1 of a task: find or add it, proposal or not, acceptance criteria, plan, dependencies (since 0.12.0) |
+| `dayhand://workflow/execution` | `text/markdown` | Phase 2: choose ready work, claim it, tick criteria, ask before risky steps, stop with a checkpoint |
+| `dayhand://workflow/finalization` | `text/markdown` | Phase 3: check the criteria, complete with proof, ask the owner for the last step, or hand back |
 | `dayhand://tasks/{ref}` (template) | `application/json` | `get_task` of task `#ref`, e.g. `dayhand://tasks/42` |
 
-`resources/list` returns the first three, `resources/templates/list` the two templates. The `helm://`
+`resources/list` returns the six without a template, `resources/templates/list` the two templates. The `helm://`
 URIs of the same resources, from before the rename, can still be read. Reading a
 resource that does not exist (also a task number that does not) is a JSON-RPC error with
 `data: { "uri" }`: `-32602` on 2026-07-28, `-32002` on 2025 revisions.
@@ -259,7 +287,7 @@ Each API key, and each agent connection (OAuth), may make 120 reads and 60 chang
 (`convex/callLimits.ts`). The minute
 starts with the first call; reads and changes are counted apart. Reads are tool calls of
 read-only tools, `resources/read` of `dayhand://today`, `dayhand://activity…` and `dayhand://tasks/…`, and `prompts/get`;
-listing tools, resources and prompts, `server/discover` and `dayhand://guide` are not counted.
+listing tools, resources and prompts, `server/discover`, `dayhand://guide` and the `dayhand://workflow/…` guides are not counted.
 
 A call over the limit is refused before it runs, so nothing is applied:
 
@@ -457,6 +485,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.12.0 | Phase guides and Backlog.md ([agent-work.md](agent-work.md#9-phase-guides-and-the-agent-brief), [backlog-md.md](backlog-md.md)): resources `dayhand://workflow/intake`, `dayhand://workflow/execution` and `dayhand://workflow/finalization`; `agent_brief`; `import_backlog` and `export_backlog` (source kind `backlog-md`) |
 | 0.11.0 | Agents and the owner ([agent-work.md](agent-work.md)): `request_approval`, `get_approval`, `list_approvals`, `decide_approval`; `get_agent_controls`, `pause_agents`, `set_tool_policy`, and `approvalId` on every change an agent makes; proposals (`add_task` takes `proposal`, `source`, `requestedBy`, `returnTo`; task fields `proposedAt`, `source`, `requestedBy`, `returnTo`, `mergedInto`; `list_all` takes `proposed`; `accept_proposal`, `merge_proposal`, `reject_proposal`); `plan_health` and the prompt `plan_health`; error codes `agents_paused`, `forbidden`, `approval_required` (with `approvalId`); webhook events `approval.decided` and `task.returned`; the owner's tools (O) are left out of an agent's `tools/list` |
 | 0.10.0 | Agent work ([agent-work.md](agent-work.md)): `list_events` and the resource `dayhand://activity` (the activity log); task fields `acceptance`, `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; `complete_task` takes `proof`; `list_all` takes `ready`; `claim_task`, `renew_claim`, `release_task`; error code `conflict`, and `precondition_failed` outside `If-Match` too |
 | 0.9.0 | The rename to Dayhand: `serverInfo.name` `dayhand`; resources `dayhand://today`, `dayhand://guide` and `dayhand://tasks/{ref}` (the `helm://` URIs are still read); new API keys start with `dayhand_` (`helm_` keys keep working); import format `dayhand-json` (`helm-json` still accepted); `WWW-Authenticate` realm `dayhand`; `x-dayhand-scope` in the OpenAPI document; problem types under `https://schemas.dayhand.invalid/`; deployment variables `DAYHAND_*` (`HELM_*` still read, [deploy.md](deploy.md#renamed-variables)) |

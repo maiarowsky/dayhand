@@ -15,6 +15,8 @@ import { queueApprovalDecided } from "./webhookEvents";
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
 
+export const MAX_APPROVAL_MINUTES = 7 * 24 * 60;
+
 const LIMITS = {
   action: 200,
   detail: 4_000,
@@ -24,7 +26,7 @@ const LIMITS = {
   label: 100,
   consequence: 500,
   note: 1_000,
-  minutes: 7 * 24 * 60,
+  minutes: MAX_APPROVAL_MINUTES,
   list: 200,
   arguments: 2_000,
 };

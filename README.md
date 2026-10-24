@@ -87,9 +87,17 @@ DAYHAND_API_KEY=$AGENT_KEY dayhand done "$TASK_ID" --summary "3 PDFs sent" --che
 ```
 
 For agents, `--json` prints exactly what the MCP tools return ([schemas](docs/schemas)), exit
-codes say what to do next, and `dayhand prime` prints Today with a short guide, ready for a
-session-start hook. More: [docs/agent-work.md](docs/agent-work.md) (activity cursors,
-dependencies, claims) and [docs/cli.md](docs/cli.md) (every command).
+codes say what to do next, and `dayhand prime` prints Today, the agent's claims, the approvals it
+waits for and its next steps with a short guide, ready for a session-start hook. Over MCP the
+same is `agent_brief`, and three guides walk an agent through one task, from writing it down to
+closing it with proof (`dayhand://workflow/intake`, `…/execution`, `…/finalization`). More:
+[docs/agent-work.md](docs/agent-work.md) (activity cursors, dependencies, claims) and
+[docs/cli.md](docs/cli.md) (every command).
+
+A plan kept in [Backlog.md](https://github.com/MrLesk/Backlog.md) task files comes in with
+`dayhand backlog import backlog --dry-run` (then without `--dry-run`) and goes out with
+`dayhand backlog export backlog-out`: criteria, plan, dependencies and status carry over, and a folder
+imported again brings only what is new ([docs/backlog-md.md](docs/backlog-md.md)).
 
 You stay in charge of your agents. Before a risky step an agent asks (`dayhand ask`, the MCP tool
 `request_approval`) and you pick an option on the phone or with `dayhand approvals decide`; one

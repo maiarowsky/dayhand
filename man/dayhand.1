@@ -727,6 +727,27 @@ Each task is checked like dayhand add; one that fails is listed and the rest are
 auto (default), dayhand\-json, ics or todoist\-csv (auto, dayhand\-json, helm\-json, ics, todoist\-csv)
 .RE
 .TP
+.B dayhand backlog import <dir>
+Import a Backlog.md folder: each task file becomes a task; files imported before are skipped
+.br
+Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non\-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog\-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with \-\-approval after the owner allows it. \-\-dry\-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
+.TP
+.B dayhand backlog export [dir]
+Write the plan as Backlog.md task files into a folder (without one, \-\-json prints the files)
+.br
+One file per task in tasks/ (proposals in drafts/; with \-\-archived, archived tasks in archive/tasks/ and archived proposals in archive/drafts/), and a config.yml with the statuses To Do, In Progress and Done. Tasks imported from Backlog.md keep their ids; the others get <PREFIX>\-<number>. The destination must be missing or empty unless \-\-force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks or config.yml whose exported text exceeds Dayhand import limits, including the 100,000\-character file limit; text is not truncated. Needs backend 0.12.0 or later.
+.RS
+.TP
+.B \-\-prefix <prefix>
+ID prefix of tasks that did not come from Backlog.md (default task: TASK\-12)
+.TP
+.B \-\-archived
+Also write archived tasks to archive/tasks/ and archived proposals to archive/drafts/
+.TP
+.B \-\-force
+Confirm writing into a non\-empty folder and replacing exported files, config.yml too
+.RE
+.TP
 .B dayhand login
 Store an API key for the deployment in the OS keychain (or a private file)
 .br
@@ -791,9 +812,9 @@ The Dayhand repository's backend/ folder (default: found from here)
 .RE
 .TP
 .B dayhand prime
-Context for an AI agent: Today and how to use dayhand (for a SessionStart hook)
+Context for an AI agent: Today, its claims, approvals, ready work, next steps and how to use dayhand (for a SessionStart hook)
 .br
-Prints plain text without colors in every format except \-\-json, which prints list_today like dayhand today \-\-json. In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"dayhand prime"}]}]}}.
+Prints plain text without colors in every format except \-\-json, which prints agent_brief: list_today's fields plus claims, approvals, ready tasks and nextSteps (a backend before 0.12.0 gives list_today alone). In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"dayhand prime"}]}]}}.
 .TP
 .B dayhand when <phrase...>
 Show the day (and time) a date phrase means in your time zone, without changing anything

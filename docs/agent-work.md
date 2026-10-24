@@ -5,7 +5,9 @@ work on the plan next to the person who owns it: an activity log, acceptance cri
 of completion, dependencies with a blocked reason, and time-boxed claims. Backend 0.11.0 (CLI
 0.12.0, Android 0.10.0) adds four that keep the owner in charge of those agents: approval
 requests decided on the phone, a switch that pauses every agent with a policy per tool, an inbox
-for proposed work, and a plan health report. This page explains the problem each one solves, the
+for proposed work, and a plan health report. Backend 0.12.0 (CLI 0.14.0) adds guides for each
+phase of a task, an agent brief for the start of a session, and Backlog.md import and export.
+This page explains the problem each one solves, the
 decisions behind it and the public designs it follows. The tool
 reference is in [mcp.md](mcp.md), the REST routes in [api.md](api.md) and the commands in
 [cli.md](cli.md).
@@ -96,10 +98,10 @@ Decisions:
 - **A repeating task's next occurrence** keeps the criteria (unticked) and the plan, but not the
   proof.
 
-Public counterpart: [Backlog.md](https://github.com/MrLesk/Backlog.md) (MIT), a Markdown task
+Public counterpart: [Backlog.md](backlog-md.md), a Markdown task
 board for people and AI agents, gives its tasks acceptance criteria and an implementation plan in
-the same spirit. Dayhand takes the idea, not the format or code: its criteria are structured
-fields behind its own tools.
+the same spirit. Dayhand's criteria are structured fields behind its own tools; file-format
+interchange is a separate [import/export operation](backlog-md.md).
 
 ## 3. Dependencies and a blocked reason
 
@@ -340,9 +342,77 @@ Decisions:
 - **"Done without proof"** counts tasks completed today with no summary, link or check. It is a
   prompt to look, not an error: people complete tasks without proof all the time.
 
+## The third problem: starting well, and plans kept elsewhere
+
+With eight features an agent has a lot to remember, and two more gaps show:
+
+9. **Where to begin.** An agent that starts a session reads Today, then its claims, then the
+   approvals it asked for, then works out what to do next: several calls before any work. And
+   the rules for one task are spread over one long guide.
+10. **Plans in files.** Many people who work with coding agents keep tasks as Markdown files in
+    the repository, in the format of [Backlog.md](https://github.com/MrLesk/Backlog.md). Moving
+    such a plan into Dayhand, or out of it, should not mean retyping it.
+
+## 9. Phase guides and the agent brief
+
+Three MCP resources split the work on one task into phases, each a short page that names the
+tools to use:
+
+- `dayhand://workflow/intake`: before work. Is the task already there (search, `source`)? Asked for,
+  or a proposal? Acceptance criteria that can be checked, a plan written just before starting,
+  dependencies and a blocked reason, a dry run before many changes.
+- `dayhand://workflow/execution`: during work. Choose ready work, `claim_task` and `renew_claim`,
+  tick criteria as they become true, `request_approval` before a risky step, a checkpoint when
+  stopping, what each refusal means.
+- `dayhand://workflow/finalization`: at the end. Check the criteria again, `complete_task` with
+  proof (a failed check recorded as failed), the owner's yes before a last step that needs it, or
+  hand the task back with a note.
+
+`agent_brief` (`dayhand prime --json`, `GET /api/v1/brief`) is the start of a session in one
+read: every field of `list_today`, then whether agents are paused and the caller's own tool
+policies, the claims in force and those that ran out (each marked `mine` when the caller holds
+it), the approval requests waiting and the owner's decisions on the caller's requests in the last
+day, the first tasks ready to work on, and `nextSteps`: sentences, most pressing first, such as
+"You hold #12 … until 14:30: renew_claim while you work …". `dayhand prime` prints the same as
+text before the rules of the road.
+
+Decisions:
+
+- **Phases, not one longer guide.** `dayhand://guide` stays the reference; the phase guides are
+  what an agent rereads at the point it needs them. They are static text, the same for every
+  user, so they need no user data, count against no limit and may be cached publicly.
+- **The brief is list_today with more fields.** `dayhand prime --json` printed `list_today`
+  before; it now prints a superset, so a script that read it keeps working (fields may be
+  added, [mcp.md](mcp.md#versions)). Against a backend before 0.12.0, `dayhand prime` falls back
+  to `list_today`.
+- **From the caller's side.** The same plan reads differently for two agents: each sees its own
+  claims and requests as `mine`, and ready work leaves out tasks another agent holds. The owner's
+  decisions are listed only to the agent that asked.
+- **Next steps are sentences, not commands.** They name tools and resources but do not act; an
+  agent still decides. While agents are paused there is one step: stop changing things.
+
+Public counterparts: Backlog.md also offers its agent instructions as MCP resources, split into a
+workflow overview and guides for creating, executing and finalizing a task; Dayhand's guides cover
+the same three phases with Dayhand's own tools and texts. MCP
+[resources](https://modelcontextprotocol.io/specification/2025-06-18/server/resources) are the
+way to give a client context without a tool call.
+
+## 10. Backlog.md import and export
+
+`import_backlog` (`dayhand backlog import <dir>`) reads Backlog.md task files into ordinary
+Dayhand tasks; `export_backlog` (`dayhand backlog export <dir>`) writes the plan as task files.
+Import uses the [source identity](#7-the-proposal-inbox) shared by integrations, not a second
+synchronization mechanism. Its report explains what was created, skipped or refused, and a dry
+run previews that report without storing anything.
+
+See [Backlog.md import and export](backlog-md.md) for the field mappings, source normalization,
+call limits, approval handling, export safety and overflow warnings, and the format's license and
+attribution.
+
 ## What an agent does
 
-1. Back from a pause: `list_events` with the `nextCursor` it kept; `plan_health` for the overview.
+1. Start of a session: `agent_brief` (`dayhand prime`); back from a pause: `list_events` with the
+   `nextCursor` it kept; `plan_health` for the whole plan.
 2. Pick work: `list_all` with `ready: true`.
 3. `claim_task`; on `conflict`, pick another task.
 4. Write `acceptance` and `plan` if the task has none; `renew_claim` while working.
@@ -353,10 +423,12 @@ Decisions:
 9. `agents_paused`: stop changing things and wait. `forbidden`: do not retry.
    `approval_required`: wait for that request, then repeat the call with `approvalId`.
 
-The same steps are in the `dayhand://guide` resource and in `dayhand prime` for agents.
+The same steps are in the `dayhand://guide` resource, one phase at a time in
+`dayhand://workflow/intake`, `/execution` and `/finalization`, and in `dayhand prime` for agents.
 
 ## Not in this release
 
-Phase guides as MCP resources and Backlog.md import or export are planned separately. The phone
+Backlog.md import and export are copies, not sync: a change made on one side afterwards stays
+there, and importing a changed file again does not update its task. The phone
 does not edit tool policies yet (it shows them; `dayhand policy` sets them), and it notifies about
 approval requests at most every 15 minutes while the app is closed.

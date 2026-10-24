@@ -8,7 +8,7 @@
 import { serverEnv } from "./env";
 import { json } from "./http";
 
-export const SERVER_INFO = { name: "dayhand", version: "0.11.0" };
+export const SERVER_INFO = { name: "dayhand", version: "0.12.0" };
 
 export const MODERN_VERSIONS = ["2026-07-28"];
 export const LEGACY_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];

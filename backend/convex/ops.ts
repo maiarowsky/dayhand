@@ -15,6 +15,8 @@ import {
   requestForPolicy as requestForPolicyOp,
 } from "./lib/approvals";
 import { approvalArgs, args, DRY_RUN_CODE, dryRunArgs } from "./lib/args";
+import { exportBacklog as exportBacklogOp, importBacklog as importBacklogOp } from "./lib/backlogOps";
+import { agentBrief as agentBriefOp } from "./lib/brief";
 import { appliedOperation, fail, identityOf as who, loadTask, versionTag, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { findTasks as findTasksOp } from "./lib/findTasks";
@@ -109,6 +111,7 @@ export const setToolPolicy = change(args.setToolPolicy, (ctx, identity, input) =
 export const acceptProposal = change(args.acceptProposal, acceptProposalOp);
 export const mergeProposal = change(args.mergeProposal, mergeProposalOp);
 export const rejectProposal = change(args.rejectProposal, rejectProposalOp);
+export const importBacklog = change(args.importBacklog, importBacklogOp);
 
 /**
  * The approval request behind a call that a policy "ask" refused (mcp.ts,
@@ -171,6 +174,14 @@ export const getAgentControls = internalQuery({
 export const planHealth = internalQuery({
   args: { ...identity, ...args.planHealth },
   handler: (ctx, a) => planHealthOp(ctx, who(a), a),
+});
+export const agentBrief = internalQuery({
+  args: { ...identity, ...args.agentBrief },
+  handler: (ctx, a) => agentBriefOp(ctx, who(a), a),
+});
+export const exportBacklog = internalQuery({
+  args: { ...identity, ...args.exportBacklog },
+  handler: (ctx, a) => exportBacklogOp(ctx, who(a), a),
 });
 /** Whether agents are paused, for the REST API's account routes (rest.ts). */
 export const agentsPaused = internalQuery({

@@ -6,7 +6,7 @@ import { internal } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
 import type { Identity } from "./core";
 import { addDays, localDate } from "./dates";
-import { AGENT_GUIDE } from "./guide";
+import { AGENT_GUIDE, WORKFLOWS } from "./guide";
 
 export const RESOURCES = [
   {
@@ -28,6 +28,27 @@ export const RESOURCES = [
     name: "guide",
     title: "How to work with Dayhand",
     description: "Rules and routines for an agent managing the user's plan: task numbers, the now task, retries, dry runs, limits.",
+    mimeType: "text/markdown",
+  },
+  {
+    uri: "dayhand://workflow/intake",
+    name: "workflow-intake",
+    title: "Intake: writing a task down",
+    description: "Phase 1 of a task: find or add it, proposal or not, acceptance criteria, plan and dependencies.",
+    mimeType: "text/markdown",
+  },
+  {
+    uri: "dayhand://workflow/execution",
+    name: "workflow-execution",
+    title: "Execution: working on a task",
+    description: "Phase 2: choose ready work, claim it, tick criteria, ask before risky steps, stop with a checkpoint.",
+    mimeType: "text/markdown",
+  },
+  {
+    uri: "dayhand://workflow/finalization",
+    name: "workflow-finalization",
+    title: "Finalization: closing a task",
+    description: "Phase 3: check the criteria, complete with proof, ask the owner for the last step, or hand the task back.",
     mimeType: "text/markdown",
   },
 ];
@@ -54,8 +75,10 @@ export type ResourceContents = { uri: string; mimeType: string; text: string };
 /** helm://… is what the resources were called before the rename to Dayhand; those addresses still work. */
 const canonicalUri = (uri: unknown): string => (typeof uri === "string" ? uri.replace(/^helm:\/\//, "dayhand://") : "");
 
-/** The guide: the same for everyone, so it needs no user data and may be cached. */
-export const isGuide = (uri: unknown) => canonicalUri(uri) === "dayhand://guide";
+const isWorkflow = (name: string) => Object.prototype.hasOwnProperty.call(WORKFLOWS, name);
+
+/** The guide and the phase guides: the same for everyone, so they need no user data and may be cached. */
+export const isGuide = (uri: unknown) => canonicalUri(uri) === "dayhand://guide" || isWorkflow(canonicalUri(uri));
 
 /** Whether reading the resource looks at the user's data (and counts against the key's reads). */
 export const readsUserData = (uri: unknown) => !isGuide(uri);
@@ -64,6 +87,7 @@ export const readsUserData = (uri: unknown) => !isGuide(uri);
 export async function readResource(ctx: ActionCtx, identity: Identity, uri: string): Promise<ResourceContents | null> {
   const name = canonicalUri(uri);
   if (name === "dayhand://guide") return { uri, mimeType: "text/markdown", text: AGENT_GUIDE };
+  if (isWorkflow(name)) return { uri, mimeType: "text/markdown", text: WORKFLOWS[name]! };
   if (name === "dayhand://today") {
     const today = await ctx.runQuery(internal.ops.listToday, { ...identity, at: Date.now() });
     return { uri, mimeType: "application/json", text: JSON.stringify(today, null, 2) };

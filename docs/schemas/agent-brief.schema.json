@@ -1,0 +1,439 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/agent-brief.schema.json",
+  "title": "Agent brief",
+  "description": "agent_brief (dayhand prime --json): list_today plus what an agent needs at the start of a session (since 0.12.0). Sections count every item and list the first 10. Fields may be added.",
+  "allOf": [
+    {
+      "$ref": "today.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "at",
+        "caller",
+        "agentsPaused",
+        "pausedReason",
+        "policies",
+        "claims",
+        "approvals",
+        "ready",
+        "nextSteps"
+      ],
+      "properties": {
+        "at": {
+          "type": "number",
+          "description": "As of, Unix time in milliseconds"
+        },
+        "caller": {
+          "type": "object",
+          "required": [
+            "type",
+            "name"
+          ],
+          "description": "Who asked: the actor and the name of the key or connection",
+          "properties": {
+            "type": {
+              "enum": [
+                "app",
+                "cli",
+                "agent"
+              ]
+            },
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "agentsPaused": {
+          "type": "boolean",
+          "description": "true: the owner paused all agents; their changes are refused with agents_paused"
+        },
+        "pausedReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "policies": {
+          "type": "array",
+          "description": "The owner's rules for the caller's own API key other than allow",
+          "items": {
+            "type": "object",
+            "required": [
+              "tool",
+              "rule"
+            ],
+            "properties": {
+              "tool": {
+                "type": "string",
+                "description": "A write tool, or \"*\""
+              },
+              "rule": {
+                "enum": [
+                  "allow",
+                  "ask",
+                  "deny"
+                ]
+              }
+            }
+          }
+        },
+        "claims": {
+          "type": "object",
+          "required": [
+            "active",
+            "expired"
+          ],
+          "properties": {
+            "active": {
+              "type": "object",
+              "required": [
+                "count",
+                "items"
+              ],
+              "description": "Claims in force, the soonest to end first",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "How many in all"
+                },
+                "items": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "description": "The first 10",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "task-brief.schema.json"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "claimedBy",
+                          "claimExpiresAt",
+                          "mine"
+                        ],
+                        "properties": {
+                          "claimedBy": {
+                            "type": "string",
+                            "description": "Name of the API key or agent connection holding the claim"
+                          },
+                          "claimExpiresAt": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "When the claim ends, Unix time in milliseconds"
+                          },
+                          "mine": {
+                            "type": "boolean",
+                            "description": "true: the caller holds it"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "expired": {
+              "type": "object",
+              "required": [
+                "count",
+                "items"
+              ],
+              "description": "Claims that ran out on tasks not done; anyone may claim those tasks",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "How many in all"
+                },
+                "items": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "description": "The first 10",
+                  "items": {
+                    "allOf": [
+                      {
+                        "$ref": "task-brief.schema.json"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "claimedBy",
+                          "claimExpiresAt",
+                          "mine"
+                        ],
+                        "properties": {
+                          "claimedBy": {
+                            "type": "string",
+                            "description": "Name of the API key or agent connection holding the claim"
+                          },
+                          "claimExpiresAt": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "When the claim ends, Unix time in milliseconds"
+                          },
+                          "mine": {
+                            "type": "boolean",
+                            "description": "true: the caller holds it"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "approvals": {
+          "type": "object",
+          "required": [
+            "pending",
+            "decided"
+          ],
+          "properties": {
+            "pending": {
+              "type": "object",
+              "required": [
+                "count",
+                "items"
+              ],
+              "description": "Approval requests waiting for the owner, the soonest to expire first",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "How many in all"
+                },
+                "items": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "description": "The first 10",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "action",
+                      "taskId",
+                      "ref",
+                      "expiresAt",
+                      "requestedBy",
+                      "mine",
+                      "decision"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Approval request id (get_approval)"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "taskId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "ref": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "expiresAt": {
+                        "type": "number",
+                        "description": "Unix time in milliseconds"
+                      },
+                      "requestedBy": {
+                        "type": "string",
+                        "description": "Name of the key or connection that asked"
+                      },
+                      "mine": {
+                        "type": "boolean",
+                        "description": "true: the caller asked"
+                      },
+                      "decision": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "optionId",
+                              "label",
+                              "note",
+                              "decidedAt"
+                            ],
+                            "properties": {
+                              "optionId": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "decidedAt": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "decided": {
+              "type": "object",
+              "required": [
+                "count",
+                "items"
+              ],
+              "description": "The caller's requests the owner decided in the last 24 hours, newest first",
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "How many in all"
+                },
+                "items": {
+                  "type": "array",
+                  "maxItems": 10,
+                  "description": "The first 10",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "action",
+                      "taskId",
+                      "ref",
+                      "expiresAt",
+                      "requestedBy",
+                      "mine",
+                      "decision"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Approval request id (get_approval)"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "taskId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "ref": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "expiresAt": {
+                        "type": "number",
+                        "description": "Unix time in milliseconds"
+                      },
+                      "requestedBy": {
+                        "type": "string",
+                        "description": "Name of the key or connection that asked"
+                      },
+                      "mine": {
+                        "type": "boolean",
+                        "description": "true: the caller asked"
+                      },
+                      "decision": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "optionId",
+                              "label",
+                              "note",
+                              "decidedAt"
+                            ],
+                            "properties": {
+                              "optionId": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "decidedAt": {
+                                "type": "number"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ready": {
+          "type": "object",
+          "required": [
+            "count",
+            "items"
+          ],
+          "description": "Tasks ready to work on (not done, not blocked, every dependency done) that no other agent holds, the soonest due first",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "How many in all"
+            },
+            "items": {
+              "type": "array",
+              "maxItems": 10,
+              "description": "The first 10",
+              "items": {
+                "$ref": "task-brief.schema.json"
+              }
+            }
+          }
+        },
+        "nextSteps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What to do next, most pressing first, as sentences naming the tools to use"
+        }
+      }
+    }
+  ],
+  "type": "object"
+}
