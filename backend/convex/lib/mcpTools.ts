@@ -438,7 +438,10 @@ export const TOOLS: Tool[] = [
     fields: args.importBacklog,
     output: "backlog-import",
     ref: internal.ops.importBacklog,
-    docs: BACKLOG_DOCS,
+    docs: {
+      ...BACKLOG_DOCS,
+      run: "For a multi-batch import, the same ordered manifest of all batches: {batches: [{hash, files}]}. hash is SHA-256 of JSON.stringify(files.map(({path, content}) => ({path, content}))); files is that batch's file count. One policy approval covers this whole manifest, including idempotent retries; each submitted batch must match it.",
+    },
   }),
   read("export_backlog", {
     title: "Export as Backlog.md",

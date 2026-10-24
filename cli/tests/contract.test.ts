@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { batches, dependenciesFirst, readFolder } from "../src/backlog/folder.js";
 import { flatten } from "../src/registry/index.js";
-import { admin, connectAgent, createKey, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall, TEST_HOME } from "./helpers.js";
+import { admin, connectAgent, createKey, dayhand, dayhandJson, jsonError, mcpClient, newUser, schemaValidator, sdkCall, TEST_HOME } from "./helpers.js";
 
 const validate = schemaValidator();
 const specOf = (path: string) => flatten().find((c) => c.path === path)!.spec;
@@ -181,14 +181,46 @@ describe("agent contract", () => {
     expect(refused.code).toBe(2);
     expect(refused.stderr).toContain("already exist");
     expect((await dayhandJson(key, ["backlog", "export", target, "--force"])).config).toBe("config.yml");
-    // A folder that has its own config.yml keeps it.
     const theirs = join(mkdtempSync(join(TEST_HOME, "own-")), "backlog");
     mkdirSync(theirs);
     writeFileSync(join(theirs, "config.yml"), "statuses: [A, B]\n");
-    expect((await dayhandJson(key, ["backlog", "export", theirs])).config).toBeNull();
+    expect((await dayhand(key, ["backlog", "export", theirs])).code).toBe(2);
     expect(readFileSync(join(theirs, "config.yml"), "utf8")).toBe("statuses: [A, B]\n");
+    expect(existsSync(join(theirs, "tasks"))).toBe(false);
+    expect((await dayhandJson(key, ["backlog", "export", theirs, "--force"])).config).toBe("config.yml");
+    expect(readFileSync(join(theirs, "config.yml"), "utf8")).toContain("'To Do', 'In Progress', 'Done'");
     expect(existsSync(join(theirs, "tasks", "task-1 - Buy-a-printer.md"))).toBe(true);
     await sdk.close();
+  });
+
+  test("a multi-batch folder under ask needs one approval, then imports and retries the whole run", async () => {
+    const { userId, key } = await newUser();
+    const agent = await createKey(userId, "importer", "agent");
+    await dayhandJson(key, ["policy", "set", agent.id, "import_backlog", "ask"]);
+    const dir = join(mkdtempSync(join(TEST_HOME, "multi-")), "backlog");
+    mkdirSync(join(dir, "tasks"), { recursive: true });
+    for (let i = 1; i <= 199; i++) writeFileSync(join(dir, "tasks", `filler-${i}.md`), `---\nid: TASK-${i}\ntitle: Filler ${i}\n---\n`);
+    writeFileSync(join(dir, "tasks", "a-dependent.md"), "---\nid: TASK-201\ntitle: Dependent\ndependencies: [TASK-200] # prerequisite\n---\n");
+    writeFileSync(join(dir, "tasks", "z-prerequisite.md"), "---\nid: 'Task-200' # source\ntitle: Prerequisite\n---\n");
+    const calls = batches(dependenciesFirst((await readFolder(dir)).files));
+    expect(calls.map((batch) => batch.length)).toEqual([200, 1]);
+    const refused = await dayhand(agent.key, ["backlog", "import", dir, "--json"]);
+    expect(refused.code).toBe(7);
+    const { approvalId } = jsonError(refused);
+    expect(typeof approvalId).toBe("string");
+    expect((await dayhandJson(key, ["approval", approvalId])).arguments).toContain("201 file(s) in 2 batch(es)");
+    expect((await dayhandJson(key, ["list"])).total).toBe(0);
+    await dayhandJson(key, ["approvals", "decide", approvalId, "allow"]);
+    const imported = await dayhandJson(agent.key, ["backlog", "import", dir, "--approval", approvalId]);
+    expect(imported).toMatchObject({ created: 201, failed: [], warnings: [] });
+    const prerequisite = imported.tasks.find((task: any) => task.title === "Prerequisite");
+    expect(imported.tasks.find((task: any) => task.title === "Dependent").dependsOn).toEqual([prerequisite.id]);
+    const again = await dayhandJson(agent.key, ["backlog", "import", dir, "--approval", approvalId]);
+    expect(again.created).toBe(0);
+    expect(again.skipped).toHaveLength(201);
+    expect((await dayhandJson(key, ["approvals"])).approvals).toHaveLength(1);
+    writeFileSync(join(dir, "tasks", "z-prerequisite.md"), "---\nid: TASK-999\ntitle: Changed\n---\n");
+    expect((await dayhand(agent.key, ["backlog", "import", dir, "--approval", approvalId])).code).toBe(7);
   });
 
   test("a Markdown export prints the SDK's text, and its JSON form follows the schema", async () => {

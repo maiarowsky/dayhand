@@ -3,7 +3,7 @@
 // through the official MCP SDK client, the REST API and the app layer.
 import { describe, expect, test } from "vitest";
 import { api } from "../convex/_generated/api";
-import { appClient, callTool, createKey, mcpClient, mcpPost, modern, newUserId, openApiChecker, rest } from "./helpers";
+import { appClient, callTool, createKey, importRows, mcpClient, mcpPost, modern, newUserId, openApiChecker, rest } from "./helpers";
 
 const WORKFLOWS = ["dayhand://workflow/intake", "dayhand://workflow/execution", "dayhand://workflow/finalization"];
 const textOf = (contents: object[]) => (contents[0] as { text: string }).text;
@@ -79,6 +79,25 @@ describe("agent_brief", () => {
     const paused = await callTool(agent, "agent_brief");
     expect(paused).toMatchObject({ agentsPaused: true, pausedReason: "quiet hours", policies: [{ tool: "delete_task", rule: "deny" }] });
     expect(paused.nextSteps).toEqual(["The owner paused all agents (quiet hours): read, but change nothing until they resume you; do not retry in a loop."]);
+  });
+
+  test("a recent decision on a seven-day request appears in both decisions and next steps", async () => {
+    const { client: app, userId } = await appClient();
+    const agent = await mcpClient(await createKey(userId, "patient", "agent"));
+    const keys = await app.query(api.app.listApiKeys, {}) as any[];
+    const keyId = keys.find((key) => key.name === "patient").id;
+    const at = Date.now();
+    const hour = 60 * 60 * 1000;
+    const request = {
+      userId, title: "Long-lived request", options: [{ id: "yes", label: "Proceed" }, { id: "no", label: "Wait" }], reversible: true,
+      requestedBy: { actor: "agent", keyId, name: "patient" }, source: "agent", createdAt: at - 7 * 24 * hour - hour,
+      expiresAt: at - hour, decidedAt: at - 2 * hour, optionId: "yes", decidedBy: "app",
+    };
+    await importRows("approvals", [request, { ...request, title: "Old decision", decidedAt: at - 25 * hour }]);
+    const brief = await callTool(agent, "agent_brief", { at });
+    expect(brief.approvals.decided).toMatchObject({ count: 1, items: [{ action: "Long-lived request", decision: { label: "Proceed", decidedAt: at - 2 * hour } }] });
+    expect(brief.nextSteps).toContain('The owner decided "Long-lived request": Proceed. Act on that choice and nothing else.');
+    expect(brief.nextSteps.some((step: string) => step.includes("Old decision"))).toBe(false);
   });
 
   test("an expired claim of the caller asks to renew or release; REST gives the same brief", async () => {

@@ -87,10 +87,18 @@ export function statusFor(status: string | undefined, statuses: string[]): { sta
 
 // ---- Reading ----
 
-const MARKER = /^\s*<!--\s*(?:SECTION:[A-Z_]+|AC|DOD):(?:BEGIN|END)\s*-->\s*$/;
+const MARKER = /^\s*<!--\s*(SECTION:[A-Z_]+|AC|DOD):(BEGIN|END)\s*-->\s*$/;
 const CHECKBOX = /^\s*[-*]\s+\[([ xX])\]\s+(?:#\d+\s+)?(.*\S)\s*$/;
 const HEADING = /^##\s+(.+?)\s*#*\s*$/;
-const FENCE = /^\s*(```|~~~)/;
+const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+
+function fenceOf(line: string, current: string | null): string | null {
+  const match = FENCE.exec(line);
+  if (!match) return current;
+  const run = match[1]!;
+  if (current) return run[0] === current[0] && run.length >= current.length && !match[2]!.trim() ? null : current;
+  return run[0] === "`" && match[2]!.includes("`") ? null : run;
+}
 
 type Section = { title: string; text: string };
 
@@ -99,16 +107,26 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   const sections: Section[] = [];
   let current: { title: string; lines: string[] } | null = null;
   const preamble: string[] = [];
-  let fenced = false;
+  let fence: string | null = null;
+  let scope: string | null = null;
   for (const line of body.split("\n")) {
-    if (FENCE.test(line)) fenced = !fenced;
-    const heading = fenced ? null : HEADING.exec(line);
+    const wasFenced = fence !== null;
+    fence = fenceOf(line, fence);
+    const marker = wasFenced || fence ? null : MARKER.exec(line);
+    if (marker && scope === null && marker[2] === "BEGIN") {
+      scope = marker[1]!;
+      continue;
+    }
+    if (marker && marker[1] === scope && marker[2] === "END") {
+      scope = null;
+      continue;
+    }
+    const heading = wasFenced || fence || scope ? null : HEADING.exec(line);
     if (heading) {
       if (current) sections.push({ title: current.title, text: current.lines.join("\n").trim() });
       current = { title: heading[1]!, lines: [] };
       continue;
     }
-    if (!fenced && MARKER.test(line)) continue;
     (current ? current.lines : preamble).push(line);
   }
   if (current) sections.push({ title: current.title, text: current.lines.join("\n").trim() });
@@ -120,8 +138,11 @@ const sectionKey = (title: string) => title.replace(/\(optional\)/i, "").trim().
 function checkboxes(text: string): { items: Criterion[]; rest: string } {
   const items: Criterion[] = [];
   const rest: string[] = [];
+  let fence: string | null = null;
   for (const line of text.split("\n")) {
-    const match = CHECKBOX.exec(line);
+    const wasFenced = fence !== null;
+    fence = fenceOf(line, fence);
+    const match = wasFenced || fence ? null : CHECKBOX.exec(line);
     if (match) items.push({ text: match[2]!, met: match[1] !== " " });
     else if (line.trim() !== "") rest.push(line);
   }

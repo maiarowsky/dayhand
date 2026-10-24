@@ -141,8 +141,9 @@ can check.
 ## 1. Is it already there?
 
 - Search before adding: \`list_all\` with \`query\` (a few words of the
-  title) and, for work from outside, the same \`source\` you would give.
-- One \`source\` (\`{kind, ref, url}\`) makes one task: adding it again
+  title).
+- Give external work a \`source\` in \`add_task\`. One \`source\`
+  (\`{kind, ref, url}\`) makes one task: adding it again
   returns the task it made the first time, even if the owner rejected it.
 
 ## 2. Asked for, or your idea?

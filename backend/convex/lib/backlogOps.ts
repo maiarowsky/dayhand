@@ -7,8 +7,9 @@
 import { ConvexError, type ObjectType } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
-import { checkAcceptance, checkCompletion, checkLongText, checkProof } from "./agentWork";
+import { checkAcceptance, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
 import type { args } from "./args";
+import { checkBacklogRun } from "./backlogApproval";
 import {
   BACKLOG_KIND,
   BacklogFormatError,
@@ -37,6 +38,8 @@ export const BACKLOG_LIMITS = { files: 200, content: 100_000, path: 500, prefix:
 type Skipped = { path: string; reason: string; id?: string; title?: string; taskId?: Id<"tasks">; ref?: number };
 type Failed = { path: string; title: string | null; message: string };
 type Warning = { path: string | null; message: string };
+
+const sourceRef = (ref: string) => ref.toUpperCase();
 
 const SKIP_REASONS: Partial<Record<BacklogTask["place"], string>> = {
   "archived-draft": "an archived draft, not a task",
@@ -76,12 +79,12 @@ function readFiles(files: BacklogFile[], skipped: Skipped[], warnings: Warning[]
       continue;
     }
     const why = SKIP_REASONS[task.place];
-    const first = seen.get(task.ref.toLowerCase());
+    const first = seen.get(sourceRef(task.ref));
     if (why || first) {
       skipped.push({ path: file.path, reason: why ?? `the same id as ${first}`, id: task.id, title: task.title });
       continue;
     }
-    seen.set(task.ref.toLowerCase(), file.path);
+    seen.set(sourceRef(task.ref), file.path);
     tasks.push(task);
   }
   return { tasks, statuses };
@@ -92,13 +95,13 @@ const natural = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 /** Dependencies first, else in id order; a cycle is broken where it closes (its tasks come last). */
 function inOrder(tasks: BacklogTask[]): BacklogTask[] {
   const pending = [...tasks].sort((a, b) => natural.compare(a.ref, b.ref));
-  const inCall = new Set(pending.map((t) => t.ref.toLowerCase()));
+  const inCall = new Set(pending.map((t) => sourceRef(t.ref)));
   const done = new Set<string>();
   const ordered: BacklogTask[] = [];
   while (pending.length) {
-    const index = pending.findIndex((t) => t.dependencies.every((d) => !inCall.has(d.toLowerCase()) || done.has(d.toLowerCase())));
+    const index = pending.findIndex((t) => t.dependencies.every((d) => !inCall.has(sourceRef(d)) || done.has(sourceRef(d))));
     const [next] = pending.splice(index === -1 ? 0 : index, 1);
-    done.add(next!.ref.toLowerCase());
+    done.add(sourceRef(next!.ref));
     ordered.push(next!);
   }
   return ordered;
@@ -106,16 +109,12 @@ function inOrder(tasks: BacklogTask[]): BacklogTask[] {
 
 /** The task an earlier import made from this id; Backlog.md ids are the same in any case (TASK-1, task-1). */
 async function importedBefore(ctx: QueryCtx, userId: string, id: string): Promise<Doc<"tasks"> | null> {
-  for (const ref of new Set([id, id.toUpperCase(), id.toLowerCase()])) {
-    const task = await taskOfSource(ctx, userId, { kind: BACKLOG_KIND, ref });
-    if (task) return task;
-  }
-  return null;
+  return taskOfSource(ctx, userId, { kind: BACKLOG_KIND, ref: sourceRef(id) });
 }
 
 /** The Dayhand task a Backlog.md id leads to: made in this call, or by an earlier import. */
 async function dependencyOf(ctx: QueryCtx, userId: string, id: string, made: Map<string, Id<"tasks">>): Promise<Id<"tasks"> | null> {
-  return made.get(id.toLowerCase()) ?? (await importedBefore(ctx, userId, id))?._id ?? null;
+  return made.get(sourceRef(id)) ?? (await importedBefore(ctx, userId, id))?._id ?? null;
 }
 
 const isUrl = (value: string) => /^https?:\/\/\S+$/i.test(value.trim());
@@ -156,7 +155,7 @@ function fieldsOf(task: BacklogTask, statuses: string[], identity: Identity, tim
     archivedAt: task.place === "archived" ? now : undefined,
     proposedAt: task.place === "draft" ? now : undefined,
     requestedBy: checkRequestedBy(identity, undefined, task.place === "draft"),
-    source: checkSource({ kind: BACKLOG_KIND, ref: task.ref }),
+    source: checkSource({ kind: BACKLOG_KIND, ref: sourceRef(task.ref) }),
   };
 }
 
@@ -177,15 +176,16 @@ async function dependenciesOf(ctx: MutationCtx, userId: string, task: BacklogTas
     const id = await dependencyOf(ctx, userId, dependency, made.ids);
     if (id && !ids.includes(id)) ids.push(id);
     if (id) continue;
-    const why = made.inCall.has(dependency.toLowerCase())
+    const why = made.inCall.has(sourceRef(dependency))
       ? "which is in these files but was not imported before this one (it failed, or the two wait for each other)"
       : "which is neither in these files nor imported before";
     warnings.push({ path: task.path, message: `depends on ${dependency}, ${why}; left out` });
   }
-  return ids.length ? ids.slice(0, 50) : undefined;
+  return checkDependsOn(ctx, userId, null, ids);
 }
 
 export async function importBacklog(ctx: MutationCtx, identity: Identity, input: Args<"importBacklog"> & { dryRun?: boolean }) {
+  await checkBacklogRun(input);
   if (input.files.length > BACKLOG_LIMITS.files) fail("invalid_argument", `at most ${BACKLOG_LIMITS.files} files per call; send the rest in another call`);
   for (const file of input.files) {
     if (!file.path.trim() || file.path.length > BACKLOG_LIMITS.path) fail("invalid_argument", `file paths must be 1 to ${BACKLOG_LIMITS.path} characters`);
@@ -198,11 +198,11 @@ export async function importBacklog(ctx: MutationCtx, identity: Identity, input:
   const warnings: Warning[] = [];
   const created: ReturnType<typeof toTask>[] = [];
   const { tasks, statuses } = readFiles(input.files, skipped, warnings);
-  const made: Made = { ids: new Map(), inCall: new Set(tasks.map((t) => t.ref.toLowerCase())) };
+  const made: Made = { ids: new Map(), inCall: new Set(tasks.map((t) => sourceRef(t.ref))) };
   for (const task of inOrder(tasks)) {
     const before = await importedBefore(ctx, identity.userId, task.ref);
     if (before) {
-      made.ids.set(task.ref.toLowerCase(), before._id);
+      made.ids.set(sourceRef(task.ref), before._id);
       skipped.push({ path: task.path, reason: "imported before", id: task.id, title: task.title, taskId: before._id, ref: before.ref });
       continue;
     }
@@ -218,7 +218,7 @@ export async function importBacklog(ctx: MutationCtx, identity: Identity, input:
     const taskId = await ctx.db.insert("tasks", { userId: identity.userId, ref, ...fields, createdAt: now, updatedAt: now });
     await addSource(ctx, identity.userId, fields.source, taskId);
     await recordEvent(ctx, identity, { taskId, action: "import", after: { ...fields, importedFrom: task.path } });
-    made.ids.set(task.ref.toLowerCase(), taskId);
+    made.ids.set(sourceRef(task.ref), taskId);
     created.push(toTask((await ctx.db.get(taskId))!));
   }
   return {

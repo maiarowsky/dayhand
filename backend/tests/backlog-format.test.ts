@@ -77,6 +77,22 @@ describe("the YAML header", () => {
       q: "it's",
     });
     expect(parseFrontmatter('title: "a \\"b\\" \\u00e9"\nfold: >\n  one\n  two\n')).toEqual({ title: 'a "b" é', fold: "one two" });
+    expect(parseFrontmatter("labels: [it's, next]  \n")).toEqual({ labels: ["it's", "next"] });
+  });
+
+  test("quoted hashes, apostrophes and escaped backslashes survive all header representations", () => {
+    const quoted = "O'Brien #42";
+    const entries = ["id", "title", "status", "created_date", "updated_date"];
+    const header = writeFrontmatter(entries.map((key) => [key, quoted]));
+    expect(parseFrontmatter(splitFrontmatter(header + "\n").front!)).toEqual(Object.fromEntries(entries.map((key) => [key, quoted])));
+    for (const key of ["labels", "dependencies", "references"]) {
+      expect(parseFrontmatter(`${key}: ['O''Brien #42', 'next'] # outside\n`)[key]).toEqual([quoted, "next"]);
+      expect(parseFrontmatter(`${key}: # outside\n  - 'O''Brien #42' # outside\n  - next\n`)[key]).toEqual([quoted, "next"]);
+    }
+    expect(parseFrontmatter(String.raw`title: "folder\\" # outside`)).toEqual({ title: "folder\\" });
+    expect(parseFrontmatter(String.raw`labels: ["folder\\", "next #42"] # outside`)).toEqual({ labels: ["folder\\", "next #42"] });
+    const written = writeTask({ id: "TASK-42", place: "task", title: quoted, status: "To Do", labels: [quoted], dependencies: [quoted], references: [quoted], created: quoted, updated: quoted, acceptance: [] });
+    expect(readTask(written)).toMatchObject({ title: quoted, labels: [quoted], dependencies: [quoted], references: [quoted], updated: quoted });
   });
 
   test("a broken header is an error, a file without one has none", () => {
@@ -195,6 +211,23 @@ describe("writing", () => {
       extra: ["## Implementation Notes\n\nResume: invoice saved"],
       dropped: [],
     });
+  });
+
+  test("marked sections retain inner headings rather than turning them into task fields", () => {
+    const description = "## Acceptance Criteria\n- [x] Only an example\n\n## Final Summary\nNot proof.";
+    const plan = "## Rollout\nDeploy in stages.\n\n## Acceptance Criteria\n- [ ] Plan example";
+    const notes = "## Final Summary\nStill just notes.";
+    const finalSummary = "## Evidence\nAll checks passed.";
+    const back = readTask(writeTask({ ...file, description, plan, notes, finalSummary }));
+    expect(back).toMatchObject({ description, plan, finalSummary, acceptance: file.acceptance, extra: [`## Implementation Notes\n\n${notes}`] });
+  });
+
+  test.each(["Acceptance Criteria", "Definition of Done"])("%s ignores checkboxes and headings in fenced examples", (heading) => {
+    const body = `## ${heading}\n- [x] Real criterion\n\n~~~~markdown\n- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~\n\n\`\`\`\`markdown\n\`\`\`\n- [ ] Still an example\n\`\`\`\`\n- [ ] Real second criterion`;
+    const parsed = readTask({ path: "tasks/example.md", content: `---\ntitle: Examples\n---\n${body}` });
+    expect(parsed.acceptance).toEqual([{ text: "Real criterion", met: true }, { text: "Real second criterion", met: false }]);
+    expect(parsed.finalSummary).toBeUndefined();
+    expect(parsed.extra[0]).toContain("- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~");
   });
 
   test("file names keep letters of any script and drop what a file system refuses", () => {

@@ -1,7 +1,9 @@
 // dayhand backlog and dayhand prime without a backend: the order and size of the
 // import calls, merging their reports, and the brief as text.
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { BATCH_BYTES, batches, dependenciesFirst, type BacklogFile } from "../src/backlog/folder.js";
+import { BATCH_BYTES, batches, dependenciesFirst, writeFolder, type BacklogFile } from "../src/backlog/folder.js";
 import { primeText, type AgentBrief } from "../src/registry/agents.js";
 import { importText, mergeReports } from "../src/registry/backlog.js";
 
@@ -18,6 +20,21 @@ describe("import calls", () => {
       task("b/tasks/y.md", "id: TASK-7\ntitle: Y\ndependencies: [TASK-8]"),
     ];
     expect(dependenciesFirst(files).map((f) => f.path)).toEqual(["b/config.yml", "b/tasks/a.md", "b/tasks/b.md", "b/tasks/c.md", "b/tasks/x.md", "b/tasks/y.md"]);
+  });
+
+  test.each([
+    "dependencies: [TASK-200] # prerequisite",
+    "dependencies: # prerequisite\n  - 'TASK-200' # quoted",
+    'dependencies: ["TASK-200"] # quoted',
+    "dependencies: >-\n  TASK-200",
+  ])("ordering uses the supported YAML for %s", (dependencies) => {
+    const files = [task("a.md", `id: TASK-1\ntitle: Dependent\n${dependencies}`), task("z.md", "id: 'Task-200' # source\ntitle: Prerequisite")];
+    expect(batches(dependenciesFirst(files)).flat().map((file) => file.path)).toEqual(["z.md", "a.md"]);
+  });
+
+  test("quoted hashes and doubled quotes identify the same dependency in lists and scalars", () => {
+    const files = [task("a.md", "id: TASK-1\ntitle: Dependent\ndependencies: ['O''Brien #42'] # outside"), task("z.md", "id: 'O''Brien #42' # outside\ntitle: Prerequisite")];
+    expect(dependenciesFirst(files).map((file) => file.path)).toEqual(["z.md", "a.md"]);
   });
 
   test("calls stay under 200 files and the byte limit, each with the config", () => {
@@ -58,6 +75,68 @@ describe("import calls", () => {
       ].join("\n"),
     );
   });
+});
+
+async function inFolder(run: (root: string) => Promise<void>) {
+  const root = await mkdtemp(join(process.cwd(), ".backlog-test-"));
+  try {
+    await run(root);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+const exportFiles = [{ path: "config.yml", content: "statuses: [To Do, In Progress, Done]\n" }, { path: "tasks/task-1.md", content: "private task\n" }];
+
+describe("export folders", () => {
+  test("missing and empty destinations get the config and tasks; existing contents require force", async () => inFolder(async (root) => {
+    const out = join(root, "out");
+    await writeFolder(out, exportFiles);
+    expect(await readFile(join(out, "tasks/task-1.md"), "utf8")).toBe("private task\n");
+    const existing = join(root, "existing");
+    await mkdir(existing);
+    await writeFile(join(existing, "config.yml"), "statuses: [A, B]\n");
+    await expect(writeFolder(existing, exportFiles)).rejects.toThrow(/already exist/);
+    expect(await readdir(existing)).toEqual(["config.yml"]);
+    expect(await readFile(join(existing, "config.yml"), "utf8")).toBe("statuses: [A, B]\n");
+    await writeFolder(existing, exportFiles, true);
+    expect(await readFile(join(existing, "config.yml"), "utf8")).toBe(exportFiles[0].content);
+    const empty = join(root, "empty");
+    await mkdir(empty);
+    await writeFolder(empty, exportFiles);
+    expect(await readFile(join(empty, "tasks/task-1.md"), "utf8")).toBe("private task\n");
+  }));
+
+  test.each([false, true])("a directory symlink cannot redirect an export (force=%s)", async (force) => inFolder(async (root) => {
+    const out = join(root, "out");
+    const outside = join(root, "outside");
+    await mkdir(out);
+    await mkdir(outside);
+    await symlink(outside, join(out, "tasks"));
+    await expect(writeFolder(out, exportFiles, force)).rejects.toThrow();
+    expect(await readdir(outside)).toEqual([]);
+    expect(await readdir(out)).toEqual(["tasks"]);
+    await symlink(outside, join(root, "alias"));
+    await expect(writeFolder(join(root, "alias"), exportFiles, force)).rejects.toThrow(/unsafe/);
+    expect(await readdir(outside)).toEqual([]);
+  }));
+
+  test.each(["config.yml", "tasks/task-1.md"])("existing and dangling file symlinks are refused: %s", async (path) => inFolder(async (root) => {
+    const out = join(root, "out");
+    const outside = join(root, "outside.md");
+    await mkdir(join(out, "tasks"), { recursive: true });
+    await symlink(outside, join(out, path));
+    await expect(writeFolder(out, exportFiles, true)).rejects.toThrow(/unsafe/);
+    await expect(readFile(outside)).rejects.toMatchObject({ code: "ENOENT" });
+    await writeFile(outside, "untouched");
+    await expect(writeFolder(out, exportFiles, true)).rejects.toThrow(/unsafe/);
+    expect(await readFile(outside, "utf8")).toBe("untouched");
+  }));
+
+  test("relative traversal is refused before writing anything", async () => inFolder(async (root) => {
+    await expect(writeFolder(join(root, "out"), [{ path: "../escape.md", content: "private" }], true)).rejects.toThrow(/outside/);
+    expect(await readdir(root)).toEqual([]);
+  }));
 });
 
 describe("dayhand prime", () => {

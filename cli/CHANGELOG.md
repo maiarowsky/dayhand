@@ -14,10 +14,13 @@ Needs backend 0.12.0 for the new parts; everything else works with older servers
   over, drafts become proposals, and a folder imported again brings only new files. The files go
   in calls of up to 200, the tasks others depend on first. `--dry-run` shows the report without
   storing anything; `--json` prints it ([backlog-import](../docs/schemas/backlog-import.schema.json)).
+  Under an `ask` policy, one approval covers the whole import and its file count; retrying the
+  unchanged folder with `--approval` imports every batch and skips previously imported files.
 - **`dayhand backlog export [dir]`**: the plan as task files and a `config.yml` with
   `export_backlog` (`--prefix`, `--archived`, `--force`); without a folder, `--json` prints the
-  files. Existing files are not overwritten without `--force`, and a folder's own `config.yml` is
-  kept.
+  files. The destination must be missing or empty unless `--force` explicitly confirms writing
+  into an existing folder and replacing exported files, including `config.yml`. Symlink
+  destinations, task directories and files are refused.
 
 ### Changed
 

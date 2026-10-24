@@ -3,9 +3,10 @@
 // and writes the format; this module only finds files, orders them so that a
 // task's dependencies go first, cuts them into calls that fit the server's
 // request limit, and writes an export without overwriting anything unasked.
-import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { constants, existsSync } from "node:fs";
+import { lstat, mkdir, open, readdir, readFile, realpath } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { FrontmatterError, parseFrontmatter, splitFrontmatter } from "./frontmatter.js";
 
 export type BacklogFile = { path: string; content: string };
 
@@ -53,13 +54,16 @@ export async function readFolder(dir: string): Promise<{ files: BacklogFile[]; t
 
 /** The id and the dependencies in a file's YAML header, read just enough to order the files. */
 function headerOf(content: string): { id: string | null; dependencies: string[] } {
-  const header = /^﻿?---\r?\n([\s\S]*?)\r?\n---/.exec(content)?.[1] ?? "";
-  const clean = (v: string) => v.trim().replace(/^['"]|['"]$/g, "").toLowerCase();
-  const id = /^id:\s*(.+?)\s*$/m.exec(header)?.[1];
-  const flow = /^dependencies:\s*\[(.*)\]\s*$/m.exec(header)?.[1];
-  const block = /^dependencies:\s*\r?\n((?:[ \t]*-.*\r?\n?)*)/m.exec(header)?.[1];
-  const dependencies = flow !== undefined ? flow.split(",") : (block ?? "").split(/\r?\n/).map((l) => l.replace(/^\s*-\s*/, "").replace(/\s+#.*$/, ""));
-  return { id: id ? clean(id) : null, dependencies: dependencies.map(clean).filter(Boolean) };
+  try {
+    const { front } = splitFrontmatter(content);
+    const header = front === null ? {} : parseFrontmatter(front);
+    const id = Array.isArray(header.id) ? header.id.join(", ") : header.id;
+    const dependencies = Array.isArray(header.dependencies) ? header.dependencies : typeof header.dependencies === "string" ? [header.dependencies] : [];
+    return { id: id?.trim().toUpperCase() || null, dependencies: dependencies.map((d) => d.trim().toUpperCase()).filter(Boolean) };
+  } catch (error) {
+    if (!(error instanceof FrontmatterError)) throw error;
+    return { id: null, dependencies: [] };
+  }
 }
 
 /** Config first, then every task after the tasks it depends on (a cycle keeps its order). */
@@ -99,17 +103,53 @@ export function batches(ordered: BacklogFile[]): BacklogFile[][] {
   return result;
 }
 
-/** The export's paths that already exist in `dir`. */
-export function existing(dir: string, paths: string[]): string[] {
-  return paths.filter((path) => existsSync(join(dir, path)));
+async function stat(path: string) {
+  try {
+    return await lstat(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    return null;
+  }
 }
 
-/** Writes the files below `dir`, making folders as needed. */
-export async function writeFolder(dir: string, files: BacklogFile[]): Promise<void> {
-  for (const file of files) {
-    const target = join(dir, ...file.path.split("/"));
-    if (!resolve(target).startsWith(resolve(dir) + sep)) throw new Error(`Refusing to write outside ${dir}: ${file.path}`);
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, file.content);
+async function directory(path: string, root: string): Promise<void> {
+  if (!(await stat(path))) await mkdir(path);
+  const entry = await lstat(path);
+  const resolved = await realpath(path);
+  if (!entry.isDirectory() || entry.isSymbolicLink() || (resolved !== root && !resolved.startsWith(root + sep))) {
+    throw new Error(`Refusing an unsafe export directory: ${path}`);
+  }
+}
+
+export async function writeFolder(dir: string, files: BacklogFile[], force = false): Promise<void> {
+  const destination = resolve(dir);
+  const targets = files.map((file) => {
+    const target = resolve(destination, file.path);
+    if (!target.startsWith(destination + sep)) throw new Error(`Refusing to write outside ${dir}: ${file.path}`);
+    return { ...file, target };
+  });
+  const entry = await stat(destination);
+  if (entry && (!entry.isDirectory() || entry.isSymbolicLink())) throw new Error(`Refusing an unsafe export destination: ${dir}`);
+  if (entry && !force && (await readdir(destination)).length) throw new Error(`Files already exist in ${dir}; choose an empty folder or pass --force`);
+  await mkdir(destination, { recursive: true });
+  const root = await realpath(destination);
+  for (const file of targets) {
+    let parent = root;
+    for (const part of relative(destination, dirname(file.target)).split(sep).filter(Boolean)) {
+      parent = join(parent, part);
+      await directory(parent, root);
+    }
+    const target = await stat(file.target);
+    if (target && (!target.isFile() || target.isSymbolicLink() || target.nlink > 1)) throw new Error(`Refusing an unsafe export file: ${file.path}`);
+  }
+  for (const file of targets) {
+    const parent = await realpath(dirname(file.target));
+    if (parent !== root && !parent.startsWith(root + sep)) throw new Error(`Refusing to write outside ${dir}: ${file.path}`);
+    const handle = await open(file.target, constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | (force ? constants.O_TRUNC : constants.O_EXCL));
+    try {
+      await handle.writeFile(file.content);
+    } finally {
+      await handle.close();
+    }
   }
 }

@@ -37,11 +37,8 @@
       "description": "Their paths, relative to the folder"
     },
     "config": {
-      "type": [
-        "string",
-        "null"
-      ],
-      "description": "config.yml when it was written; null when the folder already had one (kept)"
+      "type": "string",
+      "description": "The generated config.yml, always written with the task files"
     },
     "notes": {
       "type": "array",

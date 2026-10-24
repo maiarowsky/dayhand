@@ -8,7 +8,7 @@ import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import { getAgentControls } from "./agentControls";
 import { isReady, sameHolder } from "./agentWork";
-import { statusOf } from "./approvals";
+import { MAX_APPROVAL_MINUTES, statusOf } from "./approvals";
 import type { args } from "./args";
 import { loadSettings, type Identity } from "./core";
 import { localDateTime } from "./dates";
@@ -19,7 +19,7 @@ type Args = ObjectType<(typeof args)["agentBrief"]>;
 /** Items listed per section; `count` counts them all. */
 export const BRIEF_LIST = 10;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const APPROVAL_WINDOW_MS = 7 * DAY_MS;
+const APPROVAL_WINDOW_MS = MAX_APPROVAL_MINUTES * 60_000 + DAY_MS;
 
 const brief = (t: Doc<"tasks">) => ({ id: t._id, ref: t.ref ?? null, title: t.title, status: t.status, dueDate: t.dueDate ?? null, dueTime: t.dueTime ?? null });
 const label = (t: Doc<"tasks">) => `#${t.ref ?? t._id} ${t.title}`;

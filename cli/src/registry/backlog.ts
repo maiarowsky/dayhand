@@ -2,14 +2,15 @@
 // (Markdown task files with a YAML header, docs/backlog-md.md) in and out. The
 // server reads and writes the format (import_backlog, export_backlog); these
 // commands move the files between the folder and the server.
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { batches, dependenciesFirst, existing, FILE_CHARS, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
-import { usageError } from "../core/exit.js";
+import { createHash } from "node:crypto";
+import { batches, dependenciesFirst, FILE_CHARS, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
+import { CliError, usageError } from "../core/exit.js";
 import { tool } from "./ops.js";
 import type { CommandSpec, RunContext } from "./types.js";
 
 const NEEDS = "Needs backend 0.12.0 or later.";
+const MAX_IMPORT_BATCHES = 256;
+type ImportRun = { batches: { hash: string; files: number }[] };
 
 type Report = {
   format: "backlog-md";
@@ -32,9 +33,10 @@ type Export = {
 };
 
 /** One call: the tool, or with --dry-run the REST route that asks the server for a dry run (nothing is held back). */
-async function importBatch(ctx: RunContext, files: BacklogFile[]): Promise<Report> {
-  if (!ctx.dryRun) return tool<Report>(ctx, "import_backlog", { files });
-  return (await ctx.client()).request("POST", "/api/v1/import/backlog?dryRun=true", { files });
+async function importBatch(ctx: RunContext, files: BacklogFile[], run?: ImportRun): Promise<Report> {
+  const input = { files, ...(run ? { run } : {}) };
+  if (!ctx.dryRun) return tool<Report>(ctx, "import_backlog", input);
+  return (await ctx.client()).request("POST", "/api/v1/import/backlog?dryRun=true", input);
 }
 
 /** The reports of several calls as one; a single call's report stays as the tool gave it. */
@@ -72,6 +74,7 @@ const importCommand: CommandSpec = {
     "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends them, the tasks others depend on first, in calls of up to 200 files. " +
     "Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
+    "Under an ask policy, one approval covers the whole import and its file count; retry the unchanged folder with --approval after the owner allows it. " +
     `--dry-run asks the server what would happen without storing anything (a folder sent in several calls cannot see dependencies across calls). ${NEEDS}`,
   args: [{ name: "dir", description: "The backlog folder (backlog/, or one of its folders such as backlog/tasks)", required: true }],
   tools: ["import_backlog"],
@@ -82,29 +85,34 @@ const importCommand: CommandSpec = {
       throw usageError(`Cannot read the folder ${dir}`);
     });
     if (files.length === 0 && tooLong.length === 0) throw usageError(`No Markdown files below ${dir}`, { hint: "point at the backlog folder, e.g. dayhand backlog import backlog" });
+    const calls = batches(dependenciesFirst(files));
+    if (calls.length > MAX_IMPORT_BATCHES) throw usageError(`An import supports at most ${MAX_IMPORT_BATCHES} batches; split the folder`);
+    const run: ImportRun | undefined = calls.length > 1 ? {
+      batches: calls.map((batch) => ({ hash: createHash("sha256").update(JSON.stringify(batch)).digest("hex"), files: batch.length })),
+    } : undefined;
     const reports: Report[] = [];
-    for (const batch of batches(dependenciesFirst(files))) reports.push(await importBatch(ctx, batch));
+    for (const batch of calls) reports.push(await importBatch(ctx, batch, run));
     const value = mergeReports(reports, files.length, tooLong);
     return { value, view: { kind: "text", text: importText(value) } };
   },
 };
 
 /** What dayhand backlog export <dir> wrote. */
-type Written = { format: "backlog-md"; prefix: string; directory: string; total: number; written: string[]; config: string | null; notes: string[] };
+type Written = { format: "backlog-md"; prefix: string; directory: string; total: number; written: string[]; config: string; notes: string[] };
 
 const exportCommand: CommandSpec = {
   name: "export",
   schema: ["backlog-written.schema.json", "backlog-export.schema.json"],
   summary: "Write the plan as Backlog.md task files into a folder (without one, --json prints the files)",
   description:
-    "One file per task in tasks/ (proposals in drafts/, archived tasks with --archived in archive/tasks/), and a config.yml with the statuses To Do, In Progress and Done unless one is there. " +
-    "Tasks imported from Backlog.md keep their ids; the others get <PREFIX>-<number>. Files that already exist are not overwritten without --force. " +
+    "One file per task in tasks/ (proposals in drafts/, archived tasks with --archived in archive/tasks/), and a config.yml with the statuses To Do, In Progress and Done. " +
+    "Tasks imported from Backlog.md keep their ids; the others get <PREFIX>-<number>. The destination must be missing or empty unless --force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. " +
     `Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). ${NEEDS}`,
   args: [{ name: "dir", description: "The folder to write into (made if missing), e.g. backlog" }],
   options: [
     { flags: "--prefix <prefix>", description: "ID prefix of tasks that did not come from Backlog.md (default task: TASK-12)" },
     { flags: "--archived", description: "Also write archived tasks, to archive/tasks/" },
-    { flags: "--force", description: "Overwrite files that already exist, config.yml too" },
+    { flags: "--force", description: "Confirm writing into a non-empty folder and replacing exported files, config.yml too" },
   ],
   tools: ["export_backlog"],
   dryRun: false,
@@ -119,22 +127,20 @@ const exportCommand: CommandSpec = {
       const text = [...value.files.map((f) => f.path), `${value.total} task file(s); pass a folder to write them: dayhand backlog export <dir>`].join("\n");
       return { value, view: { kind: "text", text } };
     }
-    const clash = existing(dir, value.files.map((f) => f.path));
-    if (clash.length && !opts.force) {
-      throw usageError(`${clash.length} file(s) already exist in ${dir}, e.g. ${clash[0]}; nothing was written`, { hint: "pass --force to overwrite them, or choose an empty folder" });
-    }
-    const writeConfig = Boolean(opts.force) || !existsSync(join(dir, value.config.path));
-    await writeFolder(dir, [...(writeConfig ? [value.config] : []), ...value.files]);
+    await writeFolder(dir, [value.config, ...value.files], Boolean(opts.force)).catch((cause: unknown) => {
+      const message = cause instanceof Error ? cause.message : `Cannot write the folder ${dir}`;
+      throw new CliError("usage", message, { hint: "choose a fresh folder, or pass --force to confirm replacement in an existing folder" }, { cause });
+    });
     const written: Written = {
       format: "backlog-md",
       prefix: value.prefix,
       directory: dir,
       total: value.total,
       written: value.files.map((f) => f.path),
-      config: writeConfig ? value.config.path : null,
+      config: value.config.path,
       notes: value.notes,
     };
-    const text = [`Wrote ${value.total} task file(s) to ${dir}${writeConfig ? " and config.yml" : " (kept its config.yml)"}.`, ...value.notes.map((n) => `  note: ${n}`)].join("\n");
+    const text = [`Wrote ${value.total} task file(s) to ${dir} and config.yml.`, ...value.notes.map((n) => `  note: ${n}`)].join("\n");
     return { value: written, view: { kind: "text", text } };
   },
 };

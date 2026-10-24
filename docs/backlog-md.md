@@ -78,7 +78,7 @@ project's statuses in order, `["To Do", "In Progress", "Done"]` unless set.
 
 | Backlog.md | Dayhand |
 |---|---|
-| `id` | the task's `source`: `{ kind: "backlog-md", ref: "TASK-12" }`; a file without an id is known by its path |
+| `id` | the task's `source`: `{ kind: "backlog-md", ref: "TASK-12" }`, normalized to uppercase for case-insensitive identity; a file without an id is known by its path |
 | `title` | `title` |
 | `status` | the nearest status: the project's first status is `todo`, its last is `done`, any between is `doing`. A status the project does not list is read by its words (`done`, `closed`, … → `done`; `progress`, `review`, … → `doing`; else `todo`) with a warning |
 | `labels` | `labels` |
@@ -110,7 +110,15 @@ Decisions:
   `dependsOn` can point at them. A larger folder goes in several calls (at most 200 files and
   256 KiB each); `dayhand backlog import` orders the files the same way across calls, and an agent
   calling the tool should too. A dry run cannot see tasks that an earlier call of the same import
-  would have made.
+  would have made. A task with more than 50 resolved dependencies fails instead of losing edges.
+- **One approval per import run.** Under an `ask` policy, the CLI binds all batches and their
+  file counts into one approval. After the owner allows it, retry the unchanged folder with
+  `--approval <id>`: every batch runs without another question, and files imported before are
+  skipped. The count includes config.yml each time it is sent. Changing any batch or count needs
+  a new approval. Tool and REST callers can send the same `run: {batches: [{hash, files}]}` with
+  every batch: `hash` is the SHA-256 hex digest of
+  `JSON.stringify(files.map(({path, content}) => ({path, content})))`, and `files` is that batch's
+  file count. A run supports up to 256 batches; a single-call import needs no manifest.
 - **No new statuses.** Backlog.md lets a project name its own columns; Dayhand keeps `todo`,
   `doing` and `done` and maps each column to the nearest one.
 - **An agent's import follows an agent's rules.** A finished task with criteria not all met, or
@@ -138,8 +146,11 @@ Decisions:
 
 Due dates and times, repeat rules, reminders, the now task and claims have no place in the format;
 the result's `notes` count what was left out. Tasks in the trash are not exported.
-`dayhand backlog export <dir>` writes `config.yml` only when the folder has none (or with
-`--force`), and refuses to overwrite a task file without `--force`.
+`dayhand backlog export <dir>` requires a missing or empty destination and always writes its
+own `config.yml`. `--force` explicitly confirms writing into a non-empty folder and replacing
+exported files, including `config.yml`; it does not reconcile another project's configuration
+or delete unrelated files. Destination, task-directory and file symlinks are refused, including
+dangling file symlinks.
 
 An export imported into another Dayhand account keeps titles, statuses, labels, criteria, plan,
 dependencies, links and proof; the note gains the checklist and the notes section as text. The

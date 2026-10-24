@@ -3,6 +3,7 @@
 // the REST API. The folders are synthetic, written here for the tests.
 import { describe, expect, test } from "vitest";
 import { api } from "../convex/_generated/api";
+import { sha256Hex } from "../convex/lib/secrets";
 import { appClient, callTool, createKey, mcpClient, newUserId, openApiChecker, rest } from "./helpers";
 
 type File = { path: string; content: string };
@@ -108,7 +109,9 @@ describe("import_backlog", () => {
 
   test("dependencies sent in an earlier call are found by their source; a cycle is reported", async () => {
     const { client } = await owner();
-    await callTool(client, "import_backlog", { files: [file("tasks/task-1.md", "id: task-1\ntitle: First")] });
+    await callTool(client, "import_backlog", { files: [file("tasks/task-1.md", "id: Task-1\ntitle: First")] });
+    const repeated = await callTool(client, "import_backlog", { files: [file("tasks/renamed.md", "id: TASK-1\ntitle: Renamed")] });
+    expect(repeated).toMatchObject({ created: 0, skipped: [{ reason: "imported before", id: "TASK-1" }] });
     const second = await callTool(client, "import_backlog", {
       files: [
         file("tasks/task-2.md", "id: TASK-2\ntitle: Second\ndependencies: [TASK-1]"),
@@ -122,6 +125,51 @@ describe("import_backlog", () => {
     expect(second.warnings).toEqual([
       { path: "tasks/task-3.md", message: "depends on TASK-4, which is in these files but was not imported before this one (it failed, or the two wait for each other); left out" },
     ]);
+  });
+
+  test("a run approval covers only its declared batches and counts", async () => {
+    const { client: app, userId } = await appClient();
+    const agent = await mcpClient(await createKey(userId, "batch importer", "agent"));
+    const keys = await app.query(api.app.listApiKeys, {}) as any[];
+    await app.mutation(api.app.setToolPolicy, { apiKeyId: keys.find((key) => key.name === "batch importer").id, toolName: "import_backlog", rule: "ask" });
+    const calls = [Array.from({ length: 200 }, (_, i) => file(`tasks/${i}.md`, `id: TASK-${i}\ntitle: T${i}`)), [file("tasks/last.md", "id: TASK-200\ntitle: Last\ndependencies: [Task-0]")]];
+    const run = { batches: await Promise.all(calls.map(async (files) => ({ hash: await sha256Hex(JSON.stringify(files)), files: files.length }))) };
+    const refused = await agent.callTool({ name: "import_backlog", arguments: { files: calls[0], run } });
+    const approvalId = (refused.structuredContent as any).error.approvalId;
+    expect(typeof approvalId).toBe("string");
+    await app.mutation(api.app.decideApproval, { approvalId, optionId: "allow" });
+    const changedCount = { batches: run.batches.map((batch, index) => index === 1 ? { ...batch, files: 2 } : batch) };
+    const wrongCount = await agent.callTool({ name: "import_backlog", arguments: { files: calls[1], run: changedCount, approvalId } });
+    expect((wrongCount.structuredContent as any).error.code).toBe("invalid_argument");
+    const changedFile = await agent.callTool({ name: "import_backlog", arguments: { files: [file("tasks/other.md", "title: Not approved")], run, approvalId } });
+    expect((changedFile.structuredContent as any).error.code).toBe("invalid_argument");
+    expect((await callTool(agent, "import_backlog", { files: calls[0], run, approvalId })).created).toBe(200);
+    expect((await callTool(agent, "import_backlog", { files: calls[1], run, approvalId })).created).toBe(1);
+    expect((await callTool(agent, "import_backlog", { files: calls[0], run, approvalId })).created).toBe(0);
+    expect((await callTool(agent, "list_approvals")).approvals).toHaveLength(1);
+  });
+
+  test("excess dependencies fail the task; all accepted dependencies survive readiness and export", async () => {
+    const { client } = await owner();
+    const prerequisites = Array.from({ length: 51 }, (_, i) => file(`tasks/task-${i + 1}.md`, `id: TASK-${i + 1}\ntitle: Prerequisite ${i + 1}\nstatus: ${i === 50 ? "To Do" : "Done"}`));
+    const imported = await callTool(client, "import_backlog", { files: prerequisites });
+    expect(imported.created).toBe(51);
+    const refs = Array.from({ length: 51 }, (_, i) => `TASK-${i + 1}`);
+    const result = await callTool(client, "import_backlog", { files: [
+      file("tasks/too-many.md", `id: TASK-100\ntitle: Excess edges\ndependencies: [${refs.join(", ")}]`),
+      file("tasks/at-limit.md", `id: TASK-101\ntitle: All edges\ndependencies: [${refs.slice(1).join(", ")}]`),
+    ] });
+    expect(result).toMatchObject({ created: 1, failed: [{ path: "tasks/too-many.md", message: "at most 50 dependencies" }] });
+    const dependent = result.tasks[0];
+    expect(dependent.dependsOn).toHaveLength(50);
+    expect((await callTool(client, "list_all", { ready: true })).map((t: any) => t.id)).not.toContain(dependent.id);
+    expect((await callTool(client, "agent_brief")).ready.items.map((t: any) => t.id)).not.toContain(dependent.id);
+    const exported = await callTool(client, "export_backlog");
+    const restored = await owner();
+    const copy = await callTool(restored.client, "import_backlog", { files: [exported.config, ...exported.files.map(({ path, content }: File) => ({ path, content }))] });
+    expect(byTitle(copy.tasks, "All edges").dependsOn).toHaveLength(50);
+    await callTool(client, "complete_task", { taskId: byTitle(imported.tasks, "Prerequisite 51").id });
+    expect((await callTool(client, "agent_brief")).ready.items.map((t: any) => t.id)).toContain(dependent.id);
   });
 
   test("the same id twice is imported once; limits and an agent's rules hold", async () => {
@@ -160,6 +208,20 @@ async function asOwnerPause(userId: string) {
 }
 
 describe("export_backlog", () => {
+  test("quoted titles and narrative headings survive export and an agent's import without becoming criteria", async () => {
+    const { client: source } = await owner();
+    const title = "O'Brien #42";
+    const note = "## Acceptance Criteria\n- [ ] This is only an example.\n\n## Final Summary\nNot the actual proof.";
+    const plan = "## Rollout\nDeploy in stages.";
+    const summary = "## Evidence\nThe checks passed.";
+    const task = await callTool(source, "add_task", { title, note, plan, acceptance: [{ text: "Actual criterion", met: true }] });
+    await callTool(source, "complete_task", { taskId: task.id, proof: { summary } });
+    const exported = await callTool(source, "export_backlog");
+    const target = await mcpClient(await createKey(newUserId(), "reader", "agent"));
+    const imported = await callTool(target, "import_backlog", { files: [exported.config, ...exported.files.map(({ path, content }: File) => ({ path, content }))] });
+    expect(imported).toMatchObject({ created: 1, failed: [], tasks: [{ title, note, plan, status: "done", acceptance: [{ text: "Actual criterion", met: true }], proof: { summary } }] });
+  });
+
   test("round trip: export one plan, import it into another, and the criteria, dependencies and statuses survive", async () => {
     const { client: source } = await owner();
     const base = await callTool(source, "add_task", { title: "Pick a supplier", labels: ["ops"] });

@@ -8,12 +8,15 @@ import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { args } from "./args";
+import { checkBacklogRun, type BacklogRun } from "./backlogApproval";
 import { checkClientId, fail, loadTask, ownerOnly, recordEvent, type Identity } from "./core";
 import { sha256Hex } from "./secrets";
 import type { ApprovalOption, ApprovalOptionInput } from "./validators";
 import { queueApprovalDecided } from "./webhookEvents";
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
+
+export const MAX_APPROVAL_MINUTES = 7 * 24 * 60;
 
 const LIMITS = {
   action: 200,
@@ -24,7 +27,7 @@ const LIMITS = {
   label: 100,
   consequence: 500,
   note: 1_000,
-  minutes: 7 * 24 * 60,
+  minutes: MAX_APPROVAL_MINUTES,
   list: 200,
   arguments: 2_000,
 };
@@ -237,8 +240,13 @@ export function callArguments(input: Record<string, unknown>): Record<string, un
 
 /** What one approval allows: this key (or connection), this tool, these arguments. */
 export async function policyHash(identity: Identity, tool: string, input: Record<string, unknown>): Promise<string> {
+  if (tool === "import_backlog") await checkBacklogRun(input);
   const holder = identity.keyId ?? identity.connectionId ?? identity.actor;
-  return sha256Hex(JSON.stringify([holder, tool, callArguments(input)]));
+  return sha256Hex(JSON.stringify([holder, tool, policyArguments(tool, input)]));
+}
+
+function policyArguments(tool: string, input: Record<string, unknown>): Record<string, unknown> {
+  return callArguments(tool === "import_backlog" && input.run !== undefined ? { run: input.run } : input);
 }
 
 const ALLOW = "allow";
@@ -256,7 +264,11 @@ export async function requestForPolicy(ctx: MutationCtx, identity: Identity, too
     .collect();
   const waiting = same.find((a) => statusOf(a, now) === "pending" || (a.optionId === ALLOW && a.usedAt === undefined));
   if (waiting) return approvalView(ctx, waiting, now);
-  const shown = JSON.stringify(callArguments(input));
+  const run = tool === "import_backlog" ? input.run as BacklogRun | undefined : undefined;
+  const scope = tool === "import_backlog"
+    ? `Import ${run ? run.batches.reduce((n, b) => n + b.files, 0) : (input.files as unknown[]).length} file(s) in ${run?.batches.length ?? 1} batch(es). `
+    : "";
+  const shown = scope + JSON.stringify(policyArguments(tool, input));
   const taskRef = typeof input.taskId === "string" ? input.taskId : null;
   let task: Doc<"tasks"> | null = null;
   if (taskRef !== null) {
@@ -273,7 +285,7 @@ export async function requestForPolicy(ctx: MutationCtx, identity: Identity, too
     title: `${name} wants to call ${tool}`.slice(0, LIMITS.action),
     detail: `Your policy asks before this key calls ${tool}. Arguments: ${shown}`.slice(0, LIMITS.detail),
     options: [
-      { id: ALLOW, label: "Allow once", consequence: `The agent repeats the call and ${tool} runs once, with exactly these arguments.` },
+      { id: ALLOW, label: "Allow once", consequence: run ? `${scope}Only these batches may run; retries skip files imported before.` : `The agent repeats the call and ${tool} runs once, with exactly these arguments.` },
       { id: "deny", label: "Deny", consequence: "The call stays refused; the agent is told you said no." },
     ],
     reversible,
@@ -304,6 +316,7 @@ export async function usePolicyApproval(ctx: MutationCtx, identity: Identity, to
   if (status === "pending") fail("approval_required", "The owner has not decided yet; check with get_approval and try again later", { approvalId: approval._id });
   if (status === "expired") fail("approval_required", "The approval request expired; call again for a new one");
   if (approval.optionId !== ALLOW) fail("forbidden", `The owner denied this call${approval.note ? `: ${approval.note}` : ""}`);
-  if (approval.usedAt !== undefined) fail("approval_required", "This approval was already used; call again for a new one");
-  await ctx.db.patch(approval._id, { usedAt: Date.now() });
+  const importRun = tool === "import_backlog" && input.run !== undefined;
+  if (approval.usedAt !== undefined && !importRun) fail("approval_required", "This approval was already used; call again for a new one");
+  if (approval.usedAt === undefined) await ctx.db.patch(approval._id, { usedAt: Date.now() });
 }
