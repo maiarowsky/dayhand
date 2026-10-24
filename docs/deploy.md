@@ -9,19 +9,36 @@ One command sets up a complete Dayhand server of your own on your own free Conve
 the phone app, the MCP endpoint for AI agents, the REST API and `dayhand`. Nobody else runs or
 maintains anything for you, and nobody else can see your tasks.
 
-You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex account is made
+You need Node.js 22.12 or newer, on macOS, Linux or Windows. The Convex account is made
 (or signed in to) in your browser during the setup.
 
 ```sh
 npm i -g dayhand
+dayhand server deploy
+```
+
+`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
+first release, from source: [Install](install.md)). The package carries the server it deploys, the
+`backend/` folder of this repository, so there is nothing to clone. Because the installed package
+folder may be read-only (a Homebrew keg, a global npm prefix), `dayhand server` runs the setup from a
+copy of that backend in your user data folder: `~/Library/Application Support/dayhand/backend/<version>`
+on macOS, `${XDG_DATA_HOME:-~/.local/share}/dayhand/backend/<version>` on Linux,
+`%LOCALAPPDATA%\dayhand\Data\backend\<version>` on Windows (`DAYHAND_DATA_DIR` changes the folder).
+The copy is made once per `dayhand` version: the dependencies are installed and the Convex local
+backend is downloaded into it once, and the next run, or `dayhand server start`, reuses it. A new
+`dayhand` version makes a new copy (delete the folders of old versions when you like). Your keys and
+server state stay in the server's private folder (`DAYHAND_SERVER_CONFIG_DIR`, below), not in the copy.
+
+A clone of the repository still works and wins when you run `dayhand` from it, or from a folder next to its
+`backend/`, or pass `--backend <folder>` or set `DAYHAND_BACKEND_DIR`; it is then used in place, as before:
+
+```sh
 git clone https://github.com/maiarowsky/dayhand.git
 cd dayhand
 dayhand server deploy
 ```
 
-`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
-first release, from source: [Install](install.md)); the copy of the repository holds the server it
-deploys. Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` (it then prints the
+Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` in a clone (it then prints the
 `dayhand login` command to use later).
 
 `dayhand server deploy` (which runs `backend/scripts/setup.mjs`):

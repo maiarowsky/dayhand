@@ -21,13 +21,9 @@ Homebrew, `brew install maiarowsky/tap/dayhand` does the same. `dayhand --versio
 Before the first release, build it from source instead; every way to install, and the state of each:
 [Install](install.md).
 
-The server is deployed from a copy of the repository (nothing to build), so get one and stay in it for
-the next steps:
-
-```sh
-git clone https://github.com/maiarowsky/dayhand.git
-cd dayhand
-```
+The `dayhand` package carries the server (the `backend/` folder of the repository), so there is nothing
+else to get: no clone, nothing to build. (A clone of the repository still works, and wins when you run
+`dayhand` from it.)
 
 ## 2. Start your own server
 
@@ -35,13 +31,14 @@ cd dayhand
 dayhand server start
 ```
 
-The first run downloads the Convex local backend once (a pinned version whose checksum is checked),
-deploys Dayhand to it, creates a key for `dayhand` and signs this computer in with it, and prints a
+The first run copies the packaged backend to your user data folder (once per `dayhand` version),
+installs its dependencies from the lockfile, downloads the Convex local backend once (a pinned version
+whose checksum is checked), deploys Dayhand to it, creates a key for `dayhand` and signs this computer in with it, and prints a
 pairing code for the phone. Data and keys stay in a private folder on this computer; no account is
 needed. The server listens on `127.0.0.1` only and runs until you press Ctrl+C. The same command starts
 it again later, with its data.
 
-Leave it running and open a second terminal in the same folder for the next steps. In that second
+Leave it running and open a second terminal for the next steps. In that second
 terminal, select the local server explicitly:
 
 ```sh

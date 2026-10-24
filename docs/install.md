@@ -62,19 +62,23 @@ cd dayhand && (cd cli && npm ci --ignore-scripts && npm run build && npm link)
 ## Your own server
 
 The server is the `backend/` folder of the repository, deployed to [Convex](https://www.convex.dev).
-The command line sets it up from a copy of the repository, with nothing to build:
-
-```sh
-git clone https://github.com/maiarowsky/dayhand.git
-cd dayhand
-```
-
-Then, in that folder:
+The `dayhand` package carries that folder, so the command line sets the server up with no clone of the
+repository and nothing to build:
 
 - **On this computer** (macOS or Linux, x64 or arm64): `dayhand server start` downloads the Convex
   local backend once and runs your server until Ctrl+C. No account needed.
 - **On your own free Convex account** (from macOS, Linux or Windows): `dayhand server deploy` logs in
   to Convex in the browser and deploys. The server gets a public HTTPS address.
+
+The packaged backend is not run from the package folder (it may be read-only, as with Homebrew): the
+first run copies it to a folder in your user data folder, one per `dayhand` version
+(`~/Library/Application Support/dayhand/backend/<version>` on macOS,
+`${XDG_DATA_HOME:-~/.local/share}/dayhand/backend/<version>` on Linux,
+`%LOCALAPPDATA%\dayhand\Data\backend\<version>` on Windows; `DAYHAND_DATA_DIR` moves it),
+installs the dependencies there and reuses the folder on the next run. After an update the new
+version makes its own copy; you can delete the folders of older versions. Keys and the server's data
+stay where they were, in the server's private folder. A clone of the repository still works, and wins
+when you run `dayhand` from it (or pass `--backend <folder>`).
 
 Both are described step by step, with costs, backups and updates, in [Your own server](deploy.md).
 The apps also work with no server at all, each on its own device.

@@ -66,7 +66,7 @@ describe("release files", () => {
     expect(config.packages.cli).toMatchObject({ component: "dayhand", "release-type": "node" });
   });
 
-  test("the package ships the binary and the man page, and names the public repository", () => {
+  test("the package ships the binary, the man page and the server backend, and names the public repository", () => {
     expect(pkg).not.toHaveProperty("private");
     expect(pkg).toMatchObject({
       name: "dayhand",
@@ -74,7 +74,7 @@ describe("release files", () => {
       // dh is the short name; hlm, the old one, warns until 1.0 removes it.
       bin: { dayhand: "dist/bin/dayhand.js", dh: "dist/bin/dayhand.js", hlm: "dist/bin/hlm.js" },
       man: ["./man/dayhand.1", "./man/dh.1"],
-      files: ["dist", "man"],
+      files: ["dist", "man", "backend"],
     });
     expect(read("man/dh.1")).toBe(".so man1/dayhand.1\n");
   });

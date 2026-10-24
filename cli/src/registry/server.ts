@@ -1,8 +1,9 @@
 // Your own Dayhand server: `dayhand server deploy` puts it on your free Convex
 // account, `dayhand server start` runs it on this computer. Both run the
 // backend's setup script (backend/scripts/setup.mjs, also `npm run setup`)
-// from a copy of the Dayhand repository, because deploying needs the backend's
-// code and the Convex CLI that dayhand does not carry, and then sign dayhand in with
+// from the backend of a Dayhand repository, or else the backend the dayhand package carries
+// (packaged-backend.ts), because deploying needs the backend's code and the Convex CLI that
+// dayhand itself does not carry, and then sign dayhand in with
 // the CLI key the script made, like `dayhand login --url`. The key is read from
 // the script's private folder and never printed.
 import { spawn, type ChildProcess } from "node:child_process";
@@ -12,9 +13,12 @@ import { fileURLToPath } from "node:url";
 import qrcode from "qrcode-terminal";
 import type { Env } from "../config/env.js";
 import { saveProfileUrl } from "../config/file.js";
+import { resolveDataDir } from "../config/paths.js";
 import { normalizeUrl } from "../config/url.js";
 import { CliError, usageError } from "../core/exit.js";
+import { CLI_VERSION } from "../core/version.js";
 import { PROFILE, storeKey } from "./auth.js";
+import { PACKAGED_BACKEND, writableBackend } from "./packaged-backend.js";
 import type { CommandSpec, Opts, Outcome, RunContext } from "./types.js";
 
 const SCRIPT = path.join("scripts", "setup.mjs");
@@ -31,10 +35,17 @@ function isBackend(dir: string): boolean {
 
 /**
  * backend/ of a Dayhand checkout: --backend, DAYHAND_BACKEND_DIR, the one next to this dayhand when it
- * runs from the repository, else the current folder or one above it (or its backend/). The
- * script found is run, so a checkout of your own wins over whatever folder you stand in.
+ * runs from the repository, else the current folder or one above it (or its backend/), else the
+ * backend this dayhand package carries. The script found is run, so a checkout of your own wins
+ * over whatever folder you stand in, and a given folder is never replaced by the packaged one.
  */
-export function findBackend(given: string | undefined, env: Env, cwd: string, beside = fileURLToPath(new URL("../../../backend", import.meta.url))): string | null {
+export function findBackend(
+  given: string | undefined,
+  env: Env,
+  cwd: string,
+  beside = fileURLToPath(new URL("../../../backend", import.meta.url)),
+  packaged = PACKAGED_BACKEND,
+): string | null {
   const explicit = given ?? env.DAYHAND_BACKEND_DIR;
   if (explicit) {
     const dir = path.resolve(cwd, explicit);
@@ -44,8 +55,9 @@ export function findBackend(given: string | undefined, env: Env, cwd: string, be
   for (let dir = path.resolve(cwd); ; dir = path.dirname(dir)) {
     if (isBackend(dir)) return dir;
     if (isBackend(path.join(dir, "backend"))) return path.join(dir, "backend");
-    if (path.dirname(dir) === dir) return null;
+    if (path.dirname(dir) === dir) break;
   }
+  return isBackend(packaged) ? packaged : null;
 }
 
 type Engine = { result: Record<string, any>; child: ChildProcess; exited: Promise<number | null> };
@@ -146,18 +158,26 @@ async function summary(result: Record<string, any>, login: { profile: string; lo
   ].join("\n");
 }
 
+/** The folder to run the packaged backend from: a copy for this dayhand version, made once in the data folder. */
+function packagedBackend(ctx: RunContext, source: string): string {
+  const copy = writableBackend(source, CLI_VERSION, resolveDataDir(ctx.env), !ctx.dryRun);
+  if (copy.copied) ctx.io.stderr.write(`Copied the packaged Dayhand backend to ${copy.dir} (once per dayhand version; the setup installs its dependencies there)\n`);
+  return copy.dir;
+}
+
 async function setup(ctx: RunContext, opts: Opts, local: boolean): Promise<Outcome> {
   const name = local ? "start" : "deploy";
   if (!ctx.interactive && !ctx.yes && !ctx.dryRun) {
     throw usageError(`dayhand server ${name} can ask questions${local ? "" : " and log in to Convex in a browser"}; without a terminal pass --yes (every question gets its safe answer)`);
   }
-  const backend = findBackend(opts.backend as string | undefined, ctx.env, process.cwd());
-  if (!backend) {
+  const found = findBackend(opts.backend as string | undefined, ctx.env, process.cwd());
+  if (!found) {
     throw usageError("dayhand server needs a copy of the Dayhand repository: it deploys the repository's backend/ folder", {
       hint: "git clone https://github.com/maiarowsky/dayhand.git && cd dayhand && dayhand server " + name + "   (or --backend <folder>)",
     });
   }
-  ctx.io.stderr.write(`Using the Dayhand backend in ${backend}\n`);
+  const backend = found === PACKAGED_BACKEND ? packagedBackend(ctx, found) : found;
+  ctx.io.stderr.write(`Using the Dayhand backend in ${backend}${found === PACKAGED_BACKEND ? ` (packaged with dayhand ${CLI_VERSION})` : ""}\n`);
   const engine = await runEngine(backend, engineArgs(opts, local, ctx.dryRun), ctx.env);
   if (ctx.dryRun) {
     await engine.exited;
@@ -184,14 +204,18 @@ async function setup(ctx: RunContext, opts: Opts, local: boolean): Promise<Outco
   return { value, view: { kind: "text", text }, printed: true };
 }
 
-const BACKEND_OPTION = { flags: "--backend <folder>", description: "The Dayhand repository's backend/ folder (default: found from here)" };
+const BACKEND_OPTION = {
+  flags: "--backend <folder>",
+  description: "The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand)",
+};
 
 const server: CommandSpec = {
   name: "server",
   summary: "Your own Dayhand server: on your free Convex account, or on this computer",
   description:
-    "Runs backend/scripts/setup.mjs from a copy of the Dayhand repository (npm run setup does the same without dayhand), " +
-    "then signs dayhand in. Keys stay in a private folder (DAYHAND_SERVER_CONFIG_DIR) and are never printed. See docs/deploy.md.",
+    "Runs backend/scripts/setup.mjs from the backend/ folder of a Dayhand repository you run from, " +
+    "else from the backend the dayhand package carries, copied once per version to the data folder (DAYHAND_DATA_DIR). " +
+    "Then signs dayhand in. Keys stay in a private folder (DAYHAND_SERVER_CONFIG_DIR) and are never printed. See docs/deploy.md.",
   tools: [],
   subcommands: [
     {

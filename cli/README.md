@@ -27,6 +27,11 @@ source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help com
 In a checkout, build and link it from this folder instead: `npm ci --ignore-scripts && npm run build && npm link`
 (also the way to get it before the first release; [every way to install](../docs/install.md)).
 
+`dayhand server start` and `dayhand server deploy` need no clone of the repository: the package carries
+the Dayhand backend (`backend/`, copied in by prepack), runs it from a copy in your data folder
+(`DAYHAND_DATA_DIR`), once per version, and uses the `backend/` of a clone instead when you run from one
+or pass `--backend` ([your own server](../docs/deploy.md#run-your-own-server-in-5-minutes)).
+
 For key creation, automatic sign-in during server setup, and credential storage, see
 [signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
 default (`dayhand help config`); the key never goes into it.
@@ -73,7 +78,9 @@ src/ui/               dayhand ui: controller (polling, changes, mouse), key redu
 src/i18n/             dayhand ui's languages: en.ts is the source, one catalog per language, t() and plurals
 src/completion/       dayhand __complete and the bash, zsh, fish and PowerShell scripts
 src/docs.ts, man.ts, skill.ts   docs/cli.md, man/dayhand.1 and the agent skill, rendered from the registry
+src/registry/packaged-backend.ts   the backend the package carries (backend/) and its per-version copy in the data folder
 scripts/              gen-docs (npm run docs), pack-files (prepack), check-release (publish workflow)
+backend/              the server's backend (setup scripts, convex/), copied from ../backend by prepack; not committed
 tests/                unit tests (*.unit.test.ts) and tests against a real local Convex backend
 ```
 
@@ -83,7 +90,7 @@ tests/                unit tests (*.unit.test.ts) and tests against a real local
 (cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
 npm test                                      # builds, then runs everything
 npm run test:unit                             # pure tests only (dates, config, output, completion)
-npm pack                                      # the tarball npm publishes: dist/, the man pages, README and LICENSE
+npm pack                                      # the tarball npm publishes: dist/, the man pages, the backend, README and LICENSE
 ```
 
 The tests never touch the real keychain or config folder: every run gets its own

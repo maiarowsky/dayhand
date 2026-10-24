@@ -186,6 +186,7 @@ terminal (or with `--no-input` / `DAYHAND_NO_INPUT=1`) it never waits for input 
 | `DAYHAND_NO_INPUT` | 1 to never prompt |
 | `DAYHAND_CONFIG_DIR` | Folder of config.toml and credentials.json (default: the system's config folder) |
 | `DAYHAND_CACHE_DIR` | Folder of the completion cache (default: the system's cache folder) |
+| `DAYHAND_DATA_DIR` | Folder of the copy of the packaged server backend that dayhand server runs, one per version (default: the system's data folder) |
 | `DAYHAND_CREDENTIAL_STORE` | keychain or file: where dayhand login keeps keys (default: keychain, else file) |
 | `NO_COLOR, FORCE_COLOR` | Turn colors off or on when neither --color nor config.toml decides |
 | `VISUAL, EDITOR` | Editor for dayhand note <ref> and dayhand edit <ref> on a terminal (default: vi, notepad on Windows) |
@@ -1778,7 +1779,7 @@ dayhand server deploy [options]
 | `--project <name>` | Name of the new Convex project (default: dayhand) |
 | `--deployment <name>` | Use this existing production deployment instead of a new project |
 | `--issuer <url>` | DAYHAND_JWT_ISSUER for a new server (default: the server's address) |
-| `--backend <folder>` | The Dayhand repository's backend/ folder (default: found from here) |
+| `--backend <folder>` | The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand) |
 
 ```sh
 dayhand server deploy
@@ -1802,7 +1803,7 @@ dayhand server start [options]
 | `--site-port <n>` | HTTP actions port (default: 3211) |
 | `--public-url <url>` | The HTTPS address phones use, e.g. https://<machine>.<tailnet>.ts.net |
 | `--public-api-url <url>` | The Convex API's HTTPS address (default: --public-url at port 8443) |
-| `--backend <folder>` | The Dayhand repository's backend/ folder (default: found from here) |
+| `--backend <folder>` | The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand) |
 
 ```sh
 dayhand server start
