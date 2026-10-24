@@ -7,17 +7,19 @@
 #   scripts/check-sync-loop.sh                # builds dist/Dayhand.app first, then runs it for 50 seconds
 #   DAYHAND_APP=<path>/Dayhand.app DAYHAND_CHECK_SECONDS=90 scripts/check-sync-loop.sh
 #
-# The app's window opens while it runs. Nothing of yours is touched: the database is a temporary folder, and a small
-# library loaded only into this process answers the Keychain for Dayhand's own item with a made-up sign-in to a local
-# port that accepts and closes every connection (other Keychain items go to the Keychain as usual; nothing is saved).
+# The app's window opens while it runs. Your app and data stay untouched: a temporary copy uses a separate bundle id
+# for notifications and preferences, whose defaults domain is deleted on cleanup. The database is a temporary folder,
+# and a small library loaded only into this process answers the Keychain for Dayhand's own item with a made-up sign-in
+# to a local port that accepts and closes every connection (other Keychain items go to the Keychain as usual; nothing is saved).
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SECONDS_TO_RUN=${DAYHAND_CHECK_SECONDS:-50}
 POLL_SECONDS=15
+CHECK_BUNDLE_ID=io.github.maiarowsky.dayhand.check-sync-loop
 APP=${DAYHAND_APP:-}
 if [ -z "$APP" ]; then
-  "$ROOT/scripts/build-app.sh"
+  DAYHAND_CONFIGURATION=release "$ROOT/scripts/build-app.sh"
   APP="$ROOT/dist/Dayhand.app"
 fi
 
@@ -25,11 +27,19 @@ WORK=$(mktemp -d)
 APP_PID=""
 SERVER_PID=""
 cleanup() {
-  [ -z "$APP_PID" ] || kill "$APP_PID" 2>/dev/null || true
+  if [ -n "$APP_PID" ]; then
+    kill "$APP_PID" 2>/dev/null || true
+    wait "$APP_PID" 2>/dev/null || true
+  fi
   [ -z "$SERVER_PID" ] || kill "$SERVER_PID" 2>/dev/null || true
+  defaults delete "$CHECK_BUNDLE_ID" >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
 trap cleanup EXIT INT TERM
+
+ditto "$APP" "$WORK/Dayhand.app"
+APP="$WORK/Dayhand.app"
+plutil -replace CFBundleIdentifier -string "$CHECK_BUNDLE_ID" "$APP/Contents/Info.plist"
 
 cat > "$WORK/keychain.c" <<'EOF'
 #include <CoreFoundation/CoreFoundation.h>
