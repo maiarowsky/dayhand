@@ -71,7 +71,7 @@ final class AppModel: ObservableObject {
     init(_ environment: AppEnvironment) {
         let box = engineBox
         repository = TaskRepository(
-            database: environment.database, onOutboxChanged: { box.poke() }
+            database: environment.database, onOutboxChanged: { box.poke() }, repeatsOnMac: { !box.hasServer }
         )
         history = TaskHistorySync(repository: repository, runner: { box.queries })
         credentials = environment.credentials
@@ -403,6 +403,12 @@ final class EngineBox: @unchecked Sendable {
         self.engine = engine
         runner = queries
         lock.unlock()
+    }
+
+    var hasServer: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return engine != nil
     }
 
     /// The connected server's queries, or nil without one.

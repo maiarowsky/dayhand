@@ -25,14 +25,17 @@ This version is the basic one (MVP):
   (only a timed task rings them) and times of day on the due day or the day before. Both stay a draft, with a
   summary line, until **Save Repeat** or **Save Reminders**, which only a rule or reminders the server accepts
   enable (`TaskRules`), so a refused change never reaches the outbox; **Revert** drops the draft.
-- **Repeating offline**: ticking off a simple repeating task creates its next occurrence on the Mac at once,
-  including on a paired Mac without network access. This also works while connected, without waiting for a poll.
-  Dates follow `Recurrence.advance`, using the actual local completion day for completion-based rules. The done
-  task loses its rule before completion is sent, and the next occurrence has a stable `clientId`, so reconnecting
-  or resending a lost answer keeps one next occurrence. Tasks with agent acceptance criteria or a plan wait for
-  server generation after reconnecting; eligibility is cached with the server snapshot, without a schema change.
-  Known limitation (also on Android): completing the same cached occurrence on two devices before sync can
-  produce two next occurrences; this release adds no cross-device correlation protocol.
+- **Repeating offline**: only without a server (**Not now**, disconnected or signed out), ticking off a repeating
+  task creates its next occurrence on the Mac at once (`Recurrence.advance`). The done task loses its rule before
+  completion is sent, so a server connected later does not also generate an occurrence for that completion.
+  Resends reuse the queued occurrence's `clientId`. If the parent add, rule-clear or completion is permanently
+  refused, its unsent generated occurrences are discarded. Known limitations:
+  - A paired Mac without network queues completion but creates no next occurrence until it syncs; a
+    completion-anchored rule then counts from the sync date, not the local completion date.
+  - A Mac without a server does not keep agent acceptance criteria or plans, so a locally created next occurrence
+    lacks those fields.
+  - Completing the same cached occurrence on two devices before sync can yield two next occurrences, as on
+    Android; this release adds no cross-device correlation protocol.
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
   by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
   cached entries remain available offline. Without cached entries, the details say history is unavailable
@@ -182,10 +185,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
   is erased. It also checks trash expiry and queuing an offline restore. `RepeatEditingTests.swift` checks the editors'
   drafts against the rules they make, that rules and reminders `TaskRules` refuses queue nothing, and that a
-  simple repeating task completed without a server or on a paired Mac without network gets its next occurrence
-  locally, retains its completion-based date through a delayed reconnect, and keeps one occurrence after a lost
-  add answer is resent. Tasks with acceptance criteria or a plan defer generation to the fake server, which
-  preserves those fields and resets the criteria as the backend does. The loop's wait ends at its timeout or at
+  repeating task completed without a server gets its next occurrence locally and keeps one occurrence when the
+  outbox is sent. With a server, generation stays on the server, including after a delayed offline completion.
+  Permanent rejection of a parent add, rule-clear or completion drops its unsent generated descendants, while
+  retryable failures retain them and unrelated additions still sync. The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.

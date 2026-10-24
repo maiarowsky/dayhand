@@ -19,11 +19,10 @@ latest one below).
 
 ### Changed
 
-- Ticking off a simple repeating task creates its next occurrence on the Mac at once, including on a paired Mac
-  without network access. The done task's rule is cleared before sending completion; the next occurrence's stable
-  `clientId` deduplicates resends. Completion-based dates use the local completion day. Tasks with agent acceptance
-  criteria or a plan wait for server generation after reconnecting; see the known cross-device limitation in
-  [docs/macos.md](../docs/macos.md#offline-repeating).
+- Ticking off a repeating task without a server (Not now, disconnected or signed out) creates its next occurrence
+  on the Mac at once. The done task's rule is cleared before sending completion, and permanently refused parent
+  changes discard their unsent generated occurrences. With a server, generation remains on the server; see the
+  paired-offline, agent-field and cross-device limitations in [docs/macos.md](../docs/macos.md#offline-repeating).
 - The existing sidebar now switches between Today and Trash; the window keeps its two-column layout.
 - The local database now caches server history; the cache leaves the Mac with a purged task.
   Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).

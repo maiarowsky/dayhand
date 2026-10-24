@@ -22,14 +22,13 @@ public struct RemoteTask: Hashable, Sendable {
     public var checklist: [ChecklistItem]
     /// Nil: the default reminders from the settings.
     public var reminders: [TaskReminder]?
-    public var hasAgentDetails: Bool
 
     public init(
         id: String, clientId: String? = nil, title: String, note: String? = nil, dueDate: String? = nil,
         dueTime: String? = nil, status: String = "todo", isNow: Bool = false, resumeNote: String? = nil,
         completedAt: Int64? = nil, archivedAt: Int64? = nil, createdAt: Int64, updatedAt: Int64,
         repeat: RepeatRule? = nil, labels: [String] = [], links: [TaskLink] = [], deletedAt: Int64? = nil,
-        checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil, hasAgentDetails: Bool = false
+        checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil
     ) {
         self.id = id
         self.clientId = clientId
@@ -50,7 +49,6 @@ public struct RemoteTask: Hashable, Sendable {
         self.deletedAt = deletedAt
         self.checklist = checklist
         self.reminders = reminders
-        self.hasAgentDetails = hasAgentDetails
     }
 }
 
@@ -128,8 +126,7 @@ public enum RemoteJSON {
             links: o["links"]?.array?.compactMap(TaskLink.parse) ?? [],
             deletedAt: o["deletedAt"]?.int64,
             checklist: o["checklist"]?.array?.compactMap(ChecklistItem.parse) ?? [],
-            reminders: o["reminders"]?.array?.compactMap(TaskReminder.parse),
-            hasAgentDetails: ["acceptance", "plan"].contains { o[$0].map { !$0.isNull } ?? false }
+            reminders: o["reminders"]?.array?.compactMap(TaskReminder.parse)
         )
     }
 

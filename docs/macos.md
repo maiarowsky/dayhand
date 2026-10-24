@@ -149,14 +149,19 @@ version before announcing it.
 
 ## Offline repeating
 
-Simple repeating tasks create their next occurrence locally, whether connected, unpaired or paired without network
-access; completion-based rules use the local completion day, and resending the same next occurrence is deduplicated
-by its stable `clientId`.
-Tasks with agent acceptance criteria or a plan instead get their next occurrence from the server after reconnecting,
-so those fields are preserved without a local schema change.
-Known limitation, shared with Android: if two devices complete the same cached occurrence before syncing, both a
-server-generated and a locally generated next occurrence can survive; this release adds no correlation protocol for
-that race.
+The Mac creates a repeating task's next occurrence locally only when it has no server (**Not now**, disconnected
+or signed out). It clears the completed task's rule before sending completion, then uploads the locally created
+occurrence. If the parent add, rule-clear or completion is permanently refused, its unsent generated occurrences
+are discarded.
+
+Known limitations:
+
+- A paired Mac without network queues completion but creates no next occurrence until it syncs; a
+  completion-anchored rule then counts from the sync date, not the local completion date.
+- A Mac without a server does not keep agent acceptance criteria or plans, so a locally created next occurrence
+  lacks those fields.
+- Completing the same cached occurrence on two devices before sync can yield two next occurrences, as on Android;
+  this release adds no cross-device correlation protocol.
 
 ## What is left for parity with the Android app
 
