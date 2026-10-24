@@ -9,8 +9,8 @@ RUN sed -i 's/^\[options\]/[options]\nDisableSandbox/' /etc/pacman.conf \
  && echo "Server = https://archive.archlinux.org/repos/${ARCHIVE_DATE}/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist \
  && pacman -Syyu --noconfirm --needed \
       cmake ninja gcc pkgconf \
-      qt6-base qt6-declarative qt6-wayland \
-      libsecret gnome-keyring dbus tzdata ttf-dejavu \
+      qt6-base qt6-declarative qt6-svg qt6-tools qt6-wayland \
+      libsecret gnome-keyring dbus weston tzdata ttf-dejavu \
  && pacman -Scc --noconfirm
 
 RUN useradd -m builder

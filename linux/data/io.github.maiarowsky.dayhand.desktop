@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Dayhand
+GenericName=Task List
+Comment=Today's tasks, quick add and reminders
+Exec=dayhand-qt %u
+Icon=io.github.maiarowsky.dayhand
+Terminal=false
+Categories=Office;ProjectManagement;Qt;
+Keywords=tasks;todo;today;reminders;
+MimeType=x-scheme-handler/dayhand;x-scheme-handler/helm;
+StartupNotify=true
+StartupWMClass=io.github.maiarowsky.dayhand
+Actions=quick-add;
+
+[Desktop Action quick-add]
+Name=Quick Add
+Exec=dayhand-qt --quick-add

@@ -3,6 +3,7 @@
 #include "Json.h"
 #include "PairingInput.h"
 
+#include <QCoreApplication>
 #include <QJsonObject>
 
 using namespace Qt::StringLiterals;
@@ -38,6 +39,15 @@ std::optional<DeviceCredential> DeviceCredential::fromJson(const QString &text)
 }
 
 namespace DevicePairing {
+
+namespace {
+
+/// The context of the connection messages in the translations.
+struct Texts {
+    Q_DECLARE_TR_FUNCTIONS(DevicePairing)
+};
+
+} // namespace
 
 ConnectResult connect(const PairingApi &api, CredentialStore &store, const QString &address, const QString &code,
                       const QString &deviceName)
@@ -85,25 +95,28 @@ QString message(ConnectError error, std::optional<int> retryAfterSeconds)
     case ConnectError::None:
         return {};
     case ConnectError::BadAddress:
-        return u"That is not a server address. It looks like https://<name>.convex.site."_s;
+        return Texts::tr("That is not a server address. It looks like https://<name>.convex.site.");
     case ConnectError::BadCode:
-        return u"A pairing code has 12 letters and digits, like E6M8-FE02-XSNT."_s;
+        return Texts::tr("A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.");
     case ConnectError::InvalidCode:
-        return u"The code is wrong, used or expired. Run dayhand pair again for a new one."_s;
+        return Texts::tr("The code is wrong, used or expired. Run dayhand pair again for a new one.");
     case ConnectError::RateLimited: {
-        const QString wait = !retryAfterSeconds         ? u"a few minutes"_s
-                             : *retryAfterSeconds >= 60 ? u"%1 min"_s.arg((*retryAfterSeconds + 59) / 60)
-                                                        : u"%1 s"_s.arg(*retryAfterSeconds);
-        return u"Too many wrong codes on this server. Try again in %1."_s.arg(wait);
+        if (!retryAfterSeconds)
+            return Texts::tr("Too many wrong codes on this server. Try again in a few minutes.");
+        if (*retryAfterSeconds >= 60)
+            return Texts::tr("Too many wrong codes on this server. Try again in %n min.", nullptr,
+                             (*retryAfterSeconds + 59) / 60);
+        return Texts::tr("Too many wrong codes on this server. Try again in %n s.", nullptr, *retryAfterSeconds);
     }
     case ConnectError::Unreachable:
-        return u"The server cannot be reached. Check the address and the network."_s;
+        return Texts::tr("The server cannot be reached. Check the address and the network.");
     case ConnectError::NotDayhand:
-        return u"Something answered at that address, but it is not a Dayhand server."_s;
+        return Texts::tr("Something answered at that address, but it is not a Dayhand server.");
     case ConnectError::ServerError:
-        return u"The server has a problem. Try again later."_s;
+        return Texts::tr("The server has a problem. Try again later.");
     case ConnectError::Storage:
-        return u"The sign-in could not be saved in the keyring (is a Secret Service such as gnome-keyring running?)."_s;
+        return Texts::tr("The sign-in could not be saved in the keyring "
+                         "(is a Secret Service such as gnome-keyring running?).");
     }
     return {};
 }

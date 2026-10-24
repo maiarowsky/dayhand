@@ -15,6 +15,8 @@ namespace Formatting {
 
 /// "Today", "Tomorrow", "Yesterday", or "Fri 23 Oct" (with the year when it is not this year).
 QString day(const QString &date, const QString &today);
+/// "Sat 24 Oct", with no "Today": the date under the Today title.
+QString dayName(const QString &date);
 /// "Today, 14:00", "Fri 23 Oct", or nothing for a task without a day.
 std::optional<QString> due(const TaskItem &task, const QString &today);
 QString when(const When &when, const QString &today);

@@ -19,6 +19,14 @@ dayhand_test(tst_merge)
 dayhand_test(tst_pairing)
 dayhand_test(tst_sync)
 
+# Missing or unfinished translations fail the build's tests.
+dayhand_test(tst_translations)
+target_compile_definitions(tst_translations PRIVATE
+    DAYHAND_LUPDATE="$<TARGET_FILE:Qt6::lupdate>"
+    DAYHAND_SOURCES="${PROJECT_SOURCE_DIR}/src"
+    DAYHAND_TS_DIR="${PROJECT_SOURCE_DIR}/translations"
+)
+
 if(DAYHAND_BUILD_APP)
     add_subdirectory(app)
 endif()

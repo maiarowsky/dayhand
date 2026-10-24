@@ -2,6 +2,7 @@
 
 #include "CivilDate.h"
 
+#include <QCoreApplication>
 #include <QStringList>
 
 #include <algorithm>
@@ -12,8 +13,26 @@ namespace dayhand::Formatting {
 
 namespace {
 
-const char *const dayNames[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-const char *const monthNames[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+/// The context of this file's texts in the translations.
+struct Texts {
+    Q_DECLARE_TR_FUNCTIONS(Formatting)
+};
+
+// The short names on Today and in quick add's preview; translators may reorder the date with "%1 %2 %3".
+const char *const dayNames[] = {
+    QT_TRANSLATE_NOOP("Formatting", "Mon"), QT_TRANSLATE_NOOP("Formatting", "Tue"),
+    QT_TRANSLATE_NOOP("Formatting", "Wed"), QT_TRANSLATE_NOOP("Formatting", "Thu"),
+    QT_TRANSLATE_NOOP("Formatting", "Fri"), QT_TRANSLATE_NOOP("Formatting", "Sat"),
+    QT_TRANSLATE_NOOP("Formatting", "Sun"),
+};
+const char *const monthNames[] = {
+    QT_TRANSLATE_NOOP("Formatting", "Jan"), QT_TRANSLATE_NOOP("Formatting", "Feb"),
+    QT_TRANSLATE_NOOP("Formatting", "Mar"), QT_TRANSLATE_NOOP("Formatting", "Apr"),
+    QT_TRANSLATE_NOOP("Formatting", "May"), QT_TRANSLATE_NOOP("Formatting", "Jun"),
+    QT_TRANSLATE_NOOP("Formatting", "Jul"), QT_TRANSLATE_NOOP("Formatting", "Aug"),
+    QT_TRANSLATE_NOOP("Formatting", "Sep"), QT_TRANSLATE_NOOP("Formatting", "Oct"),
+    QT_TRANSLATE_NOOP("Formatting", "Nov"), QT_TRANSLATE_NOOP("Formatting", "Dec"),
+};
 
 } // namespace
 
@@ -25,19 +44,29 @@ QString day(const QString &date, const QString &today)
         return date;
     switch (now->daysUntil(*civil)) {
     case 0:
-        return u"Today"_s;
+        return Texts::tr("Today");
     case 1:
-        return u"Tomorrow"_s;
+        return Texts::tr("Tomorrow");
     case -1:
-        return u"Yesterday"_s;
+        return Texts::tr("Yesterday");
     default:
         break;
     }
-    QString text = u"%1 %2 %3"_s.arg(QLatin1StringView(dayNames[civil->weekday() - 1])).arg(civil->day)
-                       .arg(QLatin1StringView(monthNames[civil->month - 1]));
+    QString text = dayName(date);
     if (civil->year != now->year)
-        text += u' ' + QString::number(civil->year);
+        text = Texts::tr("%1 %2", "a date and its year").arg(text).arg(civil->year);
     return text;
+}
+
+QString dayName(const QString &date)
+{
+    const auto civil = CivilDate::parse(date);
+    if (!civil)
+        return date;
+    return Texts::tr("%1 %2 %3", "weekday, day of the month, month: Sat 24 Oct")
+        .arg(Texts::tr(dayNames[civil->weekday() - 1]))
+        .arg(civil->day)
+        .arg(Texts::tr(monthNames[civil->month - 1]));
 }
 
 std::optional<QString> due(const TaskItem &task, const QString &today)
@@ -54,7 +83,8 @@ QString when(const When &when, const QString &today)
     if (when.time)
         text += u", "_s + *when.time;
     if (when.shiftedFrom)
-        text += u" (%1 does not exist that day)"_s.arg(*when.shiftedFrom);
+        text += u' ' + Texts::tr("(%1 does not exist that day)", "a clock time skipped by a daylight saving change")
+                           .arg(*when.shiftedFrom);
     return text;
 }
 
@@ -80,21 +110,23 @@ QString detailLine(const TaskItem &task, const QString &today, bool overdue)
 
 std::optional<QString> status(const SyncStatus &status, qint64 pending, bool useOffline)
 {
-    const QString waiting = pending == 1 ? u"1 change waits"_s : u"%1 changes wait"_s.arg(pending);
+    const int count = int(pending);
     switch (status.kind) {
     case SyncStatus::Kind::NotConnected:
-        return useOffline ? u"Not connected to a server; tasks stay on this computer."_s : u"No server connected."_s;
+        return useOffline ? Texts::tr("Not connected to a server; tasks stay on this computer.")
+                          : Texts::tr("No server connected.");
     case SyncStatus::Kind::Connecting:
-        return u"Connecting…"_s;
+        return Texts::tr("Connecting…");
     case SyncStatus::Kind::Synced:
         if (pending > 0)
-            return pending == 1 ? u"Sending 1 change…"_s : u"Sending %1 changes…"_s.arg(pending);
+            return Texts::tr("Sending %n change(s)…", nullptr, count);
         return std::nullopt;
     case SyncStatus::Kind::SignedOut:
-        return u"The server signed this computer out. Connect again with a new code; your tasks stay here."_s;
+        return Texts::tr("The server signed this computer out. Connect again with a new code; your tasks stay here.");
     case SyncStatus::Kind::Offline: {
-        const QString base = pending > 0 ? u"Offline: %1 for the server."_s.arg(waiting) : u"Cannot reach the server."_s;
-        return status.reason.startsWith(u"HTTP 5") ? base + u" The server has a problem."_s : base;
+        const QString base = pending > 0 ? Texts::tr("Offline: %n change(s) wait for the server.", nullptr, count)
+                                         : Texts::tr("Cannot reach the server.");
+        return status.reason.startsWith(u"HTTP 5") ? base + u' ' + Texts::tr("The server has a problem.") : base;
     }
     }
     return std::nullopt;

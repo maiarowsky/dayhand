@@ -4,6 +4,7 @@
 #include "Reminders.h"
 #include "TaskRules.h"
 #include "TestSupport.h"
+#include "Translations.h"
 #include "TodaySections.h"
 
 #include <QTest>
@@ -46,6 +47,9 @@ class RulesTest : public QObject {
     Q_OBJECT
 
 private slots:
+    // English, whose translation file holds the plural forms of the texts.
+    void initTestCase() { QVERIFY(Translations::install(u"en"_s)); }
+
     void sectionsInOrderWithBackendSorting()
     {
         const QList<TaskItem> tasks{

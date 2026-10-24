@@ -2,6 +2,7 @@
 
 #include "HelmDates.h"
 
+#include <QCoreApplication>
 #include <QHash>
 
 #include <algorithm>
@@ -11,6 +12,11 @@ using namespace Qt::StringLiterals;
 namespace dayhand::ReminderPlanner {
 
 namespace {
+
+/// The context of this file's texts in the translations.
+struct Texts {
+    Q_DECLARE_TR_FUNCTIONS(ReminderPlanner)
+};
 
 bool earlier(const PlannedNotification &a, const PlannedNotification &b)
 {
@@ -83,27 +89,29 @@ QString reminderBody(const Reminder &reminder, const QString &timezone)
     const QString ringDay = HelmDates::localDate(reminder.at, timezone);
     QString day = reminder.dueDate;
     if (reminder.dueDate == ringDay)
-        day = u"Today"_s;
+        day = Texts::tr("Today");
     else if (HelmDates::addDays(ringDay, 1) == reminder.dueDate)
-        day = u"Tomorrow"_s;
+        day = Texts::tr("Tomorrow");
     if (!reminder.dueTime)
         return day;
     if (reminder.minutesBefore == 0)
-        return u"Now, %1"_s.arg(*reminder.dueTime);
-    return u"%1 at %2"_s.arg(day, *reminder.dueTime);
+        return Texts::tr("Now, %1", "a reminder at the task's time").arg(*reminder.dueTime);
+    return Texts::tr("%1 at %2", "a reminder before the task: Today at 09:00").arg(day, *reminder.dueTime);
 }
 
 QString summaryTitle(const MorningSummary &summary)
 {
-    const QString today = summary.today == 1 ? u"1 task today"_s : u"%1 tasks today"_s.arg(summary.today);
-    return summary.overdue == 0 ? today : u"%1, %2 overdue"_s.arg(today).arg(summary.overdue);
+    const QString today = Texts::tr("%n task(s) today", "morning summary", int(summary.today));
+    if (summary.overdue == 0)
+        return today;
+    return Texts::tr("%1, %n overdue", "morning summary: 1 task today, 2 overdue", int(summary.overdue)).arg(today);
 }
 
 QString summaryBody(const MorningSummary &summary)
 {
     if (!summary.startWith)
-        return u"Nothing planned. Add a task with the quick add shortcut."_s;
-    return u"Start with: %1"_s.arg(*summary.startWith);
+        return Texts::tr("Nothing planned. Add a task with the quick add shortcut.");
+    return Texts::tr("Start with: %1", "morning summary: the first task").arg(*summary.startWith);
 }
 
 } // namespace dayhand::ReminderPlanner

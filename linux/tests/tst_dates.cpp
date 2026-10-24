@@ -4,6 +4,7 @@
 #include "HelmDates.h"
 #include "QuickAdd.h"
 #include "TestSupport.h"
+#include "Translations.h"
 #include "WhenParser.h"
 
 #include <QFile>
@@ -47,6 +48,9 @@ class DatesTest : public QObject {
     Q_OBJECT
 
 private slots:
+    // English, whose translation file holds the plural forms of the texts.
+    void initTestCase() { QVERIFY(Translations::install(u"en"_s)); }
+
     void sharedPhrases_data()
     {
         QTest::addColumn<QString>("text");
