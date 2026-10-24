@@ -2,7 +2,7 @@
 // credentials file and the color decision. No backend.
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, normalize } from "node:path";
 import { afterAll, describe, expect, test } from "vitest";
 import { expandAlias, splitWords } from "../src/config/aliases.js";
 import { emptyConfig, loadConfig, saveProfileUrl } from "../src/config/file.js";
@@ -84,7 +84,7 @@ describe("folders follow each system's convention", () => {
     const url = "https://legacy.convex.site";
     writeFileSync(join(legacy, "config.toml"), `default_profile = "personal"\n[profiles.personal]\nurl = "${url}"\n[aliases]\nhome = "list -l home"\n`);
     const paths = resolvePaths(env, platform, home);
-    expect(paths.configDir).toBe(legacy);
+    expect(normalize(paths.configDir)).toBe(normalize(legacy));
     const config = loadConfig(paths.configFile, commandNames());
     const store = new FileStore(paths.configDir);
     await store.set(url, "dayhand_legacy");

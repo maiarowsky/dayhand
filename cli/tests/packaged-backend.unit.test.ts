@@ -1,7 +1,7 @@
 // The copy of the packaged backend that dayhand server runs the setup from. No backend.
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { afterAll, describe, expect, test } from "vitest";
 import { CliError } from "../src/core/exit.js";
 import { backendCopyDir, writableBackend } from "../src/registry/packaged-backend.js";
@@ -86,7 +86,7 @@ describe("writableBackend", () => {
     mkdirSync(join(source, ".local-backend"), { recursive: true });
     const data = folder();
     const copy = writableBackend(source, "../../escape", data, true);
-    expect(copy.dir.startsWith(join(data, "backend") + "/")).toBe(true);
+    expect(copy.dir.startsWith(join(data, "backend") + sep)).toBe(true);
     expect(readdirSync(copy.dir).sort()).toEqual(["convex", "package-lock.json", "package.json", "scripts"]);
   });
 
