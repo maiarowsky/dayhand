@@ -66,6 +66,7 @@ class AppModel final : public QObject {
     Q_PROPERTY(QColor overdueColor READ overdueColor NOTIFY themeChanged)
     Q_PROPERTY(QString language READ language NOTIFY languageChanged)
     Q_PROPERTY(QVariantList languages READ languages NOTIFY languageChanged)
+    Q_PROPERTY(QVariantMap selectedTask READ selectedTask NOTIFY selectedTaskChanged)
 
 public:
     explicit AppModel(AppEnvironment environment, QObject *parent = nullptr);
@@ -92,6 +93,8 @@ public:
     QString language() const;
     /// The language menu: `code` (empty for the system's) and `name` in that language.
     QVariantList languages() const;
+    /// The selected local row, including tasks no longer on Today; empty after closing or a server purge.
+    QVariantMap selectedTask() const;
 
     const QList<TaskItem> &tasks() const { return allTasks; }
     const TodaySections &todaySections() const { return sections; }
@@ -111,6 +114,23 @@ public:
     Q_INVOKABLE void moveToTomorrow(const QString &id);
     Q_INVOKABLE void archive(const QString &id);
     Q_INVOKABLE void moveToTrash(const QString &id);
+    Q_INVOKABLE void openDetails(const QString &id);
+    Q_INVOKABLE void closeDetails();
+    Q_INVOKABLE bool rename(const QString &id, const QString &title);
+    Q_INVOKABLE void setStatus(const QString &id, const QString &status);
+    Q_INVOKABLE void setResumeNote(const QString &id, const QString &note);
+    Q_INVOKABLE bool saveNote(const QString &id, const QString &note);
+    Q_INVOKABLE bool setLabels(const QString &id, const QString &commaSeparated);
+    Q_INVOKABLE bool addChecklistItem(const QString &id, const QString &title);
+    Q_INVOKABLE void renameChecklistItem(const QString &id, const QString &itemId, const QString &title);
+    Q_INVOKABLE void toggleChecklistItem(const QString &id, const QString &itemId);
+    Q_INVOKABLE void removeChecklistItem(const QString &id, const QString &itemId);
+    /// Date phrases use the same grammar and server timezone as quick add; invalid input changes nothing.
+    Q_INVOKABLE QVariantMap previewDue(const QString &phrase) const;
+    Q_INVOKABLE bool setDuePhrase(const QString &id, const QString &phrase);
+    Q_INVOKABLE void clearDue(const QString &id);
+    Q_INVOKABLE void removeDueTime(const QString &id);
+    Q_INVOKABLE void restore(const QString &id);
     /// Pairs with a server; the answer comes as [connectFinished] (an empty message on success).
     Q_INVOKABLE void connectServer(const QString &address, const QString &code);
     Q_INVOKABLE void useOffline();
@@ -132,6 +152,7 @@ signals:
     void alertChanged();
     void themeChanged();
     void languageChanged();
+    void selectedTaskChanged();
     void connectFinished(const QString &error);
     /// Connect should open, filled in from a pairing link (either may be empty).
     void connectRequested(const QString &serverUrl, const QString &code);
@@ -141,7 +162,7 @@ signals:
 private:
     QVariantList rows(const QList<TaskItem> &tasks, bool overdue) const;
     QVariantMap row(const TaskItem &task, bool overdue) const;
-    void run(const std::function<void(TaskRepository &)> &action);
+    bool run(const std::function<void(TaskRepository &)> &action);
     void startSession(const DeviceCredential &credential);
     void stopSession();
     void signedOut();
@@ -161,6 +182,7 @@ private:
     qint64 pending = 0;
     bool connectInFlight = false;
     QString alertText;
+    QString selectedId;
     QColor overdueTint{0xd0, 0x3a, 0x3a};
     QTimer clockTimer;
 };

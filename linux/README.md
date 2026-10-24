@@ -7,6 +7,13 @@ is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is i
 - **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first by time) and done
   today (folded). One click on the circle ticks a task off; the context menu (right click or **⋯**) works on it now,
   moves it to today or tomorrow, archives it or moves it to the trash.
+- **Task details**: click a row to open a right-hand panel in a wide window, or a page with **Back** in a narrow one.
+  Edit the title, status, **Working on it now**, where you stopped, comma-separated labels and checklist items.
+  A date phrase has an **I understand** preview; Return or **Set date** applies it, with **Today**, **No day** and
+  **Remove time** shortcuts.
+  **Save note** saves the note explicitly; repeat, reminders and links are read-only previews.
+  **Archive** and **Move to Trash** keep the selected details open; a trashed task is read-only until **Restore**.
+  The trash list and reminder/repeat/link editors are not part of this version.
 - **Quick add** at the top of Today and as a small window of its own for a keyboard binding
   (`dayhand-qt --quick-add`). A date phrase at the end of the line sets the day and time, with the grammar of
   `dayhand` (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st". The line below the field
@@ -65,7 +72,7 @@ tests:
 | `tst_dates`, `tst_recurrence` | the date phrases and repeat rules on the cases shared with the CLI and macOS (`tests/cases/*.json`) |
 | `tst_rules`, `tst_merge`, `tst_pairing`, `tst_sync` | Today's sections, reminders, the merge, pairing and sync against a fake server |
 | `tst_translations` | runs lupdate on the sources and fails when a text is missing, unfinished or stale in any language |
-| `tst_app` | the model, the Today window and the quick add window on the offscreen platform: typing, ticking off, the language switch |
+| `tst_app` | the model, the Today window and the quick add window on the offscreen platform: typing, ticking off, responsive task details and edits, the language switch |
 | `tst_desktop` | notifications and the tray against fake desktop services, as a client of a headless Weston |
 | `smoke_wayland` | the real `dayhand-qt` on Weston: starts in the background, a second copy hands `--quick-add` and a pairing link over |
 

@@ -5,6 +5,9 @@
 #include "SnapshotMerger.h"
 #include "TaskRules.h"
 
+#include <QCoreApplication>
+#include <QJsonArray>
+
 using namespace Qt::StringLiterals;
 
 namespace dayhand {
@@ -102,6 +105,50 @@ void TaskRepository::rename(const QString &localId, const QString &title)
     if (!clean)
         throw InvalidChange(titleError());
     edit(localId, Mutations::update, {{u"title"_s, *clean}}, [&clean](TaskItem &task, qint64) { task.title = *clean; });
+}
+
+void TaskRepository::setStatus(const QString &localId, TaskStatus status)
+{
+    if (status == TaskStatus::Done) {
+        complete(localId);
+        return;
+    }
+    edit(localId, Mutations::setStatus, {{u"status"_s, statusWire(status)}}, [status](TaskItem &task, qint64) {
+        task.status = status;
+        task.completedAt.reset();
+        if (status != TaskStatus::Doing)
+            task.isNow = false;
+    });
+}
+
+void TaskRepository::setNote(const QString &localId, const QString &note)
+{
+    if (note.size() > TaskRules::maxNote)
+        throw InvalidChange(QCoreApplication::translate("TaskRepository", "The note is too long."));
+    const std::optional<QString> clean = note.trimmed().isEmpty() ? std::nullopt : std::optional<QString>(note);
+    edit(localId, Mutations::update, {{u"note"_s, json::orNull(clean)}},
+         [&clean](TaskItem &task, qint64) { task.note = clean; });
+}
+
+void TaskRepository::setLabels(const QString &localId, const QStringList &labels)
+{
+    const auto clean = TaskRules::labels(labels);
+    if (!clean)
+        throw InvalidChange(QCoreApplication::translate("TaskRepository", "Use up to 20 labels, at most 50 characters each."));
+    edit(localId, Mutations::update, {{u"labels"_s, QJsonArray::fromStringList(*clean)}},
+         [&clean](TaskItem &task, qint64) { task.labels = *clean; });
+}
+
+void TaskRepository::setChecklist(const QString &localId, const QList<ChecklistItem> &items)
+{
+    const auto clean = TaskRules::checklist(items);
+    if (!clean)
+        throw InvalidChange(QCoreApplication::translate("TaskRepository", "Use up to 100 checklist items, at most 500 characters each."));
+    QJsonArray wire;
+    for (const ChecklistItem &item : *clean)
+        wire.append(item.wire());
+    edit(localId, Mutations::update, {{u"checklist"_s, wire}},
+         [&clean](TaskItem &task, qint64) { task.checklist = *clean; });
 }
 
 void TaskRepository::setDue(const QString &localId, const std::optional<QString> &date, const std::optional<QString> &time)

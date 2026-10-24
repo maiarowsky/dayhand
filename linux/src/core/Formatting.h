@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Reminders.h"
 #include "SyncEngine.h"
 #include "TaskItem.h"
 #include "WhenParser.h"
@@ -20,6 +21,9 @@ QString dayName(const QString &date);
 /// "Today, 14:00", "Fri 23 Oct", or nothing for a task without a day.
 std::optional<QString> due(const TaskItem &task, const QString &today);
 QString when(const When &when, const QString &today);
+/// Read-only repeat and reminder previews for the details panel.
+QString repeat(const TaskItem &task, const QString &today);
+QString reminders(const TaskItem &task, const ReminderSettings &settings);
 /// The small line under a task on Today: its time or day, repeat, checklist and labels.
 QString detailLine(const TaskItem &task, const QString &today, bool overdue);
 /// The connection in words for the status line, or nothing when there is nothing to say.

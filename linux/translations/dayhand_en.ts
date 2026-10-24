@@ -21,6 +21,48 @@
 <context>
     <name>Formatting</name>
     <message numerus="yes">
+        <source>Every %n day(s)</source>
+        <translation>
+            <numerusform>Every %n day</numerusform>
+            <numerusform>Every %n days</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n week(s)</source>
+        <translation>
+            <numerusform>Every %n week</numerusform>
+            <numerusform>Every %n weeks</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n month(s)</source>
+        <translation>
+            <numerusform>Every %n month</numerusform>
+            <numerusform>Every %n months</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n year(s)</source>
+        <translation>
+            <numerusform>Every %n year</numerusform>
+            <numerusform>Every %n years</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) before</source>
+        <translation>
+            <numerusform>%n minute before</numerusform>
+            <numerusform>%n minutes before</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1, %n day(s) before</source>
+        <translation>
+            <numerusform>%1, %n day before</numerusform>
+            <numerusform>%1, %n days before</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
         <source>Sending %n change(s)…</source>
         <translation>
             <numerusform>Sending %n change…</numerusform>

@@ -58,6 +58,11 @@ public:
     /// Back from done to the to-do list.
     void reopen(const QString &localId);
     void rename(const QString &localId, const QString &title);
+    /// Done uses complete(), including the server's repeat handling; doing does not make a task "now".
+    void setStatus(const QString &localId, TaskStatus status);
+    void setNote(const QString &localId, const QString &note);
+    void setLabels(const QString &localId, const QStringList &labels);
+    void setChecklist(const QString &localId, const QList<ChecklistItem> &items);
     /// Sets the day (YYYY-MM-DD) and the optional time (HH:MM); no day clears both.
     void setDue(const QString &localId, const std::optional<QString> &date, const std::optional<QString> &time);
     /// Moves a task to [date] (YYYY-MM-DD), keeping its time.

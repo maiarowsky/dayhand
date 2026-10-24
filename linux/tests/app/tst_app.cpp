@@ -12,6 +12,7 @@
 #include <QTemporaryDir>
 #include <QTest>
 
+#include <algorithm>
 #include <memory>
 
 using namespace Qt::StringLiterals;
@@ -93,6 +94,24 @@ void click(QQuickWindow *window, QQuickItem *target)
     QTest::mouseClick(window, Qt::LeftButton, {}, centre.toPoint());
 }
 
+/// Scrolls a detail control into the viewport before real mouse/keyboard interaction.
+void reveal(QQuickWindow *window, QQuickItem *target)
+{
+    QQuickItem *scroll = item(window, u"detailsScroll"_s);
+    if (!scroll)
+        return;
+    auto *flick = scroll->property("contentItem").value<QQuickItem *>();
+    if (!flick)
+        return;
+    auto *content = flick->property("contentItem").value<QQuickItem *>();
+    if (!content)
+        return;
+    const qreal y = target->mapToItem(content, QPointF()).y();
+    const qreal maximum = std::max(qreal(0), flick->property("contentHeight").toReal() - flick->height());
+    flick->setProperty("contentY", std::clamp(y - flick->height() / 2, qreal(0), maximum));
+    QCoreApplication::processEvents();
+}
+
 /// Types [text] into the focused item of [window] (QTest::keyClicks takes widgets only).
 void typeText(QWindow *window, const QString &text)
 {
@@ -132,6 +151,7 @@ private slots:
     void paletteFileSetsColours();
     void secondCopyHandsItsRequestOver();
     void windowShowsTodayAndAddsTasks();
+    void detailsEditTheLocalRowAndKeepSelection();
     void quickAddWindowAddsAndCloses();
     void connectOpensWhenNotConnected();
     void languageSwitchesAtOnce();
@@ -371,6 +391,189 @@ void TestApp::windowShowsTodayAndAddsTasks()
     click(window, item(window, u"doneHeader"_s));
     QTRY_COMPARE(item(window, u"doneHeader"_s)->property("text").toString(), u"▾ Done (2)"_s);
     snapshot(window, u"today-done-open.png"_s);
+}
+
+void TestApp::detailsEditTheLocalRowAndKeepSelection()
+{
+    QTemporaryDir dir;
+    auto now = std::make_shared<qint64>(utc(u"2026-10-24T09:10"_s));
+    Desktop desktop(environment(now, dir.path()));
+    AppModel &model = desktop.appModel();
+    model.useOffline();
+    model.quickAdd(u"Plan synthetic release 2pm"_s);
+    const QString id = idOf(model, u"Plan synthetic release"_s);
+    // Synthetic fields that arrive from another client; L1 previews them without offering editors.
+    TaskItem seed = *model.database().task(id);
+    RepeatRule repeat;
+    repeat.every = RepeatEvery::Week;
+    seed.repeat = repeat;
+    seed.reminders = QList<TaskReminder>{TaskReminder::before(15), TaskReminder::at(u"18:00"_s, 1)};
+    seed.links = {{u"https://example.invalid/release"_s, u"Synthetic release link"_s}};
+    model.database().save(seed);
+    model.reload();
+    QVERIFY(desktop.start({}));
+    auto *window = qobject_cast<QQuickWindow *>(desktop.qmlEngine().rootObjects().value(0));
+    QVERIFY(window);
+    window->resize(980, 900);
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+    window->requestActivate();
+    QVERIFY(QTest::qWaitForWindowActive(window));
+    QVERIFY(item(window, u"taskDetailsTarget"_s));
+    click(window, item(window, u"taskDetailsTarget"_s));
+    QTRY_COMPARE(model.selectedTask().value(u"id"_s).toString(), id);
+    QVERIFY(item(window, u"todayList"_s));
+    QVERIFY(item(window, u"detailsPanel"_s));
+    QVERIFY(item(window, u"detailsPanel"_s)->x() > 0);
+    QCOMPARE(item(window, u"detailsBack"_s)->property("text").toString(), u"Close"_s);
+    QVERIFY(item(window, u"detailsRepeat"_s)->property("text").toString().contains(u"Every 1 week"_s));
+    QVERIFY(item(window, u"detailsReminders"_s)->property("text").toString().contains(u"15 minutes before"_s));
+    QVERIFY(item(window, u"detailsLink"_s)->property("text").toString().contains(u"https://example.invalid/release"_s));
+
+    const auto replace = [&](const QString &name, const QString &text) {
+        QQuickItem *field = item(window, name);
+        QVERIFY(field);
+        reveal(window, field);
+        field->forceActiveFocus();
+        QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+        typeText(window, text);
+        QTest::keyClick(window, Qt::Key_Return);
+    };
+    replace(u"detailsTitle"_s, u"Ship synthetic release"_s);
+    QTRY_COMPARE(model.database().task(id)->title, u"Ship synthetic release"_s);
+    replace(u"detailsLabels"_s, u" work, linux, work, "_s);
+    QTRY_COMPARE(model.database().task(id)->labels, (QStringList{u"work"_s, u"linux"_s}));
+    replace(u"detailsChecklistAdd"_s, u"Build package"_s);
+    QTRY_COMPARE(model.database().task(id)->checklist.size(), 1);
+    const QString checklistId = model.database().task(id)->checklist.first().id;
+    QVERIFY(!checklistId.isEmpty());
+    replace(u"detailsChecklistTitle"_s, u"Test package"_s);
+    QTRY_COMPARE(model.database().task(id)->checklist.first().title, u"Test package"_s);
+    auto *check = item(window, u"detailsChecklistDone"_s);
+    QVERIFY(check);
+    reveal(window, check);
+    click(window, check);
+    QTRY_VERIFY(model.database().task(id)->checklist.first().done);
+    QCOMPARE(model.database().task(id)->checklist.first().id, checklistId);
+    replace(u"detailsChecklistAdd"_s, u"Disposable item"_s);
+    QTRY_COMPARE(model.database().task(id)->checklist.size(), 2);
+    auto *remove = items(window, u"detailsChecklistRemove"_s).last();
+    reveal(window, remove);
+    click(window, remove);
+    QTRY_COMPARE(model.database().task(id)->checklist.size(), 1);
+    QCOMPARE(model.database().task(id)->checklist.first().id, checklistId);
+
+    // Invalid date phrases do not queue changes; a valid phrase is previewed and applied on Return.
+    const int pending = model.pendingCount();
+    replace(u"detailsDuePhrase"_s, u"not a date"_s);
+    QCOMPARE(model.pendingCount(), pending);
+    auto *due = item(window, u"detailsDuePhrase"_s);
+    due->forceActiveFocus();
+    QTest::keyClick(window, Qt::Key_A, Qt::ControlModifier);
+    typeText(window, u"tomorrow 9am"_s);
+    QVERIFY(item(window, u"detailsDuePreview"_s)->property("text").toString().contains(u"09:00"_s));
+    QTest::keyClick(window, Qt::Key_Return);
+    QTRY_COMPARE(model.database().task(id)->dueDate, std::optional<QString>(u"2026-10-25"_s));
+    QCOMPARE(model.database().task(id)->dueTime, std::optional<QString>(u"09:00"_s));
+    // The row has left Today, but the selected details remain.
+    QVERIFY(model.today().isEmpty());
+    QCOMPARE(model.selectedTask().value(u"id"_s).toString(), id);
+    for (const QString &name : {u"detailsToday"_s, u"detailsRemoveTime"_s, u"detailsNoDay"_s}) {
+        auto *button = item(window, name);
+        reveal(window, button);
+        click(window, button);
+        if (name == u"detailsToday") {
+            QCOMPARE(model.database().task(id)->dueDate, std::optional<QString>(u"2026-10-24"_s));
+            QCOMPARE(model.database().task(id)->dueTime, std::optional<QString>(u"09:00"_s));
+        } else if (name == u"detailsRemoveTime") {
+            QVERIFY(!model.database().task(id)->dueTime);
+            QVERIFY(model.database().task(id)->dueDate);
+        } else {
+            QVERIFY(!model.database().task(id)->dueDate);
+            QVERIFY(!model.database().task(id)->dueTime);
+        }
+    }
+    model.moveToToday(id);
+    replace(u"detailsResume"_s, u"Next: verify archive"_s);
+    QCOMPARE(model.database().task(id)->resumeNote, std::optional<QString>(u"Next: verify archive"_s));
+    auto *nowBox = item(window, u"detailsNow"_s);
+    reveal(window, nowBox);
+    click(window, nowBox);
+    QTRY_VERIFY(model.database().task(id)->isNow);
+    QCOMPARE(model.database().task(id)->status, TaskStatus::Doing);
+    auto *status = item(window, u"detailsStatus"_s);
+    reveal(window, status);
+    status->forceActiveFocus();
+    QTest::keyClick(window, Qt::Key_End);
+    QTRY_COMPARE(model.database().task(id)->status, TaskStatus::Done);
+    QVERIFY(!model.database().task(id)->isNow);
+    QTest::keyClick(window, Qt::Key_Home);
+    QTRY_COMPARE(model.database().task(id)->status, TaskStatus::Todo);
+    QVERIFY(!model.database().task(id)->completedAt);
+
+    // Unrelated model refreshes must not overwrite a note waiting for its explicit Save button.
+    auto *note = item(window, u"detailsNote"_s);
+    reveal(window, note);
+    note->forceActiveFocus();
+    typeText(window, u"Synthetic release notes"_s);
+    QVERIFY(!model.database().task(id)->note);
+    model.setLabels(id, u"work, linux, review"_s);
+    QCOMPARE(note->property("text").toString(), u"Synthetic release notes"_s);
+    auto *save = item(window, u"detailsSaveNote"_s);
+    reveal(window, save);
+    click(window, save);
+    QTRY_COMPARE(model.database().task(id)->note, std::optional<QString>(u"Synthetic release notes"_s));
+    QVERIFY(!save->isEnabled());
+    reveal(window, item(window, u"detailsTitle"_s));
+    snapshot(window, u"details-wide.png"_s);
+
+    // Narrow windows have a separate page with Back; resizing does not change selection.
+    window->resize(420, 760);
+    QTRY_VERIFY(!item(window, u"todayList"_s));
+    QCOMPARE(item(window, u"detailsBack"_s)->property("text").toString(), u"Back"_s);
+    snapshot(window, u"details-narrow.png"_s);
+    click(window, item(window, u"detailsBack"_s));
+    QTRY_VERIFY(model.selectedTask().isEmpty());
+    QVERIFY(item(window, u"todayList"_s));
+    click(window, item(window, u"taskDetailsTarget"_s));
+    QTRY_COMPARE(model.selectedTask().value(u"id"_s).toString(), id);
+
+    auto *archive = item(window, u"detailsArchive"_s);
+    reveal(window, archive);
+    click(window, archive);
+    QTRY_VERIFY(model.database().task(id)->archivedAt);
+    QVERIFY(item(window, u"detailsPanel"_s));
+    auto *restore = item(window, u"detailsRestore"_s);
+    reveal(window, restore);
+    click(window, restore);
+    QTRY_VERIFY(!model.database().task(id)->archivedAt);
+    auto *trash = item(window, u"detailsTrash"_s);
+    reveal(window, trash);
+    click(window, trash);
+    QTRY_VERIFY(model.database().task(id)->inTrash());
+    QVERIFY(item(window, u"detailsTitle"_s)->property("readOnly").toBool());
+    QVERIFY(item(window, u"detailsNote"_s)->property("readOnly").toBool());
+    QVERIFY(item(window, u"detailsLabels"_s)->property("readOnly").toBool());
+    QVERIFY(item(window, u"detailsChecklistAdd"_s)->property("readOnly").toBool());
+    QVERIFY(!item(window, u"detailsStatus"_s)->isEnabled());
+    QVERIFY(!item(window, u"detailsNow"_s)->isEnabled());
+    QVERIFY(!item(window, u"detailsSaveNote"_s)->isEnabled());
+    QVERIFY(!item(window, u"detailsChecklistDone"_s)->isEnabled());
+    const int beforeRestore = model.pendingCount();
+    model.rename(id, u"Ignored in trash"_s);
+    QCOMPARE(model.pendingCount(), beforeRestore);
+    QCOMPARE(model.database().task(id)->title, u"Ship synthetic release"_s);
+    reveal(window, item(window, u"detailsTitle"_s));
+    snapshot(window, u"details-trash.png"_s);
+    restore = item(window, u"detailsRestore"_s);
+    reveal(window, restore);
+    click(window, restore);
+    QTRY_VERIFY(!model.database().task(id)->inTrash());
+    QVERIFY(!item(window, u"detailsTitle"_s)->property("readOnly").toBool());
+    QCOMPARE(model.pendingCount(), beforeRestore + 1);
+    model.setLanguage(u"pl"_s);
+    QTRY_COMPARE(item(window, u"detailsBack"_s)->property("text").toString(), u"Wstecz"_s);
+    QVERIFY(item(window, u"detailsRepeat"_s)->property("text").toString().contains(u"Co 1 tydzień"_s));
+    model.setLanguage(u"en"_s);
 }
 
 void TestApp::quickAddWindowAddsAndCloses()
