@@ -4,7 +4,7 @@ The phone app never holds a signing key. It is paired once with a one-time code 
 asks the backend for short-lived app tokens.
 
 ```
-helm pair (API key) ──> code XXXX-XXXX-XXXX, valid 10 min, single use
+dayhand pair (API key) ──> code XXXX-XXXX-XXXX, valid 10 min, single use
 phone: POST /auth/pair  {code}         ──> deviceToken (long-lived, revocable)
 phone: POST /auth/token {deviceToken}  ──> app JWT (ES256, 1 hour)
 phone: Convex client with that JWT     ──> app.* queries and mutations as the owner
@@ -16,10 +16,10 @@ application/json`); token responses carry `Cache-Control: no-store`.
 
 ## Pairing link
 
-`helm pair` prints the code, a deep link and the same link as a QR code:
+`dayhand pair` prints the code, a deep link and the same link as a QR code:
 
 ```
-helm://pair?url=<URL-encoded HTTP actions URL>&code=<XXXX-XXXX-XXXX>
+dayhand://pair?url=<URL-encoded HTTP actions URL>&code=<XXXX-XXXX-XXXX>
 ```
 
 The app reads `url` (the HTTP actions URL, where `/auth/pair` and `/auth/token` live) and
@@ -34,7 +34,7 @@ Request:
 { "code": "E6M8-FE02-XSNT", "deviceName": "Pixel 9" }
 ```
 
-`deviceName` is optional (1 to 100 characters, default `"Phone"`); it is shown by `helm devices`.
+`deviceName` is optional (1 to 100 characters, default `"Phone"`); it is shown by `dayhand devices`.
 
 | Status | Body | Meaning |
 |---|---|---|
@@ -59,7 +59,7 @@ Request:
 | 503 | `{ "error": "not_configured", … }` | The deployment cannot sign tokens (configuration problem on the server). Retry later; do not drop the device token. |
 
 The JWT has header `{ "alg": "ES256", "typ": "JWT", "kid": … }` and claims `iss`
-(`HELM_JWT_ISSUER`), `sub` (the owner, e.g. `owner`), `aud: "helm"`, `iat`, `exp` (`iat` + 3600).
+(`DAYHAND_JWT_ISSUER`), `sub` (the owner, e.g. `owner`), `aud: "helm"`, `iat`, `exp` (`iat` + 3600).
 
 ## Using the token in the Android app
 
@@ -76,18 +76,18 @@ The JWT has header `{ "alg": "ES256", "typ": "JWT", "kid": … }` and claims `is
 - Revoking a device stops new tokens at once; a JWT it already holds stays valid until its
   `exp` (at most one hour).
 
-The app does all of the above from version 0.3.0: the Connect screen, the `helm://pair` link,
+The app does all of the above from version 0.3.0: the Connect screen, the `dayhand://pair` link,
 the encrypted device token and the refresh are described in
 [android/README.md](../android/README.md#signing-in). A device cannot revoke itself (the
 `/devices/*` routes need an API key), so the app's Disconnect only forgets the sign-in on the
-phone and names `helm revoke <deviceId>` for the server side.
+phone and names `dayhand revoke <deviceId>` for the server side.
 
 ## Managing devices (CLI)
 
 ```sh
-helm pair            # code + link + QR; --no-qr for text only, --json for scripts
-helm devices         # name, paired when and by which key, last used, revoked
-helm revoke <deviceId>
+dayhand pair         # code + link + QR; --no-qr for text only, --json for scripts
+dayhand devices      # name, paired when and by which key, last used, revoked
+dayhand revoke <deviceId>
 ```
 
 They call `POST /devices/pairing-code`, `GET /devices` and `POST /devices/revoke`
@@ -103,8 +103,8 @@ npx convex run devices:revoke '{"userId":"<issuer>|owner","actor":"app","deviceI
 npx convex run devices:resetPairLimit     # after someone exhausted the failed-attempt limit
 ```
 
-Only an app user can pair: the API key's user id must be `<HELM_JWT_ISSUER>|<subject>`, because
-the phone's JWT gives exactly that identity. A key of another user gets an error from `helm pair`.
+Only an app user can pair: the API key's user id must be `<DAYHAND_JWT_ISSUER>|<subject>`, because
+the phone's JWT gives exactly that identity. A key of another user gets an error from `dayhand pair`.
 
 ## Security notes
 
@@ -119,7 +119,7 @@ the phone's JWT gives exactly that identity. A key of another user gets an error
   only and compared in constant time. `/auth/token` has no attempt limit on purpose: 256-bit
   secrets cannot be guessed, and a limit would let anyone lock the real phone out.
 - Error answers never tell whether a code or token existed, was used, expired or revoked.
-- The signing key (`HELM_JWT_PRIVATE_JWK`) lives only in the deployment environment and is
+- The signing key (`DAYHAND_JWT_PRIVATE_JWK`) lives only in the deployment environment and is
   never returned. See [deploy.md](deploy.md).
 - A personal API key can pair a device, and that device keeps working after the key is
-  revoked. If a key may have leaked, revoke it and check `helm devices` as well.
+  revoked. If a key may have leaked, revoke it and check `dayhand devices` as well.

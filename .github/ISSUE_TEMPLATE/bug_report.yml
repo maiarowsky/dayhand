@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Helm (app, backend, MCP or the hlm CLI) does not work as documented
+description: Something in Dayhand (app, backend, MCP or the dayhand CLI) does not work as documented
 labels: [bug]
 body:
   - type: markdown
@@ -12,7 +12,7 @@ body:
     attributes:
       label: Area
       options:
-        - hlm CLI
+        - dayhand CLI
         - MCP endpoint
         - Backend
         - Android app
@@ -26,7 +26,7 @@ body:
       label: What happened
       description: The command or steps, what you expected and what you got instead.
       placeholder: |
-        hlm add Call the bank --due "fri 2pm"
+        dayhand add Call the bank --due "fri 2pm"
         Expected: due on Friday at 14:00. Got: exit 2 "Not a date".
     validations:
       required: true
@@ -40,7 +40,7 @@ body:
     id: versions
     attributes:
       label: Versions
-      description: "hlm version --json (CLI and server), or the app version; and the operating system."
-      placeholder: "hlm 0.3.0, server 0.3.0, macOS 26"
+      description: "dayhand version --json (CLI and server), or the app version; and the operating system."
+      placeholder: "dayhand 0.10.0, server 0.9.0, macOS 26"
     validations:
       required: true

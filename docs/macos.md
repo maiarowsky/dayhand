@@ -42,8 +42,9 @@ Estimate: 4 to 8 hours of agent work once the certificate and the notarization k
 settings, the release workflow, the cask, Sparkle's appcast), plus the maintainer's time for the Apple accounts.
 
 Before the first release also decide: the version scheme (the app reports `0.1.0` and the commit count as the
-build number, like the Android app's `versionCode`) and whether `helm://` stays registered next to
-`dayhand://` once `hlm pair` prints the new scheme.
+build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
+`dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
+older versions).
 
 ## What is left for parity with the Android app
 

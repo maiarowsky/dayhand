@@ -4,12 +4,12 @@ The hosted Claude apps (claude.ai on the web, Claude Desktop, Claude for Android
 remote MCP server as a *custom connector* and sign in to it with OAuth; a fixed API key header
 is only a beta for some organizations
 ([claude.com/docs, add-unlisted](https://claude.com/docs/connectors/custom/add-unlisted)).
-Helm therefore runs a small OAuth 2.1 authorization server next to its MCP endpoint. Personal
+Dayhand therefore runs a small OAuth 2.1 authorization server next to its MCP endpoint. Personal
 API keys keep working unchanged for the CLI and for agents that can send a header
 ([mcp.md](mcp.md#keys-and-actors)).
 
-**The owner approves every connection on the paired phone.** Helm has no web sign-in: the
-authorization page in the browser shows a code, and the owner types that code into the Helm app
+**The owner approves every connection on the paired phone.** Dayhand has no web sign-in: the
+authorization page in the browser shows a code, and the owner types that code into the Dayhand app
 (Settings → Agent connections → Approve a connection), sees who asks for what, and approves or
 refuses. The threat model is in [oauth-threat-model.md](oauth-threat-model.md).
 
@@ -42,10 +42,10 @@ All on the deployment's HTTP actions URL (`https://<name>.convex.site`, locally
 | `POST /oauth/token` | `authorization_code` and `refresh_token` grants, `application/x-www-form-urlencoded` |
 | `POST /oauth/register` | Dynamic Client Registration ([RFC 7591](https://www.rfc-editor.org/rfc/rfc7591)), JSON, public clients only |
 | `POST /oauth/revoke` | [RFC 7009](https://www.rfc-editor.org/rfc/rfc7009) revocation (form: `token`, `client_id`) |
-| `GET /connections`, `POST /connections/revoke` | The owner's list and revocation with a personal API key (`hlm connection`) |
+| `GET /connections`, `POST /connections/revoke` | The owner's list and revocation with a personal API key (`dayhand connection`) |
 
 `/mcp` answers a request without a valid credential with `401` and
-`WWW-Authenticate: Bearer realm="helm", scope="tasks:read tasks:write", resource_metadata="<issuer>/.well-known/oauth-protected-resource/mcp"`
+`WWW-Authenticate: Bearer realm="dayhand", scope="tasks:read tasks:write", resource_metadata="<issuer>/.well-known/oauth-protected-resource/mcp"`
 (plus `error="invalid_token"` when a token was sent but is not valid).
 
 ## Clients and redirect URIs
@@ -53,7 +53,7 @@ All on the deployment's HTTP actions URL (`https://<name>.convex.site`, locally
 A client is identified in one of two ways:
 
 - **Client ID Metadata Document** (Claude's "Use Claude's published identity"): `client_id` is
-  an HTTPS URL that Helm fetches. The Claude apps use
+  an HTTPS URL that Dayhand fetches. The Claude apps use
   `https://claude.ai/oauth/mcp-oauth-client-metadata`, Claude Code
   `https://claude.ai/oauth/claude-code-client-metadata`. Only URLs on the allowed origins are
   fetched, by default only `https://claude.ai`; no redirects are followed, the answer is limited
@@ -90,7 +90,7 @@ client or a wrong redirect URI gets an error page and is never redirected.
   ignored. The phone may grant a non-empty part of what was asked, never more. `tools/list`
   shows only the tools the token's scopes allow; calling another tool gets
   `403` with `WWW-Authenticate: Bearer error="insufficient_scope", scope="…"`. Reading the
-  user's data through `resources/read` (all but `helm://guide`) and `prompts/get` needs
+  user's data through `resources/read` (all but `dayhand://guide`) and `prompts/get` needs
   `tasks:read` the same way.
 - **Resource indicators** ([RFC 8707](https://www.rfc-editor.org/rfc/rfc8707)): `resource`, when
   sent to `/oauth/authorize` or `/oauth/token`, must be `<issuer>/mcp`; every token is bound to
@@ -119,7 +119,7 @@ each change. Approvals, refusals and revocations are recorded in history too.
 
 - **Phone**: Settings → Agent connections lists the connected agents (where they come from, read
   only or read and change, last use); tapping one disconnects it.
-- **CLI**: `hlm connection list` (or `hlm connections`) and `hlm connection revoke <id>`
+- **CLI**: `dayhand connection list` (or `dayhand connections`) and `dayhand connection revoke <id>`
   ([cli.md](cli.md)).
 - **Admin**: `npx convex run oauthOwner:list '{"userId":"<issuer>|owner","actor":"app"}'` and
   `npx convex run oauthOwner:revoke '{"userId":"<issuer>|owner","actor":"app","id":"<connectionId>"}'`.
@@ -148,11 +148,11 @@ automatically (Dynamic Client Registration) is the way around it. See
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `HELM_PUBLIC_URL` | the Convex site URL (`CONVEX_SITE_URL`) | The issuer and the base of `/mcp`, for a custom domain. It must be exactly the URL users add in Claude, without `/mcp`. |
-| `HELM_OAUTH_CIMD_ORIGINS` | `https://claude.ai` | Comma-separated origins whose client metadata documents are fetched. Tests add a local origin; production should not change it. |
+| `DAYHAND_PUBLIC_URL` | the Convex site URL (`CONVEX_SITE_URL`) | The issuer and the base of `/mcp`, for a custom domain. It must be exactly the URL users add in Claude, without `/mcp`. |
+| `DAYHAND_OAUTH_CIMD_ORIGINS` | `https://claude.ai` | Comma-separated origins whose client metadata documents are fetched. Tests add a local origin; production should not change it. |
 
 No secret is involved: tokens are random and stored hashed, and the app-signing key
-(`HELM_JWT_PRIVATE_JWK`) is not used by OAuth.
+(`DAYHAND_JWT_PRIVATE_JWK`) is not used by OAuth.
 
 ## Connecting the Claude app (manual procedure)
 
@@ -164,36 +164,36 @@ Anthropic's network and needs public HTTPS.
 
    ```sh
    curl -si -X POST https://<name>.convex.site/mcp | grep -i www-authenticate
-   # WWW-Authenticate: Bearer realm="helm", scope="tasks:read tasks:write", resource_metadata="https://<name>.convex.site/.well-known/oauth-protected-resource/mcp"
+   # WWW-Authenticate: Bearer realm="dayhand", scope="tasks:read tasks:write", resource_metadata="https://<name>.convex.site/.well-known/oauth-protected-resource/mcp"
    curl -s https://<name>.convex.site/.well-known/oauth-protected-resource/mcp
    curl -s https://<name>.convex.site/.well-known/oauth-authorization-server
    ```
 
-2. **Phone ready**: the Helm app is paired with this deployment (Settings → Server shows
+2. **Phone ready**: the Dayhand app is paired with this deployment (Settings → Server shows
    *Synced*) and updated to the version with Settings → Agent connections.
 3. **Add the connector** in the Claude app: Settings (or Customize) → Connectors → **Add custom
-   connector**. Name: `Helm`. URL: `https://<name>.convex.site/mcp`. Under the advanced or
+   connector**. Name: `Dayhand`. URL: `https://<name>.convex.site/mcp`. Under the advanced or
    authentication settings choose **Sign in now** (or leave the default) and **Use Claude's
    published identity** for the OAuth client; leave client ID and secret empty. Add.
-4. **Connect**: Claude opens Helm's page in a browser view. It shows a code like `K7QF-M2XA`.
-5. **Approve on the phone**: switch to the Helm app → Settings → **Agent connections** →
+4. **Connect**: Claude opens Dayhand's page in a browser view. It shows a code like `K7QF-M2XA`.
+5. **Approve on the phone**: switch to the Dayhand app → Settings → **Agent connections** →
    **Approve a connection** → type the code → check that it says *Identified by claude.ai* and
    *Answer goes to claude.ai*, that *Asked* is a moment ago and that there is no red warning →
    leave both permissions on (or switch off *Change tasks and settings* for read only) →
    **Approve**.
 6. **Back to the browser view**: within two seconds it continues by itself (or tap
-   **Continue**) and Claude shows Helm as connected.
-7. **Try it**: ask Claude "What is on my Helm list today?" (it calls `list_today`), then "Add
-   *test from Claude* to Helm for today" and check the task in the app; its history shows
+   **Continue**) and Claude shows Dayhand as connected.
+7. **Try it**: ask Claude "What is on my Dayhand list today?" (it calls `list_today`), then "Add
+   *test from Claude* to Dayhand for today" and check the task in the app; its history shows
    `agent: <the client's name>`. Delete the test task afterwards.
 8. **If step 4 shows "Unknown client"**: Claude's published identity is served from an origin
    other than `https://claude.ai`. Remove the connector and add it again with **Register
    automatically** (Dynamic Client Registration), which needs no allowlist. Note the origin
    from the Convex logs (`Client metadata refused: …`) so it can be added to
-   `HELM_OAUTH_CIMD_ORIGINS` deliberately.
+   `DAYHAND_OAUTH_CIMD_ORIGINS` deliberately.
 9. **To disconnect**: Settings → Agent connections → tap the connection → Disconnect, or
-   `hlm connection revoke <id>`. Removing the connector in Claude alone does not revoke it on
-   Helm's side; unused connections end 60 days after their last refresh.
+   `dayhand connection revoke <id>`. Removing the connector in Claude alone does not revoke it on
+   Dayhand's side; unused connections end 60 days after their last refresh.
 
 Claude refreshes the access token by itself (on `401` and shortly before it expires), so the
 phone is needed only for the first approval and after a disconnection.

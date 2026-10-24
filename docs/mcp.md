@@ -11,20 +11,20 @@
   ([oauth.md](oauth.md)). Missing, wrong, expired or revoked credentials get HTTP 401 with a
   `WWW-Authenticate` header that points OAuth clients at the authorization server. A request
   with a browser `Origin` header gets HTTP 403 unless the origin is listed in
-  `HELM_MCP_ALLOWED_ORIGINS` ([deploy.md](deploy.md#environment-variables)).
+  `DAYHAND_MCP_ALLOWED_ORIGINS` ([deploy.md](deploy.md#environment-variables)).
 - Every change is recorded with the key's kind as the actor (`cli` for the user at a terminal,
   `agent` for an AI agent) and the key's name, or as `agent` with the OAuth client's name; see
   [Keys and actors](#keys-and-actors).
 - Pass a `clientId` (e.g. a UUID) with changes you might retry; a repeated `clientId` is not
   applied twice. Pass `dryRun: true` to check a change without saving it ([Dry runs](#dry-runs)).
 - Each key or connection may make 120 reads and 60 changes a minute ([Limits](#limits)).
-- The server identifies itself as `{ "name": "helm", "version": "0.7.0" }` (`serverInfo` of
+- The server identifies itself as `{ "name": "dayhand", "version": "0.9.0" }` (`serverInfo` of
   `initialize`, `_meta` of 2026-07-28 results); see [Versions](#versions).
 
 ## Tools
 
 The input schemas are generated from the same validators the operations enforce; the output
-schemas come from [schemas/](schemas/), the contract `hlm --json` follows too.
+schemas come from [schemas/](schemas/), the contract `dayhand --json` follows too.
 
 Every task has an `id` and a `ref`: the user's task number (1, 2, 3, …). It is given once, kept
 through the trash, the archive and a restore, and never given to another task, even after the
@@ -33,7 +33,7 @@ as `"#42"`.
 
 `tools/list` returns the tools in this order. Read-only tools are marked R, destructive ones D
 (`destructiveHint`); every change except `add_task` is idempotent (`idempotentHint`: repeating
-it with the same arguments changes nothing more), and no tool reaches outside Helm
+it with the same arguments changes nothing more), and no tool reaches outside Dayhand
 (`openWorldHint: false`). Each tool also has a `title`.
 
 | Tool | Title | Hints | Result ([schema](schemas/)) | Operation |
@@ -93,7 +93,7 @@ block holds the whole object.
 
 ### Dry runs
 
-Every changing tool takes `dryRun: true`. The change runs with every check, then Helm rolls it
+Every changing tool takes `dryRun: true`. The change runs with every check, then Dayhand rolls it
 back: nothing is saved and nothing enters the history. The result is what the real call would
 return, marked `"dryRun": true` (for `set_now` with `taskId: null`, `{ "result": null, "dryRun":
 true }`). A dry run of `add_task` shows the number the task would get, but does not reserve it.
@@ -104,11 +104,12 @@ the [limits](#limits).
 
 | URI | Type | Content |
 |---|---|---|
-| `helm://today` | `application/json` | `list_today` |
-| `helm://guide` | `text/markdown` | How an agent should work with Helm: numbers, the now task, retries, dry runs, limits |
-| `helm://tasks/{ref}` (template) | `application/json` | `get_task` of task `#ref`, e.g. `helm://tasks/42` |
+| `dayhand://today` | `application/json` | `list_today` |
+| `dayhand://guide` | `text/markdown` | How an agent should work with Dayhand: numbers, the now task, retries, dry runs, limits |
+| `dayhand://tasks/{ref}` (template) | `application/json` | `get_task` of task `#ref`, e.g. `dayhand://tasks/42` |
 
-`resources/list` returns the first two, `resources/templates/list` the template. Reading a
+`resources/list` returns the first two, `resources/templates/list` the template. The `helm://`
+URIs of the same resources, from before the rename, can still be read. Reading a
 resource that does not exist (also a task number that does not) is a JSON-RPC error with
 `data: { "uri" }`: `-32602` on 2026-07-28, `-32002` on 2025 revisions.
 
@@ -116,7 +117,7 @@ resource that does not exist (also a task number that does not) is a JSON-RPC er
 
 | Prompt | Arguments | What it starts |
 |---|---|---|
-| `plan_day` | `focus` (optional) | Go through overdue and today's tasks, agree on an order and set the now task; the Today screen is attached as the resource `helm://today` |
+| `plan_day` | `focus` (optional) | Go through overdue and today's tasks, agree on an order and set the now task; the Today screen is attached as the resource `dayhand://today` |
 | `weekly_review` | | Look back at the last 7 days (board's done column) and ahead at the next 7 (`list_all` with dates), then tidy the plan |
 | `triage_overdue` | | Decide, task by task, what happens to each overdue task; the overdue tasks are attached |
 
@@ -128,8 +129,8 @@ larger changes with `dryRun`. An unknown prompt or argument is a JSON-RPC error 
 Each API key, and each agent connection (OAuth), may make 120 reads and 60 changes a minute
 (`convex/callLimits.ts`). The minute
 starts with the first call; reads and changes are counted apart. Reads are tool calls of
-read-only tools, `resources/read` of `helm://today` and `helm://tasks/…`, and `prompts/get`;
-listing tools, resources and prompts, `server/discover` and `helm://guide` are not counted.
+read-only tools, `resources/read` of `dayhand://today` and `dayhand://tasks/…`, and `prompts/get`;
+listing tools, resources and prompts, `server/discover` and `dayhand://guide` are not counted.
 
 A call over the limit is refused before it runs, so nothing is applied:
 
@@ -163,14 +164,14 @@ missed, and those count against `count`. When the series has ended, `complete_ta
 `next: null`. The next occurrence keeps the title, note, labels, links and reminders, with the
 checklist unticked.
 
-Helm reads `FREQ` (DAILY, WEEKLY, MONTHLY, YEARLY), `INTERVAL`, `BYDAY`, `BYMONTHDAY`,
+Dayhand reads `FREQ` (DAILY, WEEKLY, MONTHLY, YEARLY), `INTERVAL`, `BYDAY`, `BYMONTHDAY`,
 `BYSETPOS`, `UNTIL`, `COUNT` and `WKST`; anything else (`BYHOUR`, `BYMONTH`, …) is an
-`invalid_argument` naming the part. Where Helm differs from RFC 5545:
+`invalid_argument` naming the part. Where Dayhand differs from RFC 5545:
 
 - A day the month does not have (31 in April) falls on the month's last day; RFC 5545 skips the
   month. `rrule` writes such days as `BYMONTHDAY=28,29,30,31;BYSETPOS=-1`, which means the same
   in both, and reads that form back as `monthDay: 31`. A plain `BYMONTHDAY=31` is read as
-  `monthDay: 31` too, with Helm's meaning.
+  `monthDay: 31` too, with Dayhand's meaning.
 - A plain monthly rule takes its day from the due date; after a shorter month the next
   occurrence keeps that day as `monthDay` (31 Jan, 28 Feb, 31 Mar).
 - A yearly rule from 29 February falls on 28 February in other years and stays there.
@@ -242,7 +243,7 @@ One endpoint serves both eras of MCP, the way the specification describes a dual
 
 - **2025 revisions** (2025-11-25 and earlier): the client sends `initialize`, and the server
   answers with the requested version when it knows it, otherwise `2025-11-25`. `ping` works.
-  Results have no `resultType`. Helm keeps no session, so every request stands alone anyway.
+  Results have no `resultType`. Dayhand keeps no session, so every request stands alone anyway.
 - **2026-07-28**: no `initialize`; a request is served as 2026-07-28 when its `params._meta`
   carries `io.modelcontextprotocol/protocolVersion`. It must also carry
   `io.modelcontextprotocol/clientCapabilities` (else `-32602`, HTTP 400) and the headers
@@ -253,10 +254,10 @@ One endpoint serves both eras of MCP, the way the specification describes a dual
   `_meta["io.modelcontextprotocol/serverInfo"]`; `server/discover`, `tools/list`,
   `prompts/list`, `resources/list` and `resources/templates/list` carry `ttlMs: 300000` and
   `cacheScope: "public"`, `resources/read` carries `ttlMs: 0` and `cacheScope: "private"`
-  (`helm://guide`: public). `ping` no longer exists and unknown methods get HTTP 404.
+  (`dayhand://guide`: public). `ping` no longer exists and unknown methods get HTTP 404.
 
 Not offered in either era: `subscriptions/listen` (and `listChanged` notifications), logging,
-completion, sampling, elicitation and the tasks extension. Helm never asks the client for
+completion, sampling, elicitation and the tasks extension. Dayhand never asks the client for
 input, so no request returns `input_required`.
 
 The official TypeScript SDK v2 reaches the 2026-07-28 era with
@@ -306,7 +307,7 @@ npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"
 Creating and revoking API keys is not an MCP tool on purpose: a key that can mint keys could
 outlive its own revocation. Keys are managed by the app (`app.createApiKey`,
 `app.revokeApiKey`), by the deployment admin (`npx convex run apiKeys:create`), or with a full
-key through `POST /api/v1/keys` (`hlm key create`). A key made that way can only have scope
+key through `POST /api/v1/keys` (`dayhand key create`). A key made that way can only have scope
 `read` or `write`, expires no later than the key that made it, and works only while that key
 works: revoking the parent stops it too ([api.md](api.md#api-keys)).
 
@@ -322,6 +323,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.9.0 | The rename to Dayhand: `serverInfo.name` `dayhand`; resources `dayhand://today`, `dayhand://guide` and `dayhand://tasks/{ref}` (the `helm://` URIs are still read); new API keys start with `dayhand_` (`helm_` keys keep working); import format `dayhand-json` (`helm-json` still accepted); `WWW-Authenticate` realm `dayhand`; `x-dayhand-scope` in the OpenAPI document; problem types under `https://schemas.dayhand.invalid/`; deployment variables `DAYHAND_*` (`HELM_*` still read, [deploy.md](deploy.md#renamed-variables)) |
 | 0.8.0 | API keys with a `scope` (`read`, `write`, `full`) and `expiresAt` (a read key sees and calls only reading tools); the error code `precondition_failed` (REST `If-Match` only); the REST API `/api/v1` with OpenAPI 3.1 ([api.md](api.md)), webhooks ([webhooks.md](webhooks.md)) and import. Devices, connections and the calendar feed need a full key |
 | 0.7.0 | `export_plan` format `ics`; the read-only calendar feed `GET /cal/<token>.ics` and its endpoints `/calendar/feed*` ([calendar.md](calendar.md)) |
 | 0.6.0 | OAuth 2.1 for the Claude apps and other MCP clients: access tokens next to API keys, `WWW-Authenticate` with `resource_metadata`, scopes `tasks:read` and `tasks:write` (`tools/list` filtered, `403 insufficient_scope`), limits per connection ([oauth.md](oauth.md)) |
@@ -333,13 +335,13 @@ works with any 0.x from 0.3 on.
 
 ## Connecting a client
 
-The Claude apps (claude.ai, Desktop, Android, iOS) add Helm as a custom connector with the URL
+The Claude apps (claude.ai, Desktop, Android, iOS) add Dayhand as a custom connector with the URL
 `<deployment HTTP actions URL>/mcp` and sign in with OAuth; the owner approves the connection
 on the phone. The steps are in [oauth.md](oauth.md#connecting-the-claude-app-manual-procedure).
 
 Any MCP client with Streamable HTTP and custom headers works with an API key, for example:
 
 ```sh
-claude mcp add --transport http helm http://127.0.0.1:3211/mcp \
-  --header "Authorization: Bearer $HELM_API_KEY"
+claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp \
+  --header "Authorization: Bearer $DAYHAND_API_KEY"
 ```

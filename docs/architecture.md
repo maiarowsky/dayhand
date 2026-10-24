@@ -7,20 +7,20 @@ Android app ──(Convex client, JWT)──> convex/app.ts ─┐
                                                       ├─> domain operations (convex/lib/*.ts)
 AI agent ──(MCP, API key)──> /mcp (convex/mcp.ts) ───┤      registered as internal functions
 Claude app ──(MCP, OAuth access token)──> /mcp ──────┤      in convex/ops.ts
-helm CLI ──(MCP tools/call, API key)─────────────────┤
+dayhand CLI ──(MCP tools/call, API key)──────────────┤
 integration ──(REST /api/v1, API key)──> convex/rest.ts ┘   (same tools, lib/restRoutes.ts)
 
 Android app ──(device token)──> /auth/token ─┐
             ──(pairing code)──> /auth/pair  ─┼─> convex/pairing.ts ──> convex/devices.ts
-helm CLI ──(API key)──> /devices/* ──────────┘
+dayhand CLI ──(API key)──> /devices/* ───────┘
 
 Claude app ──> /.well-known/*, /oauth/* (convex/oauthHttp.ts) ──> convex/oauth.ts
 Android app ──(JWT)──> app.lookup/decideConnectionRequest ─┐
-helm CLI ──(API key)──> /connections* ─────────────────────┴──> convex/oauthOwner.ts
+dayhand CLI ──(API key)──> /connections* ──────────────────┴──> convex/oauthOwner.ts
 
 calendar app ──(secret address)──> GET /cal/<token>.ics ─┐
 Android app ──(JWT)──> app.*CalendarFeed ────────────────┼─> convex/calendarFeeds.ts ──> lib/ical.ts
-helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
+dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 ```
 
 - Domain operations take the acting identity explicitly: `userId` and `actor` (`app`, `cli` or
@@ -104,7 +104,7 @@ helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
 
 ## Authentication
 
-- **Agent and CLI:** personal API keys (`helm_` + 32 random bytes, base64url), each with a
+- **Agent and CLI:** personal API keys (`dayhand_` + 32 random bytes, base64url), each with a
   name and a kind (`cli` or `agent`, default `agent`) that becomes the actor of its changes. Keys are generated in an
   action (mutations have a deterministic random source), shown once, and stored as SHA-256 only.
   A missing, wrong or revoked key gets HTTP 401. Each key may make 120 reads and 60 changes a
@@ -115,17 +115,17 @@ helm CLI ──(API key)──> /calendar/feed* (calendar.ts) ───┘
   code its sign-in page shows. Tokens are selector + secret, stored as SHA-256, bound to
   `<issuer>/mcp`, and stop at once when the connection is revoked. Protocol and limits:
   [oauth.md](oauth.md); threats: [oauth-threat-model.md](oauth-threat-model.md).
-- **App:** a custom ES256 JWT. The deployment trusts the public key given in `HELM_JWKS`
-  (a JWKS `data:` URI) for issuer `HELM_JWT_ISSUER`, audience `helm`; `userId` is the token
+- **App:** a custom ES256 JWT. The deployment trusts the public key given in `DAYHAND_JWKS`
+  (a JWKS `data:` URI) for issuer `DAYHAND_JWT_ISSUER`, audience `helm`; `userId` is the token
   identifier `<issuer>|<subject>`. The deployment itself signs these tokens with
-  `HELM_JWT_PRIVATE_JWK`, an environment variable read only by `POST /auth/token`
-  (`convex/lib/appToken.ts`); it checks that the key matches `HELM_JWKS` and answers `503`
+  `DAYHAND_JWT_PRIVATE_JWK`, an environment variable read only by `POST /auth/token`
+  (`convex/lib/appToken.ts`); it checks that the key matches `DAYHAND_JWKS` and answers `503`
   when it does not.
-- **Pairing:** `helm pair` (or the admin) creates a one-time code, valid 10 minutes. The phone
+- **Pairing:** `dayhand pair` (or the admin) creates a one-time code, valid 10 minutes. The phone
   exchanges it at `POST /auth/pair` for a long-lived, revocable device token, and the device
   token at `POST /auth/token` for an app JWT valid one hour. Codes and device tokens are
   selector + secret; only SHA-256 of the secret is stored and compared in constant time.
-  Pairing failures are limited per deployment. `helm devices` and `helm revoke` manage
+  Pairing failures are limited per deployment. `dayhand devices` and `dayhand revoke` manage
   devices; a revoked device gets no new JWTs. Protocol: [pairing.md](pairing.md); deployment
   and key migration: [deploy.md](deploy.md).
 - **Tokens by hand:** `scripts/jwt.mjs` creates a key pair and tokens for tests;

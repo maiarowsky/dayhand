@@ -1,18 +1,18 @@
 # Webhooks
 
-Since backend 0.8.0, Helm can tell other systems about changes as they happen: a webhook is an
+Since backend 0.8.0, Dayhand can tell other systems about changes as they happen: a webhook is an
 HTTPS address that gets a signed `POST` for every change of a task. Messages follow
 [Standard Webhooks](https://www.standardwebhooks.com), so any of its verification libraries
 (JavaScript, Python, Go, …) checks them.
 
-Webhooks are managed with a full API key through the REST API ([api.md](api.md)) or `hlm`:
+Webhooks are managed with a full API key through the REST API ([api.md](api.md)) or `dayhand`:
 
 ```sh
-hlm webhook add https://n8n.example.com/webhook/helm --event task.completed --event task.created
-hlm webhook list
-hlm webhook test <id>
-hlm webhook deliveries <id>
-hlm webhook rm <id> --yes
+dayhand webhook add https://n8n.example.com/webhook/dayhand --event task.completed --event task.created
+dayhand webhook list
+dayhand webhook test <id>
+dayhand webhook deliveries <id>
+dayhand webhook rm <id> --yes
 ```
 
 | Route | What it does |
@@ -40,7 +40,7 @@ A user may have at most 10 webhooks.
 | `webhook.test` | Only from `POST …/test` |
 
 Leaving out `events` subscribes to all of them. Changes from every surface count: the app,
-MCP, the REST API and `hlm`. A dry run (`dryRun`) sends nothing, and neither does a change that
+MCP, the REST API and `dayhand`. A dry run (`dryRun`) sends nothing, and neither does a change that
 fails: the message is queued in the same transaction as the change.
 
 The body (`docs/schemas/webhook-event.schema.json`):
@@ -75,7 +75,7 @@ With the reference library:
 
 ```js
 import { Webhook } from "standardwebhooks";
-const payload = new Webhook(process.env.HELM_WEBHOOK_SECRET).verify(rawBody, headers); // throws when not genuine
+const payload = new Webhook(process.env.DAYHAND_WEBHOOK_SECRET).verify(rawBody, headers); // throws when not genuine
 ```
 
 Verify the raw body exactly as received, before parsing it. To change a secret, add a new
@@ -90,16 +90,16 @@ timeout, a refused connection, a redirect, which is never followed) is retried w
 `timestamp` in the body.
 
 When 5 deliveries in a row fail on every attempt, the webhook is **turned off**: `enabled:
-false`, `disabledAt` and `disabledReason` in `hlm webhook list` and `GET /webhooks`, and a
+false`, `disabledAt` and `disabledReason` in `dayhand webhook list` and `GET /webhooks`, and a
 `webhook.disable` entry in the history. Changes then send nothing to it. Fix the receiver, check
-it with `hlm webhook test <id>`, and turn it on with `hlm webhook enable <id>`. A successful
+it with `dayhand webhook test <id>`, and turn it on with `dayhand webhook enable <id>`. A successful
 delivery sets the count back to 0; test messages do not count.
 
 The delivery log keeps 30 days (a daily cron removes older entries).
 
 ## Security
 
-- **Only HTTPS on public hosts.** Helm refuses (when the webhook is added, and again before each
+- **Only HTTPS on public hosts.** Dayhand refuses (when the webhook is added, and again before each
   attempt) `http://`, user names or passwords in the URL, `localhost` and names under `.local`,
   `.internal`, `.localhost`, `.home.arpa`, `.lan`, `.corp`, `.intranet`, single-label names, and
   IP addresses that are loopback, private, link-local (cloud metadata such as 169.254.169.254),
@@ -108,7 +108,7 @@ The delivery log keeps 30 days (a daily cron removes older entries).
   rebinding). Convex runs the requests from its own network, not the user's, which limits what
   such a name could reach; on a self-hosted deployment, keep the backend's outbound traffic away
   from internal services.
-- `HELM_WEBHOOK_ALLOWED_ORIGINS` (comma-separated origins, e.g. `http://127.0.0.1:8080`)
+- `DAYHAND_WEBHOOK_ALLOWED_ORIGINS` (comma-separated origins, e.g. `http://127.0.0.1:8080`)
   exempts those exact origins from the rules, for tests or a receiver on a self-hosted
   deployment's own network. Production leaves it unset.
 - The secret is stored as it is, because every message is signed with it, and is shown only
@@ -122,5 +122,5 @@ The delivery log keeps 30 days (a daily cron removes older entries).
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `HELM_WEBHOOK_ALLOWED_ORIGINS` | unset | Origins exempt from the address rules (above) |
-| `HELM_WEBHOOK_RETRY_DELAYS` | `5,300,1800,7200,18000,36000,36000` | Seconds before each retry; the number of values is the number of retries |
+| `DAYHAND_WEBHOOK_ALLOWED_ORIGINS` | unset | Origins exempt from the address rules (above) |
+| `DAYHAND_WEBHOOK_RETRY_DELAYS` | `5,300,1800,7200,18000,36000,36000` | Seconds before each retry; the number of values is the number of retries |

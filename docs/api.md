@@ -1,6 +1,6 @@
 # REST API
 
-Since backend 0.8.0, Helm has a REST API for integrations that do not speak MCP: Shortcuts,
+Since backend 0.8.0, Dayhand has a REST API for integrations that do not speak MCP: Shortcuts,
 n8n, Home Assistant, a cron script. It lives under `<deployment HTTP actions URL>/api/v1`
 (e.g. `https://<name>.convex.site/api/v1`) and is described by an OpenAPI 3.1 document at
 [`/api/v1/openapi.json`](#openapi), which needs no key.
@@ -17,18 +17,18 @@ compares the results.
 Send a personal API key as a Bearer token:
 
 ```sh
-curl -s https://<name>.convex.site/api/v1/today -H "Authorization: Bearer $HELM_API_KEY"
+curl -s https://<name>.convex.site/api/v1/today -H "Authorization: Bearer $DAYHAND_API_KEY"
 ```
 
 OAuth access tokens of agent connections are bound to `/mcp` (RFC 8707) and get `401` here.
 
 Each route needs a key **scope** ([mcp.md](mcp.md#keys-and-actors)): `read` for `GET` routes,
 `write` for changes to tasks and settings, `full` for the account routes (API keys, webhooks,
-import). The OpenAPI document gives it per operation as `x-helm-scope`; a key with less gets
+import). The OpenAPI document gives it per operation as `x-dayhand-scope`; a key with less gets
 `403 insufficient_scope`. Give an integration the smallest scope it needs and an expiry date:
 
 ```sh
-hlm key create n8n --scope read --expires 90d
+dayhand key create n8n --scope read --expires 90d
 ```
 
 Changes are recorded in the task history like changes made through MCP: `agent: <key name>`
@@ -77,7 +77,7 @@ keeps its value, `null` clears it.
 
 ```sh
 curl -s -X PATCH https://<name>.convex.site/api/v1/tasks/42 \
-  -H "Authorization: Bearer $HELM_API_KEY" -H 'Content-Type: application/merge-patch+json' \
+  -H "Authorization: Bearer $DAYHAND_API_KEY" -H 'Content-Type: application/merge-patch+json' \
   -H 'If-Match: "1793011200000"' \
   -d '{"note": null, "labels": ["work"], "dueDate": "tomorrow"}'
 ```
@@ -115,7 +115,7 @@ is the same code an MCP tool error has ([mcp.md](mcp.md#errors)), and `detail` t
 
 ```json
 {
-  "type": "https://schemas.helm.invalid/problems/invalid_argument",
+  "type": "https://schemas.dayhand.invalid/problems/invalid_argument",
   "title": "Invalid argument",
   "status": 422,
   "detail": "dueDate must be YYYY-MM-DD, \"today\" or \"tomorrow\", got \"someday\"",
@@ -128,7 +128,7 @@ is the same code an MCP tool error has ([mcp.md](mcp.md#errors)), and `detail` t
 | Status | `code` | When |
 |---|---|---|
 | 400 | `invalid_argument` | The body is not JSON, or not a JSON object |
-| 401 | `unauthenticated` | No key, or an invalid, expired or revoked key, or an OAuth access token (`WWW-Authenticate: Bearer realm="helm"`) |
+| 401 | `unauthenticated` | No key, or an invalid, expired or revoked key, or an OAuth access token (`WWW-Authenticate: Bearer realm="dayhand"`) |
 | 403 | `insufficient_scope` | The key's scope does not cover the route |
 | 404 | `not_found` | No such task, key or webhook, or no such route |
 | 405 | `method_not_allowed` | The path exists with other methods (`Allow` lists them) |
@@ -168,21 +168,21 @@ A full key manages keys for integrations:
 A key created this way has scope `read` (the default) or `write`, never `full`; it expires no
 later than the key that created it, and it works only while that key works. So a key can never
 outlive its parent's revocation, and an integration can never mint keys of its own.
-`hlm key list`, `hlm key create` and `hlm key revoke` use these routes.
+`dayhand key list`, `dayhand key create` and `dayhand key revoke` use these routes.
 
 ## Import
 
-`POST /import` brings a plan into Helm from a file:
+`POST /import` brings a plan into Dayhand from a file:
 
 | `format` | File | What becomes of it |
 |---|---|---|
-| `helm-json` | Helm's own JSON export (`hlm export --format json`, `export_plan` format `json`, version 1) | Every task outside the trash with all its fields: status, dates, repeat rule, labels, links, checklist, reminders, done and archived times. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
-| `ics` | iCalendar: `VTODO` and `VEVENT` | `SUMMARY` → title, `DESCRIPTION` → note, `DUE` (or `DTSTART`) → day and time in your time zone (UTC and `TZID` times are converted), `RRULE` → repeat rule, `CATEGORIES` → labels, `URL` → link, `STATUS:COMPLETED`/`IN-PROCESS` → done/doing, `VALARM` before the start → reminders. Cancelled entries and changed occurrences of a series (`RECURRENCE-ID`) are skipped. Helm's own calendar file (`hlm calendar export`) reads back without its `✓` and `Helm #n` marks. |
+| `dayhand-json` | Dayhand's own JSON export (`dayhand export --format json`, `export_plan` format `json`, version 1); `helm-json`, its name before the rename, is still accepted | Every task outside the trash with all its fields: status, dates, repeat rule, labels, links, checklist, reminders, done and archived times. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
+| `ics` | iCalendar: `VTODO` and `VEVENT` | `SUMMARY` → title, `DESCRIPTION` → note, `DUE` (or `DTSTART`) → day and time in your time zone (UTC and `TZID` times are converted), `RRULE` → repeat rule, `CATEGORIES` → labels, `URL` → link, `STATUS:COMPLETED`/`IN-PROCESS` → done/doing, `VALARM` before the start → reminders. Cancelled entries and changed occurrences of a series (`RECURRENCE-ID`) are skipped. Dayhand's own calendar file (`dayhand calendar export`) reads back without its `✓` and `Dayhand #n` marks. |
 | `todoist-csv` | Todoist's CSV export of a project | Rows of type `task`; `@label` words in the content → labels; the section → a label; `note` rows → the task's note; sub-tasks (`INDENT` 2 or more) → checklist items of their task; `DATE` in English (`2026-11-03`, `today`, `tomorrow at 9am`, `Nov 20 15:30`, a weekday, `every day`, `every 2 weeks`, `every monday, friday`, `every weekday`) → day, time and repeat rule. A date it does not understand stays in the note, with a warning. Priorities are not imported. Todoist's CSV format is not documented by Todoist; this reader follows its current export. |
 
 ```sh
 curl -s -X POST "https://<name>.convex.site/api/v1/import?dryRun=true" \
-  -H "Authorization: Bearer $HELM_API_KEY" -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $DAYHAND_API_KEY" -H 'Content-Type: application/json' \
   --data "$(jq -Rs '{content: .}' todoist.csv)"
 ```
 
@@ -195,13 +195,13 @@ others are imported all the same) and `warnings` about what could not be carried
 - Every task is checked by the same rules as `add_task`, gets an `import` history entry with
   the key's actor, and sends `task.created` to webhooks.
 - **Importing the same file again imports nothing twice**: each task's `clientId` is a hash of
-  the format and its place in the file. A task from a Helm export whose id is still in this
+  the format and its place in the file. A task from a Dayhand export whose id is still in this
   account is skipped too, so importing an export into the account it came from changes nothing.
 - `?dryRun=true` reads the file and checks every task without storing anything (`dryRun: true`).
 - At most 2000 tasks per import; the server stores them in batches of 200, so a failure halfway
   leaves the first batches imported, and running the same import again completes it.
 
-`hlm import <file> [--format …] [--dry-run]` sends a file this way.
+`dayhand import <file> [--format …] [--dry-run]` sends a file this way.
 
 ## OpenAPI
 
@@ -209,7 +209,7 @@ others are imported all the same) and `warnings` about what could not be carried
 URL). It is generated from the same sources as the API: the route table, the tools' argument
 validators (the MCP `inputSchema`) and the result schemas of `docs/schemas`, so it cannot
 drift from what the server does. Each operation names its MCP tool (`x-mcp-tool`) and the key
-scope it needs (`x-helm-scope`). Load it into Swagger UI, Postman, n8n's HTTP Request node or a
+scope it needs (`x-dayhand-scope`). Load it into Swagger UI, Postman, n8n's HTTP Request node or a
 client generator. The tests validate it against the official OpenAPI 3.1 schema and check every
 answer they get against the response schema it gives.
 

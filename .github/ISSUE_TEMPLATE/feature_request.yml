@@ -19,7 +19,7 @@ body:
     attributes:
       label: Area
       options:
-        - hlm CLI
+        - dayhand CLI
         - MCP endpoint
         - Backend
         - Android app

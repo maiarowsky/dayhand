@@ -1,8 +1,8 @@
 # Design system
 
-Helm's Android app uses the visual language of Mussh (the owner's other app) so the two read
-as one family: the same palettes, type scale, shapes, buttons, cards, fields and states. Helm keeps its own identity:
-its name, its helm icon and its words. No Mussh name, logo or icon is used.
+Dayhand's Android app uses the visual language of Mussh (the owner's other app) so the two read
+as one family: the same palettes, type scale, shapes, buttons, cards, fields and states. Dayhand keeps its own identity:
+its name, its own icon and its words. No Mussh name, logo or icon is used.
 
 The code lives in `android/app/src/main/java/dev/helm/planner/ui/theme/` (tokens) and `ui/components/` (shared
 components). Screens use only these: no raw colours, no `MaterialTheme.colorScheme` lookups and no ad-hoc shapes.
@@ -20,28 +20,28 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 4. **Type follows the system size.** Every size is in sp. Anything that holds text has a minimum height, never a
    fixed one, and rows put their value under the name from font scale 1.5 (`LARGE_TEXT_SCALE`).
 5. **Touch targets of at least 48 × 48 dp**, also for icon buttons (Material's `IconButton` has a 40 dp clickable
-   circle, so Helm uses `HeaderIconButton`). Every icon-only control has a description for screen readers.
+   circle, so Dayhand uses `HeaderIconButton`). Every icon-only control has a description for screen readers.
 6. **One primary action per screen** (the accent pill). Secondary actions are tinted pills, minor ones text actions.
 7. **Change applies at once.** The appearance is a `StateFlow`; saving it redraws the whole app without a restart and
    it is read synchronously at start, so the first frame has the right colours.
 
-## Mussh → Helm
+## Mussh → Dayhand
 
-| Mussh (Android) | Helm | Notes |
+| Mussh (Android) | Dayhand | Notes |
 |---|---|---|
-| `ui.Palette` (roles) | `ui.theme.Palette` | Same roles and values minus the chat, code and agent roles Helm has no use for (`userBubble`, `code*`, `toolSurface`, `vivid*`, `blocked`, `idle`, `unknown`, `inlineCode`, `quoteBar`). Mussh `working` is Helm "Now", `done` is done, `attention`/`danger` is overdue. |
+| `ui.Palette` (roles) | `ui.theme.Palette` | Same roles and values minus the chat, code and agent roles Dayhand has no use for (`userBubble`, `code*`, `toolSurface`, `vivid*`, `blocked`, `idle`, `unknown`, `inlineCode`, `quoteBar`). Mussh `working` is Dayhand "Now", `done` is done, `attention`/`danger` is overdue. |
 | `Palettes.all` (16) and `PaletteThemes` | `Palettes`, `PaletteThemes` | Same 16 palettes, ids and values: dark Terracotta (default), Honey, Amber, Gruvbox Dark, Solarized Dark, Nord, Dracula, Tokyo Night, Catppuccin Mocha, One Dark, Rosé Pine; light Paper (default), Gruvbox Light, Solarized Light, Catppuccin Latte, Rosé Pine Dawn. Generated from the Mussh sources, not retyped. |
-| One palette for the whole app | Dark palette + light palette + mode | Mussh has no light/dark mode; Helm needs one, so it keeps one choice per variant. |
+| One palette for the whole app | Dark palette + light palette + mode | Mussh has no light/dark mode; Dayhand needs one, so it keeps one choice per variant. |
 | `AppTheme`, `LocalPalette`, `palette` | `HelmTheme(appearance)`, `LocalPalette`, `palette` | Plus `LocalHelmType`/`helmType`, the Material type scale and shapes. |
 | `colorScheme(palette)` | `colorScheme(palette)` | Same mapping, also the Material 1.4 container roles. |
 | `AppType` (Headline 30, Title 18, Body 15, Small 13, Label mono 12 / 2 sp tracking) | `HelmType` | Same sizes and weights, in the chosen font; adds `screenTitle` (22 sp, Mussh's settings title) and the strong variants. Settings use it in the system sans whatever the font, as Mussh's settings do (`SettingsType`). |
-| `ChatFont` (System, Inter, IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4, JetBrains Mono) | `HelmFont` | Same list and ids, for the whole app; default System like Mussh's screens. The ten code fonts are terminal-only in Mussh and not used. Mussh has no font import, so Helm has none. |
+| `ChatFont` (System, Inter, IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4, JetBrains Mono) | `HelmFont` | Same list and ids, for the whole app; default System like Mussh's screens. The ten code fonts are terminal-only in Mussh and not used. Mussh has no font import, so Dayhand has none. |
 | `CardShape` 20 dp, option 16 dp, field 14 dp, icon tile 14 dp, swatch 12 dp, badge 8 dp, pills round | `HelmShapes` | Same radii; also the Material `Shapes`. |
 | `AccentButton` (56 dp accent pill) | `PrimaryButton` | Minimum height instead of a fixed one, optional icon. |
 | `GhostButton` (12 % tinted pill) | `SecondaryButton` | At least 48 dp high. |
 | `TextButton` in dialogs | `TextAction` | Accent text, 48 dp. |
 | `HeaderIconButton` / `BackButton` (48 dp) | `HeaderIconButton` | Material icons instead of Mussh's own drawings. |
-| `IconButtonBox` (44 dp) | `HeaderIconButton` | 48 dp, Helm's minimum. |
+| `IconButtonBox` (44 dp) | `HeaderIconButton` | 48 dp, Dayhand's minimum. |
 | `FeatureCard`, `InfoCard`, cards on `surface` with 18 dp padding | `HelmCard` | |
 | Settings section (muted `MonoLabel` over a card) | `CardSection` | Task details; Settings uses `ListGroup`. |
 | `IconTile` | `IconTile` | |
@@ -85,7 +85,7 @@ Settings → About → Open source licenses.
 | JetBrains Mono | 2.304 | `JetBrainsMono-OFL.txt` |
 
 Only Regular and Bold are bundled (as in Mussh); medium and semibold weights use the nearest file. Reserved font
-names only matter for modified fonts; Helm ships them unchanged.
+names only matter for modified fonts; Dayhand ships them unchanged.
 
 ## Adding a screen
 
