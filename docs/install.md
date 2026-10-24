@@ -62,21 +62,17 @@ cd dayhand && (cd cli && npm ci --ignore-scripts && npm run build && npm link)
 ## Your own server
 
 The server is the `backend/` folder of the repository, deployed to [Convex](https://www.convex.dev).
-The command line sets it up from a copy of the repository, with nothing to build:
-
-```sh
-git clone https://github.com/maiarowsky/dayhand.git
-cd dayhand
-```
-
-Then, in that folder:
+The `dayhand` package carries that folder, so the command line sets the server up with no clone of the
+repository and nothing to build:
 
 - **On this computer** (macOS or Linux, x64 or arm64): `dayhand server start` downloads the Convex
   local backend once and runs your server until Ctrl+C. No account needed.
 - **On your own free Convex account** (from macOS, Linux or Windows): `dayhand server deploy` logs in
   to Convex in the browser and deploys. The server gets a public HTTPS address.
 
-Both are described step by step, with costs, backups and updates, in [Your own server](deploy.md).
+Backend selection, the writable copy's location, and keeping keys and data across updates are
+covered in [Your own server](deploy.md#run-your-own-server-in-5-minutes), together with costs,
+backups and updates.
 The apps also work with no server at all, each on its own device.
 
 ## Android

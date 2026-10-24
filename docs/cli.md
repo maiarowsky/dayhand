@@ -1786,7 +1786,7 @@ dayhand server deploy [options]
 | `--project <name>` | Name of the new Convex project (default: dayhand) |
 | `--deployment <name>` | Use this existing production deployment instead of a new project |
 | `--issuer <url>` | DAYHAND_JWT_ISSUER for a new server (default: the server's address) |
-| `--backend <folder>` | The Dayhand repository's backend/ folder (default: found from here) |
+| `--backend <folder>` | The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand) |
 
 ```sh
 dayhand server deploy
@@ -1810,7 +1810,7 @@ dayhand server start [options]
 | `--site-port <n>` | HTTP actions port (default: 3211) |
 | `--public-url <url>` | The HTTPS address phones use, e.g. https://<machine>.<tailnet>.ts.net |
 | `--public-api-url <url>` | The Convex API's HTTPS address (default: --public-url at port 8443) |
-| `--backend <folder>` | The Dayhand repository's backend/ folder (default: found from here) |
+| `--backend <folder>` | The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand) |
 
 ```sh
 dayhand server start

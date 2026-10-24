@@ -50,17 +50,19 @@ npm i -g dayhand
 
 Start your own server on this computer (macOS or Linux). On Windows, use the
 [Convex account setup](docs/deploy.md#run-your-own-server-in-5-minutes) instead.
-The server is deployed from the repository's `backend/` folder, so get a copy first (nothing to build).
-No account is needed for the local server: the first run downloads the Convex local backend once,
-deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
+The `dayhand` package carries the server (the `backend/` folder), so there is no repository to clone
+and nothing to build. No account is needed for the local server: the first run copies the packaged
+backend once to a folder for your user data, downloads the Convex local backend once, deploys Dayhand
+to it, signs `dayhand` in and prints a pairing QR code for the phone.
 
 ```sh
-git clone https://github.com/maiarowsky/dayhand.git
-cd dayhand
 dayhand server start
 ```
 
-For the local server, leave it running and select it explicitly in a second terminal in the same folder:
+A clone of the repository still works and wins when you run `dayhand` from it
+([Your own server](docs/deploy.md#run-your-own-server-in-5-minutes)).
+
+For the local server, leave it running and select it explicitly in a second terminal:
 
 ```sh
 export DAYHAND_URL=http://127.0.0.1:3211
@@ -130,9 +132,13 @@ Any other MCP client works the same way: the address and an `Authorization: Bear
 custom connector with OAuth instead, and you approve each connection on your phone
 ([docs/oauth.md](docs/oauth.md)); that needs a public HTTPS server (below).
 
-There is also a ready Agent Skill that teaches an agent the `dayhand` commands:
+There is also a ready Agent Skill that teaches an agent the `dayhand` commands. It lives in the
+repository, and the commands from here on that name repository folders (`docs/`, `macos/`, `cli/`)
+run in a clone (if you already have one, skip the `git clone` line and `cd` into it):
 
 ```sh
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand
 mkdir -p ~/.claude/skills && cp -R docs/skills/dayhand ~/.claude/skills/
 ```
 
@@ -165,8 +171,8 @@ run yours in one of two ways:
 - **On this computer**: follow [Quick start](#quick-start). Data and keys stay in a private folder.
 - **On your own free Convex account**: `dayhand server deploy` logs in to Convex in the browser,
   deploys, signs `dayhand` in and prints the server address and a pairing code. This gives a
-  public HTTPS address, which the Claude apps and a phone away from home need. Run it again to
-  update; keys and data are kept.
+  public HTTPS address, which the Claude apps and a phone away from home need. Follow the
+  [server update guide](docs/deploy.md#updating) to update; keys and data are kept.
 
 See every step first, without changing anything:
 

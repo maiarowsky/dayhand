@@ -786,7 +786,7 @@ Use this existing production deployment instead of a new project
 DAYHAND_JWT_ISSUER for a new server (default: the server's address)
 .TP
 .B \-\-backend <folder>
-The Dayhand repository's backend/ folder (default: found from here)
+The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand)
 .RE
 .TP
 .B dayhand server start
@@ -808,7 +808,7 @@ The HTTPS address phones use, e.g. https://<machine>.<tailnet>.ts.net
 The Convex API's HTTPS address (default: \-\-public\-url at port 8443)
 .TP
 .B \-\-backend <folder>
-The Dayhand repository's backend/ folder (default: found from here)
+The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand)
 .RE
 .TP
 .B dayhand prime

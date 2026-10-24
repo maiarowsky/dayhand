@@ -22,7 +22,8 @@
   ],
   "files": [
     "dist",
-    "man"
+    "man",
+    "backend"
   ],
   "engines": {
     "node": ">=22.12"

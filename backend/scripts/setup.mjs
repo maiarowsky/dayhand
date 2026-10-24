@@ -14,7 +14,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { BACKEND_DIR, newInstanceSecret, startLocalBackend } from "./local-backend-lib.mjs";
 import { checkMcp, checkOpenApi, checkSigning, commands, convex, hasConvexCli, parseRunOutput } from "./setup-convex.mjs";
@@ -29,6 +29,7 @@ import {
   ensurePrivateDir,
   loadOrCreateSigningKey,
   nodeProblem,
+  npmCli,
   oldEnvNames,
   pairingLink,
   parseOptions,
@@ -71,17 +72,6 @@ async function choose(question, choices) {
   } finally {
     rl.close();
   }
-}
-
-/** npm's own script, found next to node (no shell, so the same on Windows). */
-function npmCli() {
-  const nodeDir = dirname(process.execPath);
-  const candidates = [
-    process.env.npm_execpath,
-    join(nodeDir, "node_modules", "npm", "bin", "npm-cli.js"),
-    join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
-  ];
-  return candidates.find((file) => file && /npm-cli\.js$/.test(file) && existsSync(file));
 }
 
 async function ensureDependencies() {

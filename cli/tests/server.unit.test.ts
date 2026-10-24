@@ -40,8 +40,37 @@ describe("findBackend", () => {
 
   test("without one, the current folder or one above it", () => {
     const missing = join(ROOT, "no-such-dayhand", "backend");
-    expect(findBackend(undefined, {}, nested, missing)).toBe(clone);
-    expect(findBackend(undefined, {}, clone, missing)).toBe(clone);
-    expect(findBackend(undefined, {}, nowhere, missing)).toBeNull();
+    const noPackage = join(ROOT, "no-such-package", "backend");
+    expect(findBackend(undefined, {}, nested, missing, noPackage)).toBe(clone);
+    expect(findBackend(undefined, {}, clone, missing, noPackage)).toBe(clone);
+    expect(findBackend(undefined, {}, nowhere, missing, noPackage)).toBeNull();
+  });
+
+  describe("the backend the package carries", () => {
+    const packaged = backend(join(ROOT, "package", "backend"));
+    const missing = join(ROOT, "no-such-dayhand", "backend");
+    const noPackage = join(ROOT, "no-such-package", "backend");
+
+    test("is the last resort: used when no checkout is found", () => {
+      expect(findBackend(undefined, {}, nowhere, missing, packaged)).toBe(packaged);
+      expect(findBackend(undefined, {}, nowhere, missing, noPackage)).toBeNull();
+    });
+
+    test("loses to the checkout dayhand runs from and to the current folder", () => {
+      expect(findBackend(undefined, {}, nowhere, own, packaged)).toBe(own);
+      expect(findBackend(undefined, {}, nested, missing, packaged)).toBe(clone);
+      expect(findBackend(undefined, {}, clone, missing, packaged)).toBe(clone);
+    });
+
+    test("loses to --backend and DAYHAND_BACKEND_DIR, which never fall back to it", () => {
+      expect(findBackend(own, {}, nowhere, missing, packaged)).toBe(own);
+      expect(findBackend(undefined, { DAYHAND_BACKEND_DIR: own }, nowhere, missing, packaged)).toBe(own);
+      expect(findBackend(nowhere, {}, nowhere, missing, packaged)).toBeNull();
+      expect(findBackend(undefined, { DAYHAND_BACKEND_DIR: nowhere }, nowhere, missing, packaged)).toBeNull();
+    });
+
+    test("is found by its own folder as --backend too", () => {
+      expect(findBackend(packaged, {}, nowhere, own, packaged)).toBe(packaged);
+    });
   });
 });

@@ -85,15 +85,16 @@ minimal desktop), `dayhand login --store file` keeps the key in a file only you 
 
 ### `dayhand version` says the server is not compatible
 
-The CLI needs a server with the same major version that is not older than the one it was built for. Update
-the server: `git pull`, then `dayhand server deploy` or `dayhand server start` again ([updating](deploy.md#updating)).
+The CLI needs a server with the same major version that is not older than the one it was built for.
+Follow [Updating](deploy.md#updating) for your package manager or checkout, then redeploy or restart
+the server.
 
 ### `dayhand server start` does not start
 
 - It runs on macOS and Linux (x64 or arm64), not on Windows: use `dayhand server deploy` there.
 - When ports 3210 or 3211 are taken, choose others with `--port` and `--site-port`.
-- `dayhand server start --dry-run` lists every step without changing anything. Run it from inside the
-  checkout, or pass `--backend <path to backend/>`.
+- `dayhand server start --dry-run` lists every step without changing anything.
+  [Server setup](deploy.md#run-your-own-server-in-5-minutes) explains which backend it selects.
 
 ### The phone cannot connect
 
@@ -104,7 +105,8 @@ the server: `git pull`, then `dayhand server deploy` or `dayhand server start` a
   browser: it should show a JSON document.
 - **The code is refused.** A code works once, for 10 minutes; make a new one with `dayhand pair`. After 10
   wrong codes in 10 minutes the server stops checking codes for the rest of that window; wait, or clear it
-  from `backend/` with `npx convex run devices:resetPairLimit` and the deployment's `--env-file`.
+  from your [backend directory](deploy.md#backups) with `npx convex run devices:resetPairLimit` and the
+  deployment's `--env-file`.
 - **"Replace the plan on this phone?"** The code is for another server than the one whose plan is on the
   phone. **Cancel** keeps everything; save a backup file first if you want to keep those tasks.
 - **"The server signed this phone out."** The device was revoked. Make a new code with `dayhand pair`; the
@@ -162,6 +164,7 @@ it; the item holds the Mac's sign-in to your server.
 ### Something else
 
 Run the failing command with `--json` to see the error code, check `dayhand version` and `dayhand whoami`,
-and look at the server's logs (`npx convex logs` in `backend/` with the deployment's `--env-file`). A bug
-you can reproduce is welcome as an [issue](https://github.com/maiarowsky/dayhand/issues); a security problem
-goes privately ([security](security.md#reporting-a-problem)).
+and look at the server's logs (`npx convex logs` in your [backend directory](deploy.md#backups) with
+the deployment's `--env-file`). A bug you can reproduce is welcome as an
+[issue](https://github.com/maiarowsky/dayhand/issues); a security problem goes privately
+([security](security.md#reporting-a-problem)).

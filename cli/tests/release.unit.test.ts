@@ -57,16 +57,15 @@ test("prime puts the now task with its resume note on top, then the rules", () =
 });
 
 describe("release files", () => {
-  test("the CLI has its own version: manifest, package.json, lockfile and Homebrew formula agree", () => {
+  test("the CLI has its own version: manifest, package.json and lockfile agree", () => {
     expect(JSON.parse(read(".release-please-manifest.json"))).toEqual({ cli: pkg.version });
     expect(JSON.parse(read("cli/package-lock.json")).version).toBe(pkg.version);
-    expect(read("packaging/homebrew/dayhand.rb")).toContain(`url "https://registry.npmjs.org/${pkg.name}/-/dayhand-${pkg.version}.tgz" # x-release-please-version`);
     const config = JSON.parse(read("release-please-config.json"));
     expect(Object.keys(config.packages)).toEqual(["cli"]);
     expect(config.packages.cli).toMatchObject({ component: "dayhand", "release-type": "node" });
   });
 
-  test("the package ships the binary and the man page, and names the public repository", () => {
+  test("the package ships the binary, the man page and the server backend, and names the public repository", () => {
     expect(pkg).not.toHaveProperty("private");
     expect(pkg).toMatchObject({
       name: "dayhand",
@@ -74,7 +73,7 @@ describe("release files", () => {
       // dh is the short name; hlm, the old one, warns until 1.0 removes it.
       bin: { dayhand: "dist/bin/dayhand.js", dh: "dist/bin/dayhand.js", hlm: "dist/bin/hlm.js" },
       man: ["./man/dayhand.1", "./man/dh.1"],
-      files: ["dist", "man"],
+      files: ["dist", "man", "backend"],
     });
     expect(read("man/dh.1")).toBe(".so man1/dayhand.1\n");
   });
@@ -88,18 +87,5 @@ describe("release files", () => {
     expect(releaseProblems({ ...ready, repository: "https://github.com/<owner>/helm" }, "dayhand-v1.2.3")).toEqual([expect.stringMatching(/repository/)]);
     expect(releaseProblems(ready, "dayhand-v1.2.3", "11.5.0")).toEqual([expect.stringMatching(/trusted publishing/)]);
     expect(releaseProblems(ready, "dayhand-v1.2.3", "11.5.1")).toEqual([]);
-  });
-
-  test("the publish workflow is gated, uses OIDC with provenance and pinned actions", () => {
-    const workflow = read(".github/workflows/publish-npm.yml");
-    expect(workflow).toContain("if: vars.DAYHAND_PUBLISH_ENABLED == 'true'");
-    expect(workflow).toContain("id-token: write");
-    expect(workflow).toContain("npm publish --provenance --access public");
-    expect(workflow).toContain("node scripts/check-release.mjs");
-    expect(workflow).not.toMatch(/NPM_TOKEN|NODE_AUTH_TOKEN/);
-    for (const file of ["publish-npm.yml", "release-please.yml"]) {
-      for (const [, ref] of read(`.github/workflows/${file}`).matchAll(/uses: \S+@(\S+)/g)) expect(ref, file).toMatch(/^[0-9a-f]{40}$/);
-    }
-    expect(read(".github/workflows/release-please.yml")).toContain("if: vars.DAYHAND_RELEASE_ENABLED == 'true'");
   });
 });

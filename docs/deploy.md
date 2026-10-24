@@ -9,19 +9,39 @@ One command sets up a complete Dayhand server of your own on your own free Conve
 the phone app, the MCP endpoint for AI agents, the REST API and `dayhand`. Nobody else runs or
 maintains anything for you, and nobody else can see your tasks.
 
-You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex account is made
+You need Node.js 22.12 or newer, on macOS, Linux or Windows. The Convex account is made
 (or signed in to) in your browser during the setup.
 
 ```sh
 npm i -g dayhand
+dayhand server deploy
+```
+
+`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
+first release, from source: [Install](install.md)). The package carries the server it deploys, the
+`backend/` folder of this repository, so there is nothing to clone. Because the installed package
+folder may be read-only (a Homebrew keg, a global npm prefix), `dayhand server` runs the setup from a
+copy of that backend in your user data folder: `~/Library/Application Support/dayhand-data/backend/<version>`
+on macOS, `${XDG_DATA_HOME:-$HOME/.local/share}/dayhand-data/backend/<version>` on Linux
+(relative `XDG_DATA_HOME` values are ignored), `%LOCALAPPDATA%\dayhand-data\Data\backend\<version>`
+on Windows.
+The copy is made once per `dayhand` version: dependencies are installed there when missing, and
+`dayhand server start` also downloads the Convex local backend there once. Later runs reuse it. A new
+`dayhand` version makes a new copy (delete the folders of old versions when you like). Your keys and
+server state stay in the server's private folder (`DAYHAND_SERVER_CONFIG_DIR`, below), not in the copy.
+
+An explicit `--backend <folder>` (or `DAYHAND_BACKEND_DIR` when the flag is absent) selects a backend;
+an invalid selection fails rather than falling back. Without an explicit path, the order is the
+backend in the CLI's own source checkout, a backend in the current folder or its ancestors (including
+their `backend/` subfolders), then the packaged backend. Checkouts run in place:
+
+```sh
 git clone https://github.com/maiarowsky/dayhand.git
 cd dayhand
 dayhand server deploy
 ```
 
-`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
-first release, from source: [Install](install.md)); the copy of the repository holds the server it
-deploys. Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` (it then prints the
+Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` in a clone (it then prints the
 `dayhand login` command to use later).
 
 `dayhand server deploy` (which runs `backend/scripts/setup.mjs`):
@@ -88,10 +108,38 @@ The Convex CLI keeps its own login in `~/.convex`. Anyone with admin access to t
 
 ### Updating
 
+Update the installed package using the same package manager you installed it with, then redeploy.
+With npm:
+
+```sh
+npm i -g dayhand@latest
+dayhand server deploy
+```
+
+With Homebrew:
+
+```sh
+brew update
+brew upgrade dayhand
+dayhand server deploy
+```
+
+For a local server, stop it with Ctrl+C before updating and run `dayhand server start` instead of
+`dayhand server deploy`, with the same options as before (including `--public-url` if used). The new
+CLI version stages its own backend copy; it reuses the server's private folder, keys and data.
+Run package-installed commands outside any checkout or staged backend directory so that an older
+backend cannot win.
+
+**Checkout alternative:** from the repository root, update the checkout and rebuild its linked CLI:
+
 ```sh
 git pull
-dayhand server deploy         # or: cd backend && npm run setup
+(cd cli && npm ci --ignore-scripts && npm run build)
+dayhand server deploy
 ```
+
+Without `dayhand`, run `cd backend && npm run setup` after `git pull` instead (`npm run setup -- --local`
+for a local server).
 
 A second run deploys the new code and keeps everything else: the deployment, the keys, the CLI
 key (while it still works) and the data. It never replaces `DAYHAND_JWT_ISSUER` (it is part of every
@@ -122,16 +170,36 @@ small next to these numbers; the Convex dashboard shows what you use.
 
 ### Backups
 
-Export the data (tasks, history, keys' hashes, devices) to a zip file outside the repository:
+For an npm or Homebrew installation, use the writable backend copy made by `dayhand server deploy`
+or `dayhand server start`, not the installed package directory. `<backend-copy>` is the path printed
+as `Using the Dayhand backend in …` during setup, for the version shown by `dayhand --version`.
+The platform-specific locations are listed in [server setup](#run-your-own-server-in-5-minutes).
+
+Export the data (tasks, history, keys' hashes, devices) to an absolute zip-file path outside the
+backend copy and the server's private folder:
 
 ```sh
-cd backend
-npx convex export --env-file "<folder>/cloud/convex.env" --path ~/dayhand-backup-$(date +%F).zip
+cd "<backend-copy>"
+npx convex export --env-file "<folder>/cloud/convex.env" --path "<backup-file>.zip"
 ```
 
-`<folder>` is the private folder above. To restore into the same deployment:
-`npx convex import --env-file "<folder>/cloud/convex.env" --replace-all <file>.zip` (it drops
-changes made since). Into a new deployment, keep the same `DAYHAND_JWT_ISSUER` (from `server.json`),
+Replace `<backend-copy>` with the full path (expand `~` to your home directory when quoting it),
+`<folder>` with the server's private folder from [Where the keys are](#where-the-keys-are), and
+`<backup-file>` with the absolute destination path without `.zip`.
+
+**Checkout alternative:** from the repository root, `cd backend`, then run the same export and
+import commands there instead. Keep the zip outside the repository too.
+
+To restore into the same deployment, from the same backend directory:
+
+```sh
+npx convex import --env-file "<folder>/cloud/convex.env" --replace-all "<backup-file>.zip"
+```
+
+This drops changes made since the export. For a local server, keep `dayhand server start` running
+and use `<folder>/local/convex.env` instead of `<folder>/cloud/convex.env` for both export and import.
+
+Into a new deployment, keep the same `DAYHAND_JWT_ISSUER` (from `server.json`),
 or the restored tasks belong to a user nobody signs in as: with a new `DAYHAND_SERVER_CONFIG_DIR`,
 run `dayhand server deploy --deployment <new> --issuer <old issuer>`, import the zip with that
 folder's `convex.env`, run `dayhand server deploy` once more (the import replaced the keys table, so
