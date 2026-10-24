@@ -81,9 +81,10 @@ Overdue tasks never ring. The summary is quiet (`passive`), so it waits in Notif
 permission when the first reminder is planned, or from Settings.
 
 Where the app keeps things: the database in `~/Library/Application Support/Dayhand/dayhand.sqlite`, the sign-in
-in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`. To try it without
-touching those, start it with `DAYHAND_DATA_DIR=<folder>` (another database) and `DAYHAND_CREDENTIALS=memory`
-(the sign-in is forgotten when the app quits).
+in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`.
+`DAYHAND_DATA_DIR=<folder>` selects another database, and `DAYHAND_CREDENTIALS=memory` keeps the sign-in only until
+the app quits. These overrides do not isolate preferences or notifications; the [sync-loop check](#tests) uses a
+separate app identity for those.
 
 ## Build and run
 
@@ -124,14 +125,17 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 175 tests, about five seconds; the live one is skipped
+swift test                        # the live-backend test is skipped by default
 scripts/check-sync-loop.sh        # the release app with its sync loop turning, 50 seconds
 ```
 
-`scripts/check-sync-loop.sh` builds `dist/Dayhand.app` (or takes `DAYHAND_APP`) and runs it signed in to a local
-server that never answers, with a temporary database and a made-up sign-in that never reaches your Keychain; it
-fails when the app ends before the time is up or the sync loop did not turn. Release builds once aborted at the end
-of the loop's wait, which neither `swift test` nor a debug build shows.
+`scripts/check-sync-loop.sh` forces a release build of `dist/Dayhand.app`, even when `DAYHAND_CONFIGURATION` is set
+to debug. To use an existing release bundle instead, set `DAYHAND_APP=<path>/Dayhand.app`; `DAYHAND_CHECK_SECONDS`
+changes the default 50-second run. The script opens a temporary copy under a separate bundle id for notifications
+and preferences, then deletes that preferences domain on cleanup. It uses a temporary database and a process-local
+Keychain stand-in for Dayhand's sign-in, pointed at a local server that accepts and closes each connection without
+replying. It fails if the app exits early or makes too few server connections. This exercises the release-app crash
+at the end of the sync loop's wait, which unit tests and debug builds did not reproduce.
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
   (`TodaySectionsTest`), repeat (`RecurrenceTest` and the backend's `repeat.test.ts`, with the RFC 5545 dates of

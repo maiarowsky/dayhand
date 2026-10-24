@@ -42,8 +42,8 @@ Estimate: 4 to 8 hours of agent work once the certificate and the notarization k
 settings, the release workflow, the cask), plus the maintainer's time for the Apple accounts. The updater and its
 screens are done (below); the release only has to sign and publish them.
 
-Before the first release also decide: the version scheme (the app reports `0.2.2` and the commit count as the
-build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
+Before the first release also decide: the version scheme (see the
+[build settings](../macos/README.md#build-and-run)) and when to stop registering `helm://` next to
 `dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
 older versions).
 
