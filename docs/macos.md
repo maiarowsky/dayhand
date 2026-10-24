@@ -42,8 +42,8 @@ Estimate: 4 to 8 hours of agent work once the certificate and the notarization k
 settings, the release workflow, the cask), plus the maintainer's time for the Apple accounts. The updater and its
 screens are done (below); the release only has to sign and publish them.
 
-Before the first release also decide: the version scheme (the app reports `0.2.0` and the commit count as the
-build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
+Before the first release also decide: the version scheme (current build metadata is described in
+[macos/README.md](../macos/README.md#build-and-run)) and when to stop registering `helm://` next to
 `dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
 older versions).
 
@@ -176,7 +176,7 @@ offline outbox, reminders and the morning summary, and the details with basic ed
 - **Live updates**: polling every 15 seconds now. A Convex WebSocket subscription would make changes elsewhere
   appear at once; `convex-swift` needs a binary framework, so this would be a small client of the Convex sync
   protocol, or the Rust core if a binary is accepted.
-- **UI tests**: the screens are drawn by `DayhandSnapshots` and their logic is tested in `DayhandCore`; clicks
-  through the real app (XCUITest) need the Xcode project above.
+- **UI tests**: current screen and layout checks are described in [macos/README.md](../macos/README.md#tests);
+  clicks through the real app (XCUITest) need the Xcode project above.
 
 The same core (`DayhandCore`) is meant to carry the iOS app later: it has no AppKit or SwiftUI in it.
