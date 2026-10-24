@@ -82,8 +82,8 @@
 	<string>Przejęcie zakończone</string>
 	<key>Claim renewed</key>
 	<string>Przejęcie przedłużone</string>
-	<key>Claimed by an agent</key>
-	<string>Przejęte przez agenta</string>
+	<key>Claimed</key>
+	<string>Przejęte</string>
 	<key>Close</key>
 	<string>Zamknij</string>
 	<key>Connect</key>
@@ -168,6 +168,8 @@
 	<string>Ukrywa zadania zrobione dzisiaj</string>
 	<key>History</key>
 	<string>Historia</string>
+	<key>History is unavailable offline.</key>
+	<string>Historia jest niedostępna offline.</string>
 	<key>In progress</key>
 	<string>W trakcie</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -324,6 +326,8 @@
 	<string>Adres serwera</string>
 	<key>Shortcut from any app:</key>
 	<string>Skrót z dowolnej aplikacji:</string>
+	<key>Show</key>
+	<string>Pokaż</string>
 	<key>Shows the tasks done today</key>
 	<string>Pokazuje zadania zrobione dzisiaj</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>

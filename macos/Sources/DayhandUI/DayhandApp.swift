@@ -23,7 +23,7 @@ public struct DayhandApp: App {
             MainWindow()
                 .environmentObject(model)
                 .environmentObject(updater)
-                .frame(minWidth: 820, minHeight: 460)
+                .frame(minWidth: 720, minHeight: 460)
                 // Drawn again in a new language, with dates in its locale.
                 .id(model.language)
                 .environment(\.locale, Localization.current.locale)

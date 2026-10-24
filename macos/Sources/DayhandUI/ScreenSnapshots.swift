@@ -64,12 +64,13 @@ public enum ScreenSnapshots {
         let updater = Updater.shared
         for dark in [false, true] {
             let suffix = dark ? "-dark" : ""
-            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 1040, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
+            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 960, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
         }
+        try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 720, height: 680), false, folder.appendingPathComponent("today-compact.png"))
         try await render(TodayView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("today-list.png"))
         for dark in [false, true] {
             try await render(
-                Sidebar().environmentObject(model).environmentObject(updater), CGSize(width: 220, height: 680), dark,
+                Sidebar().environmentObject(model).environmentObject(updater), CGSize(width: 380, height: 680), dark,
                 folder.appendingPathComponent("sidebar-update\(dark ? "-dark" : "").png")
             )
         }
@@ -77,12 +78,16 @@ public enum ScreenSnapshots {
         if let task = model.selection.flatMap(model.task) {
             try await render(TaskDetailView(task: task).environmentObject(model), CGSize(width: 560, height: 1500), false, folder.appendingPathComponent("details.png"))
         }
+        if let task = model.sections.today.first(where: { $0.title == "Buy milk" }) {
+            try await render(TaskDetailView(task: task).environmentObject(model), CGSize(width: 560, height: 1500), false, folder.appendingPathComponent("history-offline-empty.png"))
+        }
         try await render(TrashView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("trash-list.png"))
         model.show(.trash)
         model.selection = model.trash.first?.localId
         for dark in [false, true] {
-            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 1040, height: 680), dark, folder.appendingPathComponent("trash\(dark ? "-dark" : "").png"))
+            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 960, height: 680), dark, folder.appendingPathComponent("trash\(dark ? "-dark" : "").png"))
         }
+        try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 720, height: 680), false, folder.appendingPathComponent("trash-compact.png"))
         model.show(.today)
         try await render(MenuBarView().environmentObject(model), CGSize(width: 340, height: 430), false, folder.appendingPathComponent("menu-bar.png"))
         try await render(
@@ -181,6 +186,7 @@ public enum ScreenSnapshots {
         guard let call = tasks.first(where: { $0.title == "Call the accountant" }) else { return }
         let minute: Int64 = 60_000
         try await model.repository.saveHistory(call.id, [
+            TaskEvent(taskServerId: call.id, at: now - 6 * minute, actor: "cli", action: "claim"),
             TaskEvent(
                 taskServerId: call.id, at: now - 12 * minute, actor: "app", action: "update",
                 beforeJson: JSONValue.object(["dueTime": "11:00"]).encoded(), afterJson: JSONValue.object(["dueTime": "14:00"]).encoded()

@@ -58,6 +58,10 @@ let package = Package(
             dependencies: ["DayhandCore"]
         ),
         .testTarget(
+            name: "DayhandUITests",
+            dependencies: ["DayhandUI", "DayhandCore", "DayhandLocalization"]
+        ),
+        .testTarget(
             name: "DayhandLocalizationTests",
             dependencies: ["DayhandLocalization", "DayhandCore", "DayhandUpdates"]
         ),

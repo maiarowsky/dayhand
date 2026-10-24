@@ -2,8 +2,6 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// The main window: the places (Today, the trash) on the left, the place's tasks in the middle and the selected
-/// task's details on the right.
 struct MainWindow: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openWindow) private var openWindow
@@ -11,15 +9,7 @@ struct MainWindow: View {
     var body: some View {
         NavigationSplitView {
             Sidebar()
-                .navigationSplitViewColumnWidth(min: 160, ideal: 190, max: 260)
-        } content: {
-            Group {
-                switch model.place {
-                case .today: TodayView()
-                case .trash: TrashView()
-                }
-            }
-            .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 520)
+                .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 520)
         } detail: {
             if let id = model.selection, let task = model.task(id) {
                 TaskDetailView(task: task)
@@ -49,21 +39,23 @@ struct MainWindow: View {
     }
 }
 
-/// The left column: Today and the trash with their counts, and the update button in its bottom corner while a newer
-/// version is known.
 struct Sidebar: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        List(selection: Binding<Place?>(get: { model.place }, set: { if let place = $0 { model.show(place) } })) {
-            Label(tr("Today"), systemImage: "sun.max")
-                .badge(model.sections.openCount)
-                .tag(Place.today)
-            Label(tr("Trash"), systemImage: "trash")
-                .badge(model.trash.count)
-                .tag(Place.trash)
+        VStack(spacing: 0) {
+            Picker(tr("Show"), selection: Binding(get: { model.place }, set: { model.show($0) })) {
+                Text(tr("Today")).tag(Place.today)
+                Text(tr("Trash")).tag(Place.trash)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(12)
+            switch model.place {
+            case .today: TodayView()
+            case .trash: TrashView()
+            }
         }
-        .listStyle(.sidebar)
         .safeAreaInset(edge: .bottom, spacing: 0) { UpdateCorner() }
     }
 }

@@ -55,9 +55,10 @@ Mac apps outside the App Store do. Sparkle reads an **appcast** (an RSS file lis
 **EdDSA signature** against the public key in the app, and installs it after the app quits, then starts the new
 version. Dayhand draws its own screens for it (Sparkle's user driver in `DayhandUpdates`):
 
-- **The update button**: a round blue button with a download arrow at the bottom left of the main window, under
-  the sidebar's Today and Trash (where Codex has it above the profile picture; Dayhand has no profile, so the button sits alone in that
-  corner). It shows only while a newer version is known; its tooltip names the version.
+- **The update button**: a round blue button with a download arrow at the bottom left of the shared task sidebar.
+  The two-column window has a Today/Trash chooser above the sidebar list and task details on the right; there
+  are no count badges or separate places column. It shows only while a newer version is known; its tooltip
+  names the version.
 - **The update window** (a popover on the button): "Dayhand 0.2.0 is available", the running version, the release
   notes as plain text, **Later** and **Update and Relaunch**; then the download with its progress, the signature
   check, "Dayhand will quit and open again"; a failure in plain words (offline, unreadable list, broken download,
@@ -152,7 +153,9 @@ version before announcing it.
 
 The MVP covers pairing, Today, quick add with date phrases, ticking off, the menu bar, the global shortcut, the
 offline outbox, reminders and the morning summary, and the details with basic editing; 0.3.0 adds the trash and
-the change history. The research estimated 80 to 110 hours for full parity; what remains, by screen:
+the change history. Today and Trash share one sidebar beside the task details, with a segmented chooser
+and no count badges; the minimum window width remains 720 points. The research estimated 80 to 110 hours for
+full parity; what remains, by screen:
 
 - **Board**: three columns (To do, In progress with the now task first, Done: the 50 most recently done), drag
   between columns, the same moves from a menu. The repository already has `move(_:to:)`.

@@ -82,8 +82,8 @@
 	<string>Claim ended</string>
 	<key>Claim renewed</key>
 	<string>Claim renewed</string>
-	<key>Claimed by an agent</key>
-	<string>Claimed by an agent</string>
+	<key>Claimed</key>
+	<string>Claimed</string>
 	<key>Close</key>
 	<string>Close</string>
 	<key>Connect</key>
@@ -168,6 +168,8 @@
 	<string>Hides the tasks done today</string>
 	<key>History</key>
 	<string>History</string>
+	<key>History is unavailable offline.</key>
+	<string>History is unavailable offline.</string>
 	<key>In progress</key>
 	<string>In progress</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -324,6 +326,8 @@
 	<string>Server address</string>
 	<key>Shortcut from any app:</key>
 	<string>Shortcut from any app:</string>
+	<key>Show</key>
+	<string>Show</string>
 	<key>Shows the tasks done today</key>
 	<string>Shows the tasks done today</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>

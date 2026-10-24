@@ -2,21 +2,16 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/**
- * A task's change history for its details: the cached copy from the database (so it shows offline), fetched again
- * from the server when the task opens and whenever a newer server copy of it arrives, and the number of its changes
- * still in the outbox, which the server's history does not have yet.
- */
 @MainActor
 final class HistoryModel: ObservableObject {
     @Published private(set) var entries: [HistoryEntry] = []
     @Published private(set) var state: HistoryState = .loading
     @Published private(set) var pending = 0
 
-    /// What a fresh fetch depends on: the server id, and the server copy's version.
     struct RefreshKey: Hashable {
         let serverId: String?
         let version: Int64?
+        let syncStatus: SyncStatus
     }
 
     /// The cached history of [serverId], again after each change, until the view goes.
@@ -41,7 +36,9 @@ final class HistoryModel: ObservableObject {
     }
 
     func refresh(_ serverId: String?, with model: AppModel) async {
-        state = await model.refreshHistory(serverId)
+        let next = await model.refreshHistory(serverId)
+        guard !Task.isCancelled else { return }
+        state = next
     }
 }
 
@@ -56,13 +53,8 @@ struct HistorySection: View {
             if history.pending > 0 {
                 Placeholder(text: tr("\(history.pending) changes wait to be sent; they show here after that."))
             }
-            switch history.state {
-            case .notOnServerYet: Placeholder(text: tr("The history starts once this task reaches the server."))
-            case .cached: Placeholder(text: tr("Offline: this is the history from the last connection."))
-            case .loading, .fresh: EmptyView()
-            }
-            if history.entries.isEmpty, history.state == .fresh || history.state == .cached {
-                Placeholder(text: tr("No changes recorded yet."))
+            if let text = HistoryText.placeholder(history.state, isEmpty: history.entries.isEmpty) {
+                Placeholder(text: text)
             }
             ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
                 HistoryRow(entry: entry, today: today, settings: model.settings)
@@ -118,6 +110,18 @@ enum HistoryText {
     /// Long texts (a note, a checklist) are cut to this many characters.
     static let maxShown = 80
 
+    static func placeholder(_ state: HistoryState, isEmpty: Bool) -> String? {
+        switch state {
+        case .notOnServerYet: return tr("The history starts once this task reaches the server.")
+        case .cached:
+            return isEmpty
+                ? tr("History is unavailable offline.")
+                : tr("Offline: this is the history from the last connection.")
+        case .fresh: return isEmpty ? tr("No changes recorded yet.") : nil
+        case .loading: return nil
+        }
+    }
+
     static func actor(_ actor: HistoryActor) -> String {
         switch actor {
         case .app: return tr("You (app)")
@@ -143,7 +147,7 @@ enum HistoryText {
         case "delete": return tr("Moved to the trash")
         case "restore": return tr("Restored")
         case "repeat": return tr("Created as the next repeat")
-        case "claim": return tr("Claimed by an agent")
+        case "claim": return tr("Claimed")
         case "renewClaim": return tr("Claim renewed")
         case "release": return tr("Claim ended")
         default: return action

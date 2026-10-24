@@ -82,8 +82,8 @@
 	<string>担当を終了</string>
 	<key>Claim renewed</key>
 	<string>担当を延長</string>
-	<key>Claimed by an agent</key>
-	<string>エージェントが担当</string>
+	<key>Claimed</key>
+	<string>担当を取得</string>
 	<key>Close</key>
 	<string>閉じる</string>
 	<key>Connect</key>
@@ -168,6 +168,8 @@
 	<string>今日完了したタスクを隠します</string>
 	<key>History</key>
 	<string>履歴</string>
+	<key>History is unavailable offline.</key>
+	<string>オフラインでは履歴を表示できません。</string>
 	<key>In progress</key>
 	<string>進行中</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -324,6 +326,8 @@
 	<string>サーバーアドレス</string>
 	<key>Shortcut from any app:</key>
 	<string>どのアプリからでも使えるショートカット：</string>
+	<key>Show</key>
+	<string>表示</string>
 	<key>Shows the tasks done today</key>
 	<string>今日完了したタスクを表示します</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>

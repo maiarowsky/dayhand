@@ -321,6 +321,7 @@ final class AppModel: ObservableObject {
 
     func syncNow() {
         guard let engine else { return }
+        status = .connecting
         Task { await engine.round() }
     }
 

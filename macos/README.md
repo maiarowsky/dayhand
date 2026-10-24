@@ -20,8 +20,10 @@ This version is the basic one (MVP):
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
   by name) and when, newest first, each field from its old value to the new one, and how many of its changes still
   wait to be sent. It is fetched with `app:getTask` and kept in the local database, so it shows offline too.
-- **Trash** in the sidebar, under Today: the deleted tasks with the day each was deleted, the day it goes for good
-  (30 days later) and **Restore**. The sidebar counts the tasks open today and those in the trash.
+- **Trash** shares the left sidebar with Today: a segmented chooser at the top switches the task list, with no
+  count badges. Deleted tasks show the day each was deleted, the day it goes for good (30 days later) and
+  **Restore**. The window stays two-column: the sidebar and the selected task's details, with the update button
+  at the bottom left of the sidebar.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
@@ -51,9 +53,9 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  ──> SnapshotMerger (last write wins per field) ──> the database
 rounds: every 15 s, and at once after a local change
 
-task details open, or a newer server copy of the task arrives:
+task details open, a newer server copy arrives, sync succeeds, or Sync Now is requested:
   TaskHistorySync: app:getTask ──> the task's history replaces its cached copy (taskEvent table)
-  no answer or no server: the cached copy, marked as such
+  no answer or no server: the cached copy, marked as such; without a copy, history is unavailable offline
 ```
 
 The code is a Swift package with six targets:
@@ -134,7 +136,7 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 179 tests, about five seconds; the live one is skipped
+swift test                        # the live-backend test is skipped by default
 ```
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
@@ -162,11 +164,16 @@ swift test                        # 179 tests, about five seconds; the live one 
   and a build without the key sends no request. Also the state machine, the `Info.plist` rules, the notes, the
   error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
-- **Screens**: `swift run DayhandSnapshots <folder>` draws Today, the trash, the sidebar (also with the update
-  button), the details with their history, the menu bar, quick add, Connect, Settings, Settings → Updates and
-  every state of the update window from synthetic data into PNG files, off screen (the sidebar's translucent
-  background does not draw off screen, so the sidebar and the Today and trash lists are also drawn on their own). `swift run DayhandSnapshots <folder> pl` draws them
-  in another language, and the tool fails when a text on them is missing from the string catalog.
+- **Screens**: `swift run DayhandSnapshots <folder>` draws the two-column Today and Trash windows at 960 and
+  720 points wide, the shared sidebar with its chooser and update button, the details with cached history and
+  with history unavailable offline, the menu bar, quick add, Connect, Settings, Settings → Updates and every
+  state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
+  background does not draw off screen, so the sidebar and task lists are also drawn on their own).
+  `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
+  them is missing from the string catalog.
+- **History presentation** (`DayhandUITests`): sync status invalidates the refresh key even without a task
+  change, an empty offline cache never asserts an empty server history, and claim labels are actor-neutral
+  in every language.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources
