@@ -185,9 +185,9 @@ private fun TaskCheckbox(checked: Boolean, description: String, onToggle: () -> 
 private fun TaskTitle(
     task: Task,
     blocked: AgentWork.Blocked?,
+    modifier: Modifier = Modifier,
     color: Color = palette.text,
     emphasized: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
     val time = task.dueTime
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {

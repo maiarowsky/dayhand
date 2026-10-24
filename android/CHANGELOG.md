@@ -23,9 +23,8 @@ called Helm until 0.9.0.
 - **End the claim** under a live claim takes the task over from the agent after a confirmation:
   the claim ends on the phone at once and `app:release` goes through the outbox, offline too. The
   history calls it "Claim ended".
-- On Today and the board a task that cannot go on, with a blocked reason or a dependency not done
-  yet (as plan health counts it), has "⛔" before its title; screen readers hear why ("Blocked:
-  …", "Waiting for 2 tasks").
+- Blocked marks on Today and the board, with reasons for screen readers; the rules and phone-only
+  dependency lookup limits are in [Screens](README.md#screens).
 - Room version 5 keeps the task's number, plan, dependencies and blocked reason (auto-migration 4
   to 5, with `MigrationTest`; the next snapshot fills them in).
 
