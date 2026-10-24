@@ -22,6 +22,7 @@
 # - `dayhand ui` runs under expect(1), which waits for the screen and presses q;
 # - `open …/Dayhand.app` only checks that the app was built (nothing is launched);
 # - `claude mcp add …` runs only when the claude CLI is installed; the macOS build only on macOS with swift.
+# - `makepkg -si` (the Linux package) is not run, as it installs a system package; linux/ has its own tests.
 # Needs: node 22.12+, npm, git, jq, tar; expect for `dayhand ui`.
 set -euo pipefail
 
@@ -119,6 +120,7 @@ SCRIPT="$WORK/readme.sh"
       *build-app.sh*)
         run="if [ \$QUICK = 1 ] || [ \"\$(uname)\" != Darwin ] || ! command -v swift >/dev/null; then skip 'macOS build' 'quick run, or no macOS with swift'; else $run; fi" ;;
       *"npm test"*) run="if [ \$QUICK = 1 ]; then skip $(printf %q "$line") 'quick run'; else $run; fi" ;;
+      *"makepkg -si"*) run="skip 'Linux package' 'makepkg -si installs a system package (linux/ is tested by its own ctest)'" ;;
     esac
     printf 'step %q\n%s\n' "$line" "$run"
   done < <(sh_lines)

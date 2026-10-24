@@ -185,6 +185,19 @@ open macos/dist/Dayhand.app
 Connect it with a code from `dayhand pair`, or choose **Not now** to keep the plan on this Mac.
 More: [macos/README.md](macos/README.md) and [docs/macos.md](docs/macos.md).
 
+## On Linux
+
+Dayhand for Linux (Qt 6) has Today, a quick add window for a keyboard binding, a tray icon, reminders
+and the morning summary as desktop notifications, works offline, and speaks eight languages. On Arch
+Linux or Omarchy it is built as a package from this repository (not on the AUR):
+
+```sh
+(cd packaging/arch && makepkg -si)
+```
+
+Bind `dayhand-qt --quick-add` to a key in Hyprland and add the Omarchy theme template to follow your
+theme's colours: [docs/linux.md](docs/linux.md). More: [linux/README.md](linux/README.md).
+
 ## The name
 
 Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0; the old `hlm` command and `HELM_*`
@@ -201,6 +214,7 @@ backend/   Convex backend: data model, domain operations, MCP endpoint, REST API
 cli/       dayhand, the command line for people and agents
 android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
+linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
 ```
 

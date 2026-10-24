@@ -5,6 +5,8 @@ launcher entry opens them in their own terminal window, a Hyprland key focuses t
 when it is already open, and the terminal's 16 ANSI colours follow the Omarchy theme. `dayhand ui`
 uses only those 16 colours, so it changes with the theme like the rest of the desktop.
 
+For the desktop app with a tray, quick add and notifications, see [linux.md](linux.md).
+
 This page describes a hand-made setup. There is no AUR package yet, and nothing here has been
 run on an Omarchy machine (see [Not checked](#not-checked)).
 

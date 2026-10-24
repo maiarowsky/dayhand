@@ -1,0 +1,34 @@
+# Dayhand for Linux (dayhand-qt), built from the checkout this file is in: `makepkg -si` in packaging/arch.
+# Not on the AUR. A published package would take a tagged source tarball in source=() and its checksum instead
+# of the local tree.
+
+pkgname=dayhand-qt
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Today's tasks, quick add, tray and reminders for a Dayhand server (Qt 6)"
+arch=(x86_64 aarch64)
+url="https://github.com/maiarowsky/helm"
+license=(Apache-2.0)
+depends=(qt6-base qt6-declarative qt6-svg qt6-wayland libsecret hicolor-icon-theme)
+makedepends=(cmake ninja qt6-tools)
+checkdepends=(dbus weston)
+optdepends=('gnome-keyring: keeps the sign-in to the server (any Secret Service provider works)')
+
+_tree="$startdir/../../linux"
+
+build() {
+    cmake -S "$_tree" -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=None \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DDAYHAND_BUILD_TESTS=ON
+    cmake --build build
+}
+
+check() {
+    ctest --test-dir build --output-on-failure
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install build
+    install -Dm644 "$_tree/../LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
