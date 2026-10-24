@@ -1,0 +1,14 @@
+# dayhand.dev runs as a Cloudflare Worker with static assets only: the files Astro builds into dist/, no Worker script.
+# Deploy from this folder: npm run build && wrangler deploy. The account comes from `wrangler login`, so no account
+# id and no secrets belong here.
+name = "dayhand-site"
+compatibility_date = "2026-10-24"
+
+[[routes]]
+pattern = "dayhand.dev"
+custom_domain = true
+
+[assets]
+directory = "./dist"
+# Paths with no file get dist/404.html with status 404.
+not_found_handling = "404-page"

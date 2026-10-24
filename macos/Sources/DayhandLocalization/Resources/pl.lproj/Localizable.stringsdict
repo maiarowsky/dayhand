@@ -122,6 +122,46 @@
 			<string>%lld zadania na dziś</string>
 		</dict>
 	</dict>
+	<key>%lld times, this one included</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld razy, łącznie z tym</string>
+			<key>many</key>
+			<string>%lld razy, łącznie z tym</string>
+			<key>one</key>
+			<string>%lld raz, łącznie z tym</string>
+			<key>other</key>
+			<string>%lld razy, łącznie z tym</string>
+		</dict>
+	</dict>
+	<key>At most %lld reminders.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Najwyżej %lld przypomnienia.</string>
+			<key>many</key>
+			<string>Najwyżej %lld przypomnień.</string>
+			<key>one</key>
+			<string>Najwyżej %lld przypomnienie.</string>
+			<key>other</key>
+			<string>Najwyżej %lld przypomnienia.</string>
+		</dict>
+	</dict>
 	<key>Dayhand, %lld open today</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

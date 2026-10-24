@@ -12,6 +12,7 @@
     <text x="520" y="250" fill="#F3E3C8" font-size="104" font-weight="700" letter-spacing="-2">Dayhand</text>
     <text x="524" y="330" fill="#D9A66B" font-size="40" font-weight="500">A day plan for you</text>
     <text x="524" y="382" fill="#D9A66B" font-size="40" font-weight="500">and your AI agents</text>
-    <text x="524" y="470" fill="#F3E3C8" fill-opacity="0.75" font-size="28">dayhand.dev · open source, Apache-2.0</text>
+    <text x="524" y="470" fill="#F3E3C8" font-size="30" font-weight="600">Free and open source</text>
+    <text x="524" y="512" fill="#F3E3C8" fill-opacity="0.75" font-size="28">dayhand.dev · Apache-2.0</text>
   </g>
 </svg>

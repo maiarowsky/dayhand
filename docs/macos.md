@@ -147,6 +147,23 @@ Not checked yet (needs the signed release): a full install and relaunch. Sparkle
 after the app quits, and only for a signed, notarized app; the first release should try it from the previous
 version before announcing it.
 
+## Offline repeating
+
+The Mac creates a repeating task's next occurrence locally only when it has no server (**Not now**, disconnected
+or signed out). It clears the completed task's rule before sending completion, then uploads the locally created
+occurrence, so connecting a server later does not also generate an occurrence for that completion. Retries reuse
+the queued occurrence's `clientId`. If the parent add, rule-clear or completion is permanently refused, its unsent
+generated occurrences are discarded.
+
+Known limitations:
+
+- A paired Mac without network queues completion but creates no next occurrence until it syncs; a
+  completion-anchored rule then counts from the sync date, not the local completion date.
+- A Mac without a server does not keep agent acceptance criteria or plans, so a locally created next occurrence
+  lacks those fields.
+- Completing the same cached occurrence on two devices before sync can yield two next occurrences, as on Android;
+  this release adds no cross-device correlation protocol.
+
 ## What is left for parity with the Android app
 
 The implemented features, including the trash and change history, are described in
@@ -158,10 +175,7 @@ by screen:
 - **Calendar**: the week on an hour grid and one day, tasks with a time as blocks, the band of tasks without a
   time, later dates of a repeating task (`Recurrence.occurrences` is ported), drag to another day and time with
   Undo (`setDue` through the outbox is there).
-- **Details**: editors for repeat (every N days, weeks on weekdays, months on a day, the last day or an nth
-  weekday; from the due date or completion; until or a count; `TaskRules.isValid` and `setRepeat` are ported),
-  for reminders (minutes before, a time on the day or days before, at most five; `setReminders` is ported), for
-  links, a date picker and moving checklist items.
+- **Details**: an editor for links, a date picker and moving checklist items.
 - **Settings**: the morning summary time and default reminders edited on the Mac (`app:updateSettings` through the
   outbox, kept against snapshots while it waits); appearance (the Mussh palettes and fonts of
   [design.md](design.md)); export as Markdown or JSON; the calendar address; **agent connections** (approve a

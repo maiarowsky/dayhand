@@ -1,0 +1,3 @@
+# Made by `astro build` and `astro dev`, and by `wrangler deploy`.
+.astro/
+.wrangler/

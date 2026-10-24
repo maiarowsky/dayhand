@@ -30,6 +30,8 @@
 	<string>Kod parowania ma 12 liter i cyfr, np. E6M8-FE02-XSNT.</string>
 	<key>About</key>
 	<string>O programie</string>
+	<key>Add</key>
+	<string>Dodaj</string>
 	<key>Add Task</key>
 	<string>Dodaj zadanie</string>
 	<key>Add a task (try: Pay rent fri 9am)</key>
@@ -40,6 +42,8 @@
 	<string>Dodaj te słowa do tytułu, zamiast czytać je jako datę</string>
 	<key>Address</key>
 	<string>Adres</string>
+	<key>After a number of times</key>
+	<string>Po liczbie razy</string>
 	<key>Agent</key>
 	<string>Agent</string>
 	<key>Agent: %@</key>
@@ -52,8 +56,14 @@
 	<string>Archiwizuj</string>
 	<key>Archived</key>
 	<string>Zarchiwizowano</string>
+	<key>As in Settings</key>
+	<string>Jak w Ustawieniach</string>
 	<key>As in settings (%@)</key>
 	<string>Jak w ustawieniach (%@)</string>
+	<key>At a time of day</key>
+	<string>O godzinie</string>
+	<key>Before the due time</key>
+	<string>Przed terminem</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>Zbudowano z GRDB.swift (MIT), KeyboardShortcuts (MIT) i Sparkle (MIT).</string>
 	<key>Cancel</key>
@@ -100,14 +110,22 @@
 	<string>Połączenie</string>
 	<key>Connect…</key>
 	<string>Połącz…</string>
+	<key>Count the next date from</key>
+	<string>Następny termin licz od</string>
 	<key>Created</key>
 	<string>Utworzono</string>
 	<key>Created as the next repeat</key>
 	<string>Utworzono jako kolejne powtórzenie</string>
+	<key>Custom</key>
+	<string>Własne</string>
 	<key>Daily</key>
 	<string>Codziennie</string>
 	<key>Day</key>
 	<string>Dzień</string>
+	<key>Day %lld</key>
+	<string>Dzień %lld.</string>
+	<key>Day of the month</key>
+	<string>Dzień miesiąca</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dostępny jest Dayhand %@ (wersja zapoznawcza)</string>
 	<key>Dayhand %@ is available</key>
@@ -162,6 +180,14 @@
 	<string>Termin</string>
 	<key>Edited</key>
 	<string>Zmieniono</string>
+	<key>Ends</key>
+	<string>Koniec</string>
+	<key>Enter a number from 1 to %lld.</key>
+	<string>Wpisz liczbę od 1 do %lld.</string>
+	<key>Every how many</key>
+	<string>Co ile</string>
+	<key>Frequency</key>
+	<string>Częstotliwość</string>
 	<key>General</key>
 	<string>Ogólne</string>
 	<key>Hides the tasks done today</key>
@@ -170,6 +196,8 @@
 	<string>Historia</string>
 	<key>History is unavailable offline.</key>
 	<string>Historia jest niedostępna offline.</string>
+	<key>How many times</key>
+	<string>Ile razy</string>
 	<key>In progress</key>
 	<string>W trakcie</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -190,6 +218,8 @@
 	<string>Język</string>
 	<key>Last checked %@.</key>
 	<string>Ostatnio sprawdzono: %@.</string>
+	<key>Last date</key>
+	<string>Ostatni dzień</string>
 	<key>Later</key>
 	<string>Później</string>
 	<key>Links</key>
@@ -218,6 +248,8 @@
 	<string>Przeniesiono na tablicy</string>
 	<key>Moved to the trash</key>
 	<string>Przeniesiono do kosza</string>
+	<key>Never</key>
+	<string>Nigdy</string>
 	<key>New Task</key>
 	<string>Nowe zadanie</string>
 	<key>New Task…</key>
@@ -232,6 +264,10 @@
 	<string>Nie ma jeszcze zapisanych zmian.</string>
 	<key>No day</key>
 	<string>Bez terminu</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>Bez wybranego dnia: dzień tygodnia, w którym ukończę zadanie.</string>
+	<key>No day picked: the due date's weekday.</key>
+	<string>Nie wybrano dnia: dzień tygodnia terminu.</string>
 	<key>No server connected.</key>
 	<string>Nie połączono z serwerem.</string>
 	<key>None</key>
@@ -276,6 +312,12 @@
 	<string>Offline: to historia z ostatniego połączenia.</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>Na komputerze zalogowanym do serwera uruchom dayhand pair i wpisz pokazany kod albo otwórz wypisany link. Kod działa raz, przez 10 minut.</string>
+	<key>On a day</key>
+	<string>W dniu</string>
+	<key>On the due day</key>
+	<string>W dniu terminu</string>
+	<key>On these days</key>
+	<string>W te dni</string>
 	<key>Open Dayhand</key>
 	<string>Otwórz Dayhand</string>
 	<key>Open System Settings</key>
@@ -296,6 +338,10 @@
 	<string>Nie udało się wczytać zadań: %@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
 	<string>Wydane wersje są podpisane i same się uaktualniają; kopia zbudowana na tym Macu tego nie potrafi.</string>
+	<key>Reminder day</key>
+	<string>Dzień przypomnienia</string>
+	<key>Reminder time</key>
+	<string>Godzina przypomnienia</string>
 	<key>Reminders</key>
 	<string>Przypomnienia</string>
 	<key>Reminders and the morning summary are on.</key>
@@ -316,8 +362,14 @@
 	<string>Przywrócono</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return dodaje na dziś; data na końcu, po angielsku (tomorrow 9am, fri, 23 oct), ustawia dzień.</string>
+	<key>Revert</key>
+	<string>Przywróć</string>
 	<key>Save Note</key>
 	<string>Zapisz notatkę</string>
+	<key>Save Reminders</key>
+	<string>Zapisz przypomnienia</string>
+	<key>Save Repeat</key>
+	<string>Zapisz powtarzanie</string>
 	<key>Select a task to see its details.</key>
 	<string>Wybierz zadanie, aby zobaczyć szczegóły.</string>
 	<key>Server</key>
@@ -356,10 +408,18 @@
 	<string>Nie udało się zapisać zmiany: %@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>Kod jest błędny, zużyty albo wygasł. Uruchom ponownie dayhand pair, aby dostać nowy.</string>
+	<key>The day I complete it</key>
+	<string>Dnia zrobienia</string>
+	<key>The day before</key>
+	<string>Dzień wcześniej</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>Pobrane uaktualnienie nie przeszło weryfikacji podpisu, więc nie zostało zainstalowane.</string>
+	<key>The due date</key>
+	<string>Terminu</string>
 	<key>The history starts once this task reaches the server.</key>
 	<string>Historia zacznie się, gdy zadanie dotrze na serwer.</string>
+	<key>The last day of the month</key>
+	<string>Ostatni dzień miesiąca</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>Nie udało się odczytać listy nowych wersji. Spróbuj później.</string>
 	<key>The note is too long.</key>
@@ -398,6 +458,8 @@
 	<string>Etykiet jest za dużo albo któraś jest za długa.</string>
 	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
 	<string>Te ustawienia pochodzą z serwera, więc telefon, agent i ten Mac się zgadzają. Zmienisz je w telefonie albo poleceniem dayhand.</string>
+	<key>These ring only when the task has a time.</key>
+	<string>Te dzwonią tylko, gdy zadanie ma godzinę.</string>
 	<key>This Mac</key>
 	<string>Ten Mac</string>
 	<key>This version</key>

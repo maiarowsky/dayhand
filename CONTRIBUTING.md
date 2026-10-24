@@ -55,9 +55,9 @@ npm run test:unit                         # pure tests only, under a second
 
 - A command is an entry in the registry (`cli/src/registry/`): help, completion,
   `docs/cli.md`, `man/dayhand.1` and `docs/skills/dayhand/SKILL.md` are all generated from it. After
-  changing a command, run `npm run build && npm run docs` in `cli/`, then rebuild the
-  [published documentation](#the-site-and-the-documentation) and commit the regenerated files;
-  checks fail while they are stale.
+  changing a command, run `npm run build && npm run docs` in `cli/` and commit the regenerated files;
+  a test fails while they are stale. The [published documentation](#the-site-and-the-documentation)
+  is built from them when the site is built.
 - **`--json` is a contract for agents and scripts.** A change to what a command prints with
   `--json`, to its error JSON or to an exit code needs the contract tests in the same PR:
   `cli/tests/contract.test.ts` (output equals the MCP tool's `structuredContent` and passes its
@@ -71,19 +71,29 @@ npm run test:unit                         # pure tests only, under a second
 
 ## The site and the documentation
 
-`site/` is dayhand.dev: plain HTML and CSS that open from the file system, with nothing loaded from
-other servers. Its documentation pages (`site/docs/`) are built from `docs/*.md`; edit the Markdown,
-then rebuild and commit both. How it is built and the CSS rules it follows: [site/STYLE.md](site/STYLE.md);
-how to write the docs: [docs/contributing.md](docs/contributing.md).
+`site/` is dayhand.dev: an Astro project that builds the landing page and the documentation into a
+static site in `site/dist/`, with nothing loaded from other servers. The documentation pages are the
+Markdown in `docs/`, rendered at build time, so nothing generated is committed. How it is built, the
+screenshots and the CSS rules it follows: [site/STYLE.md](site/STYLE.md); how to write the docs:
+[docs/contributing.md](docs/contributing.md).
 
 ```sh
-node scripts/build-docs.mjs     # after changing docs/*.md (Node, standard library only)
-scripts/check-site.sh           # fixed site/: HTML, metadata, links, CSS/JS lint, docs up to date (needs python3 and node)
+(cd site && npm ci --ignore-scripts && npm run dev)   # http://localhost:4321
+scripts/check-site.sh --build   # build site/, then check dist/: HTML, metadata, links, weight (needs python3)
 scripts/render-site-images.sh   # after changing og-image.svg or the icon (needs Chrome)
 ```
 
 Write only what is true today: a package or a download without a published release is "Coming soon",
-with no command or link for it.
+with no command or link for it. Screenshots show made-up demo data only.
+
+Maintainers deploy after a merge to `main`, from `site/`, with Wrangler logged in to the account that
+owns dayhand.dev:
+
+```sh
+npm run build && wrangler deploy
+```
+
+`site/wrangler.toml` holds no account id and no secrets; the account comes from `wrangler login`.
 
 ## Secrets
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Renders the raster images of the dayhand.dev page (site/) from their SVG sources with headless Chrome:
-#   site/og-image.svg            -> site/og-image.png (1200 x 630, the social preview)
-#   design/icon/dayhand-icon.svg -> site/apple-touch-icon.png (180 x 180)
+#   site/og-image.svg            -> site/public/og-image.png (1200 x 630, the social preview)
+#   design/icon/dayhand-icon.svg -> site/public/apple-touch-icon.png (180 x 180)
 # Run it after changing either SVG and commit the PNGs. CHROME overrides the browser path.
 set -euo pipefail
 
@@ -32,5 +32,5 @@ EOF
   echo "wrote ${png#"$ROOT"/}"
 }
 
-render "$ROOT/site/og-image.svg" 1200 630 "$ROOT/site/og-image.png"
-render "$ROOT/design/icon/dayhand-icon.svg" 180 180 "$ROOT/site/apple-touch-icon.png"
+render "$ROOT/site/og-image.svg" 1200 630 "$ROOT/site/public/og-image.png"
+render "$ROOT/design/icon/dayhand-icon.svg" 180 180 "$ROOT/site/public/apple-touch-icon.png"

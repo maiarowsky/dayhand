@@ -1,0 +1,34 @@
+---
+// The bar at the top of every page: the name, which leads home, and the main links.
+import { DOCS_PATH, REPO_URL } from "../site";
+
+const here = Astro.url.pathname;
+const links = [
+  { href: "/#screens", label: "Screens" },
+  { href: "/#agents", label: "Agents" },
+  { href: "/#self-hosting", label: "Server" },
+  { href: "/#download", label: "Download" },
+  { href: DOCS_PATH, label: "Docs" },
+  { href: REPO_URL, label: "GitHub" },
+];
+---
+
+<header class="site-header">
+  <a class="brand" href="/">
+    <img src="/favicon.svg" alt="" width="32" height="32" />
+    <span>Dayhand</span>
+  </a>
+  <nav aria-label="Main">
+    <ul>
+      {
+        links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={link.href === DOCS_PATH && here.startsWith(DOCS_PATH) ? "page" : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</header>

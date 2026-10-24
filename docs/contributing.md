@@ -16,7 +16,7 @@ change, signing off your commits, the commit format and the tests each part need
 | `packaging/` | the Arch Linux package and the Homebrew formula template | |
 | `docs/` | these pages, the JSON schemas of `--json` and the MCP results, the Agent Skill | below |
 | `man/` | the manual pages, generated from the CLI | |
-| `site/` | dayhand.dev: the landing page and the built docs | [site/STYLE.md](../site/STYLE.md) |
+| `site/` | dayhand.dev: the landing page and these docs, built with Astro | [site/STYLE.md](../site/STYLE.md) |
 | `scripts/` | checks and builders for the README and the site | |
 
 Test setup and the checks each change needs:
@@ -24,14 +24,15 @@ Test setup and the checks each change needs:
 
 ## Writing these docs
 
-Edit the Markdown in `docs/`, not the generated pages in `site/docs/`. Rebuild and check commands
-are in [CONTRIBUTING.md](../CONTRIBUTING.md#the-site-and-the-documentation); how the generated site
-works is in [site/STYLE.md](../site/STYLE.md#documentation-pages-docs).
+Edit the Markdown in `docs/`; dayhand.dev renders it when the site is built, and nothing generated is
+committed. Build and check commands are in [CONTRIBUTING.md](../CONTRIBUTING.md#the-site-and-the-documentation);
+how the site turns the Markdown into pages is in [site/STYLE.md](../site/STYLE.md#documentation-pages-docs).
 
-- Which files become pages, their titles in the menu and their order are in `scripts/docs/pages.mjs`. A
+- Which files become pages, their titles in the menu and their order are in `site/src/docs/pages.ts`. A
   new page goes there.
 - Link to other pages by their file name (`[webhooks](webhooks.md#events)`). Links to any other file in
-  the repository become links to it on GitHub. A link to a missing file or heading stops the build.
+  the repository become links to it on GitHub. A link to a missing file stops the build, and
+  `scripts/check-site.sh` reports a link to a missing heading.
 - For generated command references and the Agent Skill, follow the
   [CLI contribution instructions](../CONTRIBUTING.md#the-dayhand-cli) instead of editing the output.
 - Write only what is true in `main`. Something that is not released or not built yet is marked as

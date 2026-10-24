@@ -1,0 +1,16 @@
+---
+// The page for addresses that do not exist; the host serves it with status 404.
+import Page from "../layouts/Page.astro";
+import { DOCS_PATH } from "../site";
+---
+
+<Page title="Page not found · Dayhand" description="This page does not exist on dayhand.dev." noindex>
+  <section class="closing" aria-labelledby="missing-title">
+    <h1 id="missing-title">This page does not exist.</h1>
+    <p class="section-lead">It may have moved. The home page and the documentation are one click away.</p>
+    <div class="actions">
+      <a class="button primary" href="/">Go to dayhand.dev</a>
+      <a class="button" href={DOCS_PATH}>Read the docs</a>
+    </div>
+  </section>
+</Page>
