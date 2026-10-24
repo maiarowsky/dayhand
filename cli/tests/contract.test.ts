@@ -266,6 +266,30 @@ describe("agent contract", () => {
     }
   });
 
+  test.each(["agents_paused", "forbidden"] as const)("backlog REST previews preserve the same %s refusal as MCP imports", async (code) => {
+    const { userId, key } = await newUser();
+    const agent = await createKey(userId, "importer", "agent");
+    const dir = backlogFolder();
+    if (code === "agents_paused") await dayhandJson(key, ["agents", "pause", "--reason", "lunch"]);
+    else await dayhandJson(key, ["policy", "set", agent.id, "import_backlog", "deny"]);
+    const ordinary = await dayhand(agent.key, ["backlog", "import", dir, "--json"]);
+    const preview = await dayhand(agent.key, ["backlog", "import", dir, "--dry-run", "--json"]);
+    for (const run of [ordinary, preview]) {
+      expect(run.code).toBe(7);
+      expect(run.stdout).toBe("");
+      const error = jsonError(run);
+      expect(error).toMatchObject({ code, exitCode: 7 });
+      expect(error.hint).toBeUndefined();
+      expect(validate("error.schema.json", { error })).toEqual([]);
+    }
+    expect(jsonError(preview).message).toBe(jsonError(ordinary).message);
+    expect((await dayhandJson(key, ["list"])).total).toBe(0);
+    if (code === "agents_paused") await dayhandJson(key, ["agents", "resume"]);
+    else await dayhandJson(key, ["policy", "set", agent.id, "import_backlog", "allow"]);
+    expect(await dayhandJson(agent.key, ["backlog", "import", dir, "--dry-run"])).toMatchObject({ dryRun: true, created: 2 });
+    expect((await dayhandJson(key, ["list"])).total).toBe(0);
+  });
+
   test("a backlog import under ask uses an exact one-call approval with no replay exception", async () => {
     const { userId, key } = await newUser();
     const agent = await createKey(userId, "importer", "agent");

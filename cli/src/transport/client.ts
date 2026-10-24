@@ -211,6 +211,7 @@ function httpError(status: number, payload: any, where: string): CliError {
   const code = payload?.code ?? payload?.error;
   if (code === "not_found") return new CliError("not_found", description ?? "Not found");
   if (status === 403) {
+    if (code === "agents_paused" || code === "forbidden") return new CliError(code, description ?? `${where} refused the request (HTTP 403)`);
     return new CliError("unauthenticated", description ?? `${where} refused the request (HTTP 403)`, {
       hint: "use a key with scope full (dayhand key list shows each key's scope)",
     });
