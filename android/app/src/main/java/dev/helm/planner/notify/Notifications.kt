@@ -18,14 +18,15 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.ContextCompat
 import dev.helm.planner.MainActivity
 import dev.helm.planner.R
+import dev.helm.planner.agents.ApprovalRequest
 import dev.helm.planner.domain.MorningSummary
 import dev.helm.planner.domain.Reminder
 import dev.helm.planner.ui.theme.AppearanceStore
 
 /**
- * Reminders and the morning summary as notifications, in two channels so each can be turned
- * off or silenced on its own in the system settings. The summary channel is quiet by default:
- * it arrives at 05:00 and should be waiting, not wake anyone.
+ * Reminders, the morning summary and agents' approval requests as notifications, each in its
+ * own channel so it can be turned off or silenced on its own in the system settings. The summary
+ * channel is quiet by default: it arrives at 05:00 and should be waiting, not wake anyone.
  */
 class AndroidNotifier(private val context: Context) : ReminderNotifier {
     private val manager = NotificationManagerCompat.from(context)
@@ -40,7 +41,36 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
             NotificationChannel(CHANNEL_SUMMARY, context.getString(R.string.channel_summary), NotificationManager.IMPORTANCE_LOW)
                 .apply { description = context.getString(R.string.channel_summary_description) },
         )
+        system.createNotificationChannel(
+            NotificationChannel(CHANNEL_APPROVALS, context.getString(R.string.channel_approvals), NotificationManager.IMPORTANCE_HIGH)
+                .apply { description = context.getString(R.string.channel_approvals_description) },
+        )
     }
+
+    /** New approval requests (agents/ApprovalPoll.kt); a tap opens Agents, where the owner decides. */
+    @SuppressLint("MissingPermission")
+    fun showApprovals(requests: List<ApprovalRequest>) {
+        if (requests.isEmpty() || !canPost(context)) return
+        for (request in requests) {
+            val notification = NotificationCompat.Builder(context, CHANNEL_APPROVALS)
+                .setSmallIcon(R.drawable.ic_stat_helm)
+                .setColor(accent())
+                .setContentTitle(context.getString(R.string.approval_notify_title, request.requestedBy))
+                .setContentText(request.action)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(request.action))
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setWhen(request.createdAt)
+                .setShowWhen(true)
+                .setTimeoutAfter((request.expiresAt - System.currentTimeMillis()).coerceAtLeast(1))
+                .setAutoCancel(true)
+                .setContentIntent(openAgents())
+                .build()
+            notifySafely { manager.notify(request.id, ID_APPROVAL, notification) }
+        }
+    }
+
+    fun cancelApproval(approvalId: String) = manager.cancel(approvalId, ID_APPROVAL)
 
     // canPost() checks the permission; notifySafely() catches its withdrawal in between.
     @SuppressLint("MissingPermission")
@@ -107,6 +137,15 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 
+    private fun openAgents(): PendingIntent = PendingIntent.getActivity(
+        context,
+        1,
+        Intent(context, MainActivity::class.java)
+            .putExtra(MainActivity.EXTRA_OPEN, MainActivity.OPEN_AGENTS)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
     private fun completeIntent(taskLocalId: String): PendingIntent = PendingIntent.getBroadcast(
         context,
         0,
@@ -121,8 +160,10 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
     companion object {
         const val CHANNEL_REMINDERS = "reminders"
         const val CHANNEL_SUMMARY = "summary"
+        const val CHANNEL_APPROVALS = "approvals"
         const val ID_REMINDER = 1
         const val ID_SUMMARY = 2
+        const val ID_APPROVAL = 3
 
         /** Android 13+ needs the POST_NOTIFICATIONS permission; the user can also block the app. */
         fun canPost(context: Context): Boolean =

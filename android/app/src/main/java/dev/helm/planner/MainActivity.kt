@@ -28,10 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.helm.planner.auth.PairingInput
 import dev.helm.planner.auth.PairingLink
+import dev.helm.planner.ui.agents.AgentsRoute
 import dev.helm.planner.ui.connect.ConnectRoute
 import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
@@ -48,6 +50,8 @@ import dev.helm.planner.ui.task.TaskDetailViewModel
 import dev.helm.planner.ui.components.HelmTab
 import dev.helm.planner.ui.components.HelmTabBar
 import dev.helm.planner.ui.theme.HelmTheme
+import dev.helm.planner.ui.today.HealthCard
+import dev.helm.planner.ui.today.HealthCardViewModel
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
 import dev.helm.planner.ui.today.TodayViewModel
@@ -59,12 +63,18 @@ class MainActivity : ComponentActivity() {
     /** A `dayhand://pair` (or older `helm://pair`) link (QR code from `dayhand pair`) waiting to fill in the Connect screen. */
     private var pairingLink by mutableStateOf<PairingLink?>(null)
 
+    /** An approval request's notification was tapped: Agents opens over Today. */
+    private var openAgents by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as HelmApplication).container
         val versionName = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
-        if (savedInstanceState == null) pairingLink = linkOf(intent)
+        if (savedInstanceState == null) {
+            pairingLink = linkOf(intent)
+            openAgents = wantsAgents(intent)
+        }
         setContent {
             val appearance by container.appearance.appearance.collectAsStateWithLifecycle()
             val systemDark = isSystemInDarkTheme()
@@ -78,13 +88,24 @@ class MainActivity : ComponentActivity() {
                 }
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
-            HelmTheme(appearance, systemDark) { HelmRoot(container, versionName, pairingLink, onLinkUsed = { pairingLink = null }) }
+            HelmTheme(appearance, systemDark) {
+                HelmRoot(container, versionName, pairingLink, onLinkUsed = { pairingLink = null }, openAgents, onAgentsOpened = { openAgents = false })
+            }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         linkOf(intent)?.let { pairingLink = it }
+        if (wantsAgents(intent)) openAgents = true
+    }
+
+    private fun wantsAgents(intent: Intent?): Boolean = intent?.getStringExtra(EXTRA_OPEN) == OPEN_AGENTS
+
+    companion object {
+        /** What a notification opens; [OPEN_AGENTS] for an approval request. */
+        const val EXTRA_OPEN = "dev.helm.planner.OPEN"
+        const val OPEN_AGENTS = "agents"
     }
 
     private fun linkOf(intent: Intent?): PairingLink? =
@@ -99,6 +120,7 @@ private object Route {
     const val TRASH = "trash"
     const val SETTINGS = "settings"
     const val CONNECT = "connect"
+    const val AGENTS = "agents"
 
     /** Connect shown by itself at the first start without a server (with "Not now"). */
     const val FIRST_CONNECT = "first-connect"
@@ -114,6 +136,8 @@ private fun HelmRoot(
     versionName: String,
     pairingLink: PairingLink?,
     onLinkUsed: () -> Unit,
+    openAgents: Boolean,
+    onAgentsOpened: () -> Unit,
 ) {
     // A back stack of routes; Today is always at the bottom, so Back from the calendar or the board returns to it.
     var stack by rememberSaveable { mutableStateOf(listOf(Route.TODAY)) }
@@ -134,6 +158,12 @@ private fun HelmRoot(
     // A pairing link always opens Connect, filled in.
     LaunchedEffect(pairingLink) {
         if (pairingLink != null && route != Route.CONNECT) open(Route.CONNECT)
+    }
+    LaunchedEffect(openAgents) {
+        if (openAgents) {
+            if (route != Route.AGENTS) open(Route.AGENTS)
+            onAgentsOpened()
+        }
     }
     val context = LocalContext.current
     // Asked in context: the first task with a time is the first one that can ring.
@@ -160,7 +190,15 @@ private fun HelmRoot(
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
-            state?.let { TodayScreen(it, actions, bottomBar = tabs) }
+            val healthModel = viewModel { HealthCardViewModel(api = { container.settings.current().backend?.let(container::agentControlApi) }) }
+            val health by healthModel.health.collectAsStateWithLifecycle()
+            // Read again whenever the tasks change and when Dayhand comes back to the front.
+            LaunchedEffect(state?.sections) { healthModel.refresh() }
+            LifecycleResumeEffect(Unit) {
+                healthModel.refresh()
+                onPauseOrDispose {}
+            }
+            state?.let { TodayScreen(it, actions, bottomBar = tabs, header = { HealthCard(health, onReview = { open(Route.AGENTS) }) }) }
         }
         route == Route.CALENDAR -> {
             val viewModel = viewModel {
@@ -229,6 +267,7 @@ private fun HelmRoot(
             onBack = back,
             onConnect = { open(Route.CONNECT) },
         )
+        route == Route.AGENTS -> AgentsRoute(container, onBack = back)
         route == Route.CONNECT || route == Route.FIRST_CONNECT -> ConnectRoute(
             container,
             link = pairingLink,

@@ -3,6 +3,28 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.10.0 (2026-10-24)
+
+### Added
+
+- **Settings → Agents** (with a server, backend 0.11.0 or later): **Pause agents**, one switch
+  that refuses every agent's changes while reading still works; the approval requests waiting
+  for a decision, each on its own page with its options and their consequences, whether it can be
+  undone and the time to decide by, decided with an optional word for the agent; the proposal
+  inbox, where a proposal is accepted, merged into an open task or rejected with a reason; and the
+  tool policies set with `dayhand policy set`, read-only.
+- A **plan health** card above Today: overdue, claims that ran out, approval requests, blocked
+  tasks, proposals, done without proof and more in one line, with **Review** to open Agents.
+- Notifications for new approval requests while Dayhand is closed, checked every 15 minutes
+  (WorkManager); a tap opens Agents.
+
+## 0.9.1 (2026-10-24)
+
+### Added
+
+- Task details show, read-only, who works on a task and until when, its acceptance criteria and
+  the proof it was completed with (backend 0.10.0).
+
 ## 0.9.0 (2026-10-24)
 
 ### Changed

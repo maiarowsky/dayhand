@@ -113,6 +113,11 @@ internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, 
                         open(SettingsPane.CONNECTIONS)
                     }
                 }
+                add {
+                    ListRow(stringResource(R.string.agents_title), SettingsTags.ROW_AGENTS, icon = LineIcon.Code) {
+                        open(SettingsPane.AGENTS)
+                    }
+                }
             }
         },
     )

@@ -34,6 +34,7 @@ import dev.helm.planner.notify.AndroidAlarmScheduler
 import dev.helm.planner.notify.AndroidNotifier
 import dev.helm.planner.settings.AppLanguage
 import dev.helm.planner.settings.AppLanguages
+import dev.helm.planner.ui.agents.AgentsRoute
 import dev.helm.planner.ui.connections.ConnectionsRoute
 import dev.helm.planner.ui.theme.Appearance
 import java.io.File
@@ -156,6 +157,7 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
             actions,
             connections = { back -> ConnectionsRoute(container, back) },
             calendar = { back -> CalendarFeedRoute(container, back) },
+            agents = { back -> AgentsRoute(container, back) },
         )
     } ?: SettingsLoading(onBack)
 }

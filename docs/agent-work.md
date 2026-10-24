@@ -185,8 +185,8 @@ new tools; a client that knows none of them keeps working.
 `request_approval` stores a request: what it is about (optionally a task), what the agent wants
 to do (`action`, with `detail`), 2 to 4 `options`, each with the `consequence` of picking it,
 whether the step is `reversible`, and how long the owner has (`expiresInMinutes`, a day unless
-set, a week at most). The phone shows it under Settings → Agents → Approvals, on the health card
-above Today, and as a notification; the owner picks an option and may add a note. The agent reads
+set, a week at most). The phone shows it under Settings → Agents (waiting for you), on the health
+card above Today, and as a notification; the owner picks an option and may add a note. The agent reads
 the outcome with `get_approval` (`pending`, `decided` or `expired`), or is told by the webhook
 `approval.decided`. `dayhand ask` and `dayhand approval` do the same from a terminal, and a `cli`
 key can decide with `dayhand approvals decide`.
@@ -325,9 +325,11 @@ the pending requests in all, proposals in the inbox, tasks completed today with 
 proof, and the oldest open task with its age in days. Each section has its `count` and lists the
 first 20 tasks. Whether agents are paused comes first.
 
-On the phone, a card above Today shows the same counts and opens the approvals and proposals;
-it is worked out on the phone from its copy of the plan, so it shows offline too, with the
-approvals and proposals from the last time the phone reached the server.
+On the phone, a card above Today says the same counts in one line, the most pressing first, and
+its **Review** opens Settings → Agents when a request or a proposal waits. The phone reads the
+report from the server (`app:planHealth`) when Today opens, when the app comes back to the front
+and when the tasks change; offline it keeps the last report, and a phone without a server has no
+card.
 
 Decisions:
 

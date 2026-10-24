@@ -6,6 +6,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import dev.helm.planner.agents.AgentControlApi
+import dev.helm.planner.agents.ApprovalPollScheduler
 import dev.helm.planner.auth.AppTokens
 import dev.helm.planner.auth.DeviceTokens
 import dev.helm.planner.auth.PairingApi
@@ -40,6 +42,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class HelmApplication : Application() {
@@ -61,6 +64,10 @@ class HelmApplication : Application() {
             }
                 .distinctUntilChanged()
                 .collect { container.reminders.reschedule() }
+        }
+        // New approval requests reach the phone by polling while it is connected to a server.
+        container.backgroundScope.launch {
+            container.settings.settings.map { it.backend != null }.distinctUntilChanged().collect { container.approvalPoll.update(it) }
         }
         ProcessLifecycleOwner.get().lifecycleScope.launch {
             ProcessLifecycleOwner.get().repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -113,6 +120,11 @@ class AppContainer(context: Context) {
 
     /** Agent connections (approve, list, disconnect) are read and changed over plain HTTP when their page is open. */
     fun connectionsApi(backend: BackendConfig) = HttpTaskRemote(backend.url, tokensFor(backend)).let { AgentConnectionsApi(it, it) }
+
+    /** Approval requests, the agent switch, proposals and plan health are read over plain HTTP when shown. */
+    fun agentControlApi(backend: BackendConfig) = HttpTaskRemote(backend.url, tokensFor(backend)).let { AgentControlApi(it, it) }
+
+    val approvalPoll = ApprovalPollScheduler(context)
 
     /** The calendar feed's address (Settings → Calendar) is read and changed over plain HTTP when its page is open. */
     fun calendarFeedApi(backend: BackendConfig) = HttpTaskRemote(backend.url, tokensFor(backend)).let { CalendarFeedApi(it, it, it) }

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ustawienia → Agenci (0.10.0): wyłącznik agentów, prośby o zgodę, propozycje i reguły narzędzi -->
+    <string name="agents_title">Agenci</string>
+    <string name="agents_loading">Wczytuję…</string>
+    <string name="agents_failed">Nie udało się wczytać. Sprawdź połączenie z serwerem.</string>
+    <string name="agents_unauthorized">Serwer odrzucił ten telefon albo jest starszy niż 0.11.0. Sparuj telefon ponownie w sekcji Serwer.</string>
+    <string name="agents_pause">Wstrzymaj agentów</string>
+    <string name="agents_running_note">Agenci mogą zmieniać plan w granicach swoich kluczy i połączeń.</string>
+    <string name="agents_paused_since">od %1$s</string>
+    <string name="agents_paused_note">agenci mogą czytać; każda ich zmiana jest odrzucana, dopóki ich nie wznowisz</string>
+    <string name="agents_pause_failed">Nie udało się przełączyć. Spróbuj ponownie.</string>
+    <string name="agents_waiting">Czekają na Ciebie (%1$d)</string>
+    <string name="agents_no_requests">Żadna prośba o zgodę nie czeka.</string>
+    <string name="agents_request_note">%1$s · zdecyduj do %2$s</string>
+    <string name="agents_earlier">Wcześniejsze prośby</string>
+    <string name="agents_proposals">Propozycje (%1$d)</string>
+    <string name="agents_no_proposals">Brak propozycji. Zadania zaproponowane przez agenta czekają tutaj, poza widokiem Dziś, dopóki ich nie przyjmiesz.</string>
+    <string name="agents_from">od %1$s</string>
+    <string name="agents_policies">Reguły narzędzi</string>
+    <string name="agents_no_policies">Brak reguł: każdy klucz agenta może używać każdego narzędzia, na które pozwala jego zakres.</string>
+    <string name="agents_policies_hint">Ustawiasz je w terminalu poleceniem dayhand policy set. „Pytaj” wstrzymuje wywołanie, dopóki nie zgodzisz się tutaj.</string>
+    <string name="agents_policy_any_tool">każde inne narzędzie</string>
+    <string name="agents_rule_allow">Pozwól</string>
+    <string name="agents_rule_ask">Pytaj</string>
+    <string name="agents_rule_deny">Zabroń</string>
+    <string name="agents_hint">Dayhand zapisuje Twoją decyzję, a agent działa zgodnie z nią. Dayhand nie zatrzyma tego, co agent robi poza Dayhand.</string>
+    <string name="agents_gone">Tego już tu nie ma: rozstrzygnięte, wygasłe albo usunięte gdzie indziej.</string>
+    <string name="agents_sending">Wysyłam…</string>
+
+    <string name="agents_approval_title">Prośba o zgodę</string>
+    <string name="agents_asked_by">Pyta %1$s</string>
+    <string name="agents_policy_held">Wstrzymane przez Twoją regułę: %1$s</string>
+    <string name="agents_reversible">Można cofnąć</string>
+    <string name="agents_irreversible">Nie da się cofnąć</string>
+    <string name="agents_decide_by">Zdecyduj do %1$s</string>
+    <string name="agents_choose">Twoja odpowiedź</string>
+    <string name="agents_decision_hint">Odpowiadaj tylko na prośbę, którą rozumiesz. Bez odpowiedzi prośba wygaśnie i agent się o tym dowie.</string>
+    <string name="agents_choose_title">Wybrać „%1$s”?</string>
+    <string name="agents_choose_confirm">Wybierz</string>
+    <string name="agents_note_label">Słowo dla agenta (opcjonalnie)</string>
+    <string name="agents_chose">Wybrano: %1$s</string>
+    <string name="agents_expired">Wygasła bez odpowiedzi</string>
+    <string name="agents_decided">Odpowiedź wysłana. Agent przeczyta ją, gdy następnym razem sprawdzi.</string>
+    <string name="agents_decide_refused">Ta prośba jest już rozstrzygnięta albo wygasła.</string>
+
+    <string name="agents_proposal_title">Propozycja</string>
+    <string name="agents_requested_by">Prosi %1$s</string>
+    <string name="agents_proposed_at">Zaproponowano %1$s</string>
+    <string name="agents_accept">Przyjmij</string>
+    <string name="agents_accept_note">Stanie się zadaniem Twojego planu i pojawi się w widoku Dziś w swoim terminie.</string>
+    <string name="agents_merge">Połącz z zadaniem</string>
+    <string name="agents_merge_note">Jej notatka, linki i etykiety dołączą do zadania, które już masz.</string>
+    <string name="agents_reject">Odrzuć</string>
+    <string name="agents_reject_title">Odrzucić „%1$s”?</string>
+    <string name="agents_reason_label">Dlaczego (opcjonalnie, trafi do źródła)</string>
+    <string name="agents_merge_title">Połącz z</string>
+    <string name="agents_merge_search">Znajdź zadanie</string>
+    <string name="agents_merge_none">Żadne otwarte zadanie nie pasuje.</string>
+    <string name="agents_merge_confirm_title">Połączyć z „%1$s”?</string>
+    <string name="agents_merge_confirm_text">Propozycja trafi do kosza; jej notatka, linki i etykiety dołączą do tego zadania.</string>
+    <string name="agents_merge_confirm">Połącz</string>
+    <string name="agents_accepted">Przyjęto: to teraz zadanie Twojego planu.</string>
+    <string name="agents_merged">Połączono.</string>
+    <string name="agents_rejected">Odrzucono: propozycja jest w koszu.</string>
+    <string name="agents_proposal_gone">Tę propozycję ktoś już obsłużył gdzie indziej.</string>
+    <string name="agents_change_failed">Brak połączenia z serwerem. Spróbuj ponownie.</string>
+
+    <string name="channel_approvals">Prośby o zgodę</string>
+    <string name="channel_approvals_description">Agent pyta, zanim coś zrobi. Sprawdzane co 15 minut, gdy Dayhand jest zamknięty.</string>
+    <string name="approval_notify_title">%1$s prosi o Twoją zgodę</string>
+
+    <!-- Karta stanu planu nad widokiem Dziś -->
+    <string name="health_title">Plan: %1$s</string>
+    <string name="health_clear">Plan: nic nie wymaga uwagi.</string>
+    <string name="health_review">Przejrzyj</string>
+    <string name="health_paused">agenci wstrzymani</string>
+    <plurals name="health_overdue">
+        <item quantity="one">%d zaległe</item>
+        <item quantity="few">%d zaległe</item>
+        <item quantity="many">%d zaległych</item>
+        <item quantity="other">%d zaległego</item>
+    </plurals>
+    <plurals name="health_expired_claims">
+        <item quantity="one">%d wygasła rezerwacja</item>
+        <item quantity="few">%d wygasłe rezerwacje</item>
+        <item quantity="many">%d wygasłych rezerwacji</item>
+        <item quantity="other">%d wygasłej rezerwacji</item>
+    </plurals>
+    <plurals name="health_approvals">
+        <item quantity="one">%d prośba o zgodę</item>
+        <item quantity="few">%d prośby o zgodę</item>
+        <item quantity="many">%d próśb o zgodę</item>
+        <item quantity="other">%d prośby o zgodę</item>
+    </plurals>
+    <plurals name="health_blocked">
+        <item quantity="one">%d zablokowane</item>
+        <item quantity="few">%d zablokowane</item>
+        <item quantity="many">%d zablokowanych</item>
+        <item quantity="other">%d zablokowanego</item>
+    </plurals>
+    <plurals name="health_proposals">
+        <item quantity="one">%d propozycja</item>
+        <item quantity="few">%d propozycje</item>
+        <item quantity="many">%d propozycji</item>
+        <item quantity="other">%d propozycji</item>
+    </plurals>
+    <plurals name="health_without_proof">
+        <item quantity="one">%d zrobione bez dowodu</item>
+        <item quantity="few">%d zrobione bez dowodu</item>
+        <item quantity="many">%d zrobionych bez dowodu</item>
+        <item quantity="other">%d zrobionego bez dowodu</item>
+    </plurals>
+    <plurals name="health_due_today">
+        <item quantity="one">%d na dziś</item>
+        <item quantity="few">%d na dziś</item>
+        <item quantity="many">%d na dziś</item>
+        <item quantity="other">%d na dziś</item>
+    </plurals>
+    <plurals name="health_in_progress">
+        <item quantity="one">%d w trakcie</item>
+        <item quantity="few">%d w trakcie</item>
+        <item quantity="many">%d w trakcie</item>
+        <item quantity="other">%d w trakcie</item>
+    </plurals>
+    <plurals name="health_done_today">
+        <item quantity="one">%d zrobione dziś</item>
+        <item quantity="few">%d zrobione dziś</item>
+        <item quantity="many">%d zrobionych dziś</item>
+        <item quantity="other">%d zrobionego dziś</item>
+    </plurals>
+    <plurals name="health_oldest">
+        <item quantity="one">najstarsze otwarte zadanie ma %d dzień</item>
+        <item quantity="few">najstarsze otwarte zadanie ma %d dni</item>
+        <item quantity="many">najstarsze otwarte zadanie ma %d dni</item>
+        <item quantity="other">najstarsze otwarte zadanie ma %d dnia</item>
+    </plurals>
+</resources>

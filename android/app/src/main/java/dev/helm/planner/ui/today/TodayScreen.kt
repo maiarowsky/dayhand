@@ -64,6 +64,8 @@ fun TodayScreen(
     actions: TodayActions,
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
+    /** Under the status lines, above the list: the plan health card. */
+    header: @Composable () -> Unit = {},
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -85,7 +87,7 @@ fun TodayScreen(
             HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(TodayTags.FAB))
         },
     ) { padding ->
-        TodayList(state, actions, date, PaddingValues(bottom = 96.dp), Modifier.padding(padding), onAdd = { adding = true })
+        TodayList(state, actions, date, PaddingValues(bottom = 96.dp), Modifier.padding(padding), header, onAdd = { adding = true })
     }
     if (adding) {
         QuickAddSheet(
@@ -106,12 +108,14 @@ private fun TodayList(
     today: LocalDate,
     contentPadding: PaddingValues,
     modifier: Modifier,
+    header: @Composable () -> Unit,
     onAdd: () -> Unit,
 ) {
     // The banners stay above the list: as list items they could appear above the first visible row, off screen.
     Column(modifier.fillMaxSize()) {
         StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS))
         if (state.sample) SampleBanner(actions::removeSample, Modifier.testTag(TodayTags.SAMPLE))
+        header()
         TodayItems(state, actions, today, contentPadding, onAdd)
     }
 }

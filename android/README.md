@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.9.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.10.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -47,6 +47,16 @@ With nothing to do, one sentence and an **Add task** button. A line at the top s
 phone is offline (and how many changes wait), while changes are being sent, or when the server
 signed the phone out; on this phone only there is no such line. While the sample plan is on the
 phone, a line says so with **Remove them**, which removes every sample task.
+
+With a server (backend 0.11.0 or later), a **plan health** card sits under those lines: one
+sentence with what needs a look, the most pressing first, and only what is there: agents paused,
+overdue, claims that ran out, approval requests, blocked tasks, proposals, tasks done today
+without proof, due today, in progress, done today, and the oldest open task when it is two weeks
+old or more (`app:planHealth`, the same report as `plan_health` and `dayhand health`). It is red
+when agents are paused or something is late, amber when the owner is asked for something, and
+**Review** opens Agents when there is a request or a proposal to decide. It is read when Today
+opens, when Dayhand comes back to the front and when the tasks change; offline it keeps the last
+report, and without a server it is not shown.
 
 **First start** asks where the plan lives (**Welcome to Dayhand**), on two cards, the phone first:
 
@@ -191,6 +201,17 @@ in its preview and on the other screens. Top to bottom:
    where the answer goes, when it asked (with a warning when the request is minutes old or the
    answer goes to a program on the computer) and a switch per permission; **Approve** or
    **Refuse** answers the page, which continues by itself.
+   **Agents** (with a server, backend 0.11.0 or later; [agent-work.md](../docs/agent-work.md)):
+   **Pause agents**, one switch that refuses every change from every agent key and agent
+   connection while reading still works; the approval requests **waiting for you**, each with
+   who asks, the task, whether it can be undone and the time to decide by, and the ten latest
+   decided or expired ones; the **proposals** with who asked and their source; and the **tool
+   policies** set with `dayhand policy set` (read-only here). A request opens on its own page in
+   the style of a connection's approval: what the agent wants to do and why, a row per option with
+   its consequence, and a confirmation with an optional word for the agent. A proposal is
+   **accepted** (it becomes a task of the plan), **merged** into an open task found by its title
+   (its note, links and labels join that task) or **rejected** with an optional reason. Dayhand
+   records the decision; it cannot stop what an agent does outside Dayhand.
 5. **About**: the Apache License 2.0, the licenses of the bundled fonts (SIL Open Font License
    1.1) and the version.
 
@@ -230,6 +251,17 @@ permission (`SystemEventsReceiver`). After a force stop Android drops the alarms
 opened again. A reminder's **Done** button completes the task offline-first, like a tap on
 Today. Android 13+ asks for the notification permission when the first task with a time is
 added, or from Settings.
+
+## Approval requests while Dayhand is closed
+
+The server cannot push to the phone (the app has no Firebase or other push service), so a
+periodic WorkManager job (`agents/ApprovalPoll.kt`) asks for pending requests every 15 minutes,
+WorkManager's shortest period, while the phone is connected to a server and has a network. Each
+new request becomes one notification in the **Approval requests** channel (who asks and what),
+shown once; a tap opens Agents, and deciding it in the app removes the notification. A request
+can therefore wait up to about 15 minutes, longer while the phone is in Doze, before the phone
+shows it; one that expires first is never shown. Without the notification permission nothing is
+shown, and Agents and the health card still list the requests.
 
 ## How offline works
 
@@ -413,11 +445,12 @@ over the installed app: keep a copy of the keystore and its password somewhere s
 ./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
                                             # agent connections (answers, code input, approval flow), calendar address,
-                                            # backup file (write, read, the server's export), sample plan, another server
+                                            # backup file (write, read, the server's export), sample plan, another server,
+                                            # agents (answers, requests, proposals, the switch, the health card, new requests)
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync and the phone's zone,
                                             # on this phone only (repeats made on the phone, sample tasks, restore, emptying),
                                             # Compose (Today, calendar, board, details, Settings, Settings → Calendar and Backup, Connect,
-                                            # agent connections), encrypted pairing storage, and a real alarm + notification
+                                            # agent connections, Agents and the health card), encrypted pairing storage, and a real alarm + notification
                                             # (ReminderDeliveryTest, about 80 s, with no server configured)
 ```
 

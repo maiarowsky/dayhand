@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings → Agents (0.10.0): the agent switch, approval requests, proposals and tool policies -->
+    <string name="agents_title">Agents</string>
+    <string name="agents_loading">Loading…</string>
+    <string name="agents_failed">Could not load. Check the connection to the server.</string>
+    <string name="agents_unauthorized">The server refused this phone, or it is older than 0.11.0. Pair it again under Server.</string>
+    <string name="agents_pause">Pause agents</string>
+    <string name="agents_running_note">Agents can change the plan within their keys and connections.</string>
+    <string name="agents_paused_since">since %1$s</string>
+    <string name="agents_paused_note">agents can read; every change they try is refused until you resume them</string>
+    <string name="agents_pause_failed">Could not change the switch. Try again.</string>
+    <string name="agents_waiting">Waiting for you (%1$d)</string>
+    <string name="agents_no_requests">No approval requests are waiting.</string>
+    <string name="agents_request_note">%1$s · decide by %2$s</string>
+    <string name="agents_earlier">Earlier requests</string>
+    <string name="agents_proposals">Proposals (%1$d)</string>
+    <string name="agents_no_proposals">No proposals. Tasks an agent proposes wait here, out of Today, until you accept them.</string>
+    <string name="agents_from">from %1$s</string>
+    <string name="agents_policies">Tool policies</string>
+    <string name="agents_no_policies">No tool policies: every agent key may use every tool its scope allows.</string>
+    <string name="agents_policies_hint">Set them in the terminal with dayhand policy set. Ask holds the call until you allow it here.</string>
+    <string name="agents_policy_any_tool">every other tool</string>
+    <string name="agents_rule_allow">Allow</string>
+    <string name="agents_rule_ask">Ask</string>
+    <string name="agents_rule_deny">Deny</string>
+    <string name="agents_hint">Dayhand records your decision and the agent acts on it. Dayhand cannot stop what an agent does outside Dayhand.</string>
+    <string name="agents_gone">This is no longer here: decided, expired or removed elsewhere.</string>
+    <string name="agents_sending">Sending…</string>
+
+    <string name="agents_approval_title">Approval request</string>
+    <string name="agents_asked_by">Asked by %1$s</string>
+    <string name="agents_policy_held">Held by your policy: %1$s</string>
+    <string name="agents_reversible">Can be undone</string>
+    <string name="agents_irreversible">Cannot be undone</string>
+    <string name="agents_decide_by">Decide by %1$s</string>
+    <string name="agents_choose">Your answer</string>
+    <string name="agents_decision_hint">Only answer a request you understand. With no answer it expires and the agent hears that.</string>
+    <string name="agents_choose_title">Choose “%1$s”?</string>
+    <string name="agents_choose_confirm">Choose</string>
+    <string name="agents_note_label">A word for the agent (optional)</string>
+    <string name="agents_chose">You chose: %1$s</string>
+    <string name="agents_expired">Expired without an answer</string>
+    <string name="agents_decided">Answer sent. The agent reads it with its next look.</string>
+    <string name="agents_decide_refused">This request was already decided or has expired.</string>
+
+    <string name="agents_proposal_title">Proposal</string>
+    <string name="agents_requested_by">Asked for by %1$s</string>
+    <string name="agents_proposed_at">Proposed %1$s</string>
+    <string name="agents_accept">Accept</string>
+    <string name="agents_accept_note">It becomes a task of your plan and shows on Today when due.</string>
+    <string name="agents_merge">Merge into a task</string>
+    <string name="agents_merge_note">Its note, links and labels join a task you already have.</string>
+    <string name="agents_reject">Reject</string>
+    <string name="agents_reject_title">Reject “%1$s”?</string>
+    <string name="agents_reason_label">Why (optional, sent back to its source)</string>
+    <string name="agents_merge_title">Merge into</string>
+    <string name="agents_merge_search">Find a task</string>
+    <string name="agents_merge_none">No open task matches.</string>
+    <string name="agents_merge_confirm_title">Merge into “%1$s”?</string>
+    <string name="agents_merge_confirm_text">The proposal goes to the trash; its note, links and labels join this task.</string>
+    <string name="agents_merge_confirm">Merge</string>
+    <string name="agents_accepted">Accepted: it is a task of your plan now.</string>
+    <string name="agents_merged">Merged.</string>
+    <string name="agents_rejected">Rejected: it is in the trash.</string>
+    <string name="agents_proposal_gone">This proposal was already handled elsewhere.</string>
+    <string name="agents_change_failed">No connection to the server. Try again.</string>
+
+    <string name="channel_approvals">Approval requests</string>
+    <string name="channel_approvals_description">An agent asks before it does something. Checked every 15 minutes while Dayhand is closed.</string>
+    <string name="approval_notify_title">%1$s asks for your approval</string>
+
+    <!-- The plan health card above Today -->
+    <string name="health_title">Plan: %1$s</string>
+    <string name="health_clear">Plan: nothing needs a look.</string>
+    <string name="health_review">Review</string>
+    <string name="health_paused">agents paused</string>
+    <plurals name="health_overdue">
+        <item quantity="one">%d overdue</item>
+        <item quantity="other">%d overdue</item>
+    </plurals>
+    <plurals name="health_expired_claims">
+        <item quantity="one">%d claim ran out</item>
+        <item quantity="other">%d claims ran out</item>
+    </plurals>
+    <plurals name="health_approvals">
+        <item quantity="one">%d approval request</item>
+        <item quantity="other">%d approval requests</item>
+    </plurals>
+    <plurals name="health_blocked">
+        <item quantity="one">%d blocked</item>
+        <item quantity="other">%d blocked</item>
+    </plurals>
+    <plurals name="health_proposals">
+        <item quantity="one">%d proposal</item>
+        <item quantity="other">%d proposals</item>
+    </plurals>
+    <plurals name="health_without_proof">
+        <item quantity="one">%d done without proof</item>
+        <item quantity="other">%d done without proof</item>
+    </plurals>
+    <plurals name="health_due_today">
+        <item quantity="one">%d due today</item>
+        <item quantity="other">%d due today</item>
+    </plurals>
+    <plurals name="health_in_progress">
+        <item quantity="one">%d in progress</item>
+        <item quantity="other">%d in progress</item>
+    </plurals>
+    <plurals name="health_done_today">
+        <item quantity="one">%d done today</item>
+        <item quantity="other">%d done today</item>
+    </plurals>
+    <plurals name="health_oldest">
+        <item quantity="one">oldest open task %d day old</item>
+        <item quantity="other">oldest open task %d days old</item>
+    </plurals>
+</resources>
