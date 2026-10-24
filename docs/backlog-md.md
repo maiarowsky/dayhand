@@ -30,7 +30,9 @@ the REST API, `POST /api/v1/import/backlog` and `GET /api/v1/export/backlog`
 ([api.md](api.md)). An agent reads files from wherever it works and sends their text; Dayhand never
 reads a disk itself. Selecting a subdirectory keeps paths relative to the backlog root and includes
 that project's config, found in its ancestors; without a config, the task-folder layout supplies
-the root, so nested and archived subsets keep their classification.
+the root, so nested and archived subsets keep their classification. Classification belongs to the
+top-level folder under that root: `tasks/docs/` still holds tasks, while `docs/tasks/` still holds
+documents; nested reserved names do not change the enclosing folder's meaning.
 
 ## The file format
 

@@ -231,6 +231,41 @@ describe("agent contract", () => {
     expect(await dayhandJson(key, ["backlog", "import", noConfig])).toMatchObject({ created: 1, tasks: [{ archivedAt: expect.any(Number) }] });
   });
 
+  test.each([false, true])("backlog top-level folders retain ownership of nested reserved names (config=%s)", async (configured) => {
+    const { key } = await newUser();
+    const root = join(mkdtempSync(join(TEST_HOME, "nested-layout-")), "backlog");
+    mkdirSync(root);
+    if (configured) writeFileSync(join(root, "config.yml"), "statuses: [Queue, Middle, Shipped]\n");
+    const cases = [
+      { folder: "tasks/docs", expected: { status: "doing" } },
+      { folder: "tasks/archive/drafts", expected: { status: "doing" } },
+      { folder: "tasks/completed", expected: { status: "doing" } },
+      { folder: "drafts/tasks", expected: { status: "todo", proposedAt: expect.any(Number) } },
+      { folder: "completed/tasks", expected: { status: "done" } },
+      { folder: "archive/tasks/docs", expected: { status: "doing", archivedAt: expect.any(Number) } },
+      { folder: "archive/drafts/tasks", reason: "an archived draft, not a task" },
+      { folder: "docs/tasks", reason: "a document, not a task" },
+      { folder: "decisions/tasks", reason: "a decision record, not a task" },
+      { folder: "milestones/tasks", reason: "a milestone, not a task" },
+    ];
+    for (const [index, item] of cases.entries()) {
+      const selected = join(root, item.folder, "part");
+      mkdirSync(selected, { recursive: true });
+      const status = item.folder.startsWith("drafts/") ? configured ? "Queue" : "To Do" : configured ? "Middle" : "In Progress";
+      writeFileSync(join(selected, "task.md"), `---\nid: TASK-${index}\ntitle: Nested ${index}\nstatus: ${status}\n---\n`);
+      for (const flags of [["--dry-run"], []]) {
+        const report = await dayhandJson(key, ["backlog", "import", selected, ...flags]);
+        expect(report.files).toBe(configured ? 2 : 1);
+        if (item.reason) expect(report).toMatchObject({ created: 0, skipped: [{ path: `${item.folder}/part/task.md`, reason: item.reason }] });
+        else {
+          expect(report).toMatchObject({ created: 1, failed: [], warnings: [], tasks: [item.expected] });
+          if (!item.folder.startsWith("drafts/")) expect(report.tasks[0]).not.toHaveProperty("proposedAt");
+          if (!item.folder.startsWith("archive/tasks/")) expect(report.tasks[0]).not.toHaveProperty("archivedAt");
+        }
+      }
+    }
+  });
+
   test("a backlog import under ask uses an exact one-call approval with no replay exception", async () => {
     const { userId, key } = await newUser();
     const agent = await createKey(userId, "importer", "agent");

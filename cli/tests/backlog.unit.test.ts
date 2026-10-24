@@ -68,6 +68,23 @@ describe("import calls", () => {
     expect(all.filter((file) => file.path.endsWith(".md"))).toHaveLength(fixtures.length + 1);
   }));
 
+  test.each(["config.yml", "backlog.config.yml", undefined])("nested reserved names do not move the backlog root (%s)", async (configName) => inFolder(async (base) => {
+    const root = join(base, "project", "backlog");
+    const branches = ["tasks", "drafts", "completed", "archive/tasks", "archive/drafts", "docs", "decisions", "milestones"];
+    const fixtures = branches.flatMap((outer, i) => branches.map((inner, j) => task(`${outer}/${inner}/subset-${i}-${j}/task.md`, `id: TASK-${i * branches.length + j}\ntitle: Nested`)));
+    for (const file of fixtures) {
+      await mkdir(dirname(join(root, file.path)), { recursive: true });
+      await writeFile(join(root, file.path), file.content);
+    }
+    if (configName) await writeFile(join(root, configName), "statuses: [Queue, Middle, Shipped]\n");
+    for (const file of fixtures) {
+      const files = await readFolder(dirname(join(root, file.path)));
+      expect(files).toHaveLength(configName ? 2 : 1);
+      expect(files).toContainEqual(file);
+      if (configName) expect(files).toContainEqual({ path: configName, content: "statuses: [Queue, Middle, Shipped]\n" });
+    }
+  }));
+
   test.each([false, true])("over-limit folders fail before any request (dryRun=%s)", async (dryRun) => inFolder(async (root) => {
     const client = vi.fn();
     const ctx = { dryRun, client } as unknown as RunContext;

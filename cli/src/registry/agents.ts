@@ -70,7 +70,7 @@ const unknownTool = (error: unknown) => error instanceof CliError && error.code 
 
 const prime: CommandSpec = {
   name: "prime",
-  schema: "agent-brief.schema.json",
+  schema: ["agent-brief.schema.json", "today.schema.json"],
   summary: "Context for an AI agent: Today, its claims, approvals, ready work, next steps and how to use dayhand (for a SessionStart hook)",
   description:
     "Prints plain text without colors in every format except --json, which prints agent_brief: list_today's fields plus claims, approvals, ready tasks and nextSteps (a backend before 0.12.0 gives list_today alone). " +

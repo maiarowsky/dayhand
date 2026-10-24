@@ -113,7 +113,7 @@ describe("the YAML header", () => {
 
 describe("task files", () => {
   test("a task file: header, criteria from both lists, plan and the other sections", () => {
-    const task = readTask({ path: "backlog/tasks/task-7 - Sort-the-receipts.md", content: TASK });
+    const task = readTask({ path: "tasks/task-7 - Sort-the-receipts.md", content: TASK });
     expect(task).toMatchObject({
       place: "task",
       id: "TASK-7",
@@ -143,7 +143,7 @@ describe("task files", () => {
   });
 
   test("the folder decides what a file is", () => {
-    expect(placeOf("backlog/tasks/task-1 - a.md")).toBe("task");
+    expect(placeOf("tasks/task-1 - a.md")).toBe("task");
     expect(placeOf("completed/task-1 - a.md")).toBe("completed");
     expect(placeOf("drafts/draft-1 - a.md")).toBe("draft");
     expect(placeOf("archive/tasks/task-1 - a.md")).toBe("archived");
@@ -151,8 +151,26 @@ describe("task files", () => {
     expect(placeOf("docs/doc-1 - a.md")).toBe("doc");
     expect(placeOf("decisions/decision-1 - a.md")).toBe("decision");
     expect(placeOf("milestones/m-1 - a.md")).toBe("milestone");
-    expect(placeOf("backlog/config.yml")).toBe("config");
+    expect(placeOf("config.yml")).toBe("config");
+    expect(placeOf("backlog.config.yml")).toBe("config");
     expect(placeOf("task-1 - loose.md")).toBe("task");
+  });
+});
+
+describe("enclosing backlog folders", () => {
+  const places = [["tasks", "task"], ["completed", "completed"], ["drafts", "draft"], ["archive/tasks", "archived"], ["archive/drafts", "archived-draft"], ["docs", "doc"], ["decisions", "decision"], ["milestones", "milestone"]] as const;
+
+  test.each(places)("%s owns its contents even inside another reserved folder", (outer, expected) => {
+    for (const [inner] of places) {
+      const path = `${outer}/${inner}/subset/task.md`;
+      expect(placeOf(path)).toBe(expected);
+      expect(placeOf(path.replace(/\//g, "\\").toUpperCase())).toBe(expected);
+      expect(placeOf(`${outer}/${inner}/config.yml`)).toBe(expected);
+    }
+  });
+
+  test("a reserved name below an unrecognized top-level folder does not reclassify it", () => {
+    for (const [inner] of places) expect(placeOf(`subsets/${inner}/task.md`)).toBe("task");
   });
 });
 

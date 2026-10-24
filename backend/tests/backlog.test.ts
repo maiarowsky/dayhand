@@ -108,6 +108,41 @@ describe("import_backlog", () => {
     expect(await allTasks(client)).toHaveLength(6);
   });
 
+  test("top-level folders control import state despite nested reserved names", async () => {
+    const { client } = await owner();
+    const cases = [
+      { path: "tasks/docs/task.md", expected: { status: "doing" } },
+      { path: "tasks/archive/drafts/task.md", expected: { status: "doing" } },
+      { path: "tasks/completed/task.md", expected: { status: "doing" } },
+      { path: "drafts/tasks/task.md", expected: { status: "todo", proposedAt: expect.any(Number) } },
+      { path: "completed/tasks/task.md", expected: { status: "done" } },
+      { path: "archive/tasks/docs/task.md", expected: { status: "doing", archivedAt: expect.any(Number) } },
+      { path: "archive/drafts/tasks/task.md", reason: "an archived draft, not a task" },
+      { path: "docs/tasks/task.md", reason: "a document, not a task" },
+      { path: "decisions/tasks/task.md", reason: "a decision record, not a task" },
+      { path: "milestones/tasks/task.md", reason: "a milestone, not a task" },
+    ];
+    const files = [
+      { path: "tasks/docs/config.yml", content: "statuses: [Wrong, Done]\n" },
+      { path: "config.yml", content: "statuses: [Queue, Middle, Shipped]\n" },
+      ...cases.map((item, index) => file(item.path, `id: TASK-${index}\ntitle: Case ${index}\nstatus: ${item.path.startsWith("drafts/") ? "Queue" : "Middle"}`)),
+    ];
+    const result = await callTool(client, "import_backlog", { files });
+    expect(result).toMatchObject({ created: 6, failed: [], warnings: [] });
+    expect(result.skipped).toContainEqual({ path: "tasks/docs/config.yml", reason: "not a Markdown file" });
+    for (const [index, item] of cases.entries()) {
+      if (item.reason) {
+        expect(result.skipped).toContainEqual(expect.objectContaining({ path: item.path, reason: item.reason }));
+      } else {
+        const task = byTitle(result.tasks, `Case ${index}`);
+        expect(task).toMatchObject(item.expected);
+        if (!item.path.startsWith("drafts/")) expect(task).not.toHaveProperty("proposedAt");
+        if (!item.path.startsWith("archive/tasks/")) expect(task).not.toHaveProperty("archivedAt");
+      }
+    }
+    expect(await allTasks(client)).toHaveLength(6);
+  });
+
   test("dependencies sent in an earlier call are found by their source; a cycle is reported", async () => {
     const { client } = await owner();
     await callTool(client, "import_backlog", { files: [file("tasks/task-1.md", "id: Task-1\ntitle: First")] });

@@ -41,14 +41,12 @@ async function backlogRoot(selected: string): Promise<{ root: string; config?: s
       if ((await stat(config))?.isFile()) return { root: current, config };
     }
     const parent = dirname(current);
-    if (layout === undefined) {
-      if (BACKLOG_DIRS.has(basename(current).toLowerCase())) {
-        layout = basename(parent).toLowerCase() === "archive" ? dirname(parent) : parent;
-      } else if ((await readdir(current, { withFileTypes: true })).some((entry) => entry.isDirectory() && LAYOUT_DIRS.has(entry.name.toLowerCase()))) {
-        layout = current;
-      }
-    }
     if (parent === current || await stat(join(current, ".git"))) return { root: layout ?? selected };
+    if (BACKLOG_DIRS.has(basename(current).toLowerCase())) {
+      layout = basename(parent).toLowerCase() === "archive" ? dirname(parent) : parent;
+    } else if ((await readdir(current, { withFileTypes: true })).some((entry) => entry.isDirectory() && LAYOUT_DIRS.has(entry.name.toLowerCase()))) {
+      layout = current;
+    }
     current = parent;
   }
 }

@@ -13,6 +13,7 @@ import {
   BACKLOG_KIND,
   BacklogFormatError,
   DEFAULT_STATUSES,
+  placeOf,
   readDate,
   readTask,
   statusesOf,
@@ -52,7 +53,7 @@ const SKIP_REASONS: Partial<Record<BacklogTask["place"], string>> = {
 /** The files as task files to import, and what was skipped on the way: other files, unreadable ones, an id given twice. */
 function readFiles(files: BacklogFile[], skipped: Skipped[], warnings: Warning[]): { tasks: BacklogTask[]; statuses: string[] } {
   let statuses = DEFAULT_STATUSES;
-  const config = files.find((f) => /(^|\/)(backlog\.)?config\.yml$/i.test(f.path.replace(/\\/g, "/")));
+  const config = files.find((f) => placeOf(f.path) === "config");
   if (config) {
     try {
       statuses = statusesOf(config.content);

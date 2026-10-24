@@ -43,21 +43,16 @@ export class BacklogFormatError extends Error {}
 
 // ---- Places ----
 
-const DIRS: Record<string, Place> = { drafts: "draft", completed: "completed", docs: "doc", decisions: "decision", milestones: "milestone" };
+const DIRS: Record<string, Place> = { tasks: "task", drafts: "draft", completed: "completed", docs: "doc", decisions: "decision", milestones: "milestone" };
 
 /** The place of a path relative to the backlog folder ("tasks/task-1 - x.md", "archive/tasks/…"). */
 export function placeOf(path: string): Place {
   const parts = path.replace(/\\/g, "/").toLowerCase().split("/").filter(Boolean);
   const name = parts[parts.length - 1] ?? "";
-  if (name === "config.yml" || name === "backlog.config.yml") return "config";
   const dirs = parts.slice(0, -1);
-  for (let i = dirs.length - 1; i >= 0; i--) {
-    const dir = dirs[i]!;
-    if (dirs[i - 1] === "archive") return dir === "drafts" ? "archived-draft" : dir === "tasks" ? "archived" : "doc";
-    if (dir === "tasks") return "task";
-    if (DIRS[dir]) return DIRS[dir]!;
-  }
-  return "task";
+  if (dirs.length === 0 && (name === "config.yml" || name === "backlog.config.yml")) return "config";
+  if (dirs[0] === "archive") return dirs[1] === "drafts" ? "archived-draft" : dirs[1] === "tasks" ? "archived" : "doc";
+  return DIRS[dirs[0] ?? ""] ?? "task";
 }
 
 // ---- Statuses ----
