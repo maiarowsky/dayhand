@@ -18,11 +18,21 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var tasks: [TaskItem] = []
     @Published private(set) var sections: TodaySections = .empty
+    /// The tasks in the trash, the most recently deleted first.
+    @Published private(set) var trash: [TaskItem] = []
     @Published private(set) var pending = 0
-    @Published private(set) var status: SyncStatus = .notConnected
+    @Published private(set) var status: SyncStatus = .notConnected {
+        didSet {
+            if Self.historyRecovered(from: oldValue, to: status) { historyRefreshRevision += 1 }
+        }
+    }
+    /// Moves on when the connection comes back and on Sync Now, so an open task's history is fetched again.
+    @Published private(set) var historyRefreshRevision = 0
     @Published private(set) var settings = ReminderSettings()
     @Published private(set) var credential: DeviceCredential?
     @Published var selection: String?
+    /// The place picked in the sidebar.
+    @Published var place: Place = .today
     @Published var showConnect = false
     @Published var connectPrefill: PairingLink?
     @Published var alert: String?
@@ -35,6 +45,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var language: String
 
     let repository: TaskRepository
+    let history: TaskHistorySync
     let notifications: NotificationScheduler?
     /// Opens the main window; set by the first view that has SwiftUI's `openWindow`.
     var openMainWindow: (() -> Void)?
@@ -60,6 +71,7 @@ final class AppModel: ObservableObject {
     init(_ environment: AppEnvironment) {
         let box = engineBox
         repository = TaskRepository(database: environment.database, onOutboxChanged: { box.poke() })
+        history = TaskHistorySync(repository: repository, runner: { box.queries })
         credentials = environment.credentials
         defaults = environment.defaults
         let choice = environment.defaults.string(forKey: Keys.language) ?? Self.systemLanguageChoice
@@ -120,6 +132,13 @@ final class AppModel: ObservableObject {
     func recompute() {
         let next = todaySections(tasks, nowMs: Clock.nowMs(), timezone: settings.timezone)
         if next != sections { sections = next }
+        let deleted = tasks.filter(\.inTrash).sorted { ($0.deletedAt ?? 0) > ($1.deletedAt ?? 0) }
+        if deleted != trash { trash = deleted }
+    }
+
+    /// Fetches a task's history from the server into the cache; without a server the cached copy stays.
+    func refreshHistory(_ serverId: String?) async -> HistoryState {
+        await history.refresh(serverId: serverId)
     }
 
     /// The notifications ahead, planned again a moment after the last change (changes come in bursts from a sync).
@@ -158,6 +177,13 @@ final class AppModel: ObservableObject {
     func moveToTomorrow(_ id: String) {
         guard let tomorrow = HelmDates.addDays(today, 1) else { return }
         run { try await $0.reschedule(id, to: tomorrow) }
+    }
+
+    /// Opens a place of the sidebar; a selected task that is not there is let go.
+    func show(_ place: Place) {
+        guard place != self.place else { return }
+        self.place = place
+        if let id = selection, let task = task(id), task.inTrash != (place == .trash) { selection = nil }
     }
 
     func setNow(_ id: String) { run { try await $0.setNow(id) } }
@@ -299,9 +325,17 @@ final class AppModel: ObservableObject {
         status = .notConnected
     }
 
-    func syncNow() {
-        guard let engine else { return }
-        Task { await engine.round() }
+    /// The server answers again after it did not (or after connecting); a poll that stays synced is not a recovery.
+    static func historyRecovered(from previous: SyncStatus, to current: SyncStatus) -> Bool {
+        switch (previous, current) {
+        case (.offline, .synced), (.signedOut, .synced), (.connecting, .synced): return true
+        default: return false
+        }
+    }
+
+    func syncNow() async {
+        if let engine { await engine.round() }
+        historyRefreshRevision += 1
     }
 
     /// A `dayhand://pair` or `helm://pair` link (the QR code of `dayhand pair`) opens Connect filled in.
@@ -332,14 +366,14 @@ final class AppModel: ObservableObject {
             Task { @MainActor in AppModel.shared.status = status }
         })
         self.engine = engine
-        engineBox.set(engine)
+        engineBox.set(engine, queries: remote)
         Task { await engine.start() }
     }
 
     private func stopSession() {
         guard let engine else { return }
         self.engine = nil
-        engineBox.set(nil)
+        engineBox.set(nil, queries: nil)
         Task { await engine.stop() }
     }
 
@@ -353,15 +387,25 @@ final class AppModel: ObservableObject {
     }
 }
 
-/// The sync engine, reachable from the repository's change callback on any thread.
+/// The sync engine and the server's queries, reachable from the repository's change callback and the history on any
+/// thread.
 final class EngineBox: @unchecked Sendable {
     private let lock = NSLock()
     private var engine: SyncEngine?
+    private var runner: QueryRunner?
 
-    func set(_ engine: SyncEngine?) {
+    func set(_ engine: SyncEngine?, queries: QueryRunner?) {
         lock.lock()
         self.engine = engine
+        runner = queries
         lock.unlock()
+    }
+
+    /// The connected server's queries, or nil without one.
+    var queries: QueryRunner? {
+        lock.lock()
+        defer { lock.unlock() }
+        return runner
     }
 
     func poke() {
@@ -370,6 +414,11 @@ final class EngineBox: @unchecked Sendable {
         lock.unlock()
         engine?.poke()
     }
+}
+
+/// The places of the main window's sidebar.
+enum Place: Hashable {
+    case today, trash
 }
 
 /// Where the model keeps things: the database file, the sign-in and the preferences.

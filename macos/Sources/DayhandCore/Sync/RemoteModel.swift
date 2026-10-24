@@ -130,6 +130,28 @@ public enum RemoteJSON {
         )
     }
 
+    /// The change history of task [serverId] from [queryTask] (`{task, history}`, oldest first), newest first; of two
+    /// changes in the same millisecond the later one comes first.
+    public static func history(_ value: JSONValue, serverId: String) -> [TaskEvent] {
+        (value["history"]?.array ?? [])
+            .reversed()
+            .compactMap { e -> TaskEvent? in
+                guard e.object != nil else { return nil }
+                return TaskEvent(
+                    taskServerId: serverId,
+                    at: e["at"]?.int64 ?? 0,
+                    actor: e["actor"]?.string ?? "app",
+                    actorName: e["actorName"]?.string,
+                    action: e["action"]?.string ?? "update",
+                    beforeJson: e["before"].flatMap { $0.object == nil ? nil : $0.encoded() },
+                    afterJson: e["after"].flatMap { $0.object == nil ? nil : $0.encoded() }
+                )
+            }
+            .enumerated()
+            .sorted { $0.element.at != $1.element.at ? $0.element.at > $1.element.at : $0.offset < $1.offset }
+            .map(\.element)
+    }
+
     /// The `{code}` a ConvexError carries in its data, e.g. `unauthenticated`.
     public static func errorCode(_ data: JSONValue?) -> String? { data?["code"]?.string }
 }

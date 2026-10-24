@@ -3,7 +3,8 @@ import DayhandLocalization
 import SwiftUI
 
 /// A task's details with basic editing: title, status and "now", the day and time, labels, the checklist and the
-/// note. Repeat and reminders are shown; editing them comes with full parity with the Android app.
+/// note, and its change history at the bottom. Repeat and reminders are shown; editing them comes with full parity
+/// with the Android app.
 struct TaskDetailView: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
@@ -16,6 +17,7 @@ struct TaskDetailView: View {
     @State private var duePhraseFailed = false
     @State private var newItem = ""
     @State private var confirmTrash = false
+    @StateObject private var history = HistoryModel()
     @FocusState private var focus: FieldName?
 
     enum FieldName: Hashable { case title, resume, labels, note }
@@ -140,9 +142,14 @@ struct TaskDetailView: View {
                     }
                 }
             }
+            HistorySection(history: history, today: today)
         }
         .formStyle(.grouped)
         .navigationTitle(task.title)
+        .task(id: task.serverId) { await history.watchHistory(task.serverId, in: model.repository) }
+        .task(id: HistoryModel.RefreshKey(serverId: task.serverId, revision: model.historyRefreshRevision)) {
+            await history.refresh(task.serverId, with: model)
+        }
         .onAppear(perform: load)
         .onChange(of: task) { _ in load() }
         .onChange(of: focus) { [focus] _ in saveLeaving(focus) }

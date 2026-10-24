@@ -2,8 +2,8 @@ import Foundation
 import GRDB
 
 /**
- * The local SQLite database (GRDB): the tasks as the screens see them, the outbox of changes waiting for the server
- * and a small key-value table for the server settings. The screens read only from here, never from the network.
+ * The local SQLite database (GRDB): the tasks as the screens see them, the outbox of changes waiting for the server,
+ * the cached change history of each task and a small key-value table for the server settings. The screens read only from here, never from the network.
  */
 public final class AppDatabase: Sendable {
     public let writer: DatabaseQueue
@@ -66,6 +66,19 @@ public final class AppDatabase: Sendable {
                 t.column("value", .text).notNull()
             }
         }
+        // 0.3.0: the change history of each task, as `app:getTask` last sent it (replaced, never merged).
+        migrator.registerMigration("v2") { db in
+            try db.create(table: "taskEvent") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("taskServerId", .text).notNull().indexed()
+                t.column("at", .integer).notNull()
+                t.column("actor", .text).notNull()
+                t.column("actorName", .text)
+                t.column("action", .text).notNull()
+                t.column("beforeJson", .text)
+                t.column("afterJson", .text)
+            }
+        }
         return migrator
     }
 }
@@ -123,6 +136,32 @@ extension TaskItem: FetchableRecord, PersistableRecord {
         container["deletedAt"] = deletedAt
         container["checklist"] = FieldJSON.encode(checklist)
         container["reminders"] = FieldJSON.encode(reminders)
+    }
+}
+
+extension TaskEvent: FetchableRecord, PersistableRecord {
+    public static let databaseTableName = "taskEvent"
+
+    public init(row: Row) throws {
+        self.init(
+            taskServerId: row["taskServerId"],
+            at: row["at"],
+            actor: row["actor"],
+            actorName: row["actorName"],
+            action: row["action"],
+            beforeJson: row["beforeJson"],
+            afterJson: row["afterJson"]
+        )
+    }
+
+    public func encode(to container: inout PersistenceContainer) throws {
+        container["taskServerId"] = taskServerId
+        container["at"] = at
+        container["actor"] = actor
+        container["actorName"] = actorName
+        container["action"] = action
+        container["beforeJson"] = beforeJson
+        container["afterJson"] = afterJson
     }
 }
 

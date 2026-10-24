@@ -17,6 +17,16 @@ This version is the basic one (MVP):
 - **Task details** with basic editing: title, status, "working on it now" and the resume note, the day and time
   (a phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat, reminders
   and links are shown. A task in the trash is read-only until **Restore**.
+- **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
+  by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
+  cached entries remain available offline. Without cached entries, the details say history is unavailable
+  offline; a task created locally says its history starts once it reaches the server. Refresh rules are under
+  [How it works](#how-it-works).
+- **Trash** shares the left sidebar with Today: a segmented chooser at the top switches the task list, with no
+  count badges. Deleted tasks are listed most recently deleted first, with the deletion day, the day the task
+  expires from the trash and **Restore**, which also works offline. The server keeps deleted tasks for 30 days
+  before its daily purge. The window stays two-column, at least 720 points wide: the sidebar and the selected
+  task's details, with the update button at the bottom left of the sidebar.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
@@ -45,13 +55,19 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  then app:listAll + app:listTrash + app:getSettings (POST /api/query)
                                  ──> SnapshotMerger (last write wins per field) ──> the database
 rounds: every 15 s, and at once after a local change
+
+history loads only when details open, the connection changes from offline/signed out/connecting to synced,
+or Sync Now is requested:
+  TaskHistorySync: app:getTask ──> the task's history replaces its cached copy
+  no answer or no server: the cached copy stays, marked as such
+  ordinary polls (even with a newer task version): no history request or cancellation; no retry loop
 ```
 
-The code is a Swift package with six targets:
+The code is a Swift package with these application and library targets (test targets are described below):
 
 | Target | What it holds |
 |---|---|
-| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
+| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
 | `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
 | `DayhandLocalization` | The texts: the string catalog `Localizable.xcstrings` (English is the source and the keys), the `.lproj` folders compiled from it, `tr(…)`, choosing the language (`Localization`) and days and times in the region's style (`DateText`). |
 | `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
@@ -60,7 +76,8 @@ The code is a Swift package with six targets:
 
 Rules ported from the Android app keep their names and comments, so a change on one side can be carried to the
 other: `domain/Recurrence.kt` → `Recurrence.swift`, `sync/SnapshotMerger.kt` → `SnapshotMerger.swift`,
-`data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`.
+`data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`,
+`sync/TaskHistorySync.kt` and `domain/HistoryEntries.kt` → `TaskHistorySync.swift` and `TaskHistory.swift`.
 The backend's own rules are in `backend/convex/lib/dates.ts`, `repeat.ts` and `core.ts`.
 
 **Sign-in.** `POST /auth/pair` with the code and this Mac's name gives a device token, which is kept only in the
@@ -145,8 +162,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
 - **The outbox and sync against a fake server** (`FakeServer.swift`, in memory): offline changes reach the server
   in order, a change whose answer was lost is applied once, a waiting change keeps its field against a newer
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
-  refreshed and the call repeated. The loop's wait ends at its timeout or at a change, many times over (`SignalTests`;
-  also worth running as `swift test -c release --filter SignalTests`).
+  refreshed and the call repeated. `HistoryTests.swift` checks history parsing and actor attribution, fetching
+  and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
+  is erased. It also checks trash expiry and queuing an offline restore. The loop's wait ends at its timeout or at
+  a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
@@ -161,13 +180,18 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   and a build without the key sends no request. Also the state machine, the `Info.plist` rules, the notes, the
   error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
-- **Screens**: `swift run DayhandSnapshots <folder>` draws Today (also with the update button), the details, the
-  menu bar, quick add, Connect, Settings, Settings → Updates and every state of the update window from synthetic
-  data into PNG files, off screen (the sidebar's translucent background does not
-  draw off screen, so the Today list is also drawn on its own). `swift run DayhandSnapshots <folder> pl` draws them
-  in another language, and the tool fails when a text on them is missing from the string catalog. It also lays out
-  the main window in a real window with its title bar (wide, narrowest, sidebar closed, light and dark) and fails when
-  the content is taller than the window or quick add sits under the title bar and its window buttons.
+- **Screens**: `swift run DayhandSnapshots <folder>` draws the two-column Today and Trash windows at 960 and
+  720 points wide, the shared sidebar with its chooser and update button, the details with cached history and
+  with history unavailable offline, the menu bar, quick add, Connect, Settings, Settings → Updates and every
+  state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
+  background does not draw off screen, so the sidebar and task lists are also drawn on their own).
+  `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
+  them is missing from the string catalog. It also lays out the main window in a real window with its title bar
+  (wide, narrowest, sidebar closed, light and dark) and fails when the content is taller than the window or quick
+  add sits under the title bar and its window buttons.
+- **History presentation** (`DayhandUITests`): refresh-key equality and connection-recovery classification,
+  placeholders for fresh, cached and local-only history, and translated, actor-neutral claim labels. These
+  are unit checks, not clicks through the running app.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources

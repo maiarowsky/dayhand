@@ -184,6 +184,20 @@
 			<string>正在发送 %lld 项更改…</string>
 		</dict>
 	</dict>
+	<key>Tasks stay here for %lld days, then they are deleted for good.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>任务会在这里保留 %lld 天，之后将被永久删除。</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -196,6 +210,20 @@
 			<string>lld</string>
 			<key>other</key>
 			<string>标题须为 1 到 %lld 个字符。</string>
+		</dict>
+	</dict>
+	<key>The trash is empty. Deleted tasks stay here for %lld days.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>废纸篓是空的。已删除的任务会在这里保留 %lld 天。</string>
 		</dict>
 	</dict>
 </dict>

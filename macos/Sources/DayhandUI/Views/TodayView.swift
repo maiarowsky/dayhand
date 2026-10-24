@@ -2,14 +2,14 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// The main window: Today on the left, the selected task's details on the right.
+/// The main window: Today or the trash on the left, the selected task's details on the right.
 struct MainWindow: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         NavigationSplitView {
-            TodaySidebar()
+            Sidebar()
                 .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 520)
         } detail: {
             if let id = model.selection, let task = model.task(id) {
@@ -40,11 +40,26 @@ struct MainWindow: View {
     }
 }
 
-/// The left column: Today, and the update button in its bottom corner while a newer version is known.
-struct TodaySidebar: View {
+/// The left column: a choice between Today and the trash above the chosen list, and the update button in its bottom
+/// corner while a newer version is known.
+struct Sidebar: View {
+    @EnvironmentObject private var model: AppModel
+
     var body: some View {
-        TodayView()
-            .safeAreaInset(edge: .bottom, spacing: 0) { UpdateCorner() }
+        VStack(spacing: 0) {
+            Picker(tr("Show"), selection: Binding(get: { model.place }, set: { model.show($0) })) {
+                Text(tr("Today")).tag(Place.today)
+                Text(tr("Trash")).tag(Place.trash)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .padding(12)
+            switch model.place {
+            case .today: TodayView()
+            case .trash: TrashView()
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { UpdateCorner() }
     }
 }
 

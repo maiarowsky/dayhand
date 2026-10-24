@@ -9,7 +9,7 @@ extension Updater {
 }
 
 /**
- * The corner at the bottom left of the main window (under Today, where Codex keeps its update button above the
+ * The corner at the bottom left of the main window (under the sidebar's Today and Trash, where Codex keeps its update button above the
  * profile): a round blue button with a download arrow while a newer version is known, or while the update window is
  * open from Check for Updates. It opens the update window as a popover.
  */

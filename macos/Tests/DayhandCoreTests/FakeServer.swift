@@ -4,7 +4,7 @@ import Foundation
 /**
  * A Dayhand server in memory, behind the same `HTTPTransport` the app uses: `/auth/pair`, `/auth/token`, and the app
  * functions over `/api/mutation` and `/api/query`, with the backend's rules that sync depends on (one now task,
- * `clientId` idempotency, the trash, `updatedAt`). It can go offline, lose an answer after applying a change, and
+ * `clientId` idempotency, the trash, `updatedAt`) and each task's change history (`app:getTask`). It can go offline, lose an answer after applying a change, and
  * revoke the device. No network, no production.
  */
 final class FakeServer: HTTPTransport, @unchecked Sendable {
@@ -17,6 +17,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     private var tasks: [String: JSONValue] = [:]
     private var order: [String] = []
     private var seenClientIds: [String: JSONValue] = [:]
+    /// Task id → its history, oldest first, as `taskEvents` holds it.
+    private var events: [String: [JSONValue]] = [:]
     private var nextId = 1
     private var nextJwt = 1
     private var validJwts: Set<String> = []
@@ -75,8 +77,20 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         }
     }
 
-    func editElsewhere(_ id: String, _ fields: [String: JSONValue]) {
-        lock.locked { change(id) { task in for (key, value) in fields { task[key] = value } } }
+    /// A change made by someone else, recorded in the history as theirs (an agent through MCP by default).
+    func editElsewhere(_ id: String, _ fields: [String: JSONValue], actor: String = "agent", actorName: String? = "claude", action: String = "update") {
+        lock.locked {
+            change(id, action: action, by: (actor, actorName)) { task in for (key, value) in fields { task[key] = value } }
+        }
+    }
+
+    /// The task leaves the server for good, as the daily purge of the trash does, with its history.
+    func purge(_ id: String) {
+        lock.locked {
+            tasks[id] = nil
+            order.removeAll { $0 == id }
+            events[id] = nil
+        }
     }
 
     var allTasks: [JSONValue] { lock.locked { order.compactMap { tasks[$0] } } }
@@ -124,6 +138,9 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         case "app:listAll": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] == nil }))
         case "app:listTrash": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] != nil }))
         case "app:getSettings": return success(settings)
+        case "app:getTask":
+            guard let id = args["taskId"]?.string, let task = tasks[id] else { return failure("Task not found") }
+            return success(["task": task, "history": .array(events[id] ?? [])])
         default: return failure("unknown query \(path)")
         }
     }
@@ -139,30 +156,32 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             if tasks[id]?["deletedAt"] != nil, path != "app:restore" { return failure("Task is in the trash") }
             switch path {
             case "app:update":
-                change(id) { task in
+                change(id, action: "update") { task in
                     for (key, field) in args.object ?? [:] where key != "taskId" && key != "clientId" {
                         task[key] = field.isNull ? nil : field
                     }
                 }
             case "app:complete":
-                change(id) { $0["status"] = "done"; $0["completedAt"] = .of(clock()); $0["isNow"] = false }
+                change(id, action: "complete") { $0["status"] = "done"; $0["completedAt"] = .of(clock()); $0["isNow"] = false }
             case "app:setStatus":
-                change(id) { task in
+                change(id, action: "setStatus") { task in
                     task["status"] = args["status"]
                     if args["status"]?.string != "doing" { task["isNow"] = false }
                     if args["status"]?.string != "done" { task["completedAt"] = nil }
                 }
             case "app:setNow":
-                for other in order where other != id { change(other, touch: tasks[other]?["isNow"]?.bool == true) { $0["isNow"] = false } }
-                change(id) { $0["isNow"] = true; $0["status"] = "doing" }
+                for other in order where other != id {
+                    change(other, action: "setNow", touch: tasks[other]?["isNow"]?.bool == true) { $0["isNow"] = false }
+                }
+                change(id, action: "setNow") { $0["isNow"] = true; $0["status"] = "doing" }
             case "app:reschedule":
-                change(id) { $0["dueDate"] = args["dueDate"] }
+                change(id, action: "update") { $0["dueDate"] = args["dueDate"] }
             case "app:archive":
-                change(id) { $0["archivedAt"] = .of(clock()); $0["isNow"] = false }
+                change(id, action: "archive") { $0["archivedAt"] = .of(clock()); $0["isNow"] = false }
             case "app:softDelete":
-                change(id) { $0["deletedAt"] = .of(clock()); $0["isNow"] = false }
+                change(id, action: "delete") { $0["deletedAt"] = .of(clock()); $0["isNow"] = false }
             case "app:restore":
-                change(id) { task in if task["deletedAt"] != nil { task["deletedAt"] = nil } else { task["archivedAt"] = nil } }
+                change(id, action: "restore") { task in if task["deletedAt"] != nil { task["deletedAt"] = nil } else { task["archivedAt"] = nil } }
             default:
                 return failure("unknown mutation \(path)")
             }
@@ -182,13 +201,34 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         for key in ["note", "dueDate", "dueTime", "clientId"] { if let value = args[key] { task[key] = value } }
         tasks[id] = .object(task)
         order.append(id)
+        record(id, "create", by: ("app", nil), before: nil, after: .object(task))
         return .object(task)
     }
 
-    private func change(_ id: String, touch: Bool = true, _ edit: (inout [String: JSONValue]) -> Void) {
+    /// Changes a task and records the fields that changed, as the backend's `patchTask`; an edit that changes
+    /// nothing is not recorded.
+    private func change(
+        _ id: String, action: String = "update", by actor: (String, String?) = ("app", nil), touch: Bool = true,
+        _ edit: (inout [String: JSONValue]) -> Void
+    ) {
         guard var task = tasks[id]?.object else { return }
+        let old = task
         edit(&task)
+        let keys = Set(old.keys).union(task.keys).filter { $0 != "updatedAt" && old[$0] != task[$0] }
         if touch { task["updatedAt"] = .of(max(clock(), (task["updatedAt"]?.int64 ?? 0) + 1)) }
         tasks[id] = .object(task)
+        guard !keys.isEmpty else { return }
+        let before = Dictionary(uniqueKeysWithValues: keys.map { ($0, old[$0] ?? .null) })
+        let after = Dictionary(uniqueKeysWithValues: keys.map { ($0, task[$0] ?? .null) })
+        record(id, action, by: actor, before: .object(before), after: .object(after))
+    }
+
+    private func record(_ id: String, _ action: String, by actor: (String, String?), before: JSONValue?, after: JSONValue?) {
+        var event: [String: JSONValue] = [
+            "at": .of(clock()), "actor": .string(actor.0), "actorName": .of(actor.1), "action": .string(action),
+            "before": before ?? .null, "after": after ?? .null,
+        ]
+        event["by"] = .string(actor.0 == "agent" && actor.1 != nil ? "agent: \(actor.1!)" : actor.0)
+        events[id, default: []].append(.object(event))
     }
 }

@@ -4,6 +4,19 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.3.0 (unreleased)
+
+### Added
+
+- **Trash** with **Restore** in the task sidebar, and per-task **History** in the details.
+  Usage and offline behavior: [README.md](README.md).
+
+### Changed
+
+- The existing sidebar now switches between Today and Trash; the window keeps its two-column layout.
+- The local database now caches server history; the cache leaves the Mac with a purged task.
+  Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).
+
 ## 0.2.2 (2026-10-24)
 
 ### Fixed

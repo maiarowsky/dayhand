@@ -41,7 +41,7 @@ public struct DayhandApp: App {
                     .keyboardShortcut("n")
             }
             CommandMenu(tr("Task")) {
-                Button(tr("Sync Now")) { model.syncNow() }
+                Button(tr("Sync Now")) { Task { await model.syncNow() } }
                     .keyboardShortcut("r")
                     .disabled(model.credential == nil)
             }
