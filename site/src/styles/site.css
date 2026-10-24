@@ -84,7 +84,7 @@ code, pre { font-family: var(--font-mono); font-size: 0.9em; }
   background: color-mix(in oklch, var(--text) 8%, transparent);
   white-space: nowrap;
 }
-:where(.cards, .steps, .promise, .platforms, .row, .duo, .showcase, .strip) > * { min-inline-size: 0; }
+:where(.cards, .steps, .platforms, .row, .duo, .showcase, .strip) > * { min-inline-size: 0; }
 
 a { color: var(--accent); text-underline-offset: 0.18em; }
 /* One focus ring everywhere, in the accent colour, which keeps at least 6:1 against both page backgrounds. */
@@ -248,26 +248,6 @@ h3 { font-size: var(--step-1); }
   .showcase .window { grid-column: 1 / -1; }
   .showcase .phone { grid-column: 7 / -1; margin-block-start: 40%; }
 }
-
-/* What it promises, in four short points. */
-.promise {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  gap: var(--space-s);
-  padding: 0;
-  list-style: none;
-}
-.promise li {
-  display: grid;
-  align-content: start;
-  gap: var(--space-2xs);
-  padding: var(--space-m);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-.promise strong { font-size: var(--step-1); }
-.promise p { color: var(--muted); }
 
 /* Rows of text next to a screenshot: side by side when there is room, stacked otherwise. */
 .rows { display: grid; gap: var(--space-xl); }

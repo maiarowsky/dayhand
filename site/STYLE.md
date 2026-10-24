@@ -59,11 +59,12 @@ highlighting (it would put a `style` attribute on every token), and `src/docs/ht
   link to a file that does not exist stops the build, and a bare `https://…` in a sentence stays text;
 - tables and code blocks scroll on their own and take keyboard focus, and shell blocks get a Copy button.
 
-The search index (`/docs/search-index.json`) has one entry per section: the text before the first `##`
-heading, then each `##` section. `src/scripts/docs-search.ts` fetches it the first time someone uses the
-search box. On narrow screens the side navigation is a menu that starts folded, and beside the page it is
-always open, so nothing moves when the script runs. Without JavaScript the menu is a plain `<details>` and
-the search box is hidden (`@media (scripting: none)`).
+The search index (`/docs/search-index.json`) has one entry per section: the text before the first `##` or
+`###` heading, then each `##` and `###` section, linked to its heading id. Entries keep the full plain text;
+only the displayed snippets are shortened. `src/scripts/docs-search.ts` fetches it the first time someone
+uses the search box. On narrow screens the side navigation is a menu that starts folded, and beside the
+page it is always open, so nothing moves when the script runs. Without JavaScript the menu is a plain
+`<details>` and the search box is hidden (`@media (scripting: none)`).
 
 To add a page, write `docs/<name>.md` with a `#` title and a first paragraph that says what the page is
 for, add it to `SECTIONS` in `src/docs/pages.ts`, then build and run `scripts/check-site.sh`, which checks
