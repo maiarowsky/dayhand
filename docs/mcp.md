@@ -22,8 +22,9 @@
   and time-boxed claims; agents can ask the owner first, the owner can pause them or set a policy
   per tool, agents propose work into an inbox, and a health report shows what needs a look
   ([agent-work.md](agent-work.md)).
-- The server identifies itself as `{ "name": "dayhand", "version": "0.11.0" }` (`serverInfo` of
-  `initialize`, `_meta` of 2026-07-28 results); see [Versions](#versions).
+- The server's name and backend release version appear in `serverInfo` of `initialize` and
+  `_meta` of 2026-07-28 results. The [server identity](../backend/convex/lib/mcpProtocol.ts) is the
+  source of truth; see [Versions](#versions) for release history.
 
 ## Tools
 
@@ -235,17 +236,11 @@ agents are paused, `nextSteps` says only that.
 
 ### Backlog.md (`import_backlog`, `export_backlog`)
 
-`import_backlog` takes up to 200 files `{ path, content }` (100,000 characters each), paths relative
-to the backlog folder, and makes a task of each task file with the source
-`{ kind: "backlog-md", ref: <id> }` (uppercase). Files without an id are skipped; a file imported
-before is skipped and reported with the task it made. The result lists `tasks`, `skipped` and `failed` per file and
-`warnings` (statuses read by their words, dependencies not found, header keys without a Dayhand
-field). `dryRun: true` stores nothing. `export_backlog` returns `files` (one per task, with `id`)
-and `config`; nothing is stored. Its `notes` identify tasks whose exported fields exceed Dayhand
-import limits, without truncating text. The CLI sends one call per invocation and refuses folders
-that exceed one call's limits before sending anything; import those by subdirectories. An `ask`
-approval binds the exact call and is consumed once, as for other tools. What maps to what is in
-[backlog-md.md](backlog-md.md).
+`import_backlog` takes `files: [{ path, content }]`, with paths relative to the backlog folder;
+`export_backlog` returns the files and configuration to write. The result contracts are
+[backlog-import](schemas/backlog-import.schema.json) and
+[backlog-export](schemas/backlog-export.schema.json). See [backlog-md.md](backlog-md.md) for field
+mappings, source identity, limits, approvals and safe folder handling.
 
 ### Dry runs
 

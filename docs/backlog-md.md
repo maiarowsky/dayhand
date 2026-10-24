@@ -27,8 +27,8 @@ dayhand backlog export --json                # the files as JSON, nothing writte
 The same through MCP is `import_backlog` (a change, so it takes `dryRun`, obeys the owner's pause
 and tool policies, and counts against the limit of changes) and `export_backlog` (a read); through
 the REST API, `POST /api/v1/import/backlog` and `GET /api/v1/export/backlog`
-([api.md](api.md)). An agent reads files from wherever it works and sends their text; Dayhand never
-reads a disk itself. A selected directory holding `config.yml` or `backlog.config.yml` is the root.
+([api.md](api.md)). An agent reads files from wherever it works and sends their text; the server
+never reads the agent's disk. A selected directory holding `config.yml` or `backlog.config.yml` is the root.
 Otherwise, the CLI walks up only while directory names are reserved: `tasks`, `completed`, `drafts`,
 `docs`, `decisions`, `milestones` or `archive`. The first non-reserved directory is the root; the
 CLI reads only its config and never searches above it. A non-reserved selected subdirectory is
@@ -111,10 +111,10 @@ the board, is ignored.
 
 Decisions:
 
-- **One source, one task.** The source is the same field any integration uses
-  ([agent-work.md](agent-work.md#7-the-proposal-inbox)), so importing a folder again skips every
-  file imported before, also one whose task was rejected or merged since; the report names the task
-  each such file made. It never updates a task from a changed file: that would be sync.
+- **One source, one task.** A file whose source already belongs to a task is skipped, and the
+  report names that task. Source lifetime, including merges and trash purging, follows the shared
+  [source identity rules](agent-work.md#7-the-proposal-inbox). Import never updates a task from a
+  changed file: that would be sync.
 - **One call per invocation, dependencies first.** `dayhand backlog import` sends one call,
   including its config: at most 200 files, 200 KiB of file JSON (leaving room within the server's
   256 KiB request limit), and 100,000 characters per file. A larger folder fails before anything
@@ -129,9 +129,9 @@ Decisions:
   reusable; obtain a new approval if needed. Source identity still skips files imported before.
 - **No new statuses.** Backlog.md lets a project name its own columns; Dayhand keeps `todo`,
   `doing` and `done` and maps each column to the nearest one.
-- **An agent's import follows an agent's rules.** A finished task with criteria not all met, or
-  without a final summary, is refused for an agent as `complete_task` would refuse it; the rest
-  of the folder is imported.
+- **An agent's import follows an agent's rules.** A finished task must satisfy the same
+  [completion requirements](agent-work.md#2-acceptance-criteria-plan-and-proof) as `complete_task`;
+  a task that fails them is refused, while the rest of the folder is imported.
 - **The header is read, not executed.** The reader understands the part of YAML these headers
   use (plain and quoted values, lists, block text) and nothing else: no anchors, tags or nested
   maps.
@@ -140,7 +140,7 @@ Decisions:
 
 | Dayhand | Backlog.md |
 |---|---|
-| a task from Backlog.md | its own id; any other task `<PREFIX>-<number>` (`TASK-12` for #12, `--prefix` changes the prefix), a proposal `DRAFT-<number>`; an id already taken gets the next free number |
+| a task from Backlog.md with an id matching `PREFIX-number` (optional dotted subnumbers), where the prefix starts with a letter and contains only letters and digits | its own id; otherwise `<PREFIX>-<number>` (`TASK-12` for #12, `--prefix` changes the prefix), a proposal `DRAFT-<number>`; an id already taken gets the next free number |
 | `status` | `To Do`, `In Progress` or `Done`, the statuses of the `config.yml` it writes |
 | `labels`, `dependsOn` | `labels`, `dependencies` (dependencies on tasks not exported are left out, and counted) |
 | `links` | `references` |
@@ -152,8 +152,9 @@ Decisions:
 | `createdAt`, `updatedAt` | `created_date`, `updated_date`, in the user's time zone |
 | a proposal, an archived task, an archived proposal (`--archived`) | a file in `drafts/`, `archive/tasks/`, `archive/drafts/` respectively; archived drafts are skipped on import |
 
-Due dates and times, repeat rules, reminders, the now task and claims have no place in the format;
-the result's `notes` count what was left out. Tasks in the trash are not exported.
+Due dates and times, repeat rules, reminders, the now task and claims are not exported. The
+result's `notes` count omitted scheduling fields and tasks with dependencies left out; they do
+not count the now task or claims. Tasks in the trash are not exported.
 `dayhand backlog export <dir>` requires a missing or empty destination and always writes its
 own `config.yml`. `--force` explicitly confirms writing into a non-empty folder and replacing
 exported files, including `config.yml`; it does not reconcile another project's configuration
@@ -161,8 +162,9 @@ or delete unrelated files. Destination, task-directory and file symlinks are ref
 dangling file symlinks.
 
 An export imported into another Dayhand account keeps titles, statuses, labels, criteria, plan,
-dependencies, links and proof when the flattened fields fit the import limits; the note gains the
-checklist and the notes section as text. Export never truncates that text: its `notes` identify
+dependencies and link URLs when the flattened fields fit the import limits. Proof links and check
+results become text in the final summary, not structured proof fields; the note gains the checklist
+and the notes section as text. Export never truncates that text: its `notes` identify
 any task whose resulting note exceeds 20,000 characters or finished task's final summary exceeds
 4,000 characters, including contributions from checklists, resume notes, blocked reasons, proof
 links and checks. It also warns when any serialized task file or the aggregated `config.yml`

@@ -94,7 +94,7 @@ closing it with proof (`dayhand://workflow/intake`, `…/execution`, `…/finali
 
 A plan kept in [Backlog.md](https://github.com/MrLesk/Backlog.md) task files comes in with
 `dayhand backlog import backlog --dry-run` (then without `--dry-run`) and goes out with
-`dayhand backlog export backlog`: criteria, plan, dependencies and status carry over, and a folder
+`dayhand backlog export backlog-out`: criteria, plan, dependencies and status carry over, and a folder
 imported again brings only what is new ([docs/backlog-md.md](docs/backlog-md.md)).
 
 You stay in charge of your agents. Before a risky step an agent asks (`dayhand ask`, the MCP tool

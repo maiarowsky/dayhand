@@ -98,10 +98,10 @@ Decisions:
 - **A repeating task's next occurrence** keeps the criteria (unticked) and the plan, but not the
   proof.
 
-Public counterpart: [Backlog.md](https://github.com/MrLesk/Backlog.md) (MIT), a Markdown task
+Public counterpart: [Backlog.md](backlog-md.md), a Markdown task
 board for people and AI agents, gives its tasks acceptance criteria and an implementation plan in
-the same spirit. Dayhand takes the idea, not the format or code: its criteria are structured
-fields behind its own tools.
+the same spirit. Dayhand's criteria are structured fields behind its own tools; file-format
+interchange is a separate [import/export operation](backlog-md.md).
 
 ## 3. Dependencies and a blocked reason
 
@@ -399,27 +399,15 @@ way to give a client context without a tool call.
 
 ## 10. Backlog.md import and export
 
-`import_backlog` (`dayhand backlog import <dir>`) reads Backlog.md task files into tasks, and
-`export_backlog` (`dayhand backlog export <dir>`) writes the plan as such files. Each imported
-task gets the source `{ kind: "backlog-md", ref: <the file's id> }` from section 7, so a folder
-imported again brings only the files that are new; the report says, file by file, what was
-created, what was skipped and why, what failed its checks, and what had no place in Dayhand.
-`--dry-run` (`dryRun: true`) shows the report without storing anything. Statuses map to the
-nearest of `todo`, `doing` and `done`, criteria to `acceptance`, the implementation plan to
-`plan`, dependencies to `dependsOn` and the final summary to proof. The full mapping, the
-decisions and the format's license and author are in [backlog-md.md](backlog-md.md).
+`import_backlog` (`dayhand backlog import <dir>`) reads Backlog.md task files into ordinary
+Dayhand tasks; `export_backlog` (`dayhand backlog export <dir>`) writes the plan as task files.
+Import uses the [source identity](#7-the-proposal-inbox) shared by integrations, not a second
+synchronization mechanism. Its report explains what was created, skipped or refused, and a dry
+run previews that report without storing anything.
 
-Each CLI invocation sends one import call; the backend creates dependencies first. Folders over
-200 files or 200 KiB of file JSON are refused before sending anything, with a request to import by
-subdirectories.
-Files without an id are skipped, and an `ask` approval allows the exact call once, with no
-import-specific replay exception. Export requires a fresh destination unless `--force` explicitly
-confirms writing into an existing folder. Archived proposals are written under `archive/drafts/`
-and remain excluded from import. Export notes identify tasks whose flattened fields exceed the
-import limits, without changing field limits or truncating text.
-
-Public counterpart: [Backlog.md](https://github.com/MrLesk/Backlog.md) by Alex Gavrilescu, MIT
-License. Dayhand reads and writes its file format and shares no code with it.
+See [Backlog.md import and export](backlog-md.md) for the field mappings, source normalization,
+call limits, approval handling, export safety and overflow warnings, and the format's license and
+attribution.
 
 ## What an agent does
 

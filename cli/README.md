@@ -48,8 +48,8 @@ For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file an
 `--client-id`), `--dry-run` shows a change checked by the backend without saving it, and `dayhand`
 never prompts without a terminal.
 Give each agent its own key of kind `agent`; history then shows its changes as `agent: <key name>`.
-`dayhand prime` prints Today and these rules as plain text for an agent's session-start hook, and
-[docs/skills/dayhand/SKILL.md](../docs/skills/dayhand/SKILL.md) is the same guidance as an Agent Skill.
+For session-start context, use [`dayhand prime`](../docs/cli.md#dayhand-prime).
+[docs/skills/dayhand/SKILL.md](../docs/skills/dayhand/SKILL.md) provides the agent guidance as an Agent Skill.
 
 The full reference is generated from the command registry: [docs/cli.md](../docs/cli.md),
 the man page [man/dayhand.1](../man/dayhand.1) (in the package, so `man dayhand` works after a global
