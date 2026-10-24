@@ -180,7 +180,7 @@ export class Controller {
     switch (view) {
       case "today":
         return this.load("today", async () => {
-          const [today, health] = await Promise.all([api.today(), api.health()]);
+          const [today, health] = await Promise.all([api.today(), api.health().catch(() => undefined)]);
           return { today, health };
         }, (value) => (this.data = { ...this.data, ...value }));
       case "agents":
