@@ -22,13 +22,24 @@ public struct RemoteTask: Hashable, Sendable {
     public var checklist: [ChecklistItem]
     /// Nil: the default reminders from the settings.
     public var reminders: [TaskReminder]?
+    public var ref: Int?
+    /// Agent work, as `TaskItem` holds it; the claim holder only by name.
+    public var acceptance: [AcceptanceItem]
+    public var plan: String?
+    public var proof: TaskProof?
+    public var dependsOn: [String]
+    public var blockedReason: String?
+    public var claimedBy: String?
+    public var claimExpiresAt: Int64?
 
     public init(
         id: String, clientId: String? = nil, title: String, note: String? = nil, dueDate: String? = nil,
         dueTime: String? = nil, status: String = "todo", isNow: Bool = false, resumeNote: String? = nil,
         completedAt: Int64? = nil, archivedAt: Int64? = nil, createdAt: Int64, updatedAt: Int64,
         repeat: RepeatRule? = nil, labels: [String] = [], links: [TaskLink] = [], deletedAt: Int64? = nil,
-        checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil
+        checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil, ref: Int? = nil,
+        acceptance: [AcceptanceItem] = [], plan: String? = nil, proof: TaskProof? = nil, dependsOn: [String] = [],
+        blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil
     ) {
         self.id = id
         self.clientId = clientId
@@ -49,6 +60,14 @@ public struct RemoteTask: Hashable, Sendable {
         self.deletedAt = deletedAt
         self.checklist = checklist
         self.reminders = reminders
+        self.ref = ref
+        self.acceptance = acceptance
+        self.plan = plan
+        self.proof = proof
+        self.dependsOn = dependsOn
+        self.blockedReason = blockedReason
+        self.claimedBy = claimedBy
+        self.claimExpiresAt = claimExpiresAt
     }
 }
 
@@ -80,6 +99,9 @@ public enum RemoteJSON {
     public static let querySettings = "app:getSettings"
     public static let queryTrash = "app:listTrash"
     public static let queryTask = "app:getTask"
+    public static let queryPlanHealth = "app:planHealth"
+    public static let queryApprovals = "app:listApprovals"
+    public static let queryProposals = "app:listProposals"
 
     /// Arguments of [queryTasks]: everything except the trash, done and archived included.
     public static let tasksArgs: JSONValue = ["includeArchived": true, "includeDone": true]
@@ -126,7 +148,15 @@ public enum RemoteJSON {
             links: o["links"]?.array?.compactMap(TaskLink.parse) ?? [],
             deletedAt: o["deletedAt"]?.int64,
             checklist: o["checklist"]?.array?.compactMap(ChecklistItem.parse) ?? [],
-            reminders: o["reminders"]?.array?.compactMap(TaskReminder.parse)
+            reminders: o["reminders"]?.array?.compactMap(TaskReminder.parse),
+            ref: o["ref"]?.int,
+            acceptance: o["acceptance"]?.array?.compactMap(AcceptanceItem.parse) ?? [],
+            plan: o["plan"]?.string,
+            proof: TaskProof.parse(o["proof"]),
+            dependsOn: o["dependsOn"]?.array?.compactMap(\.string) ?? [],
+            blockedReason: o["blockedReason"]?.string,
+            claimedBy: o["claimedBy"]?["name"]?.string,
+            claimExpiresAt: o["claimExpiresAt"]?.int64
         )
     }
 

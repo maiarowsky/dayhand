@@ -36,15 +36,62 @@ struct GeneralSettings: View {
                     Text(tr("Notifications need the app bundle (scripts/build-app.sh); swift run has none."))
                         .foregroundStyle(.secondary)
                 }
-                LabeledContent(tr("Morning summary"), value: DateText.time(model.settings.summaryTime))
-                LabeledContent(tr("Default reminders"), value: model.settings.reminderMinutes.isEmpty ? tr("None") : model.settings.reminderMinutes.map(Formatting.minutes).joined(separator: DateText.listSeparator))
+                ReminderSettingsEditor(settings: model.settings)
                 LabeledContent(tr("Time zone"), value: model.settings.timezone)
-                Text(tr("These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand."))
+                Text(tr("Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/**
+ * The morning summary time and the default reminders (minutes before the due time of a task without its own), as on
+ * the phone. A change shows at once, plans the notifications again and goes to the server through the outbox
+ * (`app:updateSettings`); a sync while it waits does not undo it.
+ */
+struct ReminderSettingsEditor: View {
+    @EnvironmentObject private var model: AppModel
+    let settings: ReminderSettings
+
+    private let columns = Array(repeating: GridItem(.flexible(), alignment: .leading), count: 3)
+
+    var body: some View {
+        DatePicker(tr("Morning summary"), selection: Binding(
+            get: { PickerDates.time(settings.summaryTime) },
+            set: { date in
+                let time = PickerDates.hhmm(date)
+                guard time != settings.summaryTime else { return }
+                model.setSummaryTime(time)
+            }
+        ), displayedComponents: .hourAndMinute)
+            .environment(\.timeZone, PickerDates.zone)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(tr("Default reminders"))
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 4) {
+                ForEach(Self.choices(settings.reminderMinutes), id: \.self) { minutes in
+                    Toggle(Formatting.minutes(minutes), isOn: Binding(
+                        get: { settings.reminderMinutes.contains(minutes) },
+                        set: { on in model.setDefaultReminders(Self.toggled(settings.reminderMinutes, minutes, on: on)) }
+                    ))
+                    .toggleStyle(.checkbox)
+                }
+            }
+            if settings.reminderMinutes.isEmpty {
+                Text(tr("No reminders unless a task has its own.")).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// The usual choices and any other the settings already have (set on the phone or with dayhand).
+    static func choices(_ current: [Int]) -> [Int] { Set(ReminderDraft.beforeOptions).union(current).sorted() }
+
+    static func toggled(_ current: [Int], _ minutes: Int, on: Bool) -> [Int] {
+        var set = Set(current)
+        if on { set.insert(minutes) } else { set.remove(minutes) }
+        return set.sorted()
     }
 }
 

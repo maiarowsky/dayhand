@@ -216,13 +216,32 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
     public var checklist: [ChecklistItem]
     /// This task's own reminders; nil = the default reminders from the settings, empty = none.
     public var reminders: [TaskReminder]?
+    /// The task's number (#42), given by the server; nil until the server has the task.
+    public var ref: Int?
+    // Agent work (backend 0.10.0, docs/agent-work.md), set by agents and `dayhand`; read-only on the Mac.
+    /// What "done" means; empty = no criteria.
+    public var acceptance: [AcceptanceItem]
+    /// How the work will be done, as free text.
+    public var plan: String?
+    /// What the last completion was given to show the work is done.
+    public var proof: TaskProof?
+    /// Server ids of the tasks that must be done before this one is ready.
+    public var dependsOn: [String]
+    /// Why the task cannot go on.
+    public var blockedReason: String?
+    /// The name of the agent holding the task's claim, kept after the claim runs out until it is released.
+    public var claimedBy: String?
+    /// When the claim runs out (Unix ms).
+    public var claimExpiresAt: Int64?
 
     public init(
         localId: String, serverId: String? = nil, clientId: String? = nil, title: String, note: String? = nil,
         dueDate: String? = nil, dueTime: String? = nil, status: TaskStatus = .todo, isNow: Bool = false,
         resumeNote: String? = nil, completedAt: Int64? = nil, archivedAt: Int64? = nil, createdAt: Int64,
         updatedAt: Int64, serverUpdatedAt: Int64? = nil, repeat: RepeatRule? = nil, labels: [String] = [],
-        links: [TaskLink] = [], deletedAt: Int64? = nil, checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil
+        links: [TaskLink] = [], deletedAt: Int64? = nil, checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil,
+        ref: Int? = nil, acceptance: [AcceptanceItem] = [], plan: String? = nil, proof: TaskProof? = nil,
+        dependsOn: [String] = [], blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil
     ) {
         self.localId = localId
         self.serverId = serverId
@@ -245,6 +264,14 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
         self.deletedAt = deletedAt
         self.checklist = checklist
         self.reminders = reminders
+        self.ref = ref
+        self.acceptance = acceptance
+        self.plan = plan
+        self.proof = proof
+        self.dependsOn = dependsOn
+        self.blockedReason = blockedReason
+        self.claimedBy = claimedBy
+        self.claimExpiresAt = claimExpiresAt
     }
 
     public var id: String { localId }
@@ -259,4 +286,9 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
 
     /// Shown on Today: neither archived nor in the trash.
     public var isActive: Bool { archivedAt == nil && deletedAt == nil }
+
+    /// Whether an agent has set anything the details' Agent section shows.
+    public var hasAgentWork: Bool {
+        !acceptance.isEmpty || plan != nil || proof != nil || !dependsOn.isEmpty || blockedReason != nil || claimedBy != nil
+    }
 }

@@ -48,6 +48,21 @@ public enum SnapshotMerger {
         return MergePlan(upserts: upserts, deletes: deletes)
     }
 
+    /**
+     * The server's settings, except the fields a settings change still in the outbox sets: they keep the local value,
+     * which reaches the server after everything already there, as the tasks' fields do.
+     */
+    public static func settings(local: ReminderSettings, pending: [OutboxOp], remote: ReminderSettings) -> ReminderSettings {
+        var merged = remote
+        for op in pending where op.mutation == Mutations.updateSettings {
+            let keys = Set((JSONValue.decode(op.argsJson)?.object ?? [:]).keys)
+            if keys.contains("timezone") { merged.timezone = local.timezone }
+            if keys.contains("summaryTime") { merged.summaryTime = local.summaryTime }
+            if keys.contains("defaultReminderMinutes") { merged.reminderMinutes = local.reminderMinutes }
+        }
+        return merged
+    }
+
     private static func mergeRow(_ row: TaskItem?, _ r: RemoteTask, _ keepLocal: Set<Field>) -> TaskItem {
         var task = TaskItem(
             localId: row?.localId ?? r.clientId ?? r.id,
@@ -70,7 +85,16 @@ public enum SnapshotMerger {
             links: r.links,
             deletedAt: r.deletedAt,
             checklist: r.checklist,
-            reminders: r.reminders
+            reminders: r.reminders,
+            // Agent work is read-only on the Mac, so the server's copy always wins.
+            ref: r.ref,
+            acceptance: r.acceptance,
+            plan: r.plan,
+            proof: r.proof,
+            dependsOn: r.dependsOn,
+            blockedReason: r.blockedReason,
+            claimedBy: r.claimedBy,
+            claimExpiresAt: r.claimExpiresAt
         )
         guard let row, !keepLocal.isEmpty else { return task }
         if keepLocal.contains(.title) { task.title = row.title }

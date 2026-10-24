@@ -2,6 +2,54 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%lld approval requests</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld solicitud de aprobación</string>
+			<key>other</key>
+			<string>%lld solicitudes de aprobación</string>
+		</dict>
+	</dict>
+	<key>%lld blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld bloqueada</string>
+			<key>other</key>
+			<string>%lld bloqueadas</string>
+		</dict>
+	</dict>
+	<key>%lld claims ran out</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld reserva caducada</string>
+			<key>other</key>
+			<string>%lld reservas caducadas</string>
+		</dict>
+	</dict>
 	<key>%lld days before</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -32,6 +80,70 @@
 			<string>%lld hecha</string>
 			<key>other</key>
 			<string>%lld hechas</string>
+		</dict>
+	</dict>
+	<key>%lld done today</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld hecha hoy</string>
+			<key>other</key>
+			<string>%lld hechas hoy</string>
+		</dict>
+	</dict>
+	<key>%lld done without proof</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld hecha sin prueba</string>
+			<key>other</key>
+			<string>%lld hechas sin prueba</string>
+		</dict>
+	</dict>
+	<key>%lld due today</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld vence hoy</string>
+			<key>other</key>
+			<string>%lld vencen hoy</string>
+		</dict>
+	</dict>
+	<key>%lld in progress</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld en curso</string>
+			<key>other</key>
+			<string>%lld en curso</string>
 		</dict>
 	</dict>
 	<key>%lld more times</key>
@@ -80,6 +192,22 @@
 			<string>%lld atrasada</string>
 			<key>other</key>
 			<string>%lld atrasadas</string>
+		</dict>
+	</dict>
+	<key>%lld proposals</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld propuesta</string>
+			<key>other</key>
+			<string>%lld propuestas</string>
 		</dict>
 	</dict>
 	<key>%lld tasks today</key>
@@ -288,6 +416,22 @@
 			<string>La papelera está vacía. Las tareas eliminadas se quedan aquí %lld día.</string>
 			<key>other</key>
 			<string>La papelera está vacía. Las tareas eliminadas se quedan aquí %lld días.</string>
+		</dict>
+	</dict>
+	<key>oldest open task %lld days old</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>la tarea abierta más antigua tiene %lld día</string>
+			<key>other</key>
+			<string>la tarea abierta más antigua tiene %lld días</string>
 		</dict>
 	</dict>
 </dict>

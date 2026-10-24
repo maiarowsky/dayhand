@@ -14,6 +14,13 @@ latest one below).
 - **Trash** with **Restore** in the task sidebar, and per-task **History** in the details.
   Usage and offline behavior: [README.md](README.md).
 
+- A **plan health card** above Today, with **Review** listing the waiting approval requests and proposals read-only.
+- An **Agent** section in the task details, read-only: the claim and until when, acceptance criteria with ticks,
+  the plan, the proof of completion, the tasks it waits for and why it is blocked.
+- Settings → General → **Notifications** edits the morning summary time and the default reminders; the change goes
+  through the outbox (`app:updateSettings`) and a snapshot taken while it waits does not undo it.
+  Usage and limitations: [README.md](README.md), [docs/macos.md](../docs/macos.md#agent-work-and-settings-on-the-mac).
+
 ### Changed
 
 - Repeating tasks completed without a server now create their next occurrence locally.
@@ -21,6 +28,8 @@ latest one below).
 - The existing sidebar now switches between Today and Trash; the window keeps its two-column layout.
 - The local database now caches server history; the cache leaves the Mac with a purged task.
   Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).
+- The local database also keeps each task's number and agent fields from the snapshot (migration v3) and the last
+  plan health report.
 
 ## 0.2.2 (2026-10-24)
 

@@ -2,8 +2,8 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// A task's details with editing: title, status and "now", the day and time, repeat and reminders (each a draft until
-/// it is saved), labels, the checklist and the note, and its change history at the bottom.
+/// A task's details with editing: title, status and "now", the day and time, what agents set (read-only), repeat and
+/// reminders (each a draft until it is saved), labels, the checklist and the note, and its change history at the bottom.
 struct TaskDetailView: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
@@ -76,6 +76,7 @@ struct TaskDetailView: View {
                         .buttonStyle(.link)
                 }
             }
+            AgentSection(task: task, today: today)
             RepeatEditor(task: task, today: today)
             ReminderEditor(task: task, defaults: model.settings.reminderMinutes)
             Section(tr("Labels")) {
