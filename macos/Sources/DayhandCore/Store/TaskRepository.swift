@@ -17,19 +17,24 @@ public final class TaskRepository: Sendable {
     private let newId: @Sendable () -> String
     private let onOutboxChanged: @Sendable () -> Void
     private let localTimezone: @Sendable () -> String
+    private let repeatsOnMac: @Sendable () -> Bool
 
+    /// [repeatsOnMac] is true while the Mac has no server, which then makes a repeating task's next occurrence itself;
+    /// with a server, `complete` does it there.
     public init(
         database: AppDatabase,
         clock: @escaping @Sendable () -> Int64 = Clock.nowMs,
         newId: @escaping @Sendable () -> String = { UUID().uuidString.lowercased() },
         onOutboxChanged: @escaping @Sendable () -> Void = {},
-        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier }
+        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier },
+        repeatsOnMac: @escaping @Sendable () -> Bool = { false }
     ) {
         self.database = database
         self.clock = clock
         self.newId = newId
         self.onOutboxChanged = onOutboxChanged
         self.localTimezone = localTimezone
+        self.repeatsOnMac = repeatsOnMac
     }
 
     private var writer: DatabaseQueue { database.writer }
@@ -102,12 +107,45 @@ public final class TaskRepository: Sendable {
         return task
     }
 
+    /**
+     * Marks a task done. Without a server the Mac adds a repeating task's next occurrence itself (as the backend's
+     * `complete` would) and queues it as a task of its own; the done task loses its rule first, so the server, once
+     * connected, does not add another one. The Android app's `TaskRepository.complete`.
+     */
     public func complete(_ localId: String) async throws {
-        try await edit(localId, Mutations.complete) { task, now in
+        let onMac = repeatsOnMac()
+        let zone = localTimezone()
+        let now = clock()
+        let completeOp = makeOp(Mutations.complete, localId, [:], now: now)
+        let changed = try await writer.write { db -> Bool in
+            guard var task = try TaskItem.fetchOne(db, key: localId), !task.inTrash else { return false }
+            let rule = task.repeat
+            let wasDone = task.status == .done
             task.status = .done
             task.completedAt = now
             task.isNow = false
+            task.updatedAt = now
+            var complete = completeOp
+            guard onMac, let rule, !wasDone else {
+                try task.save(db)
+                try complete.insert(db)
+                return true
+            }
+            let today = HelmDates.localDate(now, try Meta.settings(db, localTimezone: zone).timezone)
+            task.repeat = nil
+            try task.save(db)
+            var stopRepeating = self.makeOp(Mutations.update, localId, ["repeat": .null], now: now)
+            try stopRepeating.insert(db)
+            try complete.insert(db)
+            if let occurrence = Recurrence.advance(rule, dueDate: task.dueDate, today: today) {
+                let next = self.nextOccurrence(of: task, occurrence, now: now)
+                try next.save(db)
+                var add = self.makeOp(Mutations.add, next.localId, Self.addArgs(next), now: now, clientId: next.localId)
+                try add.insert(db)
+            }
+            return true
         }
+        if changed { onOutboxChanged() }
     }
 
     /// Back from done to the to-do list.
@@ -120,7 +158,7 @@ public final class TaskRepository: Sendable {
     }
 
     /// To do and in progress through `setStatus`, done through `complete` (which also creates a repeating task's
-    /// next occurrence on the server). Leaving "in progress" ends the "now" flag, as on the server.
+    /// next occurrence, on the server or, without one, on the Mac). Leaving "in progress" ends the "now" flag, as on the server.
     public func move(_ localId: String, to status: TaskStatus) async throws {
         guard let current = try await task(localId), current.status != status else { return }
         switch status {
@@ -360,6 +398,32 @@ public final class TaskRepository: Sendable {
             return true
         }
         if changed { onOutboxChanged() }
+    }
+
+    /// The task the completion of [task] creates, as the backend's `complete`: the same fields on the next date, the
+    /// checklist unticked.
+    private func nextOccurrence(of task: TaskItem, _ occurrence: Recurrence.Next, now: Int64) -> TaskItem {
+        let id = newId()
+        return TaskItem(
+            localId: id, clientId: id, title: task.title, note: task.note, dueDate: occurrence.dueDate,
+            dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat, labels: task.labels,
+            links: task.links, checklist: task.checklist.map { ChecklistItem(id: $0.id, title: $0.title) },
+            reminders: task.reminders
+        )
+    }
+
+    /// The `add` arguments of a whole task, unset fields left out.
+    private static func addArgs(_ task: TaskItem) -> [String: JSONValue] {
+        var args: [String: JSONValue] = ["title": .string(task.title)]
+        if let note = task.note { args["note"] = .string(note) }
+        if let dueDate = task.dueDate { args["dueDate"] = .string(dueDate) }
+        if let dueTime = task.dueTime { args["dueTime"] = .string(dueTime) }
+        if let rule = task.repeat { args["repeat"] = rule.wire }
+        if !task.labels.isEmpty { args["labels"] = .array(task.labels.map(JSONValue.string)) }
+        if !task.links.isEmpty { args["links"] = .array(task.links.map(\.wire)) }
+        if !task.checklist.isEmpty { args["checklist"] = .array(task.checklist.map(\.wire)) }
+        if let reminders = task.reminders { args["reminders"] = .array(reminders.map(\.wire)) }
+        return args
     }
 
     /// A change with its own `clientId`, which makes the server apply it once however often it is sent.

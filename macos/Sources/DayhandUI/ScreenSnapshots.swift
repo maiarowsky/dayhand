@@ -76,12 +76,26 @@ public enum ScreenSnapshots {
                 folder.appendingPathComponent("sidebar-update\(dark ? "-dark" : "").png")
             )
         }
-        // The details from top to bottom, the change history included.
+        // The details from top to bottom, the repeat and reminder editors and the change history included.
+        let detailsSize = CGSize(width: 560, height: 2100)
         if let task = model.selection.flatMap(model.task) {
-            try await render(TaskDetailView(task: task).environmentObject(model), CGSize(width: 560, height: 1500), false, folder.appendingPathComponent("details.png"))
+            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details.png"))
+            // The same task repeating monthly on its nth weekday, counted from completion, six more times.
+            var monthly = task
+            if let due = task.dueDate.flatMap(CivilDate.init) {
+                monthly.repeat = RepeatRule(
+                    every: .month, from: .completion,
+                    weekdayOfMonth: WeekdayOfMonth(nth: RepeatDraft.nthOfMonth(due), weekday: due.weekday), count: 6
+                )
+            }
+            try await render(TaskDetailView(task: monthly).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-repeat-month.png"))
+        }
+        // Weekly on two days, with the reminders from Settings.
+        if let task = model.sections.today.first(where: { $0.title == "Water the plants" }) {
+            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-repeat-week.png"))
         }
         if let task = model.sections.today.first(where: { $0.title == "Buy milk" }) {
-            try await render(TaskDetailView(task: task).environmentObject(model), CGSize(width: 560, height: 1500), false, folder.appendingPathComponent("history-offline-empty.png"))
+            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("history-offline-empty.png"))
         }
         try await render(TrashView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("trash-list.png"))
         model.show(.trash)

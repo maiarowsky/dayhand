@@ -158,10 +158,7 @@ by screen:
 - **Calendar**: the week on an hour grid and one day, tasks with a time as blocks, the band of tasks without a
   time, later dates of a repeating task (`Recurrence.occurrences` is ported), drag to another day and time with
   Undo (`setDue` through the outbox is there).
-- **Details**: editors for repeat (every N days, weeks on weekdays, months on a day, the last day or an nth
-  weekday; from the due date or completion; until or a count; `TaskRules.isValid` and `setRepeat` are ported),
-  for reminders (minutes before, a time on the day or days before, at most five; `setReminders` is ported), for
-  links, a date picker and moving checklist items.
+- **Details**: an editor for links, a date picker and moving checklist items.
 - **Settings**: the morning summary time and default reminders edited on the Mac (`app:updateSettings` through the
   outbox, kept against snapshots while it waits); appearance (the Mussh palettes and fonts of
   [design.md](design.md)); export as Markdown or JSON; the calendar address; **agent connections** (approve a

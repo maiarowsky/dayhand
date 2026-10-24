@@ -4,7 +4,8 @@ import Foundation
 /**
  * A Dayhand server in memory, behind the same `HTTPTransport` the app uses: `/auth/pair`, `/auth/token`, and the app
  * functions over `/api/mutation` and `/api/query`, with the backend's rules that sync depends on (one now task,
- * `clientId` idempotency, the trash, `updatedAt`) and each task's change history (`app:getTask`). It can go offline, lose an answer after applying a change, and
+ * `clientId` idempotency, the trash, `updatedAt`, a repeating task's next occurrence on `complete`) and each task's
+ * change history (`app:getTask`). It can go offline, lose an answer after applying a change, and
  * revoke the device. No network, no production.
  */
 final class FakeServer: HTTPTransport, @unchecked Sendable {
@@ -162,7 +163,9 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
                     }
                 }
             case "app:complete":
+                let wasDone = tasks[id]?["status"]?.string == "done"
                 change(id, action: "complete") { $0["status"] = "done"; $0["completedAt"] = .of(clock()); $0["isNow"] = false }
+                if !wasDone { repeatAfter(id) }
             case "app:setStatus":
                 change(id, action: "setStatus") { task in
                     task["status"] = args["status"]
@@ -198,11 +201,40 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             "id": .string(id), "ref": .of(nextId - 1), "title": args["title"] ?? "", "status": "todo", "isNow": false,
             "labels": [], "links": [], "checklist": [], "createdAt": .of(clock()), "updatedAt": .of(clock()),
         ]
-        for key in ["note", "dueDate", "dueTime", "clientId"] { if let value = args[key] { task[key] = value } }
+        for key in ["note", "dueDate", "dueTime", "clientId", "status", "resumeNote", "repeat", "labels", "links", "checklist", "reminders"] {
+            if let value = args[key] { task[key] = value }
+        }
         tasks[id] = .object(task)
         order.append(id)
         record(id, "create", by: ("app", nil), before: nil, after: .object(task))
         return .object(task)
+    }
+
+    /// The next occurrence a completed repeating task creates, as the backend's `complete`: the same fields on the
+    /// date `Recurrence.advance` gives for today in the settings' zone, the checklist unticked.
+    private func repeatAfter(_ id: String) {
+        guard let done = tasks[id]?.object, let rule = RepeatRule.parse(done["repeat"]) else { return }
+        let today = HelmDates.localDate(clock(), settings["timezone"]?.string)
+        guard let occurrence = Recurrence.advance(rule, dueDate: done["dueDate"]?.string, today: today) else { return }
+        var next = done.filter { ["title", "note", "dueTime", "labels", "links", "reminders"].contains($0.key) }
+        next["dueDate"] = .string(occurrence.dueDate)
+        next["repeat"] = occurrence.repeat.wire
+        next["checklist"] = .array((done["checklist"]?.array ?? []).map { item in
+            var unticked = item.object ?? [:]
+            unticked["done"] = false
+            return .object(unticked)
+        })
+        let newId = "srv\(nextId)"
+        nextId += 1
+        next["id"] = .string(newId)
+        next["ref"] = .of(nextId - 1)
+        next["status"] = "todo"
+        next["isNow"] = false
+        next["createdAt"] = .of(clock())
+        next["updatedAt"] = .of(clock())
+        tasks[newId] = .object(next)
+        order.append(newId)
+        record(newId, "repeat", by: ("app", nil), before: nil, after: ["dueDate": .string(occurrence.dueDate), "repeatedFrom": .string(id)])
     }
 
     /// Changes a task and records the fields that changed, as the backend's `patchTask`; an edit that changes

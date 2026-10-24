@@ -70,7 +70,9 @@ final class AppModel: ObservableObject {
 
     init(_ environment: AppEnvironment) {
         let box = engineBox
-        repository = TaskRepository(database: environment.database, onOutboxChanged: { box.poke() })
+        repository = TaskRepository(
+            database: environment.database, onOutboxChanged: { box.poke() }, repeatsOnMac: { !box.hasServer }
+        )
         history = TaskHistorySync(repository: repository, runner: { box.queries })
         credentials = environment.credentials
         defaults = environment.defaults
@@ -194,6 +196,8 @@ final class AppModel: ObservableObject {
     func setResumeNote(_ id: String, _ note: String) { run { try await $0.setResumeNote(id, note) } }
     func setLabels(_ id: String, _ labels: [String]) { run { try await $0.setLabels(id, labels) } }
     func setDue(_ id: String, date: String?, time: String?) { run { try await $0.setDue(id, date: date, time: time) } }
+    func setRepeat(_ id: String, _ rule: RepeatRule?) { run { try await $0.setRepeat(id, rule) } }
+    func setReminders(_ id: String, _ reminders: [TaskReminder]?) { run { try await $0.setReminders(id, reminders) } }
     func archive(_ id: String) { run { try await $0.archive(id) } }
     func moveToTrash(_ id: String) { run { try await $0.moveToTrash(id) } }
     func restore(_ id: String) { run { try await $0.restore(id) } }
@@ -399,6 +403,13 @@ final class EngineBox: @unchecked Sendable {
         self.engine = engine
         runner = queries
         lock.unlock()
+    }
+
+    /// False while the Mac has no server (Not now, disconnected or signed out): tasks stay here alone.
+    var hasServer: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return engine != nil
     }
 
     /// The connected server's queries, or nil without one.

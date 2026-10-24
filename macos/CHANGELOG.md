@@ -4,6 +4,22 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.3.1 (unreleased)
+
+### Added
+
+- **Repeat** and **Reminders** in the task details are editors: frequency, every how many, weekdays, the day of the
+  month (the due date's day, the last day, an nth weekday), counted from the due date or completion, ending never,
+  on a day or after a number of times; reminders as in Settings, none, or up to five of the task's own (minutes
+  before, a time on the due day or the day before). Save is enabled only for what the server accepts
+  (`TaskRules`), so a refused rule never enters the outbox. Usage: [README.md](README.md).
+
+### Changed
+
+- Ticking off a repeating task without a server (Not now, disconnected or signed out) creates its next occurrence
+  on the Mac at once, as the Android app does; the done task's rule is cleared first, so a server connected later
+  does not add a second one. With a server nothing changes: the server makes the next occurrence.
+
 ## 0.3.0 (unreleased)
 
 ### Added
