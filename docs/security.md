@@ -96,11 +96,9 @@ programs running as you.
 
 ## Reporting a problem
 
-Report security problems **privately**, never in a public issue, pull request or discussion: open the
-repository's **Security** tab on GitHub and choose **Report a vulnerability**. Only the maintainers see
-the report. Say what is affected, how to reproduce it and the impact you expect; leave out real keys and
-other people's data. You can expect an acknowledgement within 7 days and an assessment within 30 days.
-The full policy: [SECURITY.md](../SECURITY.md).
+Report security problems **privately**, never in a public issue, pull request or discussion.
+See [SECURITY.md](../SECURITY.md#reporting-a-vulnerability) for reporting steps, what to include
+and response times.
 
 ## Threat models and details
 

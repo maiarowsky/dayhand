@@ -9,8 +9,8 @@ All of it is free and open source under the Apache License 2.0: the apps, the co
 and these docs. There is nothing to buy and no account to create.
 
 These pages are published at [dayhand.dev/docs](https://dayhand.dev/docs/) and kept in the
-repository as `docs/*.md`. They describe what is in the `main` branch: backend 0.11.0, the `dayhand`
-CLI 0.13.0, the Android app 0.11.0, Dayhand for macOS 0.3.0 and Dayhand for Linux 0.1.0.
+repository as `docs/*.md`. They describe what is in the `main` branch, not a published release.
+`dayhand version` shows the CLI and server versions; each app shows its version under About.
 
 ## What Dayhand is made of
 

@@ -55,8 +55,9 @@ npm run test:unit                         # pure tests only, under a second
 
 - A command is an entry in the registry (`cli/src/registry/`): help, completion,
   `docs/cli.md`, `man/dayhand.1` and `docs/skills/dayhand/SKILL.md` are all generated from it. After
-  changing a command, run `npm run build && npm run docs` and commit the regenerated files; a
-  test fails while they are stale.
+  changing a command, run `npm run build && npm run docs` in `cli/`, then rebuild the
+  [published documentation](#the-site-and-the-documentation) and commit the regenerated files;
+  checks fail while they are stale.
 - **`--json` is a contract for agents and scripts.** A change to what a command prints with
   `--json`, to its error JSON or to an exit code needs the contract tests in the same PR:
   `cli/tests/contract.test.ts` (output equals the MCP tool's `structuredContent` and passes its

@@ -4,16 +4,6 @@ Dayhand is open source under the Apache License 2.0, and contributions are welco
 change, signing off your commits, the commit format and the tests each part needs are in
 [CONTRIBUTING.md](../CONTRIBUTING.md); this page is a map of the repository and of these docs.
 
-## The short version
-
-- **Sign off every commit** (`git commit -s`): it certifies the Developer Certificate of Origin, and
-  commits without it cannot be merged.
-- **Commit messages** are `<type>: <description>`, with the types `feat`, `fix`, `refactor`, `docs`,
-  `test`, `chore`, `perf` and `ci`.
-- **Install dependencies from the lockfile** with install scripts off: `npm ci --ignore-scripts`.
-- **Never commit keys, tokens or `.env` files.**
-- **Security problems** go privately, never in an issue ([security](security.md#reporting-a-problem)).
-
 ## The repository
 
 | Folder | What it is | Start with |
@@ -29,31 +19,21 @@ change, signing off your commits, the commit format and the tests each part need
 | `site/` | dayhand.dev: the landing page and the built docs | [site/STYLE.md](../site/STYLE.md) |
 | `scripts/` | checks and builders for the README and the site | |
 
-The backend and CLI tests start their own throwaway Convex backend, so they need no account:
-
-```sh
-(cd backend && npm ci --ignore-scripts && npm test)
-(cd cli && npm ci --ignore-scripts && npm test)
-```
+Test setup and the checks each change needs:
+[backend](../CONTRIBUTING.md#testing), [CLI](../CONTRIBUTING.md#the-dayhand-cli).
 
 ## Writing these docs
 
-The pages are the Markdown files in `docs/`. `scripts/build-docs.mjs` turns them into the static pages
-of [dayhand.dev/docs](https://dayhand.dev/docs/) in `site/docs/`, with the landing page's stylesheet, a
-menu, and a search that runs in the browser from a small index file. It uses only Node's standard
-library; the built pages are committed, so the site needs no build step to be served.
-
-```sh
-node scripts/build-docs.mjs            # after changing docs/*.md
-scripts/check-site.sh                  # the whole site: HTML, links, no outside resources, docs up to date
-```
+Edit the Markdown in `docs/`, not the generated pages in `site/docs/`. Rebuild and check commands
+are in [CONTRIBUTING.md](../CONTRIBUTING.md#the-site-and-the-documentation); how the generated site
+works is in [site/STYLE.md](../site/STYLE.md#documentation-pages-docs).
 
 - Which files become pages, their titles in the menu and their order are in `scripts/docs/pages.mjs`. A
   new page goes there.
 - Link to other pages by their file name (`[webhooks](webhooks.md#events)`). Links to any other file in
   the repository become links to it on GitHub. A link to a missing file or heading stops the build.
-- `docs/cli.md`, `man/dayhand.1` and `docs/skills/dayhand/SKILL.md` are generated from the CLI's command
-  registry: change the command in `cli/src/registry/`, then `npm run build && npm run docs` in `cli/`.
+- For generated command references and the Agent Skill, follow the
+  [CLI contribution instructions](../CONTRIBUTING.md#the-dayhand-cli) instead of editing the output.
 - Write only what is true in `main`. Something that is not released or not built yet is marked as
   planned or coming soon, with no command for it. Check a command before you document it.
 - English, short sentences, plain words.

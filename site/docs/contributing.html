@@ -95,7 +95,6 @@
     <nav class="docs-toc" aria-label="On this page">
       <p>On this page</p>
       <ul>
-      <li><a href="#the-short-version">The short version</a></li>
       <li><a href="#the-repository">The repository</a></li>
       <li><a href="#writing-these-docs">Writing these docs</a></li>
       <li><a href="#translations">Translations</a></li>
@@ -105,16 +104,6 @@
 <p>Dayhand is open source under the Apache License 2.0, and contributions are welcome. The rules for a
 change, signing off your commits, the commit format and the tests each part needs are in
 <a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>; this page is a map of the repository and of these docs.</p>
-<h2 id="the-short-version">The short version</h2>
-<ul>
-<li><strong>Sign off every commit</strong> (<code>git commit -s</code>): it certifies the Developer Certificate of Origin, and
-commits without it cannot be merged.</li>
-<li><strong>Commit messages</strong> are <code>&lt;type&gt;: &lt;description&gt;</code>, with the types <code>feat</code>, <code>fix</code>, <code>refactor</code>, <code>docs</code>,
-<code>test</code>, <code>chore</code>, <code>perf</code> and <code>ci</code>.</li>
-<li><strong>Install dependencies from the lockfile</strong> with install scripts off: <code>npm ci --ignore-scripts</code>.</li>
-<li><strong>Never commit keys, tokens or <code>.env</code> files.</strong></li>
-<li><strong>Security problems</strong> go privately, never in an issue (<a href="security.html#reporting-a-problem">security</a>).</li>
-</ul>
 <h2 id="the-repository">The repository</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="The repository"><table>
 <thead><tr><th scope="col">Folder</th><th scope="col">What it is</th><th scope="col">Start with</th></tr></thead>
@@ -131,23 +120,19 @@ commits without it cannot be merged.</li>
 <tr><td><code>scripts/</code></td><td>checks and builders for the README and the site</td><td></td></tr>
 </tbody>
 </table></div>
-<p>The backend and CLI tests start their own throwaway Convex backend, so they need no account:</p>
-<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>(cd backend &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm test)
-(cd cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm test)</code></pre>
+<p>Test setup and the checks each change needs:
+<a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#testing">backend</a>, <a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#the-dayhand-cli">CLI</a>.</p>
 <h2 id="writing-these-docs">Writing these docs</h2>
-<p>The pages are the Markdown files in <code>docs/</code>. <code>scripts/build-docs.mjs</code> turns them into the static pages
-of <a href="https://dayhand.dev/docs/">dayhand.dev/docs</a> in <code>site/docs/</code>, with the landing page's stylesheet, a
-menu, and a search that runs in the browser from a small index file. It uses only Node's standard
-library; the built pages are committed, so the site needs no build step to be served.</p>
-<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>node scripts/build-docs.mjs            # after changing docs/*.md
-scripts/check-site.sh                  # the whole site: HTML, links, no outside resources, docs up to date</code></pre>
+<p>Edit the Markdown in <code>docs/</code>, not the generated pages in <code>site/docs/</code>. Rebuild and check commands
+are in <a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#the-site-and-the-documentation">CONTRIBUTING.md</a>; how the generated site
+works is in <a href="https://github.com/maiarowsky/helm/blob/main/site/STYLE.md#documentation-pages-docs">site/STYLE.md</a>.</p>
 <ul>
 <li>Which files become pages, their titles in the menu and their order are in <code>scripts/docs/pages.mjs</code>. A
 new page goes there.</li>
 <li>Link to other pages by their file name (<code>[webhooks](webhooks.md#events)</code>). Links to any other file in
 the repository become links to it on GitHub. A link to a missing file or heading stops the build.</li>
-<li><code>docs/cli.md</code>, <code>man/dayhand.1</code> and <code>docs/skills/dayhand/SKILL.md</code> are generated from the CLI's command
-registry: change the command in <code>cli/src/registry/</code>, then <code>npm run build &amp;&amp; npm run docs</code> in <code>cli/</code>.</li>
+<li>For generated command references and the Agent Skill, follow the
+<a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#the-dayhand-cli">CLI contribution instructions</a> instead of editing the output.</li>
 <li>Write only what is true in <code>main</code>. Something that is not released or not built yet is marked as
 planned or coming soon, with no command for it. Check a command before you document it.</li>
 <li>English, short sentences, plain words.</li>

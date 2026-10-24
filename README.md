@@ -53,9 +53,10 @@ deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the p
 dayhand server start
 ```
 
-Leave it running, and in a second terminal in the same folder:
+For the local server, leave it running and select it explicitly in a second terminal in the same folder:
 
 ```sh
+export DAYHAND_URL=http://127.0.0.1:3211
 dayhand add "Call the accountant" --due "today 14:00" -l admin
 dayhand
 dayhand done 1
@@ -105,7 +106,7 @@ The server speaks [MCP](https://modelcontextprotocol.io) at `/mcp`, with the sam
 the app. For Claude Code, with the agent key from above:
 
 ```sh
-claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header "Authorization: Bearer $AGENT_KEY"
+claude mcp add --transport http dayhand "$DAYHAND_URL/mcp" --header "Authorization: Bearer $AGENT_KEY"
 ```
 
 Any other MCP client works the same way: the address and an `Authorization: Bearer` header.

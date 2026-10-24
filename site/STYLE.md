@@ -1,8 +1,9 @@
 # dayhand.dev: how the page is built
 
-`site/` is the whole landing page: plain HTML, one stylesheet and one small script, with no framework,
-no build step and nothing loaded from other servers. Open `site/index.html` from the file system and it
-works as it will online. The page is in English; its text is written for this project.
+`site/` contains the landing page and the [documentation pages](#documentation-pages-docs): plain
+HTML with no framework and nothing loaded from other servers. The landing page uses one stylesheet
+and one small script, with no build step. Open `site/index.html` from the file system and it works as
+it will online. The page is in English; its text is written for this project.
 
 | File | What it is |
 |---|---|
