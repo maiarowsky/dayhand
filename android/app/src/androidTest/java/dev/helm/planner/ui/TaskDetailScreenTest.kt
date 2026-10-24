@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -151,7 +152,7 @@ class TaskDetailScreenTest {
         compose.onNodeWithTag(AgentWorkTags.dependency(0)).performScrollTo()
             .assertTextContains(text(R.string.dependency_done, "#12 Send the invoice"), substring = true)
         compose.onNodeWithTag(AgentWorkTags.dependency(1)).assertTextContains("#14 Pay the VAT", substring = true)
-        compose.onNodeWithTag(AgentWorkTags.dependency(2)).assertTextContains(text(R.string.dependency_missing), substring = true)
+        compose.onNodeWithTag(AgentWorkTags.dependency(2)).assertTextEquals(text(R.string.dependency_missing))
         compose.onNodeWithTag(AgentWorkTags.PLAN).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Draft, then send to the client").assertIsDisplayed()
         // Nobody holds the task: nothing to end.

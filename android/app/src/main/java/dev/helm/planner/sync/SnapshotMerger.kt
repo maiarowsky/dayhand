@@ -125,7 +125,7 @@ class DirtyFields private constructor(
         }
 
         private fun fieldsOf(op: OutboxOp): Set<Field> = when (op.mutation) {
-            Mutations.ADD -> Field.entries.toSet()
+            Mutations.ADD -> Field.entries.toSet() - Field.CLAIM
             Mutations.COMPLETE, Mutations.SET_STATUS -> setOf(Field.STATUS, Field.NOW)
             Mutations.RESCHEDULE -> setOf(Field.DUE)
             Mutations.ARCHIVE -> setOf(Field.ARCHIVED, Field.NOW)
@@ -135,14 +135,14 @@ class DirtyFields private constructor(
             Mutations.RESTORE -> setOf(Field.DELETED, Field.ARCHIVED)
             Mutations.RELEASE -> setOf(Field.CLAIM)
             Mutations.UPDATE -> updatedFields(op.argsJson)
-            else -> Field.entries.toSet()
+            else -> Field.entries.toSet() - Field.CLAIM
         }
 
         private fun updatedFields(argsJson: String): Set<Field> {
             val keys = try {
                 Json.parseToJsonElement(argsJson).jsonObject.keys
             } catch (_: SerializationException) {
-                return Field.entries.toSet()
+                return Field.entries.toSet() - Field.CLAIM
             }
             return buildSet {
                 if ("title" in keys) add(Field.TITLE)

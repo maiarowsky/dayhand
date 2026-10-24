@@ -380,7 +380,7 @@
     <string name="detail_plan">Plan</string>
     <string name="dependency_done">%1$s (erledigt)</string>
     <string name="dependency_in_trash">%1$s (im Papierkorb)</string>
-    <string name="dependency_missing">Eine Aufgabe, die nicht mehr im Plan ist</string>
+    <string name="dependency_missing">Eine Aufgabe, die nicht auf diesem Telefon ist</string>
     <string name="release_claim">Reservierung beenden</string>
     <string name="release_claim_title">Reservierung von %1$s beenden?</string>
     <string name="release_claim_text">%1$s hält diese Aufgabe nicht mehr, und jeder Agent kann sie wieder reservieren. Sonst ändert sich nichts an der Aufgabe.</string>

@@ -93,7 +93,8 @@ def main():
         "--blocked", REASON, "--plan", PLAN,
     )
     base.dayhand_cli("done", str(first["ref"]))
-    board.mcp("claim_task", taskId=third["id"], minutes=60)
+    claim = board.mcp("claim_task", taskId=third["id"], minutes=60)
+    holder = claim["claimedBy"]["name"]
     log(f"#{third['ref']} {report} waits for #{first['ref']} (done) and #{second['ref']}, blocked, claimed by the agent")
 
     # Today and the board: the mark says why for screen readers.
@@ -110,7 +111,7 @@ def main():
 
     # Details: claim, blocked reason, what it waits for, plan.
     tap(find(text=report))
-    find(text="agent: claude-code works until")
+    find(text=f"agent: {holder} works until")
     find(text=f"Blocked: {REASON}")
     find_scrolling(text=f"#{first['ref']} {invoice} (done)")
     find_scrolling(text=f"#{second['ref']} {vat}")
@@ -122,12 +123,12 @@ def main():
     for _ in range(8):
         shell("input", "swipe", "540", "900", "540", "1800", "300")
     tap(find(text="End the claim"))
-    confirm("End the claim", "End the claim of claude-code?")
+    confirm("End the claim", f"End the claim of {holder}?")
     screenshot(args.shots, "e2e-agent-released.png")
     task = wait_cli(third["ref"], lambda t: "claimedBy" not in t and "claimExpiresAt" not in t, "no claim")
     assert task.get("blockedReason") == REASON and task.get("plan") == PLAN, task
     try:
-        find(text="agent: claude-code works until", timeout=3)
+        find(text=f"agent: {holder} works until", timeout=3)
         raise RuntimeError("the claim is still shown on the phone")
     except RuntimeError as error:
         if "still shown" in str(error):

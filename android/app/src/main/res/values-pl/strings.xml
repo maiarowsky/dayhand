@@ -420,7 +420,7 @@
     <string name="detail_plan">Plan</string>
     <string name="dependency_done">%1$s (zrobione)</string>
     <string name="dependency_in_trash">%1$s (w koszu)</string>
-    <string name="dependency_missing">Zadanie, którego nie ma już w planie</string>
+    <string name="dependency_missing">Zadanie, którego nie ma na tym telefonie</string>
     <string name="release_claim">Zakończ przejęcie</string>
     <string name="release_claim_title">Zakończyć przejęcie przez %1$s?</string>
     <string name="release_claim_text">%1$s przestaje trzymać to zadanie i każdy agent może je znowu przejąć. Nic więcej w zadaniu się nie zmienia.</string>

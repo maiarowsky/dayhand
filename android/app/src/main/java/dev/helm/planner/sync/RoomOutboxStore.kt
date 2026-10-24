@@ -20,6 +20,9 @@ class RoomOutboxStore(private val db: HelmDatabase) : OutboxStore {
         if (op.mutation == Mutations.ADD && localId != null && serverId != null) {
             db.tasks().setServerId(localId, serverId)
         }
+        if (op.mutation == Mutations.RELEASE && localId != null) {
+            db.tasks().byLocalId(localId)?.let { db.tasks().upsert(listOf(it.copy(serverUpdatedAt = null))) }
+        }
     }
 
     override suspend fun reject(op: OutboxOp, reason: String) = db.withTransaction {

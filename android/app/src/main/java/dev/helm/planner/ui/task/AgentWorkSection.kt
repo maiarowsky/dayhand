@@ -134,7 +134,7 @@ private fun ClaimRow(task: Task, claim: AgentWork.Claim, editable: Boolean, acti
     }
 }
 
-/** "✓  #12 Send the invoice (done)", "○  #14 Pay the VAT", or a task the phone no longer has. */
+/** "✓  #12 Send the invoice (done)", "○  #14 Pay the VAT", or a task not on this phone. */
 @Composable
 private fun DependencyLine(dependency: AgentWork.Dependency, modifier: Modifier) {
     val name = dependency.title?.let { title ->
@@ -147,9 +147,13 @@ private fun DependencyLine(dependency: AgentWork.Dependency, modifier: Modifier)
         DependencyState.MISSING -> stringResource(R.string.dependency_missing)
     }
     val open = dependency.state == DependencyState.OPEN
-    val mark = stringResource(if (open) R.string.acceptance_unmet else R.string.acceptance_met)
+    val mark = when (dependency.state) {
+        DependencyState.OPEN -> stringResource(R.string.acceptance_unmet)
+        DependencyState.DONE, DependencyState.IN_TRASH -> stringResource(R.string.acceptance_met)
+        DependencyState.MISSING -> null
+    }
     Text(
-        "$mark  $text",
+        mark?.let { "$it  $text" } ?: text,
         style = helmType.body,
         color = if (open) palette.text else palette.textMuted,
         modifier = modifier,

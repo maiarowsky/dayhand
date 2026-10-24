@@ -141,8 +141,9 @@ ones ticked, and the proof the task was completed with. The owner's own changes 
 Since 0.11.0 the **Agent** card also has the blocked reason in red, the tasks it waits for
 ("#12 Send the invoice (done)") and the plan, read-only, and **End the claim** under a live claim:
 after a confirmation the claim ends at once and `app:release` goes through the outbox. On Today
-and the board, "⛔" before a title marks a task with a blocked reason or a dependency not done
-yet; screen readers hear why.
+and the board, "⛔" before a title marks a task with a blocked reason or a known open dependency;
+screen readers hear why. Dependencies absent from the phone appear as "A task not on this phone"
+without a completed mark and do not add a blocked mark: they may be proposals or purged tasks.
 **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on the due
 date's day, the last day of the month, or an nth weekday ("the 2nd Tuesday", "the last Friday");
 the next date counted from the due date or from the day you complete it; ending never, on a day

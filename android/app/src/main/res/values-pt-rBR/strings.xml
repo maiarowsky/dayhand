@@ -401,7 +401,7 @@
     <string name="detail_plan">Plano</string>
     <string name="dependency_done">%1$s (concluída)</string>
     <string name="dependency_in_trash">%1$s (na lixeira)</string>
-    <string name="dependency_missing">Uma tarefa que não está mais no plano</string>
+    <string name="dependency_missing">Uma tarefa que não está neste telefone</string>
     <string name="release_claim">Encerrar a reserva</string>
     <string name="release_claim_title">Encerrar a reserva de %1$s?</string>
     <string name="release_claim_text">%1$s deixa de reservar esta tarefa, e qualquer agente pode reservá-la de novo. Nada mais muda na tarefa.</string>

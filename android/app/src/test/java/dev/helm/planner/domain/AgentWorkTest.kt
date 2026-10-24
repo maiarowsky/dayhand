@@ -112,7 +112,7 @@ class AgentWorkTest {
         val open = task { copy(localId = "l2", serverId = "s2", ref = 14, title = "Pay the VAT") }
         val done = task { copy(localId = "l3", serverId = "s3", ref = 12, title = "Send the invoice", status = TaskStatus.DONE) }
         val trashed = task { copy(localId = "l4", serverId = "s4", ref = 9, title = "Old draft", deletedAt = 5) }
-        val waiting = task { copy(dependsOn = listOf("s3", "s2", "s4", "gone")) }
+        val waiting = task { copy(dependsOn = listOf("s3", "s2", "s4", "not-on-phone")) }
         val byServerId = listOf(open, done, trashed).associateBy { it.serverId!! }
         assertEquals(
             listOf(
@@ -126,12 +126,11 @@ class AgentWorkTest {
     }
 
     @Test
-    fun `a task is held back by its blocked reason or a dependency not done, as plan health counts it`() {
+    fun `the phone marks a task blocked by its reason or a known open dependency`() {
         val open = task { copy(localId = "l2", serverId = "s2", title = "Pay the VAT") }
         val done = open.copy(status = TaskStatus.DONE)
         val waiting = task { copy(dependsOn = listOf("s2", "gone")) }
         assertEquals(AgentWork.Blocked(null, 1), AgentWork.blocked(waiting, mapOf("s2" to open)))
-        // A dependency done, in the trash or purged does not hold the task back.
         assertNull(AgentWork.blocked(waiting, mapOf("s2" to done)))
         assertNull(AgentWork.blocked(waiting, mapOf("s2" to open.copy(deletedAt = 5))))
         assertEquals(AgentWork.Blocked("waiting for the client", 0), AgentWork.blocked(task { copy(blockedReason = "waiting for the client") }, emptyMap()))
@@ -143,6 +142,21 @@ class AgentWorkTest {
         val all = AgentWork.blockedTasks(listOf(open, waiting, task { copy(localId = "l9", serverId = "s9") }))
         assertEquals(mapOf("l1" to AgentWork.Blocked(null, 1)), all)
         assertTrue(AgentWork.blockedTasks(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `dependencies absent from the phone remain unknown and do not add blocked marks`() {
+        val waiting = task { copy(dependsOn = listOf("proposal", "purged")) }
+        assertEquals(
+            List(2) { AgentWork.Dependency(null, null, AgentWork.DependencyState.MISSING) },
+            AgentWork.dependencies(waiting, emptyMap()),
+        )
+        assertNull(AgentWork.blocked(waiting, emptyMap()))
+        assertTrue(AgentWork.blockedTasks(listOf(waiting)).isEmpty())
+        assertEquals(
+            mapOf(waiting.localId to AgentWork.Blocked("waiting for approval", 0)),
+            AgentWork.blockedTasks(listOf(waiting.copy(blockedReason = "waiting for approval"))),
+        )
     }
 
     @Test

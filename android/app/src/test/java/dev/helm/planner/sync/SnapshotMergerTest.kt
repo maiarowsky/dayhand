@@ -53,6 +53,35 @@ class SnapshotMergerTest {
     }
 
     @Test
+    fun `a claim on a newly added task is visible before and after add acknowledgment`() {
+        val local = row("local-1", serverId = null, serverUpdatedAt = null)
+        val server = remote("s9", 10) {
+            copy(clientId = "local-1", claimName = "agent", claimExpiresAt = now + 60_000)
+        }
+        val pending = op(Mutations.ADD, local.localId)
+        val merged = SnapshotMerger.merge(listOf(local), listOf(pending), listOf(server), now).upserts.single()
+        assertEquals("agent", merged.claimName)
+        assertEquals(now + 60_000, merged.claimExpiresAt)
+        assertEquals(local.title, merged.title)
+        assertEquals(server.updatedAt, merged.serverUpdatedAt)
+        val repeated = SnapshotMerger.merge(listOf(merged), emptyList(), listOf(server), now)
+        assertTrue(repeated.upserts.isEmpty())
+        assertTrue(repeated.deletes.isEmpty())
+    }
+
+    @Test
+    fun `fallback dirty fields do not mask server claims`() {
+        val local = row("a", "s1", 10)
+        val server = remote("s1", 20) { copy(claimName = "agent", claimExpiresAt = now + 60_000) }
+        for (pending in listOf(op("unknown", "a"), op(Mutations.UPDATE, "a", "not json"))) {
+            val merged = SnapshotMerger.merge(listOf(local), listOf(pending), listOf(server), now).upserts.single()
+            assertEquals("agent", merged.claimName)
+            assertEquals(now + 60_000, merged.claimExpiresAt)
+            assertEquals(local.title, merged.title)
+        }
+    }
+
+    @Test
     fun `fields with a change still waiting keep the local value, the others take the server's`() {
         val local = row("a", "s1", serverUpdatedAt = 10) { copy(status = TaskStatus.DONE, completedAt = 500) }
         val server = remote("s1", 20) { copy(title = "Renamed by the agent", dueDate = "2026-10-24") }

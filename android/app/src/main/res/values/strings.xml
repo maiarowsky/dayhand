@@ -400,7 +400,7 @@
     <string name="dependency_with_ref" translatable="false">#%1$d %2$s</string>
     <string name="dependency_done">%1$s (done)</string>
     <string name="dependency_in_trash">%1$s (in the trash)</string>
-    <string name="dependency_missing">A task no longer in the plan</string>
+    <string name="dependency_missing">A task not on this phone</string>
     <string name="release_claim">End the claim</string>
     <string name="release_claim_title">End the claim of %1$s?</string>
     <string name="release_claim_text">%1$s no longer holds this task, and any agent may claim it again. Nothing else about the task changes.</string>

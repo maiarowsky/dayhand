@@ -15,7 +15,7 @@ object AgentWork {
     /** A live claim: [name] of the key or connection working on the task, [until] as HH:MM in the user's zone. */
     data class Claim(val name: String, val until: String)
 
-    /** Where a task in `dependsOn` stands; one in the trash or no longer on the phone does not hold the task back. */
+    /** Where a dependency stands on the phone; [DependencyState.MISSING] means unknown here (it may be a proposal or a purged task). */
     enum class DependencyState { OPEN, DONE, IN_TRASH, MISSING }
 
     /** One task this task waits for: its number and title ([ref] and [title] are null when it is [DependencyState.MISSING]). */
@@ -49,9 +49,9 @@ object AgentWork {
     }
 
     /**
-     * Why an open task is held back, as the plan health report counts it (`reasonsOf` in `backend/convex/lib/health.ts`):
-     * a blocked reason, or a dependency that is not done (one in the trash or purged does not count). Null when nothing
-     * holds it back or the task is done.
+     * Why the phone marks an open task blocked: a blocked reason, or a known open dependency. Dependencies in the
+     * trash or absent from the phone do not count. An absent dependency may be a proposal or a purged task, so this
+     * can differ from server plan health. Null when neither reason is known here or the task is done.
      */
     fun blocked(task: Task, byServerId: Map<String, Task>): Blocked? {
         if (task.status == TaskStatus.DONE) return null
