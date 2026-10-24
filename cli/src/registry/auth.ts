@@ -62,7 +62,8 @@ const login: CommandSpec = {
   schema: "login.schema.json",
   summary: "Store an API key for the deployment in the OS keychain (or a private file)",
   description:
-    "Create a key with kind cli in the app (Settings → API keys) or with `npx convex run apiKeys:create`. " +
+    "dayhand server deploy and dayhand server start sign in by themselves. For another computer, create a key with kind cli " +
+    "where dayhand is signed in (`dayhand key create laptop --kind cli --scope write`) or with `npx convex run apiKeys:create`. " +
     "The key is checked against the server first; DAYHAND_API_KEY, when set, still wins over the stored key.",
   options: [
     { flags: "--with-key", description: "Read the key from stdin instead of a hidden prompt" },

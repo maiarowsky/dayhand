@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCP endpoint · Dayhand docs</title>
+  <meta name="description" content="The input schemas are generated from the same validators the operations enforce; the output schemas come from schemas/, the contract dayhand --json follows too.">
+  <link rel="canonical" href="https://dayhand.dev/docs/mcp.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html" aria-current="page">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="mcp-endpoint">MCP endpoint</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#tools">Tools</a></li>
+      <li><a href="#resources">Resources</a></li>
+      <li><a href="#prompts">Prompts</a></li>
+      <li><a href="#limits">Limits</a></li>
+      <li><a href="#repeat-rules">Repeat rules</a></li>
+      <li><a href="#checklists-and-reminders">Checklists and reminders</a></li>
+      <li><a href="#errors">Errors</a></li>
+      <li><a href="#protocol-versions">Protocol versions</a></li>
+      <li><a href="#keys-and-actors">Keys and actors</a></li>
+      <li><a href="#versions">Versions</a></li>
+      <li><a href="#connecting-a-client">Connecting a client</a></li>
+      </ul>
+    </nav>
+<ul>
+<li>URL: <code>&lt;deployment HTTP actions URL&gt;/mcp</code>, e.g. <code>http://127.0.0.1:3211/mcp</code> locally or
+<code>https://&lt;deployment&gt;.convex.site/mcp</code> on Convex Cloud.</li>
+<li>Transport: Streamable HTTP, stateless, JSON responses (<code>application/json</code>); no SSE stream.
+Every message is one <code>POST</code>; notifications get <code>202</code>; <code>GET</code> and <code>DELETE</code> get <code>405</code>.</li>
+<li>Protocol: 2026-07-28 and the 2025 revisions (2025-11-25, 2025-06-18, 2025-03-26, 2024-11-05)
+on the same URL; see <a href="#protocol-versions">Protocol versions</a>.</li>
+<li>Authentication: <code>Authorization: Bearer &lt;personal API key&gt;</code>, or an OAuth access token of an
+agent connection the owner approved on the phone, which is how the Claude apps connect
+(<a href="oauth.html">oauth.md</a>). Missing, wrong, expired or revoked credentials get HTTP 401 with a
+<code>WWW-Authenticate</code> header that points OAuth clients at the authorization server. A request
+with a browser <code>Origin</code> header gets HTTP 403 unless the origin is listed in
+<code>DAYHAND_MCP_ALLOWED_ORIGINS</code> (<a href="deploy.html#environment-variables">deploy.md</a>).</li>
+<li>Every change is recorded with the key's kind as the actor (<code>cli</code> for the user at a terminal,
+<code>agent</code> for an AI agent) and the key's name, or as <code>agent</code> with the OAuth client's name; see
+<a href="#keys-and-actors">Keys and actors</a>.</li>
+<li>Pass a <code>clientId</code> (e.g. a UUID) with changes you might retry; a repeated <code>clientId</code> is not
+applied twice. Pass <code>dryRun: true</code> to check a change without saving it (<a href="#dry-runs">Dry runs</a>).</li>
+<li>Each key or connection may make 120 reads and 60 changes a minute (<a href="#limits">Limits</a>).</li>
+<li>Several agents can share the plan: an activity log, acceptance criteria and proof, dependencies
+and time-boxed claims; agents can ask the owner first, the owner can pause them or set a policy
+per tool, agents propose work into an inbox, and a health report shows what needs a look
+(<a href="agent-work.html">agent-work.md</a>).</li>
+<li>The server identifies itself as <code>{ &quot;name&quot;: &quot;dayhand&quot;, &quot;version&quot;: &quot;0.11.0&quot; }</code> (<code>serverInfo</code> of
+<code>initialize</code>, <code>_meta</code> of 2026-07-28 results); see <a href="#versions">Versions</a>.</li>
+</ul>
+<h2 id="tools">Tools</h2>
+<p>The input schemas are generated from the same validators the operations enforce; the output
+schemas come from <a href="https://github.com/maiarowsky/dayhand/tree/main/docs/schemas">schemas/</a>, the contract <code>dayhand --json</code> follows too.</p>
+<p>Every task has an <code>id</code> and a <code>ref</code>: the user's task number (1, 2, 3, …). It is given once, kept
+through the trash, the archive and a restore, and never given to another task, even after the
+task is purged. Every tool that takes a <code>taskId</code> accepts either the <code>id</code> or the number written
+as <code>&quot;#42&quot;</code>.</p>
+<p><code>tools/list</code> returns the tools in this order. Tools marked O are the owner's: only the app and
+<code>cli</code> keys may call them, and <code>tools/list</code> leaves them out for agents (agent keys and agent
+connections; since 0.11.0). Read-only tools are marked R, destructive ones D
+(<code>destructiveHint</code>); every change except <code>add_task</code> is idempotent (<code>idempotentHint</code>: repeating
+it with the same arguments changes nothing more), and no tool reaches outside Dayhand
+(<code>openWorldHint: false</code>). Each tool also has a <code>title</code>.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Tools"><table>
+<thead><tr><th scope="col">Tool</th><th scope="col">Title</th><th scope="col">Hints</th><th scope="col">Result (<a href="https://github.com/maiarowsky/dayhand/tree/main/docs/schemas">schema</a>)</th><th scope="col">Operation</th></tr></thead>
+<tbody>
+<tr><td><code>add_task</code></td><td>Add task</td><td></td><td><code>task</code></td><td>Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo)</td></tr>
+<tr><td><code>update_task</code></td><td>Update task</td><td></td><td><code>task</code></td><td>Change fields; <code>null</code> clears an optional field</td></tr>
+<tr><td><code>set_status</code></td><td>Set task status</td><td></td><td><code>task</code></td><td><code>todo</code> / <code>doing</code> / <code>done</code></td></tr>
+<tr><td><code>set_now</code></td><td>Set the now task</td><td></td><td><code>set-now</code></td><td>Make one task the &quot;now&quot; task, optionally with a resume note; <code>taskId: null</code> clears it</td></tr>
+<tr><td><code>complete_task</code></td><td>Complete task</td><td></td><td><code>complete</code></td><td>Mark done, optionally with <code>proof</code>; ends the claim; repeating tasks return their next occurrence (<code>next: null</code> when the series has ended). An agent needs every acceptance criterion met and a proof summary (<a href="#agent-work">below</a>)</td></tr>
+<tr><td><code>reschedule_task</code></td><td>Reschedule task</td><td></td><td><code>task</code></td><td>Move to another day/time; <code>dueDate: null</code> removes the date</td></tr>
+<tr><td><code>archive_task</code></td><td>Archive task</td><td></td><td><code>task</code></td><td>Archive</td></tr>
+<tr><td><code>delete_task</code></td><td>Move task to trash</td><td>D</td><td><code>task</code></td><td>Move to the trash (purged after 30 days)</td></tr>
+<tr><td><code>restore_task</code></td><td>Restore task</td><td></td><td><code>task</code></td><td>Restore from the trash, or from the archive</td></tr>
+<tr><td><code>list_today</code></td><td>Today</td><td>R</td><td><code>today</code></td><td>Overdue, today, done today and the now task</td></tr>
+<tr><td><code>list_all</code></td><td>Find tasks</td><td>R</td><td><code>task-list</code></td><td>Tasks not in the trash: search, filters and pages (<a href="#finding-tasks-list_all">below</a>)</td></tr>
+<tr><td><code>list_trash</code></td><td>Trash</td><td>R</td><td><code>task-list</code></td><td>Tasks in the trash</td></tr>
+<tr><td><code>board</code></td><td>Board</td><td>R</td><td><code>board</code></td><td>Three columns: todo, doing, done</td></tr>
+<tr><td><code>get_task</code></td><td>Task with history</td><td>R</td><td><code>task-detail</code></td><td>One task with its change history</td></tr>
+<tr><td><code>export_plan</code></td><td>Export plan</td><td>R</td><td><code>export</code></td><td>Markdown, JSON or iCalendar (<code>ics</code>, <a href="calendar.html">calendar.md</a>) export of the whole plan</td></tr>
+<tr><td><code>get_settings</code></td><td>Settings</td><td>R</td><td><code>settings</code></td><td>Time zone, summary time, default reminders</td></tr>
+<tr><td><code>update_settings</code></td><td>Update settings</td><td>D</td><td><code>settings</code></td><td>Change them</td></tr>
+<tr><td><code>list_events</code></td><td>Activity log</td><td>R</td><td><code>event-list</code></td><td>Task changes after a cursor (<a href="#activity-log-list_events">below</a>)</td></tr>
+<tr><td><code>claim_task</code></td><td>Claim task</td><td></td><td><code>task</code></td><td>Claim a task for <code>minutes</code> (default 120); other agents get <code>conflict</code> (<a href="#claims">below</a>)</td></tr>
+<tr><td><code>renew_claim</code></td><td>Renew claim</td><td></td><td><code>task</code></td><td>Extend your claim by <code>minutes</code> from now</td></tr>
+<tr><td><code>release_task</code></td><td>Release task</td><td></td><td><code>task</code></td><td>End your claim, optionally with a checkpoint <code>note</code> (saved as the resume note)</td></tr>
+<tr><td><code>request_approval</code></td><td>Ask the owner</td><td></td><td><code>approval</code></td><td>Ask the owner to decide before you act: <code>action</code>, 2 to 4 <code>options</code>, <code>reversible</code>, <code>expiresInMinutes</code>, optional <code>taskId</code> (<a href="#approvals-pausing-and-policies">below</a>)</td></tr>
+<tr><td><code>get_approval</code></td><td>Approval request</td><td>R</td><td><code>approval</code></td><td>One request: <code>pending</code>, <code>decided</code> (with the chosen option and note) or <code>expired</code></td></tr>
+<tr><td><code>list_approvals</code></td><td>Approval requests</td><td>R</td><td><code>approval-list</code></td><td>Requests, newest first, by <code>status</code> and <code>taskId</code></td></tr>
+<tr><td><code>decide_approval</code></td><td>Decide approval request</td><td>O</td><td><code>approval</code></td><td>Pick an option of a pending request</td></tr>
+<tr><td><code>get_agent_controls</code></td><td>Agent controls</td><td>R</td><td><code>agent-controls</code></td><td>Whether agents are paused, and the tool policies</td></tr>
+<tr><td><code>pause_agents</code></td><td>Pause agents</td><td>O</td><td><code>agent-controls</code></td><td><code>paused: true</code> refuses every agent's changes until <code>paused: false</code></td></tr>
+<tr><td><code>set_tool_policy</code></td><td>Set tool policy</td><td>O</td><td><code>agent-controls</code></td><td><code>apiKeyId</code>, <code>toolName</code> (or <code>&quot;*&quot;</code>), <code>rule</code>: <code>allow</code>, <code>ask</code> or <code>deny</code></td></tr>
+<tr><td><code>accept_proposal</code></td><td>Accept proposal</td><td>O</td><td><code>task</code></td><td>A proposal joins the plan (<a href="#proposals">below</a>)</td></tr>
+<tr><td><code>merge_proposal</code></td><td>Merge proposal</td><td>O</td><td><code>merge</code></td><td>Fold a proposal into a task already in the plan (<code>intoTaskId</code>)</td></tr>
+<tr><td><code>reject_proposal</code></td><td>Reject proposal</td><td>O, D</td><td><code>task</code></td><td>Move a proposal to the trash, optionally with a <code>reason</code></td></tr>
+<tr><td><code>plan_health</code></td><td>Plan health</td><td>R</td><td><code>plan-health</code></td><td>What needs a look, in one read (<a href="#plan-health-plan_health">below</a>)</td></tr>
+</tbody>
+</table></div>
+<h3 id="results">Results</h3>
+<p>A successful call returns the result as <code>structuredContent</code> (a list as <code>{ &quot;result&quot;: [...] }</code>,
+<code>null</code> as <code>{ &quot;result&quot;: null }</code>) and as JSON in its text block. A Markdown export's text block is
+the Markdown itself and its <code>structuredContent</code> is <code>{ &quot;format&quot;: &quot;markdown&quot;, &quot;content&quot;: &quot;…&quot; }</code>;
+an iCalendar export (<code>format: &quot;ics&quot;</code>) likewise has the calendar text in both.</p>
+<p>Each tool's <code>outputSchema</code> is the result's schema from <a href="https://github.com/maiarowsky/dayhand/tree/main/docs/schemas">schemas/</a> or the
+<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/tool-error.schema.json">tool error</a> (<code>anyOf</code>), with every referenced schema inlined
+under <code>$defs</code>: clients never fetch a URL. The top level is an object, as 2025 clients require.
+<code>backend/convex/lib/outputSchemas.ts</code> is generated from <code>docs/schemas</code> by <code>npm run schemas</code> in
+<code>backend/</code>; a test fails when it is out of date.</p>
+<h3 id="finding-tasks-list_all">Finding tasks (<code>list_all</code>)</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Finding tasks (list_all)"><table>
+<thead><tr><th scope="col">Argument</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>query</code></td><td>Tasks whose title, note, resume note or labels contain this text, in any case</td></tr>
+<tr><td><code>status</code></td><td>Only these statuses, e.g. <code>[&quot;todo&quot;, &quot;doing&quot;]</code>; done tasks are included only when listed</td></tr>
+<tr><td><code>labels</code></td><td>Only tasks having all of these labels</td></tr>
+<tr><td><code>ready</code></td><td><code>true</code>: only tasks ready to work on (not done, no <code>blockedReason</code>, not a proposal, every task in <code>dependsOn</code> done); <code>false</code>: only the others</td></tr>
+<tr><td><code>proposed</code></td><td><code>true</code>: only proposals waiting in the inbox; without it, or <code>false</code>, proposals are left out (since 0.11.0)</td></tr>
+<tr><td><code>dueBefore</code>, <code>dueAfter</code></td><td>Only tasks due before / after this day (<code>YYYY-MM-DD</code>, <code>&quot;today&quot;</code>, <code>&quot;tomorrow&quot;</code>); tasks without a day never match</td></tr>
+<tr><td><code>overdue</code></td><td><code>true</code>: only overdue tasks; <code>false</code>: only the others</td></tr>
+<tr><td><code>includeDone</code>, <code>includeArchived</code></td><td>Done tasks (default <code>true</code>; ignored when <code>status</code> is given), archived ones (default <code>false</code>)</td></tr>
+<tr><td><code>limit</code></td><td>Page size, 1 to 200</td></tr>
+<tr><td><code>cursor</code></td><td><code>nextCursor</code> of the previous page</td></tr>
+</tbody>
+</table></div>
+<p>Tasks come oldest due first (tasks without a day first, timed before untimed on one day). The
+result is <code>{ &quot;result&quot;: [...], &quot;total&quot;: &lt;all matches&gt;, &quot;nextCursor&quot;: &lt;string or null&gt; }</code>; pass
+<code>nextCursor</code> back as <code>cursor</code> with the same filters for the next page. The cursor is opaque and
+stays valid when tasks are added or removed in the meantime.</p>
+<p>Without <code>limit</code>, every match comes back at once and the text block holds the plain task array,
+as before 0.4.0, so clients that read the text keep working; with <code>limit</code> or <code>cursor</code> the text
+block holds the whole object.</p>
+<h3 id="agent-work">Agent work</h3>
+<p>Since 0.10.0 a task may carry fields for agents working on it (<a href="agent-work.html">agent-work.md</a> has
+the reasons). None of them is a new status: the board stays <code>todo</code>, <code>doing</code>, <code>done</code>.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Agent work"><table>
+<thead><tr><th scope="col">Field</th><th scope="col">Set with</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>acceptance</code></td><td><code>add_task</code>, <code>update_task</code></td><td>Criteria <code>{ id, text, met }</code> in order; new ones get <code>a1</code>, <code>a2</code>, …; the list is replaced as a whole, <code>null</code> or <code>[]</code> removes it (at most 50, up to 500 characters each)</td></tr>
+<tr><td><code>plan</code></td><td><code>add_task</code>, <code>update_task</code></td><td>How the work will be done (up to 20000 characters)</td></tr>
+<tr><td><code>proof</code></td><td><code>complete_task</code></td><td><code>{ summary?, links, checks: [{ name, result: &quot;pass&quot; | &quot;fail&quot;, url? }] }</code>, kept on the task (<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/proof.schema.json">schema</a>)</td></tr>
+<tr><td><code>dependsOn</code></td><td><code>add_task</code>, <code>update_task</code></td><td>Ids of the tasks that must be done first (given as ids or <code>&quot;#42&quot;</code>); <code>[]</code> removes them; no cycles (at most 50)</td></tr>
+<tr><td><code>blockedReason</code></td><td><code>add_task</code>, <code>update_task</code></td><td>Why the task cannot go on; <code>null</code> clears it</td></tr>
+<tr><td><code>claimedBy</code>, <code>claimExpiresAt</code></td><td><code>claim_task</code>, <code>renew_claim</code>, <code>release_task</code></td><td>Who holds the claim (<code>keyId</code> or <code>connectionId</code>, and <code>name</code>) and until when (Unix ms); kept after expiry until released or claimed again</td></tr>
+</tbody>
+</table></div>
+<p>When a task has acceptance criteria, an <strong>agent</strong> (an <code>agent</code> key or an agent connection) can
+complete it only when every criterion is met and the proof has a <code>summary</code>; otherwise
+<code>complete_task</code> (and <code>set_status</code> to <code>done</code>) fails with <code>precondition_failed</code>. The app and <code>cli</code>
+keys complete tasks as before. A repeating task's next occurrence keeps the criteria, unticked,
+and the plan.</p>
+<h4 id="claims">Claims</h4>
+<p><code>claim_task</code> gives the caller's key or connection the task for <code>minutes</code> (1 to 1440, default 120).
+While the claim lasts, another agent's <code>claim_task</code>, <code>renew_claim</code>, <code>release_task</code> and every change
+of that task (<code>update_task</code>, <code>set_status</code>, <code>set_now</code>, <code>complete_task</code>, <code>reschedule_task</code>,
+<code>archive_task</code>, <code>delete_task</code>, <code>restore_task</code>) fail with <code>conflict</code>, whose message names the holder
+and the expiry. Claiming again extends your own claim. <code>renew_claim</code> works while nobody else has
+claimed the task, also after your claim ran out; without a claim of yours it is
+<code>precondition_failed</code>. <code>release_task</code> ends the claim and saves <code>note</code> as the resume note.
+Completing the task ends its claim. Done, archived and trashed tasks cannot be claimed
+(<code>invalid_argument</code>). The owner wins: changes from the app and from <code>cli</code> keys are never refused,
+and the app can end any claim (<code>app.release</code>).</p>
+<h4 id="activity-log-list_events">Activity log (<code>list_events</code>)</h4>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Activity log (list_events)"><table>
+<thead><tr><th scope="col">Argument</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>since</code></td><td><code>nextCursor</code> of an earlier call (<code>&quot;c…&quot;</code>), or a time as Unix milliseconds or ISO 8601 with a zone (the changes from then on); without it, the newest changes</td></tr>
+<tr><td><code>by</code></td><td>Only changes by <code>app</code>, <code>cli</code>, <code>agent</code> (any agent) or <code>&quot;agent: &lt;name&gt;&quot;</code></td></tr>
+<tr><td><code>taskId</code></td><td>Only changes of this task</td></tr>
+<tr><td><code>limit</code></td><td>1 to 500, default 100</td></tr>
+</tbody>
+</table></div>
+<p>The result is <code>{ &quot;events&quot;: [...], &quot;nextCursor&quot;: &quot;c…&quot;, &quot;hasMore&quot;: &lt;bool&gt; }</code>
+(<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/event-list.schema.json">schema</a>). Each event has <code>id</code>, <code>at</code>, <code>taskId</code>, <code>ref</code> and <code>title</code>
+(the task's now), <code>action</code>, <code>actor</code>, <code>actorName</code>, <code>by</code>, <code>before</code> and <code>after</code>, like a history
+entry. Events come oldest first, in the order the changes were committed. Pass <code>nextCursor</code> as
+<code>since</code> next time to get only what changed in between; <code>hasMore: true</code> means another page is
+already there. Only task changes are listed, not changes of API keys, webhooks or devices. Changes
+made before 0.10.0 appear once the deployment ran <code>migrations:backfillEventSeqs</code>
+(<a href="deploy.html#upgrading-to-0100">deploy.md</a>).</p>
+<h3 id="approvals-pausing-and-policies">Approvals, pausing and policies</h3>
+<p>Since 0.11.0 (<a href="agent-work.html#5-approval-requests">agent-work.md</a> has the reasons):</p>
+<ul>
+<li><code>request_approval</code> stores a request <code>{ action, detail?, options: [{ label, consequence?, id? }], reversible, expiresInMinutes? (1 to 10080, default 1440), taskId?, clientId? }</code>; options get
+<code>o1</code>, <code>o2</code>, … unless they carry an id. The owner decides on the phone (or with a <code>cli</code> key,
+<code>decide_approval</code>); the agent reads the outcome with <code>get_approval</code> or gets the webhook
+<code>approval.decided</code> (<a href="webhooks.html#events">webhooks.md</a>). A request about a task enters that
+task's history and the activity log (<code>approvalRequest</code>, <code>approvalDecide</code>). <strong>Dayhand records the
+decision; it does not stop an agent from acting without one.</strong> The agent's own tooling has to
+check it.</li>
+<li><code>pause_agents</code> with <code>paused: true</code> refuses every change by an agent key or agent connection
+with <code>agents_paused</code>, dry runs included, until <code>paused: false</code>; reads keep working, and the
+owner's own changes (app, <code>cli</code> keys) are never refused.</li>
+<li><code>set_tool_policy</code> sets, for one agent key, <code>allow</code>, <code>ask</code> or <code>deny</code> on a tool that changes the
+plan, or on <code>&quot;*&quot;</code> (every such tool without its own rule); no rule means <code>allow</code>. <code>deny</code> fails
+the call with <code>forbidden</code>. <code>ask</code> fails it with <code>approval_required</code> and an <code>approvalId</code>: Dayhand
+has made a request with the options <code>allow</code> (&quot;Allow once&quot;) and <code>deny</code>, bound to this key, this
+tool and these arguments (without <code>clientId</code>, <code>dryRun</code> and <code>approvalId</code>); calling again while it
+waits returns the same request. Once the owner allows it, the same call with <code>approvalId</code> runs
+once; another call, a second use, a denied or an expired request is refused. A dry run needs no
+approval. Policies are per API key; agent connections (OAuth) follow only the pause and their
+scopes.</li>
+</ul>
+<h3 id="proposals">Proposals</h3>
+<p><code>add_task</code> with <code>proposal: true</code> adds a task with <code>proposedAt</code>: it waits in the owner's inbox and
+stays out of <code>list_today</code>, <code>board</code>, <code>list_all</code> (unless <code>proposed: true</code>), <code>ready</code>, the calendar
+feed and the phone's Today until the owner accepts it (<code>accept_proposal</code>), merges it into another
+task (<code>merge_proposal</code>: that task gets the proposal's note after a line naming it, its links,
+labels, source and return webhooks; the proposal goes to the trash with <code>mergedInto</code>) or rejects
+it (<code>reject_proposal</code>: to the trash). A proposal cannot be claimed, made the now task, moved to
+<code>doing</code> or completed (<code>invalid_argument</code>). Three fields work on any new task:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Proposals"><table>
+<thead><tr><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>source</code></td><td><code>{ kind, ref, url? }</code>, e.g. <code>{ &quot;kind&quot;: &quot;sentry&quot;, &quot;ref&quot;: &quot;CHECKOUT-42&quot; }</code>. One source makes one task: <code>add_task</code> with a source that already made a task returns that task, also when it is in the trash; once the trash is purged the source is free again. A merged proposal's source leads to the task it was merged into</td></tr>
+<tr><td><code>requestedBy</code></td><td>Who asked for it (up to 200 characters); an agent's proposal without it says <code>agent: &lt;name&gt;</code></td></tr>
+<tr><td><code>returnTo</code></td><td>Id of one of the user's webhooks: it gets <code>task.returned</code> with the outcome (<code>completed</code>, <code>rejected</code> or <code>merged</code>) and the proof, whatever events it subscribes to (<a href="webhooks.html#events">webhooks.md</a>)</td></tr>
+</tbody>
+</table></div>
+<h3 id="plan-health-plan_health">Plan health (<code>plan_health</code>)</h3>
+<p><code>plan_health</code> (also <code>GET /api/v1/health</code>, <code>dayhand health</code>, the prompt <code>plan_health</code>) returns, as
+of <code>at</code>, in the user's time zone: <code>agentsPaused</code>; <code>overdue</code>, <code>dueToday</code>, <code>inProgress</code> (each with
+<code>workingBy</code>: <code>&quot;agent: &lt;name&gt;&quot;</code> while a claim lasts), <code>expiredClaims</code>, <code>blocked</code> (each with
+<code>reasons</code>: the blocked reason and every dependency not done yet), <code>awaitingApproval</code> (tasks with a
+pending request, and <code>pendingApprovals</code> in all), <code>completedToday</code> (each with <code>proof</code>, and
+<code>withProof</code>, <code>withoutProof</code>): each <code>{ count, tasks }</code> with the first 20 tasks; <code>proposals.count</code>;
+and <code>oldestOpen</code>, the open task created longest ago with <code>ageDays</code>
+(<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/plan-health.schema.json">schema</a>). Proposals and archived tasks are not counted as open.</p>
+<h3 id="dry-runs">Dry runs</h3>
+<p>Every changing tool takes <code>dryRun: true</code>. The change runs with every check, then Dayhand rolls it
+back: nothing is saved and nothing enters the history. The result is what the real call would
+return, marked <code>&quot;dryRun&quot;: true</code> (for <code>set_now</code> with <code>taskId: null</code>, <code>{ &quot;result&quot;: null, &quot;dryRun&quot;: true }</code>). A dry run of <code>add_task</code> shows the number the task would get, but does not reserve it.
+A change that would fail fails its dry run with the same error. Dry runs count as changes for
+the <a href="#limits">limits</a>.</p>
+<h2 id="resources">Resources</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Resources"><table>
+<thead><tr><th scope="col">URI</th><th scope="col">Type</th><th scope="col">Content</th></tr></thead>
+<tbody>
+<tr><td><code>dayhand://today</code></td><td><code>application/json</code></td><td><code>list_today</code></td></tr>
+<tr><td><code>dayhand://activity</code></td><td><code>application/json</code></td><td><code>list_events</code> without <code>since</code>: the newest changes and the cursor to follow from</td></tr>
+<tr><td><code>dayhand://activity{?since}</code> (template)</td><td><code>application/json</code></td><td><code>list_events</code> with <code>since</code>, e.g. <code>dayhand://activity?since=c1793011200000123</code></td></tr>
+<tr><td><code>dayhand://guide</code></td><td><code>text/markdown</code></td><td>How an agent should work with Dayhand: numbers, the now task, retries, dry runs, limits</td></tr>
+<tr><td><code>dayhand://tasks/{ref}</code> (template)</td><td><code>application/json</code></td><td><code>get_task</code> of task <code>#ref</code>, e.g. <code>dayhand://tasks/42</code></td></tr>
+</tbody>
+</table></div>
+<p><code>resources/list</code> returns the first three, <code>resources/templates/list</code> the two templates. The <code>helm://</code>
+URIs of the same resources, from before the rename, can still be read. Reading a
+resource that does not exist (also a task number that does not) is a JSON-RPC error with
+<code>data: { &quot;uri&quot; }</code>: <code>-32602</code> on 2026-07-28, <code>-32002</code> on 2025 revisions.</p>
+<h2 id="prompts">Prompts</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Prompts"><table>
+<thead><tr><th scope="col">Prompt</th><th scope="col">Arguments</th><th scope="col">What it starts</th></tr></thead>
+<tbody>
+<tr><td><code>plan_day</code></td><td><code>focus</code> (optional)</td><td>Go through overdue and today's tasks, agree on an order and set the now task; the Today screen is attached as the resource <code>dayhand://today</code></td></tr>
+<tr><td><code>weekly_review</code></td><td></td><td>Look back at the last 7 days (board's done column) and ahead at the next 7 (<code>list_all</code> with dates), then tidy the plan</td></tr>
+<tr><td><code>triage_overdue</code></td><td></td><td>Decide, task by task, what happens to each overdue task; the overdue tasks are attached</td></tr>
+<tr><td><code>plan_health</code></td><td></td><td>Go through what needs a look, most urgent first; the <code>plan_health</code> report is attached (since 0.11.0)</td></tr>
+</tbody>
+</table></div>
+<p>Each prompt tells the agent to ask before changing anything, to pass a <code>clientId</code> and to preview
+larger changes with <code>dryRun</code>. An unknown prompt or argument is a JSON-RPC error <code>-32602</code>.</p>
+<h2 id="limits">Limits</h2>
+<p>Each API key, and each agent connection (OAuth), may make 120 reads and 60 changes a minute
+(<code>convex/callLimits.ts</code>). The minute
+starts with the first call; reads and changes are counted apart. Reads are tool calls of
+read-only tools, <code>resources/read</code> of <code>dayhand://today</code>, <code>dayhand://activity…</code> and <code>dayhand://tasks/…</code>, and <code>prompts/get</code>;
+listing tools, resources and prompts, <code>server/discover</code> and <code>dayhand://guide</code> are not counted.</p>
+<p>A call over the limit is refused before it runs, so nothing is applied:</p>
+<ul>
+<li>a tool call returns the tool error <code>rate_limited</code> with <code>retryAfterMs</code>, HTTP 200 and a
+<code>Retry-After</code> header (seconds);</li>
+<li><code>resources/read</code> and <code>prompts/get</code> get HTTP 429 with <code>Retry-After</code> and the JSON-RPC error
+<code>{ &quot;code&quot;: 429, &quot;message&quot;: &quot;Too many reads with this API key: …&quot;, &quot;data&quot;: { &quot;retryAfterMs&quot; } }</code>.</li>
+</ul>
+<p><code>npx convex run callLimits:reset '{&quot;keyId&quot;:&quot;&lt;key id&gt;&quot;}'</code> clears a key's counters
+(<code>'{&quot;connectionId&quot;:&quot;&lt;connection id&gt;&quot;}'</code> a connection's).</p>
+<h2 id="repeat-rules">Repeat rules</h2>
+<p><code>repeat</code> is an object, or an <a href="https://www.rfc-editor.org/rfc/rfc5545#section-3.3.10">RFC 5545</a>
+RRULE string (with or without <code>RRULE:</code>) that the server reads into the object. Every repeating
+task also comes back with its rule as an RRULE in <code>rrule</code>, e.g. <code>&quot;FREQ=WEEKLY;BYDAY=MO,TH&quot;</code>.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Repeat rules"><table>
+<thead><tr><th scope="col">Field</th><th scope="col">Meaning</th><th scope="col">RRULE</th></tr></thead>
+<tbody>
+<tr><td><code>every</code>, <code>interval</code></td><td>every day, week, month or year; <code>interval</code> 2 = every other (1 to 366)</td><td><code>FREQ</code>, <code>INTERVAL</code></td></tr>
+<tr><td><code>weekdays</code></td><td>weekly rules: days 1 (Monday) to 7 (Sunday)</td><td><code>BYDAY=MO,TH</code></td></tr>
+<tr><td><code>monthDay</code></td><td>monthly rules: day 1 to 31, or -1 for the last day</td><td><code>BYMONTHDAY=15</code>, <code>BYMONTHDAY=-1</code></td></tr>
+<tr><td><code>weekdayOfMonth</code></td><td>monthly rules: <code>{ nth, weekday }</code>, nth 1 to 5 or -1 (last) to -5</td><td><code>BYDAY=2TU</code>, <code>BYDAY=-1FR</code> (or <code>BYDAY=TU;BYSETPOS=2</code>)</td></tr>
+<tr><td><code>from</code></td><td><code>&quot;due&quot;</code> (default): the next date follows the due date; <code>&quot;completion&quot;</code>: it is counted from the day the task is done</td><td>none</td></tr>
+<tr><td><code>until</code></td><td>last date the series may fall on, YYYY-MM-DD</td><td><code>UNTIL=20261231</code> (a UTC date-time is read in the user's time zone)</td></tr>
+<tr><td><code>count</code></td><td>occurrences left, this one included; <code>1</code> = the last one</td><td><code>COUNT</code></td></tr>
+</tbody>
+</table></div>
+<p><code>until</code> and <code>count</code> cannot be combined (as in RFC 5545). Completing a task counted from the due
+date creates the first date of the series after today, so a late completion skips the dates it
+missed, and those count against <code>count</code>. When the series has ended, <code>complete_task</code> returns
+<code>next: null</code>. The next occurrence keeps the title, note, labels, links and reminders, with the
+checklist unticked.</p>
+<p>Dayhand reads <code>FREQ</code> (DAILY, WEEKLY, MONTHLY, YEARLY), <code>INTERVAL</code>, <code>BYDAY</code>, <code>BYMONTHDAY</code>,
+<code>BYSETPOS</code>, <code>UNTIL</code>, <code>COUNT</code> and <code>WKST</code>; anything else (<code>BYHOUR</code>, <code>BYMONTH</code>, …) is an
+<code>invalid_argument</code> naming the part. Where Dayhand differs from RFC 5545:</p>
+<ul>
+<li>A day the month does not have (31 in April) falls on the month's last day; RFC 5545 skips the
+month. <code>rrule</code> writes such days as <code>BYMONTHDAY=28,29,30,31;BYSETPOS=-1</code>, which means the same
+in both, and reads that form back as <code>monthDay: 31</code>. A plain <code>BYMONTHDAY=31</code> is read as
+<code>monthDay: 31</code> too, with Dayhand's meaning.</li>
+<li>A plain monthly rule takes its day from the due date; after a shorter month the next
+occurrence keeps that day as <code>monthDay</code> (31 Jan, 28 Feb, 31 Mar).</li>
+<li>A yearly rule from 29 February falls on 28 February in other years and stays there.</li>
+<li><code>from: &quot;completion&quot;</code> has no RRULE form; <code>rrule</code> describes the dates only.</li>
+<li>Weeks start on Monday; another <code>WKST</code> is refused only where it would change the dates (several
+days every two or more weeks).</li>
+</ul>
+<p>The rule logic is in <code>backend/convex/lib/repeat.ts</code> (<code>advance</code>, and <code>occurrences</code> to list a series
+ahead, e.g. for a calendar) and <code>lib/rrule.ts</code> (<code>toRRule</code>, <code>parseRRule</code>).</p>
+<h2 id="checklists-and-reminders">Checklists and reminders</h2>
+<ul>
+<li><code>checklist</code>: items <code>{ id, title, done }</code> in the order shown. <code>update_task</code> replaces the whole
+list: send the items you keep with their ids, new items without one (the server gives <code>c1</code>,
+<code>c2</code>, …). <code>null</code> or <code>[]</code> removes it. At most 100 items of up to 500 characters. History records
+the list before and after each change.</li>
+<li><code>reminders</code>: the task's own reminders instead of the default ones from settings. Each is
+<code>{ minutesBefore }</code> (before the due time; rings only for timed tasks) or <code>{ time: &quot;HH:MM&quot;, daysBefore? }</code> (that time on the due day, or up to 30 days before; works for untimed tasks
+too). A task without <code>reminders</code> uses the defaults; <code>[]</code> means no reminders for this task;
+<code>null</code> in <code>update_task</code> goes back to the defaults. At most 5. Reminders ring on the phone
+(<a href="architecture.html#reminders">architecture.md</a>).</li>
+</ul>
+<h2 id="errors">Errors</h2>
+<p>A failed tool call is a normal result with <code>isError: true</code>. The text block holds a message
+for people; <code>structuredContent.error</code> holds the same message and a code for programs:</p>
+<pre class="code" tabindex="0" aria-label="Code: json"><code>{
+  &quot;content&quot;: [{ &quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Task #404 not found&quot; }],
+  &quot;structuredContent&quot;: { &quot;error&quot;: { &quot;code&quot;: &quot;not_found&quot;, &quot;message&quot;: &quot;Task #404 not found&quot; } },
+  &quot;isError&quot;: true
+}</code></pre>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Errors"><table>
+<thead><tr><th scope="col">Code</th><th scope="col">Meaning</th><th scope="col">Example message</th></tr></thead>
+<tbody>
+<tr><td><code>invalid_argument</code></td><td>Wrong or missing arguments, or an operation the task's state does not allow</td><td><code>dueDate must be YYYY-MM-DD, &quot;today&quot; or &quot;tomorrow&quot;, got &quot;someday&quot;</code>; <code>Invalid arguments: taskId must be a task id or &quot;#&lt;number&gt;&quot;, got &quot;nope&quot;</code>; <code>Task is in the trash; restore it first</code></td></tr>
+<tr><td><code>not_found</code></td><td>No such task (or API key, device) for this user</td><td><code>Task #404 not found</code></td></tr>
+<tr><td><code>rate_limited</code></td><td>Too many calls with this key or connection; <code>retryAfterMs</code> says when to try again</td><td><code>Too many changes with this API key: at most 60 a minute. Try again in 12 s.</code></td></tr>
+<tr><td><code>unauthenticated</code></td><td>Reserved for identity errors inside a tool; a missing, wrong or revoked key or token gets HTTP 401 before any tool runs</td><td></td></tr>
+<tr><td><code>precondition_failed</code></td><td>The task's state does not allow the change yet: an agent completing a task with unmet acceptance criteria or without a proof summary, <code>renew_claim</code> without a claim of yours; through the REST API also <code>If-Match</code> naming a version the task is no longer at (<a href="api.html#idempotency-versions-and-dry-runs">api.md</a>)</td><td><code>Acceptance criteria not met: a2; mark them met with update_task first</code>; <code>The task has changed since that version (it is now &quot;1793011200000&quot;); read it again</code></td></tr>
+<tr><td><code>conflict</code></td><td>Another agent holds the task's claim (<a href="#claims">Claims</a>); pick another task or wait for the time named</td><td><code>Task #42 is claimed by claude-code until 2026-10-24T14:30:00.000Z</code></td></tr>
+<tr><td><code>agents_paused</code></td><td>The owner paused every agent; reading works, changes wait until they resume (since 0.11.0)</td><td><code>The owner has paused all agents (holiday): reading works, changes are refused until they resume agents</code></td></tr>
+<tr><td><code>forbidden</code></td><td>Only the owner may do this, or the owner's policy denies the tool to this key, or the owner denied the approval (since 0.11.0)</td><td><code>Only the owner can accept proposals (in the app or with a cli key)</code>; <code>The owner's policy does not let this key call delete_task</code></td></tr>
+<tr><td><code>approval_required</code></td><td>The owner's policy asks first; <code>approvalId</code> names the request to wait for, then repeat the same call with it (since 0.11.0)</td><td><code>The owner's policy asks before this key calls complete_task. Approval request … waits for the owner until …</code></td></tr>
+<tr><td><code>internal</code></td><td>Anything unexpected; the message says only <code>Internal error</code></td><td><code>Internal error</code></td></tr>
+</tbody>
+</table></div>
+<p>New codes may be added in a minor version; treat an unknown code like <code>internal</code>.</p>
+<p>Errors outside tools are JSON-RPC errors:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Errors"><table>
+<thead><tr><th scope="col">Code</th><th scope="col">When</th><th scope="col">HTTP</th></tr></thead>
+<tbody>
+<tr><td><code>-32602</code></td><td>Unknown tool or prompt, bad prompt arguments, a resource that does not exist (2026-07-28), a missing <code>_meta</code> field (2026-07-28)</td><td>200; 400 for the <code>_meta</code> field</td></tr>
+<tr><td><code>-32002</code></td><td>A resource that does not exist (2025 revisions)</td><td>200</td></tr>
+<tr><td><code>-32601</code></td><td>Unknown method</td><td>200; 404 on 2026-07-28</td></tr>
+<tr><td><code>-32020</code></td><td>2026-07-28 header mismatch: a standard header missing or not matching the body</td><td>400</td></tr>
+<tr><td><code>-32022</code></td><td>Unsupported protocol version; <code>data: { supported, requested }</code></td><td>400</td></tr>
+<tr><td><code>429</code></td><td>Too many reads outside tools (<a href="#limits">Limits</a>)</td><td>429</td></tr>
+<tr><td><code>-32600</code>, <code>-32700</code></td><td>Not a JSON-RPC request, a batch, a body over 256 KB, a browser origin not allowed</td><td>400, 413, 403</td></tr>
+</tbody>
+</table></div>
+<p>An OAuth access token whose scopes do not cover the request gets HTTP 403 with
+<code>WWW-Authenticate: Bearer error=&quot;insufficient_scope&quot;, scope=&quot;…&quot;</code> and no JSON-RPC body: a tool
+of the other scope, or, without <code>tasks:read</code>, <code>resources/read</code> of the user's data and
+<code>prompts/get</code> (<a href="oauth.html#requests-scopes-and-tokens">oauth.md</a>). <code>tools/list</code> shows only the
+tools the token's scopes allow.</p>
+<h2 id="protocol-versions">Protocol versions</h2>
+<p>One endpoint serves both eras of MCP, the way the specification describes a dual-era server:</p>
+<ul>
+<li><strong>2025 revisions</strong> (2025-11-25 and earlier): the client sends <code>initialize</code>, and the server
+answers with the requested version when it knows it, otherwise <code>2025-11-25</code>. <code>ping</code> works.
+Results have no <code>resultType</code>. Dayhand keeps no session, so every request stands alone anyway.</li>
+<li><strong>2026-07-28</strong>: no <code>initialize</code>; a request is served as 2026-07-28 when its <code>params._meta</code>
+carries <code>io.modelcontextprotocol/protocolVersion</code>. It must also carry
+<code>io.modelcontextprotocol/clientCapabilities</code> (else <code>-32602</code>, HTTP 400) and the headers
+<code>MCP-Protocol-Version</code> (equal to that version), <code>Mcp-Method</code> and, for <code>tools/call</code>,
+<code>prompts/get</code> and <code>resources/read</code>, <code>Mcp-Name</code> (plain or <code>=?base64?…?=</code>), all matching the
+body (else <code>-32020</code>, HTTP 400). <code>server/discover</code> returns <code>supportedVersions</code> (both eras),
+the capabilities and the instructions. Every result has <code>resultType: &quot;complete&quot;</code> and
+<code>_meta[&quot;io.modelcontextprotocol/serverInfo&quot;]</code>; <code>server/discover</code>, <code>tools/list</code>,
+<code>prompts/list</code>, <code>resources/list</code> and <code>resources/templates/list</code> carry <code>ttlMs: 300000</code> and
+<code>cacheScope: &quot;public&quot;</code> (<code>tools/list</code> of an agent, or of a token with fewer scopes: <code>private</code>,
+since it leaves tools out), <code>resources/read</code> carries <code>ttlMs: 0</code> and <code>cacheScope: &quot;private&quot;</code>
+(<code>dayhand://guide</code>: public). <code>ping</code> no longer exists and unknown methods get HTTP 404.</li>
+</ul>
+<p>Not offered in either era: <code>subscriptions/listen</code> (and <code>listChanged</code> notifications), logging,
+completion, sampling, elicitation and the tasks extension. Dayhand never asks the client for
+input, so no request returns <code>input_required</code>.</p>
+<p>The official TypeScript SDK v2 reaches the 2026-07-28 era with
+<code>versionNegotiation: { mode: &quot;auto&quot; }</code> (or a pin); without it, it speaks 2025 like SDK v1.
+Both are tested (<code>backend/tests/mcp-modern.test.ts</code>).</p>
+<h2 id="keys-and-actors">Keys and actors</h2>
+<p>Every API key has a name and a kind:</p>
+<ul>
+<li><code>cli</code>: the user at a terminal. History shows changes as <code>cli</code>.</li>
+<li><code>agent</code>: an AI agent. History shows changes as <code>agent: &lt;key name&gt;</code>, e.g. <code>agent: claude-code</code>.</li>
+</ul>
+<p>Changes made in the app are <code>app</code>. Changes made through an agent connection (OAuth, e.g. the
+Claude app) are <code>agent</code> with the client's name, e.g. <code>agent: Claude</code>
+(<a href="oauth.html#connections-history-and-revocation">oauth.md</a>). <code>get_task</code> returns each history
+entry with <code>actor</code> (<code>app</code>, <code>cli</code> or <code>agent</code>), <code>actorName</code> (the key's or client's name, <code>null</code>
+for the app) and <code>by</code>, the label above. Give each agent its own key so it can be told apart and revoked on its own.</p>
+<p>Keys without a kind (created before 0.3.0) act as <code>agent</code> keys; the 0.3.0 migration records
+that (<a href="deploy.html#upgrading-to-030">deploy.md</a>). A new key is an <code>agent</code> key unless created with
+<code>&quot;kind&quot;: &quot;cli&quot;</code>:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>npx convex run apiKeys:create '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;,&quot;name&quot;:&quot;macbook&quot;,&quot;kind&quot;:&quot;cli&quot;}'
+npx convex run apiKeys:create '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;,&quot;name&quot;:&quot;claude-code&quot;}'</code></pre>
+<p>The app does the same with <code>app.createApiKey({ name, kind })</code>; <code>app.listApiKeys</code> returns each
+key's <code>kind</code>.</p>
+<p>Since 0.8.0 a key also has a <strong>scope</strong> and may <strong>expire</strong>:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Keys and actors"><table>
+<thead><tr><th scope="col">Scope</th><th scope="col">On <code>/mcp</code></th><th scope="col">REST <code>/api/v1</code> (<a href="api.html">api.md</a>)</th><th scope="col">Account: keys, webhooks, devices, connections, calendar feed</th></tr></thead>
+<tbody>
+<tr><td><code>read</code></td><td>only the reading tools (<code>tools/list</code> shows only them; a change gets <code>403 insufficient_scope</code>)</td><td><code>GET</code> routes</td><td>no (<code>403</code>)</td></tr>
+<tr><td><code>write</code></td><td>every tool</td><td>every task and settings route</td><td>no (<code>403</code>)</td></tr>
+<tr><td><code>full</code></td><td>every tool</td><td>everything</td><td>yes</td></tr>
+</tbody>
+</table></div>
+<p>Keys without a scope (every key made before 0.8.0) are <code>full</code> keys; nothing changes for them.
+<code>expiresAt</code> (Unix milliseconds) ends a key: after it the key gets <code>401</code> like a revoked one.</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>npx convex run apiKeys:create '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;,&quot;name&quot;:&quot;n8n&quot;,&quot;scope&quot;:&quot;read&quot;,&quot;expiresAt&quot;:1798761600000}'</code></pre>
+<p>Creating and revoking API keys is not an MCP tool on purpose: a key that can mint keys could
+outlive its own revocation. Keys are managed by the app (<code>app.createApiKey</code>,
+<code>app.revokeApiKey</code>), by the deployment admin (<code>npx convex run apiKeys:create</code>), or with a full
+key through <code>POST /api/v1/keys</code> (<code>dayhand key create</code>). A key made that way can only have scope
+<code>read</code> or <code>write</code>, expires no later than the key that made it, and works only while that key
+works: revoking the parent stops it too (<a href="api.html#api-keys">api.md</a>).</p>
+<p>Phone pairing is not an MCP tool either. The CLI pairs phones through separate endpoints
+(<code>/devices/*</code>, see <a href="pairing.html">pairing.md</a>) that accept the same API key.</p>
+<h2 id="versions">Versions</h2>
+<p><code>serverInfo.version</code> is the backend version (<code>backend/package.json</code>) and the one clients use
+to check compatibility. It follows semver: a minor version only adds tools, fields, error codes
+and accepted values; a major version may change or remove them. A client written for 0.3
+works with any 0.x from 0.3 on.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Versions"><table>
+<thead><tr><th scope="col">Version</th><th scope="col">Changes</th></tr></thead>
+<tbody>
+<tr><td>0.11.0</td><td>Agents and the owner (<a href="agent-work.html">agent-work.md</a>): <code>request_approval</code>, <code>get_approval</code>, <code>list_approvals</code>, <code>decide_approval</code>; <code>get_agent_controls</code>, <code>pause_agents</code>, <code>set_tool_policy</code>, and <code>approvalId</code> on every change an agent makes; proposals (<code>add_task</code> takes <code>proposal</code>, <code>source</code>, <code>requestedBy</code>, <code>returnTo</code>; task fields <code>proposedAt</code>, <code>source</code>, <code>requestedBy</code>, <code>returnTo</code>, <code>mergedInto</code>; <code>list_all</code> takes <code>proposed</code>; <code>accept_proposal</code>, <code>merge_proposal</code>, <code>reject_proposal</code>); <code>plan_health</code> and the prompt <code>plan_health</code>; error codes <code>agents_paused</code>, <code>forbidden</code>, <code>approval_required</code> (with <code>approvalId</code>); webhook events <code>approval.decided</code> and <code>task.returned</code>; the owner's tools (O) are left out of an agent's <code>tools/list</code></td></tr>
+<tr><td>0.10.0</td><td>Agent work (<a href="agent-work.html">agent-work.md</a>): <code>list_events</code> and the resource <code>dayhand://activity</code> (the activity log); task fields <code>acceptance</code>, <code>plan</code>, <code>proof</code>, <code>dependsOn</code>, <code>blockedReason</code>, <code>claimedBy</code>, <code>claimExpiresAt</code>; <code>complete_task</code> takes <code>proof</code>; <code>list_all</code> takes <code>ready</code>; <code>claim_task</code>, <code>renew_claim</code>, <code>release_task</code>; error code <code>conflict</code>, and <code>precondition_failed</code> outside <code>If-Match</code> too</td></tr>
+<tr><td>0.9.0</td><td>The rename to Dayhand: <code>serverInfo.name</code> <code>dayhand</code>; resources <code>dayhand://today</code>, <code>dayhand://guide</code> and <code>dayhand://tasks/{ref}</code> (the <code>helm://</code> URIs are still read); new API keys start with <code>dayhand_</code> (<code>helm_</code> keys keep working); import format <code>dayhand-json</code> (<code>helm-json</code> still accepted); <code>WWW-Authenticate</code> realm <code>dayhand</code>; <code>x-dayhand-scope</code> in the OpenAPI document; problem types under <code>https://schemas.dayhand.invalid/</code>; deployment variables <code>DAYHAND_*</code> (<code>HELM_*</code> still read, <a href="deploy.html#renamed-variables">deploy.md</a>)</td></tr>
+<tr><td>0.8.0</td><td>API keys with a <code>scope</code> (<code>read</code>, <code>write</code>, <code>full</code>) and <code>expiresAt</code> (a read key sees and calls only reading tools); the error code <code>precondition_failed</code> (REST <code>If-Match</code> only); the REST API <code>/api/v1</code> with OpenAPI 3.1 (<a href="api.html">api.md</a>), webhooks (<a href="webhooks.html">webhooks.md</a>) and import. Devices, connections and the calendar feed need a full key</td></tr>
+<tr><td>0.7.0</td><td><code>export_plan</code> format <code>ics</code>; the read-only calendar feed <code>GET /cal/&lt;token&gt;.ics</code> and its endpoints <code>/calendar/feed*</code> (<a href="calendar.html">calendar.md</a>)</td></tr>
+<tr><td>0.6.0</td><td>OAuth 2.1 for the Claude apps and other MCP clients: access tokens next to API keys, <code>WWW-Authenticate</code> with <code>resource_metadata</code>, scopes <code>tasks:read</code> and <code>tasks:write</code> (<code>tools/list</code> filtered, <code>403 insufficient_scope</code>), limits per connection (<a href="oauth.html">oauth.md</a>)</td></tr>
+<tr><td>0.5.0</td><td>Repeat rules: <code>from</code>, <code>monthDay</code>, <code>weekdayOfMonth</code>, <code>until</code>, <code>count</code>, RRULE strings in <code>repeat</code> and <code>rrule</code> on repeating tasks; <code>checklist</code> and <code>reminders</code> on tasks; <code>complete_task</code> returns <code>next: null</code> when a series has ended</td></tr>
+<tr><td>0.4.0</td><td>MCP 2026-07-28 next to the 2025 revisions; tool titles, all behaviour hints and output schemas; <code>list_all</code> search, filters and pages (<code>total</code>, <code>nextCursor</code>); <code>dryRun</code> on every change; resources <code>helm://today</code>, <code>helm://guide</code>, <code>helm://tasks/{ref}</code>; prompts <code>plan_day</code>, <code>weekly_review</code>, <code>triage_overdue</code>; limits per key and error <code>rate_limited</code>; structured content for a Markdown export; <code>Origin</code> check</td></tr>
+<tr><td>0.3.0</td><td>Task numbers (<code>ref</code>, <code>taskId: &quot;#42&quot;</code>); error codes in <code>structuredContent.error</code>; key kinds and named actors in history (<code>actor: &quot;cli&quot;</code>, <code>actorName</code>, <code>by</code>)</td></tr>
+<tr><td>0.2.0</td><td>Phone pairing endpoints (<code>/devices/*</code>, <code>/auth/*</code>)</td></tr>
+<tr><td>0.1.0</td><td>MCP endpoint with 17 tools</td></tr>
+</tbody>
+</table></div>
+<h2 id="connecting-a-client">Connecting a client</h2>
+<p>The Claude apps (claude.ai, Desktop, Android, iOS) add Dayhand as a custom connector with the URL
+<code>&lt;deployment HTTP actions URL&gt;/mcp</code> and sign in with OAuth; the owner approves the connection
+on the phone. The steps are in <a href="oauth.html#connecting-the-claude-app-manual-procedure">oauth.md</a>.</p>
+<p>Any MCP client with Streamable HTTP and custom headers works with an API key, for example:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp \
+  --header &quot;Authorization: Bearer $DAYHAND_API_KEY&quot;</code></pre>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="agent-work.html" rel="prev"><span>Previous</span> How agent work is designed</a><a href="oauth.html" rel="next"><span>Next</span> Claude apps (OAuth)</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/mcp.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

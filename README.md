@@ -1,6 +1,6 @@
 # ✋ Dayhand — a day plan with a spare pair of hands
 
-[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/helm?style=flat)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/dayhand?style=flat)](LICENSE)
 
 Dayhand is a task list and day plan for people who run a business on their own, and for the AI
 agents that work for them. Your phone keeps the plan offline with a calendar and reminders; a
@@ -36,7 +36,7 @@ TODAY
 From source you need Node.js 22.12 or newer, git and, for the agent example, `jq`:
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git dayhand
+git clone https://github.com/maiarowsky/dayhand.git dayhand
 cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 ```
 
@@ -53,9 +53,10 @@ deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the p
 dayhand server start
 ```
 
-Leave it running, and in a second terminal in the same folder:
+For the local server, leave it running and select it explicitly in a second terminal in the same folder:
 
 ```sh
+export DAYHAND_URL=http://127.0.0.1:3211
 dayhand add "Call the accountant" --due "today 14:00" -l admin
 dayhand
 dayhand done 1
@@ -113,7 +114,7 @@ The server speaks [MCP](https://modelcontextprotocol.io) at `/mcp`, with the sam
 the app. For Claude Code, with the agent key from above:
 
 ```sh
-claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header "Authorization: Bearer $AGENT_KEY"
+claude mcp add --transport http dayhand "$DAYHAND_URL/mcp" --header "Authorization: Bearer $AGENT_KEY"
 ```
 
 Any other MCP client works the same way: the address and an `Authorization: Bearer` header.
@@ -230,7 +231,7 @@ android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
-site/      the dayhand.dev landing page (static HTML and CSS); check it with scripts/check-site.sh
+site/      dayhand.dev: the landing page and the docs built from docs/ (scripts/build-docs.mjs); check it with scripts/check-site.sh
 ```
 
 The tests start their own throwaway backend:
@@ -246,7 +247,8 @@ Every command in this README runs against a local backend with sample data in
 
 ## Help
 
-Start with `dayhand help`, [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
+Start with `dayhand help` and the [documentation](docs/README.md): [quick start](docs/getting-started.md),
+[FAQ and troubleshooting](docs/faq.md), [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
 Dayhand is a personal project with no hosted service and no support promise; issues are for bugs
 you can reproduce and for feature ideas. Security problems go privately, never in an issue
 ([SECURITY.md](SECURITY.md)).

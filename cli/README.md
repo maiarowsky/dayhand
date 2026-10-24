@@ -25,10 +25,9 @@ dayhand ui                          # full screen: Today, board, week, trash (? 
 source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help completion
 ```
 
-`dayhand login` checks the API key (kind `cli`, created in the app) and keeps it in the OS keychain
-(macOS Keychain, Windows Credential Manager, Secret Service on Linux), or in a private
-`credentials.json` when there is none; the key never goes into a shell profile or config.toml.
-`config.toml` holds the URL, profiles, aliases and the color default (`dayhand help config`).
+For key creation, automatic sign-in during server setup, and credential storage, see
+[signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
+default (`dayhand help config`); the key never goes into it.
 Dates are English phrases resolved in your time zone (`dayhand help dates`, `dayhand when "next mon"`).
 
 `dayhand ui` is the same client full screen, written with [Ink](https://github.com/vadimdemedes/ink)
@@ -53,7 +52,8 @@ For session-start context, use [`dayhand prime`](../docs/cli.md#dayhand-prime).
 
 The full reference is generated from the command registry: [docs/cli.md](../docs/cli.md),
 the man page [man/dayhand.1](../man/dayhand.1) (in the package, so `man dayhand` works after a global
-install) and the agent skill. Releases: [docs/release.md](../docs/release.md).
+install) and the agent skill. Regenerating them and the published pages:
+[CONTRIBUTING.md](../CONTRIBUTING.md#the-dayhand-cli). Releases: [docs/release.md](../docs/release.md).
 
 ## Layout
 
@@ -81,7 +81,6 @@ tests/                unit tests (*.unit.test.ts) and tests against a real local
 (cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
 npm test                                      # builds, then runs everything
 npm run test:unit                             # pure tests only (dates, config, output, completion)
-npm run build && npm run docs                 # regenerate docs/cli.md, man/dayhand.1 and SKILL.md
 npm pack                                      # a local tarball with dist/, the man page and LICENSE (not published)
 ```
 

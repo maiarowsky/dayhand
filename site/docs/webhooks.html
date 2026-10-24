@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Webhooks · Dayhand docs</title>
+  <meta name="description" content="Since backend 0.8.0, Dayhand can tell other systems about changes as they happen: a webhook is an HTTPS address that gets a signed POST for every change of…">
+  <link rel="canonical" href="https://dayhand.dev/docs/webhooks.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html" aria-current="page">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="webhooks">Webhooks</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#events">Events</a></li>
+      <li><a href="#verifying-a-message">Verifying a message</a></li>
+      <li><a href="#delivery-retries-and-turning-off">Delivery, retries and turning off</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#configuration">Configuration</a></li>
+      </ul>
+    </nav>
+<p>Since backend 0.8.0, Dayhand can tell other systems about changes as they happen: a webhook is an
+HTTPS address that gets a signed <code>POST</code> for every change of a task. Messages follow
+<a href="https://www.standardwebhooks.com">Standard Webhooks</a>, so any of its verification libraries
+(JavaScript, Python, Go, …) checks them.</p>
+<p>Webhooks are managed with a full API key through the REST API (<a href="api.html">api.md</a>) or <code>dayhand</code>:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand webhook add https://n8n.example.com/webhook/dayhand --event task.completed --event task.created
+dayhand webhook list
+dayhand webhook test &lt;id&gt;
+dayhand webhook deliveries &lt;id&gt;
+dayhand webhook rm &lt;id&gt; --yes</code></pre>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Webhooks"><table>
+<thead><tr><th scope="col">Route</th><th scope="col">What it does</th></tr></thead>
+<tbody>
+<tr><td><code>GET /api/v1/webhooks</code></td><td>Every webhook (never its secret)</td></tr>
+<tr><td><code>POST /api/v1/webhooks</code></td><td><code>{ &quot;url&quot;: &quot;https://…&quot;, &quot;events&quot;: [&quot;task.completed&quot;], &quot;description&quot;: &quot;n8n&quot; }</code> → <code>{ webhook, secret }</code> (<code>201</code>); the secret is shown only here</td></tr>
+<tr><td><code>GET /api/v1/webhooks/{id}</code></td><td>One webhook</td></tr>
+<tr><td><code>DELETE /api/v1/webhooks/{id}</code></td><td>Removes it and its delivery log; messages still waiting are dropped</td></tr>
+<tr><td><code>POST /api/v1/webhooks/{id}/test</code></td><td>Sends a <code>webhook.test</code> message now (<code>202</code>), also to a webhook that is turned off</td></tr>
+<tr><td><code>POST /api/v1/webhooks/{id}/enable</code></td><td>Turns it back on after it was turned off for failing</td></tr>
+<tr><td><code>GET /api/v1/webhooks/{id}/deliveries?limit=50</code></td><td>The delivery log: newest first, each attempt with its time, duration, HTTP status or error, and the body sent</td></tr>
+</tbody>
+</table></div>
+<p>A user may have at most 10 webhooks.</p>
+<h2 id="events">Events</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Events"><table>
+<thead><tr><th scope="col">Type</th><th scope="col">When</th></tr></thead>
+<tbody>
+<tr><td><code>task.created</code></td><td>A task is added (also the next occurrence of a repeating task, and imported tasks)</td></tr>
+<tr><td><code>task.updated</code></td><td>A task's fields, status or now flag change, it is archived, or it is claimed or released (<code>claim_task</code>, <code>release_task</code>; renewing a claim sends nothing)</td></tr>
+<tr><td><code>task.completed</code></td><td>A task is marked done</td></tr>
+<tr><td><code>task.deleted</code></td><td>A task goes to the trash</td></tr>
+<tr><td><code>task.restored</code></td><td>A task comes back from the trash or the archive</td></tr>
+<tr><td><code>now.changed</code></td><td>A task becomes the now task or stops being it (one message per task whose flag changed)</td></tr>
+<tr><td><code>approval.decided</code></td><td>The owner decided an approval request (<code>request_approval</code>, since 0.11.0); <code>data.approval</code> is the request with its decision (<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/approval.schema.json">schema</a>)</td></tr>
+<tr><td><code>task.returned</code></td><td>Only to the webhooks a task names in <code>returnTo</code>, whatever they subscribe to: the task was completed, rejected or merged into another task (since 0.11.0)</td></tr>
+<tr><td><code>webhook.test</code></td><td>Only from <code>POST …/test</code></td></tr>
+</tbody>
+</table></div>
+<p>Leaving out <code>events</code> subscribes to the task events and <code>now.changed</code>; <code>approval.decided</code> has to be
+listed, because its <code>data</code> holds an approval, not a task. Changes from every surface count: the app,
+MCP, the REST API and <code>dayhand</code>. A dry run (<code>dryRun</code>) sends nothing, and neither does a change that
+fails: the message is queued in the same transaction as the change.</p>
+<p>The body (<code>docs/schemas/webhook-event.schema.json</code>):</p>
+<pre class="code" tabindex="0" aria-label="Code: json"><code>{
+  &quot;type&quot;: &quot;task.updated&quot;,
+  &quot;timestamp&quot;: &quot;2026-11-03T09:12:44.120Z&quot;,
+  &quot;data&quot;: { &quot;task&quot;: { &quot;id&quot;: &quot;…&quot;, &quot;ref&quot;: 42, &quot;title&quot;: &quot;Dentist at 15:30&quot;, &quot;status&quot;: &quot;todo&quot;, &quot;…&quot;: &quot;…&quot; } },
+  &quot;previous&quot;: { &quot;title&quot;: &quot;Dentist&quot; },
+  &quot;actor&quot;: { &quot;type&quot;: &quot;agent&quot;, &quot;name&quot;: &quot;n8n&quot; }
+}</code></pre>
+<p><code>data.task</code> is the task after the change, in the same shape as everywhere else
+(<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/task.schema.json">schemas/task.schema.json</a>). <code>previous</code> holds only the fields that
+changed, with their values before (<code>{}</code> for a new task). <code>actor</code> is who made the change: <code>app</code>,
+<code>cli</code> or <code>agent</code> and the key's or client's name. <code>now.changed</code> adds <code>data.isNow</code>. Fields may be
+added in a minor version.</p>
+<p><code>task.returned</code> is how an agent or an integration that asked for a task hears back
+(<a href="agent-work.html#7-the-proposal-inbox">agent-work.md</a>). Its <code>data</code> holds <code>outcome</code> (<code>completed</code>,
+<code>rejected</code> or <code>merged</code>), <code>task</code>, <code>proof</code> (the task's proof or <code>null</code>), <code>source</code>, <code>requestedBy</code>,
+and <code>reason</code> (rejected) or <code>mergedInto</code> (merged: the task it went into, whose own completion
+sends <code>completed</code> later). A turned-off webhook gets nothing.</p>
+<h2 id="verifying-a-message">Verifying a message</h2>
+<p>Every message carries three headers:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Verifying a message"><table>
+<thead><tr><th scope="col">Header</th><th scope="col">Value</th></tr></thead>
+<tbody>
+<tr><td><code>webhook-id</code></td><td>The message id, e.g. <code>msg_kn74…</code>. The same on every retry: store it and drop a message you have already handled</td></tr>
+<tr><td><code>webhook-timestamp</code></td><td>When this attempt was sent, Unix seconds. Reject messages older than a few minutes (replays)</td></tr>
+<tr><td><code>webhook-signature</code></td><td><code>v1,&lt;base64&gt;</code>: HMAC-SHA256 of <code>&lt;webhook-id&gt;.&lt;webhook-timestamp&gt;.&lt;body&gt;</code> with the secret's bytes (the base64 after <code>whsec_</code>)</td></tr>
+</tbody>
+</table></div>
+<p>With the reference library:</p>
+<pre class="code" tabindex="0" aria-label="Code: js" data-copy><code>import { Webhook } from &quot;standardwebhooks&quot;;
+const payload = new Webhook(process.env.DAYHAND_WEBHOOK_SECRET).verify(rawBody, headers); // throws when not genuine</code></pre>
+<p>Verify the raw body exactly as received, before parsing it. To change a secret, add a new
+webhook, move the receiver to its secret, then remove the old one.</p>
+<h2 id="delivery-retries-and-turning-off">Delivery, retries and turning off</h2>
+<p>A delivery succeeds on any <code>2xx</code> answer within 10 seconds. Anything else (another status, a
+timeout, a refused connection, a redirect, which is never followed) is retried with the same
+<code>webhook-id</code> and body after 5 s, 5 min, 30 min, 2 h, 5 h, 10 h and 10 h: eight attempts in about
+27 hours. Messages can arrive more than once and out of order; use <code>webhook-id</code> and the
+<code>timestamp</code> in the body.</p>
+<p>When 5 deliveries in a row fail on every attempt, the webhook is <strong>turned off</strong>: <code>enabled: false</code>, <code>disabledAt</code> and <code>disabledReason</code> in <code>dayhand webhook list</code> and <code>GET /webhooks</code>, and a
+<code>webhook.disable</code> entry in the history. Changes then send nothing to it. Fix the receiver, check
+it with <code>dayhand webhook test &lt;id&gt;</code>, and turn it on with <code>dayhand webhook enable &lt;id&gt;</code>. A successful
+delivery sets the count back to 0; test messages do not count.</p>
+<p>The delivery log keeps 30 days (a daily cron removes older entries).</p>
+<h2 id="security">Security</h2>
+<ul>
+<li><strong>Only HTTPS on public hosts.</strong> Dayhand refuses (when the webhook is added, and again before each
+attempt) <code>http://</code>, user names or passwords in the URL, <code>localhost</code> and names under <code>.local</code>,
+<code>.internal</code>, <code>.localhost</code>, <code>.home.arpa</code>, <code>.lan</code>, <code>.corp</code>, <code>.intranet</code>, single-label names, and
+IP addresses that are loopback, private, link-local (cloud metadata such as 169.254.169.254),
+carrier-grade NAT, multicast or reserved, in IPv4 or IPv6 (also IPv4-mapped). Redirects are
+not followed. What remains: a public name whose DNS points at a private address (DNS
+rebinding). Convex runs the requests from its own network, not the user's, which limits what
+such a name could reach; on a self-hosted deployment, keep the backend's outbound traffic away
+from internal services.</li>
+<li><code>DAYHAND_WEBHOOK_ALLOWED_ORIGINS</code> (comma-separated origins, e.g. <code>http://127.0.0.1:8080</code>)
+exempts those exact origins from the rules, for tests or a receiver on a self-hosted
+deployment's own network. Production leaves it unset.</li>
+<li>The secret is stored as it is, because every message is signed with it, and is shown only
+once. Anyone with admin access to the deployment can read it. A webhook sends the user's own
+tasks to an address the user chose, so managing webhooks needs a full key: a read or write key
+for an integration cannot add one.</li>
+<li>The message body has the task's title, note and other fields. Treat the receiver like any
+place that stores the plan.</li>
+</ul>
+<h2 id="configuration">Configuration</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Configuration"><table>
+<thead><tr><th scope="col">Variable</th><th scope="col">Default</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>DAYHAND_WEBHOOK_ALLOWED_ORIGINS</code></td><td>unset</td><td>Origins exempt from the address rules (above)</td></tr>
+<tr><td><code>DAYHAND_WEBHOOK_RETRY_DELAYS</code></td><td><code>5,300,1800,7200,18000,36000,36000</code></td><td>Seconds before each retry; the number of values is the number of retries</td></tr>
+</tbody>
+</table></div>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="api.html" rel="prev"><span>Previous</span> REST API</a><a href="calendar.html" rel="next"><span>Next</span> Calendar feed</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/webhooks.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

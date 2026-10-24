@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture · Dayhand docs</title>
+  <meta name="description" content="Reminders and the morning summary are computed on the devices, not on the server: the server stores only the settings (summaryTime, defaultReminderMinutes)…">
+  <link rel="canonical" href="https://dayhand.dev/docs/architecture.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html" aria-current="page">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="architecture">Architecture</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#one-operations-layer-thin-identity-layers">One operations layer, thin identity layers</a></li>
+      <li><a href="#data-model-convexschemats">Data model (<code>convex/schema.ts</code>)</a></li>
+      <li><a href="#rules">Rules</a></li>
+      <li><a href="#authentication">Authentication</a></li>
+      <li><a href="#reminders">Reminders</a></li>
+      </ul>
+    </nav>
+<h2 id="one-operations-layer-thin-identity-layers">One operations layer, thin identity layers</h2>
+<pre class="code" tabindex="0" aria-label="Example"><code>apps (Android, macOS, Linux) ──(JWT)──&gt; convex/app.ts ┐
+                                                      ├─&gt; domain operations (convex/lib/*.ts)
+AI agent ──(MCP, API key)──&gt; /mcp (convex/mcp.ts) ───┤      registered as internal functions
+Claude app ──(MCP, OAuth access token)──&gt; /mcp ──────┤      in convex/ops.ts
+dayhand CLI ──(MCP tools/call, API key)──────────────┤
+integration ──(REST /api/v1, API key)──&gt; convex/rest.ts ┘   (same tools, lib/restRoutes.ts)
+
+apps ──(device token)──&gt; /auth/token ─┐
+     ──(pairing code)──&gt; /auth/pair  ─┼─&gt; convex/pairing.ts ──&gt; convex/devices.ts
+dayhand CLI ──(API key)──&gt; /devices/* ┘
+
+Claude app ──&gt; /.well-known/*, /oauth/* (convex/oauthHttp.ts) ──&gt; convex/oauth.ts
+Android app ──(JWT)──&gt; app.lookup/decideConnectionRequest ─┐
+dayhand CLI ──(API key)──&gt; /connections* ──────────────────┴──&gt; convex/oauthOwner.ts
+
+calendar app ──(secret address)──&gt; GET /cal/&lt;token&gt;.ics ─┐
+Android app ──(JWT)──&gt; app.*CalendarFeed ────────────────┼─&gt; convex/calendarFeeds.ts ──&gt; lib/ical.ts
+dayhand CLI ─(API key)─&gt; /calendar/feed* (calendar.ts) ──┘</code></pre>
+<ul>
+<li>Domain operations take the acting identity explicitly: <code>userId</code> and <code>actor</code> (<code>app</code>, <code>cli</code> or
+<code>agent</code>), plus <code>keyId</code> and <code>actorName</code> for changes made with an API key. They are exposed as
+Convex <strong>internal</strong> functions (<code>convex/ops.ts</code>), so no client can call them directly.</li>
+<li><code>convex/app.ts</code> takes <code>userId</code> from the signed-in user (<code>ctx.auth</code>) and sets <code>actor: &quot;app&quot;</code>.</li>
+<li><code>convex/mcp.ts</code> takes <code>userId</code> from the personal API key and sets <code>actor</code> to the key's kind
+(<code>cli</code> or <code>agent</code>), <code>actorName</code> to its name and <code>keyId</code> to its id; for an OAuth access token
+it sets <code>actor: &quot;agent&quot;</code>, <code>actorName</code> to the client's name and <code>connectionId</code> to the
+connection, and allows only the tools of the token's scopes (<a href="oauth.html">oauth.md</a>). Arguments that try to set
+any of these are rejected. The <code>/devices/*</code> endpoints do the same. Around it:
+<code>lib/mcpTools.ts</code> (tool catalog, input schemas from the validators, output schemas from
+<code>docs/schemas</code> via the generated <code>lib/outputSchemas.ts</code>, behaviour hints),
+<code>lib/mcpContent.ts</code> (resources and prompts, read through the same internal queries) and
+<code>lib/mcpProtocol.ts</code> (the 2025 and 2026-07-28 protocol eras on one endpoint).</li>
+<li><code>dryRun</code> exists only on the MCP layer: the internal mutation runs the operation, every check
+included, then throws its result, so Convex rolls the transaction back (<code>convex/ops.ts</code>).</li>
+<li>The CLI is an MCP client too, so app, agent and CLI run exactly the same code.</li>
+<li><code>convex/rest.ts</code> is the REST API (<a href="api.html">api.md</a>): each route of <code>lib/restRoutes.ts</code> names
+the MCP tool it runs, so it calls the same internal function with the same arguments. It adds
+only HTTP: problem details (<code>lib/problem.ts</code>), <code>Idempotency-Key</code> as <code>clientId</code>, <code>ETag</code> and
+<code>If-Match</code> (checked inside the mutation, <code>ops.ts</code>), <code>X-RateLimit-*</code> from the same per-key
+counters as <code>/mcp</code>. <code>lib/openapi.ts</code> builds the OpenAPI 3.1 document from the same table,
+validators and <code>docs/schemas</code>; <code>lib/toolResults.ts</code> holds the result and error shapes both
+surfaces share.</li>
+<li>Webhooks: <code>recordEvent</code> (<code>lib/core.ts</code>), which every change of a task goes through, also
+queues a message for each live webhook of the user that wants its type
+(<code>lib/webhookEvents.ts</code>), in the same transaction, so a rolled-back change (a dry run, an
+error) sends nothing. <code>convex/webhooks.ts</code> delivers it from the scheduler, signed per Standard
+Webhooks (<code>lib/webhookSign.ts</code>), to an address checked against SSRF (<code>lib/webhookTarget.ts</code>),
+and retries it with the same <code>webhook-id</code>.</li>
+</ul>
+<h2 id="data-model-convexschemats">Data model (<code>convex/schema.ts</code>)</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Data model (convex/schema.ts)"><table>
+<thead><tr><th scope="col">Table</th><th scope="col">Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>tasks</code></td><td><code>ref</code> (the user's task number), <code>title</code>, <code>note</code>, <code>dueDate</code> (YYYY-MM-DD), optional <code>dueTime</code> (HH:MM), <code>status</code> (<code>todo</code>/<code>doing</code>/<code>done</code>), <code>isNow</code>, <code>resumeNote</code>, <code>repeat</code>, <code>labels</code>, <code>links</code>, <code>checklist</code> (items <code>id</code>, <code>title</code>, <code>done</code>), <code>reminders</code> (own reminders; absent = the defaults), agent work since 0.10.0 (<a href="agent-work.html">agent-work.md</a>): <code>acceptance</code> (criteria <code>id</code>, <code>text</code>, <code>met</code>), <code>plan</code>, <code>proof</code>, <code>dependsOn</code>, <code>blockedReason</code>, <code>claimedBy</code>, <code>claimExpiresAt</code>; proposals since 0.11.0: <code>proposedAt</code> (waiting in the inbox), <code>source</code> (<code>kind</code>, <code>ref</code>, <code>url</code>), <code>requestedBy</code>, <code>returnTo</code> (webhook ids), <code>mergedInto</code>; <code>completedAt</code>, <code>archivedAt</code>, <code>deletedAt</code>, <code>createdAt</code>, <code>updatedAt</code>, <code>clientId</code></td></tr>
+<tr><td><code>taskEvents</code></td><td>History: <code>actor</code>, <code>keyId</code> or <code>connectionId</code> and <code>actorName</code> (the API key or agent connection behind a <code>cli</code> or <code>agent</code> change), <code>action</code>, changed fields <code>before</code> and <code>after</code>, <code>at</code>, <code>clientId</code>, and for task changes <code>seq</code>, the position in the activity log (<code>list_events</code>)</td></tr>
+<tr><td><code>eventCounters</code></td><td>Last activity log position given per user (<code>lastSeq</code>); every task change reads and writes it, so positions follow the commit order</td></tr>
+<tr><td><code>taskCounters</code></td><td>Last task number given per user (<code>lastRef</code>)</td></tr>
+<tr><td><code>taskSources</code></td><td>Since 0.11.0: which task each outside source (<code>kind</code>, <code>ref</code>) made, so one source makes one task; re-pointed when a proposal is merged, removed when the task is purged</td></tr>
+<tr><td><code>approvals</code></td><td>Since 0.11.0: approval requests: <code>taskId</code>, <code>title</code> (what the agent wants to do), <code>detail</code>, <code>options</code> (<code>id</code>, <code>label</code>, <code>consequence</code>), <code>reversible</code>, <code>expiresAt</code>, <code>requestedBy</code>, <code>source</code> (<code>agent</code> or <code>policy</code>; a policy request also has <code>tool</code>, <code>argsHash</code>, <code>arguments</code>, <code>usedAt</code>), the decision (<code>decidedAt</code>, <code>optionId</code>, <code>note</code>, <code>decidedBy</code>), <code>clientId</code></td></tr>
+<tr><td><code>agentControls</code></td><td>Since 0.11.0: the owner's switch, one row per user: <code>pausedAt</code>, <code>pausedBy</code>, <code>reason</code></td></tr>
+<tr><td><code>toolPolicies</code></td><td>Since 0.11.0: one agent key's rule for one write tool or <code>*</code>: <code>keyId</code>, <code>tool</code>, <code>rule</code> (<code>allow</code>, <code>ask</code>, <code>deny</code>)</td></tr>
+<tr><td><code>apiKeys</code></td><td><code>name</code>, <code>kind</code> (<code>cli</code> or <code>agent</code>), <code>scope</code> (<code>read</code>, <code>write</code> or <code>full</code>; absent = <code>full</code>), <code>expiresAt</code>, <code>parentKeyId</code> (the key that created it through <code>/api/v1/keys</code>), SHA-256 <code>hash</code> of the key, <code>createdAt</code>, <code>revokedAt</code></td></tr>
+<tr><td><code>pairingCodes</code></td><td>One-time pairing codes: public <code>selector</code>, SHA-256 <code>secretHash</code> of the secret part, <code>createdBy</code>, <code>expiresAt</code> (10 minutes), <code>usedAt</code>, <code>failedAttempts</code></td></tr>
+<tr><td><code>devices</code></td><td>Paired phones: <code>name</code>, token <code>selector</code>, SHA-256 <code>secretHash</code>, <code>pairedBy</code>, <code>createdAt</code>, <code>lastUsedAt</code>, <code>revokedAt</code></td></tr>
+<tr><td><code>authLimits</code></td><td>Fixed-window counters, one row per bucket: failed <code>POST /auth/pair</code> attempts, and the OAuth limits (<code>oauth:*</code>: requests per client, registrations, wrong codes typed on the phone)</td></tr>
+<tr><td><code>callLimits</code></td><td>MCP calls per API key or agent connection in the current one-minute window: <code>keyId</code> or <code>connectionId</code>, <code>kind</code> (<code>read</code> or <code>write</code>), <code>windowStart</code>, <code>calls</code></td></tr>
+<tr><td><code>oauthClients</code></td><td>Clients from Dynamic Client Registration: <code>clientId</code> (<code>helmc_…</code>), <code>name</code>, <code>redirectUris</code>, <code>createdAt</code>, <code>lastUsedAt</code> (clients with a metadata document URL are not stored)</td></tr>
+<tr><td><code>oauthRequests</code></td><td>Authorization requests waiting for the phone: browser handle <code>selector</code> + <code>secretHash</code>, SHA-256 of the code shown (<code>userCodeHash</code>), client, <code>redirectUri</code>, <code>state</code>, PKCE <code>codeChallenge</code>, <code>scopes</code>, <code>resource</code>, then the decision (<code>userId</code>, <code>grantedScopes</code>, <code>approvedAt</code>/<code>deniedAt</code>) and the single-use authorization code (<code>codeHash</code>, <code>codeExpiresAt</code>, <code>codeUsedAt</code>)</td></tr>
+<tr><td><code>oauthGrants</code></td><td>Agent connections: <code>userId</code>, client (<code>clientId</code>, <code>clientType</code>, <code>clientName</code>), <code>redirectUri</code>, <code>scopes</code>, <code>resource</code>, <code>createdAt</code>, <code>lastUsedAt</code>, <code>refreshExpiresAt</code>, <code>revokedAt</code></td></tr>
+<tr><td><code>oauthTokens</code></td><td>Access and refresh tokens of a connection: <code>kind</code>, <code>selector</code>, SHA-256 <code>secretHash</code>, <code>expiresAt</code>, <code>rotatedAt</code> (refresh), <code>scopes</code> (after a narrowing refresh)</td></tr>
+<tr><td><code>calendarFeeds</code></td><td>The read-only calendar feed, at most one per user: <code>selector</code> and <code>secret</code> of the address <code>/cal/&lt;selector&gt;&lt;secret&gt;.ics</code> (the secret is kept so the address can be shown again, <a href="calendar.html#threat-model">calendar.md</a>), <code>createdAt</code></td></tr>
+<tr><td><code>webhooks</code></td><td>HTTPS endpoints for task events (<a href="webhooks.html">webhooks.md</a>): <code>url</code>, <code>events</code>, <code>description</code>, signing <code>secret</code> (<code>whsec_…</code>, kept to sign), <code>failureStreak</code>, <code>lastSuccessAt</code>, <code>lastFailureAt</code>, <code>disabledAt</code>, <code>disabledReason</code></td></tr>
+<tr><td><code>webhookDeliveries</code></td><td>The delivery log: one message to one webhook, <code>eventId</code> (the <code>webhook-id</code>, the same on every retry), <code>type</code>, the exact <code>payload</code>, <code>status</code> (<code>pending</code>, <code>succeeded</code>, <code>failed</code>), <code>attempts</code> (time, duration, HTTP status or error), <code>nextAttemptAt</code>, <code>finishedAt</code>; 30 days</td></tr>
+<tr><td><code>settings</code></td><td><code>timezone</code> (default <code>Europe/London</code>), <code>summaryTime</code> (default <code>05:00</code>), <code>defaultReminderMinutes</code> (default <code>[0]</code>)</td></tr>
+</tbody>
+</table></div>
+<h2 id="rules">Rules</h2>
+<ul>
+<li><strong>Today and overdue.</strong> &quot;Today&quot; is the calendar date in the user's time zone. A task is
+overdue when it is not done, not archived, not in the trash and its <code>dueDate</code> is before
+today. This is decided in one place, <code>convex/lib/dates.ts</code> (<code>localDate</code>, <code>isOverdue</code>).
+Views accept an optional <code>at</code> (Unix ms) so clients can re-evaluate after midnight;
+Convex caches queries, so a subscribed client should pass the current time.</li>
+<li><strong>One now task.</strong> <code>setNow</code> clears <code>isNow</code> on every other task of the user and moves the
+chosen task to <code>doing</code>. Leaving <code>doing</code>, completing, archiving or deleting clears it.</li>
+<li><strong>Repeat.</strong> Completing a repeating task creates the next occurrence: the first date of the
+series after the due date that is also after today (a late completion does not create an
+overdue task), or, for a rule counted from completion, the first date after today. A series
+ends with <code>until</code> or <code>count</code>. The logic is one pure module, <code>convex/lib/repeat.ts</code>: <code>advance</code>
+for completing and <code>occurrences</code> for listing a series ahead; <code>convex/lib/rrule.ts</code> maps rules
+to and from RFC 5545 RRULE (<a href="mcp.html#repeat-rules">mcp.md</a>). The Android app has the same
+logic in <code>domain/Recurrence.kt</code>.</li>
+<li><strong>The owner's controls.</strong> Every change an agent makes (an <code>agent</code> key or an agent connection)
+first passes <code>gateAgentWrite</code> (<code>convex/lib/agentControls.ts</code>) inside the same mutation:
+paused agents are refused, a key's tool policy <code>deny</code> is refused, and <code>ask</code> needs an approval
+request decided &quot;allow&quot;, used up by that change. The app and <code>cli</code> keys are never refused.
+Proposals (<code>proposedAt</code>) are left out of Today, the board, <code>list_all</code>, <code>ready</code> and the
+calendar until accepted (<a href="agent-work.html">agent-work.md</a>).</li>
+<li><strong>Trash.</strong> <code>softDelete</code> sets <code>deletedAt</code>; <code>restore</code> clears it. A daily cron
+(<code>convex/crons.ts</code>, 03:30 UTC) permanently removes tasks deleted more than 30 days ago,
+with their history.</li>
+<li><strong>Task numbers.</strong> Adding a task (and a repeat's next occurrence) takes the next number from
+the user's <code>taskCounters</code> row. Numbers only grow, so a purged task's number is never given
+again. Every operation that takes a <code>taskId</code> also accepts <code>&quot;#&lt;number&gt;&quot;</code>.</li>
+<li><strong>History.</strong> Every change writes a <code>taskEvents</code> row with the actor and only the changed
+fields. History is shown as <code>app</code>, <code>cli</code> or <code>agent: &lt;key or client name&gt;</code>. Settings, API key and device changes are recorded without a task id.</li>
+<li><strong>Idempotency.</strong> Every mutation accepts an optional <code>clientId</code>. Adding a task with a
+<code>clientId</code> that already exists returns the existing task; any other operation whose
+<code>clientId</code> is already in the history is not applied again. The Android outbox relies on this.</li>
+</ul>
+<h2 id="authentication">Authentication</h2>
+<ul>
+<li><strong>Agent and CLI:</strong> personal API keys (<code>dayhand_</code> + 32 random bytes, base64url), each with a
+name and a kind (<code>cli</code> or <code>agent</code>, default <code>agent</code>) that becomes the actor of its changes. Keys are generated in an
+action (mutations have a deterministic random source), shown once, and stored as SHA-256 only.
+A missing, wrong or revoked key gets HTTP 401. Each key may make 120 reads and 60 changes a
+minute over MCP (<code>convex/callLimits.ts</code>); a call over the limit is refused before it runs.</li>
+<li><strong>Agent connections (OAuth 2.1):</strong> the Claude apps and other MCP clients get an access token
+(<code>helmat_…</code>, one hour) and a rotating refresh token (<code>helmrt_…</code>, 60 days) through an
+authorization code with PKCE, after the owner approves the request on the paired phone by the
+code its sign-in page shows. Tokens are selector + secret, stored as SHA-256, bound to
+<code>&lt;issuer&gt;/mcp</code>, and stop at once when the connection is revoked. Protocol and limits:
+<a href="oauth.html">oauth.md</a>; threats: <a href="oauth-threat-model.html">oauth-threat-model.md</a>.</li>
+<li><strong>App:</strong> a custom ES256 JWT. The deployment trusts the public key given in <code>DAYHAND_JWKS</code>
+(a JWKS <code>data:</code> URI) for issuer <code>DAYHAND_JWT_ISSUER</code>, audience <code>helm</code>; <code>userId</code> is the token
+identifier <code>&lt;issuer&gt;|&lt;subject&gt;</code>. The deployment itself signs these tokens with
+<code>DAYHAND_JWT_PRIVATE_JWK</code>, an environment variable read only by <code>POST /auth/token</code>
+(<code>convex/lib/appToken.ts</code>); it checks that the key matches <code>DAYHAND_JWKS</code> and answers <code>503</code>
+when it does not.</li>
+<li><strong>Pairing:</strong> <code>dayhand pair</code> (or the admin) creates a one-time code, valid 10 minutes. The phone
+exchanges it at <code>POST /auth/pair</code> for a long-lived, revocable device token, and the device
+token at <code>POST /auth/token</code> for an app JWT valid one hour. Codes and device tokens are
+selector + secret; only SHA-256 of the secret is stored and compared in constant time.
+Pairing failures are limited per deployment. <code>dayhand devices</code> and <code>dayhand revoke</code> manage
+devices; a revoked device gets no new JWTs. Protocol: <a href="pairing.html">pairing.md</a>; deployment
+and key migration: <a href="deploy.html">deploy.md</a>.</li>
+<li><strong>Tokens by hand:</strong> <code>scripts/jwt.mjs</code> creates a key pair and tokens for tests;
+<code>scripts/app-token.mjs</code> (<code>npm run app-token</code>) signs a long-lived token from a key file for
+scripts and local development. The Android app pairs instead (version 0.2 took such a
+token pasted, and keeps one stored until the phone is paired).</li>
+</ul>
+<h2 id="reminders">Reminders</h2>
+<p>Reminders and the morning summary are computed on the devices, not on the server: the server
+stores only the settings (<code>summaryTime</code>, <code>defaultReminderMinutes</code>) and each task's own
+<code>reminders</code> (which replace the defaults for that task). Each app plans them from its local copy
+of the tasks, in the time zone from these settings, with the same rules: the Android app arms
+AlarmManager (<a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#reminders-and-the-morning-summary">android/README.md</a>), the
+macOS app leaves notifications with the system (<a href="https://github.com/maiarowsky/dayhand/blob/main/macos/README.md#how-it-works">macos/README.md</a>)
+and the Linux app rings them while it runs (<a href="linux.html#notifications">linux.md</a>).</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="calendar.html" rel="prev"><span>Previous</span> Calendar feed</a><a href="security.html" rel="next"><span>Next</span> Security and privacy</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/architecture.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

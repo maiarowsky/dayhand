@@ -48,7 +48,7 @@ maintainer's explicit go-ahead.
    package that exists. On a trusted machine, with 2FA: `cd cli && npm ci --ignore-scripts &&
    npm test && npm publish --access public` (no provenance for this one).
 6. **Add the trusted publisher on npmjs.com:** package → Settings → *Trusted publishing* →
-   GitHub Actions: organization or user `<owner>`, repository `helm`, workflow
+   GitHub Actions: organization or user `<owner>`, repository `dayhand`, workflow
    `publish-npm.yml`, environment `npm`. Then, in the same settings, choose *Require two-factor
    authentication and disallow tokens*, so only the workflow can publish.
 7. **Set the repository variables** (Settings → Secrets and variables → Actions → Variables):
@@ -68,7 +68,8 @@ maintainer's explicit go-ahead.
 1. Merge work into `main` with Conventional Commit messages (`feat:` → minor, `fix:` → patch;
    before 1.0.0 a breaking change bumps the minor version).
 2. release-please keeps a PR “chore(main): release dayhand X.Y.Z” up to date. Review its changelog,
-   check that `npm run build && npm run docs` in `cli/` leaves no changes, and merge it.
+   check that regenerating the references and published pages with the
+   [CLI contribution instructions](../CONTRIBUTING.md#the-dayhand-cli) leaves no changes, and merge it.
 3. The tag `dayhand-vX.Y.Z` starts `publish-npm.yml` (or start it by hand on the tag), and the
    `npm` environment waits for approval. The job checks the package, runs the tests and
    publishes with provenance. Check it: `npm view <name>@X.Y.Z` and the provenance badge on

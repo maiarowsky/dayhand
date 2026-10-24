@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ and troubleshooting · Dayhand docs</title>
+  <meta name="description" content="No. You run the server yourself, on your computer or on your own Convex account, or use the apps with no server at all. Dayhand is a personal open source…">
+  <link rel="canonical" href="https://dayhand.dev/docs/faq.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html" aria-current="page">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="faq-and-troubleshooting">FAQ and troubleshooting</h1>
+<h2 id="questions">Questions</h2>
+<h3 id="is-there-a-hosted-dayhand-or-an-account-to-create">Is there a hosted Dayhand, or an account to create?</h3>
+<p>No. You run the server yourself, on your computer or on your own Convex account, or use the apps with
+no server at all. Dayhand is a personal open source project with no hosted service.</p>
+<h3 id="what-does-it-cost">What does it cost?</h3>
+<p>Nothing: Dayhand is free and open source under the Apache License 2.0. A server on your computer costs nothing, and so does Convex's Free plan,
+whose limits are far above one person's plan (<a href="deploy.html#what-it-costs">what it costs</a>).</p>
+<h3 id="can-several-people-share-one-plan">Can several people share one plan?</h3>
+<p>Not as separate people. A Dayhand server has one owner, and the phone, the computers and every agent
+work on that owner's plan. Agents and integrations get keys of their own, so their changes are told
+apart. Another person runs a server of their own.</p>
+<h3 id="which-agents-can-use-it">Which agents can use it?</h3>
+<p>Any MCP client that can send an <code>Authorization</code> header (Claude Code is one command), the Claude apps as a
+custom connector with OAuth, and any agent that runs shell commands through <code>dayhand</code>. See
+<a href="agents.html">Agents and you</a>.</p>
+<h3 id="can-an-agent-do-something-i-did-not-allow">Can an agent do something I did not allow?</h3>
+<p>Inside Dayhand, no: a policy per agent key allows, asks for or denies each tool, risky steps wait for
+your answer when the agent asks, and one switch pauses every agent. Dayhand cannot stop what an agent does
+outside Dayhand, such as running commands on your computer.</p>
+<h3 id="does-it-work-offline">Does it work offline?</h3>
+<p>Yes. The Android, macOS and Linux apps keep the plan on the device, and reminders are worked out there.
+Changes wait in an outbox and go to the server in order when it can be reached. <code>dayhand</code> and <code>dayhand ui</code>
+need the server.</p>
+<h3 id="can-i-see-my-tasks-in-google-calendar-or-apple-calendar">Can I see my tasks in Google Calendar or Apple Calendar?</h3>
+<p>Yes, through a read-only feed that calendar apps subscribe to by address: Settings → Data → Calendar on
+the phone, or <code>dayhand calendar on</code> (<a href="calendar.html">calendar feed</a>). Changes are made in Dayhand.</p>
+<h3 id="can-i-bring-my-tasks-from-another-app-and-take-them-out-again">Can I bring my tasks from another app, and take them out again?</h3>
+<p><code>dayhand import</code> reads Dayhand's own JSON export, iCalendar files (tasks and events) and Todoist's CSV
+export (<a href="api.html#import">import</a>). <code>dayhand export</code> writes the whole plan as Markdown, JSON (with the
+history) or iCalendar, and the phone saves a backup file. Backlog.md import and export are planned.</p>
+<h3 id="is-there-an-app-for-iphone-or-windows">Is there an app for iPhone or Windows?</h3>
+<p>Not yet. The iPhone and iPad app is in development, with nothing to install yet. On Windows, <code>dayhand</code> works with a server on your own Convex
+account (<code>dayhand server deploy</code>); there is no desktop app.</p>
+<h3 id="which-languages-does-dayhand-speak">Which languages does Dayhand speak?</h3>
+<p>The Android, macOS and Linux apps and <code>dayhand ui</code> speak English, Polish, German, Spanish, French,
+Brazilian Portuguese, Japanese and Simplified Chinese. Date phrases (<code>fri 2pm</code>) are English everywhere,
+and so are the other <code>dayhand</code> commands, <code>--json</code> and the MCP tools.</p>
+<h3 id="why-do-some-names-still-say-helm">Why do some names still say helm?</h3>
+<p>Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0. The old <code>hlm</code> command and <code>HELM_*</code> names
+still work with a warning, and a few stored names stay as they were (<a href="rename.html">renamed from Helm</a>).
+The repository moved to <code>maiarowsky/dayhand</code>; links to <code>maiarowsky/helm</code> redirect.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="dayhand-command-not-found"><code>dayhand: command not found</code></h3>
+<p><code>npm link</code> puts the command in npm's global folder. Check that <code>npm prefix -g</code> followed by <code>/bin</code> is on
+your PATH, or run <code>node cli/dist/bin/dayhand.js</code> from the checkout. Where <code>npm link</code> needs administrator
+rights, use that path instead of <code>sudo</code>.</p>
+<h3 id="dayhand-says-there-is-no-key-exit-3"><code>dayhand</code> says there is no key (exit 3)</h3>
+<p><code>dayhand whoami</code> shows which server, profile and key source it uses. <code>dayhand server start</code> and
+<code>dayhand server deploy</code> sign in by themselves; for a server that already runs, run
+<code>dayhand login --url &lt;the server's address&gt;</code> with a key of kind <code>cli</code>. A key in <code>DAYHAND_API_KEY</code> wins over
+the stored one, so an old value there can hide a good login. On Linux without a keyring (a server, a
+minimal desktop), <code>dayhand login --store file</code> keeps the key in a file only you can read
+(<a href="cli.html#topic-login">login</a>).</p>
+<h3 id="dayhand-version-says-the-server-is-not-compatible"><code>dayhand version</code> says the server is not compatible</h3>
+<p>The CLI needs a server with the same major version that is not older than the one it was built for. Update
+the server: <code>git pull</code>, then <code>dayhand server deploy</code> or <code>dayhand server start</code> again (<a href="deploy.html#updating">updating</a>).</p>
+<h3 id="dayhand-server-start-does-not-start"><code>dayhand server start</code> does not start</h3>
+<ul>
+<li>It runs on macOS and Linux (x64 or arm64), not on Windows: use <code>dayhand server deploy</code> there.</li>
+<li>When ports 3210 or 3211 are taken, choose others with <code>--port</code> and <code>--site-port</code>.</li>
+<li><code>dayhand server start --dry-run</code> lists every step without changing anything. Run it from inside the
+checkout, or pass <code>--backend &lt;path to backend/&gt;</code>.</li>
+</ul>
+<h3 id="the-phone-cannot-connect">The phone cannot connect</h3>
+<ul>
+<li><strong>The server is on your computer.</strong> It listens on <code>127.0.0.1</code>, which the phone cannot reach, and release
+builds of the app need HTTPS. Use <code>tailscale serve</code> and <code>dayhand server start --public-url …</code>
+(<a href="deploy.html#phone-and-computer-tailscale">Phone and computer</a>), or a server on your Convex account. To
+check the address from the phone, open <code>https://&lt;machine&gt;.&lt;tailnet&gt;.ts.net/api/v1/openapi.json</code> in its
+browser: it should show a JSON document.</li>
+<li><strong>The code is refused.</strong> A code works once, for 10 minutes; make a new one with <code>dayhand pair</code>. After 10
+wrong codes in 10 minutes the server stops checking codes for the rest of that window; wait, or clear it
+from <code>backend/</code> with <code>npx convex run devices:resetPairLimit</code> and the deployment's <code>--env-file</code>.</li>
+<li><strong>&quot;Replace the plan on this phone?&quot;</strong> The code is for another server than the one whose plan is on the
+phone. <strong>Cancel</strong> keeps everything; save a backup file first if you want to keep those tasks.</li>
+<li><strong>&quot;The server signed this phone out.&quot;</strong> The device was revoked. Make a new code with <code>dayhand pair</code>; the
+tasks and waiting changes are still on the phone.</li>
+</ul>
+<h3 id="reminders-do-not-ring-on-android">Reminders do not ring on Android</h3>
+<ul>
+<li>Settings → Notifications says whether notifications and exact alarms are allowed, with a button for each.
+Without exact alarms, reminders can come a few minutes late.</li>
+<li>Overdue tasks never ring, and a reminder more than 15 minutes late (the phone was off or saving battery)
+is dropped.</li>
+<li>Minutes before the due time need a task with a time; use a time of day for tasks without one.</li>
+<li>After a force stop, Android drops the alarms until you open Dayhand again.</li>
+</ul>
+<h3 id="the-days-are-wrong">The days are wrong</h3>
+<p>&quot;Today&quot;, reminders and date phrases follow the time zone in the server's settings, <code>Europe/London</code> until you
+change it: <code>dayhand settings</code> shows it and <code>dayhand settings set timezone=Europe/Warsaw</code> changes it. On the
+phone, Settings → Server offers <strong>Use this phone's time zone</strong> when the two differ.</p>
+<h3 id="a-change-was-refused">A change was refused</h3>
+<div class="table-wrap" tabindex="0" role="region" aria-label="A change was refused"><table>
+<thead><tr><th scope="col">Message or exit code</th><th scope="col">Meaning</th><th scope="col">What to do</th></tr></thead>
+<tbody>
+<tr><td>exit 5, <code>rate_limited</code></td><td>the key made more than 120 reads or 60 changes this minute</td><td>wait as long as the message says, then run it again</td></tr>
+<tr><td>exit 5, network or server error</td><td>the change may or may not have been applied</td><td>run the same command with the <code>--client-id</code> from the error; it is never applied twice</td></tr>
+<tr><td>exit 6, <code>conflict</code></td><td>another agent holds the task's claim</td><td>pick another task, or wait until the time named</td></tr>
+<tr><td>exit 6, <code>precondition_failed</code></td><td>an agent completed a task whose criteria are not all met, or without a summary</td><td>tick the criteria (<code>dayhand criteria</code>) and add <code>--summary</code></td></tr>
+<tr><td>exit 7, <code>agents_paused</code></td><td>you paused every agent</td><td><code>dayhand agents resume</code>, from a <code>cli</code> key or the phone</td></tr>
+<tr><td>exit 7, <code>forbidden</code></td><td>only the owner may do this, or a policy denies the tool to this key</td><td>use a <code>cli</code> key, or change the policy</td></tr>
+<tr><td>exit 7, <code>approval_required</code></td><td>a policy asks first</td><td>decide the request on the phone, then rerun with <code>--approval &lt;id&gt;</code></td></tr>
+</tbody>
+</table></div>
+<h3 id="the-claude-app-shows-unknown-client-when-connecting">The Claude app shows &quot;Unknown client&quot; when connecting</h3>
+<p>Remove the connector and add it again choosing <strong>Register automatically</strong> for the OAuth client. The steps
+and what else to check: <a href="oauth.html#connecting-the-claude-app-manual-procedure">Claude apps</a>.</p>
+<h3 id="google-calendar-does-not-show-a-change">Google Calendar does not show a change</h3>
+<p>Google refreshes subscribed calendars on its own schedule, often every several hours, and ignores the
+feed's hint to look again every hour; it also ignores the reminders of a subscribed calendar. Apple
+Calendar lets you choose how often it refreshes (<a href="calendar.html">calendar feed</a>).</p>
+<h3 id="a-webhook-stopped-receiving-messages">A webhook stopped receiving messages</h3>
+<p>After 5 deliveries in a row that failed every attempt, a webhook is turned off. <code>dayhand webhook list</code>
+says so and why, and <code>dayhand webhook deliveries &lt;id&gt;</code> shows each attempt. Fix the receiver, check it with
+<code>dayhand webhook test &lt;id&gt;</code>, then <code>dayhand webhook enable &lt;id&gt;</code> (<a href="webhooks.html">webhooks</a>).</p>
+<h3 id="macos-asks-whether-dayhand-may-use-its-keychain-item">macOS asks whether Dayhand may use its Keychain item</h3>
+<p>Every build you make yourself is a new, unsigned app to macOS, so after each rebuild it may ask once. Allow
+it; the item holds the Mac's sign-in to your server.</p>
+<h3 id="something-else">Something else</h3>
+<p>Run the failing command with <code>--json</code> to see the error code, check <code>dayhand version</code> and <code>dayhand whoami</code>,
+and look at the server's logs (<code>npx convex logs</code> in <code>backend/</code> with the deployment's <code>--env-file</code>). A bug
+you can reproduce is welcome as an <a href="https://github.com/maiarowsky/dayhand/issues">issue</a>; a security problem
+goes privately (<a href="security.html#reporting-a-problem">security</a>).</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="oauth-threat-model.html" rel="prev"><span>Previous</span> OAuth threat model</a><a href="contributing.html" rel="next"><span>Next</span> Contributing</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/faq.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>
