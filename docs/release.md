@@ -106,3 +106,10 @@ mkdir -p /tmp/dayhand-try && cd /tmp/dayhand-try
 npm init -y >/dev/null && npm install --ignore-scripts <path to>/dayhand-X.Y.Z.tgz
 npx dayhand --version && npx dayhand help && npx dayhand completion bash | head
 ```
+
+## After the first release
+
+- [ ] Add the release and npm badges to the README row (and to [badges.md](badges.md)):
+  `[![Release](https://img.shields.io/github/v/release/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/releases)`
+  and `[![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand)`
+  (use the chosen npm name if it is not `dayhand`).
