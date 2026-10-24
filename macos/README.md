@@ -124,8 +124,14 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 169 tests, about five seconds; the live one is skipped
+swift test                        # 175 tests, about five seconds; the live one is skipped
+scripts/check-sync-loop.sh        # the release app with its sync loop turning, 50 seconds
 ```
+
+`scripts/check-sync-loop.sh` builds `dist/Dayhand.app` (or takes `DAYHAND_APP`) and runs it signed in to a local
+server that never answers, with a temporary database and a made-up sign-in that never reaches your Keychain; it
+fails when the app ends before the time is up or the sync loop did not turn. Release builds once aborted at the end
+of the loop's wait, which neither `swift test` nor a debug build shows.
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
   (`TodaySectionsTest`), repeat (`RecurrenceTest` and the backend's `repeat.test.ts`, with the RFC 5545 dates of
@@ -135,7 +141,8 @@ swift test                        # 169 tests, about five seconds; the live one 
 - **The outbox and sync against a fake server** (`FakeServer.swift`, in memory): offline changes reach the server
   in order, a change whose answer was lost is applied once, a waiting change keeps its field against a newer
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
-  refreshed and the call repeated.
+  refreshed and the call repeated. The loop's wait ends at its timeout or at a change, many times over (`SignalTests`;
+  also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
