@@ -98,7 +98,7 @@ class AgentsViewModel(
 
     /**
      * Success or a final refusal reloads the list; a failed send keeps the page open for retry. The page stays busy
-     * until the reload has finished, so the next change cannot start while an older answer is still on its way.
+     * until its follow-up refresh has finished, so the next change cannot overtake that refresh.
      */
     private fun change(
         run: suspend (AgentControlApi) -> Change,
@@ -124,7 +124,7 @@ class AgentsViewModel(
         }
     }
 
-    /** Reads the three sections; the answer is dropped when a newer refresh began meanwhile, as it may be older. */
+    /** Reads the three sections; drops the answer if a newer refresh or pause change invalidated it. */
     private suspend fun refresh() {
         val mine = ++epoch
         val remote = api()

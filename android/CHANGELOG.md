@@ -36,9 +36,8 @@ called Helm until 0.9.0.
 
 ### Fixed
 
-- Settings → Agents no longer shows an older rule or pause state when a refresh started earlier
-  finishes later. `AgentsRefreshRaceTest` holds back the answers of the server and checks the rule
-  and the switch for each order they arrive in.
+- Fixed stale rule and pause states in Settings → Agents after overlapping refreshes. See
+  [Screens](README.md#screens) for the controls and [Tests](README.md#tests) for regression coverage.
 
 ## 0.10.1 (2026-10-24)
 
