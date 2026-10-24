@@ -18,6 +18,8 @@ namespace Formatting {
 QString day(const QString &date, const QString &today);
 /// "Sat 24 Oct", with no "Today": the date under the Today title.
 QString dayName(const QString &date);
+/// The server's 30-day trash retention, as "Permanently deleted on 23 Nov" in the settings' time zone.
+QString trashExpiry(qint64 deletedAt, const QString &today, const QString &timezone);
 /// "Today, 14:00", "Fri 23 Oct", or nothing for a task without a day.
 std::optional<QString> due(const TaskItem &task, const QString &today);
 QString when(const When &when, const QString &today);

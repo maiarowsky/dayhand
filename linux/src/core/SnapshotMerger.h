@@ -61,5 +61,9 @@ constexpr qint64 unseenGraceMs = 2 * 60 * 1000;
 MergePlan merge(const QList<TaskItem> &local, const QList<OutboxOp> &pending, const QList<RemoteTask> &remote,
                 qint64 nowMs);
 
+/// Settings have no version: take the snapshot except for fields still waiting in app:updateSettings.
+ReminderSettings mergeSettings(const ReminderSettings &local, const QList<OutboxOp> &pending,
+                               const ReminderSettings &remote);
+
 } // namespace SnapshotMerger
 } // namespace dayhand

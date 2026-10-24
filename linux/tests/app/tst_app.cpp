@@ -97,6 +97,8 @@ void click(QQuickWindow *window, QQuickItem *target)
 /// Scrolls a detail control into the viewport before real mouse/keyboard interaction.
 void reveal(QQuickWindow *window, QQuickItem *target)
 {
+    // Archive/Restore changes visibility in a Flow; measure only after its next layout frame.
+    QTest::qWait(20);
     QQuickItem *scroll = item(window, u"detailsScroll"_s);
     if (!scroll)
         return;
@@ -147,6 +149,7 @@ private slots:
     void quickAddReadsTheDatePhrase();
     void sectionsFollowTheDay();
     void reminderRingsOnceWhenDue();
+    void reminderSettingsReplanTheRunningClock();
     void reminderTooLateIsDropped();
     void paletteFileSetsColours();
     void secondCopyHandsItsRequestOver();
@@ -267,6 +270,45 @@ void TestApp::reminderRingsOnceWhenDue()
     ReminderClock restarted(model, [&rung](const PlannedNotification &n) { rung.append(n); });
     restarted.check();
     QCOMPARE(rung.size(), 1);
+}
+
+void TestApp::reminderSettingsReplanTheRunningClock()
+{
+    QTemporaryDir dir;
+    auto now = std::make_shared<qint64>(utc(u"2026-10-24T08:49"_s));
+    AppModel model(environment(now, dir.path()));
+    model.quickAdd(u"Synthetic standup 9am"_s);
+    QList<PlannedNotification> rung;
+    ReminderClock clock(model, [&rung](const PlannedNotification &n) { rung.append(n); });
+    clock.check(); // The old plan has nothing due within the next minute.
+    QSignalSpy settings(&model, &AppModel::reminderSettingsChanged);
+
+    // Changing a default must replace the existing timer, not wait for its minute-long poll.
+    *now = utc(u"2026-10-24T08:50"_s) - 40;
+    model.setDefaultReminder(10, true);
+    QCOMPARE(settings.count(), 1);
+    QCOMPARE(model.settings().reminderMinutes, (QList<int>{0, 10}));
+    *now += 40;
+    QTRY_COMPARE_WITH_TIMEOUT(rung.size(), 1, 2'000);
+    QCOMPARE(rung.first().kind, PlannedNotification::Kind::Reminder);
+    QCOMPARE(rung.first().at, *now);
+    QCOMPARE(rung.first().taskLocalId, idOf(model, u"Synthetic standup"_s));
+
+    model.setDefaultReminder(0, false);
+    *now = utc(u"2026-10-24T08:51"_s) - 40;
+    model.setSummaryTime(u"08:51"_s);
+    QCOMPARE(model.summaryTime(), u"08:51"_s);
+    *now += 40;
+    QTRY_COMPARE_WITH_TIMEOUT(rung.size(), 2, 2'000);
+    QCOMPARE(rung.last().kind, PlannedNotification::Kind::Summary);
+    QCOMPARE(rung.last().at, *now);
+
+    // Empty defaults cancel the old at-time reminder too; already handled rings never repeat.
+    model.setDefaultReminder(10, false);
+    QVERIFY(model.settings().reminderMinutes.isEmpty());
+    *now = utc(u"2026-10-24T09:00"_s);
+    clock.check();
+    QCOMPARE(rung.size(), 2);
 }
 
 void TestApp::reminderTooLateIsDropped()

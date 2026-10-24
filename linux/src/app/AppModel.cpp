@@ -15,6 +15,8 @@
 #include <QUuid>
 #include <QtConcurrent>
 
+#include <algorithm>
+
 using namespace Qt::StringLiterals;
 
 namespace dayhand {
@@ -122,6 +124,32 @@ QVariantList AppModel::rows(const QList<TaskItem> &tasks, bool overdue) const
     return out;
 }
 
+QVariantList AppModel::trash() const
+{
+    QList<TaskItem> deleted;
+    for (const TaskItem &task : allTasks)
+        if (task.inTrash())
+            deleted.append(task);
+    std::sort(deleted.begin(), deleted.end(), [](const TaskItem &a, const TaskItem &b) {
+        return a.deletedAt != b.deletedAt ? a.deletedAt > b.deletedAt : a.localId < b.localId;
+    });
+    QVariantList out;
+    for (const TaskItem &task : deleted) {
+        QVariantMap entry = row(task, false);
+        entry.insert(u"expiry"_s, Formatting::trashExpiry(*task.deletedAt, sections.date, reminderSettings.timezone));
+        out.append(entry);
+    }
+    return out;
+}
+
+QVariantList AppModel::defaultReminderMinutes() const
+{
+    QVariantList out;
+    for (int minutes : reminderSettings.reminderMinutes)
+        out.append(minutes);
+    return out;
+}
+
 QVariantMap AppModel::selectedTask() const
 {
     for (const TaskItem &task : allTasks) {
@@ -182,11 +210,13 @@ void AppModel::reload()
 {
     try {
         const QVariantMap previousDetail = selectedTask();
+        const QVariantList previousTrash = trash();
         QList<TaskItem> tasks = repository->allTasks();
         const ReminderSettings settings = repository->settings();
         const qint64 waiting = repository->pendingCount();
         const TodaySections next = dayhand::todaySections(tasks, clock(), settings.timezone);
-        const bool tasksMoved = tasks != allTasks || settings != reminderSettings;
+        const bool settingsMoved = settings != reminderSettings;
+        const bool tasksMoved = tasks != allTasks || settingsMoved;
         allTasks = std::move(tasks);
         reminderSettings = settings;
         if (next != sections) {
@@ -197,8 +227,12 @@ void AppModel::reload()
             pending = waiting;
             emit statusChanged();
         }
+        if (settingsMoved)
+            emit reminderSettingsChanged();
         if (tasksMoved)
             emit tasksChanged();
+        if (previousTrash != trash())
+            emit trashChanged();
         if (previousDetail != selectedTask())
             emit selectedTaskChanged();
     } catch (const StoreError &error) {
@@ -495,6 +529,26 @@ void AppModel::setLanguage(const QString &code)
     emit sectionsChanged();
     emit statusChanged();
     emit selectedTaskChanged();
+    emit trashChanged();
+}
+
+void AppModel::setSummaryTime(const QString &time)
+{
+    run([&](TaskRepository &repo) { repo.setSummaryTime(time); });
+}
+
+void AppModel::setDefaultReminder(int minutes, bool enabled)
+{
+    if (minutes < 0 || minutes > 7 * 24 * 60)
+        return;
+    run([&](TaskRepository &repo) {
+        QList<int> values = repo.settings().reminderMinutes;
+        if (enabled && !values.contains(minutes))
+            values.append(minutes);
+        else if (!enabled)
+            values.removeAll(minutes);
+        repo.setReminderMinutes(values);
+    });
 }
 
 void AppModel::syncNow()

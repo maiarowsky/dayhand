@@ -178,6 +178,15 @@
         <translation>%1, %2 de %3</translation>
     </message>
     <message>
+        <source>%1 %2</source>
+        <comment>day of the month, month: 23 Nov</comment>
+        <translation>%1 de %2</translation>
+    </message>
+    <message>
+        <source>Permanently deleted on %1</source>
+        <translation>Exclusão definitiva em %1</translation>
+    </message>
+    <message>
         <source>(%1 does not exist that day)</source>
         <comment>a clock time skipped by a daylight saving change</comment>
         <translation>(%1 não existe nesse dia)</translation>
@@ -314,8 +323,16 @@
 <context>
     <name>Main</name>
     <message>
+        <source>Back</source>
+        <translation>Voltar</translation>
+    </message>
+    <message>
         <source>Today</source>
         <translation>Hoje</translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation>Lixeira</translation>
     </message>
     <message>
         <source>Menu</source>
@@ -432,6 +449,62 @@
     <message>
         <source>Quick add reads dates in English in every language, as dayhand does: tomorrow 9am, fri, 23 oct.</source>
         <translation>A adição rápida lê datas em inglês em todos os idiomas, como o dayhand: tomorrow 9am, fri, 23 oct.</translation>
+    </message>
+    <message>
+        <source>Morning summary:</source>
+        <translation>Resumo da manhã:</translation>
+    </message>
+    <message>
+        <source>Hour</source>
+        <translation>Hora</translation>
+    </message>
+    <message>
+        <source>Minute</source>
+        <translation>Minuto</translation>
+    </message>
+    <message>
+        <source>Times use %1.</source>
+        <translation>Fuso horário: %1.</translation>
+    </message>
+    <message>
+        <source>Default reminders</source>
+        <translation>Lembretes padrão</translation>
+    </message>
+    <message>
+        <source>For timed tasks without their own reminders.</source>
+        <translation>Para tarefas com horário sem lembretes próprios.</translation>
+    </message>
+    <message>
+        <source>At the time</source>
+        <translation>No horário</translation>
+    </message>
+    <message>
+        <source>5 min</source>
+        <translation>5 min</translation>
+    </message>
+    <message>
+        <source>10 min</source>
+        <translation>10 min</translation>
+    </message>
+    <message>
+        <source>15 min</source>
+        <translation>15 min</translation>
+    </message>
+    <message>
+        <source>30 min</source>
+        <translation>30 min</translation>
+    </message>
+    <message>
+        <source>1 h</source>
+        <translation>1 h</translation>
+    </message>
+    <message>
+        <source>2 h</source>
+        <translation>2 h</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1 dia</translation>
     </message>
 </context>
 <context>
@@ -691,6 +764,21 @@
     <message>
         <source>Done (%1)</source>
         <translation>Feitas (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>TrashList</name>
+    <message>
+        <source>Trash is empty.</source>
+        <translation>A lixeira está vazia.</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Restaurar</translation>
+    </message>
+    <message>
+        <source>Restore %1</source>
+        <translation>Restaurar %1</translation>
     </message>
 </context>
 <context>

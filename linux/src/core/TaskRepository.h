@@ -78,8 +78,12 @@ public:
     /// No task is "now" any more.
     void clearNow();
 
+    /// Saves settings locally and queues only the changed field, atomically, without a task id.
+    void setSummaryTime(const QString &time);
+    void setReminderMinutes(const QList<int> &minutes);
+
     // Server snapshots
-    /// Writes a server snapshot into the database (see `SnapshotMerger`) and keeps its settings.
+    /// Writes a server snapshot into the database, keeping task and settings fields with pending changes.
     void apply(const Snapshot &snapshot);
     /// Forgets every task and waiting change (pairing with another account).
     void eraseAll() { db.eraseAll(); }
@@ -97,6 +101,7 @@ private:
     using Change = std::function<void(TaskItem &, qint64)>;
 
     void edit(const QString &localId, const QString &mutation, const QJsonObject &args, const Change &change);
+    void updateSettings(const QJsonObject &patch);
     OutboxOp makeOp(const QString &mutation, const std::optional<QString> &taskLocalId, QJsonObject args, qint64 now,
                     const std::optional<QString> &clientId = std::nullopt);
     void changed();

@@ -1,6 +1,10 @@
 // The Android app's SnapshotMergerTest, case for case as the macOS app carries it: last write wins per field.
 #include "SnapshotMerger.h"
+#include "SyncEngine.h"
 #include "TestSupport.h"
+#include "Json.h"
+
+#include <QJsonArray>
 
 #include <QTest>
 
@@ -66,6 +70,91 @@ class MergeTest : public QObject {
     Q_OBJECT
 
 private slots:
+    void settingsWithWaitingChangesSurviveSnapshots_data()
+    {
+        QTest::addColumn<bool>("summary");
+        QTest::addColumn<bool>("minutes");
+        QTest::newRow("summary only") << true << false;
+        QTest::newRow("reminders only") << false << true;
+        QTest::newRow("both fields") << true << true;
+    }
+
+    void settingsWithWaitingChangesSurviveSnapshots()
+    {
+        QFETCH(bool, summary);
+        QFETCH(bool, minutes);
+        auto db = Database::open(u":memory:"_s);
+        TestIds ids;
+        int changes = 0;
+        TaskRepository repo(*db, {[] { return now; }, [&] { return ids.next(); },
+                                  [] { return u"UTC"_s; }, [&] { ++changes; }});
+        if (summary) {
+            repo.setSummaryTime(u"06:00"_s);
+            repo.setSummaryTime(u"06:45"_s); // Several edits keep the latest local choice.
+            repo.setSummaryTime(u"06:45"_s); // An unchanged value adds no mutation.
+        }
+        if (minutes) {
+            repo.setReminderMinutes({15, 0, 15});
+            repo.setReminderMinutes({0, 15});
+        }
+        const int queued = (summary ? 2 : 0) + (minutes ? 1 : 0);
+        QCOMPARE(repo.pendingCount(), queued);
+        QCOMPARE(changes, queued);
+        for (const OutboxOp &op : repo.pendingOps()) {
+            QCOMPARE(op.mutation, u"app:updateSettings"_s);
+            QVERIFY(!op.taskLocalId);
+            const QJsonObject args = json::decode(op.argsJson).toObject();
+            QVERIFY(!args.value(u"clientId").toString().isEmpty());
+            QVERIFY(!args.contains(u"taskId"));
+            QVERIFY(!args.contains(u"timezone"));
+            QCOMPARE(args.size(), 2); // Only the edited field and the idempotency key.
+        }
+
+        class Sender final : public MutationSender {
+        public:
+            bool offline = true;
+            QList<QJsonValue> sent;
+            QStringList mutations;
+            SendResult send(const QString &mutation, const QJsonValue &args) override
+            {
+                mutations.append(mutation);
+                sent.append(args);
+                return offline ? SendResult::failed(u"offline"_s) : SendResult::applied(QJsonObject());
+            }
+        } sender;
+        class Source final : public SnapshotSource {
+        public:
+            Snapshot value{{}, {u"Europe/London"_s, u"07:30"_s, {10}}};
+            Result snapshot() override { return {value, false, {}}; }
+        } source;
+        SyncEngine engine(repo, sender, source, [] { return now; });
+        QCOMPARE(engine.round().kind, SyncStatus::Kind::Offline);
+        const ReminderSettings expected{u"Europe/London"_s, summary ? u"06:45"_s : u"07:30"_s,
+                                        minutes ? QList<int>{0, 15} : QList<int>{10}};
+        QCOMPARE(repo.settings(), expected);
+        QCOMPARE(repo.pendingCount(), queued);
+        QCOMPARE(sender.sent.first(), json::decode(repo.pendingOps().first().argsJson));
+        // A repeated snapshot does not roll either waiting field back.
+        QCOMPARE(engine.round().kind, SyncStatus::Kind::Offline);
+        QCOMPARE(repo.settings(), expected);
+
+        sender.offline = false;
+        source.value.settings = expected;
+        QCOMPARE(engine.round().kind, SyncStatus::Kind::Synced);
+        QCOMPARE(repo.pendingCount(), 0);
+        for (const QString &mutation : sender.mutations)
+            QCOMPARE(mutation, u"app:updateSettings"_s);
+        QCOMPARE(sender.sent.at(0), sender.sent.at(1));
+        QCOMPARE(sender.sent.at(0), sender.sent.at(2)); // Retries keep the clientId.
+        if (minutes)
+            QCOMPARE(sender.sent.last()[u"defaultReminderMinutes"], (QJsonValue(QJsonArray{0, 15})));
+
+        // Once acknowledged, other clients' settings (including an empty list) win again.
+        source.value.settings = {u"Asia/Tokyo"_s, u"08:15"_s, {}};
+        QCOMPARE(engine.round().kind, SyncStatus::Kind::Synced);
+        QCOMPARE(repo.settings(), source.value.settings);
+    }
+
     void aTaskCreatedElsewhereIsInsertedUnderItsServerId()
     {
         const TaskItem t = single(SnapshotMerger::merge({}, {}, {remote(u"s1"_s, 10)}, now));

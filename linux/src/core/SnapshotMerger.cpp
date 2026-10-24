@@ -180,5 +180,27 @@ MergePlan merge(const QList<TaskItem> &local, const QList<OutboxOp> &pending, co
     return plan;
 }
 
+ReminderSettings mergeSettings(const ReminderSettings &local, const QList<OutboxOp> &pending,
+                               const ReminderSettings &remote)
+{
+    ReminderSettings merged = remote;
+    for (const OutboxOp &op : pending) {
+        if (op.mutation != Mutations::updateSettings)
+            continue;
+        const QJsonValue args = json::decode(op.argsJson);
+        // An unreadable pending patch must not let a snapshot undo the local choice.
+        if (!args.isObject())
+            return local;
+        const QJsonObject patch = args.toObject();
+        if (patch.contains(u"timezone"))
+            merged.timezone = local.timezone;
+        if (patch.contains(u"summaryTime"))
+            merged.summaryTime = local.summaryTime;
+        if (patch.contains(u"defaultReminderMinutes"))
+            merged.reminderMinutes = local.reminderMinutes;
+    }
+    return merged;
+}
+
 } // namespace SnapshotMerger
 } // namespace dayhand

@@ -9,6 +9,7 @@ ApplicationWindow {
     required property bool startHidden
     readonly property bool wide: width >= 800
     readonly property bool detailsOpen: app.selectedTask.id !== undefined
+    property bool trashOpen: false
 
     function showMain() {
         window.show()
@@ -51,7 +52,7 @@ ApplicationWindow {
     }
 
     header: ColumnLayout {
-        visible: window.wide || !window.detailsOpen
+        visible: window.trashOpen || window.wide || !window.detailsOpen
         spacing: 0
 
         RowLayout {
@@ -60,16 +61,23 @@ ApplicationWindow {
             Layout.rightMargin: 8
             Layout.topMargin: 10
 
+            ToolButton {
+                visible: window.trashOpen
+                text: qsTr("Back")
+                onClicked: window.trashOpen = false
+            }
+
             ColumnLayout {
                 spacing: 0
                 Label {
                     objectName: "todayTitle"
-                    text: qsTr("Today")
+                    text: window.trashOpen ? qsTr("Trash") : qsTr("Today")
                     font.pixelSize: 22
                     font.bold: true
                     color: sys.windowText
                 }
                 Label {
+                    visible: !window.trashOpen
                     text: app.dateTitle
                     color: sys.placeholderText
                 }
@@ -79,6 +87,7 @@ ApplicationWindow {
 
             ToolButton {
                 id: menuButton
+                objectName: "appMenuButton"
                 text: "⋯"
                 font.pixelSize: 18
                 Accessible.name: qsTr("Menu")
@@ -93,6 +102,15 @@ ApplicationWindow {
                         onTriggered: app.connected ? disconnectDialog.open() : connectDialog.openWith(app.serverUrl, "")
                     }
                     MenuItem {
+                        objectName: "trashMenuItem"
+                        text: qsTr("Trash")
+                        onTriggered: {
+                            app.closeDetails()
+                            window.trashOpen = true
+                        }
+                    }
+                    MenuItem {
+                        objectName: "settingsMenuItem"
                         text: qsTr("Settings…")
                         onTriggered: settingsDialog.open()
                     }
@@ -118,6 +136,7 @@ ApplicationWindow {
         QuickAddField {
             id: inlineQuickAdd
             objectName: "inlineQuickAdd"
+            visible: !window.trashOpen
             Layout.fillWidth: true
             Layout.margins: 12
         }
@@ -136,20 +155,25 @@ ApplicationWindow {
 
         TodayList {
             objectName: "todayList"
-            visible: window.wide || !window.detailsOpen
+            visible: !window.trashOpen && (window.wide || !window.detailsOpen)
             Layout.fillWidth: true
             Layout.fillHeight: true
             onAddClicked: inlineQuickAdd.focusField()
         }
+        TrashList {
+            visible: window.trashOpen
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
         Rectangle {
-            visible: window.wide && window.detailsOpen
+            visible: !window.trashOpen && window.wide && window.detailsOpen
             Layout.fillHeight: true
             implicitWidth: 1
             color: sys.mid
             opacity: 0.4
         }
         TaskDetails {
-            visible: window.detailsOpen
+            visible: !window.trashOpen && window.detailsOpen
             narrow: !window.wide
             Layout.fillWidth: !window.wide
             Layout.preferredWidth: window.wide ? Math.min(480, window.width / 2) : window.width

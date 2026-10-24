@@ -34,6 +34,7 @@ qt_add_qml_module(dayhand_app
         qml/TaskDetails.qml
         qml/TaskRow.qml
         qml/TodayList.qml
+        qml/TrashList.qml
 )
 
 qt_add_resources(dayhand_app "dayhand_icons"

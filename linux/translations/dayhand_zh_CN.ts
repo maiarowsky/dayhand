@@ -176,6 +176,15 @@
         <translation>%3%2日 %1</translation>
     </message>
     <message>
+        <source>%1 %2</source>
+        <comment>day of the month, month: 23 Nov</comment>
+        <translation>%2%1日</translation>
+    </message>
+    <message>
+        <source>Permanently deleted on %1</source>
+        <translation>将于%1永久删除</translation>
+    </message>
+    <message>
         <source>(%1 does not exist that day)</source>
         <comment>a clock time skipped by a daylight saving change</comment>
         <translation>（当天不存在 %1）</translation>
@@ -304,8 +313,16 @@
 <context>
     <name>Main</name>
     <message>
+        <source>Back</source>
+        <translation>返回</translation>
+    </message>
+    <message>
         <source>Today</source>
         <translation>今天</translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation>回收站</translation>
     </message>
     <message>
         <source>Menu</source>
@@ -420,6 +437,62 @@
     <message>
         <source>Quick add reads dates in English in every language, as dayhand does: tomorrow 9am, fri, 23 oct.</source>
         <translation>快速添加在所有语言下都按英文读取日期，与 dayhand 相同：tomorrow 9am, fri, 23 oct。</translation>
+    </message>
+    <message>
+        <source>Morning summary:</source>
+        <translation>早间摘要：</translation>
+    </message>
+    <message>
+        <source>Hour</source>
+        <translation>小时</translation>
+    </message>
+    <message>
+        <source>Minute</source>
+        <translation>分钟</translation>
+    </message>
+    <message>
+        <source>Times use %1.</source>
+        <translation>时区：%1。</translation>
+    </message>
+    <message>
+        <source>Default reminders</source>
+        <translation>默认提醒</translation>
+    </message>
+    <message>
+        <source>For timed tasks without their own reminders.</source>
+        <translation>适用于未设置专属提醒的定时任务。</translation>
+    </message>
+    <message>
+        <source>At the time</source>
+        <translation>准时</translation>
+    </message>
+    <message>
+        <source>5 min</source>
+        <translation>5分钟</translation>
+    </message>
+    <message>
+        <source>10 min</source>
+        <translation>10分钟</translation>
+    </message>
+    <message>
+        <source>15 min</source>
+        <translation>15分钟</translation>
+    </message>
+    <message>
+        <source>30 min</source>
+        <translation>30分钟</translation>
+    </message>
+    <message>
+        <source>1 h</source>
+        <translation>1小时</translation>
+    </message>
+    <message>
+        <source>2 h</source>
+        <translation>2小时</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1天</translation>
     </message>
 </context>
 <context>
@@ -679,6 +752,21 @@
     <message>
         <source>Done (%1)</source>
         <translation>已完成 (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>TrashList</name>
+    <message>
+        <source>Trash is empty.</source>
+        <translation>回收站为空。</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>恢复</translation>
+    </message>
+    <message>
+        <source>Restore %1</source>
+        <translation>恢复%1</translation>
     </message>
 </context>
 <context>

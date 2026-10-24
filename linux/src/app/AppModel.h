@@ -67,6 +67,10 @@ class AppModel final : public QObject {
     Q_PROPERTY(QString language READ language NOTIFY languageChanged)
     Q_PROPERTY(QVariantList languages READ languages NOTIFY languageChanged)
     Q_PROPERTY(QVariantMap selectedTask READ selectedTask NOTIFY selectedTaskChanged)
+    Q_PROPERTY(QVariantList trash READ trash NOTIFY trashChanged)
+    Q_PROPERTY(QString summaryTime READ summaryTime NOTIFY reminderSettingsChanged)
+    Q_PROPERTY(QVariantList defaultReminderMinutes READ defaultReminderMinutes NOTIFY reminderSettingsChanged)
+    Q_PROPERTY(QString reminderTimezone READ reminderTimezone NOTIFY reminderSettingsChanged)
 
 public:
     explicit AppModel(AppEnvironment environment, QObject *parent = nullptr);
@@ -95,6 +99,11 @@ public:
     QVariantList languages() const;
     /// The selected local row, including tasks no longer on Today; empty after closing or a server purge.
     QVariantMap selectedTask() const;
+    /// Newest deletion first; retained locally until the server purges it.
+    QVariantList trash() const;
+    QString summaryTime() const { return reminderSettings.summaryTime; }
+    QVariantList defaultReminderMinutes() const;
+    QString reminderTimezone() const { return reminderSettings.timezone; }
 
     const QList<TaskItem> &tasks() const { return allTasks; }
     const TodaySections &todaySections() const { return sections; }
@@ -140,6 +149,8 @@ public:
     Q_INVOKABLE void dismissAlert();
     /// Switches the language at once and keeps the choice; empty follows the system.
     Q_INVOKABLE void setLanguage(const QString &code);
+    Q_INVOKABLE void setSummaryTime(const QString &time);
+    Q_INVOKABLE void setDefaultReminder(int minutes, bool enabled);
     /// A `dayhand://pair` or `helm://pair` link: opens Connect filled in. False when it is not one.
     Q_INVOKABLE bool openLink(const QString &url);
     /// Reads the database again and recomputes Today (after a sync round, and every 30 seconds for midnight).
@@ -153,6 +164,8 @@ signals:
     void themeChanged();
     void languageChanged();
     void selectedTaskChanged();
+    void trashChanged();
+    void reminderSettingsChanged();
     void connectFinished(const QString &error);
     /// Connect should open, filled in from a pairing link (either may be empty).
     void connectRequested(const QString &serverUrl, const QString &code);

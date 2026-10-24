@@ -13,7 +13,9 @@ is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is i
   **Remove time** shortcuts.
   **Save note** saves the note explicitly; repeat, reminders and links are read-only previews.
   **Archive** and **Move to Trash** keep the selected details open; a trashed task is read-only until **Restore**.
-  The trash list and reminder/repeat/link editors are not part of this version.
+  Per-task reminder/repeat/link editors are not part of this version.
+- **Trash**: **⋯ → Trash** lists deleted tasks, newest deletion first, with the permanent-deletion date (30 days
+  after deletion) and **Restore**. **Back** returns to Today; the server's next snapshot removes purged tasks.
 - **Quick add** at the top of Today and as a small window of its own for a keyboard binding
   (`dayhand-qt --quick-add`). A date phrase at the end of the line sets the day and time, with the grammar of
   `dayhand` (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st". The line below the field
@@ -27,6 +29,10 @@ is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is i
   for the network. Changes go to the server in order when it can be reached, every 15 seconds and after each change.
 - **Reminders and the morning summary** as desktop notifications (`org.freedesktop.Notifications`), worked out from
   the local database with the Android app's rules. A reminder's **Done** completes the task; a click opens Dayhand.
+  **⋯ → Settings…** changes the summary's hour and minute (05:00 by default) and the default reminders: at the time,
+  5, 10, 15 or 30 minutes, 1 or 2 hours, or 1 day before. Uncheck all to disable default reminders. These defaults
+  apply to timed tasks without their own reminders. Changes save immediately, replan the running reminder clock,
+  and queue `app:updateSettings`; a snapshot keeps each edited field local while its changes wait in the outbox.
 - **Languages**: English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese and Simplified Chinese,
   the system's by default, chosen in **⋯ → Settings…**. Quick add reads dates in English in every language, as
   `dayhand` does.
@@ -70,9 +76,9 @@ tests:
 | Test | What it checks |
 |---|---|
 | `tst_dates`, `tst_recurrence` | the date phrases and repeat rules on the cases shared with the CLI and macOS (`tests/cases/*.json`) |
-| `tst_rules`, `tst_merge`, `tst_pairing`, `tst_sync` | Today's sections, reminders, the merge, pairing and sync against a fake server |
+| `tst_rules`, `tst_merge`, `tst_pairing`, `tst_sync` | Today's sections, reminders, task/settings merges (including waiting settings mutations), pairing and sync against a fake server |
 | `tst_translations` | runs lupdate on the sources and fails when a text is missing, unfinished or stale in any language |
-| `tst_app` | the model, the Today window and the quick add window on the offscreen platform: typing, ticking off, responsive task details and edits, the language switch |
+| `tst_app` | the model, reminder rescheduling after settings changes, the Today window and the quick add window on the offscreen platform: typing, ticking off, responsive task details and edits, the language switch |
 | `tst_desktop` | notifications and the tray against fake desktop services, as a client of a headless Weston |
 | `smoke_wayland` | the real `dayhand-qt` on Weston: starts in the background, a second copy hands `--quick-add` and a pairing link over |
 

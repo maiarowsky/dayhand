@@ -176,6 +176,15 @@
         <translation>%3%2日(%1)</translation>
     </message>
     <message>
+        <source>%1 %2</source>
+        <comment>day of the month, month: 23 Nov</comment>
+        <translation>%2%1日</translation>
+    </message>
+    <message>
+        <source>Permanently deleted on %1</source>
+        <translation>%1に完全に削除</translation>
+    </message>
+    <message>
         <source>(%1 does not exist that day)</source>
         <comment>a clock time skipped by a daylight saving change</comment>
         <translation>（この日は %1 が存在しません）</translation>
@@ -304,8 +313,16 @@
 <context>
     <name>Main</name>
     <message>
+        <source>Back</source>
+        <translation>戻る</translation>
+    </message>
+    <message>
         <source>Today</source>
         <translation>今日</translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation>ゴミ箱</translation>
     </message>
     <message>
         <source>Menu</source>
@@ -420,6 +437,62 @@
     <message>
         <source>Quick add reads dates in English in every language, as dayhand does: tomorrow 9am, fri, 23 oct.</source>
         <translation>クイック追加は、dayhand と同じく、どの言語でも日付を英語で読み取ります: tomorrow 9am, fri, 23 oct。</translation>
+    </message>
+    <message>
+        <source>Morning summary:</source>
+        <translation>朝のまとめ：</translation>
+    </message>
+    <message>
+        <source>Hour</source>
+        <translation>時</translation>
+    </message>
+    <message>
+        <source>Minute</source>
+        <translation>分</translation>
+    </message>
+    <message>
+        <source>Times use %1.</source>
+        <translation>タイムゾーン：%1。</translation>
+    </message>
+    <message>
+        <source>Default reminders</source>
+        <translation>既定のリマインダー</translation>
+    </message>
+    <message>
+        <source>For timed tasks without their own reminders.</source>
+        <translation>個別のリマインダーがない時刻付きタスクに適用します。</translation>
+    </message>
+    <message>
+        <source>At the time</source>
+        <translation>指定時刻</translation>
+    </message>
+    <message>
+        <source>5 min</source>
+        <translation>5分</translation>
+    </message>
+    <message>
+        <source>10 min</source>
+        <translation>10分</translation>
+    </message>
+    <message>
+        <source>15 min</source>
+        <translation>15分</translation>
+    </message>
+    <message>
+        <source>30 min</source>
+        <translation>30分</translation>
+    </message>
+    <message>
+        <source>1 h</source>
+        <translation>1時間</translation>
+    </message>
+    <message>
+        <source>2 h</source>
+        <translation>2時間</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1日</translation>
     </message>
 </context>
 <context>
@@ -679,6 +752,21 @@
     <message>
         <source>Done (%1)</source>
         <translation>完了 (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>TrashList</name>
+    <message>
+        <source>Trash is empty.</source>
+        <translation>ゴミ箱は空です。</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>復元</translation>
+    </message>
+    <message>
+        <source>Restore %1</source>
+        <translation>%1を復元</translation>
     </message>
 </context>
 <context>
