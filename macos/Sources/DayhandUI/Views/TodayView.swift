@@ -2,6 +2,7 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
+/// The main window: Today or the trash on the left, the selected task's details on the right.
 struct MainWindow: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openWindow) private var openWindow
@@ -39,6 +40,8 @@ struct MainWindow: View {
     }
 }
 
+/// The left column: a choice between Today and the trash above the chosen list, and the update button in its bottom
+/// corner while a newer version is known.
 struct Sidebar: View {
     @EnvironmentObject private var model: AppModel
 

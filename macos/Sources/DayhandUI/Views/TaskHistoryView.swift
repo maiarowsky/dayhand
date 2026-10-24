@@ -2,12 +2,18 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
+/**
+ * A task's change history for its details: the cached copy from the database (so it shows offline), fetched again
+ * from the server when the details open, when the connection comes back and on Sync Now, and the number of the
+ * task's changes still in the outbox, which the server's history does not have yet.
+ */
 @MainActor
 final class HistoryModel: ObservableObject {
     @Published private(set) var entries: [HistoryEntry] = []
     @Published private(set) var state: HistoryState = .loading
     @Published private(set) var pending = 0
 
+    /// What a fresh fetch depends on: the server id, and `AppModel.historyRefreshRevision`.
     struct RefreshKey: Hashable {
         let serverId: String?
         let revision: Int

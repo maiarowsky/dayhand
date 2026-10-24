@@ -26,6 +26,7 @@ final class AppModel: ObservableObject {
             if Self.historyRecovered(from: oldValue, to: status) { historyRefreshRevision += 1 }
         }
     }
+    /// Moves on when the connection comes back and on Sync Now, so an open task's history is fetched again.
     @Published private(set) var historyRefreshRevision = 0
     @Published private(set) var settings = ReminderSettings()
     @Published private(set) var credential: DeviceCredential?
@@ -324,6 +325,7 @@ final class AppModel: ObservableObject {
         status = .notConnected
     }
 
+    /// The server answers again after it did not (or after connecting); a poll that stays synced is not a recovery.
     static func historyRecovered(from previous: SyncStatus, to current: SyncStatus) -> Bool {
         switch (previous, current) {
         case (.offline, .synced), (.signedOut, .synced), (.connecting, .synced): return true
