@@ -1,7 +1,7 @@
 # Dayhand for macOS
 
 Swift and SwiftUI, macOS 13 or later, all open source (Apache-2.0; the libraries GRDB.swift and
-KeyboardShortcuts are MIT). Dayhand is the new name of Helm: the app, its folder and its bundle id
+KeyboardShortcuts are MIT, Sparkle is MIT-style). Dayhand is the new name of Helm: the app, its folder and its bundle id
 (`io.github.maiarowsky.dayhand`) used it from the start, and the server, `dayhand pair` and its
 `dayhand://pair` link use it now (the app also opens `helm://pair` links from older versions).
 This version is the basic one (MVP):
@@ -26,6 +26,10 @@ This version is the basic one (MVP):
 - **Reminders and the morning summary** as macOS notifications, worked out on the Mac from the local database
   with the Android app's rules, in the time zone of the server settings (this Mac's until a server has sent them). A
   reminder's **Done** completes the task.
+- **Updates** with Sparkle: a round blue button at the bottom left of the window when a newer version is out, a
+  small window with its notes and **Update and Relaunch**, the download's progress, and Settings → Updates (check
+  automatically, preview versions). Only builds made with the release key update; any other build says
+  "Updates aren't available in this build" and never checks. Releasing an update: [docs/macos.md](../docs/macos.md#updates).
 
 ## How it works
 
@@ -38,12 +42,13 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
 rounds: every 15 s, and at once after a local change
 ```
 
-The code is a Swift package with four targets:
+The code is a Swift package with five targets:
 
 | Target | What it holds |
 |---|---|
 | `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
-| `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications. |
+| `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
+| `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
 | `Dayhand` | The executable: starts `DayhandApp`. |
 | `DayhandSnapshots` | A tool that renders the main screens to PNG files from synthetic tasks (no display needed). |
 
@@ -70,7 +75,7 @@ Overdue tasks never ring. The summary is quiet (`passive`), so it waits in Notif
 permission when the first reminder is planned, or from Settings.
 
 Where the app keeps things: the database in `~/Library/Application Support/Dayhand/dayhand.sqlite`, the sign-in
-in the Keychain, preferences (the shortcut, the window) in `io.github.maiarowsky.dayhand`. To try it without
+in the Keychain, preferences (the shortcut, the window, the update settings) in `io.github.maiarowsky.dayhand`. To try it without
 touching those, start it with `DAYHAND_DATA_DIR=<folder>` (another database) and `DAYHAND_CREDENTIALS=memory`
 (the sign-in is forgotten when the app quits).
 
@@ -106,7 +111,7 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 122 tests, under a second; the live one is skipped
+swift test                        # 156 tests, about five seconds; the live one is skipped
 ```
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
@@ -125,8 +130,16 @@ swift test                        # 122 tests, under a second; the live one is s
   DAYHAND_LIVE_SITE=http://127.0.0.1:3211 DAYHAND_LIVE_CODE=<code from dayhand pair> swift test --filter LiveBackend
   ```
 
-- **Screens**: `swift run DayhandSnapshots <folder>` draws Today, the details, the menu bar, quick add, Connect
-  and Settings from synthetic tasks into PNG files, off screen (the sidebar's translucent background does not
+- **Updates** (`DayhandUpdatesTests`): the real Sparkle reads appcasts from a server on `127.0.0.1` started by the
+  test, with a throwaway key pair made in memory: a newer build is offered with its notes, builds compare as
+  numbers, an item for a newer macOS is skipped, previews only when asked for, up to date, an unreadable appcast
+  and a server that is down give plain errors, a download that breaks halfway shows its progress and then an error,
+  and a build without the key sends no request. Also the state machine, the `Info.plist` rules, the notes, the
+  error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
+  afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
+- **Screens**: `swift run DayhandSnapshots <folder>` draws Today (also with the update button), the details, the
+  menu bar, quick add, Connect, Settings, Settings → Updates and every state of the update window from synthetic
+  data into PNG files, off screen (the sidebar's translucent background does not
   draw off screen, so the Today list is also drawn on its own).
 
 The Keychain store (`KeychainCredentialStore`) is not exercised by the tests, so they never write to your login
@@ -134,8 +147,11 @@ Keychain.
 
 ## Dependencies
 
-Pinned exactly in `Package.swift` and locked in `Package.resolved`; both versions were older than seven days when
-chosen (2026-10-23): [GRDB.swift](https://github.com/groue/GRDB.swift) 7.11.1 (MIT, SQLite) and
+Pinned exactly in `Package.swift` and locked in `Package.resolved`; every version was older than seven days when
+chosen: [GRDB.swift](https://github.com/groue/GRDB.swift) 7.11.1 (MIT, SQLite) and
 [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) 3.1.0 (MIT, the global shortcut and its
-recorder). Everything else is Apple's SDK (SwiftUI, AppKit, UserNotifications, Security). No analytics, crash
-reporting or other outside services.
+recorder), chosen 2026-10-23, and [Sparkle](https://github.com/sparkle-project/Sparkle) 2.10.0 (MIT-style, the
+updates; released 2026-09-13, chosen 2026-10-24), which SwiftPM takes as a signed binary framework from its GitHub
+release. Everything else is Apple's SDK (SwiftUI, AppKit, UserNotifications, Security). No analytics, crash
+reporting or other outside services; the only address the app calls besides your server is the appcast, and only
+in a build made with the release key (Sparkle's system profile stays off).

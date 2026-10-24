@@ -1,5 +1,6 @@
 import AppKit
 import DayhandCore
+import DayhandUpdates
 import KeyboardShortcuts
 import SwiftUI
 
@@ -12,6 +13,7 @@ extension KeyboardShortcuts.Name {
 public struct DayhandApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
+    @StateObject private var updater = Updater.shared
 
     public init() {}
 
@@ -19,10 +21,17 @@ public struct DayhandApp: App {
         Window("Dayhand", id: "main") {
             MainWindow()
                 .environmentObject(model)
+                .environmentObject(updater)
                 .frame(minWidth: 720, minHeight: 460)
         }
         .defaultSize(width: 960, height: 640)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    model.showMainWindow()
+                    updater.checkForUpdates()
+                }
+            }
             CommandGroup(replacing: .newItem) {
                 Button("New Task…") { QuickAddPanel.shared.show() }
                     .keyboardShortcut("n")
@@ -45,6 +54,7 @@ public struct DayhandApp: App {
         Settings {
             SettingsView()
                 .environmentObject(model)
+                .environmentObject(updater)
         }
     }
 }
@@ -53,6 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         MainActor.assumeIsolated {
             _ = AppModel.shared
+            _ = Updater.shared
             KeyboardShortcuts.onKeyUp(for: .quickAdd) { QuickAddPanel.shared.toggle() }
         }
     }

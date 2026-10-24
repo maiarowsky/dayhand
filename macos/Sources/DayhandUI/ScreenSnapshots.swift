@@ -1,5 +1,6 @@
 import AppKit
 import DayhandCore
+import DayhandUpdates
 import KeyboardShortcuts
 import SwiftUI
 
@@ -25,6 +26,8 @@ public enum ScreenSnapshots {
                 defaults: .standard
             )
         }
+        // A newer version found, with no Sparkle behind it: nothing is fetched.
+        Updater.make = { Updater(preview: UpdateState(activity: .available, offer: demoOffer)) }
         Task { @MainActor in
             do {
                 try registerShortcut()
@@ -47,11 +50,18 @@ public enum ScreenSnapshots {
         model.recompute()
         model.selection = model.sections.today.first { $0.title == "Call the accountant" }?.localId
 
+        let updater = Updater.shared
         for dark in [false, true] {
             let suffix = dark ? "-dark" : ""
-            try await render(MainWindow().environmentObject(model), CGSize(width: 1040, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
+            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 1040, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
         }
         try await render(TodayView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("today-list.png"))
+        for dark in [false, true] {
+            try await render(
+                TodaySidebar().environmentObject(model).environmentObject(updater), CGSize(width: 400, height: 680), dark,
+                folder.appendingPathComponent("today-list-update\(dark ? "-dark" : "").png")
+            )
+        }
         try await render(MenuBarView().environmentObject(model), CGSize(width: 340, height: 430), false, folder.appendingPathComponent("menu-bar.png"))
         try await render(
             QuickAddView(line: "Call the accountant fri 2pm", onDone: {}).environmentObject(model),
@@ -59,7 +69,36 @@ public enum ScreenSnapshots {
         )
         model.connectPrefill = PairingInput.parseLink("dayhand://pair?url=http%3A%2F%2F127.0.0.1%3A3211&code=E6M8-FE02-XSNT")
         try await render(ConnectView().environmentObject(model), CGSize(width: 520, height: 400), false, folder.appendingPathComponent("connect.png"))
-        try await render(SettingsView().environmentObject(model), CGSize(width: 520, height: 360), false, folder.appendingPathComponent("settings.png"))
+        try await render(SettingsView().environmentObject(model).environmentObject(updater), CGSize(width: 520, height: 360), false, folder.appendingPathComponent("settings.png"))
+        try await renderUpdates(to: folder)
+    }
+
+    static let demoOffer = UpdateOffer(
+        version: "0.2.0", build: "412",
+        notes: ReleaseNotes.plainText("<ul><li>Board and calendar on the Mac</li><li>Reminders no longer ring late after sleep</li><li>Faster sync</li></ul>")
+    )
+
+    /// The update window in each of its states, and Settings → Updates in a build without the key and in one with it.
+    @MainActor
+    static func renderUpdates(to folder: URL) async throws {
+        let windows: [(String, UpdateState, InstallRecord.Outcome?)] = [
+            ("available", UpdateState(activity: .available, offer: demoOffer), nil),
+            ("checking", UpdateState(activity: .checking), nil),
+            ("downloading", UpdateState(activity: .downloading(received: 4_200_000, expected: 9_600_000), offer: demoOffer), nil),
+            ("installing", UpdateState(activity: .installing, offer: demoOffer), nil),
+            ("failed", UpdateState(activity: .failed(.download), offer: demoOffer), nil),
+            ("up-to-date", UpdateState(activity: .upToDate), nil),
+            ("unavailable", UpdateState(activity: .unavailable(.noKey)), nil),
+            ("not-installed", UpdateState(activity: .available, offer: demoOffer), .notInstalled(version: "0.2.0")),
+        ]
+        for (name, state, lastInstall) in windows {
+            let updater = Updater(preview: state, presented: true, lastInstall: lastInstall)
+            try await render(UpdateWindow().environmentObject(updater).fixedSize(horizontal: false, vertical: true), CGSize(width: 320, height: 300), false, folder.appendingPathComponent("update-\(name).png"))
+        }
+        for (name, state) in [("unavailable", UpdateState(activity: .unavailable(.noKey))), ("available", UpdateState(activity: .available, offer: demoOffer))] {
+            let updater = Updater(preview: state, build: "412")
+            try await render(UpdateSettings().environmentObject(updater), CGSize(width: 520, height: 360), false, folder.appendingPathComponent("settings-updates-\(name).png"))
+        }
     }
 
     /// KeyboardShortcuts stores the initial shortcut in the preferences unless its key already has a value. The tool

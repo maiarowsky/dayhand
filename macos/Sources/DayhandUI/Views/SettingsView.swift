@@ -3,12 +3,13 @@ import KeyboardShortcuts
 import SwiftUI
 import UserNotifications
 
-/// Settings: the quick add shortcut, notifications, the server connection and the licenses.
+/// Settings: the quick add shortcut, notifications, the server connection, updates and the licenses.
 struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralSettings().tabItem { Label("General", systemImage: "gearshape") }
             ConnectionSettings().tabItem { Label("Connection", systemImage: "network") }
+            UpdateSettings().tabItem { Label("Updates", systemImage: "arrow.down.circle") }
             AboutSettings().tabItem { Label("About", systemImage: "info.circle") }
         }
         .frame(width: 520, height: 360)
@@ -114,7 +115,7 @@ struct AboutSettings: View {
             Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "development")")
                 .foregroundStyle(.secondary)
             Text("Your day plan, offline first. Licensed under the Apache License 2.0.")
-            Text("Built with GRDB.swift (MIT) and KeyboardShortcuts (MIT).")
+            Text("Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).")
                 .foregroundStyle(.secondary)
             Spacer()
         }

@@ -8,7 +8,7 @@ struct MainWindow: View {
 
     var body: some View {
         NavigationSplitView {
-            TodayView()
+            TodaySidebar()
                 .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 520)
         } detail: {
             if let id = model.selection, let task = model.task(id) {
@@ -36,6 +36,14 @@ struct MainWindow: View {
             Text(model.alert ?? "")
         }
         .onAppear { model.openMainWindow = { openWindow(id: "main") } }
+    }
+}
+
+/// The left column: Today, and the update button in its bottom corner while a newer version is known.
+struct TodaySidebar: View {
+    var body: some View {
+        TodayView()
+            .safeAreaInset(edge: .bottom, spacing: 0) { UpdateCorner() }
     }
 }
 

@@ -1,8 +1,8 @@
 # Dayhand for macOS: distribution and what is left
 
 The app itself (what it does, how it is built and tested) is described in
-[macos/README.md](../macos/README.md). This page is about the two things that are not done yet:
-shipping it to other Macs, and the rest of the Android app's features.
+[macos/README.md](../macos/README.md). This page is about shipping it to other Macs, its updates, and the rest
+of the Android app's features.
 
 ## Distribution
 
@@ -15,7 +15,7 @@ needs the maintainer's word and secrets that must not live in the repository.
 | Developer ID signing with the hardened runtime | a *Developer ID Application* certificate of the Apple Developer team (99 USD a year, the team exists) | the Mac's login Keychain for local releases; for CI an encrypted `.p12` and its password as repository secrets |
 | Notarization (`xcrun notarytool submit --wait`) and stapling (`xcrun stapler staple`) | an App Store Connect API key (issuer id, key id, `.p8`) or an app-specific password | `notarytool store-credentials <profile>` locally; repository secrets in CI |
 | DMG (`hdiutil create -format UDZO`) and a Homebrew cask in an own tap | a tap repository; Homebrew's official casks require apps that pass Gatekeeper | none |
-| Updates with [Sparkle](https://sparkle-project.org) (MIT-style licence) | an EdDSA key pair (`generate_keys`); the public key goes into `Info.plist`, the appcast is published with the releases | the private key, never in the repository |
+| Updates with [Sparkle](https://sparkle-project.org) (MIT-style licence): **built in**, off until the key is given ([Updates](#updates)) | an EdDSA key pair (`generate_keys`); the public key goes into `Info.plist` at build time, the appcast is published with the releases | the private key in the maintainer's login Keychain (where `generate_keys` puts it) and a backup in a password manager, never in the repository |
 | App icon | an `AppIcon.icns` (the app shows the generic icon now) | none |
 
 One build change comes first: **signed builds need an Xcode project** (or an `.xcodeproj` generated for the
@@ -39,12 +39,114 @@ hdiutil create -volname Dayhand -srcfolder build/export/Dayhand.app -format UDZO
 ```
 
 Estimate: 4 to 8 hours of agent work once the certificate and the notarization key exist (project, signing
-settings, the release workflow, the cask, Sparkle's appcast), plus the maintainer's time for the Apple accounts.
+settings, the release workflow, the cask), plus the maintainer's time for the Apple accounts. The updater and its
+screens are done (below); the release only has to sign and publish them.
 
 Before the first release also decide: the version scheme (the app reports `0.1.0` and the commit count as the
 build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
 `dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
 older versions).
+
+## Updates
+
+Dayhand updates itself with [Sparkle](https://sparkle-project.org) 2 (2.10.0, MIT-style licence), the way most
+Mac apps outside the App Store do. Sparkle reads an **appcast** (an RSS file listing the versions), compares
+`sparkle:version` with the app's build number (`CFBundleVersion`), downloads the newer archive, checks its
+**EdDSA signature** against the public key in the app, and installs it after the app quits, then starts the new
+version. Dayhand draws its own screens for it (Sparkle's user driver in `DayhandUpdates`):
+
+- **The update button**: a round blue button with a download arrow at the bottom left of the main window, under
+  Today (where Codex has it above the profile picture; Dayhand has no profile, so the button sits alone in that
+  corner). It shows only while a newer version is known; its tooltip names the version.
+- **The update window** (a popover on the button): "Dayhand 0.2.0 is available", the running version, the release
+  notes as plain text, **Later** and **Update and Relaunch**; then the download with its progress, the signature
+  check, "Dayhand will quit and open again"; a failure in plain words (offline, unreadable list, broken download,
+  failed signature, cannot replace itself) with **Try Again**; "Dayhand is up to date" after a check.
+- **Dayhand → Check for Updates…** opens the window over the button and checks.
+- **Settings → Updates**: the version and build, **Check for updates automatically** (on by default, once a
+  day, `SUEnableAutomaticChecks`), **Include preview versions** (off by default; the appcast's `preview`
+  channel), **Check for Updates**, the last check, and the outcome of the last install.
+- **After an install**: just before Sparkle quits the app, Dayhand notes the version it installs. At the next
+  start the running build tells whether it went in; if not, Settings and the update window say so and the offer
+  stays.
+
+**Without the key, nothing happens.** The key and the appcast address are written into `Info.plist` by
+`scripts/build-app.sh` from `DAYHAND_SPARKLE_PUBLIC_KEY` and `DAYHAND_APPCAST_URL`. A build without the key (every
+local build, and `swift run`) never creates Sparkle's updater, so it fetches nothing, and Settings says
+"Updates aren't available in this build" with the reason. The appcast must be HTTPS (plain HTTP only to
+`127.0.0.1`/`localhost`, for trying an update locally). Nothing in the code changes when the key is added.
+
+Default appcast address: `https://github.com/maiarowsky/helm/releases/download/dayhand-macos-appcast/appcast.xml`,
+the `appcast.xml` asset of one release tagged `dayhand-macos-appcast`, which also holds the archives; `appcast.xml`
+is replaced at every macOS release (the repository's "latest release" can be a CLI release, so `releases/latest`
+would not work). It needs the repository
+to be **public**: assets of a private repository need a GitHub sign-in. Until the first macOS release this
+address is not called by anything.
+
+### What the maintainer does (needs secrets)
+
+Once:
+
+1. `macos/.build/artifacts/sparkle/Sparkle/bin/generate_keys` (the folder appears after `swift build` in
+   `macos/`). It makes the EdDSA pair, keeps the private key in the login Keychain and prints the public key.
+   Back the private key up: `generate_keys -x dayhand-sparkle-private.key`, store the file in the password manager,
+   delete it from disk. **Losing it means the installed apps can never be updated again.**
+2. Keep the public key where builds read it: a shell profile for local releases
+   (`export DAYHAND_SPARKLE_PUBLIC_KEY=…`; it is not secret) or a repository variable for CI.
+3. Make the repository public (see [release.md](release.md)) or choose another HTTPS host for the appcast and pass
+   it as `DAYHAND_APPCAST_URL`.
+4. Create the release that holds the appcast: `gh release create dayhand-macos-appcast --title "Dayhand for macOS appcast" --notes "Update feed of Dayhand for macOS."`.
+
+Every release (version `X.Y.Z`; the build number is the commit count):
+
+```sh
+cd macos
+DAYHAND_VERSION=X.Y.Z scripts/build-app.sh          # with DAYHAND_SPARKLE_PUBLIC_KEY set; prints "updates from …"
+# Sign with the Developer ID, inside out, with the hardened runtime (Sparkle's order for apps not signed by Xcode):
+ID="Developer ID Application: <name> (<team>)"
+F=dist/Dayhand.app/Contents/Frameworks/Sparkle.framework
+codesign -f -s "$ID" -o runtime "$F/Versions/B/XPCServices/Installer.xpc"
+codesign -f -s "$ID" -o runtime --preserve-metadata=entitlements "$F/Versions/B/XPCServices/Downloader.xpc"
+codesign -f -s "$ID" -o runtime "$F/Versions/B/Autoupdate" "$F/Versions/B/Updater.app" "$F"
+codesign -f -s "$ID" -o runtime dist/Dayhand.app
+ditto -c -k --keepParent dist/Dayhand.app build/Dayhand.zip
+xcrun notarytool submit build/Dayhand.zip --keychain-profile "$DAYHAND_NOTARY_PROFILE" --wait
+xcrun stapler staple dist/Dayhand.app
+mkdir -p build/updates && ditto -c -k --keepParent dist/Dayhand.app "build/updates/Dayhand-X.Y.Z.zip"
+# Signs the archive with the private key from the Keychain and writes build/updates/appcast.xml (it keeps
+# earlier items if the previous appcast.xml is in the folder; download it first):
+.build/artifacts/sparkle/Sparkle/bin/generate_appcast build/updates --embed-release-notes \
+  --download-url-prefix "https://github.com/maiarowsky/helm/releases/download/dayhand-macos-appcast/"
+# The archives live next to the appcast, so every item keeps a working address:
+gh release upload dayhand-macos-appcast "build/updates/Dayhand-X.Y.Z.zip"
+gh release upload dayhand-macos-appcast build/updates/appcast.xml --clobber
+```
+
+For a preview, add `--channel preview` to `generate_appcast`: only Macs with **Include preview versions** see it.
+Release notes are a `Dayhand-X.Y.Z.html` (or `.md`) next to the archive; `--embed-release-notes` puts them into the
+item, and the window shows them as plain text, up to about 600 characters. A preview needs a build number of its
+own, newer than the release before it: Sparkle ignores a `-preview.1` suffix when it compares versions. While
+the signing still needs the Xcode project from [Distribution](#distribution), the archive and export steps
+there replace the first `codesign` lines; the appcast steps stay the same.
+
+### What the scripts and the app do (no secrets)
+
+- `scripts/build-app.sh`: copies `Sparkle.framework` into `Contents/Frameworks` (the binary's rpath points there),
+  writes `SUFeedURL` and, only when given, `SUPublicEDKey` into `Info.plist`, and refuses a key that is not 32
+  bytes of base64.
+- `DayhandUpdates` (`macos/Sources/DayhandUpdates`): reads the configuration (`UpdateConfiguration`), keeps the
+  state machine (`UpdateState`: checking, available, downloading with progress, extracting, ready, installing,
+  failed, up to date), turns release notes into text (`ReleaseNotes`), keeps the install note (`InstallRecord`), and
+  drives Sparkle (`Updater`). Sparkle itself is used only from here, so `DayhandCore` stays free of it.
+- `swift test` checks it without the network outside this Mac: the real Sparkle reads appcasts from a server on
+  `127.0.0.1` (a newer build with its notes, numeric build order, a too-new macOS skipped, the preview channel, up
+  to date, an unreadable appcast, a server that is down, a download that breaks halfway with its progress, and no
+  request at all without a key), with a throwaway key pair made in memory; plus the state machine, the
+  configuration, the notes, the error texts and the install note.
+
+Not checked yet (needs the signed release): a full install and relaunch. Sparkle does that with its own installer
+after the app quits, and only for a signed, notarized app; the first release should try it from the previous
+version before announcing it.
 
 ## What is left for parity with the Android app
 
