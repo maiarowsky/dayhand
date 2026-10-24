@@ -1,6 +1,5 @@
 /* dayhand.dev: no framework, no external fonts. The rules this follows are in STYLE.md. */
 
-/* Tokens. Every colour has a light and a dark value; color-scheme follows prefers-color-scheme. */
 :root {
   color-scheme: light dark;
 

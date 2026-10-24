@@ -29,8 +29,9 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **Tokens on `:root`.** Colours, the type and space scale, radii, fonts and motion are custom
   properties; components only use them. Hover tints are made with `color-mix(in oklch, …)` from a token,
   never a second hard-coded colour.
-- **OKLCH colour, one token for light and dark.** Every colour is `oklch()`, the palette comes from the
-  app icon (espresso, caramel, cream), and each token holds both values with `light-dark()`.
+- **OKLCH colour, shared theme tokens.** The palette comes from the app icon (espresso, caramel,
+  cream). Theme-dependent tokens use `light-dark()` with `oklch()` colours; the palette and terminal
+  text colours stay fixed across themes.
   `color-scheme: light dark` makes the browser pick them from `prefers-color-scheme`; a
   `prefers-color-scheme: dark` query also dims the light screenshot a little.
 - **Fluid sizes with `clamp()`.** Type and space steps mix `rem` and `vw` (never a bare `vw`), and no
@@ -46,8 +47,7 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **Intrinsic grids instead of breakpoints.** Cards use
   `repeat(auto-fit, minmax(min(100%, 15rem), 1fr))`; the only width queries move the header navigation
   below the name and put the screenshot beside its text on wide screens.
-- **Spacing set by the parent** with `gap`; children carry no outer margins and there are no spacer
-  elements.
+- **Group spacing set by the parent** with `gap`; there are no spacer elements.
 - **One focus ring** with `:focus-visible` in `currentColor`, never `outline: none`; a skip link is the
   first element on the page.
 - **Hover only where hover exists** (`hover: hover` and `pointer: fine`), press feedback with

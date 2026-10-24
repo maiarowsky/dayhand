@@ -44,8 +44,10 @@ cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 
 ## Quick start
 
-Start your own server on this computer. No account: the first run downloads the Convex local
-backend once, deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
+Start your own server on this computer (macOS or Linux). On Windows, use the
+[Convex account setup](docs/deploy.md#run-your-own-server-in-5-minutes) instead.
+No account is needed for the local server: the first run downloads the Convex local backend once,
+deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
 
 ```sh
 dayhand server start
@@ -142,7 +144,7 @@ Tasks you added on the phone before are sent to the server. Building the app you
 Dayhand has no shared server to sign up for, and the app has no built-in server address. You
 run yours in one of two ways:
 
-- **On this computer**: `dayhand server start` (above). Data and keys stay in a private folder.
+- **On this computer**: follow [Quick start](#quick-start). Data and keys stay in a private folder.
 - **On your own free Convex account**: `dayhand server deploy` logs in to Convex in the browser,
   deploys, signs `dayhand` in and prints the server address and a pairing code. This gives a
   public HTTPS address, which the Claude apps and a phone away from home need. Run it again to
