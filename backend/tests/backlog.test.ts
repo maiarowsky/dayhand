@@ -135,7 +135,7 @@ describe("import_backlog", () => {
         if (item.reason) expect(report.skipped).toContainEqual(expect.objectContaining({ path: item.path, reason: item.reason }));
         else {
           const task = byTitle(report.tasks, `Entry ${index}`);
-          expect(task).toMatchObject(item.expected);
+          expect(task).toMatchObject(item.expected!);
           if (index !== 1) expect(task).not.toHaveProperty("proposedAt");
           if (index !== 2) expect(task).not.toHaveProperty("completedAt");
           if (index !== 3) expect(task).not.toHaveProperty("archivedAt");
@@ -173,7 +173,7 @@ describe("import_backlog", () => {
         expect(result.skipped).toContainEqual(expect.objectContaining({ path: item.path, reason: item.reason }));
       } else {
         const task = byTitle(result.tasks, `Case ${index}`);
-        expect(task).toMatchObject(item.expected);
+        expect(task).toMatchObject(item.expected!);
         if (!item.path.startsWith("drafts/")) expect(task).not.toHaveProperty("proposedAt");
         if (!item.path.startsWith("archive/tasks/")) expect(task).not.toHaveProperty("archivedAt");
       }
