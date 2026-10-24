@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%lld changes wait to be sent; they show here after that.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld zmiany czekają na wysłanie; potem pojawią się tutaj.</string>
+			<key>many</key>
+			<string>%lld zmian czeka na wysłanie; potem pojawią się tutaj.</string>
+			<key>one</key>
+			<string>%lld zmiana czeka na wysłanie; potem pojawi się tutaj.</string>
+			<key>other</key>
+			<string>%lld zmiany czeka na wysłanie; potem pojawią się tutaj.</string>
+		</dict>
+	</dict>
 	<key>%lld days before</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -262,6 +282,26 @@
 			<string>Wysyłanie %lld zmiany…</string>
 		</dict>
 	</dict>
+	<key>Tasks stay here for %lld days, then they are deleted for good.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Zadania zostają tu przez %lld dni, potem znikają na zawsze.</string>
+			<key>many</key>
+			<string>Zadania zostają tu przez %lld dni, potem znikają na zawsze.</string>
+			<key>one</key>
+			<string>Zadania zostają tu przez %lld dzień, potem znikają na zawsze.</string>
+			<key>other</key>
+			<string>Zadania zostają tu przez %lld dnia, potem znikają na zawsze.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -280,6 +320,26 @@
 			<string>Tytuł musi mieć od 1 do %lld znaku.</string>
 			<key>other</key>
 			<string>Tytuł musi mieć od 1 do %lld znaku.</string>
+		</dict>
+	</dict>
+	<key>The trash is empty. Deleted tasks stay here for %lld days.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dni.</string>
+			<key>many</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dni.</string>
+			<key>one</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dzień.</string>
+			<key>other</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dnia.</string>
 		</dict>
 	</dict>
 </dict>

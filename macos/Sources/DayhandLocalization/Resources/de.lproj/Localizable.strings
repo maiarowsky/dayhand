@@ -16,6 +16,8 @@
 	<string>%1$@ · aus „%2$@“</string>
 	<key>%@, %@</key>
 	<string>%1$@, %2$@</string>
+	<key>%@: %@ → %@</key>
+	<string>%1$@: %2$@ → %3$@</string>
 	<key>%lld h before</key>
 	<string>%lld Std. vorher</string>
 	<key>%lld min</key>
@@ -38,12 +40,18 @@
 	<string>Die Wörter in den Titel übernehmen, statt sie als Datum zu lesen</string>
 	<key>Address</key>
 	<string>Adresse</string>
+	<key>Agent</key>
+	<string>Agent</string>
+	<key>Agent: %@</key>
+	<string>Agent: %@</string>
 	<key>All done for today.</key>
 	<string>Für heute ist alles erledigt.</string>
 	<key>Allow Notifications</key>
 	<string>Mitteilungen erlauben</string>
 	<key>Archive</key>
 	<string>Archivieren</string>
+	<key>Archived</key>
+	<string>Archiviert</string>
 	<key>As in settings (%@)</key>
 	<string>Wie in den Einstellungen (%@)</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -70,6 +78,12 @@
 	<string>Suchen …</string>
 	<key>Checklist</key>
 	<string>Checkliste</string>
+	<key>Claim ended</key>
+	<string>Übernahme beendet</string>
+	<key>Claim renewed</key>
+	<string>Übernahme verlängert</string>
+	<key>Claimed by an agent</key>
+	<string>Von einem Agenten übernommen</string>
 	<key>Close</key>
 	<string>Schließen</string>
 	<key>Connect</key>
@@ -86,8 +100,14 @@
 	<string>Verbindung</string>
 	<key>Connect…</key>
 	<string>Verbinden …</string>
+	<key>Created</key>
+	<string>Erstellt</string>
+	<key>Created as the next repeat</key>
+	<string>Als nächste Wiederholung erstellt</string>
 	<key>Daily</key>
 	<string>Täglich</string>
+	<key>Day</key>
+	<string>Tag</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dayhand %@ (Vorabversion) ist verfügbar</string>
 	<key>Dayhand %@ is available</key>
@@ -118,6 +138,8 @@
 	<string>Dayhand, für heute nichts mehr</string>
 	<key>Default reminders</key>
 	<string>Standarderinnerungen</string>
+	<key>Deleted %@ · gone after %@</key>
+	<string>Gelöscht: %1$@ · endgültig weg nach %2$@</string>
 	<key>Disconnect</key>
 	<string>Trennen</string>
 	<key>Disconnect this Mac?</key>
@@ -138,10 +160,14 @@
 	<string>Laden … %lld %%</string>
 	<key>Due</key>
 	<string>Fällig</string>
+	<key>Edited</key>
+	<string>Bearbeitet</string>
 	<key>General</key>
 	<string>Allgemein</string>
 	<key>Hides the tasks done today</key>
 	<string>Blendet die heute erledigten Aufgaben aus</string>
+	<key>History</key>
+	<string>Verlauf</string>
 	<key>In progress</key>
 	<string>In Arbeit</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -174,6 +200,8 @@
 	<string>Als erledigt markieren</string>
 	<key>Mark as not done</key>
 	<string>Als nicht erledigt markieren</string>
+	<key>Marked done</key>
+	<string>Als erledigt markiert</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>Die Menüs von macOS wechseln die Sprache, wenn Dayhand neu startet.</string>
 	<key>Monthly</key>
@@ -184,6 +212,10 @@
 	<string>In den Papierkorb</string>
 	<key>Move “%@” to the trash?</key>
 	<string>„%@“ in den Papierkorb legen?</string>
+	<key>Moved on the board</key>
+	<string>Auf dem Board verschoben</string>
+	<key>Moved to the trash</key>
+	<string>In den Papierkorb verschoben</string>
 	<key>New Task</key>
 	<string>Neue Aufgabe</string>
 	<key>New Task…</key>
@@ -194,6 +226,8 @@
 	<string>Neue Aufgabe (⌘N oder das Kürzel für Schnell hinzufügen aus jeder App)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Neue Aufgabe, z. B. Steuerberater anrufen fri 2pm</string>
+	<key>No changes recorded yet.</key>
+	<string>Noch keine Änderungen erfasst.</string>
 	<key>No day</key>
 	<string>Kein Tag</string>
 	<key>No server connected.</key>
@@ -230,10 +264,14 @@
 	<string>Mitteilungen brauchen das App-Bundle (scripts/build-app.sh); swift run hat keins.</string>
 	<key>Now</key>
 	<string>Jetzt</string>
+	<key>Now changed</key>
+	<string>„Jetzt“ geändert</string>
 	<key>Now, %@</key>
 	<string>Jetzt, %@</string>
 	<key>OK</key>
 	<string>OK</string>
+	<key>Offline: this is the history from the last connection.</key>
+	<string>Offline: Das ist der Verlauf von der letzten Verbindung.</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>Führe auf einem Computer, der bei deinem Server angemeldet ist, dayhand pair aus und gib den angezeigten Code ein oder öffne den ausgegebenen Link. Der Code gilt einmal, 10 Minuten lang.</string>
 	<key>Open Dayhand</key>
@@ -270,6 +308,10 @@
 	<string>Dayhand neu starten</string>
 	<key>Restore</key>
 	<string>Wiederherstellen</string>
+	<key>Restore %@</key>
+	<string>Wiederherstellen: %@</string>
+	<key>Restored</key>
+	<string>Wiederhergestellt</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return fügt sie für heute hinzu; ein Datum am Ende, auf Englisch (tomorrow 9am, fri, 23 oct), legt den Tag fest.</string>
 	<key>Save Note</key>
@@ -312,6 +354,8 @@
 	<string>Der Code ist falsch, verbraucht oder abgelaufen. Führe dayhand pair erneut aus, um einen neuen zu bekommen.</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>Das geladene Update hat die Signaturprüfung nicht bestanden und wurde nicht installiert.</string>
+	<key>The history starts once this task reaches the server.</key>
+	<string>Der Verlauf beginnt, sobald diese Aufgabe den Server erreicht.</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>Die Liste neuer Versionen konnte nicht gelesen werden. Versuch es später noch einmal.</string>
 	<key>The note is too long.</key>
@@ -356,6 +400,8 @@
 	<string>Diese Version</string>
 	<key>Tick %@</key>
 	<string>Abhaken: %@</string>
+	<key>Time</key>
+	<string>Uhrzeit</string>
 	<key>Time zone</key>
 	<string>Zeitzone</string>
 	<key>Title</key>
@@ -374,6 +420,8 @@
 	<string>Morgen</string>
 	<key>Too many wrong codes on this server. Try again in %@.</key>
 	<string>Zu viele falsche Codes auf diesem Server. Versuch es in %@ noch einmal.</string>
+	<key>Trash</key>
+	<string>Papierkorb</string>
 	<key>Try Again</key>
 	<string>Erneut versuchen</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
@@ -418,6 +466,10 @@
 	<string>Jährlich</string>
 	<key>Yesterday</key>
 	<string>Gestern</string>
+	<key>You (CLI)</key>
+	<string>Du (CLI)</string>
+	<key>You (app)</key>
+	<string>Du (App)</string>
 	<key>You have %@.</key>
 	<string>Du hast %@.</string>
 	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
@@ -438,6 +490,10 @@
 	<string>Zuhause, Arbeit</string>
 	<key>next step</key>
 	<string>nächster Schritt</string>
+	<key>no</key>
+	<string>nein</string>
+	<key>none</key>
+	<string>leer</string>
 	<key>now</key>
 	<string>jetzt</string>
 	<key>on %@</key>
@@ -534,5 +590,7 @@
 	<string>am dritten Mittwoch</string>
 	<key>until %@</key>
 	<string>bis %@</string>
+	<key>yes</key>
+	<string>ja</string>
 </dict>
 </plist>

@@ -24,6 +24,14 @@ enum Formatting {
         return pair(dayText, DateText.time(time))
     }
 
+    /// "Deleted Today · gone after Sun 22 Nov" for a task in the trash; nil for one that is not.
+    static func trashDates(_ task: TaskItem, today: String, timezone: String) -> String? {
+        guard let deleted = task.deletedAt, let gone = task.goneForGoodAt else { return nil }
+        let deletedDay = day(HelmDates.localDate(deleted, timezone), today: today)
+        let goneDay = day(HelmDates.localDate(gone, timezone), today: today)
+        return tr("Deleted \(deletedDay) · gone after \(goneDay)")
+    }
+
     static func when(_ when: When, today: String) -> String {
         var text = day(when.date, today: today)
         if let time = when.time { text = pair(text, DateText.time(time)) }

@@ -16,6 +16,8 @@
 	<string>%1$@ · from “%2$@”</string>
 	<key>%@, %@</key>
 	<string>%1$@, %2$@</string>
+	<key>%@: %@ → %@</key>
+	<string>%1$@: %2$@ → %3$@</string>
 	<key>%lld h before</key>
 	<string>%lld h before</string>
 	<key>%lld min</key>
@@ -38,12 +40,18 @@
 	<string>Add the words as part of the title instead of reading them as a date</string>
 	<key>Address</key>
 	<string>Address</string>
+	<key>Agent</key>
+	<string>Agent</string>
+	<key>Agent: %@</key>
+	<string>Agent: %@</string>
 	<key>All done for today.</key>
 	<string>All done for today.</string>
 	<key>Allow Notifications</key>
 	<string>Allow Notifications</string>
 	<key>Archive</key>
 	<string>Archive</string>
+	<key>Archived</key>
+	<string>Archived</string>
 	<key>As in settings (%@)</key>
 	<string>As in settings (%@)</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -70,6 +78,12 @@
 	<string>Checking…</string>
 	<key>Checklist</key>
 	<string>Checklist</string>
+	<key>Claim ended</key>
+	<string>Claim ended</string>
+	<key>Claim renewed</key>
+	<string>Claim renewed</string>
+	<key>Claimed by an agent</key>
+	<string>Claimed by an agent</string>
 	<key>Close</key>
 	<string>Close</string>
 	<key>Connect</key>
@@ -86,8 +100,14 @@
 	<string>Connection</string>
 	<key>Connect…</key>
 	<string>Connect…</string>
+	<key>Created</key>
+	<string>Created</string>
+	<key>Created as the next repeat</key>
+	<string>Created as the next repeat</string>
 	<key>Daily</key>
 	<string>Daily</string>
+	<key>Day</key>
+	<string>Day</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dayhand %@ (preview) is available</string>
 	<key>Dayhand %@ is available</key>
@@ -118,6 +138,8 @@
 	<string>Dayhand, nothing left today</string>
 	<key>Default reminders</key>
 	<string>Default reminders</string>
+	<key>Deleted %@ · gone after %@</key>
+	<string>Deleted %1$@ · gone after %2$@</string>
 	<key>Disconnect</key>
 	<string>Disconnect</string>
 	<key>Disconnect this Mac?</key>
@@ -138,10 +160,14 @@
 	<string>Downloading… %lld%%</string>
 	<key>Due</key>
 	<string>Due</string>
+	<key>Edited</key>
+	<string>Edited</string>
 	<key>General</key>
 	<string>General</string>
 	<key>Hides the tasks done today</key>
 	<string>Hides the tasks done today</string>
+	<key>History</key>
+	<string>History</string>
 	<key>In progress</key>
 	<string>In progress</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -174,6 +200,8 @@
 	<string>Mark as done</string>
 	<key>Mark as not done</key>
 	<string>Mark as not done</string>
+	<key>Marked done</key>
+	<string>Marked done</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>Menus that come with macOS change language when Dayhand restarts.</string>
 	<key>Monthly</key>
@@ -184,6 +212,10 @@
 	<string>Move to Trash</string>
 	<key>Move “%@” to the trash?</key>
 	<string>Move “%@” to the trash?</string>
+	<key>Moved on the board</key>
+	<string>Moved on the board</string>
+	<key>Moved to the trash</key>
+	<string>Moved to the trash</string>
 	<key>New Task</key>
 	<string>New Task</string>
 	<key>New Task…</key>
@@ -194,6 +226,8 @@
 	<string>New task (⌘N, or the quick add shortcut from any app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>New task, e.g. Call the accountant fri 2pm</string>
+	<key>No changes recorded yet.</key>
+	<string>No changes recorded yet.</string>
 	<key>No day</key>
 	<string>No day</string>
 	<key>No server connected.</key>
@@ -230,10 +264,14 @@
 	<string>Notifications need the app bundle (scripts/build-app.sh); swift run has none.</string>
 	<key>Now</key>
 	<string>Now</string>
+	<key>Now changed</key>
+	<string>Now changed</string>
 	<key>Now, %@</key>
 	<string>Now, %@</string>
 	<key>OK</key>
 	<string>OK</string>
+	<key>Offline: this is the history from the last connection.</key>
+	<string>Offline: this is the history from the last connection.</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</string>
 	<key>Open Dayhand</key>
@@ -270,6 +308,10 @@
 	<string>Restart Dayhand</string>
 	<key>Restore</key>
 	<string>Restore</string>
+	<key>Restore %@</key>
+	<string>Restore %@</string>
+	<key>Restored</key>
+	<string>Restored</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</string>
 	<key>Save Note</key>
@@ -312,6 +354,8 @@
 	<string>The code is wrong, used or expired. Run dayhand pair again for a new one.</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>The downloaded update did not pass its signature check, so it was not installed.</string>
+	<key>The history starts once this task reaches the server.</key>
+	<string>The history starts once this task reaches the server.</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>The list of new versions could not be read. Try again later.</string>
 	<key>The note is too long.</key>
@@ -356,6 +400,8 @@
 	<string>This version</string>
 	<key>Tick %@</key>
 	<string>Tick %@</string>
+	<key>Time</key>
+	<string>Time</string>
 	<key>Time zone</key>
 	<string>Time zone</string>
 	<key>Title</key>
@@ -374,6 +420,8 @@
 	<string>Tomorrow</string>
 	<key>Too many wrong codes on this server. Try again in %@.</key>
 	<string>Too many wrong codes on this server. Try again in %@.</string>
+	<key>Trash</key>
+	<string>Trash</string>
 	<key>Try Again</key>
 	<string>Try Again</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
@@ -418,6 +466,10 @@
 	<string>Yearly</string>
 	<key>Yesterday</key>
 	<string>Yesterday</string>
+	<key>You (CLI)</key>
+	<string>You (CLI)</string>
+	<key>You (app)</key>
+	<string>You (app)</string>
 	<key>You have %@.</key>
 	<string>You have %@.</string>
 	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
@@ -438,6 +490,10 @@
 	<string>home, work</string>
 	<key>next step</key>
 	<string>next step</string>
+	<key>no</key>
+	<string>no</string>
+	<key>none</key>
+	<string>none</string>
 	<key>now</key>
 	<string>now</string>
 	<key>on %@</key>
@@ -534,5 +590,7 @@
 	<string>on the third Wednesday</string>
 	<key>until %@</key>
 	<string>until %@</string>
+	<key>yes</key>
+	<string>yes</string>
 </dict>
 </plist>

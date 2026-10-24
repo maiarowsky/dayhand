@@ -17,6 +17,11 @@ This version is the basic one (MVP):
 - **Task details** with basic editing: title, status, "working on it now" and the resume note, the day and time
   (a phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat, reminders
   and links are shown. A task in the trash is read-only until **Restore**.
+- **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
+  by name) and when, newest first, each field from its old value to the new one, and how many of its changes still
+  wait to be sent. It is fetched with `app:getTask` and kept in the local database, so it shows offline too.
+- **Trash** in the sidebar, under Today: the deleted tasks with the day each was deleted, the day it goes for good
+  (30 days later) and **Restore**. The sidebar counts the tasks open today and those in the trash.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
@@ -45,13 +50,17 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  then app:listAll + app:listTrash + app:getSettings (POST /api/query)
                                  ──> SnapshotMerger (last write wins per field) ──> the database
 rounds: every 15 s, and at once after a local change
+
+task details open, or a newer server copy of the task arrives:
+  TaskHistorySync: app:getTask ──> the task's history replaces its cached copy (taskEvent table)
+  no answer or no server: the cached copy, marked as such
 ```
 
 The code is a Swift package with six targets:
 
 | Target | What it holds |
 |---|---|
-| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
+| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
 | `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
 | `DayhandLocalization` | The texts: the string catalog `Localizable.xcstrings` (English is the source and the keys), the `.lproj` folders compiled from it, `tr(…)`, choosing the language (`Localization`) and days and times in the region's style (`DateText`). |
 | `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
@@ -60,7 +69,8 @@ The code is a Swift package with six targets:
 
 Rules ported from the Android app keep their names and comments, so a change on one side can be carried to the
 other: `domain/Recurrence.kt` → `Recurrence.swift`, `sync/SnapshotMerger.kt` → `SnapshotMerger.swift`,
-`data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`.
+`data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`,
+`sync/TaskHistorySync.kt` and `domain/HistoryEntries.kt` → `TaskHistorySync.swift` and `TaskHistory.swift`.
 The backend's own rules are in `backend/convex/lib/dates.ts`, `repeat.ts` and `core.ts`.
 
 **Sign-in.** `POST /auth/pair` with the code and this Mac's name gives a device token, which is kept only in the
@@ -124,7 +134,7 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 169 tests, about five seconds; the live one is skipped
+swift test                        # 179 tests, about five seconds; the live one is skipped
 ```
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
@@ -135,7 +145,9 @@ swift test                        # 169 tests, about five seconds; the live one 
 - **The outbox and sync against a fake server** (`FakeServer.swift`, in memory): offline changes reach the server
   in order, a change whose answer was lost is applied once, a waiting change keeps its field against a newer
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
-  refreshed and the call repeated.
+  refreshed and the call repeated. The history (`HistoryTests`): the fake server records each change as the backend
+  does, the Mac shows who made it (the app, `dayhand`, an agent by name), keeps it offline from the cache, counts
+  a task's waiting changes, says a task made offline has no history yet, and drops the history of a purged task.
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
@@ -150,10 +162,10 @@ swift test                        # 169 tests, about five seconds; the live one 
   and a build without the key sends no request. Also the state machine, the `Info.plist` rules, the notes, the
   error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
-- **Screens**: `swift run DayhandSnapshots <folder>` draws Today (also with the update button), the details, the
-  menu bar, quick add, Connect, Settings, Settings → Updates and every state of the update window from synthetic
-  data into PNG files, off screen (the sidebar's translucent background does not
-  draw off screen, so the Today list is also drawn on its own). `swift run DayhandSnapshots <folder> pl` draws them
+- **Screens**: `swift run DayhandSnapshots <folder>` draws Today, the trash, the sidebar (also with the update
+  button), the details with their history, the menu bar, quick add, Connect, Settings, Settings → Updates and
+  every state of the update window from synthetic data into PNG files, off screen (the sidebar's translucent
+  background does not draw off screen, so the sidebar and the Today and trash lists are also drawn on their own). `swift run DayhandSnapshots <folder> pl` draws them
   in another language, and the tool fails when a text on them is missing from the string catalog.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the

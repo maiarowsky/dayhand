@@ -176,7 +176,7 @@ to choose); everything scripts and agents read stays English.
 ## On the Mac
 
 Dayhand for macOS has Today, quick add from the menu bar or a global shortcut, reminders and the
-morning summary, and works offline like the phone, in English, Polish, German, Spanish, French,
+morning summary, the trash and each task's change history, and works offline like the phone, in English, Polish, German, Spanish, French,
 Brazilian Portuguese, Japanese or Simplified Chinese. It is built from source (Xcode 26 or later;
 runs on macOS 13 or later) and is not signed for other Macs yet:
 

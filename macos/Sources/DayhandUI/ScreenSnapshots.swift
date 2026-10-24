@@ -69,10 +69,21 @@ public enum ScreenSnapshots {
         try await render(TodayView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("today-list.png"))
         for dark in [false, true] {
             try await render(
-                TodaySidebar().environmentObject(model).environmentObject(updater), CGSize(width: 400, height: 680), dark,
-                folder.appendingPathComponent("today-list-update\(dark ? "-dark" : "").png")
+                Sidebar().environmentObject(model).environmentObject(updater), CGSize(width: 220, height: 680), dark,
+                folder.appendingPathComponent("sidebar-update\(dark ? "-dark" : "").png")
             )
         }
+        // The details from top to bottom, the change history included.
+        if let task = model.selection.flatMap(model.task) {
+            try await render(TaskDetailView(task: task).environmentObject(model), CGSize(width: 560, height: 1500), false, folder.appendingPathComponent("details.png"))
+        }
+        try await render(TrashView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("trash-list.png"))
+        model.show(.trash)
+        model.selection = model.trash.first?.localId
+        for dark in [false, true] {
+            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 1040, height: 680), dark, folder.appendingPathComponent("trash\(dark ? "-dark" : "").png"))
+        }
+        model.show(.today)
         try await render(MenuBarView().environmentObject(model), CGSize(width: 340, height: 430), false, folder.appendingPathComponent("menu-bar.png"))
         try await render(
             QuickAddView(line: "Call the accountant fri 2pm", onDone: {}).environmentObject(model),
@@ -160,10 +171,31 @@ public enum ScreenSnapshots {
             task("Water the plants") { $0.repeat = RepeatRule(every: .week, weekdays: [3, 7]) },
             task("Morning run") { $0.status = "done"; $0.completedAt = now - 3_600_000 },
             task("Dentist") { $0.dueDate = day(1); $0.dueTime = "10:00" },
+            task("Old shopping list") { $0.deletedAt = now - 2 * 3_600_000; $0.labels = ["home"] },
+            task("Draft of the newsletter") { $0.dueDate = day(-5); $0.deletedAt = now - 26 * 86_400_000 },
         ]
         try await model.repository.apply(Snapshot(
             tasks: tasks, settings: ReminderSettings(timezone: zone, summaryTime: "07:00", reminderMinutes: [0, 15])
         ))
+        // Its history as the server last sent it, and one change of this Mac's still waiting to be sent.
+        guard let call = tasks.first(where: { $0.title == "Call the accountant" }) else { return }
+        let minute: Int64 = 60_000
+        try await model.repository.saveHistory(call.id, [
+            TaskEvent(
+                taskServerId: call.id, at: now - 12 * minute, actor: "app", action: "update",
+                beforeJson: JSONValue.object(["dueTime": "11:00"]).encoded(), afterJson: JSONValue.object(["dueTime": "14:00"]).encoded()
+            ),
+            TaskEvent(
+                taskServerId: call.id, at: now - 40 * minute, actor: "agent", actorName: "claude", action: "update",
+                beforeJson: JSONValue.object(["note": .null]).encoded(),
+                afterJson: JSONValue.object(["note": "Ask about the VAT return and the new invoice numbering."]).encoded()
+            ),
+            TaskEvent(
+                taskServerId: call.id, at: now - 3 * 60 * minute, actor: "cli", action: "create",
+                afterJson: JSONValue.object(["title": "Call the accountant", "dueDate": .string(day(-1)), "dueTime": "11:00", "isNow": false, "labels": ["home"]]).encoded()
+            ),
+        ])
+        try await model.repository.setLabels(call.id, ["home", "tax"])
     }
 
     @MainActor

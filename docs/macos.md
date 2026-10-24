@@ -42,7 +42,7 @@ Estimate: 4 to 8 hours of agent work once the certificate and the notarization k
 settings, the release workflow, the cask), plus the maintainer's time for the Apple accounts. The updater and its
 screens are done (below); the release only has to sign and publish them.
 
-Before the first release also decide: the version scheme (the app reports `0.2.0` and the commit count as the
+Before the first release also decide: the version scheme (the app reports `0.3.0` and the commit count as the
 build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
 `dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
 older versions).
@@ -56,7 +56,7 @@ Mac apps outside the App Store do. Sparkle reads an **appcast** (an RSS file lis
 version. Dayhand draws its own screens for it (Sparkle's user driver in `DayhandUpdates`):
 
 - **The update button**: a round blue button with a download arrow at the bottom left of the main window, under
-  Today (where Codex has it above the profile picture; Dayhand has no profile, so the button sits alone in that
+  the sidebar's Today and Trash (where Codex has it above the profile picture; Dayhand has no profile, so the button sits alone in that
   corner). It shows only while a newer version is known; its tooltip names the version.
 - **The update window** (a popover on the button): "Dayhand 0.2.0 is available", the running version, the release
   notes as plain text, **Later** and **Update and Relaunch**; then the download with its progress, the signature
@@ -151,8 +151,8 @@ version before announcing it.
 ## What is left for parity with the Android app
 
 The MVP covers pairing, Today, quick add with date phrases, ticking off, the menu bar, the global shortcut, the
-offline outbox, reminders and the morning summary, and the details with basic editing. The research estimated
-80 to 110 hours for full parity; what remains, by screen:
+offline outbox, reminders and the morning summary, and the details with basic editing; 0.3.0 adds the trash and
+the change history. The research estimated 80 to 110 hours for full parity; what remains, by screen:
 
 - **Board**: three columns (To do, In progress with the now task first, Done: the 50 most recently done), drag
   between columns, the same moves from a menu. The repository already has `move(_:to:)`.
@@ -162,9 +162,7 @@ offline outbox, reminders and the morning summary, and the details with basic ed
 - **Details**: editors for repeat (every N days, weeks on weekdays, months on a day, the last day or an nth
   weekday; from the due date or completion; until or a count; `TaskRules.isValid` and `setRepeat` are ported),
   for reminders (minutes before, a time on the day or days before, at most five; `setReminders` is ported), for
-  links, a date picker, moving checklist items, and the **change history** (`app:getTask`, cached for offline).
-- **Trash**: the list of deleted tasks with the day each goes for good, and **Restore** (`restore` is ported; the
-  trash is already in every snapshot).
+  links, a date picker and moving checklist items.
 - **Settings**: the morning summary time and default reminders edited on the Mac (`app:updateSettings` through the
   outbox, kept against snapshots while it waits); appearance (the Mussh palettes and fonts of
   [design.md](design.md)); export as Markdown or JSON; the calendar address; **agent connections** (approve a

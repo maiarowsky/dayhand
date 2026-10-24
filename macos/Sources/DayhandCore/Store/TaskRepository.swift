@@ -58,6 +58,25 @@ public final class TaskRepository: Sendable {
         ValueObservation.tracking { db in try OutboxOp.fetchCount(db) }.values(in: writer)
     }
 
+    /// The number of changes to one task still waiting for the server (not in its history yet), again after each change.
+    public func observePendingCount(of localId: String) -> AsyncValueObservation<Int> {
+        ValueObservation.tracking { db in try OutboxOp.filter(Column("taskLocalId") == localId).fetchCount(db) }.values(in: writer)
+    }
+
+    /// The cached change history of a task the server knows, newest first.
+    public func history(_ serverId: String) async throws -> [TaskEvent] {
+        try await writer.read { db in try Self.history(db, serverId) }
+    }
+
+    /// The cached change history of [serverId], newest first, again after each change.
+    public func observeHistory(_ serverId: String) -> AsyncValueObservation<[TaskEvent]> {
+        ValueObservation.tracking { db in try Self.history(db, serverId) }.values(in: writer)
+    }
+
+    private static func history(_ db: Database, _ serverId: String) throws -> [TaskEvent] {
+        try TaskEvent.filter(Column("taskServerId") == serverId).order(Column("at").desc, Column("id")).fetchAll(db)
+    }
+
     // MARK: Changes
 
     /// Adds a task; [dueTime] is kept only together with [dueDate], as the backend requires.
@@ -268,7 +287,17 @@ public final class TaskRepository: Sendable {
             let plan = SnapshotMerger.merge(local: local, pending: pending, remote: snapshot.tasks, nowMs: now)
             for task in plan.upserts { try task.save(db) }
             if !plan.deletes.isEmpty { _ = try TaskItem.deleteAll(db, keys: plan.deletes) }
+            // History of tasks that no longer exist on the Mac (purged from the trash on the server).
+            try db.execute(sql: "DELETE FROM taskEvent WHERE taskServerId NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)")
             try Meta.write(db, snapshot.settings)
+        }
+    }
+
+    /// Replaces the cached history of [serverId] with the server's copy: the server's history is the whole truth.
+    public func saveHistory(_ serverId: String, _ events: [TaskEvent]) async throws {
+        try await writer.write { db in
+            _ = try TaskEvent.filter(Column("taskServerId") == serverId).deleteAll(db)
+            for event in events { try event.insert(db) }
         }
     }
 
@@ -284,10 +313,11 @@ public final class TaskRepository: Sendable {
         return ValueObservation.tracking { db in try Meta.settings(db, localTimezone: zone) }.values(in: writer)
     }
 
-    /// Forgets every task and waiting change (Disconnect and pairing with another account).
+    /// Forgets every task, its history and every waiting change (Disconnect and pairing with another account).
     public func eraseAll() async throws {
         try await writer.write { db in
             _ = try TaskItem.deleteAll(db)
+            _ = try TaskEvent.deleteAll(db)
             _ = try OutboxOp.deleteAll(db)
             _ = try db.execute(sql: "DELETE FROM meta")
         }

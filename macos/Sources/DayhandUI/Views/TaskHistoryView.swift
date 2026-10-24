@@ -1,0 +1,212 @@
+import DayhandCore
+import DayhandLocalization
+import SwiftUI
+
+/**
+ * A task's change history for its details: the cached copy from the database (so it shows offline), fetched again
+ * from the server when the task opens and whenever a newer server copy of it arrives, and the number of its changes
+ * still in the outbox, which the server's history does not have yet.
+ */
+@MainActor
+final class HistoryModel: ObservableObject {
+    @Published private(set) var entries: [HistoryEntry] = []
+    @Published private(set) var state: HistoryState = .loading
+    @Published private(set) var pending = 0
+
+    /// What a fresh fetch depends on: the server id, and the server copy's version.
+    struct RefreshKey: Hashable {
+        let serverId: String?
+        let version: Int64?
+    }
+
+    /// The cached history of [serverId], again after each change, until the view goes.
+    func watchHistory(_ serverId: String?, in repository: TaskRepository) async {
+        guard let serverId else {
+            entries = []
+            return
+        }
+        do {
+            for try await events in repository.observeHistory(serverId) { entries = events.map(\.entry) }
+        } catch {
+            // The observation ends when the view goes; the last copy shown stays until then.
+        }
+    }
+
+    func watchPending(_ localId: String, in repository: TaskRepository) async {
+        do {
+            for try await count in repository.observePendingCount(of: localId) { pending = count }
+        } catch {
+            // As above: only the view going away ends it.
+        }
+    }
+
+    func refresh(_ serverId: String?, with model: AppModel) async {
+        state = await model.refreshHistory(serverId)
+    }
+}
+
+/// Who changed what and when, newest first; changes still in the outbox are counted, not listed.
+struct HistorySection: View {
+    @EnvironmentObject private var model: AppModel
+    @ObservedObject var history: HistoryModel
+    let today: String
+
+    var body: some View {
+        Section(tr("History")) {
+            if history.pending > 0 {
+                Placeholder(text: tr("\(history.pending) changes wait to be sent; they show here after that."))
+            }
+            switch history.state {
+            case .notOnServerYet: Placeholder(text: tr("The history starts once this task reaches the server."))
+            case .cached: Placeholder(text: tr("Offline: this is the history from the last connection."))
+            case .loading, .fresh: EmptyView()
+            }
+            if history.entries.isEmpty, history.state == .fresh || history.state == .cached {
+                Placeholder(text: tr("No changes recorded yet."))
+            }
+            ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
+                HistoryRow(entry: entry, today: today, settings: model.settings)
+            }
+        }
+    }
+
+    private struct Placeholder: View {
+        let text: String
+
+        var body: some View {
+            Text(text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// One change: who and when, the action, and each field from its old value to the new one.
+struct HistoryRow: View {
+    let entry: HistoryEntry
+    let today: String
+    let settings: ReminderSettings
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Text(HistoryText.actor(entry.actor))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(isAgent ? Color.orange : Color.secondary)
+                Text(HistoryText.time(entry.at, today: today, timezone: settings.timezone))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(HistoryText.action(entry.action))
+            ForEach(entry.changes, id: \.field) { change in
+                Text(HistoryText.change(change, today: today, defaultReminders: settings.reminderMinutes))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var isAgent: Bool {
+        if case .agent = entry.actor { return true }
+        return false
+    }
+}
+
+/// How a history entry reads, in the current language (the Android app's `TaskHistory.kt`).
+enum HistoryText {
+    /// Long texts (a note, a checklist) are cut to this many characters.
+    static let maxShown = 80
+
+    static func actor(_ actor: HistoryActor) -> String {
+        switch actor {
+        case .app: return tr("You (app)")
+        case .cli: return tr("You (CLI)")
+        case .agent(let name): return name.map { tr("Agent: \($0)") } ?? tr("Agent")
+        }
+    }
+
+    /// "Today, 14:02" in the server's time zone.
+    static func time(_ at: Int64, today: String, timezone: String) -> String {
+        let local = HelmDates.localAt(at, timezone)
+        return Formatting.pair(Formatting.day(local.date.description, today: today), DateText.time(local.time.description))
+    }
+
+    static func action(_ action: String) -> String {
+        switch action {
+        case "create": return tr("Created")
+        case "update": return tr("Edited")
+        case "setStatus": return tr("Moved on the board")
+        case "setNow": return tr("Now changed")
+        case "complete": return tr("Marked done")
+        case "archive": return tr("Archived")
+        case "delete": return tr("Moved to the trash")
+        case "restore": return tr("Restored")
+        case "repeat": return tr("Created as the next repeat")
+        case "claim": return tr("Claimed by an agent")
+        case "renewClaim": return tr("Claim renewed")
+        case "release": return tr("Claim ended")
+        default: return action
+        }
+    }
+
+    /// "Day: Today → Tomorrow".
+    static func change(_ change: FieldChange, today: String, defaultReminders: [Int]) -> String {
+        let before = value(change.field, change.before, today: today, defaultReminders: defaultReminders)
+        let after = value(change.field, change.after, today: today, defaultReminders: defaultReminders)
+        return tr("\(name(change.field)): \(before) → \(after)")
+    }
+
+    static func name(_ field: HistoryField) -> String {
+        switch field {
+        case .title: return tr("Title")
+        case .status: return tr("Status")
+        case .now: return tr("Now")
+        case .dueDate: return tr("Day")
+        case .dueTime: return tr("Time")
+        case .repeat: return tr("Repeat")
+        case .labels: return tr("Labels")
+        case .links: return tr("Links")
+        case .checklist: return tr("Checklist")
+        case .reminders: return tr("Reminders")
+        case .note: return tr("Note")
+        case .resumeNote: return tr("Where I stopped")
+        }
+    }
+
+    /// A field's value as text; long texts are cut, shapes Dayhand does not know are shown as they came.
+    static func value(_ field: HistoryField, _ value: JSONValue, today: String, defaultReminders: [Int]) -> String {
+        // No reminders of its own means the defaults from the settings, unlike an empty list.
+        if field == .reminders, value.isNull { return Formatting.reminders(nil, defaults: defaultReminders) }
+        if value.isNull || value.array?.isEmpty == true { return tr("none") }
+        let text: String?
+        switch field {
+        case .status: text = value.string.map { status(TaskStatus.fromWire($0)) }
+        case .now: text = value.bool.map { $0 ? tr("yes") : tr("no") }
+        case .dueDate: text = value.string.flatMap { CivilDate($0) == nil ? nil : Formatting.day($0, today: today) }
+        case .dueTime: text = value.string.map(DateText.time)
+        case .repeat: text = RepeatRule.parse(value).map(Formatting.repeatRule)
+        case .labels: text = value.array.map { $0.compactMap(\.string).joined(separator: DateText.listSeparator) }
+        case .links: text = value.array.map { $0.compactMap(TaskLink.parse).map { $0.title ?? $0.url }.joined(separator: DateText.listSeparator) }
+        case .checklist:
+            text = value.array.map { items in
+                shorten(items.compactMap(ChecklistItem.parse).map { $0.done ? "✓ \($0.title)" : $0.title }.joined(separator: DateText.listSeparator))
+            }
+        case .reminders: text = value.array.map { Formatting.reminders($0.compactMap(TaskReminder.parse), defaults: defaultReminders) }
+        case .title, .note, .resumeNote: text = value.string.map(shorten)
+        }
+        return text ?? value.encoded()
+    }
+
+    static func status(_ status: TaskStatus) -> String {
+        switch status {
+        case .todo: return tr("To do")
+        case .doing: return tr("In progress")
+        case .done: return tr("Done")
+        }
+    }
+
+    static func shorten(_ text: String) -> String {
+        text.count <= maxShown ? text : String(text.prefix(maxShown)).trimmingCharacters(in: .whitespaces) + "…"
+    }
+}

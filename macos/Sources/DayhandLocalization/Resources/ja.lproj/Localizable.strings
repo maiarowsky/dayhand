@@ -16,6 +16,8 @@
 	<string>%1$@ ·「%2$@」から</string>
 	<key>%@, %@</key>
 	<string>%1$@、%2$@</string>
+	<key>%@: %@ → %@</key>
+	<string>%1$@：%2$@ → %3$@</string>
 	<key>%lld h before</key>
 	<string>%lld時間前</string>
 	<key>%lld min</key>
@@ -38,11 +40,17 @@
 	<string>日付として読まずにタイトルの一部にします</string>
 	<key>Address</key>
 	<string>アドレス</string>
+	<key>Agent</key>
+	<string>エージェント</string>
+	<key>Agent: %@</key>
+	<string>エージェント：%@</string>
 	<key>All done for today.</key>
 	<string>今日の分はすべて完了しました。</string>
 	<key>Allow Notifications</key>
 	<string>通知を許可</string>
 	<key>Archive</key>
+	<string>アーカイブ</string>
+	<key>Archived</key>
 	<string>アーカイブ</string>
 	<key>As in settings (%@)</key>
 	<string>設定どおり（%@）</string>
@@ -70,6 +78,12 @@
 	<string>確認中…</string>
 	<key>Checklist</key>
 	<string>チェックリスト</string>
+	<key>Claim ended</key>
+	<string>担当を終了</string>
+	<key>Claim renewed</key>
+	<string>担当を延長</string>
+	<key>Claimed by an agent</key>
+	<string>エージェントが担当</string>
 	<key>Close</key>
 	<string>閉じる</string>
 	<key>Connect</key>
@@ -86,8 +100,14 @@
 	<string>接続</string>
 	<key>Connect…</key>
 	<string>接続…</string>
+	<key>Created</key>
+	<string>作成</string>
+	<key>Created as the next repeat</key>
+	<string>次の繰り返しとして作成</string>
 	<key>Daily</key>
 	<string>毎日</string>
+	<key>Day</key>
+	<string>日付</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dayhand %@（プレビュー版）が利用できます</string>
 	<key>Dayhand %@ is available</key>
@@ -118,6 +138,8 @@
 	<string>Dayhand、今日の残りはありません</string>
 	<key>Default reminders</key>
 	<string>デフォルトのリマインダー</string>
+	<key>Deleted %@ · gone after %@</key>
+	<string>%1$@に削除 · %2$@以降に消去</string>
 	<key>Disconnect</key>
 	<string>接続を解除</string>
 	<key>Disconnect this Mac?</key>
@@ -138,10 +160,14 @@
 	<string>ダウンロード中… %lld%%</string>
 	<key>Due</key>
 	<string>期限</string>
+	<key>Edited</key>
+	<string>編集</string>
 	<key>General</key>
 	<string>一般</string>
 	<key>Hides the tasks done today</key>
 	<string>今日完了したタスクを隠します</string>
+	<key>History</key>
+	<string>履歴</string>
 	<key>In progress</key>
 	<string>進行中</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -174,6 +200,8 @@
 	<string>完了にする</string>
 	<key>Mark as not done</key>
 	<string>未完了に戻す</string>
+	<key>Marked done</key>
+	<string>完了にした</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>macOS 標準のメニューは Dayhand の再起動後に切り替わります。</string>
 	<key>Monthly</key>
@@ -184,6 +212,10 @@
 	<string>ゴミ箱に入れる</string>
 	<key>Move “%@” to the trash?</key>
 	<string>「%@」をゴミ箱に入れますか？</string>
+	<key>Moved on the board</key>
+	<string>ボード上で移動</string>
+	<key>Moved to the trash</key>
+	<string>ゴミ箱に移動</string>
 	<key>New Task</key>
 	<string>新規タスク</string>
 	<key>New Task…</key>
@@ -194,6 +226,8 @@
 	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
+	<key>No changes recorded yet.</key>
+	<string>まだ変更の記録はありません。</string>
 	<key>No day</key>
 	<string>日付なし</string>
 	<key>No server connected.</key>
@@ -230,10 +264,14 @@
 	<string>通知にはアプリバンドル（scripts/build-app.sh）が必要です。swift run にはありません。</string>
 	<key>Now</key>
 	<string>いま</string>
+	<key>Now changed</key>
+	<string>「いま」を変更</string>
 	<key>Now, %@</key>
 	<string>いま（%@）</string>
 	<key>OK</key>
 	<string>OK</string>
+	<key>Offline: this is the history from the last connection.</key>
+	<string>オフライン：前回接続したときの履歴です。</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>サーバーにサインインしているコンピュータで dayhand pair を実行し、表示されたコードを入力するか、出力されたリンクを開いてください。コードは1回だけ、10分間有効です。</string>
 	<key>Open Dayhand</key>
@@ -270,6 +308,10 @@
 	<string>Dayhand を再起動</string>
 	<key>Restore</key>
 	<string>元に戻す</string>
+	<key>Restore %@</key>
+	<string>元に戻す：%@</string>
+	<key>Restored</key>
+	<string>復元</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日になります。</string>
 	<key>Save Note</key>
@@ -312,6 +354,8 @@
 	<string>コードが間違っているか、使用済みか、期限切れです。dayhand pair をもう一度実行して新しいコードを取得してください。</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>ダウンロードしたアップデートは署名の確認に失敗したため、インストールされませんでした。</string>
+	<key>The history starts once this task reaches the server.</key>
+	<string>履歴は、このタスクがサーバーに届いてから記録されます。</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>新しいバージョンの一覧を読み取れませんでした。後でもう一度お試しください。</string>
 	<key>The note is too long.</key>
@@ -356,6 +400,8 @@
 	<string>このバージョン</string>
 	<key>Tick %@</key>
 	<string>チェック：%@</string>
+	<key>Time</key>
+	<string>時刻</string>
 	<key>Time zone</key>
 	<string>タイムゾーン</string>
 	<key>Title</key>
@@ -374,6 +420,8 @@
 	<string>明日</string>
 	<key>Too many wrong codes on this server. Try again in %@.</key>
 	<string>このサーバーで間違ったコードが多すぎます。%@後にもう一度お試しください。</string>
+	<key>Trash</key>
+	<string>ゴミ箱</string>
 	<key>Try Again</key>
 	<string>再試行</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
@@ -418,6 +466,10 @@
 	<string>毎年</string>
 	<key>Yesterday</key>
 	<string>昨日</string>
+	<key>You (CLI)</key>
+	<string>あなた（CLI）</string>
+	<key>You (app)</key>
+	<string>あなた（アプリ）</string>
 	<key>You have %@.</key>
 	<string>現在のバージョンは %@ です。</string>
 	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
@@ -438,6 +490,10 @@
 	<string>家, 仕事</string>
 	<key>next step</key>
 	<string>次のステップ</string>
+	<key>no</key>
+	<string>いいえ</string>
+	<key>none</key>
+	<string>なし</string>
 	<key>now</key>
 	<string>いま</string>
 	<key>on %@</key>
@@ -534,5 +590,7 @@
 	<string>第3水曜日</string>
 	<key>until %@</key>
 	<string>%@まで</string>
+	<key>yes</key>
+	<string>はい</string>
 </dict>
 </plist>

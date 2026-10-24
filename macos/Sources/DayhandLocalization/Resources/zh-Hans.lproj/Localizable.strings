@@ -16,6 +16,8 @@
 	<string>%1$@ · 来自“%2$@”</string>
 	<key>%@, %@</key>
 	<string>%1$@，%2$@</string>
+	<key>%@: %@ → %@</key>
+	<string>%1$@：%2$@ → %3$@</string>
 	<key>%lld h before</key>
 	<string>提前 %lld 小时</string>
 	<key>%lld min</key>
@@ -38,12 +40,18 @@
 	<string>将这些词作为标题的一部分，而不是识别为日期</string>
 	<key>Address</key>
 	<string>地址</string>
+	<key>Agent</key>
+	<string>智能体</string>
+	<key>Agent: %@</key>
+	<string>智能体：%@</string>
 	<key>All done for today.</key>
 	<string>今天的事都做完了。</string>
 	<key>Allow Notifications</key>
 	<string>允许通知</string>
 	<key>Archive</key>
 	<string>归档</string>
+	<key>Archived</key>
+	<string>已归档</string>
 	<key>As in settings (%@)</key>
 	<string>同设置（%@）</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -70,6 +78,12 @@
 	<string>正在检查…</string>
 	<key>Checklist</key>
 	<string>清单</string>
+	<key>Claim ended</key>
+	<string>认领已结束</string>
+	<key>Claim renewed</key>
+	<string>认领已续期</string>
+	<key>Claimed by an agent</key>
+	<string>已被智能体认领</string>
 	<key>Close</key>
 	<string>关闭</string>
 	<key>Connect</key>
@@ -86,8 +100,14 @@
 	<string>连接</string>
 	<key>Connect…</key>
 	<string>连接…</string>
+	<key>Created</key>
+	<string>已创建</string>
+	<key>Created as the next repeat</key>
+	<string>作为下一次重复创建</string>
 	<key>Daily</key>
 	<string>每天</string>
+	<key>Day</key>
+	<string>日期</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dayhand %@（预览版）现已推出</string>
 	<key>Dayhand %@ is available</key>
@@ -118,6 +138,8 @@
 	<string>Dayhand，今天没有剩余任务</string>
 	<key>Default reminders</key>
 	<string>默认提醒</string>
+	<key>Deleted %@ · gone after %@</key>
+	<string>%1$@删除 · %2$@后永久删除</string>
 	<key>Disconnect</key>
 	<string>断开连接</string>
 	<key>Disconnect this Mac?</key>
@@ -138,10 +160,14 @@
 	<string>正在下载… %lld%%</string>
 	<key>Due</key>
 	<string>截止</string>
+	<key>Edited</key>
+	<string>已编辑</string>
 	<key>General</key>
 	<string>通用</string>
 	<key>Hides the tasks done today</key>
 	<string>隐藏今天完成的任务</string>
+	<key>History</key>
+	<string>历史</string>
 	<key>In progress</key>
 	<string>进行中</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -174,6 +200,8 @@
 	<string>标记为完成</string>
 	<key>Mark as not done</key>
 	<string>标记为未完成</string>
+	<key>Marked done</key>
+	<string>标记为已完成</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>macOS 自带的菜单会在 Dayhand 重新启动后切换语言。</string>
 	<key>Monthly</key>
@@ -184,6 +212,10 @@
 	<string>移到废纸篓</string>
 	<key>Move “%@” to the trash?</key>
 	<string>将“%@”移到废纸篓？</string>
+	<key>Moved on the board</key>
+	<string>在看板上移动</string>
+	<key>Moved to the trash</key>
+	<string>已移到废纸篓</string>
 	<key>New Task</key>
 	<string>新建任务</string>
 	<key>New Task…</key>
@@ -194,6 +226,8 @@
 	<string>新建任务（⌘N，或在任何应用中使用快速添加快捷键）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新任务，例如 给会计打电话 fri 2pm</string>
+	<key>No changes recorded yet.</key>
+	<string>还没有更改记录。</string>
 	<key>No day</key>
 	<string>无日期</string>
 	<key>No server connected.</key>
@@ -230,10 +264,14 @@
 	<string>通知需要应用包（scripts/build-app.sh）；swift run 没有。</string>
 	<key>Now</key>
 	<string>现在</string>
+	<key>Now changed</key>
+	<string>“现在”已更改</string>
 	<key>Now, %@</key>
 	<string>现在，%@</string>
 	<key>OK</key>
 	<string>好</string>
+	<key>Offline: this is the history from the last connection.</key>
+	<string>离线：这是上次连接时的历史。</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>在已登录服务器的电脑上运行 dayhand pair，输入它显示的代码，或打开它打印的链接。代码只能使用一次，有效期 10 分钟。</string>
 	<key>Open Dayhand</key>
@@ -270,6 +308,10 @@
 	<string>重新启动 Dayhand</string>
 	<key>Restore</key>
 	<string>恢复</string>
+	<key>Restore %@</key>
+	<string>恢复：%@</string>
+	<key>Restored</key>
+	<string>已恢复</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>按 Return 添加到今天；在末尾用英文写日期（tomorrow 9am、fri、23 oct）可设定日期。</string>
 	<key>Save Note</key>
@@ -312,6 +354,8 @@
 	<string>代码错误、已使用或已过期。请再次运行 dayhand pair 获取新代码。</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>下载的更新未通过签名检查，因此没有安装。</string>
+	<key>The history starts once this task reaches the server.</key>
+	<string>任务同步到服务器后才开始记录历史。</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>无法读取新版本列表。请稍后重试。</string>
 	<key>The note is too long.</key>
@@ -356,6 +400,8 @@
 	<string>当前版本</string>
 	<key>Tick %@</key>
 	<string>勾选：%@</string>
+	<key>Time</key>
+	<string>时间</string>
 	<key>Time zone</key>
 	<string>时区</string>
 	<key>Title</key>
@@ -374,6 +420,8 @@
 	<string>明天</string>
 	<key>Too many wrong codes on this server. Try again in %@.</key>
 	<string>此服务器上错误的代码太多。请在 %@ 后重试。</string>
+	<key>Trash</key>
+	<string>废纸篓</string>
 	<key>Try Again</key>
 	<string>重试</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
@@ -418,6 +466,10 @@
 	<string>每年</string>
 	<key>Yesterday</key>
 	<string>昨天</string>
+	<key>You (CLI)</key>
+	<string>你（CLI）</string>
+	<key>You (app)</key>
+	<string>你（应用）</string>
 	<key>You have %@.</key>
 	<string>你的版本是 %@。</string>
 	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
@@ -438,6 +490,10 @@
 	<string>家, 工作</string>
 	<key>next step</key>
 	<string>下一步</string>
+	<key>no</key>
+	<string>否</string>
+	<key>none</key>
+	<string>无</string>
 	<key>now</key>
 	<string>现在</string>
 	<key>on %@</key>
@@ -534,5 +590,7 @@
 	<string>第三个星期三</string>
 	<key>until %@</key>
 	<string>直到 %@</string>
+	<key>yes</key>
+	<string>是</string>
 </dict>
 </plist>

@@ -4,6 +4,27 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.3.0 (unreleased)
+
+### Added
+
+- **Trash** in the sidebar, under Today: the deleted tasks, the most recent first, each with the day it was
+  deleted, the day the server deletes it for good (30 days later) and **Restore**. A task picked there opens
+  read-only in the details, as before. The sidebar shows how many tasks are open today and how many are in the
+  trash.
+- **History** at the bottom of a task's details: who changed it (you in the app, you with `dayhand`, or an agent
+  by name) and when, newest first, with each field from its old value to the new one. It comes from the server
+  (`app:getTask`) when the task opens and whenever a newer copy of it arrives, and is kept in the local database,
+  so it shows offline too ("Offline: this is the history from the last connection"). Changes still waiting to be
+  sent are counted above it, and a task made offline says its history starts once it reaches the server.
+
+### Changed
+
+- The main window has three columns: the places (Today, Trash) on the left, their tasks in the middle and the
+  details on the right. The update button stays at the bottom left, under the places.
+- The local database gains the `taskEvent` table (migration `v2`); the history of a task purged from the server
+  leaves the Mac with the task.
+
 ## 0.2.0 (2026-10-24)
 
 ### Added
