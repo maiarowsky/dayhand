@@ -4,6 +4,10 @@
 <dict>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@（当天不存在 %2$@）</string>
+	<key>%@ (done)</key>
+	<string>%@（已完成）</string>
+	<key>%@ (in the trash)</key>
+	<string>%@（在回收站中）</string>
 	<key>%@ at %@</key>
 	<string>%1$@ %2$@</string>
 	<key>%@ of %@</key>
@@ -24,12 +28,18 @@
 	<string>%lld 分钟</string>
 	<key>%lld min before</key>
 	<string>提前 %lld 分钟</string>
+	<key>%lld of %lld met</key>
+	<string>已满足 %1$lld/%2$lld</string>
 	<key>%lld s</key>
 	<string>%lld 秒</string>
 	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
 	<string>配对码由 12 个字母和数字组成，例如 E6M8-FE02-XSNT。</string>
+	<key>A task not on this Mac</key>
+	<string>不在此 Mac 上的任务</string>
 	<key>About</key>
 	<string>关于</string>
+	<key>Acceptance criteria</key>
+	<string>验收标准</string>
 	<key>Add</key>
 	<string>添加</string>
 	<key>Add Task</key>
@@ -46,12 +56,20 @@
 	<string>重复若干次后</string>
 	<key>Agent</key>
 	<string>智能体</string>
+	<key>Agent %@ works on it</key>
+	<string>智能体 %@ 正在处理</string>
+	<key>Agent %@ works on it until %@</key>
+	<string>智能体 %1$@ 正在处理（至 %2$@）</string>
 	<key>Agent: %@</key>
 	<string>智能体：%@</string>
+	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
+	<string>这些内容由智能体通过 dayhand 或 MCP 设置；此 Mac 仅显示。</string>
 	<key>All done for today.</key>
 	<string>今天的事都做完了。</string>
 	<key>Allow Notifications</key>
 	<string>允许通知</string>
+	<key>Approval requests (%lld)</key>
+	<string>审批请求（%lld）</string>
 	<key>Archive</key>
 	<string>归档</string>
 	<key>Archived</key>
@@ -60,10 +78,14 @@
 	<string>同设置</string>
 	<key>As in settings (%@)</key>
 	<string>同设置（%@）</string>
+	<key>Asked by %@</key>
+	<string>请求者：%@</string>
 	<key>At a time of day</key>
 	<string>在某个时间</string>
 	<key>Before the due time</key>
 	<string>截止时间之前</string>
+	<key>Blocked: %@</key>
+	<string>受阻：%@</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>使用 GRDB.swift（MIT）、KeyboardShortcuts（MIT）和 Sparkle（MIT）构建。</string>
 	<key>Cancel</key>
@@ -100,6 +122,8 @@
 	<string>连接</string>
 	<key>Connect to Server…</key>
 	<string>连接服务器…</string>
+	<key>Connect to a server to see the requests and proposals.</key>
+	<string>连接服务器后才能查看请求和提议。</string>
 	<key>Connect to your server</key>
 	<string>连接到你的服务器</string>
 	<key>Connected</key>
@@ -188,6 +212,8 @@
 	<string>间隔</string>
 	<key>Frequency</key>
 	<string>频率</string>
+	<key>From %@</key>
+	<string>来自 %@</string>
 	<key>General</key>
 	<string>通用</string>
 	<key>Hides the tasks done today</key>
@@ -236,6 +262,8 @@
 	<string>标记为已完成</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>macOS 自带的菜单会在 Dayhand 重新启动后切换语言。</string>
+	<key>Met: %@</key>
+	<string>已满足：%@</string>
 	<key>Monthly</key>
 	<string>每月</string>
 	<key>Morning summary</key>
@@ -260,6 +288,8 @@
 	<string>新建任务（⌘N，或在任何应用中使用快速添加快捷键）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新任务，例如 给会计打电话 fri 2pm</string>
+	<key>No approval requests are waiting.</key>
+	<string>没有等待中的审批请求。</string>
 	<key>No changes recorded yet.</key>
 	<string>还没有更改记录。</string>
 	<key>No day</key>
@@ -268,6 +298,12 @@
 	<string>未选择日子：按完成日期的星期几。</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>未选择日子：按截止日期的星期几。</string>
+	<key>No details given</key>
+	<string>未提供详情</string>
+	<key>No proposals are waiting.</key>
+	<string>没有等待中的提议。</string>
+	<key>No reminders unless a task has its own.</key>
+	<string>除非任务有自己的提醒，否则不提醒。</string>
 	<key>No server connected.</key>
 	<string>未连接服务器。</string>
 	<key>None</key>
@@ -282,6 +318,8 @@
 	<string>尚未检查。</string>
 	<key>Not connected to a server; tasks stay on this Mac.</key>
 	<string>未连接服务器；任务保留在这台 Mac 上。</string>
+	<key>Not met: %@</key>
+	<string>未满足：%@</string>
 	<key>Not now</key>
 	<string>暂不</string>
 	<key>Note</key>
@@ -322,18 +360,32 @@
 	<string>打开 Dayhand</string>
 	<key>Open System Settings</key>
 	<string>打开系统设置</string>
+	<key>Options: %@</key>
+	<string>选项：%@</string>
 	<key>Overdue (%lld)</key>
 	<string>已逾期（%lld）</string>
 	<key>Pairing code</key>
 	<string>配对码</string>
+	<key>Plan</key>
+	<string>计划</string>
+	<key>Plan: %@</key>
+	<string>计划：%@</string>
+	<key>Plan: nothing needs a look.</key>
+	<string>计划：没有需要关注的事项。</string>
 	<key>Preparing the update…</key>
 	<string>正在准备更新…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>预览版在正式发布前推出，可能不够完善。</string>
+	<key>Proof of completion</key>
+	<string>完成证明</string>
+	<key>Proposals (%lld)</key>
+	<string>提议（%lld）</string>
 	<key>Quick add</key>
 	<string>快速添加</string>
 	<key>Quit</key>
 	<string>退出</string>
+	<key>Read-only on this Mac. Decide on the phone, or with dayhand approvals and dayhand proposals.</key>
+	<string>在此 Mac 上只读。请在手机上，或使用 dayhand approvals 和 dayhand proposals 做出决定。</string>
 	<key>Reading tasks failed: %@</key>
 	<string>读取任务失败：%@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
@@ -352,6 +404,8 @@
 	<string>移除时间</string>
 	<key>Repeat</key>
 	<string>重复</string>
+	<key>Requests and proposals</key>
+	<string>请求和提议</string>
 	<key>Restart Dayhand</key>
 	<string>重新启动 Dayhand</string>
 	<key>Restore</key>
@@ -364,6 +418,8 @@
 	<string>按 Return 添加到今天；在末尾用英文写日期（tomorrow 9am、fri、23 oct）可设定日期。</string>
 	<key>Revert</key>
 	<string>还原</string>
+	<key>Review</key>
+	<string>查看</string>
 	<key>Save Note</key>
 	<string>保存备注</string>
 	<key>Save Reminders</key>
@@ -376,6 +432,8 @@
 	<string>服务器</string>
 	<key>Server address</key>
 	<string>服务器地址</string>
+	<key>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</key>
+	<string>通过服务器与手机、dayhand 和智能体共享。在此处所做的更改会在此 Mac 上等待，直到服务器收到。</string>
 	<key>Shortcut from any app:</key>
 	<string>在任何应用中使用的快捷键：</string>
 	<key>Show</key>
@@ -404,8 +462,12 @@
 	<string>该版本比当前版本旧，因此没有安装。</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
 	<string>无法读取钥匙串，因此 Dayhand 将在没有服务器的情况下启动。</string>
+	<key>The approval requests and proposals waiting for you, read-only</key>
+	<string>等待你处理的审批请求和提议（只读）</string>
 	<key>The change could not be saved: %@</key>
 	<string>无法保存更改：%@</string>
+	<key>The claim of %@ ran out: %@</key>
+	<string>%1$@ 的认领已到期：%2$@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>代码错误、已使用或已过期。请再次运行 dayhand pair 获取新代码。</string>
 	<key>The day I complete it</key>
@@ -456,10 +518,10 @@
 	<string>清单项目太多，或某个项目太长。</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>标签太多，或某个标签太长。</string>
-	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
-	<string>这些来自服务器设置，因此手机、代理和这台 Mac 保持一致。请在手机上或用 dayhand 更改。</string>
 	<key>These ring only when the task has a time.</key>
 	<string>仅当任务设有时间时才会提醒。</string>
+	<key>They could not be read: %@</key>
+	<string>无法读取：%@</string>
 	<key>This Mac</key>
 	<string>这台 Mac</string>
 	<key>This version</key>
@@ -514,6 +576,8 @@
 	<string>版本 %@ 是最新的。</string>
 	<key>Version %@.</key>
 	<string>版本 %@。</string>
+	<key>Waiting for</key>
+	<string>等待完成</string>
 	<key>Weekly</key>
 	<string>每周</string>
 	<key>When</key>
@@ -544,12 +608,18 @@
 	<string>几分钟</string>
 	<key>after completion</key>
 	<string>自完成起</string>
+	<key>agents paused</key>
+	<string>智能体已暂停</string>
 	<key>and %lld more</key>
 	<string>还有 %lld 项</string>
 	<key>at the due time</key>
 	<string>截止时</string>
 	<key>development</key>
 	<string>开发版</string>
+	<key>expires %@</key>
+	<string>过期时间：%@</string>
+	<key>fail</key>
+	<string>未通过</string>
 	<key>from “%@”</key>
 	<string>来自“%@”</string>
 	<key>home, work</key>
@@ -654,6 +724,8 @@
 	<string>第三个星期二</string>
 	<key>on the third Wednesday</key>
 	<string>第三个星期三</string>
+	<key>pass</key>
+	<string>通过</string>
 	<key>until %@</key>
 	<string>直到 %@</string>
 	<key>yes</key>

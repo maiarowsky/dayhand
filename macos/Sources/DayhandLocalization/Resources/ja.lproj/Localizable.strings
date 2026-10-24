@@ -4,6 +4,10 @@
 <dict>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@（その日に %2$@ はありません）</string>
+	<key>%@ (done)</key>
+	<string>%@（完了）</string>
+	<key>%@ (in the trash)</key>
+	<string>%@（ゴミ箱）</string>
 	<key>%@ at %@</key>
 	<string>%1$@ %2$@</string>
 	<key>%@ of %@</key>
@@ -24,12 +28,18 @@
 	<string>%lld分</string>
 	<key>%lld min before</key>
 	<string>%lld分前</string>
+	<key>%lld of %lld met</key>
+	<string>%1$lld/%2$lld 達成</string>
 	<key>%lld s</key>
 	<string>%lld秒</string>
 	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
 	<string>ペアリングコードは英数字12文字です（例：E6M8-FE02-XSNT）。</string>
+	<key>A task not on this Mac</key>
+	<string>このMacにないタスク</string>
 	<key>About</key>
 	<string>情報</string>
+	<key>Acceptance criteria</key>
+	<string>完了条件</string>
 	<key>Add</key>
 	<string>追加</string>
 	<key>Add Task</key>
@@ -46,12 +56,20 @@
 	<string>回数で終了</string>
 	<key>Agent</key>
 	<string>エージェント</string>
+	<key>Agent %@ works on it</key>
+	<string>エージェント %@ が作業中</string>
+	<key>Agent %@ works on it until %@</key>
+	<string>エージェント %1$@ が作業中（%2$@まで）</string>
 	<key>Agent: %@</key>
 	<string>エージェント：%@</string>
+	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
+	<string>これらはエージェントが dayhand または MCP で設定します。このMacでは閲覧のみです。</string>
 	<key>All done for today.</key>
 	<string>今日の分はすべて完了しました。</string>
 	<key>Allow Notifications</key>
 	<string>通知を許可</string>
+	<key>Approval requests (%lld)</key>
+	<string>承認リクエスト（%lld）</string>
 	<key>Archive</key>
 	<string>アーカイブ</string>
 	<key>Archived</key>
@@ -60,10 +78,14 @@
 	<string>設定どおり</string>
 	<key>As in settings (%@)</key>
 	<string>設定どおり（%@）</string>
+	<key>Asked by %@</key>
+	<string>依頼元：%@</string>
 	<key>At a time of day</key>
 	<string>指定の時刻</string>
 	<key>Before the due time</key>
 	<string>期限の時刻の前</string>
+	<key>Blocked: %@</key>
+	<string>ブロック中：%@</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>GRDB.swift（MIT）、KeyboardShortcuts（MIT）、Sparkle（MIT）を使用しています。</string>
 	<key>Cancel</key>
@@ -100,6 +122,8 @@
 	<string>接続</string>
 	<key>Connect to Server…</key>
 	<string>サーバーに接続…</string>
+	<key>Connect to a server to see the requests and proposals.</key>
+	<string>リクエストと提案を見るにはサーバーに接続してください。</string>
 	<key>Connect to your server</key>
 	<string>サーバーに接続</string>
 	<key>Connected</key>
@@ -188,6 +212,8 @@
 	<string>間隔</string>
 	<key>Frequency</key>
 	<string>頻度</string>
+	<key>From %@</key>
+	<string>提案元：%@</string>
 	<key>General</key>
 	<string>一般</string>
 	<key>Hides the tasks done today</key>
@@ -236,6 +262,8 @@
 	<string>完了にした</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>macOS 標準のメニューは Dayhand の再起動後に切り替わります。</string>
+	<key>Met: %@</key>
+	<string>達成：%@</string>
 	<key>Monthly</key>
 	<string>毎月</string>
 	<key>Morning summary</key>
@@ -260,6 +288,8 @@
 	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
+	<key>No approval requests are waiting.</key>
+	<string>待機中の承認リクエストはありません。</string>
 	<key>No changes recorded yet.</key>
 	<string>まだ変更の記録はありません。</string>
 	<key>No day</key>
@@ -268,6 +298,12 @@
 	<string>曜日を選ばない場合は完了日の曜日になります。</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>曜日を選ばない場合は期限日の曜日になります。</string>
+	<key>No details given</key>
+	<string>詳細はありません</string>
+	<key>No proposals are waiting.</key>
+	<string>待機中の提案はありません。</string>
+	<key>No reminders unless a task has its own.</key>
+	<string>タスクに独自の設定がない限り、リマインダーはありません。</string>
 	<key>No server connected.</key>
 	<string>サーバーが接続されていません。</string>
 	<key>None</key>
@@ -282,6 +318,8 @@
 	<string>まだ確認していません。</string>
 	<key>Not connected to a server; tasks stay on this Mac.</key>
 	<string>サーバーに接続していません。タスクはこの Mac に保存されます。</string>
+	<key>Not met: %@</key>
+	<string>未達成：%@</string>
 	<key>Not now</key>
 	<string>いまはやめる</string>
 	<key>Note</key>
@@ -322,18 +360,32 @@
 	<string>Dayhand を開く</string>
 	<key>Open System Settings</key>
 	<string>システム設定を開く</string>
+	<key>Options: %@</key>
+	<string>選択肢：%@</string>
 	<key>Overdue (%lld)</key>
 	<string>期限切れ (%lld)</string>
 	<key>Pairing code</key>
 	<string>ペアリングコード</string>
+	<key>Plan</key>
+	<string>計画</string>
+	<key>Plan: %@</key>
+	<string>プラン：%@</string>
+	<key>Plan: nothing needs a look.</key>
+	<string>プラン：確認が必要な項目はありません。</string>
 	<key>Preparing the update…</key>
 	<string>アップデートを準備中…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>プレビュー版はリリース前の版で、未完成な部分があるかもしれません。</string>
+	<key>Proof of completion</key>
+	<string>完了の証拠</string>
+	<key>Proposals (%lld)</key>
+	<string>提案（%lld）</string>
 	<key>Quick add</key>
 	<string>クイック追加</string>
 	<key>Quit</key>
 	<string>終了</string>
+	<key>Read-only on this Mac. Decide on the phone, or with dayhand approvals and dayhand proposals.</key>
+	<string>このMacでは閲覧のみです。判断はスマートフォン、または dayhand approvals と dayhand proposals で行ってください。</string>
 	<key>Reading tasks failed: %@</key>
 	<string>タスクを読み込めませんでした：%@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
@@ -352,6 +404,8 @@
 	<string>時刻を削除</string>
 	<key>Repeat</key>
 	<string>繰り返し</string>
+	<key>Requests and proposals</key>
+	<string>リクエストと提案</string>
 	<key>Restart Dayhand</key>
 	<string>Dayhand を再起動</string>
 	<key>Restore</key>
@@ -364,6 +418,8 @@
 	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日になります。</string>
 	<key>Revert</key>
 	<string>元に戻す</string>
+	<key>Review</key>
+	<string>確認する</string>
 	<key>Save Note</key>
 	<string>メモを保存</string>
 	<key>Save Reminders</key>
@@ -376,6 +432,8 @@
 	<string>サーバー</string>
 	<key>Server address</key>
 	<string>サーバーアドレス</string>
+	<key>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</key>
+	<string>サーバーを通じてスマートフォン、dayhand、エージェントと共有されます。ここでの変更は、サーバーに届くまでこのMacで待機します。</string>
 	<key>Shortcut from any app:</key>
 	<string>どのアプリからでも使えるショートカット：</string>
 	<key>Show</key>
@@ -404,8 +462,12 @@
 	<string>そのバージョンは現在のものより古いため、インストールされませんでした。</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
 	<string>キーチェーンを読み取れなかったため、Dayhand はサーバーなしで起動します。</string>
+	<key>The approval requests and proposals waiting for you, read-only</key>
+	<string>あなたを待っている承認リクエストと提案（閲覧のみ）</string>
 	<key>The change could not be saved: %@</key>
 	<string>変更を保存できませんでした：%@</string>
+	<key>The claim of %@ ran out: %@</key>
+	<string>%1$@ の担当期限が切れました：%2$@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>コードが間違っているか、使用済みか、期限切れです。dayhand pair をもう一度実行して新しいコードを取得してください。</string>
 	<key>The day I complete it</key>
@@ -456,10 +518,10 @@
 	<string>チェックリストの項目が多すぎるか、長すぎるものがあります。</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>ラベルが多すぎるか、長すぎるものがあります。</string>
-	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
-	<string>これらはサーバーの設定から取得されるため、電話、エージェント、この Mac で一致します。電話または dayhand で変更してください。</string>
 	<key>These ring only when the task has a time.</key>
 	<string>タスクに時刻があるときだけ通知します。</string>
+	<key>They could not be read: %@</key>
+	<string>読み込めませんでした：%@</string>
 	<key>This Mac</key>
 	<string>この Mac</string>
 	<key>This version</key>
@@ -514,6 +576,8 @@
 	<string>バージョン %@ が最新です。</string>
 	<key>Version %@.</key>
 	<string>バージョン %@。</string>
+	<key>Waiting for</key>
+	<string>先に完了が必要なタスク</string>
 	<key>Weekly</key>
 	<string>毎週</string>
 	<key>When</key>
@@ -544,12 +608,18 @@
 	<string>数分</string>
 	<key>after completion</key>
 	<string>完了後から</string>
+	<key>agents paused</key>
+	<string>エージェント一時停止中</string>
 	<key>and %lld more</key>
 	<string>ほか%lld件</string>
 	<key>at the due time</key>
 	<string>期限の時刻</string>
 	<key>development</key>
 	<string>開発版</string>
+	<key>expires %@</key>
+	<string>期限：%@</string>
+	<key>fail</key>
+	<string>失敗</string>
 	<key>from “%@”</key>
 	<string>「%@」から</string>
 	<key>home, work</key>
@@ -654,6 +724,8 @@
 	<string>第3火曜日</string>
 	<key>on the third Wednesday</key>
 	<string>第3水曜日</string>
+	<key>pass</key>
+	<string>成功</string>
 	<key>until %@</key>
 	<string>%@まで</string>
 	<key>yes</key>

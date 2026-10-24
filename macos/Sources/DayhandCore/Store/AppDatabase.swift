@@ -3,7 +3,8 @@ import GRDB
 
 /**
  * The local SQLite database (GRDB): the tasks as the screens see them, the outbox of changes waiting for the server,
- * the cached change history of each task and a small key-value table for the server settings. The screens read only from here, never from the network.
+ * the cached change history of each task and a small key-value table for the server settings and the last plan
+ * health report. The screens read only from here, never from the network.
  */
 public final class AppDatabase: Sendable {
     public let writer: DatabaseQueue
@@ -24,7 +25,7 @@ public final class AppDatabase: Sendable {
         try AppDatabase(DatabaseQueue())
     }
 
-    private var migrator: DatabaseMigrator {
+    var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
         migrator.registerMigration("v1") { db in
             try db.create(table: "task") { t in
@@ -79,6 +80,20 @@ public final class AppDatabase: Sendable {
                 t.column("afterJson", .text)
             }
         }
+        // 0.3.0: the task's number and agent work, as the snapshot sends them (read-only on the Mac). List and object
+        // fields are JSON, as in v1; rows from before stay valid with no criteria, dependencies or claim.
+        migrator.registerMigration("v3") { db in
+            try db.alter(table: "task") { t in
+                t.add(column: "ref", .integer)
+                t.add(column: "acceptance", .text).notNull().defaults(to: "[]")
+                t.add(column: "plan", .text)
+                t.add(column: "proof", .text)
+                t.add(column: "dependsOn", .text).notNull().defaults(to: "[]")
+                t.add(column: "blockedReason", .text)
+                t.add(column: "claimedBy", .text)
+                t.add(column: "claimExpiresAt", .integer)
+            }
+        }
         return migrator
     }
 }
@@ -110,7 +125,15 @@ extension TaskItem: FetchableRecord, PersistableRecord {
             links: FieldJSON.decode([TaskLink].self, row["links"]) ?? [],
             deletedAt: row["deletedAt"],
             checklist: FieldJSON.decode([ChecklistItem].self, row["checklist"]) ?? [],
-            reminders: FieldJSON.decode([TaskReminder].self, row["reminders"])
+            reminders: FieldJSON.decode([TaskReminder].self, row["reminders"]),
+            ref: row["ref"],
+            acceptance: FieldJSON.decode([AcceptanceItem].self, row["acceptance"]) ?? [],
+            plan: row["plan"],
+            proof: FieldJSON.decode(TaskProof.self, row["proof"]),
+            dependsOn: FieldJSON.decode([String].self, row["dependsOn"]) ?? [],
+            blockedReason: row["blockedReason"],
+            claimedBy: row["claimedBy"],
+            claimExpiresAt: row["claimExpiresAt"]
         )
     }
 
@@ -136,6 +159,14 @@ extension TaskItem: FetchableRecord, PersistableRecord {
         container["deletedAt"] = deletedAt
         container["checklist"] = FieldJSON.encode(checklist)
         container["reminders"] = FieldJSON.encode(reminders)
+        container["ref"] = ref
+        container["acceptance"] = FieldJSON.encode(acceptance)
+        container["plan"] = plan
+        container["proof"] = FieldJSON.encode(proof)
+        container["dependsOn"] = FieldJSON.encode(dependsOn)
+        container["blockedReason"] = blockedReason
+        container["claimedBy"] = claimedBy
+        container["claimExpiresAt"] = claimExpiresAt
     }
 }
 

@@ -24,11 +24,14 @@ final class AppModel: ObservableObject {
     @Published private(set) var status: SyncStatus = .notConnected {
         didSet {
             if Self.historyRecovered(from: oldValue, to: status) { historyRefreshRevision += 1 }
+            if Self.healthDue(status, lastRead: healthReadAt, now: Clock.nowMs()) { refreshHealth() }
         }
     }
     /// Moves on when the connection comes back and on Sync Now, so an open task's history is fetched again.
     @Published private(set) var historyRefreshRevision = 0
     @Published private(set) var settings = ReminderSettings()
+    /// The last plan health report from the server, kept offline; nil hides the card above Today.
+    @Published private(set) var health: PlanHealth?
     @Published private(set) var credential: DeviceCredential?
     @Published var selection: String?
     /// The place picked in the sidebar.
@@ -46,6 +49,7 @@ final class AppModel: ObservableObject {
 
     let repository: TaskRepository
     let history: TaskHistorySync
+    let healthSync: PlanHealthSync
     let notifications: NotificationScheduler?
     /// Opens the main window; set by the first view that has SwiftUI's `openWindow`.
     var openMainWindow: (() -> Void)?
@@ -56,6 +60,9 @@ final class AppModel: ObservableObject {
     private var engine: SyncEngine?
     private var clockTimer: Timer?
     private var planTask: Task<Void, Never>?
+    private var healthTask: Task<Void, Never>?
+    /// When the plan health was last asked for (Unix ms).
+    private var healthReadAt: Int64 = 0
     private let launchLanguage: String
 
     enum Keys {
@@ -74,6 +81,7 @@ final class AppModel: ObservableObject {
             database: environment.database, onOutboxChanged: { box.poke() }, repeatsOnMac: { !box.hasServer }
         )
         history = TaskHistorySync(repository: repository, runner: { box.queries })
+        healthSync = PlanHealthSync(repository: repository, runner: { box.queries })
         credentials = environment.credentials
         defaults = environment.defaults
         let choice = environment.defaults.string(forKey: Keys.language) ?? Self.systemLanguageChoice
@@ -113,6 +121,7 @@ final class AppModel: ObservableObject {
                     self?.tasks = tasks
                     self?.recompute()
                     self?.planNotifications()
+                    self?.refreshHealth()
                 }
             } catch {
                 self?.alert = tr("Reading tasks failed: \(String(describing: error))")
@@ -120,6 +129,9 @@ final class AppModel: ObservableObject {
         }
         Task { @MainActor [weak self] in
             for try await count in repository.observePendingCount() { self?.pending = count }
+        }
+        Task { @MainActor [weak self] in
+            for try await health in repository.observePlanHealth() { self?.health = health }
         }
         Task { @MainActor [weak self] in
             for try await settings in repository.observeSettings() {
@@ -153,6 +165,36 @@ final class AppModel: ObservableObject {
             guard !Task.isCancelled else { return }
             await notifications.apply(ReminderPlanner.plan(tasks, settings: settings, now: Clock.nowMs()))
         }
+    }
+
+    /**
+     * Reads the plan health report again a moment after the last change (changes come in bursts from a sync), when
+     * a server is connected. Approval requests and proposals change on the server without a task changing, so a
+     * synced poll also reads it once it is a minute old (`healthDue`).
+     */
+    func refreshHealth(afterNanoseconds delay: UInt64 = 1_000_000_000) {
+        guard engineBox.hasServer else { return }
+        healthTask?.cancel()
+        let sync = healthSync
+        healthTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: delay)
+            guard !Task.isCancelled else { return }
+            self?.healthReadAt = Clock.nowMs()
+            _ = await sync.refresh()
+        }
+    }
+
+    /// How old the report may get while polls keep succeeding.
+    static let healthMaxAgeMs: Int64 = 60_000
+
+    static func healthDue(_ status: SyncStatus, lastRead: Int64, now: Int64) -> Bool {
+        guard case .synced = status else { return false }
+        return now - lastRead >= healthMaxAgeMs
+    }
+
+    /// The approval requests and proposals waiting for the owner, from the server (Review on the health card).
+    func loadInbox() async -> Result<AgentInbox, AgentInbox.LoadError> {
+        await AgentInbox.load(engineBox.queries)
     }
 
     // MARK: Actions
@@ -204,6 +246,8 @@ final class AppModel: ObservableObject {
     func toggleItem(_ id: String, _ itemId: String) { run { try await $0.toggleItem(id, itemId) } }
     func addItem(_ id: String, _ title: String) { run { try await $0.addItem(id, title) } }
     func removeItem(_ id: String, _ itemId: String) { run { try await $0.removeItem(id, itemId) } }
+    func setSummaryTime(_ time: String) { run { try await $0.updateSettings(summaryTime: time) } }
+    func setDefaultReminders(_ minutes: [Int]) { run { try await $0.updateSettings(reminderMinutes: minutes) } }
 
     /// Sets the due day and time from a phrase ("fri 2pm"); false when the phrase is not understood.
     func setDue(_ id: String, phrase: String) -> Bool {
@@ -327,6 +371,14 @@ final class AppModel: ObservableObject {
         }
         credential = nil
         status = .notConnected
+        forgetHealth()
+    }
+
+    /// Without a server there is no report to show; the card goes.
+    private func forgetHealth() {
+        healthTask?.cancel()
+        let repository = repository
+        Task { try? await repository.forgetPlanHealth() }
     }
 
     /// The server answers again after it did not (or after connecting); a poll that stays synced is not a recovery.
@@ -340,6 +392,7 @@ final class AppModel: ObservableObject {
     func syncNow() async {
         if let engine { await engine.round() }
         historyRefreshRevision += 1
+        refreshHealth(afterNanoseconds: 0)
     }
 
     /// A `dayhand://pair` or `helm://pair` link (the QR code of `dayhand pair`) opens Connect filled in.
@@ -372,6 +425,7 @@ final class AppModel: ObservableObject {
         self.engine = engine
         engineBox.set(engine, queries: remote)
         Task { await engine.start() }
+        refreshHealth(afterNanoseconds: 0)
     }
 
     private func stopSession() {
@@ -388,6 +442,7 @@ final class AppModel: ObservableObject {
         try? credentials.delete()
         credential = nil
         status = .signedOut
+        forgetHealth()
     }
 }
 

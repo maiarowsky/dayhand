@@ -4,6 +4,10 @@
 <dict>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@ (ese día no existe la hora %2$@)</string>
+	<key>%@ (done)</key>
+	<string>%@ (hecha)</string>
+	<key>%@ (in the trash)</key>
+	<string>%@ (en la papelera)</string>
 	<key>%@ at %@</key>
 	<string>%1$@ a las %2$@</string>
 	<key>%@ of %@</key>
@@ -24,12 +28,18 @@
 	<string>%lld min</string>
 	<key>%lld min before</key>
 	<string>%lld min antes</string>
+	<key>%lld of %lld met</key>
+	<string>%1$lld de %2$lld cumplidos</string>
 	<key>%lld s</key>
 	<string>%lld s</string>
 	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
 	<string>Un código de vinculación tiene 12 letras y dígitos, como E6M8-FE02-XSNT.</string>
+	<key>A task not on this Mac</key>
+	<string>Una tarea que no está en este Mac</string>
 	<key>About</key>
 	<string>Acerca de</string>
+	<key>Acceptance criteria</key>
+	<string>Criterios de aceptación</string>
 	<key>Add</key>
 	<string>Añadir</string>
 	<key>Add Task</key>
@@ -46,12 +56,20 @@
 	<string>Tras un número de veces</string>
 	<key>Agent</key>
 	<string>Agente</string>
+	<key>Agent %@ works on it</key>
+	<string>El agente %@ trabaja en ella</string>
+	<key>Agent %@ works on it until %@</key>
+	<string>El agente %1$@ trabaja en ella (hasta: %2$@)</string>
 	<key>Agent: %@</key>
 	<string>Agente: %@</string>
+	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
+	<string>Los agentes fijan estos datos con dayhand o mediante MCP; este Mac solo los muestra.</string>
 	<key>All done for today.</key>
 	<string>Todo hecho por hoy.</string>
 	<key>Allow Notifications</key>
 	<string>Permitir notificaciones</string>
+	<key>Approval requests (%lld)</key>
+	<string>Solicitudes de aprobación (%lld)</string>
 	<key>Archive</key>
 	<string>Archivar</string>
 	<key>Archived</key>
@@ -60,10 +78,14 @@
 	<string>Como en Ajustes</string>
 	<key>As in settings (%@)</key>
 	<string>Como en los ajustes (%@)</string>
+	<key>Asked by %@</key>
+	<string>Solicitada por %@</string>
 	<key>At a time of day</key>
 	<string>A una hora del día</string>
 	<key>Before the due time</key>
 	<string>Antes de la hora de vencimiento</string>
+	<key>Blocked: %@</key>
+	<string>Bloqueada: %@</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>Hecho con GRDB.swift (MIT), KeyboardShortcuts (MIT) y Sparkle (MIT).</string>
 	<key>Cancel</key>
@@ -100,6 +122,8 @@
 	<string>Conectar</string>
 	<key>Connect to Server…</key>
 	<string>Conectar al servidor…</string>
+	<key>Connect to a server to see the requests and proposals.</key>
+	<string>Conéctate a un servidor para ver las solicitudes y propuestas.</string>
 	<key>Connect to your server</key>
 	<string>Conéctate a tu servidor</string>
 	<key>Connected</key>
@@ -188,6 +212,8 @@
 	<string>Cada cuántos</string>
 	<key>Frequency</key>
 	<string>Frecuencia</string>
+	<key>From %@</key>
+	<string>De %@</string>
 	<key>General</key>
 	<string>General</string>
 	<key>Hides the tasks done today</key>
@@ -236,6 +262,8 @@
 	<string>Marcada como hecha</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>Los menús propios de macOS cambian de idioma cuando Dayhand se reinicia.</string>
+	<key>Met: %@</key>
+	<string>Cumplido: %@</string>
 	<key>Monthly</key>
 	<string>Cada mes</string>
 	<key>Morning summary</key>
@@ -260,6 +288,8 @@
 	<string>Nueva tarea (⌘N o el atajo de añadido rápido desde cualquier app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Nueva tarea, p. ej. Llamar al contable fri 2pm</string>
+	<key>No approval requests are waiting.</key>
+	<string>No hay solicitudes de aprobación pendientes.</string>
 	<key>No changes recorded yet.</key>
 	<string>Todavía no hay cambios registrados.</string>
 	<key>No day</key>
@@ -268,6 +298,12 @@
 	<string>Ningún día elegido: el día de la semana en que lo complete.</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>Ningún día elegido: el día de la semana del vencimiento.</string>
+	<key>No details given</key>
+	<string>Sin detalles</string>
+	<key>No proposals are waiting.</key>
+	<string>No hay propuestas pendientes.</string>
+	<key>No reminders unless a task has its own.</key>
+	<string>Sin recordatorios, salvo que una tarea tenga los suyos.</string>
 	<key>No server connected.</key>
 	<string>Ningún servidor conectado.</string>
 	<key>None</key>
@@ -282,6 +318,8 @@
 	<string>Aún no se ha comprobado.</string>
 	<key>Not connected to a server; tasks stay on this Mac.</key>
 	<string>Sin conexión a un servidor; las tareas se quedan en este Mac.</string>
+	<key>Not met: %@</key>
+	<string>No cumplido: %@</string>
 	<key>Not now</key>
 	<string>Ahora no</string>
 	<key>Note</key>
@@ -322,18 +360,32 @@
 	<string>Abrir Dayhand</string>
 	<key>Open System Settings</key>
 	<string>Abrir Ajustes del Sistema</string>
+	<key>Options: %@</key>
+	<string>Opciones: %@</string>
 	<key>Overdue (%lld)</key>
 	<string>Atrasadas (%lld)</string>
 	<key>Pairing code</key>
 	<string>Código de vinculación</string>
+	<key>Plan</key>
+	<string>Plan</string>
+	<key>Plan: %@</key>
+	<string>Plan: %@</string>
+	<key>Plan: nothing needs a look.</key>
+	<string>Plan: nada requiere atención.</string>
 	<key>Preparing the update…</key>
 	<string>Preparando la actualización…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Las preliminares llegan antes de una versión y pueden tener detalles sin pulir.</string>
+	<key>Proof of completion</key>
+	<string>Prueba de finalización</string>
+	<key>Proposals (%lld)</key>
+	<string>Propuestas (%lld)</string>
 	<key>Quick add</key>
 	<string>Añadido rápido</string>
 	<key>Quit</key>
 	<string>Salir</string>
+	<key>Read-only on this Mac. Decide on the phone, or with dayhand approvals and dayhand proposals.</key>
+	<string>Solo lectura en este Mac. Decide en el teléfono o con dayhand approvals y dayhand proposals.</string>
 	<key>Reading tasks failed: %@</key>
 	<string>No se pudieron leer las tareas: %@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
@@ -352,6 +404,8 @@
 	<string>Quitar la hora</string>
 	<key>Repeat</key>
 	<string>Repetir</string>
+	<key>Requests and proposals</key>
+	<string>Solicitudes y propuestas</string>
 	<key>Restart Dayhand</key>
 	<string>Reiniciar Dayhand</string>
 	<key>Restore</key>
@@ -364,6 +418,8 @@
 	<string>Return la añade para hoy; una fecha al final, en inglés (tomorrow 9am, fri, 23 oct), fija el día.</string>
 	<key>Revert</key>
 	<string>Deshacer</string>
+	<key>Review</key>
+	<string>Revisar</string>
 	<key>Save Note</key>
 	<string>Guardar nota</string>
 	<key>Save Reminders</key>
@@ -376,6 +432,8 @@
 	<string>Servidor</string>
 	<key>Server address</key>
 	<string>Dirección del servidor</string>
+	<key>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</key>
+	<string>Compartido por el servidor con el teléfono, dayhand y los agentes. Un cambio hecho aquí espera en este Mac hasta que el servidor lo tenga.</string>
 	<key>Shortcut from any app:</key>
 	<string>Atajo desde cualquier app:</string>
 	<key>Show</key>
@@ -404,8 +462,12 @@
 	<string>Esa versión es más antigua que esta, así que no se instaló.</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
 	<string>No se pudo leer el llavero, así que Dayhand arranca sin servidor.</string>
+	<key>The approval requests and proposals waiting for you, read-only</key>
+	<string>Las solicitudes de aprobación y propuestas que te esperan, solo lectura</string>
 	<key>The change could not be saved: %@</key>
 	<string>No se pudo guardar el cambio: %@</string>
+	<key>The claim of %@ ran out: %@</key>
+	<string>La reserva de %1$@ caducó: %2$@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>El código es incorrecto, ya se usó o caducó. Vuelve a ejecutar dayhand pair para obtener otro.</string>
 	<key>The day I complete it</key>
@@ -456,10 +518,10 @@
 	<string>Hay demasiados elementos en la lista o alguno es demasiado largo.</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>Hay demasiadas etiquetas o alguna es demasiado larga.</string>
-	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
-	<string>Vienen de los ajustes del servidor, para que el teléfono, el agente y este Mac coincidan. Cámbialos en el teléfono o con dayhand.</string>
 	<key>These ring only when the task has a time.</key>
 	<string>Solo suenan si la tarea tiene hora.</string>
+	<key>They could not be read: %@</key>
+	<string>No se pudieron leer: %@</string>
 	<key>This Mac</key>
 	<string>Este Mac</string>
 	<key>This version</key>
@@ -514,6 +576,8 @@
 	<string>La versión %@ es la más reciente.</string>
 	<key>Version %@.</key>
 	<string>Versión %@.</string>
+	<key>Waiting for</key>
+	<string>Espera a</string>
 	<key>Weekly</key>
 	<string>Cada semana</string>
 	<key>When</key>
@@ -544,12 +608,18 @@
 	<string>unos minutos</string>
 	<key>after completion</key>
 	<string>tras completarla</string>
+	<key>agents paused</key>
+	<string>agentes en pausa</string>
 	<key>and %lld more</key>
 	<string>y %lld más</string>
 	<key>at the due time</key>
 	<string>a la hora de vencimiento</string>
 	<key>development</key>
 	<string>desarrollo</string>
+	<key>expires %@</key>
+	<string>caduca: %@</string>
+	<key>fail</key>
+	<string>fallida</string>
 	<key>from “%@”</key>
 	<string>de «%@»</string>
 	<key>home, work</key>
@@ -654,6 +724,8 @@
 	<string>el tercer martes</string>
 	<key>on the third Wednesday</key>
 	<string>el tercer miércoles</string>
+	<key>pass</key>
+	<string>superada</string>
 	<key>until %@</key>
 	<string>hasta el %@</string>
 	<key>yes</key>

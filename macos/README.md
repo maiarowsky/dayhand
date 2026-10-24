@@ -17,6 +17,17 @@ This version is the basic one (MVP):
 - **Task details** with editing: title, status, "working on it now" and the resume note, the day and time
   (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
   Links are shown. A task in the trash is read-only until **Restore**.
+- **Agent** in the details, read-only as on the phone, when an agent or `dayhand` set any of it: who holds the
+  task's claim and until when (or that the claim ran out), **Blocked:** with the reason in red, the acceptance
+  criteria with ticks and how many are met, the plan, **Waiting for** with the tasks it depends on ("#12 Send the
+  invoice (done)"; a task the Mac does not have is said so) and the proof of completion (summary, checks that
+  passed or failed, links). The fields come with each snapshot and are kept in the database, so they show offline.
+- **Plan health card** above Today: one sentence from the server's report (`app:planHealth`), the most pressing
+  first ("Plan: 1 overdue · 1 approval request · 2 proposals · 5 due today"), red when something is late or
+  agents are paused, orange when the owner is asked for something, green when nothing needs a look. **Review**
+  (when approval requests or proposals wait, or agents are paused) opens the waiting approval requests and
+  proposals, read from the server and read-only: deciding stays on the phone and with `dayhand approvals` and
+  `dayhand proposals`. The last report stays on the Mac offline; it goes with **Disconnect**.
 - **Repeat** in the details is an editor: **Frequency** (does not repeat, daily, weekly, monthly, yearly), every
   how many, and weekdays Monday to Sunday for a weekly rule (none picked: the selected anchor's weekday).
   Monthly choices are the anchor's day, the last day, or an nth weekday suggested by the due date (today for an
@@ -47,7 +58,10 @@ This version is the basic one (MVP):
   the network. Changes are sent in order when the server can be reached.
 - **Reminders and the morning summary** as macOS notifications, worked out on the Mac from the local database
   with the Android app's rules, in the time zone of the server settings (this Mac's until a server has sent them). A
-  reminder's **Done** completes the task.
+  reminder's **Done** completes the task. Settings → General → **Notifications** changes the **Morning summary**
+  time and the **Default reminders** (at the due time, 5, 10, 15 or 30 minutes, 1 or 2 hours, or a day before;
+  a value set elsewhere is kept as a choice). A change shows and is planned at once and goes to the server through
+  the outbox (`app:updateSettings`); a snapshot taken while it waits does not undo it.
 - **Updates** with Sparkle: a round blue button at the bottom left of the window when a newer version is out, a
   small window with its notes and **Update and Relaunch**, the download's progress, and Settings → Updates (check
   automatically, preview versions). Only builds made with the release key update; any other build says
@@ -65,8 +79,14 @@ click / quick add ──> TaskRepository: the row and its mutation in the outbox
                                      │                                       (screens update at once)
 SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST /api/mutation, clientId)
                                  then app:listAll + app:listTrash + app:getSettings (POST /api/query)
-                                 ──> SnapshotMerger (last write wins per field) ──> the database
+                                 ──> SnapshotMerger (last write wins per field; the settings fields a waiting
+                                     app:updateSettings sets keep their local value) ──> the database
 rounds: every 15 s, and at once after a local change
+
+plan health: PlanHealthSync reads app:planHealth when a server connects, a second after the tasks change,
+  on Sync Now, and on a synced poll once the last read is a minute old; the report is kept in the database
+  (meta table) and a failed read keeps the last one. Review reads app:listApprovals and app:listProposals
+  when it opens and keeps nothing.
 
 history loads only when details open, the connection changes from offline/signed out/connecting to synced,
 or Sync Now is requested:
@@ -79,7 +99,7 @@ The code is a Swift package with these application and library targets (test tar
 
 | Target | What it holds |
 |---|---|
-| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
+| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`, `PlanHealthSync`, `AgentInbox`), agent work (`AcceptanceItem`, `TaskProof`, `PlanHealth`, `HealthSummary`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
 | `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
 | `DayhandLocalization` | The texts: the string catalog `Localizable.xcstrings` (English is the source and the keys), the `.lproj` folders compiled from it, `tr(…)`, choosing the language (`Localization`) and days and times in the region's style (`DateText`). |
 | `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
@@ -89,7 +109,8 @@ The code is a Swift package with these application and library targets (test tar
 Rules ported from the Android app keep their names and comments, so a change on one side can be carried to the
 other: `domain/Recurrence.kt` → `Recurrence.swift`, `sync/SnapshotMerger.kt` → `SnapshotMerger.swift`,
 `data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`,
-`sync/TaskHistorySync.kt` and `domain/HistoryEntries.kt` → `TaskHistorySync.swift` and `TaskHistory.swift`.
+`sync/TaskHistorySync.kt` and `domain/HistoryEntries.kt` → `TaskHistorySync.swift` and `TaskHistory.swift`,
+`agents/HealthSummary.kt` → `PlanHealth.swift`.
 The backend's own rules are in `backend/convex/lib/dates.ts`, `repeat.ts` and `core.ts`.
 
 **Sign-in.** `POST /auth/pair` with the code and this Mac's name gives a device token, which is kept only in the
@@ -100,7 +121,7 @@ changes stay. Network errors and `503` keep the token and retry. **Disconnect** 
 names `dayhand revoke <deviceId>` for the server.
 
 **Live updates** come from polling every 15 seconds while the app runs (three queries, well under the server's
-limits). The official Swift client (`convex-swift`) ships its core as a binary Rust framework, so it is not used:
+limits; the plan health report adds at most one more a minute). The official Swift client (`convex-swift`) ships its core as a binary Rust framework, so it is not used:
 the app needs only the Convex HTTP API, as the Android app's `HttpTaskRemote` does.
 
 **Reminders.** Android keeps two alarms and works out what to show when one fires. macOS delivers notifications
@@ -181,7 +202,15 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   repeating task completed without a server gets its next occurrence locally and keeps one occurrence when the
   outbox is sent. With a server, generation stays on the server, including after a delayed offline completion.
   Permanent rejection of a parent add, rule-clear or completion drops its unsent generated descendants, while
-  retryable failures retain them and unrelated additions still sync. The loop's wait ends at its timeout or at
+  retryable failures retain them and unrelated additions still sync. `AgentWorkTests.swift` reads the agent fields
+  from a snapshot (numbers as doubles), keeps them from the server even with a local change waiting, migrates a
+  database of the earlier 0.3.0 schema (migrations v1 and v2) to v3 without losing a task and stores every field,
+  shows agent work set elsewhere offline, reads the plan health report and the card's order, tone and Review as
+  on the phone, keeps the last report offline and forgets it, and lists the waiting approval requests and proposals.
+  `SettingsSyncTests.swift` checks that a settings change shows at once and queues one `app:updateSettings`,
+  that values the backend refuses queue nothing, that a snapshot taken while the change waits keeps its fields
+  and the others follow the server, that an offline change is sent later, and that a refused one is repaired.
+  The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
@@ -199,8 +228,9 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
 - **Screens**: `swift run DayhandSnapshots <folder>` draws the two-column Today and Trash windows at 960 and
   720 points wide, the shared sidebar with its chooser and update button, the details with cached history and
-  with history unavailable offline, the repeat and reminder editors (weekly with the reminders from Settings,
-  monthly on an nth weekday with a count and custom reminders), the menu bar, quick add, Connect, Settings, Settings → Updates and every
+  with history unavailable offline, the Agent section (claim, blocked, criteria, plan, waiting for) and a proof,
+  the plan health card on Today, the read-only requests and proposals, the repeat and reminder editors (weekly with the reminders from Settings,
+  monthly on an nth weekday with a count and custom reminders), the menu bar, quick add, Connect, Settings, Settings → General with the notification settings, Settings → Updates and every
   state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
@@ -210,7 +240,8 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
 - **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
   classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,
   the month choices and counts of the repeat editor in English and Polish, and picker days and times that do not
-  move with the zone. These are unit checks, not clicks through the running app.
+  move with the zone. `AgentTextTests` checks the health card's sentence and colour, the claim, dependency and
+  approval texts in English and Polish, the default reminder choices and when a synced poll reads the report. These are unit checks, not clicks through the running app.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources

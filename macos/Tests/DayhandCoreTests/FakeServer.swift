@@ -4,9 +4,10 @@ import Foundation
 /**
  * A Dayhand server in memory, behind the same `HTTPTransport` the app uses: `/auth/pair`, `/auth/token`, and the app
  * functions over `/api/mutation` and `/api/query`, with the backend's rules that sync depends on (one now task,
- * `clientId` idempotency, the trash, `updatedAt`, a repeating task's next occurrence on `complete`) and each task's
- * change history (`app:getTask`). It can go offline, lose an answer after applying a change, and
- * revoke the device. No network, no production.
+ * `clientId` idempotency, the trash, `updatedAt`, a repeating task's next occurrence on `complete`), each task's
+ * change history (`app:getTask`), the settings (`app:updateSettings`) and the agent reads the Mac shows (plan health,
+ * approval requests, proposals). It can go offline, lose an answer after applying a change, and revoke the device.
+ * No network, no production.
  */
 final class FakeServer: HTTPTransport, @unchecked Sendable {
     static let site = "https://fake.convex.site"
@@ -25,6 +26,10 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     private var validJwts: Set<String> = []
     private(set) var settings: JSONValue = ["timezone": "Europe/London", "summaryTime": "05:00", "defaultReminderMinutes": [0]]
 
+    /// What `app:planHealth`, `app:listApprovals` and `app:listProposals` answer.
+    var planHealth: JSONValue = ["at": 1_800_000_000_000, "agentsPaused": false, "overdue": ["count": 0, "tasks": []]]
+    var approvals: [JSONValue] = []
+    var proposals: [JSONValue] = []
     var clock: @Sendable () -> Int64 = { 1_800_000_000_000 }
     var offline = false
     var revoked = false
@@ -90,6 +95,15 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         }
     }
 
+    /// Settings changed on the phone or with `dayhand`.
+    func editSettingsElsewhere(_ fields: [String: JSONValue]) {
+        lock.locked {
+            var next = settings.object ?? [:]
+            for (key, value) in fields { next[key] = value }
+            settings = .object(next)
+        }
+    }
+
     /// The task leaves the server for good, as the daily purge of the trash does, with its history.
     func purge(_ id: String) {
         lock.locked {
@@ -144,6 +158,9 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         case "app:listAll": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] == nil }))
         case "app:listTrash": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] != nil }))
         case "app:getSettings": return success(settings)
+        case "app:planHealth": return success(planHealth)
+        case "app:listApprovals": return success(["approvals": .array(approvals)])
+        case "app:listProposals": return success(.array(proposals))
         case "app:getTask":
             guard let id = args["taskId"]?.string, let task = tasks[id] else { return failure("Task not found") }
             return success(["task": task, "history": .array(events[id] ?? [])])
@@ -157,6 +174,13 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         switch path {
         case "app:add":
             value = add(args)
+        case "app:updateSettings":
+            var next = settings.object ?? [:]
+            for key in ["timezone", "summaryTime", "defaultReminderMinutes"] {
+                if let field = args[key] { next[key] = field }
+            }
+            settings = .object(next)
+            value = settings
         default:
             guard let id = args["taskId"]?.string, tasks[id] != nil else { return failure("Task not found") }
             if tasks[id]?["deletedAt"] != nil, path != "app:restore" { return failure("Task is in the trash") }

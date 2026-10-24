@@ -4,6 +4,10 @@
 <dict>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@ (%2$@ does not exist that day)</string>
+	<key>%@ (done)</key>
+	<string>%@ (done)</string>
+	<key>%@ (in the trash)</key>
+	<string>%@ (in the trash)</string>
 	<key>%@ at %@</key>
 	<string>%1$@ at %2$@</string>
 	<key>%@ of %@</key>
@@ -24,12 +28,18 @@
 	<string>%lld min</string>
 	<key>%lld min before</key>
 	<string>%lld min before</string>
+	<key>%lld of %lld met</key>
+	<string>%1$lld of %2$lld met</string>
 	<key>%lld s</key>
 	<string>%lld s</string>
 	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
 	<string>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</string>
+	<key>A task not on this Mac</key>
+	<string>A task not on this Mac</string>
 	<key>About</key>
 	<string>About</string>
+	<key>Acceptance criteria</key>
+	<string>Acceptance criteria</string>
 	<key>Add</key>
 	<string>Add</string>
 	<key>Add Task</key>
@@ -46,12 +56,20 @@
 	<string>After a number of times</string>
 	<key>Agent</key>
 	<string>Agent</string>
+	<key>Agent %@ works on it</key>
+	<string>Agent %@ works on it</string>
+	<key>Agent %@ works on it until %@</key>
+	<string>Agent %1$@ works on it until %2$@</string>
 	<key>Agent: %@</key>
 	<string>Agent: %@</string>
+	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
+	<string>Agents set these with dayhand or through MCP; this Mac shows them read-only.</string>
 	<key>All done for today.</key>
 	<string>All done for today.</string>
 	<key>Allow Notifications</key>
 	<string>Allow Notifications</string>
+	<key>Approval requests (%lld)</key>
+	<string>Approval requests (%lld)</string>
 	<key>Archive</key>
 	<string>Archive</string>
 	<key>Archived</key>
@@ -60,10 +78,14 @@
 	<string>As in Settings</string>
 	<key>As in settings (%@)</key>
 	<string>As in settings (%@)</string>
+	<key>Asked by %@</key>
+	<string>Asked by %@</string>
 	<key>At a time of day</key>
 	<string>At a time of day</string>
 	<key>Before the due time</key>
 	<string>Before the due time</string>
+	<key>Blocked: %@</key>
+	<string>Blocked: %@</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</string>
 	<key>Cancel</key>
@@ -100,6 +122,8 @@
 	<string>Connect</string>
 	<key>Connect to Server…</key>
 	<string>Connect to Server…</string>
+	<key>Connect to a server to see the requests and proposals.</key>
+	<string>Connect to a server to see the requests and proposals.</string>
 	<key>Connect to your server</key>
 	<string>Connect to your server</string>
 	<key>Connected</key>
@@ -188,6 +212,8 @@
 	<string>Every how many</string>
 	<key>Frequency</key>
 	<string>Frequency</string>
+	<key>From %@</key>
+	<string>From %@</string>
 	<key>General</key>
 	<string>General</string>
 	<key>Hides the tasks done today</key>
@@ -236,6 +262,8 @@
 	<string>Marked done</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>Menus that come with macOS change language when Dayhand restarts.</string>
+	<key>Met: %@</key>
+	<string>Met: %@</string>
 	<key>Monthly</key>
 	<string>Monthly</string>
 	<key>Morning summary</key>
@@ -260,6 +288,8 @@
 	<string>New task (⌘N, or the quick add shortcut from any app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>New task, e.g. Call the accountant fri 2pm</string>
+	<key>No approval requests are waiting.</key>
+	<string>No approval requests are waiting.</string>
 	<key>No changes recorded yet.</key>
 	<string>No changes recorded yet.</string>
 	<key>No day</key>
@@ -268,6 +298,12 @@
 	<string>No day picked: the completion day's weekday.</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>No day picked: the due date's weekday.</string>
+	<key>No details given</key>
+	<string>No details given</string>
+	<key>No proposals are waiting.</key>
+	<string>No proposals are waiting.</string>
+	<key>No reminders unless a task has its own.</key>
+	<string>No reminders unless a task has its own.</string>
 	<key>No server connected.</key>
 	<string>No server connected.</string>
 	<key>None</key>
@@ -282,6 +318,8 @@
 	<string>Not checked yet.</string>
 	<key>Not connected to a server; tasks stay on this Mac.</key>
 	<string>Not connected to a server; tasks stay on this Mac.</string>
+	<key>Not met: %@</key>
+	<string>Not met: %@</string>
 	<key>Not now</key>
 	<string>Not now</string>
 	<key>Note</key>
@@ -322,18 +360,32 @@
 	<string>Open Dayhand</string>
 	<key>Open System Settings</key>
 	<string>Open System Settings</string>
+	<key>Options: %@</key>
+	<string>Options: %@</string>
 	<key>Overdue (%lld)</key>
 	<string>Overdue (%lld)</string>
 	<key>Pairing code</key>
 	<string>Pairing code</string>
+	<key>Plan</key>
+	<string>Plan</string>
+	<key>Plan: %@</key>
+	<string>Plan: %@</string>
+	<key>Plan: nothing needs a look.</key>
+	<string>Plan: nothing needs a look.</string>
 	<key>Preparing the update…</key>
 	<string>Preparing the update…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Previews come before a release and may have rough edges.</string>
+	<key>Proof of completion</key>
+	<string>Proof of completion</string>
+	<key>Proposals (%lld)</key>
+	<string>Proposals (%lld)</string>
 	<key>Quick add</key>
 	<string>Quick add</string>
 	<key>Quit</key>
 	<string>Quit</string>
+	<key>Read-only on this Mac. Decide on the phone, or with dayhand approvals and dayhand proposals.</key>
+	<string>Read-only on this Mac. Decide on the phone, or with dayhand approvals and dayhand proposals.</string>
 	<key>Reading tasks failed: %@</key>
 	<string>Reading tasks failed: %@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
@@ -352,6 +404,8 @@
 	<string>Remove the time</string>
 	<key>Repeat</key>
 	<string>Repeat</string>
+	<key>Requests and proposals</key>
+	<string>Requests and proposals</string>
 	<key>Restart Dayhand</key>
 	<string>Restart Dayhand</string>
 	<key>Restore</key>
@@ -364,6 +418,8 @@
 	<string>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</string>
 	<key>Revert</key>
 	<string>Revert</string>
+	<key>Review</key>
+	<string>Review</string>
 	<key>Save Note</key>
 	<string>Save Note</string>
 	<key>Save Reminders</key>
@@ -376,6 +432,8 @@
 	<string>Server</string>
 	<key>Server address</key>
 	<string>Server address</string>
+	<key>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</key>
+	<string>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</string>
 	<key>Shortcut from any app:</key>
 	<string>Shortcut from any app:</string>
 	<key>Show</key>
@@ -404,8 +462,12 @@
 	<string>That version is older than this one, so it was not installed.</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
 	<string>The Keychain could not be read, so Dayhand starts without a server.</string>
+	<key>The approval requests and proposals waiting for you, read-only</key>
+	<string>The approval requests and proposals waiting for you, read-only</string>
 	<key>The change could not be saved: %@</key>
 	<string>The change could not be saved: %@</string>
+	<key>The claim of %@ ran out: %@</key>
+	<string>The claim of %1$@ ran out: %2$@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>The code is wrong, used or expired. Run dayhand pair again for a new one.</string>
 	<key>The day I complete it</key>
@@ -456,10 +518,10 @@
 	<string>There are too many checklist items, or one is too long.</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>There are too many labels, or one is too long.</string>
-	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
-	<string>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</string>
 	<key>These ring only when the task has a time.</key>
 	<string>These ring only when the task has a time.</string>
+	<key>They could not be read: %@</key>
+	<string>They could not be read: %@</string>
 	<key>This Mac</key>
 	<string>This Mac</string>
 	<key>This version</key>
@@ -514,6 +576,8 @@
 	<string>Version %@ is the newest.</string>
 	<key>Version %@.</key>
 	<string>Version %@.</string>
+	<key>Waiting for</key>
+	<string>Waiting for</string>
 	<key>Weekly</key>
 	<string>Weekly</string>
 	<key>When</key>
@@ -544,12 +608,18 @@
 	<string>a few minutes</string>
 	<key>after completion</key>
 	<string>after completion</string>
+	<key>agents paused</key>
+	<string>agents paused</string>
 	<key>and %lld more</key>
 	<string>and %lld more</string>
 	<key>at the due time</key>
 	<string>at the due time</string>
 	<key>development</key>
 	<string>development</string>
+	<key>expires %@</key>
+	<string>expires %@</string>
+	<key>fail</key>
+	<string>fail</string>
 	<key>from “%@”</key>
 	<string>from “%@”</string>
 	<key>home, work</key>
@@ -654,6 +724,8 @@
 	<string>on the third Tuesday</string>
 	<key>on the third Wednesday</key>
 	<string>on the third Wednesday</string>
+	<key>pass</key>
+	<string>pass</string>
 	<key>until %@</key>
 	<string>until %@</string>
 	<key>yes</key>

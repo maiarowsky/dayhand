@@ -159,10 +159,28 @@ Known limitations:
 
 - A paired Mac without network queues completion but creates no next occurrence until it syncs; a
   completion-anchored rule then counts from the sync date, not the local completion date.
-- A Mac without a server does not keep agent acceptance criteria or plans, so a locally created next occurrence
-  lacks those fields.
+- A locally created next occurrence does not copy agent work (criteria, plan, proof, dependencies, blocked reason,
+  claim): those fields are read-only on the Mac.
 - Completing the same cached occurrence on two devices before sync can yield two next occurrences, as on Android;
   this release adds no cross-device correlation protocol.
+
+## Agent work and settings on the Mac
+
+Since 0.3.0 the Mac shows agent work read-only and edits the notification settings. What it does is described in
+[macos/README.md](../macos/README.md); the edges:
+
+- The agent fields (criteria, plan, proof, dependencies, blocked reason, claim holder and end, the task's number)
+  come only from snapshots and always take the server's copy. A dependency shows its title only when the task is on
+  this Mac; a proposal or a purged task reads "A task not on this Mac".
+- The plan health card shows the last report the server sent and is read a second after the tasks change, when a
+  server connects, on Sync Now and on a synced poll once a minute has passed. An approval request or proposal that
+  changes no task therefore reaches the card up to a minute later. Without a server the card is not read; the last
+  report stays (also after **Not now**) until **Disconnect** or a sign-out by the server.
+- **Review** reads the waiting approval requests and proposals when it opens and keeps nothing: offline it says
+  they could not be read. Deciding, pausing agents, tool policies and ending a claim stay on the phone and with
+  `dayhand`.
+- A settings change made without a server waits in the outbox and goes to the first server the Mac connects to.
+  Until a server has sent its settings, the time zone stays this Mac's at the moment of the change.
 
 ## What is left for parity with the Android app
 
@@ -176,8 +194,9 @@ by screen:
   time, later dates of a repeating task (`Recurrence.occurrences` is ported), drag to another day and time with
   Undo (`setDue` through the outbox is there).
 - **Details**: an editor for links, a date picker and moving checklist items.
-- **Settings**: the morning summary time and default reminders edited on the Mac (`app:updateSettings` through the
-  outbox, kept against snapshots while it waits); appearance (the Mussh palettes and fonts of
+- **Agents**: deciding approval requests and proposals, pausing agents, tool policies and **End the claim**; the
+  read-only list behind **Review** is the start.
+- **Settings**: appearance (the Mussh palettes and fonts of
   [design.md](design.md)); export as Markdown or JSON; the calendar address; **agent connections** (approve a
   connection by the code its sign-in page shows, list and disconnect).
 - **Date phrases in other languages**: the screens speak eight languages, but quick add and the date field read
