@@ -190,7 +190,7 @@ More: [macos/README.md](macos/README.md) and [docs/macos.md](docs/macos.md).
 
 ## On Linux
 
-Dayhand for Linux (Qt 6) has Today, a quick add window for a keyboard binding, a tray icon, reminders
+Dayhand for Linux (Qt 6) has Today with task details, a quick add window for a keyboard binding, a tray icon, reminders
 and the morning summary as desktop notifications, works offline, and speaks eight languages. On Arch
 Linux or Omarchy it is built as a package from this repository (not on the AUR):
 
