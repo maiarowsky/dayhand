@@ -9,6 +9,7 @@ import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import type { DayhandClient } from "../transport/client.js";
 import { addDays } from "../when/calendar.js";
 import { Budget, CHANGES_PER_MINUTE, READS_PER_MINUTE } from "./budget.js";
+import type { Agents, Approval, Controls, Health } from "./agents.js";
 
 /** The UI's own limit was reached; nothing was sent. */
 export class Throttled extends Error {
@@ -20,12 +21,14 @@ export class Throttled extends Error {
 export type Api = {
   settings(): Promise<{ timezone: string }>;
   today(): Promise<TodayView>;
+  health(): Promise<Health>;
+  agents(): Promise<Agents>;
   board(): Promise<Board>;
   /** Tasks due Monday `start` to Sunday, done ones included. */
   week(start: string): Promise<Task[]>;
   trash(): Promise<Task[]>;
   task(id: string): Promise<Detail>;
-  /** A changing tool call with a fresh clientId, retried on a dropped connection. */
+  /** A changing tool call, retried on a dropped connection; task changes carry one clientId. */
   change<T = Record<string, unknown>>(tool: string, args: Record<string, unknown>): Promise<T>;
 };
 
@@ -62,6 +65,25 @@ export function makeApi(
   return {
     settings: () => read("get_settings"),
     today: () => read("list_today"),
+    health: () => read("plan_health"),
+    agents: async () => {
+      const [controls, { approvals }, proposals] = await Promise.all([
+        read<Controls>("get_agent_controls"),
+        read<{ approvals: Approval[] }>("list_approvals", { status: "pending", limit: PAGE }),
+        (async () => {
+          const tasks: Task[] = [];
+          let cursor: string | undefined;
+          for (let page = 0; page < MAX_PAGES; page++) {
+            const result = await read<{ result: Task[]; nextCursor?: string | null }>("list_all", { proposed: true, limit: PAGE, ...(cursor ? { cursor } : {}) });
+            tasks.push(...(result.result ?? []));
+            if (!result.nextCursor) break;
+            cursor = result.nextCursor;
+          }
+          return tasks;
+        })(),
+      ]);
+      return { controls, approvals, proposals };
+    },
     board: () => read("board", { doneLimit: DONE_LIMIT }),
     trash: async () => (await read<{ result: Task[] }>("list_trash")).result ?? [],
     task: (id) => read("get_task", { taskId: id }),
@@ -78,10 +100,11 @@ export function makeApi(
       return tasks;
     },
     change: async <T>(tool: string, args: Record<string, unknown>) => {
-      const clientId = randomUUID();
+      // These owner controls are idempotent and their MCP schemas do not accept clientId.
+      const input = tool === "pause_agents" || tool === "decide_approval" ? args : { ...args, clientId: randomUUID() };
       for (let attempt = 0; ; attempt++) {
         try {
-          return await call<T>(changes, tool, { ...args, clientId });
+          return await call<T>(changes, tool, input);
         } catch (error) {
           const retry = error instanceof CliError && error.code === "unavailable" && attempt < RETRY_DELAYS_MS.length;
           if (!retry) throw error;

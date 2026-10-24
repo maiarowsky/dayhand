@@ -1,12 +1,15 @@
 // What the controller knows besides the key state: the server's data per view,
 // the connection, the last message, and what the screens list from them.
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
+import { agentItems, type Agents, type Health } from "./agents.js";
 import { addDays } from "../when/calendar.js";
 import { boardColumns, matches, todaySections, todayTasks, weekDays, type Column, type Day, type Section } from "./lists.js";
 import type { Lists, UiState } from "./state.js";
 
 export type Data = {
   today?: TodayView;
+  health?: Health;
+  agents?: Agents;
   board?: Board;
   week?: { start: string; tasks: Task[] };
   trash?: Task[];
@@ -56,6 +59,8 @@ export function derive(s: Pick<Snapshot, "ui" | "data" | "today" | "rows">): Der
     week: days.map((d) => d.tasks),
     weekDates: Array.from({ length: 7 }, (_, i) => addDays(ui.weekStart, i)),
     trash: (data.trash ?? []).filter((t) => matches(t, ui.filter)),
+    agents: agentItems(data.agents, ui.filter),
+    paused: data.agents?.controls.paused,
     detail: ui.detail && data.detail?.task.id === ui.detail.taskId ? data.detail.task : undefined,
     date: today,
     page: contentHeight(s.rows),

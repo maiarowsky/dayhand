@@ -4,12 +4,13 @@
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import type { Line } from "./line.js";
+import { agentId, type AgentItem, type Approval } from "./agents.js";
 
-export type ViewName = "today" | "board" | "week" | "trash";
-export const VIEWS: ViewName[] = ["today", "board", "week", "trash"];
+export type ViewName = "today" | "board" | "week" | "trash" | "agents";
+export const VIEWS: ViewName[] = ["today", "board", "week", "trash", "agents"];
 export const viewLabel = (view: ViewName): string => t(`view.${view}`);
 
-export type Prompt = "add" | "move" | "note" | "filter";
+export type Prompt = "add" | "move" | "note" | "filter" | "reject";
 
 export type EditKey = "title" | "due" | "labels" | "resumeNote";
 export type EditField = { key: EditKey; label: string; line: Line; initial: string };
@@ -19,7 +20,9 @@ export type Mode =
   | { kind: "help"; scroll: number }
   | { kind: "prompt"; prompt: Prompt; line: Line; taskId?: string; date?: string; status?: "doing" }
   | { kind: "confirm"; taskId: string; ref: string; title: string }
-  | { kind: "edit"; taskId: string; fields: EditField[]; focus: number };
+  | { kind: "edit"; taskId: string; fields: EditField[]; focus: number }
+  /** A captured request: polling cannot change the meaning of a numbered choice. */
+  | { kind: "approval"; approval: Approval; optionId?: string; scroll: number };
 
 export type Cursor = {
   today: number;
@@ -28,6 +31,7 @@ export type Cursor = {
   weekDay: number;
   weekRow: number;
   trash: number;
+  agents: number;
 };
 
 export type UiState = {
@@ -50,6 +54,8 @@ export type Lists = {
   week: Task[][];
   weekDates: string[];
   trash: Task[];
+  agents: AgentItem[];
+  paused?: boolean;
   detail?: Task;
   /** Today in the user's time zone. */
   date: string;
@@ -61,7 +67,7 @@ export function initialState(view: ViewName, weekStart: string): UiState {
   return {
     view,
     mode: { kind: "normal" },
-    cursor: { today: 0, boardColumn: 0, board: [0, 0, 0], weekDay: 0, weekRow: 0, trash: 0 },
+    cursor: { today: 0, boardColumn: 0, board: [0, 0, 0], weekDay: 0, weekRow: 0, trash: 0, agents: 0 },
     weekStart,
     filter: "",
   };
@@ -86,10 +92,16 @@ export function selectedTask(state: UiState, lists: Lists): Task | undefined {
     }
     case "trash":
       return lists.trash[clamp(c.trash, lists.trash.length)];
+    case "agents": {
+      const item = selectedAgent(state, lists);
+      return item?.kind === "proposal" ? item.task : undefined;
+    }
   }
 }
 
-/** Puts the cursor back on task `id` after a refresh moved it, if it is still listed. */
+export const selectedAgent = (state: UiState, lists: Lists): AgentItem | undefined => lists.agents[clamp(state.cursor.agents, lists.agents.length)];
+
+/** Puts the cursor back on task/request `id` after a refresh moved it, if it is still listed. */
 export function reanchor(state: UiState, id: string | undefined, lists: Lists): UiState {
   if (!id || state.detail) return state;
   const c = state.cursor;
@@ -114,6 +126,10 @@ export function reanchor(state: UiState, id: string | undefined, lists: Lists): 
       const i = at(lists.trash);
       return i < 0 || i === c.trash ? state : { ...state, cursor: { ...c, trash: i } };
     }
+    case "agents": {
+      const i = lists.agents.findIndex((item) => agentId(item) === id);
+      return i < 0 || i === c.agents ? state : { ...state, cursor: { ...c, agents: i } };
+    }
   }
 }
 
@@ -137,6 +153,8 @@ export function moveRow(state: UiState, lists: Lists, delta: number): UiState {
       return moveInWeek(state, lists, delta);
     case "trash":
       return { ...state, cursor: { ...c, trash: step(c.trash, lists.trash.length) } };
+    case "agents":
+      return { ...state, cursor: { ...c, agents: step(c.agents, lists.agents.length) } };
   }
 }
 

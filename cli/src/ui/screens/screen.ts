@@ -6,6 +6,7 @@ import type { Row } from "../text.js";
 export type Target =
   | { kind: "tab"; view: ViewName }
   | { kind: "task"; index: number; column?: number; day?: number }
+  | { kind: "agent"; index: number }
   | { kind: "day"; day: number };
 
 export type Hit = { y: number; x0: number; x1: number; target: Target };

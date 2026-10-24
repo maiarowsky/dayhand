@@ -5,6 +5,10 @@ import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { createKey, dayhand, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
 import { loadPty, uiSession, type UiSession } from "./screen.js";
+import { DayhandClient } from "../src/transport/client.js";
+import { makeApi } from "../src/ui/api.js";
+import { Controller } from "../src/ui/controller.js";
+import { rowsText } from "../src/ui/text.js";
 
 const pty = loadPty();
 const sessions: UiSession[] = [];
@@ -40,6 +44,96 @@ function locate(screen: string, text: string) {
 }
 
 const show = (key: string, ref: number) => dayhandJson(key, ["show", String(ref)]);
+
+// These controller tests always use the real backend, including Linux without node-pty.
+describe("agent UI with the local backend", () => {
+  test("a request is decided only after opening, choosing a digit and confirming; p toggles agent pause", async () => {
+    const { key, userId } = await newUser();
+    const agent = (await createKey(userId, "demo-agent", "agent")).key;
+    const request = await dayhandJson(agent, ["ask", "Deploy the demo", "--option", "Deploy now: The demo becomes public", "--option", "Wait: Nothing changes"]);
+    const ui = new Controller({ api: makeApi(new DayhandClient({ url: helm().siteUrl, key })), view: "today", columns: 100, rows: 24 });
+    try {
+      await ui.refresh();
+      expect(rowsText(ui.frame().rows)).toContain("Approval requests pending: 1");
+      expect(ui.frame().rows[2]?.[0]?.color).toBe("yellow");
+      ui.key("5");
+      await ui.idle();
+      expect(rowsText(ui.frame().rows)).toContain("APPROVAL REQUESTS (1)");
+      ui.key("enter");
+      expect(rowsText(ui.frame().rows)).toContain("The demo becomes public");
+      ui.key("2");
+      expect((await dayhandJson(key, ["approval", request.id])).status).toBe("pending");
+      ui.key("esc");
+      ui.key("esc");
+      expect((await dayhandJson(key, ["approval", request.id])).status).toBe("pending");
+      ui.key("enter");
+      ui.key("1");
+      expect(rowsText(ui.frame().rows)).toContain("Record this decision?");
+      expect((await dayhandJson(key, ["approval", request.id])).status).toBe("pending");
+      ui.key("enter");
+      await ui.idle();
+      const decided = await dayhandJson(agent, ["approval", request.id]);
+      expect(decided).toMatchObject({ status: "decided", decision: { optionId: request.options[0].id, label: "Deploy now" } });
+      expect(rowsText(ui.frame().rows)).toContain("APPROVAL REQUESTS (0)");
+      ui.key("p");
+      await ui.idle();
+      expect((await dayhandJson(key, ["agents"])).paused).toBe(true);
+      expect(rowsText(ui.frame().rows)).toContain("Agents are paused · p resumes");
+      ui.key("p");
+      await ui.idle();
+      expect((await dayhandJson(key, ["agents"])).paused).toBe(false);
+    } finally {
+      ui.stop();
+    }
+  });
+
+  test("A accepts a proposal into Today; X rejects another only with a nonempty reason", async () => {
+    const { key, userId } = await newUser();
+    const agent = (await createKey(userId, "demo-agent", "agent")).key;
+    const proposal = await dayhandJson(agent, ["add", "Prepare the demo", "--propose", "--requested-by", "demo customer"]);
+    const rejected = await dayhandJson(agent, ["add", "Unrelated work", "--propose"]);
+    expect((await dayhandJson(key, ["today"])).today).toHaveLength(0);
+    const ui = new Controller({ api: makeApi(new DayhandClient({ url: helm().siteUrl, key })), view: "agents", columns: 100, rows: 24 });
+    try {
+      await ui.refresh();
+      expect(rowsText(ui.frame().rows)).toContain("PROPOSALS (2)");
+      ui.key("/");
+      ui.paste("Prepare the demo");
+      ui.key("enter");
+      expect(ui.selected()?.id).toBe(proposal.id);
+      ui.key("enter");
+      await ui.idle();
+      expect(rowsText(ui.frame().rows)).toContain("A accept");
+      ui.key("A");
+      await ui.idle();
+      expect((await show(key, proposal.ref)).task.proposedAt).toBeUndefined();
+      expect((await dayhandJson(key, ["today"])).today).toEqual([expect.objectContaining({ id: proposal.id })]);
+      ui.key("esc"); // Clear the filter.
+      ui.key("X");
+      ui.key("enter");
+      await ui.idle();
+      expect((await show(key, rejected.ref)).task.deletedAt).toBeUndefined();
+      ui.paste("Outside this demo");
+      ui.key("enter");
+      await ui.idle();
+      expect((await show(key, rejected.ref)).task.deletedAt).toEqual(expect.any(Number));
+      expect(rowsText(ui.frame().rows)).toContain("PROPOSALS (0)");
+      ui.key("1");
+      await ui.idle();
+      expect(rowsText(ui.frame().rows)).toContain("Prepare the demo");
+      expect(ui.snapshot().data.today?.today.map((task) => task.id)).toEqual([proposal.id]);
+    } finally {
+      ui.stop();
+    }
+  });
+
+  test("dayhand help ui advertises the fifth view and agent keys", async () => {
+    const help = await dayhand(undefined, ["help", "ui"]);
+    expect(help.code).toBe(0);
+    expect(help.stdout).toMatch(/1 2 3 4 5 +Today, Board, Week, Trash, Agents/);
+    for (const binding of [/p +Agents: pause \/ resume changes/, /1 2 3 4 +Request: choose an option/, /Enter Esc +Request: confirm/, /A +Accept the selected proposal/, /X +Reject the selected proposal/]) expect(help.stdout).toMatch(binding);
+  });
+});
 
 describe.skipIf(!pty)("dayhand ui", () => {
   test("opens Today full screen with the mouse on, and q gives the terminal back", async () => {
@@ -146,6 +240,33 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await s.shot("detail");
     await s.press("q");
     await s.waitFor("Today, ");
+  });
+
+  test("Agents: consent needs a digit and confirmation, and A brings a proposal into Today", async () => {
+    const { key, userId } = await newUser();
+    const agent = (await createKey(userId, "demo-agent", "agent")).key;
+    const request = await dayhandJson(agent, ["ask", "Deploy the demo", "--option", "Deploy now: The demo becomes public", "--option", "Wait: Nothing changes"]);
+    const proposal = await dayhandJson(agent, ["add", "Prepare the demo", "--propose"]);
+    const s = open(key);
+    await s.waitFor("Approval requests pending: 1");
+    await s.press("5");
+    await s.waitFor("APPROVAL REQUESTS (1)");
+    await s.press("enter");
+    await s.waitFor("1. Deploy now");
+    await s.press("2");
+    await s.waitFor("Record this decision?");
+    expect((await dayhandJson(key, ["approval", request.id])).status).toBe("pending");
+    await s.shot("approval-confirm");
+    await s.press("enter");
+    await s.waitFor("APPROVAL REQUESTS (0)");
+    expect((await dayhandJson(agent, ["approval", request.id])).decision.optionId).toBe(request.options[1].id);
+    await s.shot("agents");
+    await s.press("A");
+    await s.waitFor("PROPOSALS (0)");
+    expect((await show(key, proposal.ref)).task.proposedAt).toBeUndefined();
+    await s.press("1");
+    await s.waitFor("Prepare the demo");
+    expect((await dayhandJson(key, ["today"])).today).toEqual([expect.objectContaining({ id: proposal.id })]);
   });
 
   test("the edit form saves title, due day and labels in one change", async () => {

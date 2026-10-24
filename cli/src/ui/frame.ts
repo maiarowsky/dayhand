@@ -7,6 +7,8 @@ import { formatTimestamp } from "../render/format.js";
 import { addDays } from "../when/calendar.js";
 import { whenText } from "./effects.js";
 import { derive, contentHeight, type Snapshot } from "./model.js";
+import { healthRow } from "./health.js";
+import { agentsScreen, approvalRows, approvalScreen } from "./screens/agents.js";
 import { parseMove, parseQuickAdd } from "./quickadd.js";
 import { boardScreen } from "./screens/board.js";
 import { detailRows, detailScreen } from "./screens/detail.js";
@@ -64,6 +66,8 @@ function heading(s: Snapshot): Row {
         return t("heading.week", { from: dayText(s.ui.weekStart), to: dayText(addDays(s.ui.weekStart, 6)) });
       case "trash":
         return t("heading.trash", { count: s.data.trash?.length ?? 0 });
+      case "agents":
+        return viewLabel("agents");
     }
   })();
   return [seg(` ${text}`, { bold: true }), ...filter];
@@ -74,19 +78,24 @@ function content(s: Snapshot, height: number): Screen {
   const width = s.columns;
   const { sections, columns, days, lists } = derive(s);
   if (ui.mode.kind === "help") return helpScreen(ui.mode.scroll, width, height);
+  if (ui.mode.kind === "approval") return approvalScreen(ui.mode, s.timezone, width, height);
   if (ui.mode.kind === "edit") {
     const mode = ui.mode;
     const task = [lists.detail, ...lists.today, ...lists.board.flat(), ...lists.week.flat()].find((t) => t?.id === mode.taskId);
     const title = task ? `${task.ref === undefined ? "" : `#${task.ref} `}${task.title}` : "task";
     return editScreen(title, mode.fields, mode.focus, (f) => fieldPreview(f, s), width, height);
   }
-  if (ui.detail) return detailScreen(data.detail?.task.id === ui.detail.taskId ? data.detail : undefined, ui.detail.scroll, s.today, s.timezone, width, height);
-  const loaded = { today: data.today, board: data.board, week: data.week?.start === ui.weekStart ? data.week : undefined, trash: data.trash }[ui.view];
+  if (ui.detail) return detailScreen(data.detail?.task.id === ui.detail.taskId ? data.detail : undefined, ui.detail.scroll, s.today, s.timezone, width, height, s.now);
+  const loaded = { today: data.today, board: data.board, week: data.week?.start === ui.weekStart ? data.week : undefined, trash: data.trash, agents: data.agents }[ui.view];
   if (!loaded) return messageScreen(waiting(s), height);
   const c = ui.cursor;
   switch (ui.view) {
-    case "today":
-      return todayScreen(sections, c.today, s.today, width, height);
+    case "today": {
+      const body = todayScreen(sections, c.today, s.today, width, height - 1);
+      return { rows: [data.health ? healthRow(data.health) : [], ...body.rows], hits: offsetHits(body.hits, 1) };
+    }
+    case "agents":
+      return agentsScreen(data.agents!.controls, lists.agents, c.agents, s.today, width, height);
     case "board":
       return boardScreen(columns, c.boardColumn, c.board, s.today, width, height);
     case "week":
@@ -121,6 +130,7 @@ function promptRow(mode: Extract<Mode, { kind: "prompt" }>, s: Snapshot): Row {
 
 function promptPreview(mode: Extract<Mode, { kind: "prompt" }>, s: Snapshot): Row {
   const text = mode.line.text.trim();
+  if (mode.prompt === "reject") return text ? [] : [seg(t("prompt.reasonRequired"), { color: "red" })];
   if (!s.timezone || mode.prompt === "filter" || mode.prompt === "note") {
     return mode.prompt === "note" ? [seg(t("prompt.makeNow"), { dim: true })] : [];
   }
@@ -140,6 +150,7 @@ function statusRow(s: Snapshot): Row {
   const mode = s.ui.mode;
   if (mode.kind === "prompt") return promptRow(mode, s);
   if (mode.kind === "confirm") return [seg(t("confirm.trash", { ref: mode.ref, title: mode.title }), { bold: true, color: "yellow" }), seg("y/N", { bold: true })];
+  if (mode.kind === "approval") return [seg(` ${t(mode.optionId ? "confirm.approval" : "hints.approval")}`, { bold: true, color: "yellow" })];
   if (s.flash) return [seg(` ${s.flash.text}`, { color: s.flash.tone === "error" ? "red" : s.flash.tone === "ok" ? "green" : undefined, bold: s.flash.tone === "error" })];
   if (s.conn.state === "offline" || s.conn.state === "throttled" || s.conn.state === "rejected") {
     const since = "at" in s.conn && s.conn.at ? t("conn.since", { time: clock(s.conn.at, s.timezone) }) : "";
@@ -152,9 +163,11 @@ function keysRow(s: Snapshot): Row {
   const mode = s.ui.mode.kind;
   const hints = (() => {
     if (mode === "help") return t("hints.help");
+    if (s.ui.mode.kind === "approval") return t(s.ui.mode.optionId ? "hints.approvalConfirm" : "hints.approval");
     if (mode === "prompt" || mode === "edit") return t("hints.typing") + (mode === "edit" ? t("hints.nextField") : "");
     if (mode === "confirm") return t("hints.confirm");
-    if (s.ui.detail) return t("hints.detail");
+    if (s.ui.detail) return t(s.data.detail?.task.proposedAt ? "hints.proposal" : "hints.detail");
+    if (s.ui.view === "agents") return t("hints.agents");
     if (s.ui.view === "board") return t("hints.board");
     if (s.ui.view === "week") return t("hints.week");
     if (s.ui.view === "trash") return t("hints.trash");
@@ -164,10 +177,11 @@ function keysRow(s: Snapshot): Row {
 }
 
 /** How far details and help can scroll before their last row leaves the bottom. */
-export function scrollLimits(s: Snapshot): { detail: number; help: number } {
+export function scrollLimits(s: Snapshot): { detail: number; help: number; approval: number } {
   const height = contentHeight(s.rows);
-  const detail = s.ui.detail && s.data.detail ? detailRows(s.data.detail, s.today, s.timezone, s.columns).length : 0;
-  return { detail: Math.max(0, detail - height), help: Math.max(0, helpRows(s.columns).length - height) };
+  const detail = s.ui.detail && s.data.detail ? detailRows(s.data.detail, s.today, s.timezone, s.columns, s.now).length : 0;
+  const approval = s.ui.mode.kind === "approval" ? approvalRows(s.ui.mode, s.timezone, s.columns).length : 0;
+  return { detail: Math.max(0, detail - height), help: Math.max(0, helpRows(s.columns).length - height), approval: Math.max(0, approval - height) };
 }
 
 export function frame(s: Snapshot): Screen {

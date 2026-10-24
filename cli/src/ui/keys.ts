@@ -58,7 +58,7 @@ export const KEY_GROUPS: KeyGroup[] = [
     title: "keys.views",
     bindings: [
       { keys: "Tab S-Tab", does: "keys.views.next" },
-      { keys: "1 2 3 4", does: "keys.views.pick" },
+      { keys: "1 2 3 4 5", does: "keys.views.pick" },
       { keys: "/", does: "keys.views.filter" },
       { keys: "R", does: "keys.views.refresh" },
       { keys: "?", does: "keys.views.help" },
@@ -96,6 +96,17 @@ export const KEY_GROUPS: KeyGroup[] = [
       { keys: "Tab S-Tab", does: "keys.typing.field" },
       { keys: "← → C-a C-e", does: "keys.typing.cursor" },
       { keys: "C-u C-k C-w", does: "keys.typing.delete" },
+    ],
+  },
+  {
+    title: "keys.agents",
+    bindings: [
+      { keys: "p", does: "keys.agents.pause" },
+      { keys: "Enter", does: "keys.agents.open" },
+      { keys: "1 2 3 4", does: "keys.agents.choose" },
+      { keys: "Enter Esc", does: "keys.agents.confirm" },
+      { keys: "A", does: "keys.agents.accept" },
+      { keys: "X", does: "keys.agents.reject" },
     ],
   },
 ];

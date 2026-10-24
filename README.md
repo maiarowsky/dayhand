@@ -165,9 +165,11 @@ checksum is verified.
 dayhand ui
 ```
 
-Today, the board, the week and the trash full screen, with keys like vim and lazygit (`j`/`k`,
-`h`/`l`, `?` for help), quick add with date phrases (`a`, then `Call the accountant fri 2pm
-#admin`) and the mouse. Task details show who made each change, so an agent's edits stand out.
+Today, the board, the week, the trash and Agents (`5`) full screen, with keys like vim and lazygit (`j`/`k`, `h`/`l`, `?` for help), quick add with date phrases (`a`, then `Call the accountant fri 2pm #admin`) and the mouse.
+A coloured line above Today summarizes plan health, using the same counts as `dayhand health`.
+In Agents, `p` pauses or resumes changes; Enter opens an approval request, a digit selects an option and a separate Enter confirms it.
+`A` accepts a proposal into the plan; `X` rejects it with a required reason.
+Task details show who made each change, who claimed the work, acceptance criteria, the plan, proof, dependencies and blocking.
 It uses the terminal's 16 colours, so it follows your theme; on Omarchy it becomes an app of its
 own ([docs/omarchy.md](docs/omarchy.md)). Keys: `dayhand help ui`. The screens speak the
 terminal's language when it is one of the eight the Mac app speaks (`--lang pl` or `DAYHAND_LANG=pl`

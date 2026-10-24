@@ -25,7 +25,7 @@ export type EffectContext = {
 
 export type Done = { text: string; select?: string };
 
-type Change = Extract<Effect, { kind: "add" | "complete" | "reopen" | "start" | "stop" | "restore" | "delete" | "clearNow" | "now" | "move" | "shift" | "status" | "edit" | "editor" | "undo" }>;
+type Change = Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" }>;
 
 const label = (task: Pick<Task, "ref" | "title">) => `${refText(task as Task)} ${task.title}`.trim();
 
@@ -39,6 +39,19 @@ export async function runChange(effect: Change, ctx: EffectContext): Promise<Don
   const { api } = ctx;
   const when = { now: ctx.now(), timezone: ctx.timezone };
   switch (effect.kind) {
+    case "pause":
+      await api.change("pause_agents", { paused: effect.paused });
+      return { text: t(effect.paused ? "done.agentsPaused" : "done.agentsResumed") };
+    case "decide":
+      await api.change("decide_approval", { approvalId: effect.approvalId, optionId: effect.optionId });
+      return { text: t("done.decided", { label: effect.label }) };
+    case "accept": {
+      const task = await api.change<Task>("accept_proposal", { taskId: effect.task.id });
+      return { text: t("done.accepted", { task: label(task) }) };
+    }
+    case "reject":
+      await api.change("reject_proposal", { taskId: effect.task.id, reason: effect.reason });
+      return { text: t("done.rejected", { task: label(effect.task) }) };
     case "add": {
       const parsed = parseQuickAdd(effect.text, when);
       if (!parsed.title) throw usageError(t("error.titleOnlyDate"));

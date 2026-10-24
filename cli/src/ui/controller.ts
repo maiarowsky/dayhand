@@ -7,13 +7,14 @@ import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import { isoWeekday, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
+import { agentId } from "./agents.js";
 import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
 import { handleKey, type Effect } from "./handle.js";
 import { weekStart } from "./lists.js";
 import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
-import { initialState, reanchor, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
+import { initialState, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
 
 export const DEFAULT_INTERVAL_S = 12;
 const FLASH_MS = { ok: 5000, info: 5000, error: 10_000 };
@@ -178,7 +179,12 @@ export class Controller {
     const { api } = this.options;
     switch (view) {
       case "today":
-        return this.load("today", () => api.today(), (today) => (this.data = { ...this.data, today }));
+        return this.load("today", async () => {
+          const [today, health] = await Promise.all([api.today(), api.health()]);
+          return { today, health };
+        }, (value) => (this.data = { ...this.data, ...value }));
+      case "agents":
+        return this.load("agents", () => api.agents(), (agents) => (this.data = { ...this.data, agents }));
       case "board":
         return this.load("board", () => api.board(), (board) => (this.data = { ...this.data, board }));
       case "week": {
@@ -214,7 +220,12 @@ export class Controller {
   }
 
   private selectedId(): string | undefined {
-    return selectedTask(this.ui, derive(this.snapshot()).lists)?.id;
+    const lists = derive(this.snapshot()).lists;
+    if (this.ui.view === "agents" && !this.ui.detail) {
+      const item = selectedAgent(this.ui, lists);
+      return item && agentId(item);
+    }
+    return selectedTask(this.ui, lists)?.id;
   }
 
   private lastAt(): number | undefined {
@@ -274,6 +285,7 @@ export class Controller {
     const before = this.selectedId();
     const c = this.ui.cursor;
     if (target.kind === "day") this.ui = { ...this.ui, cursor: { ...c, weekDay: target.day, weekRow: 0 } };
+    else if (target.kind === "agent") this.ui = { ...this.ui, cursor: { ...c, agents: target.index } };
     else if (this.ui.view === "board" && target.column !== undefined) {
       const board = [...c.board] as UiState["cursor"]["board"];
       board[target.column] = target.index;
@@ -281,7 +293,7 @@ export class Controller {
     } else if (this.ui.view === "week" && target.day !== undefined) this.ui = { ...this.ui, cursor: { ...c, weekDay: target.day, weekRow: target.index } };
     else if (this.ui.view === "today") this.ui = { ...this.ui, cursor: { ...c, today: target.index } };
     else if (this.ui.view === "trash") this.ui = { ...this.ui, cursor: { ...c, trash: target.index } };
-    if (target.kind === "task" && before !== undefined && before === this.selectedId()) return this.key("enter");
+    if ((target.kind === "task" || target.kind === "agent") && before !== undefined && before === this.selectedId()) return this.key("enter");
     this.emit();
   }
 
@@ -289,7 +301,8 @@ export class Controller {
   private clampScroll(state: UiState): UiState {
     const limits = scrollLimits({ ...this.snapshot(), ui: state });
     const detail = state.detail && state.detail.scroll > limits.detail ? { ...state.detail, scroll: limits.detail } : state.detail;
-    const mode = state.mode.kind === "help" && state.mode.scroll > limits.help ? { ...state.mode, scroll: limits.help } : state.mode;
+    const mode = state.mode.kind === "help" && state.mode.scroll > limits.help ? { ...state.mode, scroll: limits.help }
+      : state.mode.kind === "approval" && state.mode.scroll > limits.approval ? { ...state.mode, scroll: limits.approval } : state.mode;
     return detail === state.detail && mode === state.mode ? state : { ...state, detail, mode };
   }
 
@@ -312,7 +325,7 @@ export class Controller {
         return;
       default:
         // A form whose values the server or the date grammar refuses opens again as it was typed.
-        this.change(effect, lists.date, before.kind === "edit" ? before : undefined);
+        this.change(effect, lists.date, before.kind === "edit" || (before.kind === "prompt" && before.prompt === "reject") ? before : undefined);
     }
   }
 
