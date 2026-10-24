@@ -70,6 +70,8 @@
 	<string>允许通知</string>
 	<key>Approval requests (%lld)</key>
 	<string>审批请求（%lld）</string>
+	<key>Approval requests (newest %lld)</key>
+	<string>审批请求（最新%lld条）</string>
 	<key>Archive</key>
 	<string>归档</string>
 	<key>Archived</key>

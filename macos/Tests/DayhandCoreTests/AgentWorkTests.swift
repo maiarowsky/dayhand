@@ -74,23 +74,25 @@ struct AgentFieldTests {
         try fresh.migrator.migrate(queue, upTo: "v2")
         try await queue.write { db in
             try db.execute(sql: """
-                INSERT INTO task (localId, serverId, title, status, createdAt, updatedAt, labels, links, checklist)
-                VALUES ('old', 's1', 'From 0.2', 'todo', 1, 2, '["home"]', '[]', '[]')
+                INSERT INTO task (localId, serverId, title, status, createdAt, updatedAt, serverUpdatedAt, labels, links, checklist)
+                VALUES ('old', 's1', 'From 0.2', 'todo', 1, 2, 2, '["home"]', '[]', '[]')
                 """)
         }
         let database = try AppDatabase(queue)
         let repo = TaskRepository(database: database)
         let old = try #require(try await repo.task("old"))
         #expect(old.title == "From 0.2" && old.labels == ["home"])
+        #expect(old.serverUpdatedAt == nil)
         #expect(old.ref == nil && old.acceptance.isEmpty && old.dependsOn.isEmpty && old.plan == nil && old.claimedBy == nil)
 
         try await repo.apply(Snapshot(tasks: [RemoteTask(
-            id: "s1", title: "From 0.2", createdAt: 1, updatedAt: 3, labels: ["home"], ref: 7,
+            id: "s1", title: "From 0.2", createdAt: 1, updatedAt: 2, labels: ["home"], ref: 7,
             acceptance: [AcceptanceItem(id: "a1", text: "Tests pass", met: true)], plan: "Plan",
             proof: TaskProof(summary: "Green", links: [TaskLink(url: "https://ci.example")], checks: [ProofCheck(name: "unit", result: "fail")]),
             dependsOn: ["s0"], blockedReason: "No key", claimedBy: "claude", claimExpiresAt: 99
         )]))
         let stored = try #require(try await repo.task("old"))
+        #expect(stored.serverUpdatedAt == 2)
         #expect(stored.ref == 7)
         #expect(stored.acceptance == [AcceptanceItem(id: "a1", text: "Tests pass", met: true)])
         #expect(stored.plan == "Plan")

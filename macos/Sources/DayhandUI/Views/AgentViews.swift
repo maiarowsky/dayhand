@@ -91,7 +91,7 @@ struct AgentInboxView: View {
             Text(message).foregroundStyle(.secondary).padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         case .loaded(let inbox):
             List {
-                Section(tr("Approval requests (\(inbox.approvals.count))")) {
+                Section(AgentText.approvalsHeading(shown: inbox.approvals.count, pending: model.health?.pendingApprovals ?? 0)) {
                     if inbox.approvals.isEmpty { Text(tr("No approval requests are waiting.")).foregroundStyle(.secondary) }
                     ForEach(inbox.approvals) { ApprovalRow(request: $0, today: model.today, timezone: model.settings.timezone) }
                 }
@@ -199,6 +199,10 @@ enum AgentText {
         let by = tr("Asked by \(request.requestedBy)")
         guard let expires = request.expiresAt else { return by }
         return "\(by) · " + tr("expires \(HistoryText.time(expires, today: today, timezone: timezone))")
+    }
+
+    static func approvalsHeading(shown: Int, pending: Int) -> String {
+        pending > shown ? tr("Approval requests (newest \(shown))") : tr("Approval requests (\(shown))")
     }
 
     static func inboxError(_ error: AgentInbox.LoadError) -> String {

@@ -93,6 +93,7 @@ public final class AppDatabase: Sendable {
                 t.add(column: "claimedBy", .text)
                 t.add(column: "claimExpiresAt", .integer)
             }
+            try db.execute(sql: "UPDATE task SET serverUpdatedAt = NULL")
         }
         return migrator
     }

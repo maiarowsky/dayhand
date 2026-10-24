@@ -70,6 +70,8 @@
 	<string>通知を許可</string>
 	<key>Approval requests (%lld)</key>
 	<string>承認リクエスト（%lld）</string>
+	<key>Approval requests (newest %lld)</key>
+	<string>承認リクエスト（最新%lld件）</string>
 	<key>Archive</key>
 	<string>アーカイブ</string>
 	<key>Archived</key>

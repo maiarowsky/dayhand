@@ -70,6 +70,8 @@
 	<string>Allow Notifications</string>
 	<key>Approval requests (%lld)</key>
 	<string>Approval requests (%lld)</string>
+	<key>Approval requests (newest %lld)</key>
+	<string>Approval requests (newest %lld)</string>
 	<key>Archive</key>
 	<string>Archive</string>
 	<key>Archived</key>

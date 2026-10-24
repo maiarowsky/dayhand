@@ -124,6 +124,7 @@ struct TodayView: View {
             }
         }
         .navigationTitle(tr("Today"))
+        .onAppear { model.refreshHealth(afterNanoseconds: 0) }
     }
 }
 

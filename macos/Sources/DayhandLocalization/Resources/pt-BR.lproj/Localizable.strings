@@ -70,6 +70,8 @@
 	<string>Permitir notificações</string>
 	<key>Approval requests (%lld)</key>
 	<string>Solicitações de aprovação (%lld)</string>
+	<key>Approval requests (newest %lld)</key>
+	<string>Solicitações de aprovação (%lld mais recentes)</string>
 	<key>Archive</key>
 	<string>Arquivar</string>
 	<key>Archived</key>

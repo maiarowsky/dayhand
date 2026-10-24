@@ -8,16 +8,17 @@ struct SettingsSyncTests {
     let clock = TestClock(utc("2026-10-22T09:00"))
     let server = FakeServer()
 
-    func setUp() throws -> (TaskRepository, SyncEngine) {
+    func setUp(transport: HTTPTransport? = nil, onStatus: @escaping @Sendable (SyncStatus) -> Void = { _ in }) throws -> (TaskRepository, SyncEngine) {
+        let transport = transport ?? server
         let clock = clock, ids = TestIds()
         server.clock = { clock.now }
         let repo = TaskRepository(database: try AppDatabase.inMemory(), clock: { clock.now }, newId: { ids.next() }, localTimezone: { "Europe/Warsaw" })
         let tokens = DeviceTokens(
-            serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: server),
+            serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: transport),
             onRevoked: {}, clock: { clock.now }
         )
-        let remote = ConvexRemote(deploymentUrl: FakeServer.cloud, tokens: tokens, transport: server)
-        return (repo, SyncEngine(repository: repo, sender: remote, source: remote, onStatus: { _ in }))
+        let remote = ConvexRemote(deploymentUrl: FakeServer.cloud, tokens: tokens, transport: transport)
+        return (repo, SyncEngine(repository: repo, sender: remote, source: remote, onStatus: onStatus))
     }
 
     @Test func aWaitingChangeKeepsItsFieldsAndTheRestFollowsTheServer() {
@@ -92,6 +93,41 @@ struct SettingsSyncTests {
         #expect(try await repo.settings().summaryTime == "06:00")
     }
 
+    @Test func syncNowWaitsForAPollBeforeSendingAndCannotBeRolledBackByItsOldSettings() async throws {
+        let transport = PausedSettingsTransport(server)
+        let statuses = StatusLog()
+        let (repo, engine) = try setUp(transport: transport, onStatus: { statuses.append($0) })
+        await engine.start()
+        defer { Task { await transport.release(); await engine.stop() } }
+        for _ in 0..<200 {
+            if await transport.isPaused { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await transport.isPaused)
+
+        try await repo.updateSettings(summaryTime: "07:30", reminderMinutes: [15, 60])
+        let syncNow = Task { await engine.round() }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(server.mutationsSent().isEmpty)
+        #expect(try await repo.pendingOps().count == 1)
+
+        await transport.release()
+        guard case .synced = await syncNow.value else { Issue.record("expected synced"); return }
+        for _ in 0..<200 {
+            if statuses.count >= 3 { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(statuses.count == 3)
+        let settings = try await repo.settings()
+        #expect(settings.summaryTime == "07:30")
+        #expect(settings.reminderMinutes == [15, 60])
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.settings["summaryTime"] == "07:30")
+        #expect(server.settings["defaultReminderMinutes"] == [15, 60])
+        #expect(server.mutationsSent() == [Mutations.updateSettings])
+        await engine.stop()
+    }
+
     @Test func aChangeMadeOfflineIsSentWhenTheServerAnswersAgain() async throws {
         let (repo, engine) = try setUp()
         await engine.round()
@@ -116,5 +152,29 @@ struct SettingsSyncTests {
         await engine.round()
         #expect(try await repo.pendingOps().isEmpty)
         #expect(try await repo.settings().summaryTime == "05:00")
+    }
+}
+
+private actor PausedSettingsTransport: HTTPTransport {
+    private let server: FakeServer
+    private var didPause = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(_ server: FakeServer) { self.server = server }
+
+    var isPaused: Bool { continuation != nil }
+
+    func post(_ url: URL, json: Data, bearer: String?) async throws -> HTTPReply {
+        let reply = try await server.post(url, json: json, bearer: bearer)
+        if !didPause, JSONValue.decode(json)?["path"]?.string == RemoteJSON.querySettings {
+            didPause = true
+            await withCheckedContinuation { continuation = $0 }
+        }
+        return reply
+    }
+
+    func release() {
+        continuation?.resume()
+        continuation = nil
     }
 }

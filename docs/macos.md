@@ -173,12 +173,15 @@ Since 0.3.0 the Mac shows agent work read-only and edits the notification settin
   come only from snapshots and always take the server's copy. A dependency shows its title only when the task is on
   this Mac; a proposal or a purged task reads "A task not on this Mac".
 - The plan health card shows the last report the server sent and is read a second after the tasks change, when a
-  server connects, on Sync Now and on a synced poll once a minute has passed. An approval request or proposal that
-  changes no task therefore reaches the card up to a minute later. Without a server the card is not read; the last
-  report stays (also after **Not now**) until **Disconnect** or a sign-out by the server.
+  server connects, whenever Today appears, on Sync Now and on a synced poll once a minute has passed. While Today
+  stays open, an approval request or proposal that changes no task reaches the card up to a minute later. Without
+  a server the card is not read; the last report stays (also after **Not now**) until **Disconnect** or a sign-out
+  by the server.
 - **Review** reads the waiting approval requests and proposals when it opens and keeps nothing: offline it says
-  they could not be read. Deciding, pausing agents, tool policies and ending a claim stay on the phone and with
-  `dayhand`.
+  they could not be read. Known limitation: `app:listApprovals` returns only the newest 50 pending requests, with
+  no pagination on the Mac. When plan health counts more pending requests than the list shows, the header labels
+  them as the newest subset. Older requests must be reviewed on the phone or with `dayhand approvals`.
+  Deciding, pausing agents, tool policies and ending a claim stay on the phone and with `dayhand`.
 - A settings change made without a server waits in the outbox and goes to the first server the Mac connects to.
   Until a server has sent its settings, the time zone stays this Mac's at the moment of the change.
 

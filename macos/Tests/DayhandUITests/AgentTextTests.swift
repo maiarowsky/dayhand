@@ -65,6 +65,25 @@ struct AgentTextTests {
         #expect(run("pl") { AgentText.inboxError(.noServer) } == "Połącz się z serwerem, aby zobaczyć prośby i propozycje.")
     }
 
+    @Test func approvalHeadingsDiscloseTheNewestSubsetInEveryLanguage() {
+        let headings = [
+            "de": "Genehmigungsanfragen (neueste 50)",
+            "en": "Approval requests (newest 50)",
+            "es": "Solicitudes de aprobación (50 más recientes)",
+            "fr": "Demandes d’approbation (50 plus récentes)",
+            "ja": "承認リクエスト（最新50件）",
+            "pl": "Prośby o zgodę (najnowsze 50)",
+            "pt-BR": "Solicitações de aprovação (50 mais recentes)",
+            "zh-Hans": "审批请求（最新50条）",
+        ]
+        for (language, heading) in headings {
+            #expect(run(language) { AgentText.approvalsHeading(shown: 50, pending: 51) } == heading)
+        }
+        #expect(run("en") { AgentText.approvalsHeading(shown: 50, pending: 50) } == "Approval requests (50)")
+        #expect(run("en") { AgentText.approvalsHeading(shown: 50, pending: 49) } == "Approval requests (50)")
+        #expect(run("en") { AgentText.approvalsHeading(shown: 0, pending: 0) } == "Approval requests (0)")
+    }
+
     @Test func theDefaultReminderChoicesKeepOnesSetElsewhere() {
         #expect(ReminderSettingsEditor.choices([0, 45]) == [0, 5, 10, 15, 30, 45, 60, 120, 1440])
         #expect(ReminderSettingsEditor.toggled([0, 30], 15, on: true) == [0, 15, 30])

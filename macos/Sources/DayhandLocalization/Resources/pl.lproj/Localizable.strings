@@ -70,6 +70,8 @@
 	<string>Zezwól na powiadomienia</string>
 	<key>Approval requests (%lld)</key>
 	<string>Prośby o zgodę (%lld)</string>
+	<key>Approval requests (newest %lld)</key>
+	<string>Prośby o zgodę (najnowsze %lld)</string>
 	<key>Archive</key>
 	<string>Archiwizuj</string>
 	<key>Archived</key>
