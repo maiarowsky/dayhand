@@ -1,17 +1,33 @@
 // The agent contract: every MCP tool is reachable, `--json` and `dayhand call`
 // print exactly what the official MCP SDK client gets as structuredContent,
 // and every --json output follows docs/schemas.
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test } from "vitest";
+import { batches, dependenciesFirst, readFolder } from "../src/backlog/folder.js";
 import { flatten } from "../src/registry/index.js";
-import { admin, connectAgent, createKey, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
+import { admin, connectAgent, createKey, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall, TEST_HOME } from "./helpers.js";
 
 const validate = schemaValidator();
 const specOf = (path: string) => flatten().find((c) => c.path === path)!.spec;
 
+/** A synthetic Backlog.md folder: a config with the project's statuses and two tasks, one waiting for the other. */
+function backlogFolder(): string {
+  const dir = join(mkdtempSync(join(TEST_HOME, "folder-")), "backlog");
+  mkdirSync(join(dir, "tasks"), { recursive: true });
+  writeFileSync(join(dir, "config.yml"), 'statuses: ["To Do", "Doing", "Done"]\n');
+  writeFileSync(join(dir, "tasks", "task-2 - Print-labels.md"), "---\nid: TASK-2\ntitle: Print labels\nstatus: Doing\ndependencies: [TASK-1]\n---\n");
+  writeFileSync(join(dir, "tasks", "task-1 - Buy-a-printer.md"), "---\nid: TASK-1\ntitle: Buy a printer\nstatus: To Do\n---\n\n## Acceptance Criteria\n- [ ] #1 It prints\n");
+  return dir;
+}
+
+/** The dates in written task files are the minute of the call. */
+const undated = (value: any) => ({ ...value, files: value.files.map((f: any) => ({ ...f, content: f.content.replace(/^(created_date|updated_date): .*$/gm, "$1: <time>") })) });
+
 /** export_plan's exportedAt is the time of the call; everything else must match exactly. */
 const stable = (tool: string, value: any) => {
   // plan_health states the time it was made.
-  if (tool === "plan_health") return { ...value, at: "<at>" };
+  if (tool === "plan_health" || tool === "agent_brief") return { ...value, at: "<at>" };
   if (tool !== "export_plan") return value;
   const { exportedAt, ...content } = value.content;
   return { ...value, content };
@@ -19,8 +35,8 @@ const stable = (tool: string, value: any) => {
 
 type Case = { command: string[]; path: string; tool: string; args: Record<string, unknown> };
 
-/** Tools whose arguments name a request or a key made during the test: their own test below. */
-const BY_ID = ["get_approval", "decide_approval", "set_tool_policy"];
+/** Tools whose arguments name a request or a key made during the test, or a folder on disk: their own tests below. */
+const BY_ID = ["get_approval", "decide_approval", "set_tool_policy", "import_backlog", "export_backlog"];
 
 // One user's day, in order. Changes carry a clientId, so the SDK call with the
 // same arguments is a replay that must return the same result.
@@ -74,6 +90,8 @@ const CASES: Case[] = [
   { path: "proposals merge", command: ["proposals", "merge", "8", "--into", "6", "--client-id", "c-merge"], tool: "merge_proposal", args: { taskId: "#8", intoTaskId: "#6", clientId: "c-merge" } },
   { path: "proposals reject", command: ["proposals", "reject", "9", "--reason", "not now", "--client-id", "c-reject"], tool: "reject_proposal", args: { taskId: "#9", reason: "not now", clientId: "c-reject" } },
   { path: "health", command: ["health"], tool: "plan_health", args: {} },
+  // Backend 0.12.0: the agent brief.
+  { path: "prime", command: ["prime"], tool: "agent_brief", args: {} },
   { path: "archive", command: ["archive", "1", "--client-id", "c-archive"], tool: "archive_task", args: { taskId: "#1", clientId: "c-archive" } },
   { path: "restore", command: ["restore", "1", "--client-id", "c-restore"], tool: "restore_task", args: { taskId: "#1", clientId: "c-restore" } },
   { path: "rm", command: ["rm", "1", "--client-id", "c-rm"], tool: "delete_task", args: { taskId: "#1", clientId: "c-rm" } },
@@ -82,10 +100,10 @@ const CASES: Case[] = [
 ];
 
 describe("agent contract", () => {
-  test("every one of the 32 MCP tools is reachable by a command", async () => {
+  test("every one of the 35 MCP tools is reachable by a command", async () => {
     const { key } = await newUser();
     const tools: string[] = (await dayhandJson(key, ["tools"])).tools.map((t: { name: string }) => t.name);
-    expect(tools).toHaveLength(32);
+    expect(tools).toHaveLength(35);
     const covered = new Set(flatten().flatMap((c) => c.spec.tools));
     expect(tools.filter((t) => !covered.has(t))).toEqual([]);
     expect(new Set([...CASES.map((c) => c.tool), ...BY_ID])).toEqual(new Set(tools));
@@ -127,6 +145,49 @@ describe("agent contract", () => {
       expect(stable(c.tool, viaCall), `dayhand call ${c.tool}`).toEqual(stable(c.tool, viaSdk.structured));
       expect(validate(specOf(c.path).schema!, viaCommand), `schema of dayhand ${c.path}`).toEqual([]);
     }
+    await sdk.close();
+  });
+
+  test("dayhand backlog import and export print what the SDK client gets, and follow their schemas", async () => {
+    const { key } = await newUser();
+    const sdk = await mcpClient(key);
+    const dir = backlogFolder();
+
+    const preview = await dayhandJson(key, ["backlog", "import", dir, "--dry-run"]);
+    expect(preview).toMatchObject({ dryRun: true, created: 2, files: 3 });
+    expect((await dayhandJson(key, ["list"])).total).toBe(0);
+
+    const imported = await dayhandJson(key, ["backlog", "import", dir]);
+    expect(validate(specOf("backlog import").schema!, imported)).toEqual([]);
+    expect(imported.tasks.map((t: any) => [t.title, t.status])).toEqual([["Buy a printer", "todo"], ["Print labels", "doing"]]);
+    expect(imported.tasks[1].dependsOn).toEqual([imported.tasks[0].id]);
+    // Again, the command and the SDK with the files the command sends: everything was imported before.
+    const [files] = batches(dependenciesFirst((await readFolder(dir)).files));
+    const again = await dayhandJson(key, ["backlog", "import", dir]);
+    const viaSdk = await sdkCall(sdk, "import_backlog", { files });
+    expect(viaSdk.isError).toBe(false);
+    expect(again).toEqual(viaSdk.structured);
+    expect(again.skipped.map((s: any) => s.reason)).toEqual(["imported before", "imported before"]);
+
+    const exported = await dayhandJson(key, ["backlog", "export", "--prefix", "shop"]);
+    expect(undated(exported)).toEqual(undated((await sdkCall(sdk, "export_backlog", { prefix: "shop" })).structured));
+    expect(validate("backlog-export.schema.json", exported)).toEqual([]);
+    const target = join(mkdtempSync(join(TEST_HOME, "out-")), "backlog");
+    const written = await dayhandJson(key, ["backlog", "export", target]);
+    expect(validate(specOf("backlog export").schema!, written)).toEqual([]);
+    expect(written).toMatchObject({ directory: target, total: 2, config: "config.yml", written: ["tasks/task-1 - Buy-a-printer.md", "tasks/task-2 - Print-labels.md"] });
+    expect(readFileSync(join(target, "tasks", "task-2 - Print-labels.md"), "utf8")).toContain("status: In Progress\nassignee: []");
+    const refused = await dayhand(key, ["backlog", "export", target]);
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain("already exist");
+    expect((await dayhandJson(key, ["backlog", "export", target, "--force"])).config).toBe("config.yml");
+    // A folder that has its own config.yml keeps it.
+    const theirs = join(mkdtempSync(join(TEST_HOME, "own-")), "backlog");
+    mkdirSync(theirs);
+    writeFileSync(join(theirs, "config.yml"), "statuses: [A, B]\n");
+    expect((await dayhandJson(key, ["backlog", "export", theirs])).config).toBeNull();
+    expect(readFileSync(join(theirs, "config.yml"), "utf8")).toBe("statuses: [A, B]\n");
+    expect(existsSync(join(theirs, "tasks", "task-1 - Buy-a-printer.md"))).toBe(true);
     await sdk.close();
   });
 

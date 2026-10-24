@@ -14,7 +14,8 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 
 - Check with `dayhand whoami --json`. Exit 3 means no key: ask the user for one; never search for keys.
 - Give each agent its own key of kind `agent` in `DAYHAND_API_KEY` (and `DAYHAND_URL`); history then names
-  the agent. `dayhand prime` prints Today and these rules for a session-start hook.
+  the agent. `dayhand prime` prints Today, your claims, approvals waiting, next steps and these
+  rules for a session-start hook.
 
 ## Rules
 
@@ -26,7 +27,7 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 - Dates are English phrases in the user's time zone: today, tomorrow, fri 14:00, in 3 days, 2026-10-23. Check one with dayhand when "<phrase>" or add --dry-run.
 - Before stopping work on a task, record where you are: dayhand now <ref> --note "<next step>".
 - Working on a task alongside other agents: dayhand claim <ref> first (exit 6 conflict: pick another task), dayhand renew <ref> while you work, dayhand release <ref> --note "<checkpoint>" when you stop.
-- Back after a pause: dayhand log --since <the nextCursor you kept> --json shows only what changed meanwhile; dayhand health --json shows what needs a look.
+- Start of a session: dayhand prime --json gives Today, your claims, approvals waiting, ready work and nextSteps. Back after a pause: dayhand log --since <the nextCursor you kept> --json shows only what changed meanwhile; dayhand health --json shows what needs a look.
 - Before anything risky or hard to undo, ask the owner: dayhand ask "<what you want to do>" --option "<label>: <what happens>" --option … --json, then dayhand approval <id> --wait 600 --json, and do only what they chose.
 - Work nobody asked you for goes in as a proposal: dayhand add "<title>" --propose --source "<kind>:<ref>" --json; the owner accepts it.
 - Anything the commands do not cover: dayhand tools (schemas), then dayhand call <tool> '<json>'.
@@ -35,6 +36,7 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 
 | Command | What it does |
 |---|---|
+| `dayhand prime --json` | Session start: Today plus your claims, approvals waiting, ready tasks and next steps |
 | `dayhand today --json` | Today: now task with its resume note, overdue, today, done today |
 | `dayhand list --json --status todo,doing --search <text>` | Find tasks on the server (also --overdue, --due-before eow, -l <label>, --limit, --cursor) |
 | `dayhand show <ref> --json` | One task with its history |
@@ -51,6 +53,7 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 | `dayhand ask "<action>" --option "<label>: <consequence>" --option … --json` | Ask the owner before a risky step; they decide on the phone |
 | `dayhand approval <id> --wait 600 --json` | The owner's decision (status pending, decided or expired) |
 | `dayhand health --json` | What needs a look: overdue, blocked, stale claims, approvals, proposals |
+| `dayhand backlog import <dir> --dry-run --json` | What importing a Backlog.md folder would create and skip; without --dry-run it imports |
 
 ## Patterns
 
@@ -165,10 +168,12 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `dayhand webhook enable <webhookId>` | Turn a webhook back on after it was turned off for failing |
 | `dayhand webhook deliveries <webhookId>` | The delivery log: newest first, each attempt's HTTP status or error |
 | `dayhand import <file>` | Import tasks from Dayhand's JSON export, an iCalendar file or a Todoist CSV export |
+| `dayhand backlog import <dir>` | Import a Backlog.md folder: each task file becomes a task; files imported before are skipped |
+| `dayhand backlog export [dir]` | Write the plan as Backlog.md task files into a folder (without one, --json prints the files) |
 | `dayhand whoami` | Which deployment, profile, key source and config file dayhand uses, checked against the server |
 | `dayhand server deploy` | Set up or update your server on your own Convex account, sign dayhand in and make a pairing code |
 | `dayhand server start` | Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign dayhand in |
-| `dayhand prime` | Context for an AI agent: Today and how to use dayhand (for a SessionStart hook) |
+| `dayhand prime` | Context for an AI agent: Today, its claims, approvals, ready work, next steps and how to use dayhand (for a SessionStart hook) |
 | `dayhand when <phrase...>` | Show the day (and time) a date phrase means in your time zone, without changing anything |
 
 Details: `dayhand <command> --help`, `dayhand help dates`, or docs/cli.md in the Dayhand repository.

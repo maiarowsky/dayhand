@@ -727,6 +727,27 @@ Each task is checked like dayhand add; one that fails is listed and the rest are
 auto (default), dayhand\-json, ics or todoist\-csv (auto, dayhand\-json, helm\-json, ics, todoist\-csv)
 .RE
 .TP
+.B dayhand backlog import <dir>
+Import a Backlog.md folder: each task file becomes a task; files imported before are skipped
+.br
+Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends them, the tasks others depend on first, in calls of up to 200 files. Statuses map to the nearest of todo, doing and done; drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog\-md, ref: <id>}, so importing the folder again brings only new files. \-\-dry\-run asks the server what would happen without storing anything (a folder sent in several calls cannot see dependencies across calls). Needs backend 0.12.0 or later.
+.TP
+.B dayhand backlog export [dir]
+Write the plan as Backlog.md task files into a folder (without one, \-\-json prints the files)
+.br
+One file per task in tasks/ (proposals in drafts/, archived tasks with \-\-archived in archive/tasks/), and a config.yml with the statuses To Do, In Progress and Done unless one is there. Tasks imported from Backlog.md keep their ids; the others get <PREFIX>\-<number>. Files that already exist are not overwritten without \-\-force. Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Needs backend 0.12.0 or later.
+.RS
+.TP
+.B \-\-prefix <prefix>
+ID prefix of tasks that did not come from Backlog.md (default task: TASK\-12)
+.TP
+.B \-\-archived
+Also write archived tasks, to archive/tasks/
+.TP
+.B \-\-force
+Overwrite files that already exist, config.yml too
+.RE
+.TP
 .B dayhand login
 Store an API key for the deployment in the OS keychain (or a private file)
 .br
@@ -791,9 +812,9 @@ The Dayhand repository's backend/ folder (default: found from here)
 .RE
 .TP
 .B dayhand prime
-Context for an AI agent: Today and how to use dayhand (for a SessionStart hook)
+Context for an AI agent: Today, its claims, approvals, ready work, next steps and how to use dayhand (for a SessionStart hook)
 .br
-Prints plain text without colors in every format except \-\-json, which prints list_today like dayhand today \-\-json. In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"dayhand prime"}]}]}}.
+Prints plain text without colors in every format except \-\-json, which prints agent_brief: list_today's fields plus claims, approvals, ready tasks and nextSteps (a backend before 0.12.0 gives list_today alone). In a Claude Code hook: {"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"dayhand prime"}]}]}}.
 .TP
 .B dayhand when <phrase...>
 Show the day (and time) a date phrase means in your time zone, without changing anything

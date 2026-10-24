@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/backlog-written.schema.json",
+  "title": "Backlog.md folder written",
+  "description": "dayhand backlog export <dir>: what was written into the folder (export_backlog's files). Fields may be added.",
+  "type": "object",
+  "required": [
+    "format",
+    "prefix",
+    "directory",
+    "total",
+    "written",
+    "config",
+    "notes"
+  ],
+  "properties": {
+    "format": {
+      "const": "backlog-md"
+    },
+    "prefix": {
+      "type": "string"
+    },
+    "directory": {
+      "type": "string",
+      "description": "The folder, as given"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Task files written"
+    },
+    "written": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Their paths, relative to the folder"
+    },
+    "config": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "config.yml when it was written; null when the folder already had one (kept)"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "What Backlog.md has no place for"
+    }
+  }
+}

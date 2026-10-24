@@ -48,6 +48,8 @@ export const READ_ONLY_TOOLS = new Set([
   "list_approvals",
   "get_agent_controls",
   "plan_health",
+  "agent_brief",
+  "export_backlog",
 ]);
 
 type RpcResponse = { result?: any; error?: { code: number; message: string } };
