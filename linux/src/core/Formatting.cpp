@@ -72,6 +72,19 @@ QString dayName(const QString &date)
         .arg(Texts::tr(monthNames[civil->month - 1]));
 }
 
+QString trashExpiry(qint64 deletedAt, const QString &today, const QString &timezone)
+{
+    constexpr qint64 retentionMs = 30LL * 24 * 60 * 60 * 1000;
+    const auto date = CivilDate::parse(HelmDates::localDate(deletedAt + retentionMs, timezone));
+    if (!date)
+        return {};
+    QString text = Texts::tr("%1 %2", "day of the month, month: 23 Nov")
+                       .arg(date->day).arg(Texts::tr(monthNames[date->month - 1]));
+    if (const auto now = CivilDate::parse(today); now && now->year != date->year)
+        text = Texts::tr("%1 %2", "a date and its year").arg(text).arg(date->year);
+    return Texts::tr("Permanently deleted on %1").arg(text);
+}
+
 std::optional<QString> due(const TaskItem &task, const QString &today)
 {
     if (!task.dueDate)

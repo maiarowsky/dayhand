@@ -41,7 +41,13 @@ The due field reads English date phrases like quick add, previews them with **I 
 Notes save only with **Save note**; repeat rules, reminders and links are previews, not editors.
 Archive or trash keeps the selected details open even though the row leaves Today.
 In the trash, all edits are disabled and **Restore** brings the task back.
-There is no trash list in this version.
+
+## Trash
+
+**⋯ → Trash** opens a scrolling list of deleted tasks, newest deletion first. Each row has the title,
+**Permanently deleted on 23 Nov** (the deletion date plus 30 days, in the settings' time zone), and **Restore**.
+Restoring saves locally and queues the change for sync; the row leaves Trash immediately. **Back** returns to Today.
+Only the server purges tasks: an expired row remains here while offline, until a snapshot confirms the purge.
 
 ## Quick add from any app (Hyprland)
 
@@ -107,6 +113,13 @@ completes the task, and opening it shows Dayhand; it has normal urgency. The mor
 waits quietly. Dayhand rings only while it runs (in the tray); a reminder more than 15 minutes late, after the
 laptop slept, is dropped, as on Android.
 
+In **⋯ → Settings…**, **Morning summary** chooses the hour and minute (initially **05:00**).
+**Default reminders** has checkboxes for **At the time**, **5**, **10**, **15**, **30 min**, **1 h**, **2 h**, and **1 day**
+before the due time. Uncheck every box for no default reminders; a task with its own reminders keeps those instead.
+The displayed time zone comes from the server settings (this computer's zone before the first sync).
+Changes save at once in the local database, replan reminders immediately and send `app:updateSettings` through the
+outbox. A server snapshot cannot undo fields with settings changes still waiting to be sent.
+
 ## Colours and Omarchy themes
 
 Dayhand takes its colours from the system palette, which Qt gets from the platform theme. Omarchy sets
@@ -162,14 +175,16 @@ a palette file.
 
 ## Not checked
 
-- No run on Omarchy, Hyprland or another real desktop. The app was built and tested in an Arch Linux container: the
-  window on Qt's offscreen platform, the tray and notifications as a client of a headless Weston against fake
-  desktop services, and the real `dayhand-qt` started on that Weston. The bindings, the window rule, the autostart
-  line and the theme template follow Omarchy's files, not a test on the system.
+- No run on Omarchy, Hyprland or another real desktop. The trash and reminder settings were built and tested
+  locally with Qt 6.12, isolated HOME/XDG profiles and in-memory credentials: Qt's offscreen window tests,
+  headless Weston with fake tray/notification services, and the real `dayhand-qt` smoke test. A synthetic UI
+  walkthrough also exercised Trash, Restore and the settings controls on Weston. The container run was not checked
+  for this change; Docker access was not requested. The bindings, window rule, autostart line and theme template
+  follow Omarchy's files, not a test on the system.
 - Not tried with the Omarchy shell's tray or notification centre, Waybar, mako or dunst; only the D-Bus
   interfaces they implement were exercised.
 - The Secret Service keyring path was not exercised (the tests keep the sign-in in memory), and no pairing with a
   real server was made from this app; pairing and sync were tested against a fake server.
-- Japanese and Chinese were not looked at on screen (the test container has no CJK font); their texts and those of
-  the other languages were translated by the agent that wrote the app and have not been reviewed by native
-  speakers.
+- The settings screens were captured locally in all eight languages, including Japanese and Chinese with CJK
+  fonts. The translations have not been reviewed by native speakers, and this does not verify every layout in
+  every language.

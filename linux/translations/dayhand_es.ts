@@ -178,6 +178,15 @@
         <translation>%1 %2 %3</translation>
     </message>
     <message>
+        <source>%1 %2</source>
+        <comment>day of the month, month: 23 Nov</comment>
+        <translation>%1 de %2</translation>
+    </message>
+    <message>
+        <source>Permanently deleted on %1</source>
+        <translation>Se eliminará definitivamente el %1</translation>
+    </message>
+    <message>
         <source>(%1 does not exist that day)</source>
         <comment>a clock time skipped by a daylight saving change</comment>
         <translation>(%1 no existe ese día)</translation>
@@ -314,8 +323,16 @@
 <context>
     <name>Main</name>
     <message>
+        <source>Back</source>
+        <translation>Atrás</translation>
+    </message>
+    <message>
         <source>Today</source>
         <translation>Hoy</translation>
+    </message>
+    <message>
+        <source>Trash</source>
+        <translation>Papelera</translation>
     </message>
     <message>
         <source>Menu</source>
@@ -432,6 +449,62 @@
     <message>
         <source>Quick add reads dates in English in every language, as dayhand does: tomorrow 9am, fri, 23 oct.</source>
         <translation>El añadido rápido lee las fechas en inglés en todos los idiomas, como dayhand: tomorrow 9am, fri, 23 oct.</translation>
+    </message>
+    <message>
+        <source>Morning summary:</source>
+        <translation>Resumen matutino:</translation>
+    </message>
+    <message>
+        <source>Hour</source>
+        <translation>Hora</translation>
+    </message>
+    <message>
+        <source>Minute</source>
+        <translation>Minuto</translation>
+    </message>
+    <message>
+        <source>Times use %1.</source>
+        <translation>Zona horaria: %1.</translation>
+    </message>
+    <message>
+        <source>Default reminders</source>
+        <translation>Recordatorios predeterminados</translation>
+    </message>
+    <message>
+        <source>For timed tasks without their own reminders.</source>
+        <translation>Para tareas con hora sin recordatorios propios.</translation>
+    </message>
+    <message>
+        <source>At the time</source>
+        <translation>A la hora</translation>
+    </message>
+    <message>
+        <source>5 min</source>
+        <translation>5 min</translation>
+    </message>
+    <message>
+        <source>10 min</source>
+        <translation>10 min</translation>
+    </message>
+    <message>
+        <source>15 min</source>
+        <translation>15 min</translation>
+    </message>
+    <message>
+        <source>30 min</source>
+        <translation>30 min</translation>
+    </message>
+    <message>
+        <source>1 h</source>
+        <translation>1 h</translation>
+    </message>
+    <message>
+        <source>2 h</source>
+        <translation>2 h</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1 día</translation>
     </message>
 </context>
 <context>
@@ -691,6 +764,21 @@
     <message>
         <source>Done (%1)</source>
         <translation>Hechas (%1)</translation>
+    </message>
+</context>
+<context>
+    <name>TrashList</name>
+    <message>
+        <source>Trash is empty.</source>
+        <translation>La papelera está vacía.</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Restaurar</translation>
+    </message>
+    <message>
+        <source>Restore %1</source>
+        <translation>Restaurar %1</translation>
     </message>
 </context>
 <context>

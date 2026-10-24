@@ -8,6 +8,8 @@
 #include <QCoreApplication>
 #include <QJsonArray>
 
+#include <algorithm>
+
 using namespace Qt::StringLiterals;
 
 namespace dayhand {
@@ -248,17 +250,58 @@ void TaskRepository::clearNow()
     changed();
 }
 
+void TaskRepository::setSummaryTime(const QString &time)
+{
+    if (!ClockTime::parse(time))
+        return;
+    updateSettings({{u"summaryTime"_s, time}});
+}
+
+void TaskRepository::setReminderMinutes(const QList<int> &minutes)
+{
+    QList<int> clean = minutes;
+    if (std::any_of(clean.begin(), clean.end(), [](int m) { return m < 0 || m > 7 * 24 * 60; }))
+        return;
+    std::sort(clean.begin(), clean.end());
+    clean.erase(std::unique(clean.begin(), clean.end()), clean.end());
+    QJsonArray values;
+    for (int m : clean)
+        values.append(m);
+    updateSettings({{u"defaultReminderMinutes"_s, values}});
+}
+
+void TaskRepository::updateSettings(const QJsonObject &patch)
+{
+    Transaction transaction(db);
+    QJsonObject current = RemoteJson::settingsJson(settings()).toObject();
+    bool different = false;
+    for (auto it = patch.begin(); it != patch.end(); ++it) {
+        if (current.value(it.key()) != it.value())
+            different = true;
+        current.insert(it.key(), it.value());
+    }
+    if (!different)
+        return;
+    OutboxOp op = makeOp(Mutations::updateSettings, std::nullopt, patch, hooks.clock());
+    db.setMeta(settingsKey, json::encode(current));
+    db.insert(op);
+    transaction.commit();
+    changed();
+}
+
 void TaskRepository::apply(const Snapshot &snapshot)
 {
     const qint64 now = hooks.clock();
     Transaction transaction(db);
-    const MergePlan plan = SnapshotMerger::merge(db.tasks(), db.pendingOps(), snapshot.tasks, now);
+    const QList<OutboxOp> pending = db.pendingOps();
+    const MergePlan plan = SnapshotMerger::merge(db.tasks(), pending, snapshot.tasks, now);
     // Deletes first: a task purged on the server frees its serverId before another row could take it.
     for (const QString &localId : plan.deletes)
         db.removeTask(localId);
     for (const TaskItem &task : plan.upserts)
         db.save(task);
-    db.setMeta(settingsKey, json::encode(RemoteJson::settingsJson(snapshot.settings).toObject()));
+    const ReminderSettings merged = SnapshotMerger::mergeSettings(settings(), pending, snapshot.settings);
+    db.setMeta(settingsKey, json::encode(RemoteJson::settingsJson(merged).toObject()));
     transaction.commit();
 }
 

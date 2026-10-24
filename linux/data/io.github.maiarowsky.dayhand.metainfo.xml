@@ -24,6 +24,7 @@
     <release version="0.2.0" date="2026-10-24">
       <description>
         <p>Task details with offline editing, labels, checklists and read-only repeat, reminder and link previews.</p>
+        <p>Trash with restore and permanent-deletion dates; offline-first morning summary and default reminder settings.</p>
       </description>
     </release>
     <release version="0.1.0" date="2026-10-24"/>

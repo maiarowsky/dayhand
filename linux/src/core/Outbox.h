@@ -40,6 +40,7 @@ inline const QString setNow = QStringLiteral("app:setNow");
 inline const QString update = QStringLiteral("app:update");
 inline const QString softDelete = QStringLiteral("app:softDelete");
 inline const QString restore = QStringLiteral("app:restore");
+inline const QString updateSettings = QStringLiteral("app:updateSettings");
 } // namespace Mutations
 
 } // namespace dayhand
