@@ -6,9 +6,12 @@ the reader's browser from `img.shields.io`.
 | Badge | Kind | Source |
 |---|---|---|
 | GitHub stars | live | `https://img.shields.io/github/stars/maiarowsky/helm?style=flat` |
-| License | live, from the repository (Apache-2.0) | `https://img.shields.io/github/license/maiarowsky/helm?style=flat` |
-| Platforms | static: Android, macOS, Linux, terminal | `https://img.shields.io/badge/platforms-Android%20%7C%20macOS%20%7C%20Linux%20%7C%20terminal-blue?style=flat` |
+| Release | live; "no releases or repo not found" until a release exists | `https://img.shields.io/github/v/release/maiarowsky/helm?style=flat` |
+| npm | static: not published yet | `https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat` |
 | Works with N agents | static, counted by hand (below) | `https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat` |
+| License | live, from the repository (Apache-2.0) | `https://img.shields.io/github/license/maiarowsky/helm?style=flat` |
+
+At npm publication, replace the static npm badge with `[![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand)` and update this table (use the chosen npm name if it is not `dayhand`).
 
 There is no CI badge: `.github/workflows/` holds only the release and npm publishing workflows,
 no test workflow. Add one when a CI workflow exists.

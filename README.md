@@ -1,6 +1,6 @@
 # ✋ Dayhand — a day plan with a spare pair of hands
 
-[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/stargazers) [![License](https://img.shields.io/github/license/maiarowsky/helm?style=flat)](LICENSE) [![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20macOS%20%7C%20Linux%20%7C%20terminal-blue?style=flat)](#install) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents)
+[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/helm?style=flat)](LICENSE)
 
 Dayhand is a task list and day plan for people who run a business on their own, and for the AI
 agents that work for them. Your phone keeps the plan offline with a calendar and reminders; a

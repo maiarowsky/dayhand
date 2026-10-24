@@ -109,7 +109,8 @@ npx dayhand --version && npx dayhand help && npx dayhand completion bash | head
 
 ## After the first release
 
-- [ ] Add the release and npm badges to the README row (and to [badges.md](badges.md)):
-  `[![Release](https://img.shields.io/github/v/release/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/releases)`
-  and `[![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand)`
-  (use the chosen npm name if it is not `dayhand`).
+The release badge is already live and updates when a release exists.
+
+- [ ] After npm publication, replace the static npm badge in the README row with
+  `[![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand)`
+  and update [badges.md](badges.md) (use the chosen npm name if it is not `dayhand`).
