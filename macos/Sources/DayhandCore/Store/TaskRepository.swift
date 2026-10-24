@@ -312,9 +312,11 @@ public final class TaskRepository: Sendable {
 
     // MARK: Server snapshots
 
-    /// Writes a server snapshot into the database (see `SnapshotMerger`) and keeps its settings.
+    /// Writes a server snapshot into the database (see `SnapshotMerger`) and keeps its settings, except the fields a
+    /// settings change still in the outbox sets.
     public func apply(_ snapshot: Snapshot) async throws {
         let now = clock()
+        let zone = localTimezone()
         try await writer.write { db in
             let local = try TaskItem.fetchAll(db)
             let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
@@ -323,7 +325,8 @@ public final class TaskRepository: Sendable {
             if !plan.deletes.isEmpty { _ = try TaskItem.deleteAll(db, keys: plan.deletes) }
             // History of tasks that no longer exist on the Mac (purged from the trash on the server).
             try db.execute(sql: "DELETE FROM taskEvent WHERE taskServerId NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)")
-            try Meta.write(db, snapshot.settings)
+            let mine = try Meta.settings(db, localTimezone: zone)
+            try Meta.write(db, SnapshotMerger.settings(local: mine, pending: pending, remote: snapshot.settings))
         }
     }
 
@@ -345,6 +348,56 @@ public final class TaskRepository: Sendable {
     public func observeSettings() -> AsyncValueObservation<ReminderSettings> {
         let zone = localTimezone()
         return ValueObservation.tracking { db in try Meta.settings(db, localTimezone: zone) }.values(in: writer)
+    }
+
+    /**
+     * Changes the morning summary time (HH:MM) or the default reminders (minutes before the due time) on this Mac at
+     * once and queues `updateSettings`, so the reminders are planned again without waiting for the server. Until the
+     * server has the change, snapshots keep the fields it sets (`SnapshotMerger.settings`).
+     */
+    public func updateSettings(summaryTime: String? = nil, reminderMinutes: [Int]? = nil) async throws {
+        if let summaryTime, ClockTime(summaryTime) == nil { throw RepositoryError.invalid(tr("That is not a time.")) }
+        // Sorted and once each, as the backend stores them.
+        let minutes = reminderMinutes.map { Array(Set($0)).sorted() }
+        if let minutes, minutes.contains(where: { $0 < 0 || $0 > TaskRules.maxReminderMinutes }) {
+            throw RepositoryError.invalid(tr("The reminders are not valid."))
+        }
+        var args: [String: JSONValue] = [:]
+        if let summaryTime { args["summaryTime"] = .string(summaryTime) }
+        if let minutes { args["defaultReminderMinutes"] = .array(minutes.map(JSONValue.of)) }
+        guard !args.isEmpty else { return }
+        let zone = localTimezone()
+        let op = makeOp(Mutations.updateSettings, nil, args, now: clock())
+        try await writer.write { db in
+            var settings = try Meta.settings(db, localTimezone: zone)
+            if let summaryTime { settings.summaryTime = summaryTime }
+            if let minutes { settings.reminderMinutes = minutes }
+            try Meta.write(db, settings)
+            var op = op
+            try op.insert(db)
+        }
+        onOutboxChanged()
+    }
+
+    // MARK: Plan health
+
+    /// Keeps the last plan health report the server sent (`app:planHealth`), so the card above Today stays offline.
+    public func savePlanHealth(_ report: JSONValue) async throws {
+        try await writer.write { db in try Meta.write(db, key: Meta.planHealthKey, report.encoded()) }
+    }
+
+    /// The last plan health report, or nil when no server has sent one.
+    public func planHealth() async throws -> PlanHealth? {
+        try await writer.read { db in try Meta.planHealth(db) }
+    }
+
+    public func observePlanHealth() -> AsyncValueObservation<PlanHealth?> {
+        ValueObservation.tracking { db in try Meta.planHealth(db) }.values(in: writer)
+    }
+
+    /// Forgets the last report (Disconnect): without a server the card goes.
+    public func forgetPlanHealth() async throws {
+        try await writer.write { db in try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [Meta.planHealthKey]) }
     }
 
     /// Forgets every task, its history and every waiting change (Disconnect and pairing with another account).
@@ -509,9 +562,10 @@ extension TaskRepository: OutboxStore {
     }
 }
 
-/// The server settings, kept as JSON in the key-value table.
+/// The server settings and the last plan health report, kept as JSON in the key-value table.
 enum Meta {
     static let settingsKey = "settings"
+    static let planHealthKey = "planHealth"
 
     static func settings(_ db: Database, localTimezone: String) throws -> ReminderSettings {
         guard let text = try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [settingsKey]),
@@ -525,9 +579,19 @@ enum Meta {
             "summaryTime": .string(settings.summaryTime),
             "defaultReminderMinutes": .array(settings.reminderMinutes.map(JSONValue.of)),
         ]
+        try write(db, key: settingsKey, value.encoded())
+    }
+
+    static func planHealth(_ db: Database) throws -> PlanHealth? {
+        try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [planHealthKey])
+            .flatMap(JSONValue.decode)
+            .flatMap(PlanHealth.parse)
+    }
+
+    static func write(_ db: Database, key: String, _ text: String) throws {
         try db.execute(
             sql: "INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-            arguments: [settingsKey, value.encoded()]
+            arguments: [key, text]
         )
     }
 }

@@ -2,6 +2,66 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%lld approval requests</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld prośby o zgodę</string>
+			<key>many</key>
+			<string>%lld próśb o zgodę</string>
+			<key>one</key>
+			<string>%lld prośba o zgodę</string>
+			<key>other</key>
+			<string>%lld prośby o zgodę</string>
+		</dict>
+	</dict>
+	<key>%lld blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld zablokowane</string>
+			<key>many</key>
+			<string>%lld zablokowanych</string>
+			<key>one</key>
+			<string>%lld zablokowane</string>
+			<key>other</key>
+			<string>%lld zablokowanego</string>
+		</dict>
+	</dict>
+	<key>%lld claims ran out</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld wygasłe przejęcia</string>
+			<key>many</key>
+			<string>%lld wygasłych przejęć</string>
+			<key>one</key>
+			<string>%lld wygasłe przejęcie</string>
+			<key>other</key>
+			<string>%lld wygasłego przejęcia</string>
+		</dict>
+	</dict>
 	<key>%lld days before</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -40,6 +100,86 @@
 			<string>%lld zrobione</string>
 			<key>other</key>
 			<string>%lld zrobionego</string>
+		</dict>
+	</dict>
+	<key>%lld done today</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld zrobione dziś</string>
+			<key>many</key>
+			<string>%lld zrobionych dziś</string>
+			<key>one</key>
+			<string>%lld zrobione dziś</string>
+			<key>other</key>
+			<string>%lld zrobionego dziś</string>
+		</dict>
+	</dict>
+	<key>%lld done without proof</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld zrobione bez dowodu</string>
+			<key>many</key>
+			<string>%lld zrobionych bez dowodu</string>
+			<key>one</key>
+			<string>%lld zrobione bez dowodu</string>
+			<key>other</key>
+			<string>%lld zrobionego bez dowodu</string>
+		</dict>
+	</dict>
+	<key>%lld due today</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld na dziś</string>
+			<key>many</key>
+			<string>%lld na dziś</string>
+			<key>one</key>
+			<string>%lld na dziś</string>
+			<key>other</key>
+			<string>%lld na dziś</string>
+		</dict>
+	</dict>
+	<key>%lld in progress</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld w trakcie</string>
+			<key>many</key>
+			<string>%lld w trakcie</string>
+			<key>one</key>
+			<string>%lld w trakcie</string>
+			<key>other</key>
+			<string>%lld w trakcie</string>
 		</dict>
 	</dict>
 	<key>%lld more times</key>
@@ -100,6 +240,26 @@
 			<string>%lld zaległe</string>
 			<key>other</key>
 			<string>%lld zaległego</string>
+		</dict>
+	</dict>
+	<key>%lld proposals</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld propozycje</string>
+			<key>many</key>
+			<string>%lld propozycji</string>
+			<key>one</key>
+			<string>%lld propozycja</string>
+			<key>other</key>
+			<string>%lld propozycji</string>
 		</dict>
 	</dict>
 	<key>%lld tasks today</key>
@@ -360,6 +520,26 @@
 			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dzień.</string>
 			<key>other</key>
 			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dnia.</string>
+		</dict>
+	</dict>
+	<key>oldest open task %lld days old</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>najstarsze otwarte zadanie ma %lld dni</string>
+			<key>many</key>
+			<string>najstarsze otwarte zadanie ma %lld dni</string>
+			<key>one</key>
+			<string>najstarsze otwarte zadanie ma %lld dzień</string>
+			<key>other</key>
+			<string>najstarsze otwarte zadanie ma %lld dnia</string>
 		</dict>
 	</dict>
 </dict>

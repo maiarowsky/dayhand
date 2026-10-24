@@ -28,6 +28,8 @@ public actor SyncEngine {
     private let onStatus: @Sendable (SyncStatus) -> Void
     private let signal = Signal()
     private var loop: Task<Void, Never>?
+    private var roundInProgress = false
+    private var roundWaiters: [CheckedContinuation<Void, Never>] = []
 
     public init(
         repository: TaskRepository, sender: MutationSender, source: SnapshotSource,
@@ -65,6 +67,17 @@ public actor SyncEngine {
     /// One round: the outbox, then a snapshot. Also callable directly (tests, "Sync now").
     @discardableResult
     public func round() async -> SyncStatus {
+        if roundInProgress {
+            await withCheckedContinuation { roundWaiters.append($0) }
+        }
+        roundInProgress = true
+        defer {
+            if roundWaiters.isEmpty {
+                roundInProgress = false
+            } else {
+                roundWaiters.removeFirst().resume()
+            }
+        }
         let status = await sendAndRead()
         onStatus(status)
         return status

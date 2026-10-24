@@ -94,6 +94,13 @@ public enum ScreenSnapshots {
         if let task = model.sections.today.first(where: { $0.title == "Water the plants" }) {
             try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-repeat-week.png"))
         }
+        if let task = model.sections.today.first(where: { $0.title == "Ship the release notes" }) {
+            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-agent.png"))
+        }
+        if let task = model.sections.done.first(where: { $0.title == "Publish the newsletter" }) {
+            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-proof.png"))
+        }
+        try await render(AgentInboxView(preview: .loaded(demoInbox)).environmentObject(model), CGSize(width: 480, height: 460), false, folder.appendingPathComponent("agent-inbox.png"))
         if let task = model.sections.today.first(where: { $0.title == "Buy milk" }) {
             try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("history-offline-empty.png"))
         }
@@ -112,9 +119,26 @@ public enum ScreenSnapshots {
         )
         model.connectPrefill = PairingInput.parseLink("dayhand://pair?url=http%3A%2F%2F127.0.0.1%3A3211&code=E6M8-FE02-XSNT")
         try await render(ConnectView().environmentObject(model), CGSize(width: 520, height: 400), false, folder.appendingPathComponent("connect.png"))
-        try await render(SettingsView().environmentObject(model).environmentObject(updater), CGSize(width: 520, height: 360), false, folder.appendingPathComponent("settings.png"))
+        try await render(SettingsView().environmentObject(model).environmentObject(updater), CGSize(width: 520, height: 420), false, folder.appendingPathComponent("settings.png"))
+        try await render(
+            GeneralSettings().environmentObject(model), CGSize(width: 520, height: 700), false,
+            folder.appendingPathComponent("settings-notifications.png")
+        )
         try await renderUpdates(to: folder)
     }
+
+    /// Requests and proposals as Review lists them.
+    static let demoInbox = AgentInbox(
+        approvals: [ApprovalRequest(
+            id: "ap1", action: "Send the invoice to Anna by email", detail: "Invoice 2026/10/14, 1 200 PLN", taskRef: 1,
+            taskTitle: "Send the invoice to Anna", requestedBy: "claude", options: ["Send", "Not now"],
+            expiresAt: Clock.nowMs() + 2 * 3_600_000
+        )],
+        proposals: [
+            Proposal(id: "p1", ref: 40, title: "Renew the domain dayhand.dev", dueDate: nil, requestedBy: "monitoring"),
+            Proposal(id: "p2", ref: 41, title: "Answer the support email from Tom", requestedBy: "claude"),
+        ]
+    )
 
     static let demoOffer = UpdateOffer(
         version: "0.2.0", build: "412",
@@ -163,7 +187,7 @@ public enum ScreenSnapshots {
         var ref = 0
         func task(_ title: String, _ change: (inout RemoteTask) -> Void = { _ in }) -> RemoteTask {
             ref += 1
-            var t = RemoteTask(id: "demo\(ref)", title: title, dueDate: today, createdAt: now - Int64(ref) * 60_000, updatedAt: now - 1000)
+            var t = RemoteTask(id: "demo\(ref)", title: title, dueDate: today, createdAt: now - Int64(ref) * 60_000, updatedAt: now - 1000, ref: ref)
             change(&t)
             return t
         }
@@ -189,6 +213,31 @@ public enum ScreenSnapshots {
                 ]
             },
             task("Buy milk") { $0.labels = ["home"] },
+            // Agent work as `dayhand` and an agent set it: claimed for an hour, two of three criteria met, waiting for
+            // the overdue invoice, blocked and with a plan.
+            task("Ship the release notes") {
+                $0.status = "doing"
+                $0.labels = ["work"]
+                $0.claimedBy = "claude"
+                $0.claimExpiresAt = now + 3_600_000
+                $0.acceptance = [
+                    AcceptanceItem(id: "a1", text: "Every change since 0.2.2 is listed", met: true),
+                    AcceptanceItem(id: "a2", text: "Links to the issues work", met: true),
+                    AcceptanceItem(id: "a3", text: "Reviewed by Anna"),
+                ]
+                $0.plan = "Collect the merged pull requests, group them by area, then ask Anna for a review."
+                $0.dependsOn = ["demo1", "demo3"]
+                $0.blockedReason = "Waiting for Anna to come back on Monday"
+            },
+            task("Publish the newsletter") {
+                $0.status = "done"
+                $0.completedAt = now - 1_800_000
+                $0.proof = TaskProof(
+                    summary: "Sent to 412 readers.",
+                    links: [TaskLink(url: "https://example.com/newsletter/42", title: "Archive copy")],
+                    checks: [ProofCheck(name: "spell check", result: "pass"), ProofCheck(name: "link check", result: "fail")]
+                )
+            },
             task("Water the plants") { $0.repeat = RepeatRule(every: .week, weekdays: [3, 7]) },
             task("Morning run") { $0.status = "done"; $0.completedAt = now - 3_600_000 },
             task("Dentist") { $0.dueDate = day(1); $0.dueTime = "10:00" },
@@ -198,6 +247,13 @@ public enum ScreenSnapshots {
         try await model.repository.apply(Snapshot(
             tasks: tasks, settings: ReminderSettings(timezone: zone, summaryTime: "07:00", reminderMinutes: [0, 15])
         ))
+        // The last plan health report, as the server would send it.
+        try await model.repository.savePlanHealth([
+            "at": .of(now), "agentsPaused": false, "overdue": ["count": 1], "dueToday": ["count": 5],
+            "inProgress": ["count": 2], "expiredClaims": ["count": 0], "blocked": ["count": 1],
+            "awaitingApproval": ["count": 1, "pendingApprovals": 1], "proposals": ["count": 2],
+            "completedToday": ["count": 2, "withProof": 1, "withoutProof": 1], "oldestOpen": .null,
+        ])
         // Its history as the server last sent it.
         guard let call = tasks.first(where: { $0.title == "Call the accountant" }) else { return }
         let minute: Int64 = 60_000

@@ -2,6 +2,54 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%lld approval requests</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld approval request</string>
+			<key>other</key>
+			<string>%lld approval requests</string>
+		</dict>
+	</dict>
+	<key>%lld blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld blocked</string>
+			<key>other</key>
+			<string>%lld blocked</string>
+		</dict>
+	</dict>
+	<key>%lld claims ran out</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld claim ran out</string>
+			<key>other</key>
+			<string>%lld claims ran out</string>
+		</dict>
+	</dict>
 	<key>%lld days before</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -32,6 +80,70 @@
 			<string>%lld done</string>
 			<key>other</key>
 			<string>%lld done</string>
+		</dict>
+	</dict>
+	<key>%lld done today</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld done today</string>
+			<key>other</key>
+			<string>%lld done today</string>
+		</dict>
+	</dict>
+	<key>%lld done without proof</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld done without proof</string>
+			<key>other</key>
+			<string>%lld done without proof</string>
+		</dict>
+	</dict>
+	<key>%lld due today</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld due today</string>
+			<key>other</key>
+			<string>%lld due today</string>
+		</dict>
+	</dict>
+	<key>%lld in progress</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld in progress</string>
+			<key>other</key>
+			<string>%lld in progress</string>
 		</dict>
 	</dict>
 	<key>%lld more times</key>
@@ -80,6 +192,22 @@
 			<string>%lld overdue</string>
 			<key>other</key>
 			<string>%lld overdue</string>
+		</dict>
+	</dict>
+	<key>%lld proposals</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld proposal</string>
+			<key>other</key>
+			<string>%lld proposals</string>
 		</dict>
 	</dict>
 	<key>%lld tasks today</key>
@@ -288,6 +416,22 @@
 			<string>The trash is empty. Deleted tasks stay here for %lld day.</string>
 			<key>other</key>
 			<string>The trash is empty. Deleted tasks stay here for %lld days.</string>
+		</dict>
+	</dict>
+	<key>oldest open task %lld days old</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>oldest open task %lld day old</string>
+			<key>other</key>
+			<string>oldest open task %lld days old</string>
 		</dict>
 	</dict>
 </dict>

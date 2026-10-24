@@ -196,7 +196,8 @@ to choose); everything scripts and agents read stays English.
 ## On the Mac
 
 Dayhand for macOS has Today, quick add from the menu bar or a global shortcut, reminders and the
-morning summary, the trash and each task's change history, repeat and reminder editors, and offline editing.
+morning summary (its time and default reminders set in Settings), the trash and each task's change history,
+repeat and reminder editors, a plan health card and read-only agent work in the details, and offline editing.
 Repeating tasks create their next occurrence locally only without a server; a paired Mac without network waits
 until sync. The app speaks English,
 Polish, German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese. It is built from source

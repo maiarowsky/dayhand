@@ -72,6 +72,7 @@ struct TodayView: View {
         let s = model.sections
         VStack(spacing: 0) {
             StatusLine()
+            HealthCard()
             InlineQuickAdd()
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -123,6 +124,7 @@ struct TodayView: View {
             }
         }
         .navigationTitle(tr("Today"))
+        .onAppear { model.refreshHealth(afterNanoseconds: 0) }
     }
 }
 
