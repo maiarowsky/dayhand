@@ -264,6 +264,8 @@
 	<string>Nie ma jeszcze zapisanych zmian.</string>
 	<key>No day</key>
 	<string>Bez terminu</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>Bez wybranego dnia: dzień tygodnia, w którym ukończę zadanie.</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>Nie wybrano dnia: dzień tygodnia terminu.</string>
 	<key>No server connected.</key>

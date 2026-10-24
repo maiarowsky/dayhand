@@ -147,6 +147,17 @@ Not checked yet (needs the signed release): a full install and relaunch. Sparkle
 after the app quits, and only for a signed, notarized app; the first release should try it from the previous
 version before announcing it.
 
+## Offline repeating
+
+Simple repeating tasks create their next occurrence locally, whether connected, unpaired or paired without network
+access; completion-based rules use the local completion day, and resending the same next occurrence is deduplicated
+by its stable `clientId`.
+Tasks with agent acceptance criteria or a plan instead get their next occurrence from the server after reconnecting,
+so those fields are preserved without a local schema change.
+Known limitation, shared with Android: if two devices complete the same cached occurrence before syncing, both a
+server-generated and a locally generated next occurrence can survive; this release adds no correlation protocol for
+that race.
+
 ## What is left for parity with the Android app
 
 The implemented features, including the trash and change history, are described in

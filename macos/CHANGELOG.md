@@ -4,7 +4,7 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
-## 0.3.1 (unreleased)
+## 0.3.0 (unreleased)
 
 ### Added
 
@@ -14,21 +14,16 @@ latest one below).
   before, a time on the due day or the day before). Save is enabled only for what the server accepts
   (`TaskRules`), so a refused rule never enters the outbox. Usage: [README.md](README.md).
 
-### Changed
-
-- Ticking off a repeating task without a server (Not now, disconnected or signed out) creates its next occurrence
-  on the Mac at once, as the Android app does; the done task's rule is cleared first, so a server connected later
-  does not add a second one. With a server nothing changes: the server makes the next occurrence.
-
-## 0.3.0 (unreleased)
-
-### Added
-
 - **Trash** with **Restore** in the task sidebar, and per-task **History** in the details.
   Usage and offline behavior: [README.md](README.md).
 
 ### Changed
 
+- Ticking off a simple repeating task creates its next occurrence on the Mac at once, including on a paired Mac
+  without network access. The done task's rule is cleared before sending completion; the next occurrence's stable
+  `clientId` deduplicates resends. Completion-based dates use the local completion day. Tasks with agent acceptance
+  criteria or a plan wait for server generation after reconnecting; see the known cross-device limitation in
+  [docs/macos.md](../docs/macos.md#offline-repeating).
 - The existing sidebar now switches between Today and Trash; the window keeps its two-column layout.
 - The local database now caches server history; the cache leaves the Mac with a purged task.
   Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).

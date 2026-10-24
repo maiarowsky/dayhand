@@ -71,7 +71,7 @@ final class AppModel: ObservableObject {
     init(_ environment: AppEnvironment) {
         let box = engineBox
         repository = TaskRepository(
-            database: environment.database, onOutboxChanged: { box.poke() }, repeatsOnMac: { !box.hasServer }
+            database: environment.database, onOutboxChanged: { box.poke() }
         )
         history = TaskHistorySync(repository: repository, runner: { box.queries })
         credentials = environment.credentials
@@ -403,13 +403,6 @@ final class EngineBox: @unchecked Sendable {
         self.engine = engine
         runner = queries
         lock.unlock()
-    }
-
-    /// False while the Mac has no server (Not now, disconnected or signed out): tasks stay here alone.
-    var hasServer: Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return engine != nil
     }
 
     /// The connected server's queries, or nil without one.

@@ -193,25 +193,23 @@ struct InvalidEditTests {
     }
 }
 
-/// Completing a repeating task without a server creates its next occurrence on the Mac, as the Android app does, and
-/// the server, once connected, does not add a second one.
 struct OfflineRepeatTests {
     let clock = TestClock(utc("2026-10-22T09:00"))
     let server = FakeServer()
 
-    func setUp(repeatsOnMac: Bool) throws -> (TaskRepository, SyncEngine) {
+    func setUp() throws -> (TaskRepository, SyncEngine, ConvexRemote) {
         let clock = clock, ids = TestIds()
         server.clock = { clock.now }
         let repo = TaskRepository(
             database: try AppDatabase.inMemory(), clock: { clock.now }, newId: { ids.next() },
-            localTimezone: { "Europe/London" }, repeatsOnMac: { repeatsOnMac }
+            localTimezone: { "Europe/London" }
         )
         let tokens = DeviceTokens(
             serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: server),
             onRevoked: {}, clock: { clock.now }
         )
         let remote = ConvexRemote(deploymentUrl: FakeServer.cloud, tokens: tokens, transport: server)
-        return (repo, SyncEngine(repository: repo, sender: remote, source: remote, onStatus: { _ in }))
+        return (repo, SyncEngine(repository: repo, sender: remote, source: remote, onStatus: { _ in }), remote)
     }
 
     /// Thursday 22 October 2026, repeating on Thursdays and Sundays, with a label, a ticked item and its reminders.
@@ -227,7 +225,7 @@ struct OfflineRepeatTests {
     }
 
     @Test func withoutAServerTheNextOccurrenceIsMadeOnTheMacAndTheServerAddsNoSecond() async throws {
-        let (repo, engine) = try setUp(repeatsOnMac: true)
+        let (repo, engine, _) = try setUp()
         let t = try await plants(repo)
         try await repo.complete(t.localId)
 
@@ -265,23 +263,152 @@ struct OfflineRepeatTests {
         #expect(try await repo.allTasks().count == 2)
     }
 
-    @Test func withAServerTheServerMakesTheNextOccurrence() async throws {
-        let (repo, engine) = try setUp(repeatsOnMac: false)
+    @Test(arguments: [RepeatFrom.due, .completion])
+    func pairedOfflineCompletionUsesTheCompletionDayAndResendsOneOccurrence(_ anchor: RepeatFrom) async throws {
+        let (repo, engine, remote) = try setUp()
         let t = try await plants(repo)
-        try await repo.complete(t.localId)
-        #expect(try await repo.allTasks().count == 1)
-        #expect(try await repo.pendingOps().last?.mutation == Mutations.complete)
-        #expect(try await repo.task(t.localId)?.repeat != nil)
+        try await repo.setRepeat(t.localId, RepeatRule(every: .day, interval: 2, from: anchor))
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        server.offline = true
+        clock.set(utc("2026-10-25T14:00"))
+        try await repo.move(t.localId, to: .done)
+        #expect(try await repo.task(t.localId)?.completedAt == clock.now)
+        let next = try #require(try await repo.allTasks().first { $0.status == .todo })
+        let expectedDate = anchor == .completion ? "2026-10-27" : "2026-10-26"
+        #expect(next.dueDate == expectedDate)
+        #expect(next.clientId == next.localId)
+        guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
+        #expect(server.allTasks.count == 1)
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.update, Mutations.complete, Mutations.add])
 
+        clock.advance(4 * HelmDates.dayMs)
+        server.offline = false
+        #expect(try await OutboxProcessor(store: repo, sender: remote, maxOps: 2).drain() == .moreLeft)
+        server.loseNextAnswer = true
+        guard case .offline = await engine.round() else { Issue.record("expected lost add answer"); return }
+        #expect(server.allTasks.count == 2)
+        #expect(try await repo.pendingOps().map(\.clientId) == [next.localId])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.allTasks.count == 2)
+        #expect(server.allTasks.filter { $0["status"] == "todo" }.map { $0["clientId"] } == [.string(next.localId)])
+        let saved = try #require(try await repo.task(next.localId))
+        #expect(saved.dueDate == expectedDate)
+        #expect(saved.serverId != nil)
+        #expect(try await repo.allTasks().count == 2)
+    }
+
+    @Test func aConnectedCompletionAlsoKeepsOneNextOccurrence() async throws {
+        let (repo, engine, _) = try setUp()
+        let t = try await plants(repo)
+        await engine.round()
+        try await repo.complete(t.localId)
+        let next = try #require(try await repo.allTasks().first { $0.status == .todo })
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(server.allTasks.count == 2)
-        let local = try await repo.allTasks()
-        #expect(local.count == 2)
-        #expect(local.first { $0.status == .todo }?.dueDate == "2026-10-25")
+        #expect(try await repo.task(next.localId)?.serverId != nil)
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test(arguments: ["acceptance", "plan", "both"])
+    func agentDetailsKeepRecurrenceOnTheServerAcrossRepositoryReloads(_ fields: String) async throws {
+        let (repo, engine, _) = try setUp()
+        let id = server.addElsewhere("Agent task", dueDate: "2026-10-22")
+        let acceptance: JSONValue = [["id": "criterion", "text": "Tests pass", "met": true]]
+        let plan: JSONValue = "Implement and verify"
+        var metadata: [String: JSONValue] = ["repeat": RepeatRule(every: .day).wire]
+        if fields != "plan" { metadata["acceptance"] = acceptance }
+        if fields != "acceptance" { metadata["plan"] = plan }
+        await engine.round()
+        server.editElsewhere(id, metadata)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        server.offline = true
+        let clock = clock
+        let reloaded = TaskRepository(database: repo.database, clock: { clock.now })
+        try await reloaded.complete(id)
+        #expect(try await reloaded.allTasks().count == 1)
+        #expect(try await reloaded.task(id)?.repeat == RepeatRule(every: .day))
+        #expect(try await reloaded.pendingOps().map(\.mutation) == [Mutations.complete])
+        server.offline = false
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let next = try #require(server.allTasks.first { $0["status"] == "todo" })
+        #expect(server.allTasks.count == 2)
+        #expect(next["dueDate"] == "2026-10-23")
+        #expect(next["plan"] == metadata["plan"])
+        let resetAcceptance: JSONValue? = fields == "plan" ? nil : [["id": "criterion", "text": "Tests pass", "met": false]]
+        #expect(next["acceptance"] == resetAcceptance)
+        #expect(try await reloaded.allTasks().count == 2)
+    }
+
+    @Test func removingAgentDetailsAllowsLocalRecurrenceAgain() async throws {
+        let (repo, engine, _) = try setUp()
+        let id = server.addElsewhere("Agent task", dueDate: "2026-10-22")
+        server.editElsewhere(id, ["repeat": RepeatRule(every: .day).wire, "plan": "Work"])
+        await engine.round()
+        server.editElsewhere(id, ["plan": .null])
+        await engine.round()
+        server.offline = true
+        try await repo.complete(id)
+        #expect(try await repo.allTasks().count == 2)
+        #expect(try await repo.task(id)?.repeat == nil)
+    }
+
+    @Test func staleSnapshotsCannotReenableLocalRecurrenceForAnAgentTask() async throws {
+        let (repo, engine, remote) = try setUp()
+        let id = server.addElsewhere("Agent task", dueDate: "2026-10-22")
+        server.editElsewhere(id, ["repeat": RepeatRule(every: .day).wire])
+        await engine.round()
+        let older = try await remote.snapshot().get()
+        server.editElsewhere(id, ["plan": "Preserve this plan"])
+        await engine.round()
+        try await repo.apply(older)
+        server.offline = true
+        try await repo.complete(id)
+        #expect(try await repo.allTasks().count == 1)
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.complete])
+    }
+
+    @Test func recompletingWithARuleDoesNotOverwriteTheExistingNextOccurrence() async throws {
+        let (repo, _, _) = try setUp()
+        let task = try await plants(repo)
+        try await repo.complete(task.localId)
+        let next = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.rename(next.localId, to: "Keep my edit")
+        try await repo.reopen(task.localId)
+        try await repo.setRepeat(task.localId, task.repeat)
+        try await repo.complete(task.localId)
+        #expect(try await repo.allTasks().count == 2)
+        #expect(try await repo.task(next.localId)?.title == "Keep my edit")
+        #expect(try await repo.pendingOps().filter { $0.mutation == Mutations.add && $0.taskLocalId == next.localId }.count == 1)
+    }
+
+    @Test(arguments: [false, true])
+    func occurrenceIdentityIsStableAndBounded(_ hasClientId: Bool) async throws {
+        let clientId = String(repeating: "a", count: 128)
+        let remote = RemoteTask(
+            id: "server-task", clientId: hasClientId ? clientId : nil, title: "Daily", dueDate: "2026-10-22",
+            createdAt: clock.now, updatedAt: clock.now, repeat: RepeatRule(every: .day)
+        )
+        var nextIds: [String] = []
+        for _ in 0..<2 {
+            let clock = clock
+            let repo = TaskRepository(database: try AppDatabase.inMemory(), clock: { clock.now })
+            try await repo.apply(Snapshot(tasks: [remote]))
+            var id = hasClientId ? clientId : remote.id
+            for _ in 0..<20 {
+                try await repo.complete(id)
+                let next = try #require(try await repo.allTasks().first { $0.status == .todo })
+                #expect(next.localId == next.clientId)
+                #expect(next.localId.count <= 128)
+                id = next.localId
+            }
+            nextIds.append(id)
+        }
+        #expect(nextIds[0] == nextIds[1])
     }
 
     @Test func theLastOfACountedSeriesAddsNothing() async throws {
-        let (repo, engine) = try setUp(repeatsOnMac: true)
+        let (repo, engine, _) = try setUp()
         let t = try await repo.add(title: "Last time", dueDate: "2026-10-22", dueTime: nil)
         try await repo.setRepeat(t.localId, RepeatRule(every: .day, count: 1))
         try await repo.complete(t.localId)
@@ -292,7 +419,7 @@ struct OfflineRepeatTests {
     }
 
     @Test func aLateCompletionSkipsTheMissedDatesAndCompletingTwiceAddsOne() async throws {
-        let (repo, _) = try setUp(repeatsOnMac: true)
+        let (repo, _, _) = try setUp()
         let t = try await repo.add(title: "Daily", dueDate: "2026-10-19", dueTime: nil)
         try await repo.setRepeat(t.localId, RepeatRule(every: .day, count: 10))
         try await repo.complete(t.localId)

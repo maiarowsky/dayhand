@@ -9023,6 +9023,60 @@
         }
       }
     },
+    "No day picked: the completion day's weekday." : {
+      "comment" : "Repeat editor: a weekly completion-based rule without weekdays",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Tag gewählt: der Wochentag der Erledigung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No day picked: the completion day's weekday."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún día elegido: el día de la semana en que lo complete."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun jour choisi : le jour de la semaine où je la termine."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "曜日を選ばない場合は完了日の曜日になります。"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bez wybranego dnia: dzień tygodnia, w którym ukończę zadanie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum dia escolhido: o dia da semana em que eu concluir."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未选择日子：按完成日期的星期几。"
+          }
+        }
+      }
+    },
     "No day picked: the due date's weekday." : {
       "comment" : "Repeat editor: a weekly rule without weekdays",
       "extractionState" : "manual",

@@ -264,6 +264,8 @@
 	<string>まだ変更の記録はありません。</string>
 	<key>No day</key>
 	<string>日付なし</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>曜日を選ばない場合は完了日の曜日になります。</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>曜日を選ばない場合は期限日の曜日になります。</string>
 	<key>No server connected.</key>

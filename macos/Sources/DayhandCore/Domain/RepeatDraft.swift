@@ -2,14 +2,13 @@ import Foundation
 
 /**
  * The repeat editor's choices, as the Android app's `RepeatDialog`: no repeat, or every [interval] days, weeks (on
- * [weekdays], or the due date's weekday when none is picked), months ([monthDay]) or years; counted from the due date
+ * [weekdays], or the anchor's weekday when none is picked), months ([monthDay]) or years; counted from the due date
  * or from completion; ending never, on a day or after a number of times. [rule] is what Save stores, and [isValid]
  * holds it to the backend's checks (`TaskRules.isValid`), so the editor never queues a rule the server would refuse.
  */
 public struct RepeatDraft: Hashable, Sendable {
     /// Which day of the month a monthly rule falls on.
     public enum MonthDay: Hashable, Sendable {
-        /// The due date's day (no `monthDay` in the rule).
         case sameDay
         case lastDay
         /// A fixed day 1 to 31, set elsewhere (`dayhand edit --repeat`); kept when the editor opens.

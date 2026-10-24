@@ -264,6 +264,8 @@
 	<string>Todavía no hay cambios registrados.</string>
 	<key>No day</key>
 	<string>Sin día</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>Ningún día elegido: el día de la semana en que lo complete.</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>Ningún día elegido: el día de la semana del vencimiento.</string>
 	<key>No server connected.</key>

@@ -44,7 +44,7 @@ struct RepeatEditor: View {
                 if every == .month {
                     Picker(tr("Day of the month"), selection: $draft.monthDay) {
                         ForEach(RepeatDraft.monthDays(due: due, current: task.repeat), id: \.self) { choice in
-                            Text(Self.monthText(choice, due: due)).tag(choice)
+                            Text(Self.monthText(choice, due: due, fromCompletion: draft.fromCompletion)).tag(choice)
                         }
                     }
                 }
@@ -70,7 +70,6 @@ struct RepeatEditor: View {
         }
     }
 
-    /// Monday to Sunday as toggle buttons; none picked repeats on the due date's weekday.
     @ViewBuilder private var weekdays: some View {
         LabeledContent(tr("On these days")) {
             HStack(spacing: 4) {
@@ -92,7 +91,7 @@ struct RepeatEditor: View {
             }
         }
         if draft.weekdays.isEmpty {
-            Text(tr("No day picked: the due date's weekday.")).font(.caption).foregroundStyle(.secondary)
+            Text(Self.weekdayHint(fromCompletion: draft.fromCompletion)).font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -128,10 +127,13 @@ struct RepeatEditor: View {
         }
     }
 
-    /// "Day 22", "The last day of the month", "On the fourth Thursday".
-    static func monthText(_ choice: RepeatDraft.MonthDay, due: CivilDate) -> String {
+    static func weekdayHint(fromCompletion: Bool) -> String {
+        fromCompletion ? tr("No day picked: the completion day's weekday.") : tr("No day picked: the due date's weekday.")
+    }
+
+    static func monthText(_ choice: RepeatDraft.MonthDay, due: CivilDate, fromCompletion: Bool) -> String {
         switch choice {
-        case .sameDay: return tr("Day \(due.day)")
+        case .sameDay: return fromCompletion ? tr("The day I complete it") : tr("Day \(due.day)")
         case .lastDay: return tr("The last day of the month")
         case .day(let day): return capitalizedFirst(tr("on day \(day)"))
         case .weekday(let w): return capitalizedFirst(Formatting.weekdayOfMonth(nth: w.nth, weekday: w.weekday))

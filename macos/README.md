@@ -18,17 +18,21 @@ This version is the basic one (MVP):
   (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
   Links are shown. A task in the trash is read-only until **Restore**.
 - **Repeat** in the details is an editor: **Frequency** (does not repeat, daily, weekly, monthly, yearly), every
-  how many, the weekdays Monday to Sunday for a weekly rule (none picked: the due date's weekday), the day of the
-  month for a monthly one (the due date's day, the last day, its nth weekday or, in the month's last week, the last
+  how many, the weekdays Monday to Sunday for a weekly rule (none picked: the selected anchor's weekday), the day of the
+  month for a monthly one (the anchor's day, the last day, an nth weekday or, in the month's last week, the last
   one), counting the next date from the due date or from completion, and the end: never, on a day or after a
   number of times. **Reminders** are as in Settings, none, or custom, at most five: minutes before the due time
   (only a timed task rings them) and times of day on the due day or the day before. Both stay a draft, with a
   summary line, until **Save Repeat** or **Save Reminders**, which only a rule or reminders the server accepts
   enable (`TaskRules`), so a refused change never reaches the outbox; **Revert** drops the draft.
-- **Repeating offline**: without a server (**Not now**, disconnected or signed out) ticking off a repeating task
-  creates its next occurrence on the Mac at once, with the same dates as the server and the Android app
-  (`Recurrence.advance`). The done task loses its rule first, so a server connected later keeps one next
-  occurrence, not two. With a server, the server makes it and the next poll brings it.
+- **Repeating offline**: ticking off a simple repeating task creates its next occurrence on the Mac at once,
+  including on a paired Mac without network access. This also works while connected, without waiting for a poll.
+  Dates follow `Recurrence.advance`, using the actual local completion day for completion-based rules. The done
+  task loses its rule before completion is sent, and the next occurrence has a stable `clientId`, so reconnecting
+  or resending a lost answer keeps one next occurrence. Tasks with agent acceptance criteria or a plan wait for
+  server generation after reconnecting; eligibility is cached with the server snapshot, without a schema change.
+  Known limitation (also on Android): completing the same cached occurrence on two devices before sync can
+  produce two next occurrences; this release adds no cross-device correlation protocol.
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
   by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
   cached entries remain available offline. Without cached entries, the details say history is unavailable
@@ -178,8 +182,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
   is erased. It also checks trash expiry and queuing an offline restore. `RepeatEditingTests.swift` checks the editors'
   drafts against the rules they make, that rules and reminders `TaskRules` refuses queue nothing, and that a
-  repeating task completed without a server gets its next occurrence on the Mac and keeps exactly one once the
-  fake server (which repeats on `complete` as the backend does) receives the outbox. The loop's wait ends at its timeout or at
+  simple repeating task completed without a server or on a paired Mac without network gets its next occurrence
+  locally, retains its completion-based date through a delayed reconnect, and keeps one occurrence after a lost
+  add answer is resent. Tasks with acceptance criteria or a plan defer generation to the fake server, which
+  preserves those fields and resets the criteria as the backend does. The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.

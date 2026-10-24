@@ -201,7 +201,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             "id": .string(id), "ref": .of(nextId - 1), "title": args["title"] ?? "", "status": "todo", "isNow": false,
             "labels": [], "links": [], "checklist": [], "createdAt": .of(clock()), "updatedAt": .of(clock()),
         ]
-        for key in ["note", "dueDate", "dueTime", "clientId", "status", "resumeNote", "repeat", "labels", "links", "checklist", "reminders"] {
+        for key in ["note", "dueDate", "dueTime", "clientId", "status", "resumeNote", "repeat", "labels", "links", "checklist", "reminders", "acceptance", "plan"] {
             if let value = args[key] { task[key] = value }
         }
         tasks[id] = .object(task)
@@ -216,7 +216,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         guard let done = tasks[id]?.object, let rule = RepeatRule.parse(done["repeat"]) else { return }
         let today = HelmDates.localDate(clock(), settings["timezone"]?.string)
         guard let occurrence = Recurrence.advance(rule, dueDate: done["dueDate"]?.string, today: today) else { return }
-        var next = done.filter { ["title", "note", "dueTime", "labels", "links", "reminders"].contains($0.key) }
+        var next = done.filter { ["title", "note", "dueTime", "labels", "links", "reminders", "plan"].contains($0.key) }
         next["dueDate"] = .string(occurrence.dueDate)
         next["repeat"] = occurrence.repeat.wire
         next["checklist"] = .array((done["checklist"]?.array ?? []).map { item in
@@ -224,6 +224,13 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             unticked["done"] = false
             return .object(unticked)
         })
+        if let acceptance = done["acceptance"]?.array {
+            next["acceptance"] = .array(acceptance.map { item in
+                var unmet = item.object ?? [:]
+                unmet["met"] = false
+                return .object(unmet)
+            })
+        }
         let newId = "srv\(nextId)"
         nextId += 1
         next["id"] = .string(newId)

@@ -1,3 +1,4 @@
+import CryptoKit
 import DayhandLocalization
 import Foundation
 import GRDB
@@ -17,24 +18,19 @@ public final class TaskRepository: Sendable {
     private let newId: @Sendable () -> String
     private let onOutboxChanged: @Sendable () -> Void
     private let localTimezone: @Sendable () -> String
-    private let repeatsOnMac: @Sendable () -> Bool
 
-    /// [repeatsOnMac] is true while the Mac has no server, which then makes a repeating task's next occurrence itself;
-    /// with a server, `complete` does it there.
     public init(
         database: AppDatabase,
         clock: @escaping @Sendable () -> Int64 = Clock.nowMs,
         newId: @escaping @Sendable () -> String = { UUID().uuidString.lowercased() },
         onOutboxChanged: @escaping @Sendable () -> Void = {},
-        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier },
-        repeatsOnMac: @escaping @Sendable () -> Bool = { false }
+        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier }
     ) {
         self.database = database
         self.clock = clock
         self.newId = newId
         self.onOutboxChanged = onOutboxChanged
         self.localTimezone = localTimezone
-        self.repeatsOnMac = repeatsOnMac
     }
 
     private var writer: DatabaseQueue { database.writer }
@@ -107,13 +103,7 @@ public final class TaskRepository: Sendable {
         return task
     }
 
-    /**
-     * Marks a task done. Without a server the Mac adds a repeating task's next occurrence itself (as the backend's
-     * `complete` would) and queues it as a task of its own; the done task loses its rule first, so the server, once
-     * connected, does not add another one. The Android app's `TaskRepository.complete`.
-     */
     public func complete(_ localId: String) async throws {
-        let onMac = repeatsOnMac()
         let zone = localTimezone()
         let now = clock()
         let completeOp = makeOp(Mutations.complete, localId, [:], now: now)
@@ -126,7 +116,7 @@ public final class TaskRepository: Sendable {
             task.isNow = false
             task.updatedAt = now
             var complete = completeOp
-            guard onMac, let rule, !wasDone else {
+            guard let rule, !wasDone, try Meta.canRepeatLocally(db, task.serverId) else {
                 try task.save(db)
                 try complete.insert(db)
                 return true
@@ -139,9 +129,11 @@ public final class TaskRepository: Sendable {
             try complete.insert(db)
             if let occurrence = Recurrence.advance(rule, dueDate: task.dueDate, today: today) {
                 let next = self.nextOccurrence(of: task, occurrence, now: now)
-                try next.save(db)
-                var add = self.makeOp(Mutations.add, next.localId, Self.addArgs(next), now: now, clientId: next.localId)
-                try add.insert(db)
+                if try !TaskItem.exists(db, key: next.localId) {
+                    try next.save(db)
+                    var add = self.makeOp(Mutations.add, next.localId, Self.addArgs(next), now: now, clientId: next.localId)
+                    try add.insert(db)
+                }
             }
             return true
         }
@@ -157,8 +149,7 @@ public final class TaskRepository: Sendable {
         }
     }
 
-    /// To do and in progress through `setStatus`, done through `complete` (which also creates a repeating task's
-    /// next occurrence, on the server or, without one, on the Mac). Leaving "in progress" ends the "now" flag, as on the server.
+    /// To do and in progress through `setStatus`, done through `complete`.
     public func move(_ localId: String, to status: TaskStatus) async throws {
         guard let current = try await task(localId), current.status != status else { return }
         switch status {
@@ -323,6 +314,16 @@ public final class TaskRepository: Sendable {
             // History of tasks that no longer exist on the Mac (purged from the trash on the server).
             try db.execute(sql: "DELETE FROM taskEvent WHERE taskServerId NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)")
             try Meta.write(db, snapshot.settings)
+            let knownVersions = Dictionary(uniqueKeysWithValues: local.compactMap { task in
+                task.serverId.map { ($0, task.serverUpdatedAt ?? Int64.min) }
+            })
+            for task in snapshot.tasks where task.updatedAt >= (knownVersions[task.id] ?? Int64.min) {
+                try Meta.setLocalRepeat(db, task.id, allowed: !task.hasAgentDetails)
+            }
+            try db.execute(
+                sql: "DELETE FROM meta WHERE key LIKE ? AND substr(key, ?) NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)",
+                arguments: ["\(Meta.localRepeatPrefix)%", Meta.localRepeatPrefix.count + 1]
+            )
         }
     }
 
@@ -403,7 +404,8 @@ public final class TaskRepository: Sendable {
     /// The task the completion of [task] creates, as the backend's `complete`: the same fields on the next date, the
     /// checklist unticked.
     private func nextOccurrence(of task: TaskItem, _ occurrence: Recurrence.Next, now: Int64) -> TaskItem {
-        let id = newId()
+        let identity = Data((task.clientId ?? task.localId).utf8)
+        let id = "repeat-" + SHA256.hash(data: identity).map { String(format: "%02x", $0) }.joined()
         return TaskItem(
             localId: id, clientId: id, title: task.title, note: task.note, dueDate: occurrence.dueDate,
             dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat, labels: task.labels,
@@ -460,6 +462,7 @@ extension TaskRepository: OutboxStore {
                var task = try TaskItem.fetchOne(db, key: localId) {
                 task.serverId = serverId
                 try task.save(db)
+                try Meta.setLocalRepeat(db, serverId, allowed: RemoteJSON.task(value)?.hasAgentDetails == false)
             }
         }
     }
@@ -493,6 +496,19 @@ extension TaskRepository: OutboxStore {
 /// The server settings, kept as JSON in the key-value table.
 enum Meta {
     static let settingsKey = "settings"
+    static let localRepeatPrefix = "localRepeat:"
+
+    static func canRepeatLocally(_ db: Database, _ serverId: String?) throws -> Bool {
+        guard let serverId else { return true }
+        return try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [localRepeatPrefix + serverId]) == "true"
+    }
+
+    static func setLocalRepeat(_ db: Database, _ serverId: String, allowed: Bool) throws {
+        try db.execute(
+            sql: "INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            arguments: [localRepeatPrefix + serverId, allowed ? "true" : "false"]
+        )
+    }
 
     static func settings(_ db: Database, localTimezone: String) throws -> ReminderSettings {
         guard let text = try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [settingsKey]),

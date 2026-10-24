@@ -264,6 +264,8 @@
 	<string>No changes recorded yet.</string>
 	<key>No day</key>
 	<string>No day</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>No day picked: the completion day's weekday.</string>
 	<key>No day picked: the due date's weekday.</key>
 	<string>No day picked: the due date's weekday.</string>
 	<key>No server connected.</key>

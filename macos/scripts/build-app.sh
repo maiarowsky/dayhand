@@ -16,7 +16,7 @@ set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 CONFIGURATION=${DAYHAND_CONFIGURATION:-release}
-VERSION=${DAYHAND_VERSION:-0.3.1}
+VERSION=${DAYHAND_VERSION:-0.3.0}
 BUILD_NUMBER=${DAYHAND_BUILD:-$(git -C "$ROOT" rev-list --count HEAD 2>/dev/null || echo 1)}
 LOCK=${DAYHAND_BUILD_LOCK:-/private/tmp/mussh-ios-build.lock}
 APPCAST_URL=${DAYHAND_APPCAST_URL:-https://github.com/maiarowsky/helm/releases/download/dayhand-macos-appcast/appcast.xml}
