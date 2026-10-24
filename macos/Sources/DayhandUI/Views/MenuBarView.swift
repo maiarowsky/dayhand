@@ -1,4 +1,5 @@
 import DayhandCore
+import DayhandLocalization
 import SwiftUI
 
 /// The menu bar window: quick add, and today's open tasks to tick off without opening the app.
@@ -13,14 +14,14 @@ struct MenuBarView: View {
         let rows = Array((s.overdue.map { ($0, true) } + (s.now.map { [($0, false)] } ?? []) + s.today.map { ($0, false) }).prefix(Self.maxRows))
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Today").font(.headline)
+                Text(tr("Today")).font(.headline)
                 Spacer()
                 Text(summary(s)).font(.caption).foregroundStyle(.secondary)
             }
             InlineQuickAdd()
             Divider()
             if rows.isEmpty {
-                Text(s.done.isEmpty ? "Nothing planned for today." : "All done for today.")
+                Text(s.done.isEmpty ? tr("Nothing planned for today.") : tr("All done for today."))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
             } else {
@@ -29,14 +30,14 @@ struct MenuBarView: View {
                         DoneBox(task: task)
                         Text(task.title).lineLimit(1)
                         Spacer(minLength: 4)
-                        Text(overdue ? (Formatting.due(task, today: s.date) ?? "") : (task.isNow ? "now" : task.dueTime ?? ""))
+                        Text(overdue ? (Formatting.due(task, today: s.date) ?? "") : (task.isNow ? tr("now") : task.dueTime.map(DateText.time) ?? ""))
                             .font(.caption)
                             .foregroundStyle(overdue ? Color.overdue : .secondary)
                     }
                     .contextMenu { TaskMenu(task: task) }
                 }
                 let more = s.openCount - rows.count
-                if more > 0 { Text("and \(more) more").font(.caption).foregroundStyle(.secondary) }
+                if more > 0 { Text(tr("and \(more) more")).font(.caption).foregroundStyle(.secondary) }
             }
             if let status = Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline) {
                 Divider()
@@ -44,12 +45,12 @@ struct MenuBarView: View {
             }
             Divider()
             HStack {
-                Button("Open Dayhand") {
+                Button(tr("Open Dayhand")) {
                     model.openMainWindow = { openWindow(id: "main") }
                     model.showMainWindow()
                 }
                 Spacer()
-                Button("Quit") { NSApp.terminate(nil) }
+                Button(tr("Quit")) { NSApp.terminate(nil) }
             }
             .buttonStyle(.borderless)
         }
@@ -59,9 +60,9 @@ struct MenuBarView: View {
     }
 
     private func summary(_ s: TodaySections) -> String {
-        var parts = ["\(s.openCount) open"]
-        if !s.overdue.isEmpty { parts.append("\(s.overdue.count) overdue") }
-        if !s.done.isEmpty { parts.append("\(s.done.count) done") }
+        var parts = [tr("\(s.openCount) open")]
+        if !s.overdue.isEmpty { parts.append(tr("\(s.overdue.count) overdue")) }
+        if !s.done.isEmpty { parts.append(tr("\(s.done.count) done")) }
         return parts.joined(separator: " · ")
     }
 }

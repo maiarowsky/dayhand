@@ -30,6 +30,11 @@ This version is the basic one (MVP):
   small window with its notes and **Update and Relaunch**, the download's progress, and Settings → Updates (check
   automatically, preview versions). Only builds made with the release key update; any other build says
   "Updates aren't available in this build" and never checks. Releasing an update: [docs/macos.md](../docs/macos.md#updates).
+- **Eight languages**: English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese and Simplified
+  Chinese, with plural forms per language and days and times in the style of the Mac's region (14:00 or 2:00 PM).
+  Dayhand follows the Mac's languages; Settings → General → **Language** picks one of the eight and the windows
+  change at once (the menus that come with macOS follow after **Restart Dayhand**). Date phrases in quick add stay
+  English in every language ("fri 2pm"). `DAYHAND_LANG=<code>` starts it in a language without changing Settings.
 
 ## How it works
 
@@ -42,12 +47,13 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
 rounds: every 15 s, and at once after a local change
 ```
 
-The code is a Swift package with five targets:
+The code is a Swift package with six targets:
 
 | Target | What it holds |
 |---|---|
 | `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
 | `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
+| `DayhandLocalization` | The texts: the string catalog `Localizable.xcstrings` (English is the source and the keys), the `.lproj` folders compiled from it, `tr(…)`, choosing the language (`Localization`) and days and times in the region's style (`DateText`). |
 | `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
 | `Dayhand` | The executable: starts `DayhandApp`. |
 | `DayhandSnapshots` | A tool that renders the main screens to PNG files from synthetic tasks (no display needed). |
@@ -75,7 +81,7 @@ Overdue tasks never ring. The summary is quiet (`passive`), so it waits in Notif
 permission when the first reminder is planned, or from Settings.
 
 Where the app keeps things: the database in `~/Library/Application Support/Dayhand/dayhand.sqlite`, the sign-in
-in the Keychain, preferences (the shortcut, the window, the update settings) in `io.github.maiarowsky.dayhand`. To try it without
+in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`. To try it without
 touching those, start it with `DAYHAND_DATA_DIR=<folder>` (another database) and `DAYHAND_CREDENTIALS=memory`
 (the sign-in is forgotten when the app quits).
 
@@ -91,7 +97,14 @@ open dist/Dayhand.app
 
 `scripts/build-app.sh` builds under `nice` and the machine's shared build lock
 (`/private/tmp/mussh-ios-build.lock`, change with `DAYHAND_BUILD_LOCK`), writes `Info.plist` from `Bundle/`
-(version from `DAYHAND_VERSION`, build number from the commit count) and copies the packages' resource bundles.
+(version from `DAYHAND_VERSION`, build number from the commit count) and copies the packages' resource bundles,
+the texts in eight languages among them.
+
+**Texts.** They live in `Sources/DayhandLocalization/Localizable.xcstrings` (edit it in Xcode or as JSON; English
+is the source and the keys, each with a comment for translators). SwiftPM copies a string catalog into the bundle
+without compiling it, so after a change run `scripts/compile-strings.sh`, which compiles it with `xcstringstool`
+into the `.lproj` folders the package ships, and commit both; `swift test` fails while they differ. Code takes a
+text with `tr("Every \(n) days")`; the key is the English text with `%lld` for a whole number and `%@` for text.
 The app is not signed with a Developer ID, not notarized and not in a DMG: see
 [docs/macos.md](../docs/macos.md#distribution) for what that still needs. A locally built app runs on the Mac that
 built it; after each rebuild macOS may ask once whether Dayhand may use its Keychain item.
@@ -111,7 +124,7 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 156 tests, about five seconds; the live one is skipped
+swift test                        # 169 tests, about five seconds; the live one is skipped
 ```
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
@@ -140,7 +153,13 @@ swift test                        # 156 tests, about five seconds; the live one 
 - **Screens**: `swift run DayhandSnapshots <folder>` draws Today (also with the update button), the details, the
   menu bar, quick add, Connect, Settings, Settings → Updates and every state of the update window from synthetic
   data into PNG files, off screen (the sidebar's translucent background does not
-  draw off screen, so the Today list is also drawn on its own).
+  draw off screen, so the Today list is also drawn on its own). `swift run DayhandSnapshots <folder> pl` draws them
+  in another language, and the tool fails when a text on them is missing from the string catalog.
+- **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
+  other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
+  language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources
+  has its key and every key is used, and switching the language changes the texts of the screens, the reminders
+  and the update messages.
 
 The Keychain store (`KeychainCredentialStore`) is not exercised by the tests, so they never write to your login
 Keychain.

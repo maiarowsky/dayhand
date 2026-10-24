@@ -1,4 +1,5 @@
 import DayhandCore
+import DayhandLocalization
 import SwiftUI
 
 /// What one line of quick add will become, worked out as the user types.
@@ -12,9 +13,9 @@ struct QuickAddPreview: Equatable {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         let today = model.today
-        guard readPhrase else { return QuickAddPreview(title: trimmed, when: "Today", phrase: nil) }
+        guard readPhrase else { return QuickAddPreview(title: trimmed, when: tr("Today"), phrase: nil) }
         let input = QuickAdd.parse(trimmed, now: Clock.nowMs(), timezone: model.settings.timezone)
-        let when = input.when.map { Formatting.when($0, today: today) } ?? "Today"
+        let when = input.when.map { Formatting.when($0, today: today) } ?? tr("Today")
         return QuickAddPreview(title: input.title, when: when, phrase: input.phrase)
     }
 }
@@ -35,7 +36,7 @@ struct QuickAddView: View {
     var body: some View {
         let preview = QuickAddPreview.of(line, readPhrase: readPhrase, model: model)
         VStack(alignment: .leading, spacing: 8) {
-            TextField("New task, e.g. Call the accountant fri 2pm", text: $line)
+            TextField(tr("New task, e.g. Call the accountant fri 2pm"), text: $line)
                 .textFieldStyle(.plain)
                 .font(.system(size: 20))
                 .focused($focused)
@@ -46,13 +47,13 @@ struct QuickAddView: View {
                     Image(systemName: "calendar").foregroundStyle(.secondary)
                     Text(preview.when).foregroundStyle(.secondary)
                     if let phrase = preview.phrase {
-                        Text("from “\(phrase)”").foregroundStyle(.tertiary)
-                        Button("Keep in title") { readPhrase = false }
+                        Text(tr("from “\(phrase)”")).foregroundStyle(.tertiary)
+                        Button(tr("Keep in title")) { readPhrase = false }
                             .buttonStyle(.link)
-                            .help("Add the words as part of the title instead of reading them as a date")
+                            .help(tr("Add the words as part of the title instead of reading them as a date"))
                     }
                 } else {
-                    Text("Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.")
+                    Text(tr("Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day."))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -84,7 +85,7 @@ struct InlineQuickAdd: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Image(systemName: "plus.circle").foregroundStyle(.secondary)
-                TextField("Add a task (try: Pay rent fri 9am)", text: $line)
+                TextField(tr("Add a task (try: Pay rent fri 9am)"), text: $line)
                     .textFieldStyle(.plain)
                     .onSubmit {
                         if model.quickAdd(line, readPhrase: readPhrase) { line = "" }
@@ -93,8 +94,8 @@ struct InlineQuickAdd: View {
             }
             if let preview, preview.phrase != nil {
                 HStack(spacing: 6) {
-                    Text("\(preview.when) · from “\(preview.phrase ?? "")”")
-                    Button("Keep in title") { readPhrase = false }.buttonStyle(.link)
+                    Text(tr("\(preview.when) · from “\(preview.phrase ?? "")”"))
+                    Button(tr("Keep in title")) { readPhrase = false }.buttonStyle(.link)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

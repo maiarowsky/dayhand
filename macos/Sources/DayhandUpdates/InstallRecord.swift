@@ -1,3 +1,4 @@
+import DayhandLocalization
 import Foundation
 
 /**
@@ -25,9 +26,9 @@ public struct InstallRecord: Codable, Equatable, Sendable {
         public var message: String {
             switch self {
             case .installed(let version):
-                return "Dayhand was updated to \(version)."
+                return tr("Dayhand was updated to \(version).")
             case .notInstalled(let version):
-                return "The update to \(version) did not install, so this version is still running. Try updating again."
+                return tr("The update to \(version) did not install, so this version is still running. Try updating again.")
             }
         }
     }

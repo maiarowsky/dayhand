@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>%@ (%@ does not exist that day)</key>
+	<string>%1$@ (%2$@ does not exist that day)</string>
+	<key>%@ at %@</key>
+	<string>%1$@ at %2$@</string>
+	<key>%@ of %@</key>
+	<string>%1$@ of %2$@</string>
+	<key>%@ on the day</key>
+	<string>%@ on the day</string>
+	<key>%@ the day before</key>
+	<string>%@ the day before</string>
+	<key>%@ · from “%@”</key>
+	<string>%1$@ · from “%2$@”</string>
+	<key>%@, %@</key>
+	<string>%1$@, %2$@</string>
+	<key>%lld h before</key>
+	<string>%lld h before</string>
+	<key>%lld min</key>
+	<string>%lld min</string>
+	<key>%lld min before</key>
+	<string>%lld min before</string>
+	<key>%lld s</key>
+	<string>%lld s</string>
+	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
+	<string>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</string>
+	<key>About</key>
+	<string>About</string>
+	<key>Add Task</key>
+	<string>Add Task</string>
+	<key>Add a task (try: Pay rent fri 9am)</key>
+	<string>Add a task (try: Pay rent fri 9am)</string>
+	<key>Add an item</key>
+	<string>Add an item</string>
+	<key>Add the words as part of the title instead of reading them as a date</key>
+	<string>Add the words as part of the title instead of reading them as a date</string>
+	<key>Address</key>
+	<string>Address</string>
+	<key>All done for today.</key>
+	<string>All done for today.</string>
+	<key>Allow Notifications</key>
+	<string>Allow Notifications</string>
+	<key>Archive</key>
+	<string>Archive</string>
+	<key>As in settings (%@)</key>
+	<string>As in settings (%@)</string>
+	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
+	<string>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</string>
+	<key>Cancel</key>
+	<string>Cancel</string>
+	<key>Cannot reach the server.</key>
+	<string>Cannot reach the server.</string>
+	<key>Change</key>
+	<string>Change</string>
+	<key>Changes waiting</key>
+	<string>Changes waiting</string>
+	<key>Check for Updates</key>
+	<string>Check for Updates</string>
+	<key>Check for Updates…</key>
+	<string>Check for Updates…</string>
+	<key>Check for updates automatically</key>
+	<string>Check for updates automatically</string>
+	<key>Checking for updates…</key>
+	<string>Checking for updates…</string>
+	<key>Checking the download’s signature.</key>
+	<string>Checking the download’s signature.</string>
+	<key>Checking…</key>
+	<string>Checking…</string>
+	<key>Checklist</key>
+	<string>Checklist</string>
+	<key>Close</key>
+	<string>Close</string>
+	<key>Connect</key>
+	<string>Connect</string>
+	<key>Connect to Server…</key>
+	<string>Connect to Server…</string>
+	<key>Connect to your server</key>
+	<string>Connect to your server</string>
+	<key>Connected</key>
+	<string>Connected</string>
+	<key>Connecting…</key>
+	<string>Connecting…</string>
+	<key>Connection</key>
+	<string>Connection</string>
+	<key>Connect…</key>
+	<string>Connect…</string>
+	<key>Daily</key>
+	<string>Daily</string>
+	<key>Dayhand %@ (preview) is available</key>
+	<string>Dayhand %@ (preview) is available</string>
+	<key>Dayhand %@ is available</key>
+	<string>Dayhand %@ is available</string>
+	<key>Dayhand %@ is available.</key>
+	<string>Dayhand %@ is available.</string>
+	<key>Dayhand can’t replace itself in this folder. Move it to Applications and try again.</key>
+	<string>Dayhand can’t replace itself in this folder. Move it to Applications and try again.</string>
+	<key>Dayhand could not reach the update server. Check the connection and try again.</key>
+	<string>Dayhand could not reach the update server. Check the connection and try again.</string>
+	<key>Dayhand could not restart. Quit it and open it again.</key>
+	<string>Dayhand could not restart. Quit it and open it again.</string>
+	<key>Dayhand forgets the sign-in on this Mac; your tasks stay here. To end it on the server too, run: dayhand revoke %@</key>
+	<string>Dayhand forgets the sign-in on this Mac; your tasks stay here. To end it on the server too, run: dayhand revoke %@</string>
+	<key>Dayhand has not asked yet.</key>
+	<string>Dayhand has not asked yet.</string>
+	<key>Dayhand is running from the disk image. Move it to Applications, open it from there and update again.</key>
+	<string>Dayhand is running from the disk image. Move it to Applications, open it from there and update again.</string>
+	<key>Dayhand is up to date</key>
+	<string>Dayhand is up to date</string>
+	<key>Dayhand is up to date.</key>
+	<string>Dayhand is up to date.</string>
+	<key>Dayhand was updated to %@.</key>
+	<string>Dayhand was updated to %@.</string>
+	<key>Dayhand will quit and open again in a moment.</key>
+	<string>Dayhand will quit and open again in a moment.</string>
+	<key>Dayhand, nothing left today</key>
+	<string>Dayhand, nothing left today</string>
+	<key>Default reminders</key>
+	<string>Default reminders</string>
+	<key>Disconnect</key>
+	<string>Disconnect</string>
+	<key>Disconnect this Mac?</key>
+	<string>Disconnect this Mac?</string>
+	<key>Disconnect…</key>
+	<string>Disconnect…</string>
+	<key>Does not repeat</key>
+	<string>Does not repeat</string>
+	<key>Done</key>
+	<string>Done</string>
+	<key>Done (%lld)</key>
+	<string>Done (%lld)</string>
+	<key>Downloading Dayhand %@…</key>
+	<string>Downloading Dayhand %@…</string>
+	<key>Downloading…</key>
+	<string>Downloading…</string>
+	<key>Downloading… %lld%%</key>
+	<string>Downloading… %lld%%</string>
+	<key>Due</key>
+	<string>Due</string>
+	<key>General</key>
+	<string>General</string>
+	<key>Hides the tasks done today</key>
+	<string>Hides the tasks done today</string>
+	<key>In progress</key>
+	<string>In progress</string>
+	<key>In the trash. It goes for good 30 days after it was deleted.</key>
+	<string>In the trash. It goes for good 30 days after it was deleted.</string>
+	<key>Include preview versions</key>
+	<string>Include preview versions</string>
+	<key>Installing Dayhand %@…</key>
+	<string>Installing Dayhand %@…</string>
+	<key>Installing…</key>
+	<string>Installing…</string>
+	<key>It stays in the trash for 30 days.</key>
+	<string>It stays in the trash for 30 days.</string>
+	<key>Keep in title</key>
+	<string>Keep in title</string>
+	<key>Labels</key>
+	<string>Labels</string>
+	<key>Language</key>
+	<string>Language</string>
+	<key>Last checked %@.</key>
+	<string>Last checked %@.</string>
+	<key>Later</key>
+	<string>Later</string>
+	<key>Links</key>
+	<string>Links</string>
+	<key>Mark as Done</key>
+	<string>Mark as Done</string>
+	<key>Mark as Not Done</key>
+	<string>Mark as Not Done</string>
+	<key>Mark as done</key>
+	<string>Mark as done</string>
+	<key>Mark as not done</key>
+	<string>Mark as not done</string>
+	<key>Menus that come with macOS change language when Dayhand restarts.</key>
+	<string>Menus that come with macOS change language when Dayhand restarts.</string>
+	<key>Monthly</key>
+	<string>Monthly</string>
+	<key>Morning summary</key>
+	<string>Morning summary</string>
+	<key>Move to Trash</key>
+	<string>Move to Trash</string>
+	<key>Move “%@” to the trash?</key>
+	<string>Move “%@” to the trash?</string>
+	<key>New Task</key>
+	<string>New Task</string>
+	<key>New Task…</key>
+	<string>New Task…</string>
+	<key>New item</key>
+	<string>New item</string>
+	<key>New task (⌘N, or the quick add shortcut from any app)</key>
+	<string>New task (⌘N, or the quick add shortcut from any app)</string>
+	<key>New task, e.g. Call the accountant fri 2pm</key>
+	<string>New task, e.g. Call the accountant fri 2pm</string>
+	<key>No day</key>
+	<string>No day</string>
+	<key>No server connected.</key>
+	<string>No server connected.</string>
+	<key>None</key>
+	<string>None</string>
+	<key>Not Now</key>
+	<string>Not Now</string>
+	<key>Not Now, Use Dayhand Offline</key>
+	<string>Not Now, Use Dayhand Offline</string>
+	<key>Not a date Dayhand understands; try tomorrow, fri 14:00, next mon, in 3 days or 23 oct.</key>
+	<string>Not a date Dayhand understands; try tomorrow, fri 14:00, next mon, in 3 days or 23 oct.</string>
+	<key>Not checked yet.</key>
+	<string>Not checked yet.</string>
+	<key>Not connected to a server; tasks stay on this Mac.</key>
+	<string>Not connected to a server; tasks stay on this Mac.</string>
+	<key>Not now</key>
+	<string>Not now</string>
+	<key>Note</key>
+	<string>Note</string>
+	<key>Nothing else planned for today.</key>
+	<string>Nothing else planned for today.</string>
+	<key>Nothing left for today.</key>
+	<string>Nothing left for today.</string>
+	<key>Nothing planned for today.</key>
+	<string>Nothing planned for today.</string>
+	<key>Nothing planned. Add a task with the quick add shortcut.</key>
+	<string>Nothing planned. Add a task with the quick add shortcut.</string>
+	<key>Notifications</key>
+	<string>Notifications</string>
+	<key>Notifications are off for Dayhand.</key>
+	<string>Notifications are off for Dayhand.</string>
+	<key>Notifications need the app bundle (scripts/build-app.sh); swift run has none.</key>
+	<string>Notifications need the app bundle (scripts/build-app.sh); swift run has none.</string>
+	<key>Now</key>
+	<string>Now</string>
+	<key>Now, %@</key>
+	<string>Now, %@</string>
+	<key>OK</key>
+	<string>OK</string>
+	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
+	<string>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</string>
+	<key>Open Dayhand</key>
+	<string>Open Dayhand</string>
+	<key>Open System Settings</key>
+	<string>Open System Settings</string>
+	<key>Overdue (%lld)</key>
+	<string>Overdue (%lld)</string>
+	<key>Pairing code</key>
+	<string>Pairing code</string>
+	<key>Preparing the update…</key>
+	<string>Preparing the update…</string>
+	<key>Previews come before a release and may have rough edges.</key>
+	<string>Previews come before a release and may have rough edges.</string>
+	<key>Quick add</key>
+	<string>Quick add</string>
+	<key>Quit</key>
+	<string>Quit</string>
+	<key>Reading tasks failed: %@</key>
+	<string>Reading tasks failed: %@</string>
+	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
+	<string>Released builds are signed and can update themselves; a copy built on this Mac cannot.</string>
+	<key>Reminders</key>
+	<string>Reminders</string>
+	<key>Reminders and the morning summary are on.</key>
+	<string>Reminders and the morning summary are on.</string>
+	<key>Remove %@</key>
+	<string>Remove %@</string>
+	<key>Remove the time</key>
+	<string>Remove the time</string>
+	<key>Repeat</key>
+	<string>Repeat</string>
+	<key>Restart Dayhand</key>
+	<string>Restart Dayhand</string>
+	<key>Restore</key>
+	<string>Restore</string>
+	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
+	<string>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</string>
+	<key>Save Note</key>
+	<string>Save Note</string>
+	<key>Select a task to see its details.</key>
+	<string>Select a task to see its details.</string>
+	<key>Server</key>
+	<string>Server</string>
+	<key>Server address</key>
+	<string>Server address</string>
+	<key>Shortcut from any app:</key>
+	<string>Shortcut from any app:</string>
+	<key>Shows the tasks done today</key>
+	<string>Shows the tasks done today</string>
+	<key>Something answered at that address, but it is not a Dayhand server.</key>
+	<string>Something answered at that address, but it is not a Dayhand server.</string>
+	<key>Start with: %@</key>
+	<string>Start with: %@</string>
+	<key>Status</key>
+	<string>Status</string>
+	<key>Sync Now</key>
+	<string>Sync Now</string>
+	<key>System (%@)</key>
+	<string>System (%@)</string>
+	<key>Task</key>
+	<string>Task</string>
+	<key>That is not a date.</key>
+	<string>That is not a date.</string>
+	<key>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</key>
+	<string>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</string>
+	<key>That is not a time.</key>
+	<string>That is not a time.</string>
+	<key>That version is older than this one, so it was not installed.</key>
+	<string>That version is older than this one, so it was not installed.</string>
+	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
+	<string>The Keychain could not be read, so Dayhand starts without a server.</string>
+	<key>The change could not be saved: %@</key>
+	<string>The change could not be saved: %@</string>
+	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
+	<string>The code is wrong, used or expired. Run dayhand pair again for a new one.</string>
+	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
+	<string>The downloaded update did not pass its signature check, so it was not installed.</string>
+	<key>The list of new versions could not be read. Try again later.</key>
+	<string>The list of new versions could not be read. Try again later.</string>
+	<key>The note is too long.</key>
+	<string>The note is too long.</string>
+	<key>The reminders are not valid.</key>
+	<string>The reminders are not valid.</string>
+	<key>The repeat rule is not valid.</key>
+	<string>The repeat rule is not valid.</string>
+	<key>The server cannot be reached. Check the address and the network.</key>
+	<string>The server cannot be reached. Check the address and the network.</string>
+	<key>The server has a problem.</key>
+	<string>The server has a problem.</string>
+	<key>The server has a problem. Try again later.</key>
+	<string>The server has a problem. Try again later.</string>
+	<key>The server signed this Mac out. Connect again with a new code; your tasks stay here.</key>
+	<string>The server signed this Mac out. Connect again with a new code; your tasks stay here.</string>
+	<key>The sign-in could not be removed from the Keychain: %@</key>
+	<string>The sign-in could not be removed from the Keychain: %@</string>
+	<key>The sign-in could not be saved in the Keychain.</key>
+	<string>The sign-in could not be saved in the Keychain.</string>
+	<key>The update could not be downloaded. Check the connection and try again.</key>
+	<string>The update could not be downloaded. Check the connection and try again.</string>
+	<key>The update could not be installed. Make sure Dayhand is in Applications, then try again.</key>
+	<string>The update could not be installed. Make sure Dayhand is in Applications, then try again.</string>
+	<key>The update did not finish</key>
+	<string>The update did not finish</string>
+	<key>The update did not finish. Try again later.</key>
+	<string>The update did not finish. Try again later.</string>
+	<key>The update to %@ did not install, so this version is still running. Try updating again.</key>
+	<string>The update to %@ did not install, so this version is still running. Try updating again.</string>
+	<key>The update was canceled.</key>
+	<string>The update was canceled.</string>
+	<key>There are too many checklist items, or one is too long.</key>
+	<string>There are too many checklist items, or one is too long.</string>
+	<key>There are too many labels, or one is too long.</key>
+	<string>There are too many labels, or one is too long.</string>
+	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
+	<string>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</string>
+	<key>This Mac</key>
+	<string>This Mac</string>
+	<key>This version</key>
+	<string>This version</string>
+	<key>Tick %@</key>
+	<string>Tick %@</string>
+	<key>Time zone</key>
+	<string>Time zone</string>
+	<key>Title</key>
+	<string>Title</string>
+	<key>To Today</key>
+	<string>To Today</string>
+	<key>To Tomorrow</key>
+	<string>To Tomorrow</string>
+	<key>To do</key>
+	<string>To do</string>
+	<key>To today</key>
+	<string>To today</string>
+	<key>Today</key>
+	<string>Today</string>
+	<key>Tomorrow</key>
+	<string>Tomorrow</string>
+	<key>Too many wrong codes on this server. Try again in %@.</key>
+	<string>Too many wrong codes on this server. Try again in %@.</string>
+	<key>Try Again</key>
+	<string>Try Again</string>
+	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
+	<string>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</string>
+	<key>Unarchive</key>
+	<string>Unarchive</string>
+	<key>Untick %@</key>
+	<string>Untick %@</string>
+	<key>Update and Relaunch</key>
+	<string>Update and Relaunch</string>
+	<key>Updates</key>
+	<string>Updates</string>
+	<key>Updates aren’t available in this build: it has no secure address to check for new versions.</key>
+	<string>Updates aren’t available in this build: it has no secure address to check for new versions.</string>
+	<key>Updates aren’t available in this build: it runs without an app bundle (swift run).</key>
+	<string>Updates aren’t available in this build: it runs without an app bundle (swift run).</string>
+	<key>Updates aren’t available in this build: it was built without the update signing key.</key>
+	<string>Updates aren’t available in this build: it was built without the update signing key.</string>
+	<key>Updates aren’t available in this build: the updater could not start.</key>
+	<string>Updates aren’t available in this build: the updater could not start.</string>
+	<key>Version %@</key>
+	<string>Version %@</string>
+	<key>Version %@ is the newest.</key>
+	<string>Version %@ is the newest.</string>
+	<key>Version %@.</key>
+	<string>Version %@.</string>
+	<key>Weekly</key>
+	<string>Weekly</string>
+	<key>When</key>
+	<string>When</string>
+	<key>Where I stopped</key>
+	<string>Where I stopped</string>
+	<key>Where I stopped: %@</key>
+	<string>Where I stopped: %@</string>
+	<key>Where I stopped: add a note in the details</key>
+	<string>Where I stopped: add a note in the details</string>
+	<key>Work on It Now</key>
+	<string>Work on It Now</string>
+	<key>Working on it now</key>
+	<string>Working on it now</string>
+	<key>Yearly</key>
+	<string>Yearly</string>
+	<key>Yesterday</key>
+	<string>Yesterday</string>
+	<key>You have %@.</key>
+	<string>You have %@.</string>
+	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
+	<string>Your day plan, offline first. Licensed under the Apache License 2.0.</string>
+	<key>a few minutes</key>
+	<string>a few minutes</string>
+	<key>after completion</key>
+	<string>after completion</string>
+	<key>and %lld more</key>
+	<string>and %lld more</string>
+	<key>at the due time</key>
+	<string>at the due time</string>
+	<key>development</key>
+	<string>development</string>
+	<key>from “%@”</key>
+	<string>from “%@”</string>
+	<key>home, work</key>
+	<string>home, work</string>
+	<key>next step</key>
+	<string>next step</string>
+	<key>now</key>
+	<string>now</string>
+	<key>on %@</key>
+	<string>on %@</string>
+	<key>on %@ number %lld from the end</key>
+	<string>on %1$@ number %2$lld from the end</string>
+	<key>on day %lld</key>
+	<string>on day %lld</string>
+	<key>on the fifth Friday</key>
+	<string>on the fifth Friday</string>
+	<key>on the fifth Monday</key>
+	<string>on the fifth Monday</string>
+	<key>on the fifth Saturday</key>
+	<string>on the fifth Saturday</string>
+	<key>on the fifth Sunday</key>
+	<string>on the fifth Sunday</string>
+	<key>on the fifth Thursday</key>
+	<string>on the fifth Thursday</string>
+	<key>on the fifth Tuesday</key>
+	<string>on the fifth Tuesday</string>
+	<key>on the fifth Wednesday</key>
+	<string>on the fifth Wednesday</string>
+	<key>on the first Friday</key>
+	<string>on the first Friday</string>
+	<key>on the first Monday</key>
+	<string>on the first Monday</string>
+	<key>on the first Saturday</key>
+	<string>on the first Saturday</string>
+	<key>on the first Sunday</key>
+	<string>on the first Sunday</string>
+	<key>on the first Thursday</key>
+	<string>on the first Thursday</string>
+	<key>on the first Tuesday</key>
+	<string>on the first Tuesday</string>
+	<key>on the first Wednesday</key>
+	<string>on the first Wednesday</string>
+	<key>on the fourth Friday</key>
+	<string>on the fourth Friday</string>
+	<key>on the fourth Monday</key>
+	<string>on the fourth Monday</string>
+	<key>on the fourth Saturday</key>
+	<string>on the fourth Saturday</string>
+	<key>on the fourth Sunday</key>
+	<string>on the fourth Sunday</string>
+	<key>on the fourth Thursday</key>
+	<string>on the fourth Thursday</string>
+	<key>on the fourth Tuesday</key>
+	<string>on the fourth Tuesday</string>
+	<key>on the fourth Wednesday</key>
+	<string>on the fourth Wednesday</string>
+	<key>on the last Friday</key>
+	<string>on the last Friday</string>
+	<key>on the last Monday</key>
+	<string>on the last Monday</string>
+	<key>on the last Saturday</key>
+	<string>on the last Saturday</string>
+	<key>on the last Sunday</key>
+	<string>on the last Sunday</string>
+	<key>on the last Thursday</key>
+	<string>on the last Thursday</string>
+	<key>on the last Tuesday</key>
+	<string>on the last Tuesday</string>
+	<key>on the last Wednesday</key>
+	<string>on the last Wednesday</string>
+	<key>on the last day</key>
+	<string>on the last day</string>
+	<key>on the second Friday</key>
+	<string>on the second Friday</string>
+	<key>on the second Monday</key>
+	<string>on the second Monday</string>
+	<key>on the second Saturday</key>
+	<string>on the second Saturday</string>
+	<key>on the second Sunday</key>
+	<string>on the second Sunday</string>
+	<key>on the second Thursday</key>
+	<string>on the second Thursday</string>
+	<key>on the second Tuesday</key>
+	<string>on the second Tuesday</string>
+	<key>on the second Wednesday</key>
+	<string>on the second Wednesday</string>
+	<key>on the third Friday</key>
+	<string>on the third Friday</string>
+	<key>on the third Monday</key>
+	<string>on the third Monday</string>
+	<key>on the third Saturday</key>
+	<string>on the third Saturday</string>
+	<key>on the third Sunday</key>
+	<string>on the third Sunday</string>
+	<key>on the third Thursday</key>
+	<string>on the third Thursday</string>
+	<key>on the third Tuesday</key>
+	<string>on the third Tuesday</string>
+	<key>on the third Wednesday</key>
+	<string>on the third Wednesday</string>
+	<key>until %@</key>
+	<string>until %@</string>
+</dict>
+</plist>

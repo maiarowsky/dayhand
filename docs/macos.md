@@ -42,7 +42,7 @@ Estimate: 4 to 8 hours of agent work once the certificate and the notarization k
 settings, the release workflow, the cask), plus the maintainer's time for the Apple accounts. The updater and its
 screens are done (below); the release only has to sign and publish them.
 
-Before the first release also decide: the version scheme (the app reports `0.1.0` and the commit count as the
+Before the first release also decide: the version scheme (the app reports `0.2.0` and the commit count as the
 build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
 `dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
 older versions).
@@ -169,7 +169,8 @@ offline outbox, reminders and the morning summary, and the details with basic ed
   outbox, kept against snapshots while it waits); appearance (the Mussh palettes and fonts of
   [design.md](design.md)); export as Markdown or JSON; the calendar address; **agent connections** (approve a
   connection by the code its sign-in page shows, list and disconnect).
-- **Polish** next to English (the Android app has these and six more). The screens are in English and dates follow them.
+- **Date phrases in other languages**: the screens speak eight languages, but quick add and the date field read
+  English phrases only ("fri 2pm"), as `dayhand` does; "pt 14:00" or "jutro" would need the grammar in each language.
 - **Reminders**: macOS may deliver a notification late after sleep; the Android app drops a reminder more than
   15 minutes late. Dayhand could withdraw stale pending ones when the Mac wakes.
 - **Live updates**: polling every 15 seconds now. A Convex WebSocket subscription would make changes elsewhere

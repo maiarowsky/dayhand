@@ -1,5 +1,6 @@
 import AppKit
 import DayhandCore
+import DayhandLocalization
 import DayhandUpdates
 import KeyboardShortcuts
 import SwiftUI
@@ -23,21 +24,24 @@ public struct DayhandApp: App {
                 .environmentObject(model)
                 .environmentObject(updater)
                 .frame(minWidth: 720, minHeight: 460)
+                // Drawn again in a new language, with dates in its locale.
+                .id(model.language)
+                .environment(\.locale, Localization.current.locale)
         }
         .defaultSize(width: 960, height: 640)
         .commands {
             CommandGroup(after: .appInfo) {
-                Button("Check for Updates…") {
+                Button(tr("Check for Updates…")) {
                     model.showMainWindow()
                     updater.checkForUpdates()
                 }
             }
             CommandGroup(replacing: .newItem) {
-                Button("New Task…") { QuickAddPanel.shared.show() }
+                Button(tr("New Task…")) { QuickAddPanel.shared.show() }
                     .keyboardShortcut("n")
             }
-            CommandMenu("Task") {
-                Button("Sync Now") { model.syncNow() }
+            CommandMenu(tr("Task")) {
+                Button(tr("Sync Now")) { model.syncNow() }
                     .keyboardShortcut("r")
                     .disabled(model.credential == nil)
             }
@@ -46,6 +50,8 @@ public struct DayhandApp: App {
         MenuBarExtra {
             MenuBarView()
                 .environmentObject(model)
+                .id(model.language)
+                .environment(\.locale, Localization.current.locale)
         } label: {
             MenuBarLabel(sections: model.sections)
         }
@@ -55,6 +61,8 @@ public struct DayhandApp: App {
             SettingsView()
                 .environmentObject(model)
                 .environmentObject(updater)
+                .id(model.language)
+                .environment(\.locale, Localization.current.locale)
         }
     }
 }
@@ -89,7 +97,7 @@ struct MenuBarLabel: View {
             Image(systemName: sections.overdue.isEmpty ? "checklist" : "exclamationmark.circle")
             if open > 0 { Text("\(open)") }
         }
-        .accessibilityLabel(open == 0 ? "Dayhand, nothing left today" : "Dayhand, \(open) open today")
+        .accessibilityLabel(open == 0 ? tr("Dayhand, nothing left today") : tr("Dayhand, \(open) open today"))
     }
 }
 

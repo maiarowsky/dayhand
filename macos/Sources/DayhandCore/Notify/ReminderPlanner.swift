@@ -1,3 +1,4 @@
+import DayhandLocalization
 import Foundation
 
 /// One notification to leave with the system, to ring at [at] (Unix ms) even while Dayhand is not running.
@@ -20,7 +21,8 @@ public struct PlannedNotification: Hashable, Sendable {
  * (`ReminderRules`, `morningSummary`). Android keeps two alarms and works out what to show when one fires; macOS
  * delivers notifications left with it in advance, so the plan is the next [limit] rings, each with its text, made
  * again after every change of tasks or settings. Overdue tasks never ring, and each summary is worked out for its own
- * morning from today's tasks.
+ * morning from today's tasks. The texts are in the app's language at the time of planning; the app plans again when
+ * it changes.
  */
 public enum ReminderPlanner {
     /// macOS keeps at most 64 pending notifications per app.
@@ -58,19 +60,22 @@ public enum ReminderPlanner {
 
     static func reminderBody(_ reminder: Reminder, timezone: String) -> String {
         let ringDay = HelmDates.localDate(reminder.at, timezone)
-        let day = reminder.dueDate == ringDay ? "Today" : (HelmDates.addDays(ringDay, 1) == reminder.dueDate ? "Tomorrow" : reminder.dueDate)
-        guard let time = reminder.dueTime else { return day }
-        if reminder.minutesBefore == 0 { return "Now, \(time)" }
-        return "\(day) at \(time)"
+        let day = reminder.dueDate == ringDay
+            ? tr("Today")
+            : (HelmDates.addDays(ringDay, 1) == reminder.dueDate ? tr("Tomorrow") : DateText.day(reminder.dueDate, withYear: false) ?? reminder.dueDate)
+        guard let dueTime = reminder.dueTime else { return day }
+        let time = DateText.time(dueTime)
+        if reminder.minutesBefore == 0 { return tr("Now, \(time)") }
+        return tr("\(day) at \(time)")
     }
 
     static func summaryTitle(_ summary: MorningSummary) -> String {
-        let today = summary.today == 1 ? "1 task today" : "\(summary.today) tasks today"
-        return summary.overdue == 0 ? today : "\(today), \(summary.overdue) overdue"
+        let today = tr("\(summary.today) tasks today")
+        return summary.overdue == 0 ? today : tr("\(today), \(tr("\(summary.overdue) overdue"))")
     }
 
     static func summaryBody(_ summary: MorningSummary) -> String {
-        guard let start = summary.startWith else { return "Nothing planned. Add a task with the quick add shortcut." }
-        return "Start with: \(start)"
+        guard let start = summary.startWith else { return tr("Nothing planned. Add a task with the quick add shortcut.") }
+        return tr("Start with: \(start)")
     }
 }

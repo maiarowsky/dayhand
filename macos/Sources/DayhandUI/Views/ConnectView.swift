@@ -1,4 +1,5 @@
 import DayhandCore
+import DayhandLocalization
 import SwiftUI
 
 /// Connect to a server with a one-time code from `dayhand pair` (or a `dayhand://pair` / `helm://pair` link).
@@ -12,13 +13,13 @@ struct ConnectView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Connect to your server").font(.title2).bold()
-            Text("On a computer signed in to your server, run `dayhand pair` and type the code it shows, or open the link it prints. The code works once, for 10 minutes.")
+            Text(tr("Connect to your server")).font(.title2).bold()
+            Text(tr("On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes."))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Form {
-                TextField("Server address", text: $address, prompt: Text("https://<name>.convex.site"))
-                TextField("Pairing code", text: $code, prompt: Text("XXXX-XXXX-XXXX"))
+                TextField(tr("Server address"), text: $address, prompt: Text(verbatim: "https://<name>.convex.site"))
+                TextField(tr("Pairing code"), text: $code, prompt: Text(verbatim: "XXXX-XXXX-XXXX"))
                     .onSubmit(connect)
             }
             .formStyle(.grouped)
@@ -28,13 +29,13 @@ struct ConnectView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack {
-                Button("Not Now, Use Dayhand Offline") {
+                Button(tr("Not Now, Use Dayhand Offline")) {
                     model.useOffline = true
                     dismiss()
                 }
                 Spacer()
                 if working { ProgressView().controlSize(.small) }
-                Button("Connect", action: connect)
+                Button(tr("Connect"), action: connect)
                     .keyboardShortcut(.defaultAction)
                     .disabled(working || address.isEmpty || code.isEmpty)
             }
@@ -61,16 +62,16 @@ struct ConnectView: View {
     /// The reasons in words, as the Android Connect screen says them.
     static func message(_ error: ConnectError) -> String {
         switch error {
-        case .badAddress: return "That is not a server address. It looks like https://<name>.convex.site."
-        case .badCode: return "A pairing code has 12 letters and digits, like E6M8-FE02-XSNT."
-        case .invalidCode: return "The code is wrong, used or expired. Run dayhand pair again for a new one."
+        case .badAddress: return tr("That is not a server address. It looks like https://<name>.convex.site.")
+        case .badCode: return tr("A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.")
+        case .invalidCode: return tr("The code is wrong, used or expired. Run dayhand pair again for a new one.")
         case .rateLimited(let seconds):
-            let wait = seconds.map { $0 >= 60 ? "\(($0 + 59) / 60) min" : "\($0) s" } ?? "a few minutes"
-            return "Too many wrong codes on this server. Try again in \(wait)."
-        case .unreachable: return "The server cannot be reached. Check the address and the network."
-        case .notDayhand: return "Something answered at that address, but it is not a Dayhand server."
-        case .serverError: return "The server has a problem. Try again later."
-        case .storage: return "The sign-in could not be saved in the Keychain."
+            let wait = seconds.map { secs in secs >= 60 ? tr("\((secs + 59) / 60) min") : tr("\(secs) s") } ?? tr("a few minutes")
+            return tr("Too many wrong codes on this server. Try again in \(wait).")
+        case .unreachable: return tr("The server cannot be reached. Check the address and the network.")
+        case .notDayhand: return tr("Something answered at that address, but it is not a Dayhand server.")
+        case .serverError: return tr("The server has a problem. Try again later.")
+        case .storage: return tr("The sign-in could not be saved in the Keychain.")
         }
     }
 }

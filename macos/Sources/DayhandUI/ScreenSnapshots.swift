@@ -1,5 +1,6 @@
 import AppKit
 import DayhandCore
+import DayhandLocalization
 import DayhandUpdates
 import KeyboardShortcuts
 import SwiftUI
@@ -9,14 +10,16 @@ import SwiftUI
  * permission: each view is drawn into an off-screen window (`NSHostingView.cacheDisplay`). The model runs on a
  * database in memory, with the sign-in in memory and no server, so nothing on the Mac is read or changed.
  *
- *     swift run DayhandSnapshots <output folder>
+ *     swift run DayhandSnapshots <output folder> [language]
+ *
+ * The language is one of `Localization.supported` (English by default), so each language can be checked on screen.
  */
 public enum ScreenSnapshots {
     @MainActor
-    public static func run(outputDirectory: URL) {
+    public static func run(outputDirectory: URL, language: String = "en") {
         let app = NSApplication.shared
         app.setActivationPolicy(.prohibited)
-        UserDefaults.standard.register(defaults: [AppModel.Keys.useOffline: true])
+        UserDefaults.standard.register(defaults: [AppModel.Keys.useOffline: true, AppModel.Keys.language: language])
         AppModel.makeEnvironment = {
             // A failure here is a bug in the tool; it reports and stops.
             AppEnvironment(
@@ -33,6 +36,14 @@ public enum ScreenSnapshots {
                 try registerShortcut()
                 try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
                 try await renderAll(to: outputDirectory)
+                #if DEBUG
+                // Every text on the screens drawn must be in the string catalog.
+                let missing = Localization.missingKeys
+                if !missing.isEmpty {
+                    FileHandle.standardError.write(Data("Not in Localizable.xcstrings: \(missing.sorted())\n".utf8))
+                    exit(1)
+                }
+                #endif
                 exit(0)
             } catch {
                 FileHandle.standardError.write(Data("Snapshots failed: \(error)\n".utf8))

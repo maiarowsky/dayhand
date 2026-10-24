@@ -1,4 +1,5 @@
 import DayhandCore
+import DayhandLocalization
 import SwiftUI
 
 /// A task's details with basic editing: title, status and "now", the day and time, labels, the checklist and the
@@ -25,77 +26,78 @@ struct TaskDetailView: View {
             if task.inTrash {
                 Section {
                     HStack {
-                        Text("In the trash. It goes for good 30 days after it was deleted.")
+                        Text(tr("In the trash. It goes for good 30 days after it was deleted."))
                         Spacer()
-                        Button("Restore") { model.restore(task.localId) }
+                        Button(tr("Restore")) { model.restore(task.localId) }
                     }
                 }
             }
             Group {
             Section {
-                TextField("Title", text: $title)
+                TextField(tr("Title"), text: $title)
                     .font(.title3)
                     .focused($focus, equals: .title)
                     .onSubmit(saveTitle)
-                Picker("Status", selection: Binding(get: { task.status }, set: { model.setStatus(task.localId, $0) })) {
-                    Text("To do").tag(TaskStatus.todo)
-                    Text("In progress").tag(TaskStatus.doing)
-                    Text("Done").tag(TaskStatus.done)
+                Picker(tr("Status"), selection: Binding(get: { task.status }, set: { model.setStatus(task.localId, $0) })) {
+                    Text(tr("To do")).tag(TaskStatus.todo)
+                    Text(tr("In progress")).tag(TaskStatus.doing)
+                    Text(tr("Done")).tag(TaskStatus.done)
                 }
                 .pickerStyle(.segmented)
                 if task.status != .done {
-                    Toggle("Working on it now", isOn: Binding(
+                    Toggle(tr("Working on it now"), isOn: Binding(
                         get: { task.isNow },
                         set: { $0 ? model.setNow(task.localId) : model.clearNow() }
                     ))
                 }
                 if task.isNow {
-                    TextField("Where I stopped", text: $resumeNote, prompt: Text("next step"))
+                    TextField(tr("Where I stopped"), text: $resumeNote, prompt: Text(tr("next step")))
                         .focused($focus, equals: .resume)
                         .onSubmit(saveResumeNote)
                 }
             }
-            Section("When") {
-                LabeledContent("Due", value: Formatting.due(task, today: today) ?? "No day")
+            Section(tr("When")) {
+                LabeledContent(tr("Due"), value: Formatting.due(task, today: today) ?? tr("No day"))
                 HStack {
-                    TextField("Change", text: $duePhrase, prompt: Text("tomorrow 9am, fri, 23 oct 14:00"))
+                    // The date phrases are English in every language (the grammar of dayhand).
+                    TextField(tr("Change"), text: $duePhrase, prompt: Text(verbatim: "tomorrow 9am, fri, 23 oct 14:00"))
                         .onSubmit(saveDuePhrase)
-                    Button("Today") { model.setDue(task.localId, date: today, time: task.dueTime) }
-                    Button("No day") { model.setDue(task.localId, date: nil, time: nil) }
+                    Button(tr("Today")) { model.setDue(task.localId, date: today, time: task.dueTime) }
+                    Button(tr("No day")) { model.setDue(task.localId, date: nil, time: nil) }
                 }
                 if duePhraseFailed {
-                    Text("Not a date Dayhand understands; try tomorrow, fri 14:00, next mon, in 3 days or 23 oct.")
+                    Text(tr("Not a date Dayhand understands; try tomorrow, fri 14:00, next mon, in 3 days or 23 oct."))
                         .font(.caption)
                         .foregroundStyle(Color.overdue)
                 }
                 if task.dueTime != nil {
-                    Button("Remove the time") { model.setDue(task.localId, date: task.dueDate, time: nil) }
+                    Button(tr("Remove the time")) { model.setDue(task.localId, date: task.dueDate, time: nil) }
                         .buttonStyle(.link)
                 }
-                LabeledContent("Repeat", value: task.repeat.map(Formatting.repeatRule) ?? "Does not repeat")
-                LabeledContent("Reminders", value: Formatting.reminders(task.reminders, defaults: model.settings.reminderMinutes))
+                LabeledContent(tr("Repeat"), value: task.repeat.map(Formatting.repeatRule) ?? tr("Does not repeat"))
+                LabeledContent(tr("Reminders"), value: Formatting.reminders(task.reminders, defaults: model.settings.reminderMinutes))
             }
-            Section("Labels") {
-                TextField("Labels", text: $labels, prompt: Text("home, work"))
+            Section(tr("Labels")) {
+                TextField(tr("Labels"), text: $labels, prompt: Text(tr("home, work")))
                     .focused($focus, equals: .labels)
                     .onSubmit(saveLabels)
             }
-            Section("Checklist") {
+            Section(tr("Checklist")) {
                 ForEach(task.checklist) { item in
                     HStack {
                         Button { model.toggleItem(task.localId, item.id) } label: {
                             Image(systemName: item.done ? "checkmark.square.fill" : "square")
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(item.done ? "Untick \(item.title)" : "Tick \(item.title)")
+                        .accessibilityLabel(item.done ? tr("Untick \(item.title)") : tr("Tick \(item.title)"))
                         Text(item.title).strikethrough(item.done)
                         Spacer()
                         Button { model.removeItem(task.localId, item.id) } label: { Image(systemName: "minus.circle") }
                             .buttonStyle(.borderless)
-                            .accessibilityLabel("Remove \(item.title)")
+                            .accessibilityLabel(tr("Remove \(item.title)"))
                     }
                 }
-                TextField("New item", text: $newItem, prompt: Text("Add an item"))
+                TextField(tr("New item"), text: $newItem, prompt: Text(tr("Add an item")))
                     .onSubmit {
                         let clean = newItem.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !clean.isEmpty else { return }
@@ -104,7 +106,7 @@ struct TaskDetailView: View {
                     }
             }
             if !task.links.isEmpty {
-                Section("Links") {
+                Section(tr("Links")) {
                     ForEach(task.links, id: \.url) { link in
                         if let url = URL(string: link.url) {
                             Link(link.title ?? link.url, destination: url)
@@ -112,14 +114,14 @@ struct TaskDetailView: View {
                     }
                 }
             }
-            Section("Note") {
+            Section(tr("Note")) {
                 TextEditor(text: $note)
                     .focused($focus, equals: .note)
                     .frame(minHeight: 120)
                     .font(.body)
                 HStack {
                     Spacer()
-                    Button("Save Note") { model.setNote(task.localId, note) }
+                    Button(tr("Save Note")) { model.setNote(task.localId, note) }
                         .disabled(note == (task.note ?? ""))
                 }
             }
@@ -128,13 +130,13 @@ struct TaskDetailView: View {
             Section {
                 HStack {
                     if task.archivedAt == nil {
-                        Button("Archive") { model.archive(task.localId) }
+                        Button(tr("Archive")) { model.archive(task.localId) }
                     } else {
-                        Button("Unarchive") { model.restore(task.localId) }
+                        Button(tr("Unarchive")) { model.restore(task.localId) }
                     }
                     Spacer()
                     if !task.inTrash {
-                        Button("Move to Trash", role: .destructive) { confirmTrash = true }
+                        Button(tr("Move to Trash"), role: .destructive) { confirmTrash = true }
                     }
                 }
             }
@@ -145,13 +147,13 @@ struct TaskDetailView: View {
         .onChange(of: task) { _ in load() }
         .onChange(of: focus) { [focus] _ in saveLeaving(focus) }
         .onDisappear(perform: saveOpenFields)
-        .confirmationDialog("Move “\(task.title)” to the trash?", isPresented: $confirmTrash) {
-            Button("Move to Trash", role: .destructive) {
+        .confirmationDialog(tr("Move “\(task.title)” to the trash?"), isPresented: $confirmTrash) {
+            Button(tr("Move to Trash"), role: .destructive) {
                 model.moveToTrash(task.localId)
                 model.selection = nil
             }
         } message: {
-            Text("It stays in the trash for 30 days.")
+            Text(tr("It stays in the trash for 30 days."))
         }
     }
 

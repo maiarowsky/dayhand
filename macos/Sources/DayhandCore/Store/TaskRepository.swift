@@ -1,3 +1,4 @@
+import DayhandLocalization
 import Foundation
 import GRDB
 
@@ -62,9 +63,9 @@ public final class TaskRepository: Sendable {
     /// Adds a task; [dueTime] is kept only together with [dueDate], as the backend requires.
     @discardableResult
     public func add(title: String, dueDate: String?, dueTime: String?, note: String? = nil) async throws -> TaskItem {
-        guard let cleanTitle = TaskRules.title(title) else { throw RepositoryError.invalid("title must be 1 to \(TaskRules.maxTitle) characters") }
+        guard let cleanTitle = TaskRules.title(title) else { throw RepositoryError.invalid(tr("The title must be 1 to \(TaskRules.maxTitle) characters.")) }
         let cleanNote = note.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
-        guard (cleanNote?.jsLength ?? 0) <= TaskRules.maxNote else { throw RepositoryError.invalid("note is too long") }
+        guard (cleanNote?.jsLength ?? 0) <= TaskRules.maxNote else { throw RepositoryError.invalid(tr("The note is too long.")) }
         let date = dueDate.flatMap { CivilDate($0) == nil ? nil : $0 }
         let time = date == nil ? nil : dueTime.flatMap { ClockTime($0) == nil ? nil : $0 }
         let now = clock()
@@ -120,21 +121,21 @@ public final class TaskRepository: Sendable {
     }
 
     public func rename(_ localId: String, to title: String) async throws {
-        guard let clean = TaskRules.title(title) else { throw RepositoryError.invalid("title must be 1 to \(TaskRules.maxTitle) characters") }
+        guard let clean = TaskRules.title(title) else { throw RepositoryError.invalid(tr("The title must be 1 to \(TaskRules.maxTitle) characters.")) }
         try await edit(localId, Mutations.update, ["title": .string(clean)]) { task, _ in task.title = clean }
     }
 
     /// Sets the note; a blank note clears it.
     public func setNote(_ localId: String, _ note: String) async throws {
         let clean = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note
-        guard (clean?.jsLength ?? 0) <= TaskRules.maxNote else { throw RepositoryError.invalid("note is too long") }
+        guard (clean?.jsLength ?? 0) <= TaskRules.maxNote else { throw RepositoryError.invalid(tr("The note is too long.")) }
         try await edit(localId, Mutations.update, ["note": .of(clean)]) { task, _ in task.note = clean }
     }
 
     /// Sets the day (YYYY-MM-DD) and the optional time (HH:MM); no day clears both.
     public func setDue(_ localId: String, date: String?, time: String?) async throws {
-        if let date, CivilDate(date) == nil { throw RepositoryError.invalid("not a date") }
-        if let time, ClockTime(time) == nil { throw RepositoryError.invalid("not a time") }
+        if let date, CivilDate(date) == nil { throw RepositoryError.invalid(tr("That is not a date.")) }
+        if let time, ClockTime(time) == nil { throw RepositoryError.invalid(tr("That is not a time.")) }
         let cleanTime = date == nil ? nil : time
         try await edit(localId, Mutations.update, ["dueDate": .of(date), "dueTime": .of(cleanTime)]) { task, _ in
             task.dueDate = date
@@ -144,19 +145,19 @@ public final class TaskRepository: Sendable {
 
     /// Moves a task to [date] (YYYY-MM-DD), keeping its time.
     public func reschedule(_ localId: String, to date: String) async throws {
-        guard CivilDate(date) != nil else { throw RepositoryError.invalid("not a date") }
+        guard CivilDate(date) != nil else { throw RepositoryError.invalid(tr("That is not a date.")) }
         try await edit(localId, Mutations.reschedule, ["dueDate": .string(date)]) { task, _ in task.dueDate = date }
     }
 
     /// Sets the labels (which also serve as projects), cleaned as the backend cleans them.
     public func setLabels(_ localId: String, _ labels: [String]) async throws {
-        guard let clean = TaskRules.labels(labels) else { throw RepositoryError.invalid("too many or too long labels") }
+        guard let clean = TaskRules.labels(labels) else { throw RepositoryError.invalid(tr("There are too many labels, or one is too long.")) }
         try await edit(localId, Mutations.update, ["labels": .array(clean.map(JSONValue.string))]) { task, _ in task.labels = clean }
     }
 
     /// Sets the repeat rule; nil stops repeating.
     public func setRepeat(_ localId: String, _ rule: RepeatRule?) async throws {
-        if let rule, !TaskRules.isValid(rule) { throw RepositoryError.invalid("invalid repeat rule") }
+        if let rule, !TaskRules.isValid(rule) { throw RepositoryError.invalid(tr("The repeat rule is not valid.")) }
         try await edit(localId, Mutations.update, ["repeat": rule?.wire ?? .null]) { task, _ in task.repeat = rule }
     }
 
@@ -164,7 +165,7 @@ public final class TaskRepository: Sendable {
     public func setReminders(_ localId: String, _ reminders: [TaskReminder]?) async throws {
         let clean: [TaskReminder]?
         if let reminders {
-            guard let checked = TaskRules.reminders(reminders) else { throw RepositoryError.invalid("invalid reminders") }
+            guard let checked = TaskRules.reminders(reminders) else { throw RepositoryError.invalid(tr("The reminders are not valid.")) }
             clean = checked
         } else {
             clean = nil
@@ -191,7 +192,7 @@ public final class TaskRepository: Sendable {
     public func setResumeNote(_ localId: String, _ note: String) async throws {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         let clean = trimmed.isEmpty ? nil : trimmed
-        guard (clean?.jsLength ?? 0) <= TaskRules.maxResumeNote else { throw RepositoryError.invalid("note is too long") }
+        guard (clean?.jsLength ?? 0) <= TaskRules.maxResumeNote else { throw RepositoryError.invalid(tr("The note is too long.")) }
         try await edit(localId, Mutations.update, ["resumeNote": .of(clean)]) { task, _ in task.resumeNote = clean }
     }
 
@@ -320,7 +321,7 @@ public final class TaskRepository: Sendable {
         let changed = try await writer.write { db -> Bool in
             guard var task = try TaskItem.fetchOne(db, key: localId), !task.inTrash else { return false }
             guard let items = TaskRules.checklist(change(task.checklist)) else {
-                throw RepositoryError.invalid("too many or too long checklist items")
+                throw RepositoryError.invalid(tr("There are too many checklist items, or one is too long."))
             }
             if items == task.checklist { return false }
             task.checklist = items

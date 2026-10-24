@@ -1,3 +1,4 @@
+import DayhandLocalization
 import DayhandUpdates
 import SwiftUI
 
@@ -77,10 +78,10 @@ struct UpdateWindow: View {
         case .checking:
             ProgressView().controlSize(.small)
         case .upToDate:
-            Text("Version \(updater.version) is the newest.").foregroundStyle(.secondary)
+            Text(tr("Version \(updater.version) is the newest.")).foregroundStyle(.secondary)
         case .available:
             if let offer = state.offer {
-                Text("You have \(updater.version).").foregroundStyle(.secondary)
+                Text(tr("You have \(updater.version).")).foregroundStyle(.secondary)
                 if let notes = offer.notes {
                     ScrollView {
                         Text(notes)
@@ -101,14 +102,14 @@ struct UpdateWindow: View {
             Text(UpdateText.downloaded(state)).font(.caption).foregroundStyle(.secondary)
         case .extracting(let progress):
             ProgressView(value: progress ?? 0).progressViewStyle(.linear)
-            Text("Checking the download’s signature.").font(.caption).foregroundStyle(.secondary)
+            Text(tr("Checking the download’s signature.")).font(.caption).foregroundStyle(.secondary)
         case .readyToInstall, .installing:
             ProgressView().progressViewStyle(.linear)
-            Text("Dayhand will quit and open again in a moment.").font(.caption).foregroundStyle(.secondary)
+            Text(tr("Dayhand will quit and open again in a moment.")).font(.caption).foregroundStyle(.secondary)
         case .failed(let failure):
             Text(failure.message).fixedSize(horizontal: false, vertical: true)
         case .idle:
-            Text("Version \(updater.version).").foregroundStyle(.secondary)
+            Text(tr("Version \(updater.version).")).foregroundStyle(.secondary)
         }
     }
 
@@ -118,22 +119,22 @@ struct UpdateWindow: View {
             Spacer()
             switch state.activity {
             case .available:
-                Button("Later") { updater.dismiss() }
-                Button("Update and Relaunch") { updater.install() }
+                Button(tr("Later")) { updater.dismiss() }
+                Button(tr("Update and Relaunch")) { updater.install() }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
             case .downloading:
-                Button("Cancel") { updater.cancelDownloading() }
+                Button(tr("Cancel")) { updater.cancelDownloading() }
             case .failed:
-                Button(state.hasUpdate ? "Later" : "OK") { updater.dismiss() }
-                Button("Try Again") { state.hasUpdate ? updater.install() : updater.checkForUpdates() }
+                Button(state.hasUpdate ? tr("Later") : tr("OK")) { updater.dismiss() }
+                Button(tr("Try Again")) { state.hasUpdate ? updater.install() : updater.checkForUpdates() }
                     .keyboardShortcut(.defaultAction)
             case .idle:
-                Button("Close") { updater.dismiss() }
-                Button("Check for Updates") { updater.checkForUpdates() }
+                Button(tr("Close")) { updater.dismiss() }
+                Button(tr("Check for Updates")) { updater.checkForUpdates() }
                     .keyboardShortcut(.defaultAction)
             case .unavailable, .upToDate:
-                Button("OK") { updater.dismiss() }
+                Button(tr("OK")) { updater.dismiss() }
                     .keyboardShortcut(.defaultAction)
             case .checking, .extracting, .readyToInstall, .installing:
                 EmptyView()
@@ -150,19 +151,19 @@ struct UpdateSettings: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("This version", value: updater.build.isEmpty ? updater.version : "\(updater.version) (\(updater.build))")
+                LabeledContent(tr("This version"), value: updater.build.isEmpty ? updater.version : "\(updater.version) (\(updater.build))")
                 if case .unavailable(let reason) = updater.state.activity {
                     Label(reason.message, systemImage: "exclamationmark.circle")
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Released builds are signed and can update themselves; a copy built on this Mac cannot.")
+                    Text(tr("Released builds are signed and can update themselves; a copy built on this Mac cannot."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Toggle("Check for updates automatically", isOn: Binding(get: { updater.automaticallyChecks }, set: { updater.automaticallyChecks = $0 }))
+                Toggle(tr("Check for updates automatically"), isOn: Binding(get: { updater.automaticallyChecks }, set: { updater.automaticallyChecks = $0 }))
                     .disabled(!updater.isAvailable)
-                Toggle("Include preview versions", isOn: Binding(get: { updater.includesPreviews }, set: { updater.includesPreviews = $0 }))
+                Toggle(tr("Include preview versions"), isOn: Binding(get: { updater.includesPreviews }, set: { updater.includesPreviews = $0 }))
                     .disabled(!updater.isAvailable)
-                Text("Previews come before a release and may have rough edges.")
+                Text(tr("Previews come before a release and may have rough edges."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 HStack {
@@ -170,7 +171,7 @@ struct UpdateSettings: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer()
-                    Button("Check for Updates") { updater.checkForUpdates() }
+                    Button(tr("Check for Updates")) { updater.checkForUpdates() }
                         .disabled(!updater.isAvailable || updater.state.isWorking)
                 }
                 if let lastInstall = updater.lastInstall {
@@ -182,29 +183,32 @@ struct UpdateSettings: View {
     }
 
     private var lastCheckText: String {
-        guard let date = updater.lastCheck else { return "Not checked yet." }
-        return "Last checked \(date.formatted(date: .abbreviated, time: .shortened))."
+        guard let date = updater.lastCheck else { return tr("Not checked yet.") }
+        let when = date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened).locale(Localization.current.locale))
+        return tr("Last checked \(when).")
     }
 }
 
 /// The update texts, in one place for the button, the window and Settings.
 enum UpdateText {
     static func buttonHelp(_ state: UpdateState) -> String {
-        guard let offer = state.offer else { return "Updates" }
-        return "Dayhand \(offer.version) is available"
+        guard let offer = state.offer else { return tr("Updates") }
+        return tr("Dayhand \(offer.version) is available")
     }
 
     static func title(_ state: UpdateState, version: String) -> String {
         switch state.activity {
-        case .unavailable: return "Updates"
+        case .unavailable: return tr("Updates")
         case .idle: return "Dayhand"
-        case .checking: return "Checking for updates…"
-        case .upToDate: return "Dayhand is up to date"
-        case .available: return "Dayhand \(state.offer?.version ?? "")\(state.offer?.isPreview == true ? " (preview)" : "") is available"
-        case .downloading: return "Downloading Dayhand \(state.offer?.version ?? "")…"
-        case .extracting: return "Preparing the update…"
-        case .readyToInstall, .installing: return "Installing Dayhand \(state.offer?.version ?? "")…"
-        case .failed: return "The update did not finish"
+        case .checking: return tr("Checking for updates…")
+        case .upToDate: return tr("Dayhand is up to date")
+        case .available:
+            let version = state.offer?.version ?? ""
+            return state.offer?.isPreview == true ? tr("Dayhand \(version) (preview) is available") : tr("Dayhand \(version) is available")
+        case .downloading: return tr("Downloading Dayhand \(state.offer?.version ?? "")…")
+        case .extracting: return tr("Preparing the update…")
+        case .readyToInstall, .installing: return tr("Installing Dayhand \(state.offer?.version ?? "")…")
+        case .failed: return tr("The update did not finish")
         }
     }
 
@@ -212,12 +216,12 @@ enum UpdateText {
     static func status(_ state: UpdateState) -> String? {
         switch state.activity {
         case .unavailable, .idle: return nil
-        case .checking: return "Checking…"
-        case .upToDate: return "Dayhand is up to date."
-        case .available: return "Dayhand \(state.offer?.version ?? "") is available."
-        case .downloading: return state.downloadProgress.map { "Downloading… \(Int($0 * 100))%" } ?? "Downloading…"
-        case .extracting: return "Preparing the update…"
-        case .readyToInstall, .installing: return "Installing…"
+        case .checking: return tr("Checking…")
+        case .upToDate: return tr("Dayhand is up to date.")
+        case .available: return tr("Dayhand \(state.offer?.version ?? "") is available.")
+        case .downloading: return state.downloadProgress.map { progress in tr("Downloading… \(Int(progress * 100))%") } ?? tr("Downloading…")
+        case .extracting: return tr("Preparing the update…")
+        case .readyToInstall, .installing: return tr("Installing…")
         case .failed(let failure): return failure.message
         }
     }
@@ -229,6 +233,6 @@ enum UpdateText {
         formatter.countStyle = .file
         let got = formatter.string(fromByteCount: Int64(clamping: received))
         guard let expected else { return got }
-        return "\(got) of \(formatter.string(fromByteCount: Int64(clamping: expected)))"
+        return tr("\(got) of \(formatter.string(fromByteCount: Int64(clamping: expected)))")
     }
 }

@@ -1,3 +1,4 @@
+import DayhandLocalization
 import Foundation
 
 /// A newer version found in the appcast.
@@ -131,12 +132,33 @@ public struct UpdateState: Equatable, Sendable {
     private var restingActivity: UpdateActivity { offer == nil ? .idle : .available }
 }
 
-/// Why an update did not go through, in words for the user; the technical error stays in the log.
+/// Why an update did not go through, in words for the user (in the language of the moment it is shown); the
+/// technical error stays in the log.
 public struct UpdateFailure: Equatable, Sendable {
-    public let message: String
+    public enum Reason: Equatable, Sendable {
+        case offline, unreadable, download, untrusted, install, other
+        case runningFromDiskImage, noPermission, downgrade, canceled
+    }
 
-    public init(_ message: String) {
-        self.message = message
+    public let reason: Reason
+
+    public init(_ reason: Reason) {
+        self.reason = reason
+    }
+
+    public var message: String {
+        switch reason {
+        case .offline: return tr("Dayhand could not reach the update server. Check the connection and try again.")
+        case .unreadable: return tr("The list of new versions could not be read. Try again later.")
+        case .download: return tr("The update could not be downloaded. Check the connection and try again.")
+        case .untrusted: return tr("The downloaded update did not pass its signature check, so it was not installed.")
+        case .install: return tr("The update could not be installed. Make sure Dayhand is in Applications, then try again.")
+        case .other: return tr("The update did not finish. Try again later.")
+        case .runningFromDiskImage: return tr("Dayhand is running from the disk image. Move it to Applications, open it from there and update again.")
+        case .noPermission: return tr("Dayhand can’t replace itself in this folder. Move it to Applications and try again.")
+        case .downgrade: return tr("That version is older than this one, so it was not installed.")
+        case .canceled: return tr("The update was canceled.")
+        }
     }
 
     /// Sparkle's error domain and the codes this app tells apart (`SUErrors.h`).
@@ -155,12 +177,12 @@ public struct UpdateFailure: Equatable, Sendable {
         static let writeNoPermission = 4012
     }
 
-    public static let offline = UpdateFailure("Dayhand could not reach the update server. Check the connection and try again.")
-    public static let unreadable = UpdateFailure("The list of new versions could not be read. Try again later.")
-    public static let download = UpdateFailure("The update could not be downloaded. Check the connection and try again.")
-    public static let untrusted = UpdateFailure("The downloaded update did not pass its signature check, so it was not installed.")
-    public static let install = UpdateFailure("The update could not be installed. Make sure Dayhand is in Applications, then try again.")
-    public static let other = UpdateFailure("The update did not finish. Try again later.")
+    public static let offline = UpdateFailure(.offline)
+    public static let unreadable = UpdateFailure(.unreadable)
+    public static let download = UpdateFailure(.download)
+    public static let untrusted = UpdateFailure(.untrusted)
+    public static let install = UpdateFailure(.install)
+    public static let other = UpdateFailure(.other)
 
     /// `downloading`: the error came while fetching the update archive rather than the appcast (Sparkle gives both
     /// the same code).
@@ -176,13 +198,13 @@ public struct UpdateFailure: Equatable, Sendable {
         case SparkleCode.unarchiving, SparkleCode.signature, SparkleCode.validation:
             return .untrusted
         case SparkleCode.runningFromDiskImage:
-            return UpdateFailure("Dayhand is running from the disk image. Move it to Applications, open it from there and update again.")
+            return UpdateFailure(.runningFromDiskImage)
         case SparkleCode.writeNoPermission:
-            return UpdateFailure("Dayhand can’t replace itself in this folder. Move it to Applications and try again.")
+            return UpdateFailure(.noPermission)
         case SparkleCode.downgrade:
-            return UpdateFailure("That version is older than this one, so it was not installed.")
+            return UpdateFailure(.downgrade)
         case SparkleCode.installationCanceled:
-            return UpdateFailure("The update was canceled.")
+            return UpdateFailure(.canceled)
         case SparkleCode.installation:
             return .install
         default:

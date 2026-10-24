@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>%@ (%@ does not exist that day)</key>
+	<string>%1$@（その日に %2$@ はありません）</string>
+	<key>%@ at %@</key>
+	<string>%1$@ %2$@</string>
+	<key>%@ of %@</key>
+	<string>%1$@ / %2$@</string>
+	<key>%@ on the day</key>
+	<string>当日 %@</string>
+	<key>%@ the day before</key>
+	<string>前日 %@</string>
+	<key>%@ · from “%@”</key>
+	<string>%1$@ ·「%2$@」から</string>
+	<key>%@, %@</key>
+	<string>%1$@、%2$@</string>
+	<key>%lld h before</key>
+	<string>%lld時間前</string>
+	<key>%lld min</key>
+	<string>%lld分</string>
+	<key>%lld min before</key>
+	<string>%lld分前</string>
+	<key>%lld s</key>
+	<string>%lld秒</string>
+	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
+	<string>ペアリングコードは英数字12文字です（例：E6M8-FE02-XSNT）。</string>
+	<key>About</key>
+	<string>情報</string>
+	<key>Add Task</key>
+	<string>タスクを追加</string>
+	<key>Add a task (try: Pay rent fri 9am)</key>
+	<string>タスクを追加（例：家賃を払う fri 9am）</string>
+	<key>Add an item</key>
+	<string>項目を追加</string>
+	<key>Add the words as part of the title instead of reading them as a date</key>
+	<string>日付として読まずにタイトルの一部にします</string>
+	<key>Address</key>
+	<string>アドレス</string>
+	<key>All done for today.</key>
+	<string>今日の分はすべて完了しました。</string>
+	<key>Allow Notifications</key>
+	<string>通知を許可</string>
+	<key>Archive</key>
+	<string>アーカイブ</string>
+	<key>As in settings (%@)</key>
+	<string>設定どおり（%@）</string>
+	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
+	<string>GRDB.swift（MIT）、KeyboardShortcuts（MIT）、Sparkle（MIT）を使用しています。</string>
+	<key>Cancel</key>
+	<string>キャンセル</string>
+	<key>Cannot reach the server.</key>
+	<string>サーバーに接続できません。</string>
+	<key>Change</key>
+	<string>変更</string>
+	<key>Changes waiting</key>
+	<string>送信待ちの変更</string>
+	<key>Check for Updates</key>
+	<string>アップデートを確認</string>
+	<key>Check for Updates…</key>
+	<string>アップデートを確認…</string>
+	<key>Check for updates automatically</key>
+	<string>アップデートを自動的に確認</string>
+	<key>Checking for updates…</key>
+	<string>アップデートを確認中…</string>
+	<key>Checking the download’s signature.</key>
+	<string>ダウンロードの署名を確認しています。</string>
+	<key>Checking…</key>
+	<string>確認中…</string>
+	<key>Checklist</key>
+	<string>チェックリスト</string>
+	<key>Close</key>
+	<string>閉じる</string>
+	<key>Connect</key>
+	<string>接続</string>
+	<key>Connect to Server…</key>
+	<string>サーバーに接続…</string>
+	<key>Connect to your server</key>
+	<string>サーバーに接続</string>
+	<key>Connected</key>
+	<string>接続済み</string>
+	<key>Connecting…</key>
+	<string>接続中…</string>
+	<key>Connection</key>
+	<string>接続</string>
+	<key>Connect…</key>
+	<string>接続…</string>
+	<key>Daily</key>
+	<string>毎日</string>
+	<key>Dayhand %@ (preview) is available</key>
+	<string>Dayhand %@（プレビュー版）が利用できます</string>
+	<key>Dayhand %@ is available</key>
+	<string>Dayhand %@ が利用できます</string>
+	<key>Dayhand %@ is available.</key>
+	<string>Dayhand %@ が利用できます。</string>
+	<key>Dayhand can’t replace itself in this folder. Move it to Applications and try again.</key>
+	<string>Dayhand はこのフォルダでは自身を置き換えられません。アプリケーションフォルダに移動して再試行してください。</string>
+	<key>Dayhand could not reach the update server. Check the connection and try again.</key>
+	<string>Dayhand はアップデートサーバーに接続できませんでした。接続を確認して再試行してください。</string>
+	<key>Dayhand could not restart. Quit it and open it again.</key>
+	<string>Dayhand を再起動できませんでした。終了してからもう一度開いてください。</string>
+	<key>Dayhand forgets the sign-in on this Mac; your tasks stay here. To end it on the server too, run: dayhand revoke %@</key>
+	<string>Dayhand はこの Mac のサインイン情報を削除します。タスクはここに残ります。サーバー側でも終了するには次を実行してください：dayhand revoke %@</string>
+	<key>Dayhand has not asked yet.</key>
+	<string>Dayhand はまだ許可を求めていません。</string>
+	<key>Dayhand is running from the disk image. Move it to Applications, open it from there and update again.</key>
+	<string>Dayhand はディスクイメージから実行されています。アプリケーションフォルダに移動し、そこから開いてもう一度アップデートしてください。</string>
+	<key>Dayhand is up to date</key>
+	<string>Dayhand は最新です</string>
+	<key>Dayhand is up to date.</key>
+	<string>Dayhand は最新です。</string>
+	<key>Dayhand was updated to %@.</key>
+	<string>Dayhand は %@ にアップデートされました。</string>
+	<key>Dayhand will quit and open again in a moment.</key>
+	<string>Dayhand はまもなく終了して再び開きます。</string>
+	<key>Dayhand, nothing left today</key>
+	<string>Dayhand、今日の残りはありません</string>
+	<key>Default reminders</key>
+	<string>デフォルトのリマインダー</string>
+	<key>Disconnect</key>
+	<string>接続を解除</string>
+	<key>Disconnect this Mac?</key>
+	<string>この Mac の接続を解除しますか？</string>
+	<key>Disconnect…</key>
+	<string>接続を解除…</string>
+	<key>Does not repeat</key>
+	<string>繰り返さない</string>
+	<key>Done</key>
+	<string>完了</string>
+	<key>Done (%lld)</key>
+	<string>完了 (%lld)</string>
+	<key>Downloading Dayhand %@…</key>
+	<string>Dayhand %@ をダウンロード中…</string>
+	<key>Downloading…</key>
+	<string>ダウンロード中…</string>
+	<key>Downloading… %lld%%</key>
+	<string>ダウンロード中… %lld%%</string>
+	<key>Due</key>
+	<string>期限</string>
+	<key>General</key>
+	<string>一般</string>
+	<key>Hides the tasks done today</key>
+	<string>今日完了したタスクを隠します</string>
+	<key>In progress</key>
+	<string>進行中</string>
+	<key>In the trash. It goes for good 30 days after it was deleted.</key>
+	<string>ゴミ箱にあります。削除から30日後に完全に消えます。</string>
+	<key>Include preview versions</key>
+	<string>プレビュー版を含める</string>
+	<key>Installing Dayhand %@…</key>
+	<string>Dayhand %@ をインストール中…</string>
+	<key>Installing…</key>
+	<string>インストール中…</string>
+	<key>It stays in the trash for 30 days.</key>
+	<string>ゴミ箱に30日間残ります。</string>
+	<key>Keep in title</key>
+	<string>タイトルに残す</string>
+	<key>Labels</key>
+	<string>ラベル</string>
+	<key>Language</key>
+	<string>言語</string>
+	<key>Last checked %@.</key>
+	<string>最終確認：%@。</string>
+	<key>Later</key>
+	<string>あとで</string>
+	<key>Links</key>
+	<string>リンク</string>
+	<key>Mark as Done</key>
+	<string>完了にする</string>
+	<key>Mark as Not Done</key>
+	<string>未完了に戻す</string>
+	<key>Mark as done</key>
+	<string>完了にする</string>
+	<key>Mark as not done</key>
+	<string>未完了に戻す</string>
+	<key>Menus that come with macOS change language when Dayhand restarts.</key>
+	<string>macOS 標準のメニューは Dayhand の再起動後に切り替わります。</string>
+	<key>Monthly</key>
+	<string>毎月</string>
+	<key>Morning summary</key>
+	<string>朝のまとめ</string>
+	<key>Move to Trash</key>
+	<string>ゴミ箱に入れる</string>
+	<key>Move “%@” to the trash?</key>
+	<string>「%@」をゴミ箱に入れますか？</string>
+	<key>New Task</key>
+	<string>新規タスク</string>
+	<key>New Task…</key>
+	<string>新規タスク…</string>
+	<key>New item</key>
+	<string>新しい項目</string>
+	<key>New task (⌘N, or the quick add shortcut from any app)</key>
+	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
+	<key>New task, e.g. Call the accountant fri 2pm</key>
+	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
+	<key>No day</key>
+	<string>日付なし</string>
+	<key>No server connected.</key>
+	<string>サーバーが接続されていません。</string>
+	<key>None</key>
+	<string>なし</string>
+	<key>Not Now</key>
+	<string>いまはやめる</string>
+	<key>Not Now, Use Dayhand Offline</key>
+	<string>今はしない（オフラインで使う）</string>
+	<key>Not a date Dayhand understands; try tomorrow, fri 14:00, next mon, in 3 days or 23 oct.</key>
+	<string>Dayhand はこの日付を理解できません。英語で入力してください（例：tomorrow、fri 14:00、next mon、in 3 days、23 oct）。</string>
+	<key>Not checked yet.</key>
+	<string>まだ確認していません。</string>
+	<key>Not connected to a server; tasks stay on this Mac.</key>
+	<string>サーバーに接続していません。タスクはこの Mac に保存されます。</string>
+	<key>Not now</key>
+	<string>いまはやめる</string>
+	<key>Note</key>
+	<string>メモ</string>
+	<key>Nothing else planned for today.</key>
+	<string>今日はほかに予定がありません。</string>
+	<key>Nothing left for today.</key>
+	<string>今日やることは残っていません。</string>
+	<key>Nothing planned for today.</key>
+	<string>今日の予定はありません。</string>
+	<key>Nothing planned. Add a task with the quick add shortcut.</key>
+	<string>予定はありません。クイック追加のショートカットでタスクを追加しましょう。</string>
+	<key>Notifications</key>
+	<string>通知</string>
+	<key>Notifications are off for Dayhand.</key>
+	<string>Dayhand の通知はオフです。</string>
+	<key>Notifications need the app bundle (scripts/build-app.sh); swift run has none.</key>
+	<string>通知にはアプリバンドル（scripts/build-app.sh）が必要です。swift run にはありません。</string>
+	<key>Now</key>
+	<string>いま</string>
+	<key>Now, %@</key>
+	<string>いま（%@）</string>
+	<key>OK</key>
+	<string>OK</string>
+	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
+	<string>サーバーにサインインしているコンピュータで dayhand pair を実行し、表示されたコードを入力するか、出力されたリンクを開いてください。コードは1回だけ、10分間有効です。</string>
+	<key>Open Dayhand</key>
+	<string>Dayhand を開く</string>
+	<key>Open System Settings</key>
+	<string>システム設定を開く</string>
+	<key>Overdue (%lld)</key>
+	<string>期限切れ (%lld)</string>
+	<key>Pairing code</key>
+	<string>ペアリングコード</string>
+	<key>Preparing the update…</key>
+	<string>アップデートを準備中…</string>
+	<key>Previews come before a release and may have rough edges.</key>
+	<string>プレビュー版はリリース前の版で、未完成な部分があるかもしれません。</string>
+	<key>Quick add</key>
+	<string>クイック追加</string>
+	<key>Quit</key>
+	<string>終了</string>
+	<key>Reading tasks failed: %@</key>
+	<string>タスクを読み込めませんでした：%@</string>
+	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
+	<string>公開版は署名されており自動でアップデートできます。この Mac でビルドしたコピーはできません。</string>
+	<key>Reminders</key>
+	<string>リマインダー</string>
+	<key>Reminders and the morning summary are on.</key>
+	<string>リマインダーと朝のまとめはオンです。</string>
+	<key>Remove %@</key>
+	<string>削除：%@</string>
+	<key>Remove the time</key>
+	<string>時刻を削除</string>
+	<key>Repeat</key>
+	<string>繰り返し</string>
+	<key>Restart Dayhand</key>
+	<string>Dayhand を再起動</string>
+	<key>Restore</key>
+	<string>元に戻す</string>
+	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
+	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日になります。</string>
+	<key>Save Note</key>
+	<string>メモを保存</string>
+	<key>Select a task to see its details.</key>
+	<string>タスクを選ぶと詳細が表示されます。</string>
+	<key>Server</key>
+	<string>サーバー</string>
+	<key>Server address</key>
+	<string>サーバーアドレス</string>
+	<key>Shortcut from any app:</key>
+	<string>どのアプリからでも使えるショートカット：</string>
+	<key>Shows the tasks done today</key>
+	<string>今日完了したタスクを表示します</string>
+	<key>Something answered at that address, but it is not a Dayhand server.</key>
+	<string>そのアドレスで応答がありましたが、Dayhand サーバーではありません。</string>
+	<key>Start with: %@</key>
+	<string>まずはこれから：%@</string>
+	<key>Status</key>
+	<string>状態</string>
+	<key>Sync Now</key>
+	<string>今すぐ同期</string>
+	<key>System (%@)</key>
+	<string>システム（%@）</string>
+	<key>Task</key>
+	<string>タスク</string>
+	<key>That is not a date.</key>
+	<string>日付ではありません。</string>
+	<key>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</key>
+	<string>サーバーアドレスではありません。https://&lt;name&gt;.convex.site の形式です。</string>
+	<key>That is not a time.</key>
+	<string>時刻ではありません。</string>
+	<key>That version is older than this one, so it was not installed.</key>
+	<string>そのバージョンは現在のものより古いため、インストールされませんでした。</string>
+	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
+	<string>キーチェーンを読み取れなかったため、Dayhand はサーバーなしで起動します。</string>
+	<key>The change could not be saved: %@</key>
+	<string>変更を保存できませんでした：%@</string>
+	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
+	<string>コードが間違っているか、使用済みか、期限切れです。dayhand pair をもう一度実行して新しいコードを取得してください。</string>
+	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
+	<string>ダウンロードしたアップデートは署名の確認に失敗したため、インストールされませんでした。</string>
+	<key>The list of new versions could not be read. Try again later.</key>
+	<string>新しいバージョンの一覧を読み取れませんでした。後でもう一度お試しください。</string>
+	<key>The note is too long.</key>
+	<string>メモが長すぎます。</string>
+	<key>The reminders are not valid.</key>
+	<string>リマインダーが正しくありません。</string>
+	<key>The repeat rule is not valid.</key>
+	<string>繰り返しのルールが正しくありません。</string>
+	<key>The server cannot be reached. Check the address and the network.</key>
+	<string>サーバーに接続できません。アドレスとネットワークを確認してください。</string>
+	<key>The server has a problem.</key>
+	<string>サーバーに問題があります。</string>
+	<key>The server has a problem. Try again later.</key>
+	<string>サーバーに問題があります。後でもう一度お試しください。</string>
+	<key>The server signed this Mac out. Connect again with a new code; your tasks stay here.</key>
+	<string>サーバーがこの Mac をサインアウトしました。新しいコードで再接続してください。タスクはここに残ります。</string>
+	<key>The sign-in could not be removed from the Keychain: %@</key>
+	<string>キーチェーンからサインイン情報を削除できませんでした：%@</string>
+	<key>The sign-in could not be saved in the Keychain.</key>
+	<string>サインイン情報をキーチェーンに保存できませんでした。</string>
+	<key>The update could not be downloaded. Check the connection and try again.</key>
+	<string>アップデートをダウンロードできませんでした。接続を確認して再試行してください。</string>
+	<key>The update could not be installed. Make sure Dayhand is in Applications, then try again.</key>
+	<string>アップデートをインストールできませんでした。Dayhand がアプリケーションフォルダにあることを確認して再試行してください。</string>
+	<key>The update did not finish</key>
+	<string>アップデートが完了しませんでした</string>
+	<key>The update did not finish. Try again later.</key>
+	<string>アップデートが完了しませんでした。後でもう一度お試しください。</string>
+	<key>The update to %@ did not install, so this version is still running. Try updating again.</key>
+	<string>%@ へのアップデートはインストールされなかったため、このバージョンのままです。もう一度アップデートしてください。</string>
+	<key>The update was canceled.</key>
+	<string>アップデートはキャンセルされました。</string>
+	<key>There are too many checklist items, or one is too long.</key>
+	<string>チェックリストの項目が多すぎるか、長すぎるものがあります。</string>
+	<key>There are too many labels, or one is too long.</key>
+	<string>ラベルが多すぎるか、長すぎるものがあります。</string>
+	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
+	<string>これらはサーバーの設定から取得されるため、電話、エージェント、この Mac で一致します。電話または dayhand で変更してください。</string>
+	<key>This Mac</key>
+	<string>この Mac</string>
+	<key>This version</key>
+	<string>このバージョン</string>
+	<key>Tick %@</key>
+	<string>チェック：%@</string>
+	<key>Time zone</key>
+	<string>タイムゾーン</string>
+	<key>Title</key>
+	<string>タイトル</string>
+	<key>To Today</key>
+	<string>今日へ</string>
+	<key>To Tomorrow</key>
+	<string>明日へ</string>
+	<key>To do</key>
+	<string>未着手</string>
+	<key>To today</key>
+	<string>今日へ</string>
+	<key>Today</key>
+	<string>今日</string>
+	<key>Tomorrow</key>
+	<string>明日</string>
+	<key>Too many wrong codes on this server. Try again in %@.</key>
+	<string>このサーバーで間違ったコードが多すぎます。%@後にもう一度お試しください。</string>
+	<key>Try Again</key>
+	<string>再試行</string>
+	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
+	<string>タイトルの最後に英語で日付や時刻を書きます：「Call the accountant fri 2pm」「Pay rent the 1st」「Plan next week」。</string>
+	<key>Unarchive</key>
+	<string>アーカイブ解除</string>
+	<key>Untick %@</key>
+	<string>チェックを外す：%@</string>
+	<key>Update and Relaunch</key>
+	<string>アップデートして再起動</string>
+	<key>Updates</key>
+	<string>アップデート</string>
+	<key>Updates aren’t available in this build: it has no secure address to check for new versions.</key>
+	<string>このビルドではアップデートを利用できません：新しいバージョンを確認する安全なアドレスがありません。</string>
+	<key>Updates aren’t available in this build: it runs without an app bundle (swift run).</key>
+	<string>このビルドではアップデートを利用できません：アプリバンドルなしで実行されています（swift run）。</string>
+	<key>Updates aren’t available in this build: it was built without the update signing key.</key>
+	<string>このビルドではアップデートを利用できません：アップデート署名鍵なしでビルドされています。</string>
+	<key>Updates aren’t available in this build: the updater could not start.</key>
+	<string>このビルドではアップデートを利用できません：アップデーターを起動できませんでした。</string>
+	<key>Version %@</key>
+	<string>バージョン %@</string>
+	<key>Version %@ is the newest.</key>
+	<string>バージョン %@ が最新です。</string>
+	<key>Version %@.</key>
+	<string>バージョン %@。</string>
+	<key>Weekly</key>
+	<string>毎週</string>
+	<key>When</key>
+	<string>日時</string>
+	<key>Where I stopped</key>
+	<string>中断したところ</string>
+	<key>Where I stopped: %@</key>
+	<string>中断したところ：%@</string>
+	<key>Where I stopped: add a note in the details</key>
+	<string>中断したところ：詳細でメモを追加</string>
+	<key>Work on It Now</key>
+	<string>いま取り組む</string>
+	<key>Working on it now</key>
+	<string>いま取り組み中</string>
+	<key>Yearly</key>
+	<string>毎年</string>
+	<key>Yesterday</key>
+	<string>昨日</string>
+	<key>You have %@.</key>
+	<string>現在のバージョンは %@ です。</string>
+	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
+	<string>あなたの1日の計画を、オフラインファーストで。Apache License 2.0 で提供。</string>
+	<key>a few minutes</key>
+	<string>数分</string>
+	<key>after completion</key>
+	<string>完了後から</string>
+	<key>and %lld more</key>
+	<string>ほか%lld件</string>
+	<key>at the due time</key>
+	<string>期限の時刻</string>
+	<key>development</key>
+	<string>開発版</string>
+	<key>from “%@”</key>
+	<string>「%@」から</string>
+	<key>home, work</key>
+	<string>家, 仕事</string>
+	<key>next step</key>
+	<string>次のステップ</string>
+	<key>now</key>
+	<string>いま</string>
+	<key>on %@</key>
+	<string>%@曜日</string>
+	<key>on %@ number %lld from the end</key>
+	<string>最後から%2$lld番目の%1$@曜日</string>
+	<key>on day %lld</key>
+	<string>%lld日</string>
+	<key>on the fifth Friday</key>
+	<string>第5金曜日</string>
+	<key>on the fifth Monday</key>
+	<string>第5月曜日</string>
+	<key>on the fifth Saturday</key>
+	<string>第5土曜日</string>
+	<key>on the fifth Sunday</key>
+	<string>第5日曜日</string>
+	<key>on the fifth Thursday</key>
+	<string>第5木曜日</string>
+	<key>on the fifth Tuesday</key>
+	<string>第5火曜日</string>
+	<key>on the fifth Wednesday</key>
+	<string>第5水曜日</string>
+	<key>on the first Friday</key>
+	<string>第1金曜日</string>
+	<key>on the first Monday</key>
+	<string>第1月曜日</string>
+	<key>on the first Saturday</key>
+	<string>第1土曜日</string>
+	<key>on the first Sunday</key>
+	<string>第1日曜日</string>
+	<key>on the first Thursday</key>
+	<string>第1木曜日</string>
+	<key>on the first Tuesday</key>
+	<string>第1火曜日</string>
+	<key>on the first Wednesday</key>
+	<string>第1水曜日</string>
+	<key>on the fourth Friday</key>
+	<string>第4金曜日</string>
+	<key>on the fourth Monday</key>
+	<string>第4月曜日</string>
+	<key>on the fourth Saturday</key>
+	<string>第4土曜日</string>
+	<key>on the fourth Sunday</key>
+	<string>第4日曜日</string>
+	<key>on the fourth Thursday</key>
+	<string>第4木曜日</string>
+	<key>on the fourth Tuesday</key>
+	<string>第4火曜日</string>
+	<key>on the fourth Wednesday</key>
+	<string>第4水曜日</string>
+	<key>on the last Friday</key>
+	<string>最終金曜日</string>
+	<key>on the last Monday</key>
+	<string>最終月曜日</string>
+	<key>on the last Saturday</key>
+	<string>最終土曜日</string>
+	<key>on the last Sunday</key>
+	<string>最終日曜日</string>
+	<key>on the last Thursday</key>
+	<string>最終木曜日</string>
+	<key>on the last Tuesday</key>
+	<string>最終火曜日</string>
+	<key>on the last Wednesday</key>
+	<string>最終水曜日</string>
+	<key>on the last day</key>
+	<string>末日</string>
+	<key>on the second Friday</key>
+	<string>第2金曜日</string>
+	<key>on the second Monday</key>
+	<string>第2月曜日</string>
+	<key>on the second Saturday</key>
+	<string>第2土曜日</string>
+	<key>on the second Sunday</key>
+	<string>第2日曜日</string>
+	<key>on the second Thursday</key>
+	<string>第2木曜日</string>
+	<key>on the second Tuesday</key>
+	<string>第2火曜日</string>
+	<key>on the second Wednesday</key>
+	<string>第2水曜日</string>
+	<key>on the third Friday</key>
+	<string>第3金曜日</string>
+	<key>on the third Monday</key>
+	<string>第3月曜日</string>
+	<key>on the third Saturday</key>
+	<string>第3土曜日</string>
+	<key>on the third Sunday</key>
+	<string>第3日曜日</string>
+	<key>on the third Thursday</key>
+	<string>第3木曜日</string>
+	<key>on the third Tuesday</key>
+	<string>第3火曜日</string>
+	<key>on the third Wednesday</key>
+	<string>第3水曜日</string>
+	<key>until %@</key>
+	<string>%@まで</string>
+</dict>
+</plist>

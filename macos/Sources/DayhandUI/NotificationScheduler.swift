@@ -1,4 +1,5 @@
 import DayhandCore
+import DayhandLocalization
 import Foundation
 @preconcurrency import UserNotifications
 
@@ -19,11 +20,16 @@ final class NotificationScheduler: NSObject, ObservableObject, UNUserNotificatio
     override init() {
         super.init()
         center.delegate = self
-        let done = UNNotificationAction(identifier: Self.doneAction, title: "Done", options: [])
+        registerCategories()
+        Task { await refreshAuthorization() }
+    }
+
+    /// The reminder's **Done** button, in the current language.
+    func registerCategories() {
+        let done = UNNotificationAction(identifier: Self.doneAction, title: tr("Done"), options: [])
         center.setNotificationCategories([
             UNNotificationCategory(identifier: Self.reminderCategory, actions: [done], intentIdentifiers: [], options: []),
         ])
-        Task { await refreshAuthorization() }
     }
 
     func refreshAuthorization() async {

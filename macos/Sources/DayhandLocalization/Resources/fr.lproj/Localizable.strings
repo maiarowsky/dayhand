@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>%@ (%@ does not exist that day)</key>
+	<string>%1$@ (%2$@ n’existe pas ce jour-là)</string>
+	<key>%@ at %@</key>
+	<string>%1$@ à %2$@</string>
+	<key>%@ of %@</key>
+	<string>%1$@ sur %2$@</string>
+	<key>%@ on the day</key>
+	<string>%@ le jour même</string>
+	<key>%@ the day before</key>
+	<string>%@ la veille</string>
+	<key>%@ · from “%@”</key>
+	<string>%1$@ · d’après « %2$@ »</string>
+	<key>%@, %@</key>
+	<string>%1$@, %2$@</string>
+	<key>%lld h before</key>
+	<string>%lld h avant</string>
+	<key>%lld min</key>
+	<string>%lld min</string>
+	<key>%lld min before</key>
+	<string>%lld min avant</string>
+	<key>%lld s</key>
+	<string>%lld s</string>
+	<key>A pairing code has 12 letters and digits, like E6M8-FE02-XSNT.</key>
+	<string>Un code d’association compte 12 lettres et chiffres, comme E6M8-FE02-XSNT.</string>
+	<key>About</key>
+	<string>À propos</string>
+	<key>Add Task</key>
+	<string>Ajouter une tâche</string>
+	<key>Add a task (try: Pay rent fri 9am)</key>
+	<string>Ajouter une tâche (essayez : Payer le loyer fri 9am)</string>
+	<key>Add an item</key>
+	<string>Ajouter un élément</string>
+	<key>Add the words as part of the title instead of reading them as a date</key>
+	<string>Ajouter ces mots au titre au lieu de les lire comme une date</string>
+	<key>Address</key>
+	<string>Adresse</string>
+	<key>All done for today.</key>
+	<string>Tout est fait pour aujourd’hui.</string>
+	<key>Allow Notifications</key>
+	<string>Autoriser les notifications</string>
+	<key>Archive</key>
+	<string>Archiver</string>
+	<key>As in settings (%@)</key>
+	<string>Comme dans les réglages (%@)</string>
+	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
+	<string>Conçu avec GRDB.swift (MIT), KeyboardShortcuts (MIT) et Sparkle (MIT).</string>
+	<key>Cancel</key>
+	<string>Annuler</string>
+	<key>Cannot reach the server.</key>
+	<string>Serveur injoignable.</string>
+	<key>Change</key>
+	<string>Modifier</string>
+	<key>Changes waiting</key>
+	<string>Modifications en attente</string>
+	<key>Check for Updates</key>
+	<string>Rechercher des mises à jour</string>
+	<key>Check for Updates…</key>
+	<string>Rechercher des mises à jour…</string>
+	<key>Check for updates automatically</key>
+	<string>Rechercher les mises à jour automatiquement</string>
+	<key>Checking for updates…</key>
+	<string>Recherche de mises à jour…</string>
+	<key>Checking the download’s signature.</key>
+	<string>Vérification de la signature du téléchargement.</string>
+	<key>Checking…</key>
+	<string>Vérification…</string>
+	<key>Checklist</key>
+	<string>Liste de contrôle</string>
+	<key>Close</key>
+	<string>Fermer</string>
+	<key>Connect</key>
+	<string>Connecter</string>
+	<key>Connect to Server…</key>
+	<string>Se connecter au serveur…</string>
+	<key>Connect to your server</key>
+	<string>Connectez-vous à votre serveur</string>
+	<key>Connected</key>
+	<string>Connecté</string>
+	<key>Connecting…</key>
+	<string>Connexion…</string>
+	<key>Connection</key>
+	<string>Connexion</string>
+	<key>Connect…</key>
+	<string>Connecter…</string>
+	<key>Daily</key>
+	<string>Tous les jours</string>
+	<key>Dayhand %@ (preview) is available</key>
+	<string>Dayhand %@ (préversion) est disponible</string>
+	<key>Dayhand %@ is available</key>
+	<string>Dayhand %@ est disponible</string>
+	<key>Dayhand %@ is available.</key>
+	<string>Dayhand %@ est disponible.</string>
+	<key>Dayhand can’t replace itself in this folder. Move it to Applications and try again.</key>
+	<string>Dayhand ne peut pas se remplacer dans ce dossier. Déplacez-le dans Applications et réessayez.</string>
+	<key>Dayhand could not reach the update server. Check the connection and try again.</key>
+	<string>Dayhand n’a pas pu joindre le serveur de mises à jour. Vérifiez la connexion et réessayez.</string>
+	<key>Dayhand could not restart. Quit it and open it again.</key>
+	<string>Dayhand n’a pas pu redémarrer. Quittez-le puis rouvrez-le.</string>
+	<key>Dayhand forgets the sign-in on this Mac; your tasks stay here. To end it on the server too, run: dayhand revoke %@</key>
+	<string>Dayhand oublie la connexion sur ce Mac ; vos tâches restent ici. Pour y mettre fin aussi sur le serveur, lancez : dayhand revoke %@</string>
+	<key>Dayhand has not asked yet.</key>
+	<string>Dayhand n’a pas encore demandé.</string>
+	<key>Dayhand is running from the disk image. Move it to Applications, open it from there and update again.</key>
+	<string>Dayhand s’exécute depuis l’image disque. Déplacez-le dans Applications, ouvrez-le depuis là et relancez la mise à jour.</string>
+	<key>Dayhand is up to date</key>
+	<string>Dayhand est à jour</string>
+	<key>Dayhand is up to date.</key>
+	<string>Dayhand est à jour.</string>
+	<key>Dayhand was updated to %@.</key>
+	<string>Dayhand a été mis à jour vers la %@.</string>
+	<key>Dayhand will quit and open again in a moment.</key>
+	<string>Dayhand va quitter et se rouvrir dans un instant.</string>
+	<key>Dayhand, nothing left today</key>
+	<string>Dayhand, plus rien aujourd’hui</string>
+	<key>Default reminders</key>
+	<string>Rappels par défaut</string>
+	<key>Disconnect</key>
+	<string>Déconnecter</string>
+	<key>Disconnect this Mac?</key>
+	<string>Déconnecter ce Mac ?</string>
+	<key>Disconnect…</key>
+	<string>Déconnecter…</string>
+	<key>Does not repeat</key>
+	<string>Ne se répète pas</string>
+	<key>Done</key>
+	<string>Terminée</string>
+	<key>Done (%lld)</key>
+	<string>Terminées (%lld)</string>
+	<key>Downloading Dayhand %@…</key>
+	<string>Téléchargement de Dayhand %@…</string>
+	<key>Downloading…</key>
+	<string>Téléchargement…</string>
+	<key>Downloading… %lld%%</key>
+	<string>Téléchargement… %lld %%</string>
+	<key>Due</key>
+	<string>Échéance</string>
+	<key>General</key>
+	<string>Général</string>
+	<key>Hides the tasks done today</key>
+	<string>Masque les tâches terminées aujourd’hui</string>
+	<key>In progress</key>
+	<string>En cours</string>
+	<key>In the trash. It goes for good 30 days after it was deleted.</key>
+	<string>Dans la corbeille. Elle disparaît définitivement 30 jours après sa suppression.</string>
+	<key>Include preview versions</key>
+	<string>Inclure les préversions</string>
+	<key>Installing Dayhand %@…</key>
+	<string>Installation de Dayhand %@…</string>
+	<key>Installing…</key>
+	<string>Installation…</string>
+	<key>It stays in the trash for 30 days.</key>
+	<string>Elle reste 30 jours dans la corbeille.</string>
+	<key>Keep in title</key>
+	<string>Garder dans le titre</string>
+	<key>Labels</key>
+	<string>Étiquettes</string>
+	<key>Language</key>
+	<string>Langue</string>
+	<key>Last checked %@.</key>
+	<string>Dernière vérification : %@.</string>
+	<key>Later</key>
+	<string>Plus tard</string>
+	<key>Links</key>
+	<string>Liens</string>
+	<key>Mark as Done</key>
+	<string>Marquer comme terminée</string>
+	<key>Mark as Not Done</key>
+	<string>Marquer comme non terminée</string>
+	<key>Mark as done</key>
+	<string>Marquer comme terminée</string>
+	<key>Mark as not done</key>
+	<string>Marquer comme non terminée</string>
+	<key>Menus that come with macOS change language when Dayhand restarts.</key>
+	<string>Les menus fournis par macOS changent de langue au redémarrage de Dayhand.</string>
+	<key>Monthly</key>
+	<string>Tous les mois</string>
+	<key>Morning summary</key>
+	<string>Résumé du matin</string>
+	<key>Move to Trash</key>
+	<string>Mettre à la corbeille</string>
+	<key>Move “%@” to the trash?</key>
+	<string>Mettre « %@ » à la corbeille ?</string>
+	<key>New Task</key>
+	<string>Nouvelle tâche</string>
+	<key>New Task…</key>
+	<string>Nouvelle tâche…</string>
+	<key>New item</key>
+	<string>Nouvel élément</string>
+	<key>New task (⌘N, or the quick add shortcut from any app)</key>
+	<string>Nouvelle tâche (⌘N, ou le raccourci d’ajout rapide depuis n’importe quelle app)</string>
+	<key>New task, e.g. Call the accountant fri 2pm</key>
+	<string>Nouvelle tâche, par ex. Appeler le comptable fri 2pm</string>
+	<key>No day</key>
+	<string>Aucun jour</string>
+	<key>No server connected.</key>
+	<string>Aucun serveur connecté.</string>
+	<key>None</key>
+	<string>Aucun</string>
+	<key>Not Now</key>
+	<string>Pas maintenant</string>
+	<key>Not Now, Use Dayhand Offline</key>
+	<string>Pas maintenant, utiliser Dayhand hors ligne</string>
+	<key>Not a date Dayhand understands; try tomorrow, fri 14:00, next mon, in 3 days or 23 oct.</key>
+	<string>Dayhand ne comprend pas cette date. Écrivez-la en anglais, par ex. tomorrow, fri 14:00, next mon, in 3 days ou 23 oct.</string>
+	<key>Not checked yet.</key>
+	<string>Pas encore vérifié.</string>
+	<key>Not connected to a server; tasks stay on this Mac.</key>
+	<string>Aucun serveur connecté ; les tâches restent sur ce Mac.</string>
+	<key>Not now</key>
+	<string>Pas maintenant</string>
+	<key>Note</key>
+	<string>Note</string>
+	<key>Nothing else planned for today.</key>
+	<string>Rien d’autre de prévu aujourd’hui.</string>
+	<key>Nothing left for today.</key>
+	<string>Plus rien pour aujourd’hui.</string>
+	<key>Nothing planned for today.</key>
+	<string>Rien de prévu aujourd’hui.</string>
+	<key>Nothing planned. Add a task with the quick add shortcut.</key>
+	<string>Rien de prévu. Ajoutez une tâche avec le raccourci d’ajout rapide.</string>
+	<key>Notifications</key>
+	<string>Notifications</string>
+	<key>Notifications are off for Dayhand.</key>
+	<string>Les notifications de Dayhand sont désactivées.</string>
+	<key>Notifications need the app bundle (scripts/build-app.sh); swift run has none.</key>
+	<string>Les notifications exigent le paquet de l’app (scripts/build-app.sh) ; swift run n’en a pas.</string>
+	<key>Now</key>
+	<string>Maintenant</string>
+	<key>Now, %@</key>
+	<string>Maintenant, %@</string>
+	<key>OK</key>
+	<string>OK</string>
+	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
+	<string>Sur un ordinateur connecté à votre serveur, lancez dayhand pair et saisissez le code affiché, ou ouvrez le lien qu’il imprime. Le code sert une fois, pendant 10 minutes.</string>
+	<key>Open Dayhand</key>
+	<string>Ouvrir Dayhand</string>
+	<key>Open System Settings</key>
+	<string>Ouvrir Réglages Système</string>
+	<key>Overdue (%lld)</key>
+	<string>En retard (%lld)</string>
+	<key>Pairing code</key>
+	<string>Code d’association</string>
+	<key>Preparing the update…</key>
+	<string>Préparation de la mise à jour…</string>
+	<key>Previews come before a release and may have rough edges.</key>
+	<string>Les préversions précèdent une version et peuvent être imparfaites.</string>
+	<key>Quick add</key>
+	<string>Ajout rapide</string>
+	<key>Quit</key>
+	<string>Quitter</string>
+	<key>Reading tasks failed: %@</key>
+	<string>Impossible de lire les tâches : %@</string>
+	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
+	<string>Les versions publiées sont signées et se mettent à jour seules ; une copie compilée sur ce Mac, non.</string>
+	<key>Reminders</key>
+	<string>Rappels</string>
+	<key>Reminders and the morning summary are on.</key>
+	<string>Les rappels et le résumé du matin sont activés.</string>
+	<key>Remove %@</key>
+	<string>Supprimer : %@</string>
+	<key>Remove the time</key>
+	<string>Retirer l’heure</string>
+	<key>Repeat</key>
+	<string>Répétition</string>
+	<key>Restart Dayhand</key>
+	<string>Redémarrer Dayhand</string>
+	<key>Restore</key>
+	<string>Restaurer</string>
+	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
+	<string>Retour l’ajoute pour aujourd’hui ; une date à la fin, en anglais (tomorrow 9am, fri, 23 oct), fixe le jour.</string>
+	<key>Save Note</key>
+	<string>Enregistrer la note</string>
+	<key>Select a task to see its details.</key>
+	<string>Sélectionnez une tâche pour voir ses détails.</string>
+	<key>Server</key>
+	<string>Serveur</string>
+	<key>Server address</key>
+	<string>Adresse du serveur</string>
+	<key>Shortcut from any app:</key>
+	<string>Raccourci depuis n’importe quelle app :</string>
+	<key>Shows the tasks done today</key>
+	<string>Affiche les tâches terminées aujourd’hui</string>
+	<key>Something answered at that address, but it is not a Dayhand server.</key>
+	<string>Quelque chose répond à cette adresse, mais ce n’est pas un serveur Dayhand.</string>
+	<key>Start with: %@</key>
+	<string>Commencez par : %@</string>
+	<key>Status</key>
+	<string>Statut</string>
+	<key>Sync Now</key>
+	<string>Synchroniser maintenant</string>
+	<key>System (%@)</key>
+	<string>Système (%@)</string>
+	<key>Task</key>
+	<string>Tâche</string>
+	<key>That is not a date.</key>
+	<string>Ce n’est pas une date.</string>
+	<key>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</key>
+	<string>Ce n’est pas une adresse de serveur. Elle ressemble à https://&lt;name&gt;.convex.site.</string>
+	<key>That is not a time.</key>
+	<string>Ce n’est pas une heure.</string>
+	<key>That version is older than this one, so it was not installed.</key>
+	<string>Cette version est plus ancienne que celle-ci ; elle n’a donc pas été installée.</string>
+	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
+	<string>Le trousseau n’a pas pu être lu ; Dayhand démarre donc sans serveur.</string>
+	<key>The change could not be saved: %@</key>
+	<string>La modification n’a pas pu être enregistrée : %@</string>
+	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
+	<string>Le code est faux, déjà utilisé ou expiré. Relancez dayhand pair pour en obtenir un nouveau.</string>
+	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
+	<string>La mise à jour téléchargée n’a pas passé la vérification de signature ; elle n’a donc pas été installée.</string>
+	<key>The list of new versions could not be read. Try again later.</key>
+	<string>La liste des nouvelles versions n’a pas pu être lue. Réessayez plus tard.</string>
+	<key>The note is too long.</key>
+	<string>La note est trop longue.</string>
+	<key>The reminders are not valid.</key>
+	<string>Les rappels ne sont pas valides.</string>
+	<key>The repeat rule is not valid.</key>
+	<string>La règle de répétition n’est pas valide.</string>
+	<key>The server cannot be reached. Check the address and the network.</key>
+	<string>Le serveur est injoignable. Vérifiez l’adresse et le réseau.</string>
+	<key>The server has a problem.</key>
+	<string>Le serveur a un problème.</string>
+	<key>The server has a problem. Try again later.</key>
+	<string>Le serveur a un problème. Réessayez plus tard.</string>
+	<key>The server signed this Mac out. Connect again with a new code; your tasks stay here.</key>
+	<string>Le serveur a déconnecté ce Mac. Reconnectez-vous avec un nouveau code ; vos tâches restent ici.</string>
+	<key>The sign-in could not be removed from the Keychain: %@</key>
+	<string>La connexion n’a pas pu être retirée du trousseau : %@</string>
+	<key>The sign-in could not be saved in the Keychain.</key>
+	<string>La connexion n’a pas pu être enregistrée dans le trousseau.</string>
+	<key>The update could not be downloaded. Check the connection and try again.</key>
+	<string>La mise à jour n’a pas pu être téléchargée. Vérifiez la connexion et réessayez.</string>
+	<key>The update could not be installed. Make sure Dayhand is in Applications, then try again.</key>
+	<string>La mise à jour n’a pas pu être installée. Vérifiez que Dayhand est dans Applications, puis réessayez.</string>
+	<key>The update did not finish</key>
+	<string>La mise à jour n’a pas abouti</string>
+	<key>The update did not finish. Try again later.</key>
+	<string>La mise à jour n’a pas abouti. Réessayez plus tard.</string>
+	<key>The update to %@ did not install, so this version is still running. Try updating again.</key>
+	<string>La mise à jour vers la %@ ne s’est pas installée ; cette version tourne toujours. Réessayez.</string>
+	<key>The update was canceled.</key>
+	<string>La mise à jour a été annulée.</string>
+	<key>There are too many checklist items, or one is too long.</key>
+	<string>La liste a trop d’éléments, ou l’un est trop long.</string>
+	<key>There are too many labels, or one is too long.</key>
+	<string>Il y a trop d’étiquettes, ou l’une est trop longue.</string>
+	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
+	<string>Ces valeurs viennent des réglages du serveur, pour que le téléphone, l’agent et ce Mac soient d’accord. Modifiez-les sur le téléphone ou avec dayhand.</string>
+	<key>This Mac</key>
+	<string>Ce Mac</string>
+	<key>This version</key>
+	<string>Cette version</string>
+	<key>Tick %@</key>
+	<string>Cocher : %@</string>
+	<key>Time zone</key>
+	<string>Fuseau horaire</string>
+	<key>Title</key>
+	<string>Titre</string>
+	<key>To Today</key>
+	<string>À aujourd’hui</string>
+	<key>To Tomorrow</key>
+	<string>À demain</string>
+	<key>To do</key>
+	<string>À faire</string>
+	<key>To today</key>
+	<string>À aujourd’hui</string>
+	<key>Today</key>
+	<string>Aujourd’hui</string>
+	<key>Tomorrow</key>
+	<string>Demain</string>
+	<key>Too many wrong codes on this server. Try again in %@.</key>
+	<string>Trop de codes erronés sur ce serveur. Réessayez dans %@.</string>
+	<key>Try Again</key>
+	<string>Réessayer</string>
+	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
+	<string>Tapez un titre puis, à la fin, un jour ou une heure en anglais : « Call the accountant fri 2pm », « Pay rent the 1st », « Plan next week ».</string>
+	<key>Unarchive</key>
+	<string>Désarchiver</string>
+	<key>Untick %@</key>
+	<string>Décocher : %@</string>
+	<key>Update and Relaunch</key>
+	<string>Mettre à jour et relancer</string>
+	<key>Updates</key>
+	<string>Mises à jour</string>
+	<key>Updates aren’t available in this build: it has no secure address to check for new versions.</key>
+	<string>Les mises à jour ne sont pas disponibles dans cette version : elle n’a pas d’adresse sûre où chercher les nouvelles versions.</string>
+	<key>Updates aren’t available in this build: it runs without an app bundle (swift run).</key>
+	<string>Les mises à jour ne sont pas disponibles dans cette version : elle tourne sans paquet d’app (swift run).</string>
+	<key>Updates aren’t available in this build: it was built without the update signing key.</key>
+	<string>Les mises à jour ne sont pas disponibles dans cette version : elle a été compilée sans la clé de signature des mises à jour.</string>
+	<key>Updates aren’t available in this build: the updater could not start.</key>
+	<string>Les mises à jour ne sont pas disponibles dans cette version : le système de mise à jour n’a pas pu démarrer.</string>
+	<key>Version %@</key>
+	<string>Version %@</string>
+	<key>Version %@ is the newest.</key>
+	<string>La version %@ est la plus récente.</string>
+	<key>Version %@.</key>
+	<string>Version %@.</string>
+	<key>Weekly</key>
+	<string>Toutes les semaines</string>
+	<key>When</key>
+	<string>Quand</string>
+	<key>Where I stopped</key>
+	<string>Où je me suis arrêté</string>
+	<key>Where I stopped: %@</key>
+	<string>Où je me suis arrêté : %@</string>
+	<key>Where I stopped: add a note in the details</key>
+	<string>Où je me suis arrêté : ajoutez une note dans les détails</string>
+	<key>Work on It Now</key>
+	<string>M’y mettre maintenant</string>
+	<key>Working on it now</key>
+	<string>J’y travaille maintenant</string>
+	<key>Yearly</key>
+	<string>Tous les ans</string>
+	<key>Yesterday</key>
+	<string>Hier</string>
+	<key>You have %@.</key>
+	<string>Vous avez la %@.</string>
+	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
+	<string>Votre plan de la journée, hors ligne d’abord. Sous licence Apache 2.0.</string>
+	<key>a few minutes</key>
+	<string>quelques minutes</string>
+	<key>after completion</key>
+	<string>après achèvement</string>
+	<key>and %lld more</key>
+	<string>et %lld de plus</string>
+	<key>at the due time</key>
+	<string>à l’heure d’échéance</string>
+	<key>development</key>
+	<string>développement</string>
+	<key>from “%@”</key>
+	<string>d’après « %@ »</string>
+	<key>home, work</key>
+	<string>maison, travail</string>
+	<key>next step</key>
+	<string>prochaine étape</string>
+	<key>now</key>
+	<string>maintenant</string>
+	<key>on %@</key>
+	<string>le %@</string>
+	<key>on %@ number %lld from the end</key>
+	<string>le %2$lldᵉ %1$@ avant la fin</string>
+	<key>on day %lld</key>
+	<string>le %lld</string>
+	<key>on the fifth Friday</key>
+	<string>le cinquième vendredi</string>
+	<key>on the fifth Monday</key>
+	<string>le cinquième lundi</string>
+	<key>on the fifth Saturday</key>
+	<string>le cinquième samedi</string>
+	<key>on the fifth Sunday</key>
+	<string>le cinquième dimanche</string>
+	<key>on the fifth Thursday</key>
+	<string>le cinquième jeudi</string>
+	<key>on the fifth Tuesday</key>
+	<string>le cinquième mardi</string>
+	<key>on the fifth Wednesday</key>
+	<string>le cinquième mercredi</string>
+	<key>on the first Friday</key>
+	<string>le premier vendredi</string>
+	<key>on the first Monday</key>
+	<string>le premier lundi</string>
+	<key>on the first Saturday</key>
+	<string>le premier samedi</string>
+	<key>on the first Sunday</key>
+	<string>le premier dimanche</string>
+	<key>on the first Thursday</key>
+	<string>le premier jeudi</string>
+	<key>on the first Tuesday</key>
+	<string>le premier mardi</string>
+	<key>on the first Wednesday</key>
+	<string>le premier mercredi</string>
+	<key>on the fourth Friday</key>
+	<string>le quatrième vendredi</string>
+	<key>on the fourth Monday</key>
+	<string>le quatrième lundi</string>
+	<key>on the fourth Saturday</key>
+	<string>le quatrième samedi</string>
+	<key>on the fourth Sunday</key>
+	<string>le quatrième dimanche</string>
+	<key>on the fourth Thursday</key>
+	<string>le quatrième jeudi</string>
+	<key>on the fourth Tuesday</key>
+	<string>le quatrième mardi</string>
+	<key>on the fourth Wednesday</key>
+	<string>le quatrième mercredi</string>
+	<key>on the last Friday</key>
+	<string>le dernier vendredi</string>
+	<key>on the last Monday</key>
+	<string>le dernier lundi</string>
+	<key>on the last Saturday</key>
+	<string>le dernier samedi</string>
+	<key>on the last Sunday</key>
+	<string>le dernier dimanche</string>
+	<key>on the last Thursday</key>
+	<string>le dernier jeudi</string>
+	<key>on the last Tuesday</key>
+	<string>le dernier mardi</string>
+	<key>on the last Wednesday</key>
+	<string>le dernier mercredi</string>
+	<key>on the last day</key>
+	<string>le dernier jour</string>
+	<key>on the second Friday</key>
+	<string>le deuxième vendredi</string>
+	<key>on the second Monday</key>
+	<string>le deuxième lundi</string>
+	<key>on the second Saturday</key>
+	<string>le deuxième samedi</string>
+	<key>on the second Sunday</key>
+	<string>le deuxième dimanche</string>
+	<key>on the second Thursday</key>
+	<string>le deuxième jeudi</string>
+	<key>on the second Tuesday</key>
+	<string>le deuxième mardi</string>
+	<key>on the second Wednesday</key>
+	<string>le deuxième mercredi</string>
+	<key>on the third Friday</key>
+	<string>le troisième vendredi</string>
+	<key>on the third Monday</key>
+	<string>le troisième lundi</string>
+	<key>on the third Saturday</key>
+	<string>le troisième samedi</string>
+	<key>on the third Sunday</key>
+	<string>le troisième dimanche</string>
+	<key>on the third Thursday</key>
+	<string>le troisième jeudi</string>
+	<key>on the third Tuesday</key>
+	<string>le troisième mardi</string>
+	<key>on the third Wednesday</key>
+	<string>le troisième mercredi</string>
+	<key>until %@</key>
+	<string>jusqu’au %@</string>
+</dict>
+</plist>

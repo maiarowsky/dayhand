@@ -1,3 +1,4 @@
+import DayhandLocalization
 import Foundation
 
 /**
@@ -31,13 +32,13 @@ public struct UpdateConfiguration: Equatable, Sendable {
         public var message: String {
             switch self {
             case .noBundle:
-                return "Updates aren’t available in this build: it runs without an app bundle (swift run)."
+                return tr("Updates aren’t available in this build: it runs without an app bundle (swift run).")
             case .noKey, .invalidKey:
-                return "Updates aren’t available in this build: it was built without the update signing key."
+                return tr("Updates aren’t available in this build: it was built without the update signing key.")
             case .noFeed, .insecureFeed:
-                return "Updates aren’t available in this build: it has no secure address to check for new versions."
+                return tr("Updates aren’t available in this build: it has no secure address to check for new versions.")
             case .updaterFailed:
-                return "Updates aren’t available in this build: the updater could not start."
+                return tr("Updates aren’t available in this build: the updater could not start.")
             }
         }
     }

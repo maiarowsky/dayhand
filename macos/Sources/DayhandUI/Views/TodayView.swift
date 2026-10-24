@@ -1,4 +1,5 @@
 import DayhandCore
+import DayhandLocalization
 import SwiftUI
 
 /// The main window: Today on the left, the selected task's details on the right.
@@ -15,23 +16,23 @@ struct MainWindow: View {
                 TaskDetailView(task: task)
                     .id(task.localId)
             } else {
-                Text("Select a task to see its details.")
+                Text(tr("Select a task to see its details."))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .toolbar {
             ToolbarItem {
-                Button { QuickAddPanel.shared.show() } label: { Label("New Task", systemImage: "plus") }
-                    .help("New task (⌘N, or the quick add shortcut from any app)")
+                Button { QuickAddPanel.shared.show() } label: { Label(tr("New Task"), systemImage: "plus") }
+                    .help(tr("New task (⌘N, or the quick add shortcut from any app)"))
             }
         }
         .sheet(isPresented: $model.showConnect) {
             ConnectView()
                 .environmentObject(model)
         }
-        .alert("Dayhand", isPresented: Binding(get: { model.alert != nil }, set: { if !$0 { model.alert = nil } })) {
-            Button("OK") { model.alert = nil }
+        .alert(Text(verbatim: "Dayhand"), isPresented: Binding(get: { model.alert != nil }, set: { if !$0 { model.alert = nil } })) {
+            Button(tr("OK")) { model.alert = nil }
         } message: {
             Text(model.alert ?? "")
         }
@@ -70,17 +71,17 @@ struct TodayView: View {
                                 TaskRow(task: task, today: s.date, overdue: true).tag(task.localId)
                             }
                         } header: {
-                            Text("Overdue (\(s.overdue.count))").foregroundStyle(Color.overdue)
+                            Text(tr("Overdue (\(s.overdue.count))")).foregroundStyle(Color.overdue)
                         }
                     }
                     if let now = s.now {
-                        Section("Now") {
+                        Section(tr("Now")) {
                             NowRow(task: now, today: s.date).tag(now.localId)
                         }
                     }
-                    Section("Today") {
+                    Section(tr("Today")) {
                         if s.today.isEmpty {
-                            Text(s.overdue.isEmpty && s.now == nil ? "Nothing left for today." : "Nothing else planned for today.")
+                            Text(s.overdue.isEmpty && s.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today."))
                                 .foregroundStyle(.secondary)
                         }
                         ForEach(s.today) { task in
@@ -96,17 +97,17 @@ struct TodayView: View {
                             }
                         } header: {
                             Button { showDone.toggle() } label: {
-                                Label("Done (\(s.done.count))", systemImage: showDone ? "chevron.down" : "chevron.right")
+                                Label(tr("Done (\(s.done.count))"), systemImage: showDone ? "chevron.down" : "chevron.right")
                             }
                             .buttonStyle(.plain)
-                            .accessibilityHint(showDone ? "Hides the tasks done today" : "Shows the tasks done today")
+                            .accessibilityHint(showDone ? tr("Hides the tasks done today") : tr("Shows the tasks done today"))
                         }
                     }
                 }
                 .listStyle(.sidebar)
             }
         }
-        .navigationTitle("Today")
+        .navigationTitle(tr("Today"))
     }
 }
 
@@ -121,7 +122,7 @@ struct StatusLine: View {
                 Text(text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 if model.credential == nil {
-                    Button("Connect…") { model.showConnect = true }.controlSize(.small)
+                    Button(tr("Connect…")) { model.showConnect = true }.controlSize(.small)
                 }
             }
             .padding(.horizontal, 12)
@@ -145,8 +146,8 @@ struct EmptyToday: View {
         VStack(spacing: 12) {
             Spacer()
             Image(systemName: "sun.max").font(.system(size: 36)).foregroundStyle(.secondary)
-            Text("Nothing planned for today.").font(.title3)
-            Button("Add Task") { QuickAddPanel.shared.show() }
+            Text(tr("Nothing planned for today.")).font(.title3)
+            Button(tr("Add Task")) { QuickAddPanel.shared.show() }
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -175,7 +176,7 @@ struct TaskRow: View {
             }
             Spacer(minLength: 4)
             if overdue {
-                Button("To today") { model.moveToToday(task.localId) }
+                Button(tr("To today")) { model.moveToToday(task.localId) }
                     .buttonStyle(.borderless)
                     .controlSize(.small)
             }
@@ -190,7 +191,7 @@ struct TaskRow: View {
         if overdue, let due = Formatting.due(task, today: today) {
             parts.append(due)
         } else if let time = task.dueTime, task.dueDate == today {
-            parts.append(time)
+            parts.append(DateText.time(time))
         }
         if task.repeat != nil { parts.append("↻") }
         if !task.checklist.isEmpty { parts.append("\(task.checklist.filter(\.done).count)/\(task.checklist.count)") }
@@ -210,12 +211,12 @@ struct NowRow: View {
             DoneBox(task: task)
             VStack(alignment: .leading, spacing: 2) {
                 Text(task.title).fontWeight(.semibold).foregroundStyle(.primary)
-                Text(task.resumeNote.map { "Where I stopped: \($0)" } ?? "Where I stopped: add a note in the details")
+                Text(task.resumeNote.map { tr("Where I stopped: \($0)") } ?? tr("Where I stopped: add a note in the details"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 4)
-            Button("Not now") { model.clearNow() }
+            Button(tr("Not now")) { model.clearNow() }
                 .buttonStyle(.borderless)
                 .controlSize(.small)
         }
@@ -235,7 +236,7 @@ struct DoneBox: View {
                 .foregroundStyle(task.status == .done ? Color.accentColor : .secondary)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(task.status == .done ? "Mark as not done" : "Mark as done")
+        .accessibilityLabel(task.status == .done ? tr("Mark as not done") : tr("Mark as done"))
     }
 }
 
@@ -245,19 +246,19 @@ struct TaskMenu: View {
     let task: TaskItem
 
     var body: some View {
-        Button(task.status == .done ? "Mark as Not Done" : "Mark as Done") { model.toggleDone(task) }
+        Button(task.status == .done ? tr("Mark as Not Done") : tr("Mark as Done")) { model.toggleDone(task) }
         if task.status != .done {
             if task.isNow {
-                Button("Not Now") { model.clearNow() }
+                Button(tr("Not Now")) { model.clearNow() }
             } else {
-                Button("Work on It Now") { model.setNow(task.localId) }
+                Button(tr("Work on It Now")) { model.setNow(task.localId) }
             }
             Divider()
-            Button("To Today") { model.moveToToday(task.localId) }
-            Button("To Tomorrow") { model.moveToTomorrow(task.localId) }
+            Button(tr("To Today")) { model.moveToToday(task.localId) }
+            Button(tr("To Tomorrow")) { model.moveToTomorrow(task.localId) }
         }
         Divider()
-        Button("Archive") { model.archive(task.localId) }
-        Button("Move to Trash") { model.moveToTrash(task.localId) }
+        Button(tr("Archive")) { model.archive(task.localId) }
+        Button(tr("Move to Trash")) { model.moveToTrash(task.localId) }
     }
 }

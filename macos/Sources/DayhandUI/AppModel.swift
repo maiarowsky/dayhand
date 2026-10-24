@@ -1,6 +1,8 @@
 import AppKit
 import DayhandCore
+import DayhandLocalization
 import Foundation
+import os
 import SwiftUI
 
 /**
@@ -27,6 +29,10 @@ final class AppModel: ObservableObject {
     @Published var useOffline: Bool {
         didSet { defaults.set(useOffline, forKey: Keys.useOffline) }
     }
+    /// "system" or one of `Localization.supported`, as picked in Settings.
+    @Published private(set) var languageChoice: String
+    /// The language Dayhand speaks now; the windows are drawn again when it changes.
+    @Published private(set) var language: String
 
     let repository: TaskRepository
     let notifications: NotificationScheduler?
@@ -39,17 +45,28 @@ final class AppModel: ObservableObject {
     private var engine: SyncEngine?
     private var clockTimer: Timer?
     private var planTask: Task<Void, Never>?
+    private let launchLanguage: String
 
     enum Keys {
         static let useOffline = "useOffline"
         static let lastServer = "lastServerUrl"
+        static let language = "language"
+        /// macOS's own per-app language, which the menus that come with AppKit follow from the next start.
+        static let appleLanguages = "AppleLanguages"
     }
+
+    static let systemLanguageChoice = "system"
 
     init(_ environment: AppEnvironment) {
         let box = engineBox
         repository = TaskRepository(database: environment.database, onOutboxChanged: { box.poke() })
         credentials = environment.credentials
         defaults = environment.defaults
+        let choice = environment.defaults.string(forKey: Keys.language) ?? Self.systemLanguageChoice
+        let language = Self.applyLanguage(choice)
+        languageChoice = choice
+        self.language = language
+        launchLanguage = language
         notifications = environment.notifications ? NotificationScheduler() : nil
         useOffline = environment.defaults.bool(forKey: Keys.useOffline)
         observe()
@@ -59,7 +76,7 @@ final class AppModel: ObservableObject {
         do {
             credential = try credentials.load()
         } catch {
-            alert = "The Keychain could not be read, so Dayhand starts without a server."
+            alert = tr("The Keychain could not be read, so Dayhand starts without a server.")
         }
         if let credential {
             startSession(credential)
@@ -84,7 +101,7 @@ final class AppModel: ObservableObject {
                     self?.planNotifications()
                 }
             } catch {
-                self?.alert = "Reading tasks failed: \(error)"
+                self?.alert = tr("Reading tasks failed: \(String(describing: error))")
             }
         }
         Task { @MainActor [weak self] in
@@ -171,11 +188,82 @@ final class AppModel: ObservableObject {
             do {
                 try await action(repository)
             } catch RepositoryError.invalid(let message) {
-                self?.alert = message.prefix(1).uppercased() + message.dropFirst() + "."
+                self?.alert = message
             } catch {
-                self?.alert = "The change could not be saved: \(error)"
+                self?.alert = tr("The change could not be saved: \(String(describing: error))")
             }
         }
+    }
+
+    // MARK: Language
+
+    /// The language "system" stands for: the first of the Mac's languages Dayhand speaks.
+    var systemLanguage: String { Localization.resolve(choice: nil, preferredLanguages: Self.macLanguages()) }
+
+    /// The menus that come with macOS still speak the language Dayhand started in.
+    var languageNeedsRestart: Bool { language != launchLanguage }
+
+    /// Only an app bundle can open itself again.
+    var canRelaunch: Bool { Bundle.main.bundleIdentifier != nil }
+
+    /// Speaks `choice` ("system" or a language) at once: the windows are drawn again and the notifications planned
+    /// again in it. macOS's menus follow at the next start.
+    func chooseLanguage(_ choice: String) {
+        guard choice != languageChoice else { return }
+        defaults.set(choice, forKey: Keys.language)
+        if canRelaunch {
+            if choice == Self.systemLanguageChoice {
+                defaults.removeObject(forKey: Keys.appleLanguages)
+            } else {
+                defaults.set([choice], forKey: Keys.appleLanguages)
+            }
+        }
+        languageChoice = choice
+        language = Self.applyLanguage(choice)
+        notifications?.registerCategories()
+        planNotifications()
+    }
+
+    /// Quits and opens the app again once this process has ended, so the new language reaches every menu.
+    func relaunch() {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = [
+            "-c", "while kill -0 \"$1\" 2>/dev/null; do sleep 0.2; done; /usr/bin/open \"$2\"",
+            "relaunch", String(ProcessInfo.processInfo.processIdentifier), Bundle.main.bundlePath,
+        ]
+        do {
+            try process.run()
+            NSApp.terminate(nil)
+        } catch {
+            alert = tr("Dayhand could not restart. Quit it and open it again.")
+        }
+    }
+
+    /**
+     * Makes `choice` the language of the texts and returns the language it is. `DAYHAND_LANG` (a language code)
+     * overrides the choice, for trying the app in a language without changing Settings. The Mac's languages come from
+     * the global preferences, which an earlier choice in this app does not mask.
+     */
+    static func applyLanguage(_ choice: String) -> String {
+        let forced = ProcessInfo.processInfo.environment["DAYHAND_LANG"].flatMap(Localization.match)
+        let picked = forced ?? (choice == systemLanguageChoice ? nil : choice)
+        let language = Localization.resolve(choice: picked, preferredLanguages: macLanguages())
+        let localization = picked == nil
+            ? Localization(language: language, locale: .autoupdatingCurrent)
+            : Localization(language: language, region: Locale.current.region?.identifier)
+        Localization.use(localization)
+        // One line in the system log, so a running app's language can be checked: log show --predicate 'subsystem == "io.github.maiarowsky.dayhand"'
+        Logger(subsystem: "io.github.maiarowsky.dayhand", category: "language")
+            .notice("Texts in \(language, privacy: .public) (choice \(choice, privacy: .public)): \(tr("Today"), privacy: .public)")
+        return language
+    }
+
+    static func macLanguages() -> [String] {
+        let global = CFPreferencesCopyValue(
+            Keys.appleLanguages as CFString, kCFPreferencesAnyApplication, kCFPreferencesCurrentUser, kCFPreferencesAnyHost
+        )
+        return global as? [String] ?? Locale.preferredLanguages
     }
 
     // MARK: Server
@@ -205,7 +293,7 @@ final class AppModel: ObservableObject {
         do {
             try credentials.delete()
         } catch {
-            alert = "The sign-in could not be removed from the Keychain: \(error)"
+            alert = tr("The sign-in could not be removed from the Keychain: \(String(describing: error))")
         }
         credential = nil
         status = .notConnected

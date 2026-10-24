@@ -1,11 +1,13 @@
 // swift-tools-version:6.2
 // Dayhand for macOS: the SwiftUI screens (DayhandUI, started by the Dayhand executable) on a UI-free core
 // (DayhandCore) that holds the task model, the date and repeat rules, the local database, the outbox and the server
-// protocol, and the app updates on Sparkle (DayhandUpdates). `swift test` runs the core's and the updates' tests.
+// protocol, the app updates on Sparkle (DayhandUpdates) and the texts in eight languages (DayhandLocalization).
+// `swift test` runs the core's, the updates' and the texts' tests.
 import PackageDescription
 
 let package = Package(
     name: "Dayhand",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     products: [
         .executable(name: "Dayhand", targets: ["Dayhand"]),
@@ -18,19 +20,27 @@ let package = Package(
         .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
     ],
     targets: [
+        // The string catalog is the source; SwiftPM does not compile catalogs, so the package ships the .lproj folders
+        // that scripts/compile-strings.sh makes from it.
+        .target(
+            name: "DayhandLocalization",
+            exclude: ["Localizable.xcstrings"],
+            resources: [.process("Resources")]
+        ),
         .target(
             name: "DayhandCore",
-            dependencies: [.product(name: "GRDB", package: "GRDB.swift")]
+            dependencies: ["DayhandLocalization", .product(name: "GRDB", package: "GRDB.swift")]
         ),
         // macOS only, so the core stays free of it for an iOS app later.
         .target(
             name: "DayhandUpdates",
-            dependencies: [.product(name: "Sparkle", package: "Sparkle")]
+            dependencies: ["DayhandLocalization", .product(name: "Sparkle", package: "Sparkle")]
         ),
         .target(
             name: "DayhandUI",
             dependencies: [
                 "DayhandCore",
+                "DayhandLocalization",
                 "DayhandUpdates",
                 .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
             ]
@@ -46,6 +56,10 @@ let package = Package(
         .testTarget(
             name: "DayhandCoreTests",
             dependencies: ["DayhandCore"]
+        ),
+        .testTarget(
+            name: "DayhandLocalizationTests",
+            dependencies: ["DayhandLocalization", "DayhandCore", "DayhandUpdates"]
         ),
         .testTarget(
             name: "DayhandUpdatesTests",
