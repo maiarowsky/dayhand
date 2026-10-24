@@ -1,9 +1,15 @@
 {
   "name": "dayhand",
   "version": "0.14.0",
-  "private": true,
   "description": "dayhand: the Dayhand command line client for people and agents",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maiarowsky/dayhand.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/maiarowsky/dayhand/tree/main/cli#readme",
+  "bugs": "https://github.com/maiarowsky/dayhand/issues",
   "type": "module",
   "bin": {
     "dayhand": "dist/bin/dayhand.js",

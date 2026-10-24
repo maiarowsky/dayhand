@@ -68,9 +68,11 @@ The repository moved to `maiarowsky/dayhand`; links to `maiarowsky/helm` redirec
 
 ### `dayhand: command not found`
 
-`npm link` puts the command in npm's global folder. Check that `npm prefix -g` followed by `/bin` is on
-your PATH, or run `node cli/dist/bin/dayhand.js` from the checkout. Where `npm link` needs administrator
-rights, use that path instead of `sudo`.
+`npm i -g dayhand` (and `npm link` in a checkout) puts the command in npm's global folder. Check that
+`npm prefix -g` followed by `/bin` is on your PATH (on Windows, `npm prefix -g` itself). Where a global
+install needs administrator rights, point npm at a folder of your own (`npm config set prefix
+~/.npm-global`, then add `~/.npm-global/bin` to your PATH) instead of using `sudo`, or install with
+Homebrew. In a checkout, `node cli/dist/bin/dayhand.js` also runs it.
 
 ### `dayhand` says there is no key (exit 3)
 

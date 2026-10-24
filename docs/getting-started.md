@@ -10,17 +10,24 @@ same local server and plan. On Windows, use `dayhand server deploy` in step 2 an
 server for the whole walkthrough; the local server is for macOS and Linux only. The shell examples
 use a POSIX shell (for example, Git Bash on Windows).
 
-## 1. Build the command line
-
-No package is published yet, so build `dayhand` from the repository:
+## 1. Install the command line
 
 ```sh
-git clone https://github.com/maiarowsky/dayhand.git dayhand
-cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+npm i -g dayhand
 ```
 
-`npm link` puts `dayhand` and its short name `dh` on your PATH; `npm unlink -g dayhand` removes them.
-`dayhand --version` prints the version. Other ways to install, and the state of each: [Install](install.md).
+This puts `dayhand` and its short name `dh` on your PATH; `npm rm -g dayhand` removes them. With
+Homebrew, `brew install maiarowsky/tap/dayhand` does the same. `dayhand --version` prints the version.
+Before the first release, build it from source instead; every way to install, and the state of each:
+[Install](install.md).
+
+The server is deployed from a copy of the repository (nothing to build), so get one and stay in it for
+the next steps:
+
+```sh
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand
+```
 
 ## 2. Start your own server
 

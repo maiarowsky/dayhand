@@ -1,13 +1,12 @@
-# Template of the Homebrew formula for dayhand, for a tap repository
-# (<owner>/homebrew-dayhand, file Formula/dayhand.rb). Fill in after `npm publish`:
-# the tarball's SHA-256 (docs/release.md); with a scoped package name, also `url`
-# (.../@<scope>/dayhand/-/dayhand-<version>.tgz). release-please keeps the version current.
-# Nothing is published yet.
+# Homebrew formula for dayhand, kept here and copied into the tap maiarowsky/homebrew-tap
+# (file Formula/dayhand.rb), so that `brew install maiarowsky/tap/dayhand` works. It installs the
+# package from the npm registry; after each `npm publish`, set `sha256` to the checksum of that
+# tarball (docs/release.md). release-please keeps the version in `url` current.
 class Dayhand < Formula
   desc "Command-line client for the Dayhand task manager, for people and agents"
-  homepage "https://github.com/maiarowsky/helm"
+  homepage "https://github.com/maiarowsky/dayhand"
   url "https://registry.npmjs.org/dayhand/-/dayhand-0.14.0.tgz" # x-release-please-version
-  sha256 "REPLACE_WITH_THE_SHA256_OF_THE_NPM_TARBALL"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000" # the npm tarball's, after publishing
   license "Apache-2.0"
 
   depends_on "node"

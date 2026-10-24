@@ -69,7 +69,7 @@ Create a personal API key (shown once) for the app user ${ISSUER}|me:
 
 Then:
   export DAYHAND_URL=${backend.siteUrl} DAYHAND_API_KEY=<key>
-  dayhand today      # the CLI in cli/ (npm ci --ignore-scripts && npm run build && npm link)
+  dayhand today      # the CLI: npm i -g dayhand (docs/install.md)
   dayhand pair       # pairing code for the phone app (same user)
 
 Press Ctrl+C to stop.`);

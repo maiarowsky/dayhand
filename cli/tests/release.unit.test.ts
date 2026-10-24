@@ -60,16 +60,17 @@ describe("release files", () => {
   test("the CLI has its own version: manifest, package.json, lockfile and Homebrew formula agree", () => {
     expect(JSON.parse(read(".release-please-manifest.json"))).toEqual({ cli: pkg.version });
     expect(JSON.parse(read("cli/package-lock.json")).version).toBe(pkg.version);
-    expect(read("packaging/homebrew/dayhand.rb")).toContain(`/dayhand-${pkg.version}.tgz" # x-release-please-version`);
+    expect(read("packaging/homebrew/dayhand.rb")).toContain(`url "https://registry.npmjs.org/${pkg.name}/-/dayhand-${pkg.version}.tgz" # x-release-please-version`);
     const config = JSON.parse(read("release-please-config.json"));
     expect(Object.keys(config.packages)).toEqual(["cli"]);
     expect(config.packages.cli).toMatchObject({ component: "dayhand", "release-type": "node" });
   });
 
-  test("the package ships the binary and the man page, and stays private until the maintainer's word", () => {
+  test("the package ships the binary and the man page, and names the public repository", () => {
+    expect(pkg).not.toHaveProperty("private");
     expect(pkg).toMatchObject({
       name: "dayhand",
-      private: true,
+      repository: { type: "git", url: "git+https://github.com/maiarowsky/dayhand.git", directory: "cli" },
       // dh is the short name; hlm, the old one, warns until 1.0 removes it.
       bin: { dayhand: "dist/bin/dayhand.js", dh: "dist/bin/dayhand.js", hlm: "dist/bin/hlm.js" },
       man: ["./man/dayhand.1", "./man/dh.1"],
@@ -81,7 +82,8 @@ describe("release files", () => {
   test("the publish check refuses a private package, a wrong tag, no repository and an old npm", () => {
     const ready = { name: "@x/dayhand", version: "1.2.3", repository: { url: "git+https://github.com/x/helm.git" } };
     expect(releaseProblems(ready, "dayhand-v1.2.3", "11.6.0")).toEqual([]);
-    expect(releaseProblems(pkg, `dayhand-v${pkg.version}`, "11.6.0")).toEqual([expect.stringMatching(/"private": true/), expect.stringMatching(/repository/)]);
+    expect(releaseProblems(pkg, `dayhand-v${pkg.version}`, "11.6.0")).toEqual([]);
+    expect(releaseProblems({ ...ready, private: true }, "dayhand-v1.2.3", "11.6.0")).toEqual([expect.stringMatching(/"private": true/)]);
     expect(releaseProblems(ready, "dayhand-v1.2.4", "11.6.0")).toEqual([expect.stringMatching(/does not match/)]);
     expect(releaseProblems({ ...ready, repository: "https://github.com/<owner>/helm" }, "dayhand-v1.2.3")).toEqual([expect.stringMatching(/repository/)]);
     expect(releaseProblems(ready, "dayhand-v1.2.3", "11.5.0")).toEqual([expect.stringMatching(/trusted publishing/)]);

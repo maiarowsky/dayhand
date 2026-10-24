@@ -18,14 +18,11 @@ run on an Omarchy machine (see [Not checked](#not-checked)).
 omarchy pkg add nodejs npm          # or: sudo pacman -S nodejs npm
 ```
 
-`dayhand` is not on npm yet ([release.md](release.md)), so build it from a checkout of this
-repository:
+Then install `dayhand` and sign it in (before the first release, build it from source instead:
+[Install](install.md#from-source)):
 
 ```sh
-cd cli
-npm ci --ignore-scripts
-npm run build
-npm link                            # puts dayhand on the PATH
+npm i -g dayhand
 dayhand login --url https://<deployment>.convex.site
 ```
 

@@ -15,8 +15,7 @@ own (`/usr/bin/dh`), so type `dayhand` there. `hlm`, the name before Dayhand, st
 Requires Node.js 22.12 or newer; runs on macOS, Linux and Windows.
 
 ```sh
-npm ci --ignore-scripts
-npm run build                       # then `npm link` once to get `dayhand` and `dh` on the PATH
+npm i -g dayhand                    # or: brew install maiarowsky/tap/dayhand; without installing: npx dayhand
 dayhand login --url https://<deployment>.convex.site    # locally: http://127.0.0.1:3211
 dayhand                             # Today
 dayhand add Call the accountant --due "fri 2pm" -l home
@@ -24,6 +23,9 @@ dayhand list --due-before eow --search accountant
 dayhand ui                          # full screen: Today, board, week, trash (? lists the keys)
 source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help completion
 ```
+
+In a checkout, build and link it from this folder instead: `npm ci --ignore-scripts && npm run build && npm link`
+(also the way to get it before the first release; [every way to install](../docs/install.md)).
 
 For key creation, automatic sign-in during server setup, and credential storage, see
 [signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
@@ -81,7 +83,7 @@ tests/                unit tests (*.unit.test.ts) and tests against a real local
 (cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
 npm test                                      # builds, then runs everything
 npm run test:unit                             # pure tests only (dates, config, output, completion)
-npm pack                                      # a local tarball with dist/, the man page and LICENSE (not published)
+npm pack                                      # the tarball npm publishes: dist/, the man pages, README and LICENSE
 ```
 
 The tests never touch the real keychain or config folder: every run gets its own

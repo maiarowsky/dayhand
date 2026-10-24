@@ -424,7 +424,7 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
    ```sh
    npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}'
    export DAYHAND_URL=http://127.0.0.1:3211 DAYHAND_API_KEY=<key>
-   node ../cli/dist/bin/dayhand.js pair          # or dayhand pair, after npm link in cli/
+   node ../cli/dist/bin/dayhand.js pair          # or dayhand pair, with dayhand installed (docs/install.md)
    ```
 
    Optionally set your time zone:
