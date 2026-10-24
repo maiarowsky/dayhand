@@ -93,11 +93,6 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         }
     }
 
-    /// Every query sent for [path], e.g. `app:getTask`.
-    func queriesSent(_ path: String) -> Int {
-        lock.locked { requests.filter { $0.path == "/api/query" && $0.body["path"]?.string == path }.count }
-    }
-
     var allTasks: [JSONValue] { lock.locked { order.compactMap { tasks[$0] } } }
 
     func task(titled title: String) -> JSONValue? { allTasks.first { $0["title"]?.string == title } }

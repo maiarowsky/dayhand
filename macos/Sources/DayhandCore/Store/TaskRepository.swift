@@ -58,11 +58,6 @@ public final class TaskRepository: Sendable {
         ValueObservation.tracking { db in try OutboxOp.fetchCount(db) }.values(in: writer)
     }
 
-    /// The number of changes to one task still waiting for the server (not in its history yet), again after each change.
-    public func observePendingCount(of localId: String) -> AsyncValueObservation<Int> {
-        ValueObservation.tracking { db in try OutboxOp.filter(Column("taskLocalId") == localId).fetchCount(db) }.values(in: writer)
-    }
-
     /// The cached change history of a task the server knows, newest first.
     public func history(_ serverId: String) async throws -> [TaskEvent] {
         try await writer.read { db in try Self.history(db, serverId) }

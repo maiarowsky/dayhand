@@ -16,9 +16,8 @@ latest one below).
   (`app:getTask`) only when details open, when the connection recovers from offline, signed out or connecting
   to synced, and on explicit **Sync Now**. Ordinary sync polls and task-version changes neither refresh history
   nor cancel in-flight requests; there is no retry loop. It is kept in the local database, so cached history
-  shows offline too; without a cached copy, the details say history is unavailable offline. Changes still waiting to be sent are counted
-  above it, and a task made offline says its history starts once it reaches the server. Claim actions use an
-  actor-neutral label in all eight languages.
+  shows offline too; without a cached copy, the details say history is unavailable offline. A task made offline
+  says its history starts once it reaches the server. Claim actions use an actor-neutral label in all eight languages.
 
 ### Changed
 

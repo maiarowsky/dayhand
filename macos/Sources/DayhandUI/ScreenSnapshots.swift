@@ -182,7 +182,7 @@ public enum ScreenSnapshots {
         try await model.repository.apply(Snapshot(
             tasks: tasks, settings: ReminderSettings(timezone: zone, summaryTime: "07:00", reminderMinutes: [0, 15])
         ))
-        // Its history as the server last sent it, and one change of this Mac's still waiting to be sent.
+        // Its history as the server last sent it.
         guard let call = tasks.first(where: { $0.title == "Call the accountant" }) else { return }
         let minute: Int64 = 60_000
         try await model.repository.saveHistory(call.id, [

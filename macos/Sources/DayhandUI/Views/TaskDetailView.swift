@@ -147,7 +147,6 @@ struct TaskDetailView: View {
         .formStyle(.grouped)
         .navigationTitle(task.title)
         .task(id: task.serverId) { await history.watchHistory(task.serverId, in: model.repository) }
-        .task { await history.watchPending(task.localId, in: model.repository) }
         .task(id: HistoryModel.RefreshKey(serverId: task.serverId, revision: model.historyRefreshRevision)) {
             await history.refresh(task.serverId, with: model)
         }

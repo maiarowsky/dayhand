@@ -4,14 +4,12 @@ import SwiftUI
 
 /**
  * A task's change history for its details: the cached copy from the database (so it shows offline), fetched again
- * from the server when the details open, when the connection comes back and on Sync Now, and the number of the
- * task's changes still in the outbox, which the server's history does not have yet.
+ * from the server when the details open, when the connection comes back and on Sync Now.
  */
 @MainActor
 final class HistoryModel: ObservableObject {
     @Published private(set) var entries: [HistoryEntry] = []
     @Published private(set) var state: HistoryState = .loading
-    @Published private(set) var pending = 0
 
     /// What a fresh fetch depends on: the server id, and `AppModel.historyRefreshRevision`.
     struct RefreshKey: Hashable {
@@ -32,14 +30,6 @@ final class HistoryModel: ObservableObject {
         }
     }
 
-    func watchPending(_ localId: String, in repository: TaskRepository) async {
-        do {
-            for try await count in repository.observePendingCount(of: localId) { pending = count }
-        } catch {
-            // As above: only the view going away ends it.
-        }
-    }
-
     func refresh(_ serverId: String?, with model: AppModel) async {
         let next = await model.refreshHistory(serverId)
         guard !Task.isCancelled else { return }
@@ -47,7 +37,7 @@ final class HistoryModel: ObservableObject {
     }
 }
 
-/// Who changed what and when, newest first; changes still in the outbox are counted, not listed.
+/// Who changed what and when, newest first.
 struct HistorySection: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject var history: HistoryModel
@@ -55,9 +45,6 @@ struct HistorySection: View {
 
     var body: some View {
         Section(tr("History")) {
-            if history.pending > 0 {
-                Placeholder(text: tr("\(history.pending) changes wait to be sent; they show here after that."))
-            }
             if let text = HistoryText.placeholder(history.state, isEmpty: history.entries.isEmpty) {
                 Placeholder(text: text)
             }

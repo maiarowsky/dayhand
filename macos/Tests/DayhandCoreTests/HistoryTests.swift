@@ -62,7 +62,7 @@ struct HistoryEntryTests {
     }
 }
 
-/// The history against the fake server: fetched, cached, shown offline, and counted while changes wait.
+/// The history against the fake server: fetched, cached, shown offline.
 struct TaskHistorySyncTests {
     let clock = TestClock(utc("2026-10-22T09:00"))
     let server = FakeServer()
@@ -109,27 +109,6 @@ struct TaskHistorySyncTests {
         #expect(try await repo.history(serverId).map(\.action) == ["complete", "update", "create"])
         // No server connected at all: the same.
         #expect(await TaskHistorySync(repository: repo, runner: { nil }).refresh(serverId: serverId) == .cached)
-    }
-
-    @Test func aTaskMadeOfflineHasNoHistoryYetAndItsWaitingChangesAreCounted() async throws {
-        let (repo, engine, remote) = try setUp()
-        let history = TaskHistorySync(repository: repo, runner: { remote })
-        server.offline = true
-        let added = try await repo.add(title: "Written on a plane", dueDate: nil, dueTime: nil)
-        try await repo.rename(added.localId, to: "Written on a plane, renamed")
-        await engine.round()
-        #expect(await history.refresh(serverId: try await repo.task(added.localId)?.serverId) == .notOnServerYet)
-        #expect(server.queriesSent(RemoteJSON.queryTask) == 0)
-        var waiting = repo.observePendingCount(of: added.localId).makeAsyncIterator()
-        #expect(try await waiting.next() == 2)
-
-        server.offline = false
-        await engine.round()
-        var sent = repo.observePendingCount(of: added.localId).makeAsyncIterator()
-        #expect(try await sent.next() == 0)
-        let serverId = try #require(try await repo.task(added.localId)?.serverId)
-        #expect(await history.refresh(serverId: serverId) == .fresh)
-        #expect(try await repo.history(serverId).map(\.action) == ["update", "create"])
     }
 
     @Test func theServersCopyReplacesTheCacheAndGoesWithItsTask() async throws {

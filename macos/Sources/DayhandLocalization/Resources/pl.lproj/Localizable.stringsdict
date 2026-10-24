@@ -2,26 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>%lld changes wait to be sent; they show here after that.</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@value@</string>
-		<key>value</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>lld</string>
-			<key>few</key>
-			<string>%lld zmiany czekają na wysłanie; potem pojawią się tutaj.</string>
-			<key>many</key>
-			<string>%lld zmian czeka na wysłanie; potem pojawią się tutaj.</string>
-			<key>one</key>
-			<string>%lld zmiana czeka na wysłanie; potem pojawi się tutaj.</string>
-			<key>other</key>
-			<string>%lld zmiany czeka na wysłanie; potem pojawią się tutaj.</string>
-		</dict>
-	</dict>
 	<key>%lld days before</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

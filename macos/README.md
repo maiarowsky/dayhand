@@ -18,8 +18,8 @@ This version is the basic one (MVP):
   (a phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat, reminders
   and links are shown. A task in the trash is read-only until **Restore**.
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
-  by name) and when, newest first, each field from its old value to the new one, and how many of its changes still
-  wait to be sent. It is fetched with `app:getTask` and kept in the local database, so it shows offline too.
+  by name) and when, newest first, each field from its old value to the new one. It is fetched with `app:getTask`
+  and kept in the local database, so it shows offline too.
 - **Trash** shares the left sidebar with Today: a segmented chooser at the top switches the task list, with no
   count badges. Deleted tasks show the day each was deleted, the day it goes for good (30 days later) and
   **Restore**. The window stays two-column: the sidebar and the selected task's details, with the update button
@@ -149,8 +149,8 @@ swift test                        # the live-backend test is skipped by default
   in order, a change whose answer was lost is applied once, a waiting change keeps its field against a newer
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
   refreshed and the call repeated. The history (`HistoryTests`): the fake server records each change as the backend
-  does, the Mac shows who made it (the app, `dayhand`, an agent by name), keeps it offline from the cache, counts
-  a task's waiting changes, says a task made offline has no history yet, and drops the history of a purged task.
+  does, the Mac shows who made it (the app, `dayhand`, an agent by name), keeps it offline from the cache,
+  and drops the history of a purged task.
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
