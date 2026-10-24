@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">欢迎使用 Dayhand</string>
+    <string name="welcome_intro">用“今天”、日历和看板管理你的任务。请选择 Dayhand 保存计划的位置；之后可以在设置中更改。</string>
+    <string name="local_title">仅在这部手机上</string>
+    <string name="local_body">无需账号，也无需服务器。你的计划保存在这部手机上，包括提醒和晨间摘要。可以在“设置 → 数据”中备份到文件。</string>
+    <string name="local_start">从空计划开始</string>
+    <string name="local_sample">用示例数据试用</string>
+    <string name="server_title">连接我的服务器</string>
+    <string name="server_body">你自己的 Dayhand 服务器会让计划与其他设备保持同步，并让 AI 智能体使用它。在电脑上运行 dayhand pair，然后输入它显示的代码。</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">替换这部手机上的计划？</string>
+    <string name="replace_text">这部手机上是 %1$s 的计划。连接到 %2$s 会用那里的计划替换它，并从这部手机上移除 %3$s。已同步到 %1$s 的内容会保留在那里。</string>
+    <string name="replace_pending">尚未发送到 %2$s 的 %1$s将会丢失。</string>
+    <string name="replace_keep">如需保留，请先保存备份（设置 → 数据 → 备份），或重新连接 %1$s。</string>
+    <string name="replace_confirm">替换并连接</string>
+    <plurals name="replace_tasks">
+        <item quantity="other">%d 项任务</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="other">%d 项更改</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">计划保存在这部手机上，不会发送到任何地方。</string>
+    <string name="server_local_was">上次连接的是 %1$s。此后所做的更改会在你重新连接它时发送过去。</string>
+    <string name="server_local_how">你自己的服务器可以让 Dayhand 在你的各台设备之间同步，并让 AI 智能体读取和更改计划。请按照 github.com/maiarowsky/helm（docs/deploy.md）中的说明搭建服务器，在电脑上运行 dayhand pair，然后用代码连接。之后这部手机上的所有内容都会发送到服务器。</string>
+    <string name="settings_timezone_phone">%1$s，这部手机的时区</string>
+    <string name="settings_timezone_use_phone">使用这部手机的时区（%1$s）</string>
+    <string name="settings_timezone_differs">服务器的时区决定“今天”是哪一天以及提醒何时响铃。</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">备份</string>
+    <string name="backup_save">保存备份文件</string>
+    <string name="backup_share">分享备份</string>
+    <string name="backup_restore">从文件恢复</string>
+    <string name="backup_last">上次备份：%1$s</string>
+    <string name="backup_never">这部手机上还没有备份</string>
+    <string name="backup_hint">备份是这部手机上的完整计划，采用 Dayhand 的 JSON 格式：任务及其清单、提醒和重复规则，以及设置，不含更改历史。Dayhand 不会把你的计划复制到 Google 或其他任何地方，所以请把文件保存在安全的地方。Dayhand 服务器也能读取它（dayhand import）。</string>
+    <string name="backup_working">正在准备备份…</string>
+    <string name="backup_saved">已保存 %1$s</string>
+    <string name="backup_write_failed">无法保存文件。</string>
+    <string name="backup_read_failed">无法读取文件。</string>
+    <string name="backup_not_helm">此文件不是 Dayhand 备份（Dayhand 的 JSON 导出，版本 1）。</string>
+    <plurals name="backup_too_many">
+        <item quantity="other">文件中的任务超过 %1$d 项；Dayhand 一次最多恢复 %1$d 项。</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="other">已恢复 %d 项任务。</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="other">%d 项已在手机上。</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="other">%d 项无法读取。</item>
+    </plurals>
+    <string name="backup_settings_restored">设置也已恢复。</string>
+    <string name="backup_share_title">Dayhand 备份</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">这些是示例任务，用来展示 Dayhand 的功能。</string>
+    <string name="sample_remove">移除示例</string>
+    <string name="sample_row">移除示例任务</string>
+</resources>

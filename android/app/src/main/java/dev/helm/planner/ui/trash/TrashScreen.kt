@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -74,12 +75,12 @@ fun TrashScreen(state: TrashUiState, actions: TrashActions, modifier: Modifier =
                 if (state.tasks.isEmpty()) {
                     EmptyState(
                         Icons.Outlined.Delete,
-                        stringResource(R.string.trash_empty, TRASH_DAYS),
+                        pluralStringResource(R.plurals.trash_empty, TRASH_DAYS.toInt(), TRASH_DAYS),
                         Modifier.testTag(TrashTags.EMPTY),
                     )
                 } else {
                     Text(
-                        stringResource(R.string.trash_hint, TRASH_DAYS),
+                        pluralStringResource(R.plurals.trash_hint, TRASH_DAYS.toInt(), TRASH_DAYS),
                         style = helmType.small,
                         color = palette.textMuted,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),

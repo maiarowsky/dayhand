@@ -38,6 +38,7 @@ import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarDays
 import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.ChoiceRow
 import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.LineIconView
@@ -52,7 +53,6 @@ import dev.helm.planner.ui.today.DayPickerDialog
 import dev.helm.planner.ui.today.TimePickerDialog
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 
 /**
@@ -101,7 +101,7 @@ fun MoveSheet(entry: CalendarEntry, onDismiss: () -> Unit, onMove: (date: String
                 ListRow(
                     stringResource(R.string.calendar_move_other_day),
                     tag = CalendarTags.MOVE_OTHER_DAY,
-                    value = otherDay?.format(DateTimeFormatter.ofPattern("EEE d MMM yyyy", locale)),
+                    value = otherDay?.format(dateFormat("yMMMEEEd", locale)),
                     trailing = otherDay?.let { { Chosen() } },
                     onClick = { pickingDay = true },
                 )

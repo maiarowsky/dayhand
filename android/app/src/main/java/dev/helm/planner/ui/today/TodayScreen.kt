@@ -33,6 +33,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
+import dev.helm.planner.ui.common.StatusBanner
+import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmFab
@@ -43,8 +46,6 @@ import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 object TodayTags {
     const val STATUS = "status"
@@ -69,7 +70,7 @@ fun TodayScreen(
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
-    val locale = Locale.getDefault()
+    val locale = appLocale()
     val date = LocalDate.parse(state.sections.date)
     Scaffold(
         modifier = modifier,
@@ -77,7 +78,7 @@ fun TodayScreen(
         topBar = {
             LargeHeader(
                 title = stringResource(R.string.today_title),
-                subtitle = date.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", locale)),
+                subtitle = date.format(dateFormat("EEEEdMMMM", locale)),
             ) {
                 HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
             }

@@ -1,18 +1,18 @@
 package dev.helm.planner.ui.today
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -36,6 +36,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
+import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.PrimaryButton
@@ -47,8 +49,6 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 object QuickAddTags {
     const val TITLE = "quick_add_title"
@@ -175,7 +175,7 @@ private fun MoreOptions(
         HelmChip(stringResource(R.string.quick_add_today), selected = day == today.toString(), onClick = { onDay(today.toString()) })
         HelmChip(stringResource(R.string.quick_add_tomorrow), selected = day == tomorrow, onClick = { onDay(tomorrow) })
         HelmChip(
-            if (other) LocalDate.parse(day).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+            if (other) LocalDate.parse(day).format(dateFormat("EEEdMMM", appLocale()))
             else stringResource(R.string.move_to_day),
             selected = other,
             onClick = onPickDay,

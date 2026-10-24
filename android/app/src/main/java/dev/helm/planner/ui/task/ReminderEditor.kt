@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
@@ -154,7 +155,7 @@ fun RemindersDialog(initial: List<TaskReminder>?, defaults: List<Int>, timed: Bo
             }
             TextAction(stringResource(R.string.reminders_add_on_day), { picking = 0 }, modifier = Modifier.testTag(EditorTags.REMINDER_ON_DAY))
             TextAction(stringResource(R.string.reminders_add_day_before), { picking = 1 }, modifier = Modifier.testTag(EditorTags.REMINDER_DAY_BEFORE))
-            if (!valid) Text(stringResource(R.string.reminders_too_many, TaskRules.MAX_REMINDERS), style = helmType.small, color = palette.danger)
+            if (!valid) Text(pluralStringResource(R.plurals.reminders_too_many, TaskRules.MAX_REMINDERS, TaskRules.MAX_REMINDERS), style = helmType.small, color = palette.danger)
         }
     }
     picking?.let { days ->

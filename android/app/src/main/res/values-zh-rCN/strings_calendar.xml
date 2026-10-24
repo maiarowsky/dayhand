@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calendar: week and day views. -->
+    <string name="calendar_title">日历</string>
+    <string name="calendar_week">周</string>
+    <string name="calendar_day">日</string>
+    <string name="calendar_previous_week">上一周</string>
+    <string name="calendar_next_week">下一周</string>
+    <string name="calendar_previous_day">前一天</string>
+    <string name="calendar_next_day">后一天</string>
+    <string name="calendar_go_today">今天</string>
+    <string name="calendar_no_time">不设时间</string>
+    <string name="calendar_no_time_short">全天</string>
+    <string name="calendar_more">+%1$d</string>
+    <plurals name="calendar_more_described">
+        <item quantity="other">另有 %1$d 项：打开这一天</item>
+    </plurals>
+    <string name="calendar_open_day">打开这一天</string>
+    <string name="calendar_day_tasks">显示当天的任务</string>
+    <string name="calendar_untimed_described">全天：%1$s</string>
+    <string name="calendar_empty_day">这一天没有安排。</string>
+    <string name="calendar_open">打开</string>
+    <string name="calendar_move_action">移到其他日期或时间</string>
+    <string name="calendar_state_overdue">已逾期</string>
+    <string name="calendar_state_done">已完成</string>
+    <string name="calendar_state_repeat">重复</string>
+    <string name="calendar_move_title">移动“%1$s”</string>
+    <string name="calendar_move_day">日期</string>
+    <string name="calendar_move_time">时间</string>
+    <string name="calendar_move_other_day">其他日期…</string>
+    <string name="calendar_move_pick_time">选择时间</string>
+    <string name="calendar_move_confirm">移动</string>
+    <string name="calendar_moved">已移到 %1$s</string>
+    <string name="calendar_undo">撤销</string>
+
+    <!-- Settings → Calendar: the read-only feed for Google and Apple Calendar. -->
+    <string name="calendar_feed_title">日历</string>
+    <string name="calendar_feed_off">关闭</string>
+    <string name="calendar_feed_on">开启</string>
+    <string name="calendar_feed_intro">在 Google 日历或 Apple 日历中显示带日期的任务。日历是只读的：在 Dayhand 中规划，日历会随之更新。设有时间的任务显示为日程，其余显示为全天日程，重复任务带有重复规则，提醒显示为日程提醒。</string>
+    <string name="calendar_feed_turn_on">开启日历地址</string>
+    <string name="calendar_feed_address">地址</string>
+    <string name="calendar_feed_secret">任何拿到这个地址的人都能看到你带日期的任务。只把它添加到你自己的日历；如果泄露了，请创建新地址。</string>
+    <string name="calendar_feed_copy">复制地址</string>
+    <string name="calendar_feed_copied">地址已复制</string>
+    <string name="calendar_feed_google">添加到 Google 日历</string>
+    <string name="calendar_feed_google_note">在网页上打开 Google 日历（手机应用无法通过地址添加日历）。Google 会按自己的节奏刷新订阅的日历，通常每隔几小时一次，因此更改会延迟显示。</string>
+    <string name="calendar_feed_apple">添加到 Apple 日历</string>
+    <string name="calendar_feed_apple_note">把 webcal 地址发送到你的 iPhone 或 Mac（信息、邮件、AirDrop…）；在那里打开即可订阅。</string>
+    <string name="calendar_feed_manage">管理</string>
+    <string name="calendar_feed_rotate">创建新地址</string>
+    <string name="calendar_feed_rotate_confirm_title">创建新地址？</string>
+    <string name="calendar_feed_rotate_confirm">当前地址会立即失效。订阅了它的日历将停止更新，直到你添加新地址。</string>
+    <string name="calendar_feed_rotate_done">已创建新地址，旧地址已失效。</string>
+    <string name="calendar_feed_turn_off">关闭</string>
+    <string name="calendar_feed_off_confirm_title">关闭日历地址？</string>
+    <string name="calendar_feed_off_confirm">该地址将失效，订阅的日历将停止更新。你可以之后用新地址重新开启。</string>
+    <string name="calendar_feed_export_group">一次性文件</string>
+    <string name="calendar_feed_export">导出 .ics 文件</string>
+    <string name="calendar_feed_export_note">当前计划的副本，可导入任何日历。它不会更新。</string>
+    <string name="calendar_feed_exporting">正在准备文件…</string>
+    <string name="calendar_feed_export_failed">无法导出：无法连接服务器。</string>
+    <string name="calendar_feed_loading">正在读取日历地址…</string>
+    <string name="calendar_feed_not_connected">请先连接服务器：日历地址由你的 Dayhand 服务器提供。</string>
+    <string name="calendar_feed_failed">无法连接服务器。请在手机联网后重试。</string>
+    <string name="calendar_feed_unauthorized">服务器已将这部手机登出。请在“设置 → 服务器”中重新连接。</string>
+    <string name="calendar_feed_retry">重试</string>
+    <string name="calendar_feed_share_title">Dayhand 日历</string>
+</resources>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings → Agents (0.10.0): the agent switch, approval requests, proposals and tool policies -->
+    <string name="agents_title">智能体</string>
+    <string name="agents_loading">正在加载…</string>
+    <string name="agents_failed">无法加载。请检查与服务器的连接。</string>
+    <string name="agents_unauthorized">服务器拒绝了这部手机，或服务器版本低于 0.11.0。请在“服务器”中重新配对。</string>
+    <string name="agents_pause">暂停智能体</string>
+    <string name="agents_running_note">智能体可以在其密钥和连接的权限范围内更改计划。</string>
+    <string name="agents_paused_since">自 %1$s 起</string>
+    <string name="agents_paused_note">智能体仍可读取；在你恢复之前，它们尝试的每项更改都会被拒绝</string>
+    <string name="agents_pause_failed">无法切换开关。请重试。</string>
+    <string name="agents_waiting">等待你处理（%1$d）</string>
+    <string name="agents_no_requests">没有待处理的审批请求。</string>
+    <string name="agents_request_note">%1$s · 请在 %2$s 前决定</string>
+    <string name="agents_earlier">较早的请求</string>
+    <string name="agents_proposals">提议（%1$d）</string>
+    <string name="agents_no_proposals">没有提议。智能体提议的任务会在这里等待，不会出现在“今天”中，直到你接受。</string>
+    <string name="agents_from">来自 %1$s</string>
+    <string name="agents_policies">工具策略</string>
+    <string name="agents_no_policies">没有工具策略：每个智能体密钥都可以使用其权限范围允许的所有工具。</string>
+    <string name="agents_policies_hint">在终端中用 dayhand policy set 设置。“询问”会暂停调用，直到你在这里允许。</string>
+    <string name="agents_policy_any_tool">其他所有工具</string>
+    <string name="agents_rule_allow">允许</string>
+    <string name="agents_rule_ask">询问</string>
+    <string name="agents_rule_deny">禁止</string>
+    <string name="agents_hint">Dayhand 会记录你的决定，智能体据此行动。Dayhand 无法阻止智能体在 Dayhand 之外的操作。</string>
+    <string name="agents_gone">此项已不在这里：已处理、已过期或已在别处移除。</string>
+    <string name="agents_sending">正在发送…</string>
+
+    <string name="agents_approval_title">审批请求</string>
+    <string name="agents_asked_by">请求方：%1$s</string>
+    <string name="agents_policy_held">被你的策略暂停：%1$s</string>
+    <string name="agents_reversible">可以撤销</string>
+    <string name="agents_irreversible">无法撤销</string>
+    <string name="agents_decide_by">请在 %1$s 前决定</string>
+    <string name="agents_choose">你的回答</string>
+    <string name="agents_decision_hint">只回答你理解的请求。如果不回答，请求会过期，智能体也会得知。</string>
+    <string name="agents_choose_title">选择“%1$s”？</string>
+    <string name="agents_choose_confirm">选择</string>
+    <string name="agents_note_label">给智能体留言（可选）</string>
+    <string name="agents_chose">你选择了：%1$s</string>
+    <string name="agents_expired">已过期，未回答</string>
+    <string name="agents_decided">回答已发送。智能体下次查看时会读到。</string>
+    <string name="agents_decide_refused">此请求已处理或已过期。</string>
+
+    <string name="agents_proposal_title">提议</string>
+    <string name="agents_requested_by">应 %1$s 的请求</string>
+    <string name="agents_proposed_at">提议时间：%1$s</string>
+    <string name="agents_accept">接受</string>
+    <string name="agents_accept_note">它会成为你计划中的任务，到期时显示在“今天”中。</string>
+    <string name="agents_merge">合并到任务</string>
+    <string name="agents_merge_note">它的备注、链接和标签会并入你已有的任务。</string>
+    <string name="agents_reject">拒绝</string>
+    <string name="agents_reject_title">拒绝“%1$s”？</string>
+    <string name="agents_reason_label">原因（可选，会发回给来源）</string>
+    <string name="agents_merge_title">合并到</string>
+    <string name="agents_merge_search">查找任务</string>
+    <string name="agents_merge_none">没有匹配的未完成任务。</string>
+    <string name="agents_merge_confirm_title">合并到“%1$s”？</string>
+    <string name="agents_merge_confirm_text">该提议会移到回收站；它的备注、链接和标签会并入这个任务。</string>
+    <string name="agents_merge_confirm">合并</string>
+    <string name="agents_accepted">已接受：它现在是你计划中的任务了。</string>
+    <string name="agents_merged">已合并。</string>
+    <string name="agents_rejected">已拒绝：它已移到回收站。</string>
+    <string name="agents_proposal_gone">此提议已在别处处理。</string>
+    <string name="agents_change_failed">无法连接服务器。请重试。</string>
+
+    <string name="channel_approvals">审批请求</string>
+    <string name="channel_approvals_description">智能体在执行操作前会先征求你的同意。Dayhand 关闭时每 15 分钟检查一次。</string>
+    <string name="approval_notify_title">%1$s 请求你的批准</string>
+
+    <!-- The plan health card above Today -->
+    <string name="health_title">计划：%1$s</string>
+    <string name="health_clear">计划：没有需要关注的事项。</string>
+    <string name="health_review">查看</string>
+    <string name="health_paused">智能体已暂停</string>
+    <plurals name="health_overdue">
+        <item quantity="other">%d 项已逾期</item>
+    </plurals>
+    <plurals name="health_expired_claims">
+        <item quantity="other">%d 项认领已到期</item>
+    </plurals>
+    <plurals name="health_approvals">
+        <item quantity="other">%d 个审批请求</item>
+    </plurals>
+    <plurals name="health_blocked">
+        <item quantity="other">%d 项受阻</item>
+    </plurals>
+    <plurals name="health_proposals">
+        <item quantity="other">%d 个提议</item>
+    </plurals>
+    <plurals name="health_without_proof">
+        <item quantity="other">%d 项已完成但无证明</item>
+    </plurals>
+    <plurals name="health_due_today">
+        <item quantity="other">%d 项今天截止</item>
+    </plurals>
+    <plurals name="health_in_progress">
+        <item quantity="other">%d 项进行中</item>
+    </plurals>
+    <plurals name="health_done_today">
+        <item quantity="other">%d 项今天完成</item>
+    </plurals>
+    <plurals name="health_oldest">
+        <item quantity="other">最早的未完成任务已有 %d 天</item>
+    </plurals>
+</resources>

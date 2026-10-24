@@ -169,7 +169,7 @@ offline outbox, reminders and the morning summary, and the details with basic ed
   outbox, kept against snapshots while it waits); appearance (the Mussh palettes and fonts of
   [design.md](design.md)); export as Markdown or JSON; the calendar address; **agent connections** (approve a
   connection by the code its sign-in page shows, list and disconnect).
-- **Polish** next to English (the Android app has both). The screens are in English and dates follow them.
+- **Polish** next to English (the Android app has these and six more). The screens are in English and dates follow them.
 - **Reminders**: macOS may deliver a notification late after sleep; the Android app drops a reminder more than
   15 minutes late. Dayhand could withdraw stale pending ones when the Mac wakes.
 - **Live updates**: polling every 15 seconds now. A Convex WebSocket subscription would make changes elsewhere

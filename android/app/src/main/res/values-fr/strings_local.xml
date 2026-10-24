@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">Bienvenue dans Dayhand</string>
+    <string name="welcome_intro">La vue Aujourd\'hui, un calendrier et un tableau pour vos tâches. Choisissez où Dayhand conserve votre plan ; vous pourrez changer cela plus tard dans les Paramètres.</string>
+    <string name="local_title">Sur ce téléphone uniquement</string>
+    <string name="local_body">Ni compte ni serveur. Votre plan reste sur ce téléphone, rappels et résumé du matin compris. Sauvegardez-le dans un fichier depuis Paramètres → Données.</string>
+    <string name="local_start">Commencer avec un plan vide</string>
+    <string name="local_sample">Essayer avec des données d\'exemple</string>
+    <string name="server_title">Se connecter à mon serveur</string>
+    <string name="server_body">Votre propre serveur Dayhand synchronise le plan avec vos autres appareils et permet à des agents IA d\'y travailler. Sur votre ordinateur, lancez dayhand pair et saisissez le code affiché.</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">Remplacer le plan sur ce téléphone ?</string>
+    <string name="replace_text">Ce téléphone contient le plan de %1$s. Se connecter à %2$s le remplace par le plan de ce serveur et retire %3$s de ce téléphone. Ce qui est parvenu à %1$s y reste.</string>
+    <string name="replace_pending">Ce qui n\'a pas encore été envoyé à %2$s sera perdu (%1$s).</string>
+    <string name="replace_keep">Pour les conserver, enregistrez d\'abord une sauvegarde (Paramètres → Données → Sauvegarde) ou reconnectez-vous à %1$s.</string>
+    <string name="replace_confirm">Remplacer et se connecter</string>
+    <plurals name="replace_tasks">
+        <item quantity="one">%d tâche</item>
+        <item quantity="many">%d tâches</item>
+        <item quantity="other">%d tâches</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="one">%d modification</item>
+        <item quantity="many">%d modifications</item>
+        <item quantity="other">%d modifications</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">Le plan est conservé sur ce téléphone et rien n\'est envoyé nulle part.</string>
+    <string name="server_local_was">Dernière connexion à %1$s. Les modifications faites depuis y seront envoyées quand vous vous y reconnecterez.</string>
+    <string name="server_local_how">Votre propre serveur synchronise Dayhand entre vos appareils et permet à des agents IA de lire et de modifier le plan. Installez-en un comme décrit sur github.com/maiarowsky/helm (docs/deploy.md), lancez dayhand pair sur votre ordinateur et connectez-vous avec le code. Tout ce qui se trouve sur ce téléphone part alors sur le serveur.</string>
+    <string name="settings_timezone_phone">%1$s, fuseau horaire de ce téléphone</string>
+    <string name="settings_timezone_use_phone">Utiliser le fuseau horaire de ce téléphone (%1$s)</string>
+    <string name="settings_timezone_differs">Le fuseau horaire du serveur détermine quel jour on est et quand les rappels sonnent.</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">Sauvegarde</string>
+    <string name="backup_save">Enregistrer un fichier de sauvegarde</string>
+    <string name="backup_share">Partager une sauvegarde</string>
+    <string name="backup_restore">Restaurer depuis un fichier</string>
+    <string name="backup_last">Dernière sauvegarde : %1$s</string>
+    <string name="backup_never">Aucune sauvegarde faite sur ce téléphone pour l\'instant</string>
+    <string name="backup_hint">Une sauvegarde contient tout le plan de ce téléphone au format JSON de Dayhand : les tâches avec leurs check-lists, rappels et règles de répétition, ainsi que les paramètres, sans l\'historique des modifications. Dayhand ne copie votre plan ni vers Google ni ailleurs : conservez le fichier en lieu sûr. Un serveur Dayhand sait aussi le lire (dayhand import).</string>
+    <string name="backup_working">Préparation de la sauvegarde…</string>
+    <string name="backup_saved">%1$s enregistré</string>
+    <string name="backup_write_failed">Impossible d\'enregistrer le fichier.</string>
+    <string name="backup_read_failed">Impossible de lire le fichier.</string>
+    <string name="backup_not_helm">Ce fichier n\'est pas une sauvegarde Dayhand (export JSON de Dayhand, version 1).</string>
+    <plurals name="backup_too_many">
+        <item quantity="one">Le fichier contient plus de %1$d tâche ; Dayhand en restaure au maximum %1$d à la fois.</item>
+        <item quantity="many">Le fichier contient plus de %1$d tâches ; Dayhand en restaure au maximum %1$d à la fois.</item>
+        <item quantity="other">Le fichier contient plus de %1$d tâches ; Dayhand en restaure au maximum %1$d à la fois.</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="one">%d tâche restaurée.</item>
+        <item quantity="many">%d tâches restaurées.</item>
+        <item quantity="other">%d tâches restaurées.</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="one">%d était déjà sur le téléphone.</item>
+        <item quantity="many">%d étaient déjà sur le téléphone.</item>
+        <item quantity="other">%d étaient déjà sur le téléphone.</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="one">%d illisible.</item>
+        <item quantity="many">%d illisibles.</item>
+        <item quantity="other">%d illisibles.</item>
+    </plurals>
+    <string name="backup_settings_restored">Les paramètres ont aussi été restaurés.</string>
+    <string name="backup_share_title">Sauvegarde Dayhand</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">Voici des tâches d\'exemple pour montrer ce que Dayhand sait faire.</string>
+    <string name="sample_remove">Les supprimer</string>
+    <string name="sample_row">Supprimer les tâches d\'exemple</string>
+</resources>

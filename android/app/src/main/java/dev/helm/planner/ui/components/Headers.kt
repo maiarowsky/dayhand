@@ -27,16 +27,16 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
+import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
-import java.util.Locale
 
 /** An upper-case monospace section label (Mussh "MonoLabel"), marked as a heading for screen readers. */
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = palette.accent) {
     Text(
-        text.uppercase(Locale.getDefault()),
+        text.uppercase(appLocale()),
         style = helmType.label,
         color = color,
         modifier = modifier.semantics { heading() },

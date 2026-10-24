@@ -46,7 +46,10 @@
     <string name="backup_write_failed">Could not save the file.</string>
     <string name="backup_read_failed">Could not read the file.</string>
     <string name="backup_not_helm">This file is not a Dayhand backup (Dayhand\'s JSON export, version 1).</string>
-    <string name="backup_too_many">The file has more than %1$d tasks; Dayhand restores at most %1$d at once.</string>
+    <plurals name="backup_too_many">
+        <item quantity="one">The file has more than %1$d task; Dayhand restores at most %1$d at once.</item>
+        <item quantity="other">The file has more than %1$d tasks; Dayhand restores at most %1$d at once.</item>
+    </plurals>
     <plurals name="backup_restored">
         <item quantity="one">Restored %d task.</item>
         <item quantity="other">Restored %d tasks.</item>

@@ -41,12 +41,21 @@
     <string name="quick_add_no_time">Bez godziny</string>
     <string name="quick_add_note">Notatka</string>
     <string name="quick_add_save">Dodaj</string>
-    <string name="title_too_long">Najwyżej %1$d znaków</string>
 
-    <string name="status_offline">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</string>
+    <plurals name="status_offline">
+        <item quantity="one">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</item>
+        <item quantity="few">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</item>
+        <item quantity="many">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</item>
+        <item quantity="other">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</item>
+    </plurals>
     <string name="status_unauthorized">Serwer wylogował ten telefon. Połącz ponownie w Ustawieniach.</string>
     <string name="status_error">Nie mogę połączyć się z serwerem. Dayhand próbuje dalej.</string>
-    <string name="status_sending">Wysyłanie zmian: %1$d…</string>
+    <plurals name="status_sending">
+        <item quantity="one">Wysyłanie zmian: %1$d…</item>
+        <item quantity="few">Wysyłanie zmian: %1$d…</item>
+        <item quantity="many">Wysyłanie zmian: %1$d…</item>
+        <item quantity="other">Wysyłanie zmian: %1$d…</item>
+    </plurals>
 
     <string name="settings_title">Ustawienia</string>
     <string name="back">Wstecz</string>
@@ -143,7 +152,12 @@
     <string name="add_label">Dodaj etykietę</string>
     <string name="remove_label">Usuń etykietę: %1$s</string>
     <string name="label_name">Etykieta lub projekt</string>
-    <string name="labels_full">Najwyżej %1$d etykiet</string>
+    <plurals name="labels_full">
+        <item quantity="one">Najwyżej %1$d etykieta</item>
+        <item quantity="few">Najwyżej %1$d etykiety</item>
+        <item quantity="many">Najwyżej %1$d etykiet</item>
+        <item quantity="other">Najwyżej %1$d etykiety</item>
+    </plurals>
     <string name="labels_in_use">W użyciu</string>
     <string name="add_link">Dodaj link</string>
     <string name="open_link">Otwórz link</string>
@@ -187,8 +201,18 @@
     <string name="no">nie</string>
 
     <string name="trash_title">Kosz</string>
-    <string name="trash_empty">Kosz jest pusty. Usunięte zadania zostają tu przez %1$d dni.</string>
-    <string name="trash_hint">Zadania zostają tu przez %1$d dni, potem znikają na zawsze.</string>
+    <plurals name="trash_empty">
+        <item quantity="one">Kosz jest pusty. Usunięte zadania zostają tu przez %1$d dzień.</item>
+        <item quantity="few">Kosz jest pusty. Usunięte zadania zostają tu przez %1$d dni.</item>
+        <item quantity="many">Kosz jest pusty. Usunięte zadania zostają tu przez %1$d dni.</item>
+        <item quantity="other">Kosz jest pusty. Usunięte zadania zostają tu przez %1$d dnia.</item>
+    </plurals>
+    <plurals name="trash_hint">
+        <item quantity="one">Zadania zostają tu przez %1$d dzień, potem znikają na zawsze.</item>
+        <item quantity="few">Zadania zostają tu przez %1$d dni, potem znikają na zawsze.</item>
+        <item quantity="many">Zadania zostają tu przez %1$d dni, potem znikają na zawsze.</item>
+        <item quantity="other">Zadania zostają tu przez %1$d dnia, potem znikają na zawsze.</item>
+    </plurals>
     <string name="trash_deleted_on">Usunięte %1$s · zniknie po %2$s</string>
     <string name="channel_reminders">Przypomnienia</string>
     <string name="channel_reminders_description">Dzwoni przed zadaniem, które ma godzinę.</string>
@@ -353,7 +377,12 @@
     <string name="reminders_times_title">O wybranej godzinie</string>
     <string name="reminders_add_on_day">Dodaj godzinę w dniu terminu</string>
     <string name="reminders_add_day_before">Dodaj godzinę dzień wcześniej</string>
-    <string name="reminders_too_many">Najwyżej %1$d przypomnień</string>
+    <plurals name="reminders_too_many">
+        <item quantity="one">Najwyżej %1$d przypomnienie</item>
+        <item quantity="few">Najwyżej %1$d przypomnienia</item>
+        <item quantity="many">Najwyżej %1$d przypomnień</item>
+        <item quantity="other">Najwyżej %1$d przypomnienia</item>
+    </plurals>
     <string name="reminder_remove">Usuń przypomnienie: %1$s</string>
     <string name="reminder_time_on_day">%1$s w dniu terminu</string>
     <plurals name="reminder_time_before">

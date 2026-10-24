@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings → Agents (0.10.0): the agent switch, approval requests, proposals and tool policies -->
+    <string name="agents_title">Agenten</string>
+    <string name="agents_loading">Wird geladen…</string>
+    <string name="agents_failed">Laden fehlgeschlagen. Prüfe die Verbindung zum Server.</string>
+    <string name="agents_unauthorized">Der Server hat dieses Smartphone abgelehnt oder ist älter als 0.11.0. Kopple es unter Server erneut.</string>
+    <string name="agents_pause">Agenten pausieren</string>
+    <string name="agents_running_note">Agenten können den Plan im Rahmen ihrer Schlüssel und Verbindungen ändern.</string>
+    <string name="agents_paused_since">seit %1$s</string>
+    <string name="agents_paused_note">Agenten können lesen; jede Änderung, die sie versuchen, wird abgelehnt, bis du sie fortsetzt</string>
+    <string name="agents_pause_failed">Der Schalter konnte nicht umgestellt werden. Versuche es erneut.</string>
+    <string name="agents_waiting">Warten auf dich (%1$d)</string>
+    <string name="agents_no_requests">Keine offenen Genehmigungsanfragen.</string>
+    <string name="agents_request_note">%1$s · entscheide bis %2$s</string>
+    <string name="agents_earlier">Frühere Anfragen</string>
+    <string name="agents_proposals">Vorschläge (%1$d)</string>
+    <string name="agents_no_proposals">Keine Vorschläge. Aufgaben, die ein Agent vorschlägt, warten hier außerhalb von Heute, bis du sie annimmst.</string>
+    <string name="agents_from">von %1$s</string>
+    <string name="agents_policies">Tool-Richtlinien</string>
+    <string name="agents_no_policies">Keine Tool-Richtlinien: Jeder Agent-Schlüssel darf jedes Tool nutzen, das sein Umfang erlaubt.</string>
+    <string name="agents_policies_hint">Lege sie im Terminal mit dayhand policy set fest. „Fragen“ hält den Aufruf an, bis du ihn hier erlaubst.</string>
+    <string name="agents_policy_any_tool">jedes andere Tool</string>
+    <string name="agents_rule_allow">Erlauben</string>
+    <string name="agents_rule_ask">Fragen</string>
+    <string name="agents_rule_deny">Verbieten</string>
+    <string name="agents_hint">Dayhand speichert deine Entscheidung, und der Agent handelt danach. Was ein Agent außerhalb von Dayhand tut, kann Dayhand nicht verhindern.</string>
+    <string name="agents_gone">Das ist nicht mehr da: entschieden, abgelaufen oder anderswo entfernt.</string>
+    <string name="agents_sending">Wird gesendet…</string>
+
+    <string name="agents_approval_title">Genehmigungsanfrage</string>
+    <string name="agents_asked_by">Angefragt von %1$s</string>
+    <string name="agents_policy_held">Von deiner Richtlinie angehalten: %1$s</string>
+    <string name="agents_reversible">Kann rückgängig gemacht werden</string>
+    <string name="agents_irreversible">Kann nicht rückgängig gemacht werden</string>
+    <string name="agents_decide_by">Entscheide bis %1$s</string>
+    <string name="agents_choose">Deine Antwort</string>
+    <string name="agents_decision_hint">Beantworte nur eine Anfrage, die du verstehst. Ohne Antwort läuft sie ab, und der Agent erfährt das.</string>
+    <string name="agents_choose_title">„%1$s“ wählen?</string>
+    <string name="agents_choose_confirm">Wählen</string>
+    <string name="agents_note_label">Ein Wort an den Agenten (optional)</string>
+    <string name="agents_chose">Deine Wahl: %1$s</string>
+    <string name="agents_expired">Ohne Antwort abgelaufen</string>
+    <string name="agents_decided">Antwort gesendet. Der Agent liest sie, wenn er das nächste Mal nachsieht.</string>
+    <string name="agents_decide_refused">Diese Anfrage wurde bereits entschieden oder ist abgelaufen.</string>
+
+    <string name="agents_proposal_title">Vorschlag</string>
+    <string name="agents_requested_by">Gewünscht von %1$s</string>
+    <string name="agents_proposed_at">Vorgeschlagen: %1$s</string>
+    <string name="agents_accept">Annehmen</string>
+    <string name="agents_accept_note">Wird zu einer Aufgabe in deinem Plan und erscheint unter Heute, sobald sie fällig ist.</string>
+    <string name="agents_merge">Mit Aufgabe zusammenführen</string>
+    <string name="agents_merge_note">Notiz, Links und Labels kommen zu einer Aufgabe hinzu, die du schon hast.</string>
+    <string name="agents_reject">Ablehnen</string>
+    <string name="agents_reject_title">„%1$s“ ablehnen?</string>
+    <string name="agents_reason_label">Grund (optional, geht zurück an die Quelle)</string>
+    <string name="agents_merge_title">Zusammenführen mit</string>
+    <string name="agents_merge_search">Aufgabe suchen</string>
+    <string name="agents_merge_none">Keine offene Aufgabe passt.</string>
+    <string name="agents_merge_confirm_title">Mit „%1$s“ zusammenführen?</string>
+    <string name="agents_merge_confirm_text">Der Vorschlag kommt in den Papierkorb; Notiz, Links und Labels kommen zu dieser Aufgabe hinzu.</string>
+    <string name="agents_merge_confirm">Zusammenführen</string>
+    <string name="agents_accepted">Angenommen: Das ist jetzt eine Aufgabe in deinem Plan.</string>
+    <string name="agents_merged">Zusammengeführt.</string>
+    <string name="agents_rejected">Abgelehnt: Der Vorschlag liegt im Papierkorb.</string>
+    <string name="agents_proposal_gone">Dieser Vorschlag wurde bereits anderswo bearbeitet.</string>
+    <string name="agents_change_failed">Keine Verbindung zum Server. Versuche es erneut.</string>
+
+    <string name="channel_approvals">Genehmigungsanfragen</string>
+    <string name="channel_approvals_description">Ein Agent fragt, bevor er etwas tut. Wird alle 15 Minuten geprüft, solange Dayhand geschlossen ist.</string>
+    <string name="approval_notify_title">%1$s bittet um deine Genehmigung</string>
+
+    <!-- The plan health card above Today -->
+    <string name="health_title">Plan: %1$s</string>
+    <string name="health_clear">Plan: Alles in Ordnung.</string>
+    <string name="health_review">Prüfen</string>
+    <string name="health_paused">Agenten pausiert</string>
+    <plurals name="health_overdue">
+        <item quantity="one">%d überfällig</item>
+        <item quantity="other">%d überfällig</item>
+    </plurals>
+    <plurals name="health_expired_claims">
+        <item quantity="one">%d Reservierung abgelaufen</item>
+        <item quantity="other">%d Reservierungen abgelaufen</item>
+    </plurals>
+    <plurals name="health_approvals">
+        <item quantity="one">%d Genehmigungsanfrage</item>
+        <item quantity="other">%d Genehmigungsanfragen</item>
+    </plurals>
+    <plurals name="health_blocked">
+        <item quantity="one">%d blockiert</item>
+        <item quantity="other">%d blockiert</item>
+    </plurals>
+    <plurals name="health_proposals">
+        <item quantity="one">%d Vorschlag</item>
+        <item quantity="other">%d Vorschläge</item>
+    </plurals>
+    <plurals name="health_without_proof">
+        <item quantity="one">%d ohne Nachweis erledigt</item>
+        <item quantity="other">%d ohne Nachweis erledigt</item>
+    </plurals>
+    <plurals name="health_due_today">
+        <item quantity="one">%d heute fällig</item>
+        <item quantity="other">%d heute fällig</item>
+    </plurals>
+    <plurals name="health_in_progress">
+        <item quantity="one">%d in Arbeit</item>
+        <item quantity="other">%d in Arbeit</item>
+    </plurals>
+    <plurals name="health_done_today">
+        <item quantity="one">%d heute erledigt</item>
+        <item quantity="other">%d heute erledigt</item>
+    </plurals>
+    <plurals name="health_oldest">
+        <item quantity="one">älteste offene Aufgabe %d Tag alt</item>
+        <item quantity="other">älteste offene Aufgabe %d Tage alt</item>
+    </plurals>
+</resources>

@@ -23,10 +23,10 @@ import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardTags
 import dev.helm.planner.ui.board.BoardUiState
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.ConnectionStatus
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -75,7 +75,7 @@ class BoardScreenTest {
         compose.onNodeWithTag(BoardTags.tab(TaskStatus.DOING)).assertTextContains(text(R.string.column_with_count, text(R.string.column_doing), 1))
         compose.onNodeWithTag(BoardTags.tab(TaskStatus.DONE)).assertTextContains(text(R.string.column_with_count, text(R.string.column_done), 0))
         compose.onNodeWithText("Dayhand").assertIsDisplayed()
-        compose.onNodeWithText(text(R.string.overdue_due, LocalDate.of(2026, 10, 20).format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))), substring = true, useUnmergedTree = true).assertExists()
+        compose.onNodeWithText(text(R.string.overdue_due, LocalDate.of(2026, 10, 20).format(dateFormat("EEEdMMM", Locale.getDefault()))), substring = true, useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -142,7 +142,7 @@ class BoardScreenTest {
     @Test
     fun theBoardWorksOfflineAndSaysSo() {
         show(connection = ConnectionStatus.OFFLINE, pending = 2)
-        compose.onNodeWithTag(BoardTags.STATUS).assertTextContains(text(R.string.status_offline, 2))
+        compose.onNodeWithTag(BoardTags.STATUS).assertTextContains(context.resources.getQuantityString(R.plurals.status_offline, 2, 2))
         compose.onNodeWithContentDescription(text(R.string.trash_title)).assertHeightIsAtLeast(48.dp)
     }
 }

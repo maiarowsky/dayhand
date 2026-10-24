@@ -3,6 +3,26 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.10.1 (2026-10-24)
+
+### Added
+
+- Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
+  Português (Brasil), 日本語 and 简体中文. Settings → Language offers the phone's language or any
+  of the eight, each in its own name; Android 13+ also lists them under the system's App
+  languages. Older phones follow the phone's language, as before. The new translations were
+  written by a language model and wait for review by native speakers.
+- Lint fails on missing or extra translations, plural forms and format mismatches;
+  `TranslationsTest` checks keys, placeholders, plural forms and untranslated names in every
+  language, and `LanguageSwitchTest` switches the running app's language from Settings.
+
+### Changed
+
+- Dates follow the language: the order, words and punctuation of "Mon, Oct 19", "Mo., 19. Okt.",
+  "10月19日(月)", and the week's range in the calendar header.
+- Counted messages (changes waiting, more tasks in a day, the trash's days, the label and
+  reminder limits) use the plural forms of each language.
+
 ## 0.10.0 (2026-10-24)
 
 ### Added

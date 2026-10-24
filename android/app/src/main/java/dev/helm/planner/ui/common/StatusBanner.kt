@@ -3,12 +3,13 @@ package dev.helm.planner.ui.common
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.ui.components.BannerTone
-import dev.helm.planner.ui.today.ConnectionStatus
 import dev.helm.planner.ui.components.StatusBanner as ToneBanner
+import dev.helm.planner.ui.today.ConnectionStatus
 
 /**
  * The connection line at the top of Today and the board when it needs a word: offline, changes waiting, refused
@@ -18,12 +19,12 @@ import dev.helm.planner.ui.components.StatusBanner as ToneBanner
 @Composable
 fun StatusBanner(status: ConnectionStatus, pending: Int, openSettings: () -> Unit, modifier: Modifier = Modifier) {
     val text = when (status) {
-        ConnectionStatus.OFFLINE -> stringResource(R.string.status_offline, pending)
+        ConnectionStatus.OFFLINE -> pluralStringResource(R.plurals.status_offline, pending, pending)
         ConnectionStatus.UNAUTHORIZED -> stringResource(R.string.status_unauthorized)
         ConnectionStatus.ERROR -> stringResource(R.string.status_error)
         ConnectionStatus.LOCAL -> return
         ConnectionStatus.SYNCED, ConnectionStatus.CONNECTING ->
-            if (pending > 0) stringResource(R.string.status_sending, pending) else return
+            if (pending > 0) pluralStringResource(R.plurals.status_sending, pending, pending) else return
     }
     val tone = when (status) {
         ConnectionStatus.UNAUTHORIZED, ConnectionStatus.ERROR -> BannerTone.Danger

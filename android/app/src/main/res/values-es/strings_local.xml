@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">Te damos la bienvenida a Dayhand</string>
+    <string name="welcome_intro">Hoy, un calendario y un tablero para tus tareas. Elige dónde guarda Dayhand tu plan; puedes cambiarlo después en Ajustes.</string>
+    <string name="local_title">Solo en este teléfono</string>
+    <string name="local_body">Sin cuenta y sin servidor. Tu plan se queda en este teléfono, con los recordatorios y el resumen matutino. Haz una copia de seguridad en un archivo en Ajustes → Datos.</string>
+    <string name="local_start">Empezar con un plan vacío</string>
+    <string name="local_sample">Probar con datos de ejemplo</string>
+    <string name="server_title">Conectar a mi servidor</string>
+    <string name="server_body">Tu propio servidor Dayhand mantiene el plan sincronizado con tus otros dispositivos y permite que los agentes de IA trabajen con él. En tu ordenador, ejecuta dayhand pair y escribe el código que muestra.</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">¿Reemplazar el plan de este teléfono?</string>
+    <string name="replace_text">Este teléfono tiene el plan de %1$s. Al conectarte a %2$s, se reemplaza por el plan de allí y se eliminan %3$s de este teléfono. Lo que llegó a %1$s se queda allí.</string>
+    <string name="replace_pending">Se perderán %1$s aún no enviados a %2$s.</string>
+    <string name="replace_keep">Para conservarlos, guarda antes una copia de seguridad (Ajustes → Datos → Copia de seguridad) o vuelve a conectarte a %1$s.</string>
+    <string name="replace_confirm">Reemplazar y conectar</string>
+    <plurals name="replace_tasks">
+        <item quantity="one">%d tarea</item>
+        <item quantity="many">%d tareas</item>
+        <item quantity="other">%d tareas</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="one">%d cambio</item>
+        <item quantity="many">%d cambios</item>
+        <item quantity="other">%d cambios</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">El plan se guarda en este teléfono y no se envía nada a ningún sitio.</string>
+    <string name="server_local_was">Última conexión: %1$s. Los cambios hechos desde entonces se enviarán allí cuando vuelvas a conectarte.</string>
+    <string name="server_local_how">Un servidor propio mantiene Dayhand sincronizado entre tus dispositivos y permite que los agentes de IA lean y cambien el plan. Configúralo como se describe en github.com/maiarowsky/helm (docs/deploy.md), ejecuta dayhand pair en tu ordenador y conéctate con el código. Después, todo lo que hay en este teléfono pasa al servidor.</string>
+    <string name="settings_timezone_phone">%1$s, la zona horaria de este teléfono</string>
+    <string name="settings_timezone_use_phone">Usar la zona horaria de este teléfono (%1$s)</string>
+    <string name="settings_timezone_differs">La zona horaria del servidor decide qué día es hoy y cuándo suenan los recordatorios.</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">Copia de seguridad</string>
+    <string name="backup_save">Guardar una copia de seguridad</string>
+    <string name="backup_share">Compartir una copia de seguridad</string>
+    <string name="backup_restore">Restaurar desde un archivo</string>
+    <string name="backup_last">Última copia de seguridad: %1$s</string>
+    <string name="backup_never">Todavía no se ha hecho ninguna copia de seguridad en este teléfono</string>
+    <string name="backup_hint">Una copia de seguridad es todo el plan de este teléfono en el formato JSON de Dayhand: las tareas con sus listas de verificación, recordatorios y reglas de repetición, y los ajustes, sin el historial de cambios. Dayhand no copia tu plan a Google ni a ningún otro sitio, así que guarda el archivo en un lugar seguro. Un servidor Dayhand también puede leerlo (dayhand import).</string>
+    <string name="backup_working">Preparando la copia de seguridad…</string>
+    <string name="backup_saved">Guardado: %1$s</string>
+    <string name="backup_write_failed">No se pudo guardar el archivo.</string>
+    <string name="backup_read_failed">No se pudo leer el archivo.</string>
+    <string name="backup_not_helm">Este archivo no es una copia de seguridad de Dayhand (exportación JSON de Dayhand, versión 1).</string>
+    <plurals name="backup_too_many">
+        <item quantity="one">El archivo tiene más de %1$d tarea; Dayhand restaura como máximo %1$d a la vez.</item>
+        <item quantity="many">El archivo tiene más de %1$d tareas; Dayhand restaura como máximo %1$d a la vez.</item>
+        <item quantity="other">El archivo tiene más de %1$d tareas; Dayhand restaura como máximo %1$d a la vez.</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="one">Se restauró %d tarea.</item>
+        <item quantity="many">Se restauraron %d tareas.</item>
+        <item quantity="other">Se restauraron %d tareas.</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="one">%d ya estaba en el teléfono.</item>
+        <item quantity="many">%d ya estaban en el teléfono.</item>
+        <item quantity="other">%d ya estaban en el teléfono.</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="one">%d no se pudo leer.</item>
+        <item quantity="many">%d no se pudieron leer.</item>
+        <item quantity="other">%d no se pudieron leer.</item>
+    </plurals>
+    <string name="backup_settings_restored">También se restauraron los ajustes.</string>
+    <string name="backup_share_title">Copia de seguridad de Dayhand</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">Son tareas de ejemplo para mostrar lo que puede hacer Dayhand.</string>
+    <string name="sample_remove">Quitarlas</string>
+    <string name="sample_row">Quitar las tareas de ejemplo</string>
+</resources>

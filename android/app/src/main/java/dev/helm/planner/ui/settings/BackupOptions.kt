@@ -14,13 +14,13 @@ import dev.helm.planner.R
 import dev.helm.planner.backup.PlanBackup
 import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.ListGroup
 import dev.helm.planner.ui.components.ListNote
 import dev.helm.planner.ui.components.ListRow
 import dev.helm.planner.ui.theme.palette
 import java.time.Instant
-import java.time.format.DateTimeFormatter
 
 /** Where a backup or a restore stands. */
 sealed interface BackupStatus {
@@ -63,7 +63,7 @@ internal fun BackupOptions(status: BackupStatus, lastBackupAt: Long?, timezone: 
 @Composable
 private fun LastBackupRow(lastBackupAt: Long?, timezone: String) {
     val text = lastBackupAt?.let { at ->
-        val format = DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", appLocale()).withZone(HelmDates.zone(timezone))
+        val format = dateFormat("yMMMMdHHmm", appLocale()).withZone(HelmDates.zone(timezone))
         stringResource(R.string.backup_last, format.format(Instant.ofEpochMilli(at)))
     } ?: stringResource(R.string.backup_never)
     ListRow(text, tag = SettingsTags.BACKUP_LAST, icon = LineIcon.Clock, titleColor = palette.textMuted)
@@ -80,7 +80,7 @@ private fun BackupResult(status: BackupStatus) {
             BackupFailure.WRITE -> stringResource(R.string.backup_write_failed)
             BackupFailure.READ -> stringResource(R.string.backup_read_failed)
             BackupFailure.NOT_HELM -> stringResource(R.string.backup_not_helm)
-            BackupFailure.TOO_MANY -> stringResource(R.string.backup_too_many, PlanBackup.MAX_TASKS)
+            BackupFailure.TOO_MANY -> pluralStringResource(R.plurals.backup_too_many, PlanBackup.MAX_TASKS, PlanBackup.MAX_TASKS)
         }
     }
     ListRow(

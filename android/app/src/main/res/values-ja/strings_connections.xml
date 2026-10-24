@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Agent connections (OAuth, docs/oauth.md): the Settings row, the list and the approval of a new one. -->
+<resources>
+    <string name="connections_title">エージェント接続</string>
+    <string name="connections_approve_row">接続を承認</string>
+    <string name="connections_approve_note">Claude などのエージェントのサインインページに表示されたコードを入力</string>
+    <string name="connections_active">接続中</string>
+    <string name="connections_none">接続中のエージェントはありません。Claude が Dayhand への接続を求めると、そのページにコードが表示されます。ここで承認してください。</string>
+    <string name="connections_hint">ここで接続したエージェントは、自身の名前でプランを読み取り・変更します。変更は履歴にその名前で表示されます。接続を解除するとすぐに停止します。ターミナル用の API キーはここには表示されません。</string>
+    <string name="connections_loading">接続を読み込み中…</string>
+    <string name="connections_failed">接続を読み込めませんでした。サーバーへの接続を確認してください。</string>
+    <string name="connections_unauthorized">サーバーがこの端末を拒否しました。「サーバー」で再度ペアリングしてください。</string>
+    <string name="connections_from">%1$s から</string>
+    <string name="connections_registered">自己登録、戻り先：%1$s</string>
+    <string name="connections_read_only">読み取りのみ</string>
+    <string name="connections_read_write">読み取りと変更</string>
+    <string name="connections_last_used">最終使用：%1$s</string>
+    <string name="connections_never_used">未使用</string>
+    <string name="connections_disconnect_title">%1$s の接続を解除しますか？</string>
+    <string name="connections_disconnect_text">すぐに使えなくなります。再び使うには、そのアプリからもう一度接続してください。</string>
+    <string name="connections_disconnect">接続解除</string>
+    <string name="connections_disconnect_failed">接続を解除できませんでした。もう一度お試しください。</string>
+
+    <string name="approve_title">接続を承認</string>
+    <string name="approve_code_label">サインインページのコード</string>
+    <string name="approve_code_hint">アクセスを求めるページに K7QF-M2XA のようなコードが表示されます。いま自分の画面に表示されているコードだけを承認してください。</string>
+    <string name="approve_continue">続行</string>
+    <string name="approve_checking">コードを確認中…</string>
+    <string name="approve_not_found">このコードの待機中のリクエストはありません。コードを確認するか、接続をやり直してください。コードの有効期限は10分です。</string>
+    <string name="approve_rate_limited">間違ったコードが多すぎます。数分後にもう一度お試しください。</string>
+    <string name="approve_failed">サーバーに接続できませんでした。もう一度お試しください。</string>
+    <string name="approve_asks">%1$s が Dayhand のプランへのアクセスを求めています</string>
+    <string name="approve_client_verified">%1$s により確認済み</string>
+    <string name="approve_client_registered">自己登録（名前は未確認）</string>
+    <string name="approve_returns_to">応答の送信先：%1$s</string>
+    <string name="approve_asked_at">リクエスト日時：%1$s</string>
+    <string name="approve_old_warning">このリクエストは数分前のものです。いま自分で開いたサインインページだけを承認してください。誰かからこのコードが送られてきた場合は拒否してください。</string>
+    <string name="approve_loopback_warning">応答は、ページを開いたコンピューター上のプログラム（Claude Code）に送られます。いま自分で起動した場合のみ承認してください。</string>
+    <string name="approve_allow">許可する内容</string>
+    <string name="approve_scope_read">タスクと設定の読み取り</string>
+    <string name="approve_scope_write">タスクと設定の変更</string>
+    <string name="approve_scope_write_note">タスクの追加・編集・完了・削除、設定の変更</string>
+    <string name="approve_confirm">承認</string>
+    <string name="approve_refuse">拒否</string>
+    <string name="approve_nothing_chosen">許可する項目を1つ以上選ぶか、拒否してください。</string>
+    <string name="approve_done">承認しました。サインインページに戻ってください。自動的に続行されます。</string>
+    <string name="approve_refused">拒否しました。サインインページがエージェントに拒否を伝えます。</string>
+    <string name="approve_gone">このリクエストは期限切れか、すでに処理されています。</string>
+</resources>

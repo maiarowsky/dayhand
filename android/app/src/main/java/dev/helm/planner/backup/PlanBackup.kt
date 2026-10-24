@@ -125,7 +125,7 @@ object PlanBackup {
      */
     fun read(text: String, newId: () -> String): BackupRead {
         val root = try {
-            Json.parseToJsonElement(text.removePrefix("﻿")) as? JsonObject
+            Json.parseToJsonElement(text.removePrefix("\uFEFF")) as? JsonObject
         } catch (_: SerializationException) {
             null
         } ?: return BackupRead.Unreadable(BackupProblem.NOT_JSON)

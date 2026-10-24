@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sample plan (SamplePlan), one string per SampleText. -->
+<resources>
+    <string name="sample_plan_week">今週の計画を立てる</string>
+    <string name="sample_plan_week_resume">月曜と火曜は済み。次は予算</string>
+    <string name="sample_bill">電気代を払う</string>
+    <string name="sample_reply">旅行の件で佐藤さんに返信する</string>
+    <string name="sample_dentist">歯医者に電話する</string>
+    <string name="sample_standup">チームの朝会</string>
+    <string name="sample_groceries">食料品の買い物</string>
+    <string name="sample_milk">牛乳</string>
+    <string name="sample_eggs">卵</string>
+    <string name="sample_bread">パン</string>
+    <string name="sample_coffee">コーヒー</string>
+    <string name="sample_plants">植物に水をやる</string>
+    <string name="sample_run">朝のランニング</string>
+    <string name="sample_proposal">プロジェクトの企画書を書く</string>
+    <string name="sample_proposal_note">2ページ：目的、計画、費用。</string>
+    <string name="sample_link_title">Dayhand の使い方</string>
+    <string name="sample_holiday">休暇のアイデア</string>
+    <string name="sample_holiday_note">6月に山へ？ 山小屋のことを田中さんに聞く。</string>
+    <string name="sample_monday">チームの計画会議</string>
+    <string name="sample_tuesday">車の点検</string>
+    <string name="sample_wednesday">鈴木さんとランチ</string>
+    <string name="sample_thursday">ジム</string>
+    <string name="sample_friday">四半期報告書を確認する</string>
+    <string name="sample_saturday">朝市</string>
+    <string name="sample_sunday">おばあちゃんに電話する</string>
+    <string name="sample_home">家</string>
+    <string name="sample_work">仕事</string>
+    <string name="sample_health">健康</string>
+</resources>

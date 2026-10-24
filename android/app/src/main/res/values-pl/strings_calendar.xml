@@ -12,7 +12,12 @@
     <string name="calendar_no_time">Bez godziny</string>
     <string name="calendar_no_time_short">Cały dzień</string>
     <string name="calendar_more">+%1$d</string>
-    <string name="calendar_more_described">Jeszcze %1$d: otwórz dzień</string>
+    <plurals name="calendar_more_described">
+        <item quantity="one">Jeszcze %1$d: otwórz dzień</item>
+        <item quantity="few">Jeszcze %1$d: otwórz dzień</item>
+        <item quantity="many">Jeszcze %1$d: otwórz dzień</item>
+        <item quantity="other">Jeszcze %1$d: otwórz dzień</item>
+    </plurals>
     <string name="calendar_open_day">Otwórz dzień</string>
     <string name="calendar_day_tasks">Pokaż zadania dnia</string>
     <string name="calendar_untimed_described">Cały dzień: %1$s</string>

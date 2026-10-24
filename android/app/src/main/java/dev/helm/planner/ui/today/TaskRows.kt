@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.Task
+import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmCard
 import dev.helm.planner.ui.components.HelmDialog
@@ -46,8 +48,6 @@ import dev.helm.planner.ui.components.helmCheckboxColors
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** Overdue: done, to today, or (menu) another day and archive. */
 @Composable
@@ -279,5 +279,5 @@ fun ResumeNoteDialog(initial: String, onDismiss: () -> Unit, onSave: (String) ->
 private fun overdueLabel(task: Task, today: LocalDate): String? {
     val due = task.dueDate?.let(LocalDate::parse) ?: return null
     if (due == today.minusDays(1)) return stringResource(R.string.yesterday)
-    return due.format(DateTimeFormatter.ofPattern("EEE, d MMM", Locale.getDefault()))
+    return due.format(dateFormat("EEEdMMM", appLocale()))
 }

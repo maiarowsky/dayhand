@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">Willkommen bei Dayhand</string>
+    <string name="welcome_intro">Heute, ein Kalender und ein Board für deine Aufgaben. Wähle, wo Dayhand deinen Plan speichert; du kannst das später in den Einstellungen ändern.</string>
+    <string name="local_title">Nur auf diesem Smartphone</string>
+    <string name="local_body">Kein Konto und kein Server. Dein Plan bleibt auf diesem Smartphone, samt Erinnerungen und Morgenübersicht. Sichere ihn unter Einstellungen → Daten in eine Datei.</string>
+    <string name="local_start">Mit leerem Plan beginnen</string>
+    <string name="local_sample">Mit Beispieldaten ausprobieren</string>
+    <string name="server_title">Mit meinem Server verbinden</string>
+    <string name="server_body">Dein eigener Dayhand-Server hält den Plan mit deinen anderen Geräten synchron und lässt KI-Agenten damit arbeiten. Führe auf deinem Computer dayhand pair aus und gib den angezeigten Code ein.</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">Plan auf diesem Smartphone ersetzen?</string>
+    <string name="replace_text">Auf diesem Smartphone liegt der Plan von %1$s. Eine Verbindung mit %2$s ersetzt ihn durch den Plan dort und entfernt %3$s von diesem Smartphone. Was %1$s schon erreicht hat, bleibt dort.</string>
+    <string name="replace_pending">Was noch nicht an %2$s gesendet wurde, geht verloren: %1$s.</string>
+    <string name="replace_keep">Um das zu behalten, speichere zuerst eine Sicherung (Einstellungen → Daten → Sicherung) oder verbinde dich wieder mit %1$s.</string>
+    <string name="replace_confirm">Ersetzen und verbinden</string>
+    <plurals name="replace_tasks">
+        <item quantity="one">%d Aufgabe</item>
+        <item quantity="other">%d Aufgaben</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="one">%d Änderung</item>
+        <item quantity="other">%d Änderungen</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">Der Plan wird auf diesem Smartphone gespeichert, und nichts wird irgendwohin gesendet.</string>
+    <string name="server_local_was">Zuletzt verbunden mit %1$s. Änderungen seitdem gehen dorthin, sobald du dich wieder damit verbindest.</string>
+    <string name="server_local_how">Ein eigener Server hält Dayhand auf allen deinen Geräten synchron und lässt KI-Agenten den Plan lesen und ändern. Richte ihn wie unter github.com/maiarowsky/helm (docs/deploy.md) beschrieben ein, führe auf deinem Computer dayhand pair aus und verbinde dich mit dem Code. Danach geht alles von diesem Smartphone an den Server.</string>
+    <string name="settings_timezone_phone">%1$s, Zeitzone dieses Smartphones</string>
+    <string name="settings_timezone_use_phone">Zeitzone dieses Smartphones verwenden (%1$s)</string>
+    <string name="settings_timezone_differs">Die Zeitzone des Servers bestimmt, was heute ist und wann Erinnerungen kommen.</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">Sicherung</string>
+    <string name="backup_save">Sicherungsdatei speichern</string>
+    <string name="backup_share">Sicherung teilen</string>
+    <string name="backup_restore">Aus Datei wiederherstellen</string>
+    <string name="backup_last">Letzte Sicherung: %1$s</string>
+    <string name="backup_never">Noch keine Sicherung auf diesem Smartphone</string>
+    <string name="backup_hint">Eine Sicherung ist der ganze Plan auf diesem Smartphone im JSON-Format von Dayhand: Aufgaben mit Checklisten, Erinnerungen und Wiederholungsregeln sowie die Einstellungen, ohne Änderungsverlauf. Dayhand kopiert deinen Plan weder zu Google noch anderswohin, also bewahre die Datei sicher auf. Auch ein Dayhand-Server kann sie lesen (dayhand import).</string>
+    <string name="backup_working">Sicherung wird vorbereitet…</string>
+    <string name="backup_saved">%1$s gespeichert</string>
+    <string name="backup_write_failed">Die Datei konnte nicht gespeichert werden.</string>
+    <string name="backup_read_failed">Die Datei konnte nicht gelesen werden.</string>
+    <string name="backup_not_helm">Diese Datei ist keine Dayhand-Sicherung (JSON-Export von Dayhand, Version 1).</string>
+    <plurals name="backup_too_many">
+        <item quantity="one">Die Datei enthält mehr als %1$d Aufgabe; Dayhand stellt höchstens %1$d auf einmal wieder her.</item>
+        <item quantity="other">Die Datei enthält mehr als %1$d Aufgaben; Dayhand stellt höchstens %1$d auf einmal wieder her.</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="one">%d Aufgabe wiederhergestellt.</item>
+        <item quantity="other">%d Aufgaben wiederhergestellt.</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="one">%d war schon auf dem Smartphone.</item>
+        <item quantity="other">%d waren schon auf dem Smartphone.</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="one">%d konnte nicht gelesen werden.</item>
+        <item quantity="other">%d konnten nicht gelesen werden.</item>
+    </plurals>
+    <string name="backup_settings_restored">Die Einstellungen wurden ebenfalls wiederhergestellt.</string>
+    <string name="backup_share_title">Dayhand-Sicherung</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">Das sind Beispielaufgaben, die zeigen, was Dayhand kann.</string>
+    <string name="sample_remove">Entfernen</string>
+    <string name="sample_row">Beispielaufgaben entfernen</string>
+</resources>

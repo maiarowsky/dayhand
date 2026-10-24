@@ -1,5 +1,6 @@
 package dev.helm.planner.ui.common
 
+import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
@@ -23,6 +24,13 @@ import java.util.Locale
 @Composable
 fun appLocale(): Locale = LocalConfiguration.current.locales[0]
 
+/**
+ * A formatter for the fields of [skeleton] ("EEEdMMM", "yMMMMEEEEd", ...) in the order and punctuation [locale] writes
+ * them: "Mon, Oct 19", "Mo., 19. Okt.", "10月19日(月)".
+ */
+fun dateFormat(skeleton: String, locale: Locale): DateTimeFormatter =
+    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+
 /** Board column names, also used for the status of a task. */
 @Composable
 fun statusLabel(status: TaskStatus): String = stringResource(
@@ -39,7 +47,7 @@ fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     today -> stringResource(R.string.day_today)
     today.plusDays(1) -> stringResource(R.string.day_tomorrow)
     today.minusDays(1) -> stringResource(R.string.yesterday)
-    else -> date.format(DateTimeFormatter.ofPattern(if (date.year == today.year) "EEE, d MMM" else "EEE, d MMM yyyy", appLocale()))
+    else -> date.format(dateFormat(if (date.year == today.year) "EEEdMMM" else "yMMMEEEd", appLocale()))
 }
 
 /** The due day and time of a task, e.g. "tomorrow, 09:00", or null without a due day. */
@@ -64,7 +72,7 @@ fun repeatLabel(rule: RepeatRule): String {
         rule.weekdays?.sorted()?.joinToString(", ") { weekdayName(it, locale) },
         if (rule.every == RepeatEvery.MONTH) monthPatternLabel(rule, long = false) else null,
         if (rule.fromCompletion) stringResource(R.string.repeat_label_from_completion) else null,
-        rule.until?.let { stringResource(R.string.repeat_label_until, LocalDate.parse(it).format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))) },
+        rule.until?.let { stringResource(R.string.repeat_label_until, LocalDate.parse(it).format(dateFormat("yMMMd", locale))) },
         rule.count?.let { pluralStringResource(R.plurals.repeat_label_count, it, it) },
     )
     return if (details.isEmpty()) every else stringResource(R.string.repeat_on_days, every, details.joinToString(", "))

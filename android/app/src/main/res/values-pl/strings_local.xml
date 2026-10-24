@@ -50,7 +50,12 @@
     <string name="backup_write_failed">Nie udało się zapisać pliku.</string>
     <string name="backup_read_failed">Nie udało się odczytać pliku.</string>
     <string name="backup_not_helm">To nie jest kopia Dayhand (eksport JSON aplikacji Dayhand, wersja 1).</string>
-    <string name="backup_too_many">Plik ma więcej niż %1$d zadań; Dayhand przywraca najwyżej %1$d naraz.</string>
+    <plurals name="backup_too_many">
+        <item quantity="one">Plik ma więcej niż %1$d zadanie; Dayhand przywraca najwyżej %1$d naraz.</item>
+        <item quantity="few">Plik ma więcej niż %1$d zadania; Dayhand przywraca najwyżej %1$d naraz.</item>
+        <item quantity="many">Plik ma więcej niż %1$d zadań; Dayhand przywraca najwyżej %1$d naraz.</item>
+        <item quantity="other">Plik ma więcej niż %1$d zadania; Dayhand przywraca najwyżej %1$d naraz.</item>
+    </plurals>
     <plurals name="backup_restored">
         <item quantity="one">Przywrócono %d zadanie.</item>
         <item quantity="few">Przywrócono %d zadania.</item>

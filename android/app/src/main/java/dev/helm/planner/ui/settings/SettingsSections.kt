@@ -161,6 +161,12 @@ private fun connectionValue(connection: ConnectionStatus): String = when (connec
 @StringRes
 internal fun languageName(language: AppLanguage): Int = when (language) {
     AppLanguage.SYSTEM -> R.string.language_system
-    AppLanguage.POLISH -> R.string.language_polish
     AppLanguage.ENGLISH -> R.string.language_english
+    AppLanguage.POLISH -> R.string.language_polish
+    AppLanguage.GERMAN -> R.string.language_german
+    AppLanguage.SPANISH -> R.string.language_spanish
+    AppLanguage.FRENCH -> R.string.language_french
+    AppLanguage.PORTUGUESE_BRAZIL -> R.string.language_portuguese_brazil
+    AppLanguage.JAPANESE -> R.string.language_japanese
+    AppLanguage.CHINESE_SIMPLIFIED -> R.string.language_chinese_simplified
 }

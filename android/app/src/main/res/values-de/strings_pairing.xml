@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">Mit meinem Server verbinden</string>
+    <string name="connect_intro">Führe auf deinem Computer dayhand pair aus und gib den angezeigten Code ein. Der Code funktioniert einmal, 10 Minuten lang.</string>
+    <string name="connect_address">Serveradresse</string>
+    <string name="connect_address_hint">Die Adresse der HTTP Actions, z. B. https://name.convex.site</string>
+    <string name="connect_code">Kopplungscode</string>
+    <string name="connect_code_hint">12 Buchstaben und Ziffern, z. B. ABCD-EFGH-JKMN</string>
+    <string name="connect_button">Verbinden</string>
+    <string name="connect_working">Wird verbunden…</string>
+    <string name="connect_done">Verbunden. Deine Aufgaben werden synchronisiert…</string>
+    <string name="connect_error_address">Gib die Serveradresse ein, beginnend mit https://</string>
+    <string name="connect_error_code">Ein Code hat 12 Buchstaben und Ziffern, z. B. ABCD-EFGH-JKMN.</string>
+    <string name="connect_error_invalid">Dieser Code ist falsch, schon verwendet oder abgelaufen. Führe dayhand pair aus, um einen neuen zu erhalten.</string>
+    <string name="connect_error_rate_limited">Zu viele falsche Codes. Versuche es später erneut.</string>
+    <plurals name="connect_error_rate_limited_minutes">
+        <item quantity="one">Zu viele falsche Codes. Versuche es in %1$d Minute erneut.</item>
+        <item quantity="other">Zu viele falsche Codes. Versuche es in %1$d Minuten erneut.</item>
+    </plurals>
+    <string name="connect_error_no_network">Kein Netz. Verbinde dich mit dem Internet und versuche es erneut.</string>
+    <string name="connect_error_unreachable">Server nicht erreichbar. Prüfe die Adresse und versuche es erneut.</string>
+    <string name="connect_error_not_helm">Unter dieser Adresse gibt es keinen Dayhand-Server.</string>
+    <string name="connect_error_server">Der Server hat gerade ein Problem. Versuche es später erneut.</string>
+
+    <string name="server_connected_to">Verbunden mit %1$s</string>
+    <string name="server_device">Dieses Smartphone: %1$s</string>
+    <string name="server_app_token">Mit einem App-Token angemeldet. Kopple das Smartphone besser mit einem Code; das Token funktioniert nicht mehr, sobald es abläuft.</string>
+    <string name="server_signed_out">Der Server hat dieses Smartphone abgemeldet. Verbinde es mit einem neuen Code neu.</string>
+    <string name="server_connect">Mit meinem Server verbinden</string>
+    <string name="server_connect_code">Mit Code verbinden</string>
+    <string name="server_disconnect">Trennen</string>
+    <string name="server_disconnect_title">Dieses Smartphone trennen?</string>
+    <string name="server_disconnect_text">Dayhand vergisst die Anmeldung auf diesem Smartphone, das dann allein mit dem Plan weitermacht. Deine Aufgaben bleiben hier, und noch nicht gesendete Änderungen warten, bis du dich wieder mit diesem Server verbindest; eine Verbindung mit einem anderen Server ersetzt diesen Plan. Um das Smartphone auch auf dem Server zu widerrufen, führe aus: dayhand revoke %1$s</string>
+    <string name="server_disconnect_text_no_id">Dayhand vergisst die Anmeldung auf diesem Smartphone, das dann allein mit dem Plan weitermacht. Deine Aufgaben bleiben hier, und noch nicht gesendete Änderungen warten, bis du dich wieder mit diesem Server verbindest; eine Verbindung mit einem anderen Server ersetzt diesen Plan.</string>
+</resources>

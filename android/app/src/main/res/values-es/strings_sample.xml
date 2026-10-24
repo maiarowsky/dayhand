@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sample plan (SamplePlan), one string per SampleText. -->
+<resources>
+    <string name="sample_plan_week">Planificar la semana</string>
+    <string name="sample_plan_week_resume">Lunes y martes ya están; siguiente: el presupuesto</string>
+    <string name="sample_bill">Pagar la factura de la luz</string>
+    <string name="sample_reply">Responder a Ana sobre el viaje</string>
+    <string name="sample_dentist">Llamar al dentista</string>
+    <string name="sample_standup">Reunión diaria del equipo</string>
+    <string name="sample_groceries">Hacer la compra</string>
+    <string name="sample_milk">Leche</string>
+    <string name="sample_eggs">Huevos</string>
+    <string name="sample_bread">Pan</string>
+    <string name="sample_coffee">Café</string>
+    <string name="sample_plants">Regar las plantas</string>
+    <string name="sample_run">Correr por la mañana</string>
+    <string name="sample_proposal">Redactar la propuesta del proyecto</string>
+    <string name="sample_proposal_note">Dos páginas: el objetivo, el plan y el coste.</string>
+    <string name="sample_link_title">Cómo funciona Dayhand</string>
+    <string name="sample_holiday">Ideas para las vacaciones</string>
+    <string name="sample_holiday_note">¿La montaña en junio? Preguntarle a Tomás por la cabaña.</string>
+    <string name="sample_monday">Planificación del equipo</string>
+    <string name="sample_tuesday">Revisión del coche</string>
+    <string name="sample_wednesday">Comida con Marta</string>
+    <string name="sample_thursday">Gimnasio</string>
+    <string name="sample_friday">Revisar el informe trimestral</string>
+    <string name="sample_saturday">Mercado de productores</string>
+    <string name="sample_sunday">Llamar a la abuela</string>
+    <string name="sample_home">Casa</string>
+    <string name="sample_work">Trabajo</string>
+    <string name="sample_health">Salud</string>
+</resources>

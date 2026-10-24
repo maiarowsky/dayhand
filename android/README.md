@@ -24,11 +24,13 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.10.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.10.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
-- English and Polish, text that follows the system font size, touch targets of at least 48 dp
-  and descriptions for screen readers.
+- Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
+  Português (Brasil), 日本語 and 简体中文, with dates in the order and words of the language;
+  text that follows the system font size, touch targets of at least 48 dp and descriptions for
+  screen readers.
 - The look of Mussh: its 16 colour palettes, type scale, buttons, cards and fields, with a
   light/dark/system theme and a choice of bundled fonts; see [docs/design.md](../docs/design.md).
 
@@ -167,7 +169,8 @@ in its preview and on the other screens. Top to bottom:
 1. **Appearance**: **Theme** (system, light or dark), **Color palette** (a dark and a light
    palette, each from the Mussh palettes, with a preview of both) and **Font** (system, Inter,
    IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4 or JetBrains Mono, each shown in
-   itself); **Language** (phone language, Polski or English, Android 13+ per-app language). The
+   itself); **Language** (phone language or one of the eight, each in its own name; Android 13+ per-app
+   language, the same choice as the system's App languages; older phones follow the phone). The
    appearance is stored on the phone and applies at once, without a restart.
 2. **Notifications**: **Notifications and alarms** (on, off, or "needs fixing" when exact alarms
    are missing; the page says what each means and has a button that asks Android (13+) or opens
@@ -447,11 +450,14 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # agent connections (answers, code input, approval flow), calendar address,
                                             # backup file (write, read, the server's export), sample plan, another server,
                                             # agents (answers, requests, proposals, the switch, the health card, new requests)
+                                            # translations (keys, placeholders, plural forms) and the language picker's tags
+./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync and the phone's zone,
                                             # on this phone only (repeats made on the phone, sample tasks, restore, emptying),
                                             # Compose (Today, calendar, board, details, Settings, Settings → Calendar and Backup, Connect,
                                             # agent connections, Agents and the health card), encrypted pairing storage, and a real alarm + notification
-                                            # (ReminderDeliveryTest, about 80 s, with no server configured)
+                                            # (ReminderDeliveryTest, about 80 s, with no server configured),
+                                            # the eight languages and switching them in Settings (LanguageSwitchTest)
 ```
 
 `ReminderDeliveryTest` speeds time up by setting a task and the summary to the next whole

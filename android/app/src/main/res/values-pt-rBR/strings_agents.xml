@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings → Agents (0.10.0): the agent switch, approval requests, proposals and tool policies -->
+    <string name="agents_title">Agentes</string>
+    <string name="agents_loading">Carregando…</string>
+    <string name="agents_failed">Não foi possível carregar. Verifique a conexão com o servidor.</string>
+    <string name="agents_unauthorized">O servidor recusou este celular ou é anterior à versão 0.11.0. Pareie-o de novo em Servidor.</string>
+    <string name="agents_pause">Pausar agentes</string>
+    <string name="agents_running_note">Os agentes podem alterar o plano dentro dos limites das suas chaves e conexões.</string>
+    <string name="agents_paused_since">desde %1$s</string>
+    <string name="agents_paused_note">os agentes podem ler; toda alteração que tentarem é recusada até você retomá-los</string>
+    <string name="agents_pause_failed">Não foi possível alterar a pausa. Tente de novo.</string>
+    <string name="agents_waiting">Aguardando você (%1$d)</string>
+    <string name="agents_no_requests">Nenhuma solicitação de aprovação pendente.</string>
+    <string name="agents_request_note">%1$s · decida até %2$s</string>
+    <string name="agents_earlier">Solicitações anteriores</string>
+    <string name="agents_proposals">Propostas (%1$d)</string>
+    <string name="agents_no_proposals">Nenhuma proposta. As tarefas que um agente propõe aguardam aqui, fora de Hoje, até você aceitá-las.</string>
+    <string name="agents_from">de %1$s</string>
+    <string name="agents_policies">Políticas de ferramentas</string>
+    <string name="agents_no_policies">Nenhuma política de ferramenta: toda chave de agente pode usar qualquer ferramenta que seu escopo permita.</string>
+    <string name="agents_policies_hint">Defina-as no terminal com dayhand policy set. “Perguntar” retém a chamada até você permiti-la aqui.</string>
+    <string name="agents_policy_any_tool">qualquer outra ferramenta</string>
+    <string name="agents_rule_allow">Permitir</string>
+    <string name="agents_rule_ask">Perguntar</string>
+    <string name="agents_rule_deny">Negar</string>
+    <string name="agents_hint">O Dayhand registra sua decisão e o agente age de acordo com ela. O Dayhand não pode impedir o que um agente faz fora do Dayhand.</string>
+    <string name="agents_gone">Isto não está mais aqui: foi decidido, expirou ou foi removido em outro lugar.</string>
+    <string name="agents_sending">Enviando…</string>
+
+    <string name="agents_approval_title">Solicitação de aprovação</string>
+    <string name="agents_asked_by">Solicitado por %1$s</string>
+    <string name="agents_policy_held">Retido pela sua política: %1$s</string>
+    <string name="agents_reversible">Pode ser desfeito</string>
+    <string name="agents_irreversible">Não pode ser desfeito</string>
+    <string name="agents_decide_by">Decida até %1$s</string>
+    <string name="agents_choose">Sua resposta</string>
+    <string name="agents_decision_hint">Só responda a uma solicitação que você entende. Sem resposta, ela expira e o agente fica sabendo.</string>
+    <string name="agents_choose_title">Escolher “%1$s”?</string>
+    <string name="agents_choose_confirm">Escolher</string>
+    <string name="agents_note_label">Uma mensagem para o agente (opcional)</string>
+    <string name="agents_chose">Você escolheu: %1$s</string>
+    <string name="agents_expired">Expirou sem resposta</string>
+    <string name="agents_decided">Resposta enviada. O agente vai lê-la na próxima verificação.</string>
+    <string name="agents_decide_refused">Esta solicitação já foi decidida ou expirou.</string>
+
+    <string name="agents_proposal_title">Proposta</string>
+    <string name="agents_requested_by">Pedida por %1$s</string>
+    <string name="agents_proposed_at">Proposta: %1$s</string>
+    <string name="agents_accept">Aceitar</string>
+    <string name="agents_accept_note">Ela vira uma tarefa do seu plano e aparece em Hoje no prazo.</string>
+    <string name="agents_merge">Mesclar com uma tarefa</string>
+    <string name="agents_merge_note">A nota, os links e as etiquetas dela vão para uma tarefa que você já tem.</string>
+    <string name="agents_reject">Rejeitar</string>
+    <string name="agents_reject_title">Rejeitar “%1$s”?</string>
+    <string name="agents_reason_label">Motivo (opcional, enviado de volta à origem)</string>
+    <string name="agents_merge_title">Mesclar com</string>
+    <string name="agents_merge_search">Encontrar uma tarefa</string>
+    <string name="agents_merge_none">Nenhuma tarefa aberta corresponde.</string>
+    <string name="agents_merge_confirm_title">Mesclar com “%1$s”?</string>
+    <string name="agents_merge_confirm_text">A proposta vai para a lixeira; a nota, os links e as etiquetas dela vão para esta tarefa.</string>
+    <string name="agents_merge_confirm">Mesclar</string>
+    <string name="agents_accepted">Aceita: agora é uma tarefa do seu plano.</string>
+    <string name="agents_merged">Mesclada.</string>
+    <string name="agents_rejected">Rejeitada: está na lixeira.</string>
+    <string name="agents_proposal_gone">Esta proposta já foi tratada em outro lugar.</string>
+    <string name="agents_change_failed">Sem conexão com o servidor. Tente de novo.</string>
+
+    <string name="channel_approvals">Solicitações de aprovação</string>
+    <string name="channel_approvals_description">Um agente pergunta antes de fazer algo. Verificado a cada 15 minutos enquanto o Dayhand está fechado.</string>
+    <string name="approval_notify_title">%1$s pede sua aprovação</string>
+
+    <!-- The plan health card above Today -->
+    <string name="health_title">Plano: %1$s</string>
+    <string name="health_clear">Plano: nada precisa de atenção.</string>
+    <string name="health_review">Revisar</string>
+    <string name="health_paused">agentes pausados</string>
+    <plurals name="health_overdue">
+        <item quantity="one">%d atrasada</item>
+        <item quantity="many">%d atrasadas</item>
+        <item quantity="other">%d atrasadas</item>
+    </plurals>
+    <plurals name="health_expired_claims">
+        <item quantity="one">%d reserva de agente expirou</item>
+        <item quantity="many">%d reservas de agente expiraram</item>
+        <item quantity="other">%d reservas de agente expiraram</item>
+    </plurals>
+    <plurals name="health_approvals">
+        <item quantity="one">%d solicitação de aprovação</item>
+        <item quantity="many">%d solicitações de aprovação</item>
+        <item quantity="other">%d solicitações de aprovação</item>
+    </plurals>
+    <plurals name="health_blocked">
+        <item quantity="one">%d bloqueada</item>
+        <item quantity="many">%d bloqueadas</item>
+        <item quantity="other">%d bloqueadas</item>
+    </plurals>
+    <plurals name="health_proposals">
+        <item quantity="one">%d proposta</item>
+        <item quantity="many">%d propostas</item>
+        <item quantity="other">%d propostas</item>
+    </plurals>
+    <plurals name="health_without_proof">
+        <item quantity="one">%d concluída sem comprovação</item>
+        <item quantity="many">%d concluídas sem comprovação</item>
+        <item quantity="other">%d concluídas sem comprovação</item>
+    </plurals>
+    <plurals name="health_due_today">
+        <item quantity="one">%d vence hoje</item>
+        <item quantity="many">%d vencem hoje</item>
+        <item quantity="other">%d vencem hoje</item>
+    </plurals>
+    <plurals name="health_in_progress">
+        <item quantity="one">%d em andamento</item>
+        <item quantity="many">%d em andamento</item>
+        <item quantity="other">%d em andamento</item>
+    </plurals>
+    <plurals name="health_done_today">
+        <item quantity="one">%d concluída hoje</item>
+        <item quantity="many">%d concluídas hoje</item>
+        <item quantity="other">%d concluídas hoje</item>
+    </plurals>
+    <plurals name="health_oldest">
+        <item quantity="one">tarefa aberta mais antiga: %d dia</item>
+        <item quantity="many">tarefa aberta mais antiga: %d dias</item>
+        <item quantity="other">tarefa aberta mais antiga: %d dias</item>
+    </plurals>
+</resources>

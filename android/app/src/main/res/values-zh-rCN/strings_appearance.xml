@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_appearance">外观</string>
+    <string name="appearance_mode">主题</string>
+    <string name="appearance_mode_system">跟随系统</string>
+    <string name="appearance_mode_light">浅色</string>
+    <string name="appearance_mode_dark">深色</string>
+    <string name="appearance_colors">配色</string>
+    <string name="appearance_font">字体</string>
+    <string name="appearance_palettes_dark">深色配色（深色主题）</string>
+    <string name="appearance_palettes_light">浅色配色（浅色主题）</string>
+    <string name="appearance_fonts_proportional">比例字体</string>
+    <string name="appearance_fonts_mono">等宽字体</string>
+    <string name="appearance_font_system">系统</string>
+    <string name="appearance_preview_today">今天</string>
+    <string name="appearance_preview_task">给植物浇水</string>
+    <string name="appearance_preview_now">正在做</string>
+    <string name="appearance_preview_done">已完成</string>
+
+    <string name="font_note_system">手机自带字体，与其他应用一致</string>
+    <string name="font_note_inter">清晰的无衬线字体，适合长时间阅读</string>
+    <string name="font_note_ibm_plex_sans">来自 IBM 的技术感无衬线字体</string>
+    <string name="font_note_atkinson">专为低视力用户设计，保持清晰易读</string>
+    <string name="font_note_geist">现代、紧凑的无衬线字体</string>
+    <string name="font_note_source_serif">衬线字体，像书本一样</string>
+    <string name="font_note_mono">等宽，像终端一样</string>
+
+    <string name="palette_terracotta">陶土与沙</string>
+    <string name="palette_terracotta_note">默认深色。琥珀色强调，鼠尾草绿表示“已完成”，陶土色表示“已逾期”</string>
+    <string name="palette_honey">蜂蜜与橄榄</string>
+    <string name="palette_honey_note">橄榄色表示“已完成”，鲑鱼色表示“已逾期”，玫瑰色链接</string>
+    <string name="palette_amber">琥珀</string>
+    <string name="palette_amber_note">石墨色背景上的琥珀色</string>
+    <string name="palette_gruvbox_dark">Gruvbox Dark</string>
+    <string name="palette_gruvbox_dark_note">温暖复古：棕黑底上的黄、橙、绿</string>
+    <string name="palette_solarized_dark">Solarized Dark</string>
+    <string name="palette_solarized_dark_note">沉静的深青色背景，配柔和的强调色</string>
+    <string name="palette_nord">Nord</string>
+    <string name="palette_nord_note">极地风：冷蓝灰色配霜白强调色</string>
+    <string name="palette_dracula">Dracula</string>
+    <string name="palette_dracula_note">深紫灰底上的紫、粉、绿</string>
+    <string name="palette_tokyo_night">Tokyo Night</string>
+    <string name="palette_tokyo_night_note">夜色城市：藏青底上的蓝紫霓虹</string>
+    <string name="palette_catppuccin_mocha">Catppuccin Mocha</string>
+    <string name="palette_catppuccin_mocha_note">柔和深色背景上的粉彩色</string>
+    <string name="palette_one_dark">One Dark</string>
+    <string name="palette_one_dark_note">Atom 经典配色：石墨底上的蓝、绿、紫</string>
+    <string name="palette_rose_pine">Rosé Pine</string>
+    <string name="palette_rose_pine_note">深紫底上的柔和玫瑰、金与松绿</string>
+    <string name="palette_paper">纸张</string>
+    <string name="palette_paper_note">默认浅色。暖色纸张配陶土色强调</string>
+    <string name="palette_gruvbox_light">Gruvbox Light</string>
+    <string name="palette_gruvbox_light_note">奶油底上的温暖复古</string>
+    <string name="palette_solarized_light">Solarized Light</string>
+    <string name="palette_solarized_light_note">浅米色上的沉静强调色</string>
+    <string name="palette_catppuccin_latte">Catppuccin Latte</string>
+    <string name="palette_catppuccin_latte_note">冷调浅色背景上的粉彩强调色</string>
+    <string name="palette_rose_pine_dawn">Rosé Pine Dawn</string>
+    <string name="palette_rose_pine_dawn_note">柔和晨光中的玫瑰与松绿</string>
+
+    <string name="licenses_title">开源许可证</string>
+    <string name="licenses_intro">Dayhand 是基于 Apache License 2.0 的自由软件。其中包含以下字体，未经修改，基于 SIL Open Font License 1.1 授权：</string>
+    <string name="licenses_show">显示许可证</string>
+    <string name="licenses_hide">隐藏许可证</string>
+</resources>

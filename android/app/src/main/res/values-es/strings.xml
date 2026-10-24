@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_title">Hoy</string>
+    <string name="section_overdue">Vencidas (%1$d)</string>
+    <string name="section_now">Ahora</string>
+    <string name="section_today">Hoy</string>
+    <string name="section_done">Hechas (%1$d)</string>
+    <string name="done_expand">Mostrar tareas hechas</string>
+    <string name="done_collapse">Ocultar tareas hechas</string>
+    <string name="empty_today">No hay nada planeado para hoy.</string>
+    <string name="add_task">Añadir tarea</string>
+    <string name="open_settings">Ajustes</string>
+    <string name="yesterday">ayer</string>
+
+    <string name="complete_task">Marcar como hecha: %1$s</string>
+    <string name="reopen_task">Marcar como no hecha: %1$s</string>
+    <string name="move_to_today">A hoy</string>
+    <string name="move_to_today_described">Mover a hoy: %1$s</string>
+    <string name="move_to_day">Otro día…</string>
+    <string name="archive">Archivar</string>
+    <string name="set_now">Hacerla ahora</string>
+    <string name="more_actions">Más acciones: %1$s</string>
+    <string name="stop_now">Ahora no</string>
+
+    <string name="resume_label">Dónde me quedé / siguiente paso</string>
+    <string name="resume_empty">Anota dónde te quedaste o el siguiente paso</string>
+    <string name="resume_edit">Editar dónde me quedé</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">Aceptar</string>
+    <string name="clear">Borrar</string>
+
+    <string name="quick_add_title">Nueva tarea</string>
+    <string name="quick_add_field">¿Qué hay que hacer?</string>
+    <string name="quick_add_more">Más opciones</string>
+    <string name="quick_add_less">Menos opciones</string>
+    <string name="quick_add_day">Día</string>
+    <string name="quick_add_today">Hoy</string>
+    <string name="quick_add_tomorrow">Mañana</string>
+    <string name="quick_add_time">Hora</string>
+    <string name="quick_add_no_time">Sin hora</string>
+    <string name="quick_add_note">Nota</string>
+    <string name="quick_add_save">Añadir</string>
+
+    <plurals name="status_offline">
+        <item quantity="one">Sin conexión. Los cambios se guardan y se enviarán cuando vuelva la red (%1$d en espera).</item>
+        <item quantity="many">Sin conexión. Los cambios se guardan y se enviarán cuando vuelva la red (%1$d en espera).</item>
+        <item quantity="other">Sin conexión. Los cambios se guardan y se enviarán cuando vuelva la red (%1$d en espera).</item>
+    </plurals>
+    <string name="status_unauthorized">El servidor cerró la sesión de este teléfono. Vuelve a conectarte en Ajustes.</string>
+    <string name="status_error">No se puede contactar con el servidor. Dayhand sigue intentándolo.</string>
+    <plurals name="status_sending">
+        <item quantity="one">Enviando %1$d cambio…</item>
+        <item quantity="many">Enviando %1$d cambios…</item>
+        <item quantity="other">Enviando %1$d cambios…</item>
+    </plurals>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="back">Atrás</string>
+    <string name="settings_backend">Servidor</string>
+    <string name="settings_timezone_title">Zona horaria</string>
+    <string name="settings_timezone">%1$s, del servidor</string>
+    <string name="settings_loading">Cargando ajustes</string>
+    <string name="settings_version_title">Versión</string>
+    <string name="settings_notifications_row">Notificaciones y alarmas</string>
+    <string name="settings_data">Datos</string>
+    <string name="settings_connection">Conexión</string>
+    <string name="settings_state_fix">Requiere atención</string>
+    <string name="settings_reminders_value_none">Ninguno</string>
+    <plurals name="settings_reminders_count">
+        <item quantity="one">%d recordatorio</item>
+        <item quantity="many">%d recordatorios</item>
+        <item quantity="other">%d recordatorios</item>
+    </plurals>
+
+    <!-- Board, task details and trash (0.2) -->
+    <string name="board_title">Tablero</string>
+    <string name="column_todo">Por hacer</string>
+    <string name="column_doing">En curso</string>
+    <string name="column_done">Hechas</string>
+    <string name="column_with_count">%1$s (%2$d)</string>
+    <string name="board_empty_column">Aquí no hay nada. Mantén pulsada una tarjeta y arrástrala a una columna, o usa el menú de la tarjeta para moverla.</string>
+    <string name="move_to_column">Mover a %1$s</string>
+    <string name="overdue_due">Vencida · %1$s</string>
+    <string name="open_details">Abrir detalles</string>
+    <string name="day_today">hoy</string>
+    <string name="day_tomorrow">mañana</string>
+    <string name="day_and_time">%1$s, %2$s</string>
+
+    <string name="detail_title">Tarea</string>
+    <string name="detail_missing">Esta tarea ya no está en el teléfono. Puede que se haya eliminado de la papelera.</string>
+    <string name="detail_status">Estado</string>
+    <string name="detail_due">Fecha límite</string>
+    <string name="detail_no_due">Sin fecha límite</string>
+    <string name="detail_repeat">Repetir</string>
+    <string name="detail_labels">Etiquetas y proyectos</string>
+    <string name="detail_links">Enlaces</string>
+    <string name="detail_history">Historial de cambios</string>
+    <string name="detail_archived">Archivada. Restáurala para volver a verla en Hoy y en el tablero.</string>
+    <plurals name="detail_in_trash">
+        <item quantity="one">En la papelera. Se eliminará definitivamente en %1$d día (%2$s) si no la restauras.</item>
+        <item quantity="many">En la papelera. Se eliminará definitivamente en %1$d días (%2$s) si no la restauras.</item>
+        <item quantity="other">En la papelera. Se eliminará definitivamente en %1$d días (%2$s) si no la restauras.</item>
+    </plurals>
+    <string name="edit_title">Editar título</string>
+    <string name="title_required">El título no puede estar vacío</string>
+    <string name="edit_note">Editar nota</string>
+    <string name="note_empty">Añadir una nota</string>
+    <string name="pick_day">Elegir un día</string>
+    <string name="add_time">Añadir una hora</string>
+    <string name="change_time">Cambiar hora</string>
+    <string name="remove_time">Sin hora</string>
+    <string name="remove_due">Sin fecha límite</string>
+    <string name="edit_repeat">Repetir</string>
+    <string name="repeat_none">No se repite</string>
+    <string name="repeat_unit_day">Diaria</string>
+    <string name="repeat_unit_week">Semanal</string>
+    <string name="repeat_unit_month">Mensual</string>
+    <string name="repeat_unit_year">Anual</string>
+    <string name="repeat_interval">Cada cuántos</string>
+    <string name="repeat_interval_invalid">Escribe un número del 1 al %1$d</string>
+    <string name="repeat_on">Los días</string>
+    <string name="repeat_on_days">%1$s: %2$s</string>
+    <plurals name="repeat_days">
+        <item quantity="one">Todos los días</item>
+        <item quantity="many">Cada %1$d días</item>
+        <item quantity="other">Cada %1$d días</item>
+    </plurals>
+    <plurals name="repeat_weeks">
+        <item quantity="one">Todas las semanas</item>
+        <item quantity="many">Cada %1$d semanas</item>
+        <item quantity="other">Cada %1$d semanas</item>
+    </plurals>
+    <plurals name="repeat_months">
+        <item quantity="one">Todos los meses</item>
+        <item quantity="many">Cada %1$d meses</item>
+        <item quantity="other">Cada %1$d meses</item>
+    </plurals>
+    <plurals name="repeat_years">
+        <item quantity="one">Todos los años</item>
+        <item quantity="many">Cada %1$d años</item>
+        <item quantity="other">Cada %1$d años</item>
+    </plurals>
+    <string name="add_label">Añadir etiqueta</string>
+    <string name="remove_label">Quitar etiqueta: %1$s</string>
+    <string name="label_name">Etiqueta o proyecto</string>
+    <plurals name="labels_full">
+        <item quantity="one">Como máximo %1$d etiqueta</item>
+        <item quantity="many">Como máximo %1$d etiquetas</item>
+        <item quantity="other">Como máximo %1$d etiquetas</item>
+    </plurals>
+    <string name="labels_in_use">En uso</string>
+    <string name="add_link">Añadir enlace</string>
+    <string name="open_link">Abrir enlace</string>
+    <string name="remove_link">Quitar enlace: %1$s</string>
+    <string name="no_links">Sin enlaces</string>
+    <string name="no_labels">Sin etiquetas</string>
+    <string name="link_url">Dirección</string>
+    <string name="link_title">Título (opcional)</string>
+    <string name="link_invalid">Escribe una dirección completa con http:// o https://</string>
+    <string name="add">Añadir</string>
+    <string name="move_to_trash">Mover a la papelera</string>
+    <string name="restore">Restaurar</string>
+    <string name="restore_described">Restaurar: %1$s</string>
+
+    <string name="actor_app">Tú (app)</string>
+    <string name="actor_cli">Tú (CLI)</string>
+    <string name="actor_agent">Agente</string>
+    <string name="action_create">Creada</string>
+    <string name="action_update">Editada</string>
+    <string name="action_status">Movida en el tablero</string>
+    <string name="action_now">Cambio en “Ahora”</string>
+    <string name="action_complete">Marcada como hecha</string>
+    <string name="action_archive">Archivada</string>
+    <string name="action_delete">Movida a la papelera</string>
+    <string name="action_restore">Restaurada</string>
+    <string name="action_repeat">Creada como siguiente repetición</string>
+    <string name="field_title">Título</string>
+    <string name="field_day">Día</string>
+    <string name="history_change">%1$s: %2$s → %3$s</string>
+    <string name="history_none">ninguno</string>
+    <string name="history_empty">Todavía no hay cambios registrados.</string>
+    <string name="history_cached">Sin conexión: este es el historial de la última conexión.</string>
+    <string name="history_not_on_server">El historial empieza cuando esta tarea llega al servidor.</string>
+    <plurals name="history_pending">
+        <item quantity="one">%1$d cambio espera a enviarse; aparecerá aquí después.</item>
+        <item quantity="many">%1$d cambios esperan a enviarse; aparecerán aquí después.</item>
+        <item quantity="other">%1$d cambios esperan a enviarse; aparecerán aquí después.</item>
+    </plurals>
+    <string name="yes">sí</string>
+    <string name="no">no</string>
+
+    <string name="trash_title">Papelera</string>
+    <plurals name="trash_empty">
+        <item quantity="one">La papelera está vacía. Las tareas eliminadas se quedan aquí %1$d día.</item>
+        <item quantity="many">La papelera está vacía. Las tareas eliminadas se quedan aquí %1$d días.</item>
+        <item quantity="other">La papelera está vacía. Las tareas eliminadas se quedan aquí %1$d días.</item>
+    </plurals>
+    <plurals name="trash_hint">
+        <item quantity="one">Las tareas se quedan aquí %1$d día y después se eliminan definitivamente.</item>
+        <item quantity="many">Las tareas se quedan aquí %1$d días y después se eliminan definitivamente.</item>
+        <item quantity="other">Las tareas se quedan aquí %1$d días y después se eliminan definitivamente.</item>
+    </plurals>
+    <string name="trash_deleted_on">Eliminada %1$s · se borra tras %2$s</string>
+    <string name="channel_reminders">Recordatorios</string>
+    <string name="channel_reminders_description">Suena antes de una tarea con hora.</string>
+    <string name="channel_summary">Resumen matutino</string>
+    <string name="channel_summary_description">Lo que hay hoy y lo vencido. Sin sonido de forma predeterminada.</string>
+    <string name="reminder_done">Hecha</string>
+    <string name="reminder_now">Ahora, a las %1$s</string>
+    <string name="reminder_soon">A las %1$s, en %2$s</string>
+    <string name="summary_title">Hoy: %1$s</string>
+    <string name="summary_title_overdue">Hoy: %1$s, %2$s</string>
+    <string name="summary_nothing">No hay nada planeado para hoy.</string>
+    <string name="summary_start_with">Empieza por: %1$s</string>
+    <plurals name="summary_tasks">
+        <item quantity="one">%d tarea</item>
+        <item quantity="many">%d tareas</item>
+        <item quantity="other">%d tareas</item>
+    </plurals>
+    <plurals name="summary_overdue">
+        <item quantity="one">%d vencida</item>
+        <item quantity="many">%d vencidas</item>
+        <item quantity="other">%d vencidas</item>
+    </plurals>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <plurals name="duration_days">
+        <item quantity="one">%d día</item>
+        <item quantity="many">%d días</item>
+        <item quantity="other">%d días</item>
+    </plurals>
+
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_notifications_title">Notificaciones de la app</string>
+    <string name="settings_notifications_on">Pueden aparecer los recordatorios y el resumen matutino.</string>
+    <string name="settings_notifications_off">Las notificaciones están desactivadas, así que no pueden aparecer los recordatorios ni el resumen matutino.</string>
+    <string name="settings_notifications_allow">Permitir notificaciones</string>
+    <string name="settings_open_system">Abrir ajustes del sistema</string>
+    <string name="settings_exact_title">Alarmas exactas</string>
+    <string name="settings_state_on">Activado</string>
+    <string name="settings_state_off">Desactivado</string>
+    <string name="settings_exact_on">Los recordatorios suenan en el minuto exacto.</string>
+    <string name="settings_exact_off">Las alarmas exactas no están permitidas, así que los recordatorios pueden llegar unos minutos tarde.</string>
+    <string name="settings_exact_allow">Permitir alarmas exactas</string>
+    <string name="settings_summary">Resumen matutino</string>
+    <string name="settings_summary_hint">Cada día a esta hora: las tareas de hoy, las vencidas y por dónde empezar.</string>
+    <string name="settings_summary_time">Hora</string>
+    <string name="settings_summary_change">Cambiar la hora del resumen matutino</string>
+    <string name="settings_reminders">Recordatorios predeterminados</string>
+    <string name="settings_reminders_title">Cuándo sonar</string>
+    <string name="settings_reminders_hint">Solo suenan las tareas con hora. Las vencidas nunca suenan; esperan en Hoy.</string>
+    <string name="settings_reminders_none">Sin recordatorios.</string>
+    <string name="reminder_at_due">A la hora límite</string>
+    <string name="reminder_before">%1$s antes</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_language_title">Idioma de la app</string>
+    <string name="language_system">Idioma del teléfono</string>
+    <string name="settings_language_unsupported">Dayhand usa el idioma del teléfono.</string>
+    <string name="connection_label">Estado: %1$s</string>
+    <string name="connection_synced">conectado</string>
+    <string name="connection_connecting">conectando…</string>
+    <string name="connection_offline">sin red</string>
+    <string name="connection_local">solo en este teléfono</string>
+    <string name="connection_unauthorized">el servidor rechazó el inicio de sesión</string>
+    <string name="connection_error">no se puede contactar con el servidor</string>
+    <plurals name="connection_pending">
+        <item quantity="one">%d cambio espera a enviarse.</item>
+        <item quantity="many">%d cambios esperan a enviarse.</item>
+        <item quantity="other">%d cambios esperan a enviarse.</item>
+    </plurals>
+    <string name="settings_export">Exportar</string>
+    <string name="settings_export_hint">Todo el plan desde el servidor: Markdown para leer, JSON como copia completa con el historial de cambios.</string>
+    <string name="export_markdown">Exportar Markdown</string>
+    <string name="export_json">Exportar JSON</string>
+    <string name="export_working">Preparando la exportación…</string>
+    <string name="export_saved">Guardado: %1$s</string>
+    <string name="export_failed">Error al exportar: no se puede contactar con el servidor.</string>
+    <string name="export_unauthorized">Error al exportar: el servidor rechazó el token.</string>
+    <string name="export_not_configured">Primero conéctate a un servidor.</string>
+    <string name="export_write_failed">No se pudo guardar el archivo.</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="about_text">Dayhand es de código abierto bajo la Apache License 2.0. Sin analíticas ni anuncios; tu plan se queda en este teléfono o en tu propio servidor.</string>
+    <string name="about_license">Leer la licencia</string>
+
+    <!-- Repeat rules (0.6) -->
+    <string name="repeat_on_month">Cuándo</string>
+    <string name="repeat_from">Calcular la siguiente fecha desde</string>
+    <string name="repeat_from_due">La fecha límite</string>
+    <string name="repeat_from_completion">El día en que la completo</string>
+    <string name="repeat_ends">Termina</string>
+    <string name="repeat_ends_never">Nunca</string>
+    <string name="repeat_ends_until">Un día concreto</string>
+    <string name="repeat_ends_on">Hasta el %1$s</string>
+    <string name="repeat_ends_count">Tras un número de veces</string>
+    <string name="repeat_count">Cuántas veces, incluida esta</string>
+    <string name="repeat_month_same_day">Día %1$d</string>
+    <string name="repeat_month_day">día %1$d</string>
+    <string name="repeat_month_last_day">El último día del mes</string>
+    <string name="repeat_month_nth">El %1$s %2$s del mes</string>
+    <string name="repeat_month_nth_from_end">%2$s, %1$d.º desde el final del mes</string>
+    <string name="repeat_label_last_day">último día</string>
+    <string name="repeat_label_nth">%1$s %2$s</string>
+    <string name="repeat_label_from_completion">contando desde que se completa</string>
+    <string name="repeat_label_until">hasta el %1$s</string>
+    <plurals name="repeat_label_count">
+        <item quantity="one">queda %d vez</item>
+        <item quantity="many">quedan %d veces</item>
+        <item quantity="other">quedan %d veces</item>
+    </plurals>
+    <string-array name="repeat_ordinals">
+        <item>primer</item>
+        <item>segundo</item>
+        <item>tercer</item>
+        <item>cuarto</item>
+        <item>quinto</item>
+    </string-array>
+    <string-array name="repeat_last_weekday">
+        <item>El último lunes</item>
+        <item>El último martes</item>
+        <item>El último miércoles</item>
+        <item>El último jueves</item>
+        <item>El último viernes</item>
+        <item>El último sábado</item>
+        <item>El último domingo</item>
+    </string-array>
+    <string-array name="repeat_last_weekday_short">
+        <item>último lun</item>
+        <item>último mar</item>
+        <item>último mié</item>
+        <item>último jue</item>
+        <item>último vie</item>
+        <item>último sáb</item>
+        <item>último dom</item>
+    </string-array>
+
+    <!-- Checklist -->
+    <string name="detail_checklist">Lista de verificación</string>
+    <string name="checklist_title_progress">%1$s · %2$d de %3$d hechos</string>
+    <string name="checklist_empty">Todavía no hay elementos</string>
+    <string name="checklist_add">Añadir elemento</string>
+    <string name="checklist_edit_item">Editar elemento</string>
+    <string name="checklist_item">Elemento de la lista</string>
+    <string name="checklist_move_up">Subir</string>
+    <string name="checklist_move_down">Bajar</string>
+    <string name="checklist_remove">Quitar</string>
+
+    <!-- Reminders of one task -->
+    <string name="detail_reminders">Recordatorios</string>
+    <string name="edit_reminders">Recordatorios</string>
+    <string name="reminders_default_value">Predeterminados: %1$s</string>
+    <string name="reminders_none">Ninguno</string>
+    <string name="reminders_none_lower">ninguno</string>
+    <string name="reminders_mode_default">Como en Ajustes</string>
+    <string name="reminders_mode_none">Sin recordatorios</string>
+    <string name="reminders_mode_custom">Personalizados</string>
+    <string name="reminders_before_title">Antes de la hora límite</string>
+    <string name="reminders_needs_time">Solo suenan si la tarea tiene hora.</string>
+    <string name="reminders_times_title">A una hora del día</string>
+    <string name="reminders_add_on_day">Añadir una hora el día límite</string>
+    <string name="reminders_add_day_before">Añadir una hora el día anterior</string>
+    <plurals name="reminders_too_many">
+        <item quantity="one">Como máximo %1$d recordatorio</item>
+        <item quantity="many">Como máximo %1$d recordatorios</item>
+        <item quantity="other">Como máximo %1$d recordatorios</item>
+    </plurals>
+    <string name="reminder_remove">Quitar recordatorio: %1$s</string>
+    <string name="reminder_time_on_day">%1$s el día límite</string>
+    <plurals name="reminder_time_before">
+        <item quantity="one">%2$s, el día anterior</item>
+        <item quantity="many">%2$s, %1$d días antes</item>
+        <item quantity="other">%2$s, %1$d días antes</item>
+    </plurals>
+    <string name="reminder_due">Vence %1$s</string>
+    <string name="reminder_due_at">Vence %1$s a las %2$s</string>
+    <plurals name="reminder_in_days">
+        <item quantity="one">en %d día</item>
+        <item quantity="many">en %d días</item>
+        <item quantity="other">en %d días</item>
+    </plurals>
+
+    <!-- Agent work (backend 0.10.0): read-only on the phone. -->
+    <string name="agent_works_until">agente: %1$s trabaja hasta %2$s</string>
+    <string name="detail_acceptance">Criterios de aceptación</string>
+    <string name="acceptance_title_progress">%1$s · %2$d de %3$d cumplidos</string>
+    <string name="detail_proof">Prueba de finalización</string>
+    <string name="proof_check_pass">superada</string>
+    <string name="proof_check_fail">fallida</string>
+    <string name="proof_empty">Sin detalles</string>
+</resources>

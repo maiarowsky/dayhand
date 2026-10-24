@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Agent connections (OAuth, docs/oauth.md): the Settings row, the list and the approval of a new one. -->
+<resources>
+    <string name="connections_title">Agent-Verbindungen</string>
+    <string name="connections_approve_row">Verbindung genehmigen</string>
+    <string name="connections_approve_note">Gib den Code von der Anmeldeseite von Claude oder einem anderen Agenten ein</string>
+    <string name="connections_active">Verbunden</string>
+    <string name="connections_none">Kein Agent ist verbunden. Wenn Claude eine Verbindung zu Dayhand anfordert, zeigt seine Seite einen Code: Genehmige ihn hier.</string>
+    <string name="connections_hint">Ein hier verbundener Agent liest und ändert deinen Plan in eigenem Namen; seine Änderungen erscheinen im Verlauf unter seinem Namen. Trennen stoppt ihn sofort. API-Schlüssel für das Terminal werden hier nicht angezeigt.</string>
+    <string name="connections_loading">Verbindungen werden geladen…</string>
+    <string name="connections_failed">Die Verbindungen konnten nicht geladen werden. Prüfe die Verbindung zum Server.</string>
+    <string name="connections_unauthorized">Der Server hat dieses Smartphone abgelehnt. Kopple es unter Server erneut.</string>
+    <string name="connections_from">von %1$s</string>
+    <string name="connections_registered">hat sich selbst registriert, kehrt zu %1$s zurück</string>
+    <string name="connections_read_only">Nur lesen</string>
+    <string name="connections_read_write">Lesen und ändern</string>
+    <string name="connections_last_used">zuletzt verwendet: %1$s</string>
+    <string name="connections_never_used">noch nicht verwendet</string>
+    <string name="connections_disconnect_title">%1$s trennen?</string>
+    <string name="connections_disconnect_text">Die Verbindung funktioniert sofort nicht mehr. Um sie wieder zu nutzen, verbinde sie erneut über die zugehörige App.</string>
+    <string name="connections_disconnect">Trennen</string>
+    <string name="connections_disconnect_failed">Trennen fehlgeschlagen. Versuche es erneut.</string>
+
+    <string name="approve_title">Verbindung genehmigen</string>
+    <string name="approve_code_label">Code von der Anmeldeseite</string>
+    <string name="approve_code_hint">Die Seite, die Zugriff anfordert, zeigt einen Code wie K7QF-M2XA. Genehmige nur einen Code, den du gerade jetzt auf deinem eigenen Bildschirm siehst.</string>
+    <string name="approve_continue">Weiter</string>
+    <string name="approve_checking">Code wird geprüft…</string>
+    <string name="approve_not_found">Keine wartende Anfrage hat diesen Code. Prüfe ihn oder starte die Verbindung neu: Ein Code ist 10 Minuten gültig.</string>
+    <string name="approve_rate_limited">Zu viele falsche Codes. Versuche es in ein paar Minuten erneut.</string>
+    <string name="approve_failed">Server nicht erreichbar. Versuche es erneut.</string>
+    <string name="approve_asks">%1$s fordert Zugriff auf deinen Dayhand-Plan an</string>
+    <string name="approve_client_verified">Identifiziert durch %1$s</string>
+    <string name="approve_client_registered">Hat sich selbst registriert (Name nicht verifiziert)</string>
+    <string name="approve_returns_to">Antwort geht an %1$s</string>
+    <string name="approve_asked_at">Angefragt: %1$s</string>
+    <string name="approve_old_warning">Diese Anfrage ist schon einige Minuten alt. Genehmige nur eine Anmeldeseite, die du gerade selbst geöffnet hast; wenn dir jemand diesen Code geschickt hat, lehne ab.</string>
+    <string name="approve_loopback_warning">Die Antwort geht an ein Programm auf dem Computer, der die Seite geöffnet hat (Claude Code). Genehmige nur, wenn du es gerade selbst gestartet hast.</string>
+    <string name="approve_allow">Erlauben</string>
+    <string name="approve_scope_read">Aufgaben und Einstellungen lesen</string>
+    <string name="approve_scope_write">Aufgaben und Einstellungen ändern</string>
+    <string name="approve_scope_write_note">Aufgaben hinzufügen, bearbeiten, erledigen und löschen; Einstellungen ändern</string>
+    <string name="approve_confirm">Genehmigen</string>
+    <string name="approve_refuse">Ablehnen</string>
+    <string name="approve_nothing_chosen">Wähle mindestens eine Berechtigung aus oder lehne ab.</string>
+    <string name="approve_done">Genehmigt. Geh zurück zur Anmeldeseite: Sie macht von selbst weiter.</string>
+    <string name="approve_refused">Abgelehnt. Die Anmeldeseite teilt dem Agenten die Absage mit.</string>
+    <string name="approve_gone">Diese Anfrage ist abgelaufen oder wurde bereits entschieden.</string>
+</resources>

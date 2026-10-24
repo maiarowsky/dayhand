@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -31,13 +32,13 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.Palette
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 /** The coloured edge of a block, which carries its state (accent, danger, quiet). */
 private val BAR_WIDTH = 3.dp
@@ -102,7 +103,7 @@ private fun markedTitle(entry: CalendarEntry): String {
 /** What a screen reader says: title, day, time (or none), and its state. */
 @Composable
 fun entryDescription(entry: CalendarEntry): String {
-    val day = LocalDate.parse(entry.date).format(DateTimeFormatter.ofPattern("EEEE d MMMM", appLocale()))
+    val day = LocalDate.parse(entry.date).format(dateFormat("EEEEdMMMM", appLocale()))
     val parts = buildList {
         add(entry.task.title)
         add(day)
@@ -221,7 +222,7 @@ fun EntryRow(entry: CalendarEntry, onOpen: (CalendarEntry) -> Unit, onMove: (Cal
 @Composable
 fun MoreEntries(count: Int, date: String, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier) {
     val p = palette
-    val label = stringResource(R.string.calendar_more_described, count)
+    val label = pluralStringResource(R.plurals.calendar_more_described, count, count)
     Box(
         modifier
             .fillMaxWidth()

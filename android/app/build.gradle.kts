@@ -43,7 +43,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount.get()
-        versionName = "0.10.0"
+        versionName = "0.10.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER_URL", "\"${defaultServerUrl.get()}\"")
 
@@ -85,8 +85,16 @@ android {
     }
 
     androidResources {
-        // Per-app language (system settings) from values/ and values-pl/.
+        // Per-app language (system settings) from values/ (English) and each values-* translation.
         generateLocaleConfig = true
+    }
+
+    lint {
+        // Every language has every string and nothing more, with the plural forms of its grammar (also TranslationsTest).
+        error += setOf(
+            "MissingTranslation", "ExtraTranslation", "MissingQuantity", "UnusedQuantity", "ImpliedQuantity",
+            "PluralsCandidate", "StringFormatMatches", "StringFormatCount", "StringFormatInvalid",
+        )
     }
 
     sourceSets.getByName("androidTest").assets.directories.add("$projectDir/schemas")

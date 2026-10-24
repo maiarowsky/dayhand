@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calendar: week and day views. -->
+    <string name="calendar_title">Calendario</string>
+    <string name="calendar_week">Semana</string>
+    <string name="calendar_day">Día</string>
+    <string name="calendar_previous_week">Semana anterior</string>
+    <string name="calendar_next_week">Semana siguiente</string>
+    <string name="calendar_previous_day">Día anterior</string>
+    <string name="calendar_next_day">Día siguiente</string>
+    <string name="calendar_go_today">Hoy</string>
+    <string name="calendar_no_time">Sin hora</string>
+    <string name="calendar_no_time_short">Todo el día</string>
+    <string name="calendar_more">+%1$d</string>
+    <plurals name="calendar_more_described">
+        <item quantity="one">%1$d más: abrir el día</item>
+        <item quantity="many">%1$d más: abrir el día</item>
+        <item quantity="other">%1$d más: abrir el día</item>
+    </plurals>
+    <string name="calendar_open_day">Abrir el día</string>
+    <string name="calendar_day_tasks">Mostrar las tareas del día</string>
+    <string name="calendar_untimed_described">Todo el día: %1$s</string>
+    <string name="calendar_empty_day">No hay nada planeado para este día.</string>
+    <string name="calendar_open">Abrir</string>
+    <string name="calendar_move_action">Mover a otro día u hora</string>
+    <string name="calendar_state_overdue">vencida</string>
+    <string name="calendar_state_done">hecha</string>
+    <string name="calendar_state_repeat">se repite</string>
+    <string name="calendar_move_title">Mover “%1$s”</string>
+    <string name="calendar_move_day">Día</string>
+    <string name="calendar_move_time">Hora</string>
+    <string name="calendar_move_other_day">Otro día…</string>
+    <string name="calendar_move_pick_time">Elegir una hora</string>
+    <string name="calendar_move_confirm">Mover</string>
+    <string name="calendar_moved">Movida a %1$s</string>
+    <string name="calendar_undo">Deshacer</string>
+
+    <!-- Settings → Calendar: the read-only feed for Google and Apple Calendar. -->
+    <string name="calendar_feed_title">Calendario</string>
+    <string name="calendar_feed_off">Desactivado</string>
+    <string name="calendar_feed_on">Activado</string>
+    <string name="calendar_feed_intro">Muestra tus tareas con fecha en Google Calendar o en Calendario de Apple. El calendario es de solo lectura: planifica en Dayhand y el calendario se actualiza solo. Las tareas con hora son eventos; las demás, eventos de todo el día; las que se repiten llevan su regla y los recordatorios aparecen como avisos.</string>
+    <string name="calendar_feed_turn_on">Activar la dirección del calendario</string>
+    <string name="calendar_feed_address">Dirección</string>
+    <string name="calendar_feed_secret">Cualquiera que tenga esta dirección puede ver tus tareas con fecha. Compártela solo con tu propio calendario; si se filtra, crea una dirección nueva.</string>
+    <string name="calendar_feed_copy">Copiar dirección</string>
+    <string name="calendar_feed_copied">Dirección copiada</string>
+    <string name="calendar_feed_google">Añadir a Google Calendar</string>
+    <string name="calendar_feed_google_note">Abre Google Calendar en la web (la app del teléfono no puede añadir calendarios por dirección). Google actualiza los calendarios suscritos según su propio ritmo, normalmente cada pocas horas, así que los cambios tardan en aparecer allí.</string>
+    <string name="calendar_feed_apple">Añadir a Calendario de Apple</string>
+    <string name="calendar_feed_apple_note">Envía la dirección webcal a tu iPhone o Mac (Mensajes, Mail, AirDrop…); ábrela allí para suscribirte.</string>
+    <string name="calendar_feed_manage">Gestionar</string>
+    <string name="calendar_feed_rotate">Crear una dirección nueva</string>
+    <string name="calendar_feed_rotate_confirm_title">¿Crear una dirección nueva?</string>
+    <string name="calendar_feed_rotate_confirm">La dirección actual deja de funcionar de inmediato. Los calendarios suscritos a ella dejan de actualizarse hasta que añadas la nueva.</string>
+    <string name="calendar_feed_rotate_done">Dirección nueva creada; la anterior ya no funciona.</string>
+    <string name="calendar_feed_turn_off">Desactivar</string>
+    <string name="calendar_feed_off_confirm_title">¿Desactivar la dirección del calendario?</string>
+    <string name="calendar_feed_off_confirm">La dirección deja de funcionar y los calendarios suscritos dejan de actualizarse. Puedes volver a activarla con una dirección nueva.</string>
+    <string name="calendar_feed_export_group">Archivo único</string>
+    <string name="calendar_feed_export">Exportar archivo .ics</string>
+    <string name="calendar_feed_export_note">Una copia del plan tal como está ahora, para importarla en cualquier calendario. No se actualiza.</string>
+    <string name="calendar_feed_exporting">Preparando el archivo…</string>
+    <string name="calendar_feed_export_failed">No se puede exportar: no se puede contactar con el servidor.</string>
+    <string name="calendar_feed_loading">Leyendo la dirección del calendario…</string>
+    <string name="calendar_feed_not_connected">Primero conéctate a un servidor: la dirección del calendario la ofrece tu servidor Dayhand.</string>
+    <string name="calendar_feed_failed">No se puede contactar con el servidor. Vuelve a intentarlo cuando el teléfono tenga conexión.</string>
+    <string name="calendar_feed_unauthorized">El servidor cerró la sesión de este teléfono. Vuelve a conectarte en Ajustes → Servidor.</string>
+    <string name="calendar_feed_retry">Reintentar</string>
+    <string name="calendar_feed_share_title">Calendario de Dayhand</string>
+</resources>

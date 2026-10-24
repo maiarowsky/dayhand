@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_appearance">Darstellung</string>
+    <string name="appearance_mode">Design</string>
+    <string name="appearance_mode_system">System</string>
+    <string name="appearance_mode_light">Hell</string>
+    <string name="appearance_mode_dark">Dunkel</string>
+    <string name="appearance_colors">Farbpalette</string>
+    <string name="appearance_font">Schriftart</string>
+    <string name="appearance_palettes_dark">Dunkle Palette (dunkles Design)</string>
+    <string name="appearance_palettes_light">Helle Palette (helles Design)</string>
+    <string name="appearance_fonts_proportional">Proportional</string>
+    <string name="appearance_fonts_mono">Monospace</string>
+    <string name="appearance_font_system">System</string>
+    <string name="appearance_preview_today">Heute</string>
+    <string name="appearance_preview_task">Pflanzen gießen</string>
+    <string name="appearance_preview_now">Jetzt</string>
+    <string name="appearance_preview_done">Erledigt</string>
+
+    <string name="font_note_system">Die Schrift des Smartphones, wie in anderen Apps</string>
+    <string name="font_note_inter">Klare serifenlose Schrift für langes Lesen</string>
+    <string name="font_note_ibm_plex_sans">Technische serifenlose Schrift von IBM</string>
+    <string name="font_note_atkinson">Entwickelt für gute Lesbarkeit bei Sehschwäche</string>
+    <string name="font_note_geist">Moderne, kompakte serifenlose Schrift</string>
+    <string name="font_note_source_serif">Serifenschrift, wie in einem Buch</string>
+    <string name="font_note_mono">Feste Zeichenbreite, wie im Terminal</string>
+
+    <string name="palette_terracotta">Terrakotta und Sand</string>
+    <string name="palette_terracotta_note">Standard dunkel. Akzent in Bernstein, „erledigt“ in Salbei, „überfällig“ in Terrakotta</string>
+    <string name="palette_honey">Honig und Oliv</string>
+    <string name="palette_honey_note">„Erledigt“ in Oliv, „überfällig“ in Lachs, Links in Rosé</string>
+    <string name="palette_amber">Bernstein</string>
+    <string name="palette_amber_note">Bernstein auf Graphit-Hintergrund</string>
+    <string name="palette_gruvbox_dark">Gruvbox Dark</string>
+    <string name="palette_gruvbox_dark_note">Warmer Retro-Look: Gelb, Orange und Grün auf Braunschwarz</string>
+    <string name="palette_solarized_dark">Solarized Dark</string>
+    <string name="palette_solarized_dark_note">Ruhiger, tiefer Petrol-Hintergrund mit gedämpften Akzenten</string>
+    <string name="palette_nord">Nord</string>
+    <string name="palette_nord_note">Arktisch: kühles Blaugrau mit frostigen Akzenten</string>
+    <string name="palette_dracula">Dracula</string>
+    <string name="palette_dracula_note">Lila, Pink und Grün auf dunklem Violettgrau</string>
+    <string name="palette_tokyo_night">Tokyo Night</string>
+    <string name="palette_tokyo_night_note">Stadt bei Nacht: blaues und violettes Neon auf Marineblau</string>
+    <string name="palette_catppuccin_mocha">Catppuccin Mocha</string>
+    <string name="palette_catppuccin_mocha_note">Pastellfarben auf sanftem dunklem Hintergrund</string>
+    <string name="palette_one_dark">One Dark</string>
+    <string name="palette_one_dark_note">Atom-Klassiker: Blau, Grün und Violett auf Graphit</string>
+    <string name="palette_rose_pine">Rosé Pine</string>
+    <string name="palette_rose_pine_note">Gedämpftes Rosé, Gold und Kieferngrün auf tiefem Lila</string>
+    <string name="palette_paper">Papier</string>
+    <string name="palette_paper_note">Standard hell. Warmes Papier mit Akzenten in Terrakotta</string>
+    <string name="palette_gruvbox_light">Gruvbox Light</string>
+    <string name="palette_gruvbox_light_note">Warmer Retro-Look auf Creme</string>
+    <string name="palette_solarized_light">Solarized Light</string>
+    <string name="palette_solarized_light_note">Ruhige Akzente auf hellem Beige</string>
+    <string name="palette_catppuccin_latte">Catppuccin Latte</string>
+    <string name="palette_catppuccin_latte_note">Pastellakzente auf kühlem hellem Hintergrund</string>
+    <string name="palette_rose_pine_dawn">Rosé Pine Dawn</string>
+    <string name="palette_rose_pine_dawn_note">Rosé und Kieferngrün im sanften Morgenlicht</string>
+
+    <string name="licenses_title">Open-Source-Lizenzen</string>
+    <string name="licenses_intro">Dayhand ist freie Software unter der Apache License 2.0. Die App enthält diese Schriftarten unverändert unter der SIL Open Font License 1.1:</string>
+    <string name="licenses_show">Lizenz anzeigen</string>
+    <string name="licenses_hide">Lizenz ausblenden</string>
+</resources>

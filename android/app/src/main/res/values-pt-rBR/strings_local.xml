@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- First start: where the plan lives -->
+    <string name="welcome_title">Boas-vindas ao Dayhand</string>
+    <string name="welcome_intro">A tela Hoje, um calendário e um quadro para as suas tarefas. Escolha onde o Dayhand guarda seu plano; você pode mudar isso depois em Configurações.</string>
+    <string name="local_title">Só neste celular</string>
+    <string name="local_body">Sem conta e sem servidor. Seu plano fica neste celular, incluindo os lembretes e o resumo matinal. Faça um backup em arquivo em Configurações → Dados.</string>
+    <string name="local_start">Começar com um plano vazio</string>
+    <string name="local_sample">Experimentar com dados de exemplo</string>
+    <string name="server_title">Conectar ao meu servidor</string>
+    <string name="server_body">Seu próprio servidor Dayhand mantém o plano sincronizado com seus outros dispositivos e permite que agentes de IA trabalhem com ele. No seu computador, execute dayhand pair e digite o código exibido.</string>
+
+    <!-- Connecting to another server than the one whose plan is on the phone -->
+    <string name="replace_title">Substituir o plano deste celular?</string>
+    <string name="replace_text">Este celular tem o plano de %1$s. Conectar a %2$s o substitui pelo plano de lá e remove %3$s deste celular. O que já chegou a %1$s continua lá.</string>
+    <string name="replace_pending">O que ainda não foi enviado a %2$s será perdido: %1$s.</string>
+    <string name="replace_keep">Para não perder nada, salve um backup antes (Configurações → Dados → Backup) ou conecte de novo a %1$s.</string>
+    <string name="replace_confirm">Substituir e conectar</string>
+    <plurals name="replace_tasks">
+        <item quantity="one">%d tarefa</item>
+        <item quantity="many">%d tarefas</item>
+        <item quantity="other">%d tarefas</item>
+    </plurals>
+    <plurals name="replace_changes">
+        <item quantity="one">%d alteração</item>
+        <item quantity="many">%d alterações</item>
+        <item quantity="other">%d alterações</item>
+    </plurals>
+
+    <!-- Settings → Server without a server -->
+    <string name="server_local_note">O plano fica neste celular e nada é enviado para lugar nenhum.</string>
+    <string name="server_local_was">Última conexão: %1$s. As alterações feitas desde então vão para lá quando você se conectar a ele de novo.</string>
+    <string name="server_local_how">Um servidor próprio mantém o Dayhand sincronizado entre seus dispositivos e permite que agentes de IA leiam e alterem o plano. Configure um como descrito em github.com/maiarowsky/helm (docs/deploy.md), execute dayhand pair no seu computador e conecte com o código. Depois disso, tudo o que está neste celular vai para o servidor.</string>
+    <string name="settings_timezone_phone">%1$s, fuso horário deste celular</string>
+    <string name="settings_timezone_use_phone">Usar o fuso horário deste celular (%1$s)</string>
+    <string name="settings_timezone_differs">O fuso horário do servidor define qual é o dia de hoje e quando os lembretes tocam.</string>
+
+    <!-- Settings → Data → Backup -->
+    <string name="settings_backup">Backup</string>
+    <string name="backup_save">Salvar um arquivo de backup</string>
+    <string name="backup_share">Compartilhar um backup</string>
+    <string name="backup_restore">Restaurar de um arquivo</string>
+    <string name="backup_last">Último backup: %1$s</string>
+    <string name="backup_never">Nenhum backup feito neste celular ainda</string>
+    <string name="backup_hint">Um backup é o plano inteiro deste celular no formato JSON do Dayhand: as tarefas com suas checklists, lembretes e regras de repetição, e as configurações, sem o histórico de alterações. O Dayhand não copia seu plano para o Google nem para nenhum outro lugar, então guarde o arquivo em um lugar seguro. Um servidor Dayhand também o lê (dayhand import).</string>
+    <string name="backup_working">Preparando o backup…</string>
+    <string name="backup_saved">Salvo: %1$s</string>
+    <string name="backup_write_failed">Não foi possível salvar o arquivo.</string>
+    <string name="backup_read_failed">Não foi possível ler o arquivo.</string>
+    <string name="backup_not_helm">Este arquivo não é um backup do Dayhand (exportação JSON do Dayhand, versão 1).</string>
+    <plurals name="backup_too_many">
+        <item quantity="one">O arquivo tem mais de %1$d tarefa; o Dayhand restaura no máximo %1$d de uma vez.</item>
+        <item quantity="many">O arquivo tem mais de %1$d tarefas; o Dayhand restaura no máximo %1$d de uma vez.</item>
+        <item quantity="other">O arquivo tem mais de %1$d tarefas; o Dayhand restaura no máximo %1$d de uma vez.</item>
+    </plurals>
+    <plurals name="backup_restored">
+        <item quantity="one">%d tarefa restaurada.</item>
+        <item quantity="many">%d tarefas restauradas.</item>
+        <item quantity="other">%d tarefas restauradas.</item>
+    </plurals>
+    <plurals name="backup_already_here">
+        <item quantity="one">%d já estava no celular.</item>
+        <item quantity="many">%d já estavam no celular.</item>
+        <item quantity="other">%d já estavam no celular.</item>
+    </plurals>
+    <plurals name="backup_invalid">
+        <item quantity="one">%d não pôde ser lida.</item>
+        <item quantity="many">%d não puderam ser lidas.</item>
+        <item quantity="other">%d não puderam ser lidas.</item>
+    </plurals>
+    <string name="backup_settings_restored">As configurações também foram restauradas.</string>
+    <string name="backup_share_title">Backup do Dayhand</string>
+
+    <!-- Sample data -->
+    <string name="sample_banner">Estas são tarefas de exemplo para mostrar o que o Dayhand faz.</string>
+    <string name="sample_remove">Removê-las</string>
+    <string name="sample_row">Remover tarefas de exemplo</string>
+</resources>

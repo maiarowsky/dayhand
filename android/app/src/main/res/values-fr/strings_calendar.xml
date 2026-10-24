@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calendar: week and day views. -->
+    <string name="calendar_title">Calendrier</string>
+    <string name="calendar_week">Semaine</string>
+    <string name="calendar_day">Jour</string>
+    <string name="calendar_previous_week">Semaine précédente</string>
+    <string name="calendar_next_week">Semaine suivante</string>
+    <string name="calendar_previous_day">Jour précédent</string>
+    <string name="calendar_next_day">Jour suivant</string>
+    <string name="calendar_go_today">Aujourd\'hui</string>
+    <string name="calendar_no_time">Sans heure</string>
+    <string name="calendar_no_time_short">Journée</string>
+    <string name="calendar_more">+%1$d</string>
+    <plurals name="calendar_more_described">
+        <item quantity="one">%1$d de plus : ouvrir le jour</item>
+        <item quantity="many">%1$d de plus : ouvrir le jour</item>
+        <item quantity="other">%1$d de plus : ouvrir le jour</item>
+    </plurals>
+    <string name="calendar_open_day">Ouvrir le jour</string>
+    <string name="calendar_day_tasks">Afficher les tâches du jour</string>
+    <string name="calendar_untimed_described">Toute la journée : %1$s</string>
+    <string name="calendar_empty_day">Rien de prévu ce jour-là.</string>
+    <string name="calendar_open">Ouvrir</string>
+    <string name="calendar_move_action">Déplacer à un autre jour ou une autre heure</string>
+    <string name="calendar_state_overdue">en retard</string>
+    <string name="calendar_state_done">terminée</string>
+    <string name="calendar_state_repeat">se répète</string>
+    <string name="calendar_move_title">Déplacer « %1$s »</string>
+    <string name="calendar_move_day">Jour</string>
+    <string name="calendar_move_time">Heure</string>
+    <string name="calendar_move_other_day">Autre jour…</string>
+    <string name="calendar_move_pick_time">Choisir une heure</string>
+    <string name="calendar_move_confirm">Déplacer</string>
+    <string name="calendar_moved">Déplacée : %1$s</string>
+    <string name="calendar_undo">Annuler</string>
+
+    <!-- Settings → Calendar: the read-only feed for Google and Apple Calendar. -->
+    <string name="calendar_feed_title">Calendrier</string>
+    <string name="calendar_feed_off">Désactivé</string>
+    <string name="calendar_feed_on">Activé</string>
+    <string name="calendar_feed_intro">Affichez vos tâches datées dans Google Agenda ou Calendrier Apple. Le calendrier est en lecture seule : planifiez dans Dayhand, il suit. Les tâches avec une heure deviennent des événements, les autres des événements sur toute la journée, les tâches répétées gardent leur règle, les rappels deviennent des alertes.</string>
+    <string name="calendar_feed_turn_on">Activer l\'adresse du calendrier</string>
+    <string name="calendar_feed_address">Adresse</string>
+    <string name="calendar_feed_secret">Toute personne qui a cette adresse peut voir vos tâches datées. Ne la partagez qu\'avec votre propre calendrier ; en cas de fuite, créez une nouvelle adresse.</string>
+    <string name="calendar_feed_copy">Copier l\'adresse</string>
+    <string name="calendar_feed_copied">Adresse copiée</string>
+    <string name="calendar_feed_google">Ajouter à Google Agenda</string>
+    <string name="calendar_feed_google_note">Ouvre Google Agenda sur le Web (l\'app mobile ne peut pas ajouter un calendrier par son adresse). Google actualise les calendriers abonnés à son propre rythme, souvent toutes les quelques heures : les modifications y apparaissent donc avec du retard.</string>
+    <string name="calendar_feed_apple">Ajouter au Calendrier Apple</string>
+    <string name="calendar_feed_apple_note">Envoie l\'adresse webcal à votre iPhone ou Mac (Messages, Mail, AirDrop…) ; ouvrez-la là-bas pour vous abonner.</string>
+    <string name="calendar_feed_manage">Gérer</string>
+    <string name="calendar_feed_rotate">Créer une nouvelle adresse</string>
+    <string name="calendar_feed_rotate_confirm_title">Créer une nouvelle adresse ?</string>
+    <string name="calendar_feed_rotate_confirm">L\'adresse actuelle cesse immédiatement de fonctionner. Les calendriers abonnés ne se mettent plus à jour tant que vous n\'ajoutez pas la nouvelle.</string>
+    <string name="calendar_feed_rotate_done">Nouvelle adresse créée ; l\'ancienne ne fonctionne plus.</string>
+    <string name="calendar_feed_turn_off">Désactiver</string>
+    <string name="calendar_feed_off_confirm_title">Désactiver l\'adresse du calendrier ?</string>
+    <string name="calendar_feed_off_confirm">L\'adresse cesse de fonctionner et les calendriers abonnés ne se mettent plus à jour. Vous pourrez la réactiver avec une nouvelle adresse.</string>
+    <string name="calendar_feed_export_group">Fichier ponctuel</string>
+    <string name="calendar_feed_export">Exporter un fichier .ics</string>
+    <string name="calendar_feed_export_note">Une copie du plan tel qu\'il est maintenant, à importer dans n\'importe quel calendrier. Elle ne se met pas à jour.</string>
+    <string name="calendar_feed_exporting">Préparation du fichier…</string>
+    <string name="calendar_feed_export_failed">Export impossible : serveur injoignable.</string>
+    <string name="calendar_feed_loading">Lecture de l\'adresse du calendrier…</string>
+    <string name="calendar_feed_not_connected">Connectez-vous d\'abord à un serveur : l\'adresse du calendrier est fournie par votre serveur Dayhand.</string>
+    <string name="calendar_feed_failed">Serveur injoignable. Réessayez quand le téléphone sera en ligne.</string>
+    <string name="calendar_feed_unauthorized">Le serveur a déconnecté ce téléphone. Reconnectez-vous dans Paramètres → Serveur.</string>
+    <string name="calendar_feed_retry">Réessayer</string>
+    <string name="calendar_feed_share_title">Calendrier Dayhand</string>
+</resources>

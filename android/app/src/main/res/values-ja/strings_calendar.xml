@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calendar: week and day views. -->
+    <string name="calendar_title">カレンダー</string>
+    <string name="calendar_week">週</string>
+    <string name="calendar_day">日</string>
+    <string name="calendar_previous_week">前の週</string>
+    <string name="calendar_next_week">次の週</string>
+    <string name="calendar_previous_day">前の日</string>
+    <string name="calendar_next_day">次の日</string>
+    <string name="calendar_go_today">今日</string>
+    <string name="calendar_no_time">時刻なし</string>
+    <string name="calendar_no_time_short">終日</string>
+    <string name="calendar_more">+%1$d</string>
+    <plurals name="calendar_more_described">
+        <item quantity="other">ほか%1$d件：日を開く</item>
+    </plurals>
+    <string name="calendar_open_day">日を開く</string>
+    <string name="calendar_day_tasks">その日のタスクを表示</string>
+    <string name="calendar_untimed_described">終日：%1$s</string>
+    <string name="calendar_empty_day">この日の予定はありません。</string>
+    <string name="calendar_open">開く</string>
+    <string name="calendar_move_action">別の日や時刻に移動</string>
+    <string name="calendar_state_overdue">期限切れ</string>
+    <string name="calendar_state_done">完了</string>
+    <string name="calendar_state_repeat">繰り返し</string>
+    <string name="calendar_move_title">「%1$s」を移動</string>
+    <string name="calendar_move_day">日</string>
+    <string name="calendar_move_time">時刻</string>
+    <string name="calendar_move_other_day">別の日…</string>
+    <string name="calendar_move_pick_time">時刻を選択</string>
+    <string name="calendar_move_confirm">移動</string>
+    <string name="calendar_moved">%1$sに移動しました</string>
+    <string name="calendar_undo">元に戻す</string>
+
+    <!-- Settings → Calendar: the read-only feed for Google and Apple Calendar. -->
+    <string name="calendar_feed_title">カレンダー</string>
+    <string name="calendar_feed_off">オフ</string>
+    <string name="calendar_feed_on">オン</string>
+    <string name="calendar_feed_intro">期日のあるタスクを Google カレンダーや Apple カレンダーに表示します。カレンダーは読み取り専用です。Dayhand で計画すれば、カレンダーが追従します。時刻のあるタスクは予定に、それ以外は終日の予定に、繰り返しタスクはそのルール付きで、リマインダーは通知になります。</string>
+    <string name="calendar_feed_turn_on">カレンダーのアドレスをオンにする</string>
+    <string name="calendar_feed_address">アドレス</string>
+    <string name="calendar_feed_secret">このアドレスを知っている人は誰でも、期日のあるタスクを見られます。自分のカレンダーにだけ共有し、漏れた場合は新しいアドレスを作成してください。</string>
+    <string name="calendar_feed_copy">アドレスをコピー</string>
+    <string name="calendar_feed_copied">アドレスをコピーしました</string>
+    <string name="calendar_feed_google">Google カレンダーに追加</string>
+    <string name="calendar_feed_google_note">ウェブ版の Google カレンダーを開きます（スマートフォンアプリではアドレスからカレンダーを追加できません）。Google は登録済みのカレンダーを独自のスケジュール（通常は数時間ごと）で更新するため、変更の反映は遅れます。</string>
+    <string name="calendar_feed_apple">Apple カレンダーに追加</string>
+    <string name="calendar_feed_apple_note">webcal アドレスを iPhone または Mac に送ります（メッセージ、メール、AirDrop…）。そちらで開いて登録してください。</string>
+    <string name="calendar_feed_manage">管理</string>
+    <string name="calendar_feed_rotate">新しいアドレスを作成</string>
+    <string name="calendar_feed_rotate_confirm_title">新しいアドレスを作成しますか？</string>
+    <string name="calendar_feed_rotate_confirm">現在のアドレスはすぐに使えなくなります。登録済みのカレンダーは、新しいアドレスを追加するまで更新されません。</string>
+    <string name="calendar_feed_rotate_done">新しいアドレスを作成しました。古いアドレスはもう使えません。</string>
+    <string name="calendar_feed_turn_off">オフにする</string>
+    <string name="calendar_feed_off_confirm_title">カレンダーのアドレスをオフにしますか？</string>
+    <string name="calendar_feed_off_confirm">アドレスは使えなくなり、登録済みのカレンダーは更新されなくなります。新しいアドレスで再びオンにできます。</string>
+    <string name="calendar_feed_export_group">1回限りのファイル</string>
+    <string name="calendar_feed_export">.ics ファイルをエクスポート</string>
+    <string name="calendar_feed_export_note">現時点のプランのコピーで、どのカレンダーにも読み込めます。更新はされません。</string>
+    <string name="calendar_feed_exporting">ファイルを準備中…</string>
+    <string name="calendar_feed_export_failed">エクスポートできません：サーバーに接続できません。</string>
+    <string name="calendar_feed_loading">カレンダーのアドレスを読み込み中…</string>
+    <string name="calendar_feed_not_connected">先にサーバーに接続してください。カレンダーのアドレスはお使いの Dayhand サーバーが提供します。</string>
+    <string name="calendar_feed_failed">サーバーに接続できません。端末がオンラインになったらもう一度お試しください。</string>
+    <string name="calendar_feed_unauthorized">サーバーがこの端末をサインアウトしました。設定 → サーバーから再接続してください。</string>
+    <string name="calendar_feed_retry">再試行</string>
+    <string name="calendar_feed_share_title">Dayhand カレンダー</string>
+</resources>

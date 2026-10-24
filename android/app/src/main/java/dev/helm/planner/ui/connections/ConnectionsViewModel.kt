@@ -15,9 +15,9 @@ import dev.helm.planner.connections.ConnectionsLoad
 import dev.helm.planner.connections.Decision
 import dev.helm.planner.connections.Lookup
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -135,7 +135,7 @@ fun ConnectionsRoute(container: AppContainer, onBack: () -> Unit) {
     }
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val locale = appLocale()
-    val format = remember(locale) { DateTimeFormatter.ofPattern("d MMM HH:mm", locale).withZone(ZoneId.systemDefault()) }
+    val format = remember(locale) { dateFormat("dMMMHHmm", locale).withZone(ZoneId.systemDefault()) }
     val actions = remember(viewModel) {
         object : ConnectionsActions {
             override fun startApprove() = viewModel.startApprove()

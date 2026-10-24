@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sample plan (SamplePlan), one string per SampleText. -->
+<resources>
+    <string name="sample_plan_week">规划本周</string>
+    <string name="sample_plan_week_resume">周一和周二已排好；下一步：预算</string>
+    <string name="sample_bill">缴电费</string>
+    <string name="sample_reply">回复小林出游的事</string>
+    <string name="sample_dentist">给牙医打电话</string>
+    <string name="sample_standup">团队站会</string>
+    <string name="sample_groceries">去超市采购</string>
+    <string name="sample_milk">牛奶</string>
+    <string name="sample_eggs">鸡蛋</string>
+    <string name="sample_bread">面包</string>
+    <string name="sample_coffee">咖啡</string>
+    <string name="sample_plants">给植物浇水</string>
+    <string name="sample_run">晨跑</string>
+    <string name="sample_proposal">写项目方案</string>
+    <string name="sample_proposal_note">两页：目标、计划和费用。</string>
+    <string name="sample_link_title">Dayhand 使用说明</string>
+    <string name="sample_holiday">假期安排的想法</string>
+    <string name="sample_holiday_note">六月去山里？问问老张小木屋的事。</string>
+    <string name="sample_monday">团队计划会</string>
+    <string name="sample_tuesday">汽车保养</string>
+    <string name="sample_wednesday">和小美吃午饭</string>
+    <string name="sample_thursday">去健身房</string>
+    <string name="sample_friday">审阅季度报告</string>
+    <string name="sample_saturday">逛农贸市场</string>
+    <string name="sample_sunday">给奶奶打电话</string>
+    <string name="sample_home">家庭</string>
+    <string name="sample_work">工作</string>
+    <string name="sample_health">健康</string>
+</resources>

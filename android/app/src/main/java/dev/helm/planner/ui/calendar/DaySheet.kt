@@ -25,13 +25,13 @@ import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarDay
 import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 /**
  * A day's tasks with their titles, from a long press on the day in the week of bars, where a bar is too small to read
@@ -47,7 +47,7 @@ fun DaySheet(
     onOpenDay: (String) -> Unit,
 ) {
     val p = palette
-    val title = LocalDate.parse(day.date).format(DateTimeFormatter.ofPattern("EEEE, d MMMM", appLocale()))
+    val title = LocalDate.parse(day.date).format(dateFormat("EEEEdMMMM", appLocale()))
     val move = stringResource(R.string.calendar_move_confirm)
     ModalBottomSheet(
         onDismissRequest = onDismiss,

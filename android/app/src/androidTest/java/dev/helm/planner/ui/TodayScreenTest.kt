@@ -121,7 +121,7 @@ class TodayScreenTest {
     @Test
     fun offlineBannerTellsHowManyChangesWait() {
         show(TodayUiState(sections(today = listOf(task("t", "2026-10-22"))), ConnectionStatus.OFFLINE, 2))
-        compose.onNodeWithTag(TodayTags.STATUS).assertTextContains(text(R.string.status_offline, 2))
+        compose.onNodeWithTag(TodayTags.STATUS).assertTextContains(context.resources.getQuantityString(R.plurals.status_offline, 2, 2))
     }
 
     @Test

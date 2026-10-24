@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connect_title">Conectar ao meu servidor</string>
+    <string name="connect_intro">No seu computador, execute dayhand pair e digite o código exibido. O código funciona uma vez, por 10 minutos.</string>
+    <string name="connect_address">Endereço do servidor</string>
+    <string name="connect_address_hint">O endereço das ações HTTP, como https://name.convex.site</string>
+    <string name="connect_code">Código de pareamento</string>
+    <string name="connect_code_hint">12 letras e números, como ABCD-EFGH-JKMN</string>
+    <string name="connect_button">Conectar</string>
+    <string name="connect_working">Conectando…</string>
+    <string name="connect_done">Conectado. Sincronizando suas tarefas…</string>
+    <string name="connect_error_address">Digite o endereço do servidor, começando com https://</string>
+    <string name="connect_error_code">Um código tem 12 letras e números, como ABCD-EFGH-JKMN.</string>
+    <string name="connect_error_invalid">Este código está errado, já foi usado ou expirou. Execute dayhand pair para obter um novo.</string>
+    <string name="connect_error_rate_limited">Códigos errados demais. Tente de novo mais tarde.</string>
+    <plurals name="connect_error_rate_limited_minutes">
+        <item quantity="one">Códigos errados demais. Tente de novo em %1$d minuto.</item>
+        <item quantity="many">Códigos errados demais. Tente de novo em %1$d minutos.</item>
+        <item quantity="other">Códigos errados demais. Tente de novo em %1$d minutos.</item>
+    </plurals>
+    <string name="connect_error_no_network">Sem rede. Conecte-se à internet e tente de novo.</string>
+    <string name="connect_error_unreachable">Não foi possível acessar o servidor. Verifique o endereço e tente de novo.</string>
+    <string name="connect_error_not_helm">Não há um servidor Dayhand neste endereço.</string>
+    <string name="connect_error_server">O servidor está com um problema agora. Tente de novo daqui a pouco.</string>
+
+    <string name="server_connected_to">Conectado a %1$s</string>
+    <string name="server_device">Este celular: %1$s</string>
+    <string name="server_app_token">Conectado com um token do app. Pareie o celular com um código; o token para de funcionar quando expirar.</string>
+    <string name="server_signed_out">O servidor encerrou a sessão deste celular. Conecte de novo com um novo código.</string>
+    <string name="server_connect">Conectar ao meu servidor</string>
+    <string name="server_connect_code">Conectar com um código</string>
+    <string name="server_disconnect">Desconectar</string>
+    <string name="server_disconnect_title">Desconectar este celular?</string>
+    <string name="server_disconnect_text">O Dayhand esquece o login neste celular, que segue com o plano por conta própria. Suas tarefas ficam aqui, e as alterações ainda não enviadas aguardam até você se conectar de novo a este servidor; conectar a outro servidor substitui este plano. Para revogar também o celular no servidor, execute: dayhand revoke %1$s</string>
+    <string name="server_disconnect_text_no_id">O Dayhand esquece o login neste celular, que segue com o plano por conta própria. Suas tarefas ficam aqui, e as alterações ainda não enviadas aguardam até você se conectar de novo a este servidor; conectar a outro servidor substitui este plano.</string>
+</resources>

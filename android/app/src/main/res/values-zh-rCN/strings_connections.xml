@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Agent connections (OAuth, docs/oauth.md): the Settings row, the list and the approval of a new one. -->
+<resources>
+    <string name="connections_title">智能体连接</string>
+    <string name="connections_approve_row">批准连接</string>
+    <string name="connections_approve_note">输入 Claude 或其他智能体登录页面上的代码</string>
+    <string name="connections_active">已连接</string>
+    <string name="connections_none">没有已连接的智能体。当 Claude 请求连接 Dayhand 时，它的页面会显示一个代码：在这里批准。</string>
+    <string name="connections_hint">在这里连接的智能体会以自己的身份读取和更改你的计划；它的更改会以它的名字显示在历史中。断开连接会立即停止它。终端使用的 API 密钥不在此列出。</string>
+    <string name="connections_loading">正在加载连接…</string>
+    <string name="connections_failed">无法加载连接。请检查与服务器的连接。</string>
+    <string name="connections_unauthorized">服务器拒绝了这部手机。请在“服务器”中重新配对。</string>
+    <string name="connections_from">来自 %1$s</string>
+    <string name="connections_registered">自行注册，返回至 %1$s</string>
+    <string name="connections_read_only">只读</string>
+    <string name="connections_read_write">读取和更改</string>
+    <string name="connections_last_used">上次使用：%1$s</string>
+    <string name="connections_never_used">尚未使用</string>
+    <string name="connections_disconnect_title">断开与 %1$s 的连接？</string>
+    <string name="connections_disconnect_text">它会立即停止工作。要再次使用，请从它的应用重新连接。</string>
+    <string name="connections_disconnect">断开连接</string>
+    <string name="connections_disconnect_failed">无法断开连接。请重试。</string>
+
+    <string name="approve_title">批准连接</string>
+    <string name="approve_code_label">登录页面上的代码</string>
+    <string name="approve_code_hint">请求访问的页面会显示类似 K7QF-M2XA 的代码。只批准你此刻在自己屏幕上看到的代码。</string>
+    <string name="approve_continue">继续</string>
+    <string name="approve_checking">正在检查代码…</string>
+    <string name="approve_not_found">没有使用此代码的待处理请求。请检查代码，或重新开始连接：代码有效期为 10 分钟。</string>
+    <string name="approve_rate_limited">错误代码过多。请几分钟后重试。</string>
+    <string name="approve_failed">无法连接服务器。请重试。</string>
+    <string name="approve_asks">%1$s 请求访问你的 Dayhand 计划</string>
+    <string name="approve_client_verified">由 %1$s 验证身份</string>
+    <string name="approve_client_registered">自行注册（名称未经验证）</string>
+    <string name="approve_returns_to">回复发送至 %1$s</string>
+    <string name="approve_asked_at">请求时间：%1$s</string>
+    <string name="approve_old_warning">此请求已发出几分钟。只批准你自己刚刚打开的登录页面；如果是别人发给你的代码，请拒绝。</string>
+    <string name="approve_loopback_warning">回复会发送到打开该页面的电脑上的程序（Claude Code）。只有你自己刚刚启动了它时才批准。</string>
+    <string name="approve_allow">允许</string>
+    <string name="approve_scope_read">读取任务和设置</string>
+    <string name="approve_scope_write">更改任务和设置</string>
+    <string name="approve_scope_write_note">添加、编辑、完成和删除任务；更改设置</string>
+    <string name="approve_confirm">批准</string>
+    <string name="approve_refuse">拒绝</string>
+    <string name="approve_nothing_chosen">请至少选择一项允许的内容，或者拒绝。</string>
+    <string name="approve_done">已批准。返回登录页面：它会自动继续。</string>
+    <string name="approve_refused">已拒绝。登录页面会告知智能体。</string>
+    <string name="approve_gone">此请求已过期或已处理。</string>
+</resources>

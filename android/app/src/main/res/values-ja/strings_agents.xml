@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings → Agents (0.10.0): the agent switch, approval requests, proposals and tool policies -->
+    <string name="agents_title">エージェント</string>
+    <string name="agents_loading">読み込み中…</string>
+    <string name="agents_failed">読み込めませんでした。サーバーへの接続を確認してください。</string>
+    <string name="agents_unauthorized">サーバーがこの端末を拒否したか、サーバーが0.11.0より古いバージョンです。「サーバー」で再度ペアリングしてください。</string>
+    <string name="agents_pause">エージェントを一時停止</string>
+    <string name="agents_running_note">エージェントは、自身のキーと接続で許可された範囲でプランを変更できます。</string>
+    <string name="agents_paused_since">%1$sから</string>
+    <string name="agents_paused_note">エージェントは読み取りはできますが、再開するまで変更はすべて拒否されます</string>
+    <string name="agents_pause_failed">切り替えられませんでした。もう一度お試しください。</string>
+    <string name="agents_waiting">あなたの回答待ち（%1$d）</string>
+    <string name="agents_no_requests">待機中の承認リクエストはありません。</string>
+    <string name="agents_request_note">%1$s · %2$sまでに回答</string>
+    <string name="agents_earlier">以前のリクエスト</string>
+    <string name="agents_proposals">提案（%1$d）</string>
+    <string name="agents_no_proposals">提案はありません。エージェントが提案したタスクは、採用するまで「今日」には表示されず、ここで待機します。</string>
+    <string name="agents_from">%1$s から</string>
+    <string name="agents_policies">ツールポリシー</string>
+    <string name="agents_no_policies">ツールポリシーはありません。各エージェントキーは、スコープで許可されたすべてのツールを使えます。</string>
+    <string name="agents_policies_hint">ターミナルで dayhand policy set を実行して設定します。「確認」にすると、ここで許可するまで呼び出しが保留されます。</string>
+    <string name="agents_policy_any_tool">その他すべてのツール</string>
+    <string name="agents_rule_allow">許可</string>
+    <string name="agents_rule_ask">確認</string>
+    <string name="agents_rule_deny">拒否</string>
+    <string name="agents_hint">Dayhand はあなたの判断を記録し、エージェントはそれに従って動作します。エージェントが Dayhand の外で行うことは、Dayhand では止められません。</string>
+    <string name="agents_gone">これはもうありません。回答済み、期限切れ、または別の場所で削除されました。</string>
+    <string name="agents_sending">送信中…</string>
+
+    <string name="agents_approval_title">承認リクエスト</string>
+    <string name="agents_asked_by">リクエスト元：%1$s</string>
+    <string name="agents_policy_held">ポリシーにより保留：%1$s</string>
+    <string name="agents_reversible">元に戻せます</string>
+    <string name="agents_irreversible">元に戻せません</string>
+    <string name="agents_decide_by">%1$sまでに回答</string>
+    <string name="agents_choose">あなたの回答</string>
+    <string name="agents_decision_hint">内容を理解できるリクエストにだけ回答してください。回答しないと期限切れになり、そのことがエージェントに伝わります。</string>
+    <string name="agents_choose_title">「%1$s」を選びますか？</string>
+    <string name="agents_choose_confirm">選択</string>
+    <string name="agents_note_label">エージェントへのひとこと（任意）</string>
+    <string name="agents_chose">あなたの回答：%1$s</string>
+    <string name="agents_expired">回答がないまま期限切れになりました</string>
+    <string name="agents_decided">回答を送信しました。エージェントは次に確認したときに読み取ります。</string>
+    <string name="agents_decide_refused">このリクエストはすでに回答済みか、期限切れです。</string>
+
+    <string name="agents_proposal_title">提案</string>
+    <string name="agents_requested_by">依頼元：%1$s</string>
+    <string name="agents_proposed_at">提案日時：%1$s</string>
+    <string name="agents_accept">採用</string>
+    <string name="agents_accept_note">プランのタスクになり、期日になると「今日」に表示されます。</string>
+    <string name="agents_merge">既存のタスクに統合</string>
+    <string name="agents_merge_note">メモ、リンク、ラベルが既存のタスクに追加されます。</string>
+    <string name="agents_reject">却下</string>
+    <string name="agents_reject_title">「%1$s」を却下しますか？</string>
+    <string name="agents_reason_label">理由（任意、提案元に送られます）</string>
+    <string name="agents_merge_title">統合先</string>
+    <string name="agents_merge_search">タスクを検索</string>
+    <string name="agents_merge_none">一致する未完了のタスクはありません。</string>
+    <string name="agents_merge_confirm_title">「%1$s」に統合しますか？</string>
+    <string name="agents_merge_confirm_text">提案はゴミ箱に移動し、メモ、リンク、ラベルはこのタスクに追加されます。</string>
+    <string name="agents_merge_confirm">統合</string>
+    <string name="agents_accepted">採用しました。プランのタスクになりました。</string>
+    <string name="agents_merged">統合しました。</string>
+    <string name="agents_rejected">却下しました。ゴミ箱に移動しました。</string>
+    <string name="agents_proposal_gone">この提案はすでに別の場所で処理されています。</string>
+    <string name="agents_change_failed">サーバーに接続できません。もう一度お試しください。</string>
+
+    <string name="channel_approvals">承認リクエスト</string>
+    <string name="channel_approvals_description">エージェントが操作の前に承認を求めます。Dayhand を閉じている間は15分ごとに確認します。</string>
+    <string name="approval_notify_title">%1$s が承認を求めています</string>
+
+    <!-- The plan health card above Today -->
+    <string name="health_title">プラン：%1$s</string>
+    <string name="health_clear">プラン：確認が必要な項目はありません。</string>
+    <string name="health_review">確認する</string>
+    <string name="health_paused">エージェント一時停止中</string>
+    <plurals name="health_overdue">
+        <item quantity="other">期限切れ%d件</item>
+    </plurals>
+    <plurals name="health_expired_claims">
+        <item quantity="other">担当期限切れ%d件</item>
+    </plurals>
+    <plurals name="health_approvals">
+        <item quantity="other">承認リクエスト%d件</item>
+    </plurals>
+    <plurals name="health_blocked">
+        <item quantity="other">ブロック中%d件</item>
+    </plurals>
+    <plurals name="health_proposals">
+        <item quantity="other">提案%d件</item>
+    </plurals>
+    <plurals name="health_without_proof">
+        <item quantity="other">証拠なしで完了%d件</item>
+    </plurals>
+    <plurals name="health_due_today">
+        <item quantity="other">今日が期日%d件</item>
+    </plurals>
+    <plurals name="health_in_progress">
+        <item quantity="other">進行中%d件</item>
+    </plurals>
+    <plurals name="health_done_today">
+        <item quantity="other">今日完了%d件</item>
+    </plurals>
+    <plurals name="health_oldest">
+        <item quantity="other">最も古い未完了タスクは%d日前</item>
+    </plurals>
+</resources>

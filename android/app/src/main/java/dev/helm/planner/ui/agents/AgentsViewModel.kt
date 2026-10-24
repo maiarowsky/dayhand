@@ -15,9 +15,9 @@ import dev.helm.planner.agents.Load
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -140,7 +140,7 @@ fun AgentsRoute(container: AppContainer, onBack: () -> Unit) {
     }
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val locale = appLocale()
-    val format = remember(locale) { DateTimeFormatter.ofPattern("d MMM HH:mm", locale).withZone(ZoneId.systemDefault()) }
+    val format = remember(locale) { dateFormat("dMMMHHmm", locale).withZone(ZoneId.systemDefault()) }
     val actions = remember(viewModel) {
         object : AgentsActions {
             override fun reload() = viewModel.reload()

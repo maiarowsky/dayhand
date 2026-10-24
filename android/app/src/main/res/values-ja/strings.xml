@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_title">今日</string>
+    <string name="section_overdue">期限切れ（%1$d）</string>
+    <string name="section_now">今やること</string>
+    <string name="section_today">今日</string>
+    <string name="section_done">完了（%1$d）</string>
+    <string name="done_expand">完了したタスクを表示</string>
+    <string name="done_collapse">完了したタスクを隠す</string>
+    <string name="empty_today">今日の予定はありません。</string>
+    <string name="add_task">タスクを追加</string>
+    <string name="open_settings">設定</string>
+    <string name="yesterday">昨日</string>
+
+    <string name="complete_task">完了にする：%1$s</string>
+    <string name="reopen_task">未完了に戻す：%1$s</string>
+    <string name="move_to_today">今日へ</string>
+    <string name="move_to_today_described">今日に移動：%1$s</string>
+    <string name="move_to_day">別の日…</string>
+    <string name="archive">アーカイブ</string>
+    <string name="set_now">今これをやる</string>
+    <string name="more_actions">その他の操作：%1$s</string>
+    <string name="stop_now">今はやらない</string>
+
+    <string name="resume_label">中断した所／次のステップ</string>
+    <string name="resume_empty">中断した所や次のステップを追加</string>
+    <string name="resume_edit">中断した所を編集</string>
+    <string name="save">保存</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ok">OK</string>
+    <string name="clear">クリア</string>
+
+    <string name="quick_add_title">新しいタスク</string>
+    <string name="quick_add_field">何をしますか？</string>
+    <string name="quick_add_more">その他のオプション</string>
+    <string name="quick_add_less">オプションを減らす</string>
+    <string name="quick_add_day">日</string>
+    <string name="quick_add_today">今日</string>
+    <string name="quick_add_tomorrow">明日</string>
+    <string name="quick_add_time">時刻</string>
+    <string name="quick_add_no_time">時刻なし</string>
+    <string name="quick_add_note">メモ</string>
+    <string name="quick_add_save">追加</string>
+
+    <plurals name="status_offline">
+        <item quantity="other">オフラインです。変更は保存され、ネットワークが戻ると送信されます（%1$d件待機中）。</item>
+    </plurals>
+    <string name="status_unauthorized">サーバーがこの端末をサインアウトしました。設定から再接続してください。</string>
+    <string name="status_error">サーバーに接続できません。Dayhand は再試行を続けます。</string>
+    <plurals name="status_sending">
+        <item quantity="other">%1$d件の変更を送信中…</item>
+    </plurals>
+
+    <string name="settings_title">設定</string>
+    <string name="back">戻る</string>
+    <string name="settings_backend">サーバー</string>
+    <string name="settings_timezone_title">タイムゾーン</string>
+    <string name="settings_timezone">%1$s（サーバーから取得）</string>
+    <string name="settings_loading">設定を読み込み中</string>
+    <string name="settings_version_title">バージョン</string>
+    <string name="settings_notifications_row">通知とアラーム</string>
+    <string name="settings_data">データ</string>
+    <string name="settings_connection">接続</string>
+    <string name="settings_state_fix">要対応</string>
+    <string name="settings_reminders_value_none">なし</string>
+    <plurals name="settings_reminders_count">
+        <item quantity="other">リマインダー%d件</item>
+    </plurals>
+
+    <!-- Board, task details and trash (0.2) -->
+    <string name="board_title">ボード</string>
+    <string name="column_todo">未着手</string>
+    <string name="column_doing">進行中</string>
+    <string name="column_done">完了</string>
+    <string name="column_with_count">%1$s（%2$d）</string>
+    <string name="board_empty_column">ここには何もありません。カードを長押しして列にドラッグするか、カードのメニューから移動してください。</string>
+    <string name="move_to_column">%1$sに移動</string>
+    <string name="overdue_due">期限切れ · %1$s</string>
+    <string name="open_details">詳細を開く</string>
+    <string name="day_today">今日</string>
+    <string name="day_tomorrow">明日</string>
+    <string name="day_and_time">%1$s、%2$s</string>
+
+    <string name="detail_title">タスク</string>
+    <string name="detail_missing">このタスクはもう端末にありません。ゴミ箱から削除された可能性があります。</string>
+    <string name="detail_status">ステータス</string>
+    <string name="detail_due">期日</string>
+    <string name="detail_no_due">期日なし</string>
+    <string name="detail_repeat">繰り返し</string>
+    <string name="detail_labels">ラベルとプロジェクト</string>
+    <string name="detail_links">リンク</string>
+    <string name="detail_history">変更履歴</string>
+    <string name="detail_archived">アーカイブ済みです。復元すると「今日」とボードに再び表示されます。</string>
+    <plurals name="detail_in_trash">
+        <item quantity="other">ゴミ箱にあります。復元しない場合、%1$d日後（%2$s）に完全に削除されます。</item>
+    </plurals>
+    <string name="edit_title">タイトルを編集</string>
+    <string name="title_required">タイトルは空にできません</string>
+    <string name="edit_note">メモを編集</string>
+    <string name="note_empty">メモを追加</string>
+    <string name="pick_day">日を選択</string>
+    <string name="add_time">時刻を追加</string>
+    <string name="change_time">時刻を変更</string>
+    <string name="remove_time">時刻なし</string>
+    <string name="remove_due">期日なし</string>
+    <string name="edit_repeat">繰り返し</string>
+    <string name="repeat_none">繰り返さない</string>
+    <string name="repeat_unit_day">毎日</string>
+    <string name="repeat_unit_week">毎週</string>
+    <string name="repeat_unit_month">毎月</string>
+    <string name="repeat_unit_year">毎年</string>
+    <string name="repeat_interval">間隔</string>
+    <string name="repeat_interval_invalid">1～%1$dの数字を入力してください</string>
+    <string name="repeat_on">曜日</string>
+    <string name="repeat_on_days">%1$s：%2$s</string>
+    <plurals name="repeat_days">
+        <item quantity="other">%1$d日ごと</item>
+    </plurals>
+    <plurals name="repeat_weeks">
+        <item quantity="other">%1$d週間ごと</item>
+    </plurals>
+    <plurals name="repeat_months">
+        <item quantity="other">%1$dか月ごと</item>
+    </plurals>
+    <plurals name="repeat_years">
+        <item quantity="other">%1$d年ごと</item>
+    </plurals>
+    <string name="add_label">ラベルを追加</string>
+    <string name="remove_label">ラベルを削除：%1$s</string>
+    <string name="label_name">ラベルまたはプロジェクト</string>
+    <plurals name="labels_full">
+        <item quantity="other">ラベルは最大%1$d個</item>
+    </plurals>
+    <string name="labels_in_use">使用中</string>
+    <string name="add_link">リンクを追加</string>
+    <string name="open_link">リンクを開く</string>
+    <string name="remove_link">リンクを削除：%1$s</string>
+    <string name="no_links">リンクなし</string>
+    <string name="no_labels">ラベルなし</string>
+    <string name="link_url">アドレス</string>
+    <string name="link_title">タイトル（任意）</string>
+    <string name="link_invalid">http:// または https:// で始まる完全なアドレスを入力してください</string>
+    <string name="add">追加</string>
+    <string name="move_to_trash">ゴミ箱に移動</string>
+    <string name="restore">復元</string>
+    <string name="restore_described">復元：%1$s</string>
+
+    <string name="actor_app">あなた（アプリ）</string>
+    <string name="actor_cli">あなた（CLI）</string>
+    <string name="actor_agent">エージェント</string>
+    <string name="action_create">作成</string>
+    <string name="action_update">編集</string>
+    <string name="action_status">ボード上で移動</string>
+    <string name="action_now">「今やること」を変更</string>
+    <string name="action_complete">完了にした</string>
+    <string name="action_archive">アーカイブ</string>
+    <string name="action_delete">ゴミ箱に移動</string>
+    <string name="action_restore">復元</string>
+    <string name="action_repeat">次の繰り返しとして作成</string>
+    <string name="field_title">タイトル</string>
+    <string name="field_day">日</string>
+    <string name="history_change">%1$s：%2$s → %3$s</string>
+    <string name="history_none">なし</string>
+    <string name="history_empty">まだ変更の記録はありません。</string>
+    <string name="history_cached">オフライン：前回接続したときの履歴です。</string>
+    <string name="history_not_on_server">履歴は、このタスクがサーバーに届いてから記録されます。</string>
+    <plurals name="history_pending">
+        <item quantity="other">%1$d件の変更が送信待ちです。送信後にここに表示されます。</item>
+    </plurals>
+    <string name="yes">はい</string>
+    <string name="no">いいえ</string>
+
+    <string name="trash_title">ゴミ箱</string>
+    <plurals name="trash_empty">
+        <item quantity="other">ゴミ箱は空です。削除したタスクはここに%1$d日間残ります。</item>
+    </plurals>
+    <plurals name="trash_hint">
+        <item quantity="other">タスクはここに%1$d日間残り、その後完全に削除されます。</item>
+    </plurals>
+    <string name="trash_deleted_on">%1$sに削除 · %2$s以降に消去</string>
+    <string name="channel_reminders">リマインダー</string>
+    <string name="channel_reminders_description">時刻のあるタスクの前に鳴ります。</string>
+    <string name="channel_summary">朝のまとめ</string>
+    <string name="channel_summary_description">今日の予定と期限切れのタスク。既定では音が鳴りません。</string>
+    <string name="reminder_done">完了</string>
+    <string name="reminder_now">今です（%1$s）</string>
+    <string name="reminder_soon">%1$s（あと%2$s）</string>
+    <string name="summary_title">今日：%1$s</string>
+    <string name="summary_title_overdue">今日：%1$s、%2$s</string>
+    <string name="summary_nothing">今日の予定はありません。</string>
+    <string name="summary_start_with">まずは：%1$s</string>
+    <plurals name="summary_tasks">
+        <item quantity="other">タスク%d件</item>
+    </plurals>
+    <plurals name="summary_overdue">
+        <item quantity="other">期限切れ%d件</item>
+    </plurals>
+    <string name="duration_minutes">%1$d分</string>
+    <string name="duration_hours">%1$d時間</string>
+    <string name="duration_hours_minutes">%1$d時間%2$d分</string>
+    <plurals name="duration_days">
+        <item quantity="other">%d日</item>
+    </plurals>
+
+    <string name="settings_notifications">通知</string>
+    <string name="settings_notifications_title">アプリの通知</string>
+    <string name="settings_notifications_on">リマインダーと朝のまとめを表示できます。</string>
+    <string name="settings_notifications_off">通知がオフのため、リマインダーと朝のまとめは表示されません。</string>
+    <string name="settings_notifications_allow">通知を許可</string>
+    <string name="settings_open_system">システム設定を開く</string>
+    <string name="settings_exact_title">正確なアラーム</string>
+    <string name="settings_state_on">オン</string>
+    <string name="settings_state_off">オフ</string>
+    <string name="settings_exact_on">リマインダーは時刻ちょうどに鳴ります。</string>
+    <string name="settings_exact_off">正確なアラームが許可されていないため、リマインダーが数分遅れることがあります。</string>
+    <string name="settings_exact_allow">正確なアラームを許可</string>
+    <string name="settings_summary">朝のまとめ</string>
+    <string name="settings_summary_hint">毎日この時刻に、今日のタスク、期限切れのタスク、最初に取りかかるタスクをお知らせします。</string>
+    <string name="settings_summary_time">時刻</string>
+    <string name="settings_summary_change">朝のまとめの時刻を変更</string>
+    <string name="settings_reminders">既定のリマインダー</string>
+    <string name="settings_reminders_title">鳴らすタイミング</string>
+    <string name="settings_reminders_hint">時刻のあるタスクだけが鳴ります。期限切れのタスクは鳴らず、「今日」で待機します。</string>
+    <string name="settings_reminders_none">リマインダーなし。</string>
+    <string name="reminder_at_due">期日の時刻に</string>
+    <string name="reminder_before">%1$s前</string>
+    <string name="settings_language">言語</string>
+    <string name="settings_language_title">アプリの言語</string>
+    <string name="language_system">端末の言語</string>
+    <string name="settings_language_unsupported">Dayhand は端末の言語に従います。</string>
+    <string name="connection_label">状態：%1$s</string>
+    <string name="connection_synced">接続済み</string>
+    <string name="connection_connecting">接続中…</string>
+    <string name="connection_offline">ネットワークなし</string>
+    <string name="connection_local">この端末のみ</string>
+    <string name="connection_unauthorized">サーバーがサインインを拒否しました</string>
+    <string name="connection_error">サーバーに接続できません</string>
+    <plurals name="connection_pending">
+        <item quantity="other">%d件の変更が送信待ちです。</item>
+    </plurals>
+    <string name="settings_export">エクスポート</string>
+    <string name="settings_export_hint">サーバー上のプラン全体：閲覧用の Markdown と、変更履歴を含む完全なコピーとしての JSON。</string>
+    <string name="export_markdown">Markdown をエクスポート</string>
+    <string name="export_json">JSON をエクスポート</string>
+    <string name="export_working">エクスポートを準備中…</string>
+    <string name="export_saved">%1$s を保存しました</string>
+    <string name="export_failed">エクスポートに失敗しました：サーバーに接続できません。</string>
+    <string name="export_unauthorized">エクスポートに失敗しました：サーバーがトークンを拒否しました。</string>
+    <string name="export_not_configured">先にサーバーに接続してください。</string>
+    <string name="export_write_failed">ファイルを保存できませんでした。</string>
+    <string name="settings_about">このアプリについて</string>
+    <string name="about_text">Dayhand は Apache License 2.0 のオープンソースソフトウェアです。分析も広告もなく、プランはこの端末かあなた自身のサーバーに保存されます。</string>
+    <string name="about_license">ライセンスを読む</string>
+
+    <!-- Repeat rules (0.6) -->
+    <string name="repeat_on_month">繰り返す日</string>
+    <string name="repeat_from">次の日付の起点</string>
+    <string name="repeat_from_due">期日</string>
+    <string name="repeat_from_completion">完了した日</string>
+    <string name="repeat_ends">終了</string>
+    <string name="repeat_ends_never">なし</string>
+    <string name="repeat_ends_until">日付を指定</string>
+    <string name="repeat_ends_on">%1$sまで</string>
+    <string name="repeat_ends_count">回数を指定</string>
+    <string name="repeat_count">回数（今回を含む）</string>
+    <string name="repeat_month_same_day">%1$d日</string>
+    <string name="repeat_month_day">%1$d日</string>
+    <string name="repeat_month_last_day">月の最終日</string>
+    <string name="repeat_month_nth">%1$s%2$s</string>
+    <string name="repeat_month_nth_from_end">最後から%1$d番目の%2$s</string>
+    <string name="repeat_label_last_day">末日</string>
+    <string name="repeat_label_nth">%1$s%2$s曜</string>
+    <string name="repeat_label_from_completion">完了日から</string>
+    <string name="repeat_label_until">%1$sまで</string>
+    <plurals name="repeat_label_count">
+        <item quantity="other">残り%d回</item>
+    </plurals>
+    <string-array name="repeat_ordinals">
+        <item>第1</item>
+        <item>第2</item>
+        <item>第3</item>
+        <item>第4</item>
+        <item>第5</item>
+    </string-array>
+    <string-array name="repeat_last_weekday">
+        <item>最終月曜日</item>
+        <item>最終火曜日</item>
+        <item>最終水曜日</item>
+        <item>最終木曜日</item>
+        <item>最終金曜日</item>
+        <item>最終土曜日</item>
+        <item>最終日曜日</item>
+    </string-array>
+    <string-array name="repeat_last_weekday_short">
+        <item>最終月曜</item>
+        <item>最終火曜</item>
+        <item>最終水曜</item>
+        <item>最終木曜</item>
+        <item>最終金曜</item>
+        <item>最終土曜</item>
+        <item>最終日曜</item>
+    </string-array>
+
+    <!-- Checklist -->
+    <string name="detail_checklist">チェックリスト</string>
+    <string name="checklist_title_progress">%1$s · %2$d/%3$d 完了</string>
+    <string name="checklist_empty">項目はまだありません</string>
+    <string name="checklist_add">項目を追加</string>
+    <string name="checklist_edit_item">項目を編集</string>
+    <string name="checklist_item">チェックリストの項目</string>
+    <string name="checklist_move_up">上へ移動</string>
+    <string name="checklist_move_down">下へ移動</string>
+    <string name="checklist_remove">削除</string>
+
+    <!-- Reminders of one task -->
+    <string name="detail_reminders">リマインダー</string>
+    <string name="edit_reminders">リマインダー</string>
+    <string name="reminders_default_value">既定：%1$s</string>
+    <string name="reminders_none">なし</string>
+    <string name="reminders_none_lower">なし</string>
+    <string name="reminders_mode_default">設定に従う</string>
+    <string name="reminders_mode_none">リマインダーなし</string>
+    <string name="reminders_mode_custom">カスタム</string>
+    <string name="reminders_before_title">期日の時刻の前</string>
+    <string name="reminders_needs_time">タスクに時刻がある場合のみ鳴ります。</string>
+    <string name="reminders_times_title">指定した時刻</string>
+    <string name="reminders_add_on_day">期日当日に時刻を追加</string>
+    <string name="reminders_add_day_before">前日に時刻を追加</string>
+    <plurals name="reminders_too_many">
+        <item quantity="other">リマインダーは最大%1$d件</item>
+    </plurals>
+    <string name="reminder_remove">リマインダーを削除：%1$s</string>
+    <string name="reminder_time_on_day">期日当日の%1$s</string>
+    <plurals name="reminder_time_before">
+        <item quantity="other">%1$d日前の%2$s</item>
+    </plurals>
+    <string name="reminder_due">期日：%1$s</string>
+    <string name="reminder_due_at">期日：%1$s %2$s</string>
+    <plurals name="reminder_in_days">
+        <item quantity="other">%d日後</item>
+    </plurals>
+
+    <!-- Agent work (backend 0.10.0): read-only on the phone. -->
+    <string name="agent_works_until">エージェント：%1$s が%2$sまで作業中</string>
+    <string name="detail_acceptance">完了条件</string>
+    <string name="acceptance_title_progress">%1$s · %2$d/%3$d 達成</string>
+    <string name="detail_proof">完了の証拠</string>
+    <string name="proof_check_pass">成功</string>
+    <string name="proof_check_fail">失敗</string>
+    <string name="proof_empty">詳細はありません</string>
+</resources>

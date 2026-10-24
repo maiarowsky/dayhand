@@ -12,7 +12,10 @@
     <string name="calendar_no_time">No time</string>
     <string name="calendar_no_time_short">All day</string>
     <string name="calendar_more">+%1$d</string>
-    <string name="calendar_more_described">%1$d more: open the day</string>
+    <plurals name="calendar_more_described">
+        <item quantity="one">%1$d more: open the day</item>
+        <item quantity="other">%1$d more: open the day</item>
+    </plurals>
     <string name="calendar_open_day">Open the day</string>
     <string name="calendar_day_tasks">Show the day’s tasks</string>
     <string name="calendar_untimed_described">All day: %1$s</string>

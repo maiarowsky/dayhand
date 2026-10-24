@@ -1,5 +1,7 @@
 package dev.helm.planner.ui.calendar
 
+import android.icu.text.DateIntervalFormat
+import android.icu.util.DateInterval
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -56,6 +58,7 @@ import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
@@ -63,8 +66,9 @@ import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
+import java.text.FieldPosition
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.launch
 
@@ -134,7 +138,7 @@ private fun CalendarContent(
     val subtitle = if (week) {
         dateRange(strip.date(strip.firstDay), strip.date(strip.firstDay + WEEK_DAYS - 1))
     } else {
-        dayOf(dayPager.currentPage).format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", locale))
+        dayOf(dayPager.currentPage).format(dateFormat("yMMMMEEEEd", locale))
     }
     val step = { by: Int ->
         scope.launch {
@@ -147,10 +151,11 @@ private fun CalendarContent(
     val moved = stringResource(R.string.calendar_moved)
     val undo = stringResource(R.string.calendar_undo)
     val noTime = stringResource(R.string.calendar_no_time)
+    val dayAndTime = stringResource(R.string.day_and_time)
     val onMove = { entry: CalendarEntry, date: String, time: String? ->
         actions.move(entry.task.localId, date, time)
         moving = null
-        val whenText = LocalDate.parse(date).format(DateTimeFormatter.ofPattern("EEE d MMM", locale)) + ", " + (time ?: noTime)
+        val whenText = dayAndTime.format(LocalDate.parse(date).format(dateFormat("EEEdMMM", locale)), time ?: noTime)
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
             val result = snackbar.showSnackbar(moved.format(whenText), actionLabel = undo, duration = SnackbarDuration.Long)
@@ -289,17 +294,13 @@ private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showTod
     }
 }
 
-/** "19 – 25 Oct 2026", "29 Oct – 1 Nov 2026", "30 Dec 2026 – 1 Jan 2027". */
+/** "Oct 19 – 25, 2026", "19.–25. Okt. 2026", "2026年10月19日～25日": the week as the app's language writes a range. */
 @Composable
 private fun dateRange(first: LocalDate, last: LocalDate): String {
-    val locale = appLocale()
-    val end = last.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
-    val startPattern = when {
-        first.year != last.year -> "d MMM yyyy"
-        first.month != last.month -> "d MMM"
-        else -> "d"
-    }
-    return "${first.format(DateTimeFormatter.ofPattern(startPattern, locale))} – $end"
+    val format = DateIntervalFormat.getInstance("yMMMd", appLocale())
+    // Noon, so a daylight saving change cannot move either day.
+    val millis = { date: LocalDate -> date.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }
+    return format.format(DateInterval(millis(first), millis(last)), StringBuffer(), FieldPosition(0)).toString()
 }
 
 /**

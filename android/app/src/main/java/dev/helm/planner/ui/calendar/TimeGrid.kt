@@ -46,12 +46,12 @@ import dev.helm.planner.domain.CalendarDay
 import dev.helm.planner.domain.CalendarDays
 import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
+import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 
 /** An hour is two touch targets high, so a 30-minute task is one. */
@@ -217,7 +217,7 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
     val date = LocalDate.parse(day.date)
     val locale = appLocale()
     val description = buildString {
-        append(date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale)))
+        append(date.format(dateFormat("EEEEdMMMM", locale)))
         if (day.isToday) append(", ").append(stringResource(R.string.day_today))
     }
     val openLabel = stringResource(R.string.calendar_open_day)

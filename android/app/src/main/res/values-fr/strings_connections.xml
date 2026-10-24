@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Agent connections (OAuth, docs/oauth.md): the Settings row, the list and the approval of a new one. -->
+<resources>
+    <string name="connections_title">Connexions d\'agents</string>
+    <string name="connections_approve_row">Approuver une connexion</string>
+    <string name="connections_approve_note">Saisissez le code affiché sur la page de connexion de Claude ou d\'un autre agent</string>
+    <string name="connections_active">Connectés</string>
+    <string name="connections_none">Aucun agent connecté. Quand Claude demande à se connecter à Dayhand, sa page affiche un code : approuvez-le ici.</string>
+    <string name="connections_hint">Un agent connecté ici lit et modifie votre plan en son propre nom ; ses modifications apparaissent dans l\'historique sous son nom. La déconnexion l\'arrête immédiatement. Les clés d\'API du terminal ne sont pas listées ici.</string>
+    <string name="connections_loading">Chargement des connexions…</string>
+    <string name="connections_failed">Impossible de charger les connexions. Vérifiez la connexion au serveur.</string>
+    <string name="connections_unauthorized">Le serveur a refusé ce téléphone. Associez-le à nouveau dans Serveur.</string>
+    <string name="connections_from">depuis %1$s</string>
+    <string name="connections_registered">auto-enregistré, renvoie vers %1$s</string>
+    <string name="connections_read_only">Lecture seule</string>
+    <string name="connections_read_write">Lecture et modification</string>
+    <string name="connections_last_used">dernière utilisation : %1$s</string>
+    <string name="connections_never_used">pas encore utilisé</string>
+    <string name="connections_disconnect_title">Déconnecter %1$s ?</string>
+    <string name="connections_disconnect_text">Il cesse immédiatement de fonctionner. Pour l\'utiliser à nouveau, reconnectez-le depuis son app.</string>
+    <string name="connections_disconnect">Déconnecter</string>
+    <string name="connections_disconnect_failed">Impossible de déconnecter. Réessayez.</string>
+
+    <string name="approve_title">Approuver une connexion</string>
+    <string name="approve_code_label">Code de la page de connexion</string>
+    <string name="approve_code_hint">La page qui demande l\'accès affiche un code comme K7QF-M2XA. N\'approuvez qu\'un code que vous voyez en ce moment sur votre propre écran.</string>
+    <string name="approve_continue">Continuer</string>
+    <string name="approve_checking">Vérification du code…</string>
+    <string name="approve_not_found">Aucune demande en attente n\'a ce code. Vérifiez-le ou relancez la connexion : un code est valable 10 minutes.</string>
+    <string name="approve_rate_limited">Trop de codes erronés. Réessayez dans quelques minutes.</string>
+    <string name="approve_failed">Impossible de joindre le serveur. Réessayez.</string>
+    <string name="approve_asks">%1$s demande l\'accès à votre plan Dayhand</string>
+    <string name="approve_client_verified">Identifié par %1$s</string>
+    <string name="approve_client_registered">Auto-enregistré (son nom n\'est pas vérifié)</string>
+    <string name="approve_returns_to">La réponse va à %1$s</string>
+    <string name="approve_asked_at">Demande faite : %1$s</string>
+    <string name="approve_old_warning">Cette demande date de plusieurs minutes. N\'approuvez qu\'une page de connexion que vous venez d\'ouvrir vous-même ; si quelqu\'un vous a envoyé ce code, refusez.</string>
+    <string name="approve_loopback_warning">La réponse va à un programme sur l\'ordinateur qui a ouvert la page (Claude Code). N\'approuvez que si vous venez de le lancer vous-même.</string>
+    <string name="approve_allow">Autoriser</string>
+    <string name="approve_scope_read">Lire les tâches et les paramètres</string>
+    <string name="approve_scope_write">Modifier les tâches et les paramètres</string>
+    <string name="approve_scope_write_note">Ajouter, modifier, terminer et supprimer des tâches ; modifier les paramètres</string>
+    <string name="approve_confirm">Approuver</string>
+    <string name="approve_refuse">Refuser</string>
+    <string name="approve_nothing_chosen">Choisissez au moins une autorisation, ou refusez.</string>
+    <string name="approve_done">Approuvée. Revenez à la page de connexion : elle continue toute seule.</string>
+    <string name="approve_refused">Refusée. La page de connexion signale le refus à l\'agent.</string>
+    <string name="approve_gone">Cette demande a expiré ou a déjà été traitée.</string>
+</resources>

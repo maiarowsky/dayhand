@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The sample plan (SamplePlan), one string per SampleText. -->
+<resources>
+    <string name="sample_plan_week">Die Woche planen</string>
+    <string name="sample_plan_week_resume">Montag und Dienstag sind fertig; als Nächstes: das Budget</string>
+    <string name="sample_bill">Stromrechnung bezahlen</string>
+    <string name="sample_reply">Anna wegen der Reise antworten</string>
+    <string name="sample_dentist">Zahnarzt anrufen</string>
+    <string name="sample_standup">Team-Standup</string>
+    <string name="sample_groceries">Lebensmittel einkaufen</string>
+    <string name="sample_milk">Milch</string>
+    <string name="sample_eggs">Eier</string>
+    <string name="sample_bread">Brot</string>
+    <string name="sample_coffee">Kaffee</string>
+    <string name="sample_plants">Pflanzen gießen</string>
+    <string name="sample_run">Morgenlauf</string>
+    <string name="sample_proposal">Projektvorschlag schreiben</string>
+    <string name="sample_proposal_note">Zwei Seiten: Ziel, Plan und Kosten.</string>
+    <string name="sample_link_title">So funktioniert Dayhand</string>
+    <string name="sample_holiday">Ideen für den Urlaub</string>
+    <string name="sample_holiday_note">Im Juni in die Berge? Tom wegen der Hütte fragen.</string>
+    <string name="sample_monday">Teamplanung</string>
+    <string name="sample_tuesday">Auto zur Inspektion</string>
+    <string name="sample_wednesday">Mittagessen mit Marta</string>
+    <string name="sample_thursday">Fitnessstudio</string>
+    <string name="sample_friday">Quartalsbericht durchsehen</string>
+    <string name="sample_saturday">Wochenmarkt</string>
+    <string name="sample_sunday">Oma anrufen</string>
+    <string name="sample_home">Zuhause</string>
+    <string name="sample_work">Arbeit</string>
+    <string name="sample_health">Gesundheit</string>
+</resources>
