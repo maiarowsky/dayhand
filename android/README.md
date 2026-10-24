@@ -158,7 +158,7 @@ the backend's limits before it is queued, so a change the server would refuse is
 **Restore** brings one back.
 
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
-keyboard's Done key) saves it for today. A date phrase at the end of the title sets the day and
+keyboard's Done key) saves it for today by default. A date phrase at the end of the title sets the day and
 time: "Call the accountant fri 2pm" is "Call the accountant" on the coming Friday at 14:00. The
 phrases are English, the grammar of `dayhand add --due` (`today`, `tomorrow 9am`, `fri`, `next mon`,
 `in 3 days`, `23 oct`, `2026-10-23`, `2pm`; all of them in `dayhand help dates`), read in the
