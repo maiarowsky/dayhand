@@ -250,8 +250,10 @@ Use this when you believe the task is done, or when you hand it back.
   how you know, \`links\` (a pull request, a deploy, a document) and
   \`checks\` (\`{name, result: "pass" | "fail", url}\`). Record a failed
   check as \`fail\`; do not leave it out.
-- Without met criteria or a summary the call fails with
-  \`precondition_failed\` and nothing changes.
+- For an agent completing a task with criteria, any unmet criterion or
+  missing proof summary makes the call fail with \`precondition_failed\`
+  and nothing changes. A task without criteria may be completed without
+  a proof summary.
 - Completing ends your claim. A repeating task returns its next occurrence
   as \`next\`, with the criteria unticked.
 - If the task came with \`returnTo\`, that webhook hears about it with
