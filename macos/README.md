@@ -18,12 +18,15 @@ This version is the basic one (MVP):
   (a phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat, reminders
   and links are shown. A task in the trash is read-only until **Restore**.
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
-  by name) and when, newest first, each field from its old value to the new one. It is fetched with `app:getTask`
-  and kept in the local database, so it shows offline too.
+  by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
+  cached entries remain available offline. Without cached entries, the details say history is unavailable
+  offline; a task created locally says its history starts once it reaches the server. Refresh rules are under
+  [How it works](#how-it-works).
 - **Trash** shares the left sidebar with Today: a segmented chooser at the top switches the task list, with no
-  count badges. Deleted tasks show the day each was deleted, the day it goes for good (30 days later) and
-  **Restore**. The window stays two-column: the sidebar and the selected task's details, with the update button
-  at the bottom left of the sidebar.
+  count badges. Deleted tasks are listed most recently deleted first, with the deletion day, the day the task
+  expires from the trash and **Restore**, which also works offline. The server keeps deleted tasks for 30 days
+  before its daily purge. The window stays two-column, at least 720 points wide: the sidebar and the selected
+  task's details, with the update button at the bottom left of the sidebar.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
@@ -53,13 +56,14 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  ──> SnapshotMerger (last write wins per field) ──> the database
 rounds: every 15 s, and at once after a local change
 
-history loads only when details open, the connection recovers to synced, or Sync Now is requested:
-  TaskHistorySync: app:getTask ──> the task's history replaces its cached copy (taskEvent table)
-  no answer or no server: the cached copy, marked as such; without a copy, history is unavailable offline
+history loads only when details open, the connection changes from offline/signed out/connecting to synced,
+or Sync Now is requested:
+  TaskHistorySync: app:getTask ──> the task's history replaces its cached copy
+  no answer or no server: the cached copy stays, marked as such
   ordinary polls (even with a newer task version): no history request or cancellation; no retry loop
 ```
 
-The code is a Swift package with six targets:
+The code is a Swift package with these application and library targets (test targets are described below):
 
 | Target | What it holds |
 |---|---|
@@ -148,9 +152,9 @@ swift test                        # the live-backend test is skipped by default
 - **The outbox and sync against a fake server** (`FakeServer.swift`, in memory): offline changes reach the server
   in order, a change whose answer was lost is applied once, a waiting change keeps its field against a newer
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
-  refreshed and the call repeated. The history (`HistoryTests`): the fake server records each change as the backend
-  does, the Mac shows who made it (the app, `dayhand`, an agent by name), keeps it offline from the cache,
-  and drops the history of a purged task.
+  refreshed and the call repeated. `HistoryTests.swift` checks history parsing and actor attribution, fetching
+  and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
+  is erased. It also checks trash expiry and queuing an offline restore.
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
@@ -172,10 +176,9 @@ swift test                        # the live-backend test is skipped by default
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
   them is missing from the string catalog.
-- **History presentation** (`DayhandUITests`): history loads only when details open, the connection recovers
-  from offline, signed out or connecting to synced, or **Sync Now** is requested. Ordinary synced timestamps
-  and task-version changes do not invalidate an in-flight request; there is no retry loop. An empty offline
-  cache never asserts an empty server history, and claim labels are actor-neutral in every language.
+- **History presentation** (`DayhandUITests`): refresh-key equality and connection-recovery classification,
+  placeholders for fresh, cached and local-only history, and translated, actor-neutral claim labels. These
+  are unit checks, not clicks through the running app.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources

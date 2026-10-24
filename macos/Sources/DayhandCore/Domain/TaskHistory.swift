@@ -55,7 +55,7 @@ public struct HistoryEntry: Hashable, Sendable {
 
 /**
  * One event of a task's change history as `app:getTask` returns it, cached in the database so the details show who
- * changed what also offline. [before] and [after] hold only the fields the change touched, as JSON objects.
+ * changed what also offline. `beforeJson` and `afterJson` hold only the fields the change touched, as JSON objects.
  */
 public struct TaskEvent: Hashable, Sendable {
     public var taskServerId: String

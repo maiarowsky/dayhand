@@ -42,8 +42,8 @@ Estimate: 4 to 8 hours of agent work once the certificate and the notarization k
 settings, the release workflow, the cask), plus the maintainer's time for the Apple accounts. The updater and its
 screens are done (below); the release only has to sign and publish them.
 
-Before the first release also decide: the version scheme (the app reports `0.3.0` and the commit count as the
-build number, like the Android app's `versionCode`) and when to stop registering `helm://` next to
+Before the first release also decide whether to keep the [build script's version scheme](../macos/scripts/build-app.sh)
+and when to stop registering `helm://` next to
 `dayhand://` (`dayhand pair` prints `dayhand://` links; `helm://` is only there for codes printed by
 older versions).
 
@@ -55,10 +55,8 @@ Mac apps outside the App Store do. Sparkle reads an **appcast** (an RSS file lis
 **EdDSA signature** against the public key in the app, and installs it after the app quits, then starts the new
 version. Dayhand draws its own screens for it (Sparkle's user driver in `DayhandUpdates`):
 
-- **The update button**: a round blue button with a download arrow at the bottom left of the shared task sidebar.
-  The two-column window has a Today/Trash chooser above the sidebar list and task details on the right; there
-  are no count badges or separate places column. It shows only while a newer version is known; its tooltip
-  names the version.
+- **The update button**: a round blue button with a download arrow at the bottom left of the shared task sidebar
+  ([sidebar layout](../macos/README.md)). It shows only while a newer version is known; its tooltip names the version.
 - **The update window** (a popover on the button): "Dayhand 0.2.0 is available", the running version, the release
   notes as plain text, **Later** and **Update and Relaunch**; then the download with its progress, the signature
   check, "Dayhand will quit and open again"; a failure in plain words (offline, unreadable list, broken download,
@@ -151,11 +149,9 @@ version before announcing it.
 
 ## What is left for parity with the Android app
 
-The MVP covers pairing, Today, quick add with date phrases, ticking off, the menu bar, the global shortcut, the
-offline outbox, reminders and the morning summary, and the details with basic editing; 0.3.0 adds the trash and
-the change history. Today and Trash share one sidebar beside the task details, with a segmented chooser
-and no count badges; the minimum window width remains 720 points. The research estimated 80 to 110 hours for
-full parity; what remains, by screen:
+The implemented features, including the trash and change history, are described in
+[macos/README.md](../macos/README.md). The research estimated 80 to 110 hours for full parity; what remains,
+by screen:
 
 - **Board**: three columns (To do, In progress with the now task first, Done: the 50 most recently done), drag
   between columns, the same moves from a menu. The repository already has `move(_:to:)`.
@@ -177,7 +173,7 @@ full parity; what remains, by screen:
 - **Live updates**: polling every 15 seconds now. A Convex WebSocket subscription would make changes elsewhere
   appear at once; `convex-swift` needs a binary framework, so this would be a small client of the Convex sync
   protocol, or the Rust core if a binary is accepted.
-- **UI tests**: the screens are drawn by `DayhandSnapshots` and their logic is tested in `DayhandCore`; clicks
-  through the real app (XCUITest) need the Xcode project above.
+- **UI tests**: current coverage is described in [macos/README.md](../macos/README.md#tests); clicks through
+  the real app (XCUITest) need the Xcode project above.
 
 The same core (`DayhandCore`) is meant to carry the iOS app later: it has no AppKit or SwiftUI in it.

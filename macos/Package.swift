@@ -2,7 +2,7 @@
 // Dayhand for macOS: the SwiftUI screens (DayhandUI, started by the Dayhand executable) on a UI-free core
 // (DayhandCore) that holds the task model, the date and repeat rules, the local database, the outbox and the server
 // protocol, the app updates on Sparkle (DayhandUpdates) and the texts in eight languages (DayhandLocalization).
-// `swift test` runs the core's, the updates' and the texts' tests.
+// Test coverage and commands: README.md#tests.
 import PackageDescription
 
 let package = Package(
