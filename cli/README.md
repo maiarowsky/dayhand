@@ -10,7 +10,7 @@ iCalendar or Todoist CSV.
 `dh` is the same command with a shorter name. On Debian and Ubuntu, debhelper has a `dh` of its
 own (`/usr/bin/dh`), so type `dayhand` there. `hlm`, the name before Dayhand, still runs until
 1.0 and warns on every run; the `HLM_*` variables and the `hlm` config folder are read too
-([Renamed from Helm](../README.md#renamed-from-helm)).
+([Renamed from Helm](../docs/rename.md)).
 
 Requires Node.js 22.12 or newer; runs on macOS, Linux and Windows.
 

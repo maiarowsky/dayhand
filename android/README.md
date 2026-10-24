@@ -6,11 +6,11 @@ on the phone, has the **Settings** screen, connects to a server by **pairing** w
 code from `dayhand pair`, approves and disconnects **agent connections** such as the Claude app, and
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
-**Install**: download the `.apk` from the
-[latest release](https://github.com/maiarowsky/helm/releases/latest), allow your browser or file
-manager to install apps when Android asks, and on the first start choose **On this phone only**
-to use Dayhand without a server. What works without a server, what needs one and how to connect
-your own: [Install on Android](../README.md#install-on-android). To build it yourself, see
+**Install**: the signed release build is ready, but no release is published yet. Once it is,
+download the `.apk` from the [latest release](https://github.com/maiarowsky/helm/releases/latest),
+allow your browser or file manager to install apps when Android asks, and on the first start
+choose **On this phone only** to use Dayhand without a server. What works without a server, what
+needs one and how to connect your own: [On the phone](../README.md#on-the-phone). To build it yourself, see
 [Run it locally](#run-it-locally) and [Release build](#release-build).
 
 Dayhand works **on this phone only**, without an account or a server, and that is what the first

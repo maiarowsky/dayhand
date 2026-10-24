@@ -3,3 +3,6 @@ contact_links:
   - name: Report a security vulnerability
     url: https://github.com/maiarowsky/helm/security/advisories/new
     about: Report it privately, never in a public issue (SECURITY.md).
+  - name: Questions about running Dayhand or your own server
+    url: https://github.com/maiarowsky/helm/blob/main/docs/deploy.md
+    about: Dayhand is a personal project with no hosted service and no support promise. Setup, costs, backups and Tailscale are in docs/deploy.md; issues are for bugs you can reproduce.
