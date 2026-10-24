@@ -119,7 +119,9 @@ struct StatusLine: View {
         if let text = Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline) {
             HStack(spacing: 8) {
                 Image(systemName: icon).foregroundStyle(.secondary)
-                Text(text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                // Wraps without fixedSize: a fixed height is measured at the split view's narrowest width, many lines
+                // tall, which made the window's content taller than the window and slid it under the title bar.
+                Text(text).font(.callout).foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 if model.credential == nil {
                     Button(tr("Connect…")) { model.showConnect = true }.controlSize(.small)
