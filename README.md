@@ -219,6 +219,7 @@ android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
+site/      the dayhand.dev landing page (static HTML and CSS); check it with scripts/check-site.sh
 ```
 
 The tests start their own throwaway backend:
