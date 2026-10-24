@@ -40,15 +40,14 @@ and Cal.com; first-party analytics only on Plausible, Ghostty and Super Producti
 - **The licence named in the body and again in the FAQ**, with a plain "why is it free?" answer, as on
   Vikunja, Super Productivity and Plausible. Dayhand adds that there is no paid plan and no hosted
   service, and says what the one non-Apache part (the Convex local backend) is.
-- **Frank about self-hosting.** Like Vikunja's two paths and Plausible's comparison: a server on your
-  computer, your own Convex account, or no server at all, each with its one command.
+- **Frank about self-hosting.** Like Vikunja's two paths and Plausible's comparison: explain the choices
+  before setup. Dayhand's server paths are in [README.md](../README.md#your-own-server).
 - **Phone and desktop together, showing the same plan**, the idea from Joplin, built the way Immich builds
   its images: two separate real screenshots, light and dark files swapped by `<picture>`, the phone over
   the Mac window's corner with a caption naming both. On narrow screens the phone takes half the width
   instead of standing alone, so both platforms stay in view.
-- **Real screenshots in light and dark pairs**, with width and height, alt text that says what the
-  screen shows, lazy loading below the first screen and WebP at several widths (Vikunja does all of it);
-  a one-line caption under each, as on Super Productivity.
+- **Real screenshots**, as on Vikunja, and one-line captions, as on Super Productivity. Dayhand's capture
+  and image-handling rules are in [site/STYLE.md](../site/STYLE.md#screenshots).
 - **Rows of phone screens that scroll sideways under the reader's control**, never a slideshow that moves
   by itself.
 - **Every platform visible with its real state.** One card per platform with requirements, as Ente, Zed and

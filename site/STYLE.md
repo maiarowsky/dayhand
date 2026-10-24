@@ -72,28 +72,22 @@ every link and fragment between the pages.
 
 ## Deploying
 
-Only maintainers deploy, after a merge to `main`. From `site/`, with Wrangler logged in to the Cloudflare
-account that owns dayhand.dev:
-
-```sh
-npm run build && wrangler deploy
-```
-
-`wrangler.toml` names the Worker (`dayhand-site`), the folder it serves (`./dist`), the 404 handling and
-the custom domain. It holds no account id and no secrets: the account comes from `wrangler login`.
+Maintainer deployment steps and authentication requirements are in
+[CONTRIBUTING.md](../CONTRIBUTING.md#the-site-and-the-documentation). The Worker, assets and custom domain
+are configured in `wrangler.toml`.
 
 ## Screenshots
 
 Every screenshot shows the real apps, built from this repository, on made-up demo data: a one-person
 business's day with its agents, entered into a throwaway local backend. Never take them on a real plan or a
 real account. The Mac app ran under its own bundle id with its own data folder and no keychain entry; the
-Android app ran on an emulator with the demo-mode status bar. Each screen has a light and a dark file, which
-`<picture>` swaps by `prefers-color-scheme`.
+Android app ran on an emulator with the demo-mode status bar. App screens have light and dark files, which
+`<picture>` swaps by `prefers-color-scheme`; the notification uses the same light capture in both themes.
 
-The files in `src/assets/screens/` are lossless WebP at device resolution (Android 1080 × 2400, a Mac
-window 2160 × 1400); the build makes smaller WebP files at the widths each place asks for, with width and
-height set so nothing moves while they load. To replace one, keep the file name, check the new picture by
-eye for anything that is not demo data, and look at the page in both themes.
+The files in `src/assets/screens/` are lossless WebP at capture resolution, except for the notification,
+which is cropped to its card. The build makes smaller WebP files at the widths each place asks for, with
+width and height set so nothing moves while they load. To replace one, keep the file name, check the new
+picture by eye for anything that is not demo data, and look at the page in both themes.
 
 ## Rules from good-css.com that this site follows
 
@@ -139,7 +133,7 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **Native elements before scripts.** The FAQ and the docs menu are `<details>`, the search box is
   `<search>`; JavaScript only adds Copy buttons, keeps the docs menu open beside the page and searches.
 - **Never disable zoom**, never `user-select: none` on text you read (only on the `$` prompt of the
-  terminal samples), never truncate text.
+  terminal samples), never truncate page content.
 
 Not used, because the site does not need them: subgrid, container queries, popovers, view transitions,
 scroll-driven animation, `text-box` and `@property`.
