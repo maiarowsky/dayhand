@@ -122,6 +122,46 @@
 			<string>%lld zadania na dziś</string>
 		</dict>
 	</dict>
+	<key>%lld times, this one included</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld razy, łącznie z tym</string>
+			<key>many</key>
+			<string>%lld razy, łącznie z tym</string>
+			<key>one</key>
+			<string>%lld raz, łącznie z tym</string>
+			<key>other</key>
+			<string>%lld razy, łącznie z tym</string>
+		</dict>
+	</dict>
+	<key>At most %lld reminders.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Najwyżej %lld przypomnienia.</string>
+			<key>many</key>
+			<string>Najwyżej %lld przypomnień.</string>
+			<key>one</key>
+			<string>Najwyżej %lld przypomnienie.</string>
+			<key>other</key>
+			<string>Najwyżej %lld przypomnienia.</string>
+		</dict>
+	</dict>
 	<key>Dayhand, %lld open today</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -262,6 +302,26 @@
 			<string>Wysyłanie %lld zmiany…</string>
 		</dict>
 	</dict>
+	<key>Tasks stay here for %lld days, then they are deleted for good.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Zadania zostają tu przez %lld dni, potem znikają na zawsze.</string>
+			<key>many</key>
+			<string>Zadania zostają tu przez %lld dni, potem znikają na zawsze.</string>
+			<key>one</key>
+			<string>Zadania zostają tu przez %lld dzień, potem znikają na zawsze.</string>
+			<key>other</key>
+			<string>Zadania zostają tu przez %lld dnia, potem znikają na zawsze.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -280,6 +340,26 @@
 			<string>Tytuł musi mieć od 1 do %lld znaku.</string>
 			<key>other</key>
 			<string>Tytuł musi mieć od 1 do %lld znaku.</string>
+		</dict>
+	</dict>
+	<key>The trash is empty. Deleted tasks stay here for %lld days.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dni.</string>
+			<key>many</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dni.</string>
+			<key>one</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dzień.</string>
+			<key>other</key>
+			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dnia.</string>
 		</dict>
 	</dict>
 </dict>

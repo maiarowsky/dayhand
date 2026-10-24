@@ -113,7 +113,7 @@ public struct ChecklistItem: Hashable, Sendable, Codable, Identifiable {
         self.done = done
     }
 
-    static func parse(_ value: JSONValue) -> ChecklistItem? {
+    public static func parse(_ value: JSONValue) -> ChecklistItem? {
         guard let id = value["id"]?.string, let title = value["title"]?.string else { return nil }
         return ChecklistItem(id: id, title: title, done: value["done"]?.bool ?? false)
     }
@@ -143,7 +143,7 @@ public struct TaskReminder: Hashable, Sendable, Codable {
     }
 
     /// A reminder as the server sends it; anything else is nil.
-    static func parse(_ value: JSONValue) -> TaskReminder? {
+    public static func parse(_ value: JSONValue) -> TaskReminder? {
         if let minutes = value["minutesBefore"]?.int { return .before(minutes) }
         guard let time = value["time"]?.string else { return nil }
         return .at(time, daysBefore: value["daysBefore"]?.int ?? 0)
@@ -168,7 +168,7 @@ public struct TaskLink: Hashable, Sendable, Codable {
         self.title = title
     }
 
-    static func parse(_ value: JSONValue) -> TaskLink? {
+    public static func parse(_ value: JSONValue) -> TaskLink? {
         guard let url = value["url"]?.string else { return nil }
         return TaskLink(url: url, title: value["title"]?.string)
     }
@@ -250,6 +250,12 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
     public var id: String { localId }
 
     public var inTrash: Bool { deletedAt != nil }
+
+    /// How long the server keeps a task in the trash (`TRASH_RETENTION_MS` in `backend/convex/lib/taskOps.ts`).
+    public static let trashRetentionDays = 30
+
+    /// When the server deletes a task in the trash for good; nil for a task that is not in the trash.
+    public var goneForGoodAt: Int64? { deletedAt.map { $0 + Int64(Self.trashRetentionDays) * HelmDates.dayMs } }
 
     /// Shown on Today: neither archived nor in the trash.
     public var isActive: Bool { archivedAt == nil && deletedAt == nil }

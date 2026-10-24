@@ -66,7 +66,7 @@ sealed interface BackupRead {
 /**
  * A backup of the plan on this phone in Dayhand's JSON export format (version 1, as `app:exportPlan` and
  * `dayhand export --format json` write it), so the server's import (`POST /api/v1/import`, `dayhand import`) reads it too.
- * The phone has no change history and no task numbers, so `events` is empty and `ref` is left out.
+ * Backup contents and restore limits: `android/README.md#backups`.
  */
 object PlanBackup {
     const val VERSION = 1

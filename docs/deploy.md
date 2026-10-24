@@ -13,14 +13,16 @@ You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex 
 (or signed in to) in your browser during the setup.
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git
-cd helm/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+npm i -g dayhand
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand
 dayhand server deploy
 ```
 
-Without `dayhand`, the same setup is `cd helm/backend && npm run setup` (it then prints the
-`dayhand login` command to use later). `npm link` puts `dayhand` on the PATH; where it needs
-administrator rights, run `node cli/dist/bin/dayhand.js server deploy` instead.
+`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
+first release, from source: [Install](install.md)); the copy of the repository holds the server it
+deploys. Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` (it then prints the
+`dayhand login` command to use later).
 
 `dayhand server deploy` (which runs `backend/scripts/setup.mjs`):
 
@@ -36,6 +38,18 @@ administrator rights, run `node cli/dist/bin/dayhand.js server deploy` instead.
 5. deploys `backend/` and checks that `/api/v1/openapi.json`, `/auth/token` and `/mcp` answer;
 6. creates a CLI key (kind `cli`) and signs `dayhand` in with it (OS keychain, or a private file),
    and makes a pairing code for the phone, valid for 10 minutes.
+
+If you already used another server, setup stores the new server's key but does not overwrite an
+existing profile. Select the printed address explicitly for subsequent commands, for example in a
+POSIX shell:
+
+```sh
+export DAYHAND_URL=https://<deployment>.convex.site
+dayhand whoami
+```
+
+Replace `<deployment>` with the name setup prints. Set this again in a new terminal, or pass
+`--url https://<deployment>.convex.site` to each command, including `pair` and key creation.
 
 At the end it prints the server address, the pairing code with a QR code, and the next steps:
 
@@ -157,15 +171,21 @@ server on your computer, put both in a [Tailscale](https://tailscale.com) networ
    tailscale serve --bg --https=8443 http://127.0.0.1:3210
    ```
 
-3. Start the server with that address, so it gives the phone the HTTPS addresses instead of
-   127.0.0.1:
+3. If the server is already running, stop it with Ctrl+C first. Start it again with that address,
+   keeping the same data and keys, so it gives the phone the HTTPS addresses instead of 127.0.0.1:
 
    ```sh
    dayhand server start --public-url https://<machine>.<tailnet>.ts.net
    ```
 
    (`--public-api-url` when the Convex API is not on port 8443.) Then pair the phone with the
-   printed address and code.
+   printed address and code. In a second terminal, select that address for later CLI commands
+   (POSIX shell), since an existing profile can still point at 127.0.0.1:
+
+   ```sh
+   export DAYHAND_URL=https://<machine>.<tailnet>.ts.net
+   dayhand whoami
+   ```
 
 `tailscale serve status` shows what is published; `tailscale serve reset` stops it. The phone
 syncs only while the computer is on and in the tailnet. This setup has not been tested by the
@@ -228,6 +248,21 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
+
+## Upgrading to 0.12.0
+
+0.12.0 adds the phase guides `dayhand://workflow/intake`, `/execution` and `/finalization`, the
+`agent_brief` tool and Backlog.md import and export (`import_backlog`, `export_backlog`;
+[backlog-md.md](backlog-md.md)), with their REST routes `/brief`, `/import/backlog` and
+`/export/backlog`. There is no new table, field, status, error code or secret, and no migration:
+imported tasks use the `source` field and the `taskSources` table of 0.11.0.
+
+1. Deploy: `dayhand server deploy` (or `npx convex deploy`).
+2. Check: `dayhand version` shows server 0.12.0 and `dayhand prime` prints an "Agent brief"
+   section.
+
+Rollback: deploy 0.11.x again; nothing needs restoring. Tasks imported from Backlog.md stay
+ordinary tasks with a source.
 
 ## Upgrading to 0.11.0
 

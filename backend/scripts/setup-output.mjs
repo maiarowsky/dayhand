@@ -88,7 +88,7 @@ export async function humanSummary(result) {
     "",
     "Next:",
     `  dayhand      dayhand login --url ${url} --with-key < "${files.cliKey}"`,
-    "           (no dayhand yet: cd cli && npm ci --ignore-scripts && npm run build && npm link)",
+    "           (no dayhand yet: npm i -g dayhand, see docs/install.md)",
     ...(local
       ? [
           `  Claude   Claude Code: an agent key (dayhand key create claude --scope write) as the`,

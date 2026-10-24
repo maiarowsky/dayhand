@@ -114,7 +114,7 @@ struct ConnectionSettings: View {
                     LabeledContent(tr("Status"), value: Formatting.status(model.status, pending: model.pending, useOffline: false) ?? tr("Connected"))
                     LabeledContent(tr("Changes waiting"), value: "\(model.pending)")
                     HStack {
-                        Button(tr("Sync Now")) { model.syncNow() }
+                        Button(tr("Sync Now")) { Task { await model.syncNow() } }
                         Spacer()
                         Button(tr("Disconnect…"), role: .destructive) { confirmDisconnect = true }
                     }

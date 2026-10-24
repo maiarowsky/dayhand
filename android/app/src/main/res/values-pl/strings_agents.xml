@@ -19,11 +19,15 @@
     <string name="agents_from">od %1$s</string>
     <string name="agents_policies">Reguły narzędzi</string>
     <string name="agents_no_policies">Brak reguł: każdy klucz agenta może używać każdego narzędzia, na które pozwala jego zakres.</string>
-    <string name="agents_policies_hint">Ustawiasz je w terminalu poleceniem dayhand policy set. „Pytaj” wstrzymuje wywołanie, dopóki nie zgodzisz się tutaj.</string>
+    <string name="agents_policies_hint">Stuknij regułę, żeby ją zmienić. Reguły dla innych kluczy i narzędzi ustawiasz w terminalu poleceniem dayhand policy set. „Pytaj” wstrzymuje wywołanie, dopóki nie zgodzisz się tutaj.</string>
     <string name="agents_policy_any_tool">każde inne narzędzie</string>
     <string name="agents_rule_allow">Pozwól</string>
     <string name="agents_rule_ask">Pytaj</string>
     <string name="agents_rule_deny">Zabroń</string>
+    <string name="agents_policy_name">Klucz %1$s: %2$s</string>
+    <string name="agents_rule_allow_note">%1$s wywołuje %2$s bez pytania.</string>
+    <string name="agents_rule_ask_note">%1$s najpierw pyta: każde wywołanie %2$s zatwierdzasz albo odrzucasz tutaj.</string>
+    <string name="agents_rule_deny_note">Serwer odmawia kluczowi %1$s: %2$s; czytanie dalej działa.</string>
     <string name="agents_hint">Dayhand zapisuje Twoją decyzję, a agent działa zgodnie z nią. Dayhand nie zatrzyma tego, co agent robi poza Dayhand.</string>
     <string name="agents_gone">Tego już tu nie ma: rozstrzygnięte, wygasłe albo usunięte gdzie indziej.</string>
     <string name="agents_sending">Wysyłam…</string>
@@ -65,6 +69,13 @@
     <string name="agents_rejected">Odrzucono: propozycja jest w koszu.</string>
     <string name="agents_proposal_gone">Tę propozycję ktoś już obsłużył gdzie indziej.</string>
     <string name="agents_change_failed">Brak połączenia z serwerem. Spróbuj ponownie.</string>
+
+    <string name="agents_policy_title">Reguła narzędzia</string>
+    <string name="agents_policy_rule">Reguła</string>
+    <string name="agents_policy_hint">Serwer stosuje regułę od następnego wywołania agenta, a dayhand policy ją pokazuje. „Pozwól” jest domyślne: reguła ustawiona na „Pozwól” znika z listy, chyba że reguła klucza dla każdego innego narzędzia mówi inaczej.</string>
+    <string name="agents_policy_set">Reguła zapisana. Agent trafi na nią przy następnym wywołaniu.</string>
+    <string name="agents_policy_key_gone">Serwer nie zmienił reguły: ten klucz agenta został unieważniony albo usunięty.</string>
+    <string name="agents_policy_refused">Serwer nie przyjął tej reguły dla tego klucza i narzędzia.</string>
 
     <string name="channel_approvals">Prośby o zgodę</string>
     <string name="channel_approvals_description">Agent pyta, zanim coś zrobi. Sprawdzane co 15 minut, gdy Dayhand jest zamknięty.</string>

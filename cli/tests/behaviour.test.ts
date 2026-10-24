@@ -21,7 +21,7 @@ describe("output", () => {
     expect(await dayhandJson(key, [])).toEqual(await dayhandJson(key, ["today"]));
   });
 
-  test("dayhand prime prints Today and the agent rules as plain text; --json is list_today", async () => {
+  test("dayhand prime prints Today, the agent brief and the rules as plain text; --json is agent_brief, list_today's fields included", async () => {
     const { key } = await newUser("agent");
     await dayhand(key, ["add", "Write the report", "--time", "09:00"]);
     await dayhand(key, ["now", "1", "--note", "section 2 next"]);
@@ -32,7 +32,12 @@ describe("output", () => {
     expect(run.stdout).toContain("## Using dayhand\n- Pass --json");
     expect(run.stdout).not.toContain("\x1b[");
     expect((await dayhand(key, ["prime", "--plain"])).stdout).toBe(run.stdout);
-    expect(await dayhandJson(key, ["prime"])).toEqual(await dayhandJson(key, ["today"]));
+    expect(run.stdout).toContain("\n## Agent brief\nAgents: running\nReady to work on:\n  #1 Write the report\n");
+    expect(run.stdout).toContain("\n## Next steps\n- Ready to work on: #1 Write the report. claim_task it first");
+    const brief = await dayhandJson(key, ["prime"]);
+    const today = await dayhandJson(key, ["today"]);
+    expect(Object.fromEntries(Object.keys(today).map((k) => [k, brief[k]]))).toEqual(today);
+    expect(brief).toMatchObject({ caller: { type: "agent" }, agentsPaused: false, ready: { count: 1 }, nextSteps: [expect.stringContaining("claim_task")] });
   });
 
   test("--plain is tab-separated without headers; --fields picks columns and JSON fields", async () => {

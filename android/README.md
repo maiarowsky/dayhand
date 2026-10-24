@@ -7,7 +7,7 @@ code from `dayhand pair`, approves and disconnects **agent connections** such as
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
 **Install**: the signed release build is ready, but no release is published yet. Once it is,
-download the `.apk` from the [latest release](https://github.com/maiarowsky/helm/releases/latest),
+download the `.apk` from the [latest release](https://github.com/maiarowsky/dayhand/releases/latest),
 allow your browser or file manager to install apps when Android asks, and on the first start
 choose **On this phone only** to use Dayhand without a server. What works without a server, what
 needs one and how to connect your own: [On the phone](../README.md#on-the-phone). To build it yourself, see
@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.10.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.11.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
@@ -135,9 +135,17 @@ trash.
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
 optional time, repeat, reminders, a checklist, labels (which are also the projects: the backend has
 one list for both), links (http/https only; no files in version 1) and the note. Since 0.9.1 it
-also shows, read-only, what an agent does with the task (backend 0.10.0, [agent-work.md](../docs/agent-work.md)):
-"agent: \<name\> works until \<time\>" while a claim lasts, the acceptance criteria with the met
-ones ticked, and the proof the task was completed with. The owner's own changes always go through.
+also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
+completed with, read-only (backend 0.10.0, [agent-work.md](../docs/agent-work.md)). The owner's own
+changes always go through. Since 0.11.0 the **Agent** card shows "agent: \<name\> works until
+\<time\>" while a claim lasts, the blocked reason in red, the tasks it waits for ("#12 Send the
+invoice (done)") and the plan. These fields are read-only except for **End the claim** under a
+live claim: after a confirmation the claim ends on the phone at once and `app:release` goes
+through the outbox. On Today and the board, "⛔" before a title marks an unfinished task with a
+blocked reason or a known open dependency; screen readers hear why. Dependencies in the trash
+do not hold it back. Dependencies absent from the phone appear as "A task not on this phone"
+without a completed mark and do not add a blocked mark: they may be proposals or purged tasks,
+so the phone's marks can differ from the server's plan health report.
 **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on the due
 date's day, the last day of the month, or an nth weekday ("the 2nd Tuesday", "the last Friday");
 the next date counted from the due date or from the day you complete it; ending never, on a day
@@ -158,7 +166,18 @@ the backend's limits before it is queued, so a change the server would refuse is
 **Restore** brings one back.
 
 **Quick add**: the button at the bottom opens a sheet with one title field; one tap (or the
-keyboard's Done key) saves it for today. "More options" adds the day, a time and a note.
+keyboard's Done key) saves it for today by default. A date phrase at the end of the title sets the day and
+time: "Call the accountant fri 2pm" is "Call the accountant" on the coming Friday at 14:00. The
+phrases are English, the grammar of `dayhand add --due` (`today`, `tomorrow 9am`, `fri`, `next mon`,
+`in 3 days`, `23 oct`, `2026-10-23`, `2pm`; all of them in `dayhand help dates`), read in the
+server's time zone, or the phone's on this phone only. The longest phrase at the end wins and at
+least one word stays the title, so a title that is only "tomorrow" stays a title. A grey line under
+the field says what will happen: "Friday 23 Oct, 14:00 · from “fri 2pm”", or "No date phrase:
+today"; **Keep in title** keeps the words as text, until the title changes. "More options" adds the
+day, a time and a note; a day or time picked there wins over the phrase, which then stays in the
+title. The grammar is ported from `cli/src/when/parse.ts` (`domain/When.kt`, `domain/QuickAdd.kt`),
+and `WhenParserTest` runs every case of `linux/tests/cases/when.json`, shared with the CLI, macOS
+and Linux.
 
 **Settings** is laid out like Mussh's: groups under upper-case labels, one row per setting with a
 thin outline icon, the name, a short current value and "›". Each row opens its own page with the
@@ -209,7 +228,17 @@ in its preview and on the other screens. Top to bottom:
    connection while reading still works; the approval requests **waiting for you**, each with
    who asks, the task, whether it can be undone and the time to decide by, and the ten latest
    decided or expired ones; the **proposals** with who asked and their source; and the **tool
-   policies** set with `dayhand policy set` (read-only here). A request opens on its own page in
+   policies**, one row per rule ("Key claude: complete_task → Ask"). A rule opens on its own page
+   with **Allow**, **Ask** and **Deny**, each with what it does for that key and tool; tapping
+   another one sends it to the server at once (`app:setToolPolicy`, not through the outbox, so it
+   needs a connection). After a successful save, the list says "Rule saved" and `dayhand policy`
+   reflects the change. **Allow** is the default and removes the row unless it overrides a
+   non-Allow `*` rule for that key. A final refusal returns to the list and says why: a key revoked
+   meanwhile ("this agent key was revoked or removed") or a rule the server does not take. If the
+   phone is signed out, offline, times out or no longer has a server configured, the policy page
+   stays open with "No connection to the server. Try again." and the last displayed rule still
+   selected; tap the desired rule again to retry. New rules for other keys or tools are added in
+   the terminal with `dayhand policy set`. A request opens on its own page in
    the style of a connection's approval: what the agent wants to do and why, a row per option with
    its consequence, and a confirmation with an optional word for the agent. A proposal is
    **accepted** (it becomes a task of the plan), **merged** into an open task found by its title
@@ -296,8 +325,9 @@ Convex subscription (app:listAll, app:listTrash, app:getSettings) ──> Snapsh
   Changes still in the outbox are counted under it; they join the history once sent.
 - **Conflicts: last write wins per field, by `updatedAt`.** A field changed by a change still in
   the outbox keeps its local value (that change will reach the server last). Every other field
-  takes the server value, but only from a server copy newer than the one merged before, so a
-  late snapshot never undoes a newer state.
+  normally takes a server copy only when it is newer than the one merged before. Version
+  invalidation can force reconciliation even at the same version; the merge rules are in
+  `sync/SnapshotMerger.kt`.
 - **Today and overdue** are computed on the phone by `HelmDates` and `todaySections`, the same
   rules as `backend/convex/lib/dates.ts`, in the phone's time zone on this phone only and in the
   server's when connected (default `Europe/London`, as on the backend). The screen moves on at
@@ -341,9 +371,10 @@ and server copy of another phone would be hard to reason about.
 The **backup file** (`backup/PlanBackup.kt`) is Dayhand's JSON export format, version 1, as
 `app:exportPlan` and `dayhand export --format json` write it (`docs/schemas/export.schema.json`):
 `version`, `exportedAt`, `settings`, `tasks` (with the server id where the server knows a task,
-else the phone's) and an empty `events` (the phone has no history and no task numbers, so `ref`
-is left out). Sample tasks are not in it. A server reads it (`dayhand import`, `POST /api/v1/import`,
-format `dayhand-json`), and so does **Restore from a file**: every task the backend's rules accept
+else the phone's) and an empty `events`. Task numbers (`ref`), cached change history and agent-work
+fields (including the plan, dependencies and blocked reason) are not included. Sample tasks are
+not in it. A server reads it (`dayhand import`, `POST /api/v1/import`, format `dayhand-json`), and
+so does **Restore from a file**: every task the backend's rules accept
 is added as a new task and queued like one added on the phone (a done task without its rule, so
 a server does not repeat it again; archived tasks archived); one whose id is already on the
 phone is skipped, so the same file restores once; tasks in the trash and tasks that fail a check
@@ -403,7 +434,7 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
    ```sh
    npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}'
    export DAYHAND_URL=http://127.0.0.1:3211 DAYHAND_API_KEY=<key>
-   node ../cli/dist/bin/dayhand.js pair          # or dayhand pair, after npm link in cli/
+   node ../cli/dist/bin/dayhand.js pair          # or dayhand pair, with dayhand installed (docs/install.md)
    ```
 
    Optionally set your time zone:
@@ -449,10 +480,11 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
                                             # agent connections (answers, code input, approval flow), calendar address,
                                             # backup file (write, read, the server's export), sample plan, another server,
-                                            # agents (answers, requests, proposals, the switch, the health card, new requests)
+                                            # agents (answers, requests, proposals, the switch, tool policies and their refusals,
+                                            # the health card, new requests)
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync and the phone's zone,
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,
                                             # on this phone only (repeats made on the phone, sample tasks, restore, emptying),
                                             # Compose (Today, calendar, board, details, Settings, Settings → Calendar and Backup, Connect,
                                             # agent connections, Agents and the health card), encrypted pairing storage, and a real alarm + notification
@@ -490,6 +522,19 @@ label, a time and a link; offline it goes to the trash and the change reaches th
 app was killed; it is restored from the Trash screen, and an agent edit shows in its history as
 the agent's. Every step is checked on the server through MCP, with an agent key of the same user
 in `DAYHAND_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
+
+`scripts/e2e-agent-work.py` (same arguments and keys) checks the agent work in the details:
+`dayhand` adds a task that waits for two others (`--depends-on`), with `--blocked` and `--plan`,
+and completes one of them, and the agent claims it through MCP; the phone shows "⛔" on Today and
+the board, and in the details the claim, the blocked reason, "#n … (done)" and the plan; **End the
+claim** is confirmed on the phone and `dayhand show` then has no claim.
+
+`scripts/e2e-tool-policy.py` (same arguments; `DAYHAND_API_KEY` must be a `cli` key) checks
+editing tool policies: `dayhand` creates two agent keys with `ask` for `complete_task`; on the
+phone the rule of the first is opened in Settings → Agents and set to **Deny**, and `dayhand policy`
+must then print `deny`; the second key is revoked with `dayhand key revoke` while the phone still
+lists it, and choosing a rule for it must show "The server did not change the rule: this agent
+key was revoked or removed."
 
 `scripts/e2e-connections.py` (same arguments, plus `--site-url` for the HTTP actions URL as the
 computer sees it) plays the Claude app over HTTP: it registers, opens the authorization page and

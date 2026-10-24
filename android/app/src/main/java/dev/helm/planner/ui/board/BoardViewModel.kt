@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.boardColumns
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
@@ -32,7 +33,7 @@ class BoardViewModel(
             connectionStatus(settings.settings, network.online, liveSync.state),
             repository.pendingChanges,
         ) { tasks, s, now, c, pending ->
-            BoardUiState(boardColumns(tasks, now, s.timezone), c, pending)
+            BoardUiState(boardColumns(tasks, now, s.timezone), c, pending, timezone = s.timezone, blocked = AgentWork.blockedTasks(tasks))
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
     override fun move(localId: String, status: TaskStatus) = launch { repository.moveTo(localId, status) }

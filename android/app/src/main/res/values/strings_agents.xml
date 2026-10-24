@@ -19,11 +19,15 @@
     <string name="agents_from">from %1$s</string>
     <string name="agents_policies">Tool policies</string>
     <string name="agents_no_policies">No tool policies: every agent key may use every tool its scope allows.</string>
-    <string name="agents_policies_hint">Set them in the terminal with dayhand policy set. Ask holds the call until you allow it here.</string>
+    <string name="agents_policies_hint">Tap a rule to change it. Rules for other keys and tools are set in the terminal with dayhand policy set. Ask holds the call until you allow it here.</string>
     <string name="agents_policy_any_tool">every other tool</string>
     <string name="agents_rule_allow">Allow</string>
     <string name="agents_rule_ask">Ask</string>
     <string name="agents_rule_deny">Deny</string>
+    <string name="agents_policy_name">Key %1$s: %2$s</string>
+    <string name="agents_rule_allow_note">%1$s calls %2$s without asking.</string>
+    <string name="agents_rule_ask_note">%1$s asks first: you allow or deny each call of %2$s here.</string>
+    <string name="agents_rule_deny_note">The server refuses %2$s to %1$s; reading stays allowed.</string>
     <string name="agents_hint">Dayhand records your decision and the agent acts on it. Dayhand cannot stop what an agent does outside Dayhand.</string>
     <string name="agents_gone">This is no longer here: decided, expired or removed elsewhere.</string>
     <string name="agents_sending">Sending…</string>
@@ -65,6 +69,13 @@
     <string name="agents_rejected">Rejected: it is in the trash.</string>
     <string name="agents_proposal_gone">This proposal was already handled elsewhere.</string>
     <string name="agents_change_failed">No connection to the server. Try again.</string>
+
+    <string name="agents_policy_title">Tool policy</string>
+    <string name="agents_policy_rule">Rule</string>
+    <string name="agents_policy_hint">The server applies the rule from the agent\'s next call, and dayhand policy shows it. Allow is the default: an allowed rule leaves this list unless the key\'s rule for every other tool says otherwise.</string>
+    <string name="agents_policy_set">Rule saved. The agent meets it with its next call.</string>
+    <string name="agents_policy_key_gone">The server did not change the rule: this agent key was revoked or removed.</string>
+    <string name="agents_policy_refused">The server did not accept this rule for this key and tool.</string>
 
     <string name="channel_approvals">Approval requests</string>
     <string name="channel_approvals_description">An agent asks before it does something. Checked every 15 minutes while Dayhand is closed.</string>

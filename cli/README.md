@@ -15,8 +15,7 @@ own (`/usr/bin/dh`), so type `dayhand` there. `hlm`, the name before Dayhand, st
 Requires Node.js 22.12 or newer; runs on macOS, Linux and Windows.
 
 ```sh
-npm ci --ignore-scripts
-npm run build                       # then `npm link` once to get `dayhand` and `dh` on the PATH
+npm i -g dayhand                    # or: brew install maiarowsky/tap/dayhand; without installing: npx dayhand
 dayhand login --url https://<deployment>.convex.site    # locally: http://127.0.0.1:3211
 dayhand                             # Today
 dayhand add Call the accountant --due "fri 2pm" -l home
@@ -25,10 +24,12 @@ dayhand ui                          # full screen: Today, board, week, trash, ag
 source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help completion
 ```
 
-`dayhand login` checks the API key (kind `cli`, created in the app) and keeps it in the OS keychain
-(macOS Keychain, Windows Credential Manager, Secret Service on Linux), or in a private
-`credentials.json` when there is none; the key never goes into a shell profile or config.toml.
-`config.toml` holds the URL, profiles, aliases and the color default (`dayhand help config`).
+In a checkout, build and link it from this folder instead: `npm ci --ignore-scripts && npm run build && npm link`
+(also the way to get it before the first release; [every way to install](../docs/install.md)).
+
+For key creation, automatic sign-in during server setup, and credential storage, see
+[signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
+default (`dayhand help config`); the key never goes into it.
 Dates are English phrases resolved in your time zone (`dayhand help dates`, `dayhand when "next mon"`).
 
 `dayhand ui` is the same client full screen, written with [Ink](https://github.com/vadimdemedes/ink)
@@ -48,12 +49,13 @@ For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file an
 `--client-id`), `--dry-run` shows a change checked by the backend without saving it, and `dayhand`
 never prompts without a terminal.
 Give each agent its own key of kind `agent`; history then shows its changes as `agent: <key name>`.
-`dayhand prime` prints Today and these rules as plain text for an agent's session-start hook, and
-[docs/skills/dayhand/SKILL.md](../docs/skills/dayhand/SKILL.md) is the same guidance as an Agent Skill.
+For session-start context, use [`dayhand prime`](../docs/cli.md#dayhand-prime).
+[docs/skills/dayhand/SKILL.md](../docs/skills/dayhand/SKILL.md) provides the agent guidance as an Agent Skill.
 
 The full reference is generated from the command registry: [docs/cli.md](../docs/cli.md),
 the man page [man/dayhand.1](../man/dayhand.1) (in the package, so `man dayhand` works after a global
-install) and the agent skill. Releases: [docs/release.md](../docs/release.md).
+install) and the agent skill. Regenerating them and the published pages:
+[CONTRIBUTING.md](../CONTRIBUTING.md#the-dayhand-cli). Releases: [docs/release.md](../docs/release.md).
 
 ## Layout
 
@@ -81,8 +83,7 @@ tests/                unit tests (*.unit.test.ts) and tests against a real local
 (cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
 npm test                                      # builds, then runs everything
 npm run test:unit                             # pure tests only (dates, config, output, completion)
-npm run build && npm run docs                 # regenerate docs/cli.md, man/dayhand.1 and SKILL.md
-npm pack                                      # a local tarball with dist/, the man page and LICENSE (not published)
+npm pack                                      # the tarball npm publishes: dist/, the man pages, README and LICENSE
 ```
 
 The tests never touch the real keychain or config folder: every run gets its own

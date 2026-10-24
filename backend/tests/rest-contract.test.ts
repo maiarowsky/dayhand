@@ -71,6 +71,11 @@ const STEPS: Step[] = [
   { tool: "merge_proposal", args: { taskId: "#4", intoTaskId: "#3" }, method: "POST", path: "/tasks/4/merge", body: { intoTaskId: "#3" } },
   { tool: "reject_proposal", args: { taskId: "#4" }, method: "POST", path: "/tasks/4/reject" },
   { tool: "plan_health", args: { at: AT }, method: "GET", path: `/health?at=${AT}` },
+  // Since 0.12.0: the agent brief and Backlog.md files in and out.
+  { tool: "agent_brief", args: { at: AT }, method: "GET", path: `/brief?at=${AT}` },
+  { tool: "import_backlog", args: { files: [{ path: "tasks/task-1 - Pack.md", content: "---\nid: TASK-1\ntitle: Pack\nstatus: In Progress\n---\n" }] },
+    method: "POST", path: "/import/backlog", body: { files: [{ path: "tasks/task-1 - Pack.md", content: "---\nid: TASK-1\ntitle: Pack\nstatus: In Progress\n---\n" }] } },
+  { tool: "export_backlog", args: { prefix: "home" }, method: "GET", path: "/export/backlog?prefix=home" },
 ];
 
 const ID_FIELDS = new Set(["id", "taskId", "repeatedFrom", "keyId"]);
@@ -88,7 +93,15 @@ function normalize(value: unknown, ids = new Map<string, string>()): unknown {
       }
       if (TIME_FIELDS.has(key) && typeof v === "number") return [key, "<time>"];
       if (key === "nextCursor" && typeof v === "string" && /^c\d+$/.test(v)) return [key, "<cursor>"];
-      if (key === "content" && typeof v === "string") return [key, v.replace(/(DTSTAMP|CREATED|LAST-MODIFIED):\d{8}T\d{6}Z/g, "$1:<time>").replace(/UID:[^\r\n]+/g, "UID:<uid>")];
+      if (key === "content" && typeof v === "string") {
+        return [
+          key,
+          v
+            .replace(/(DTSTAMP|CREATED|LAST-MODIFIED):\d{8}T\d{6}Z/g, "$1:<time>")
+            .replace(/UID:[^\r\n]+/g, "UID:<uid>")
+            .replace(/^(created_date|updated_date): .*$/gm, "$1: <time>"),
+        ];
+      }
       return [key, normalize(v, ids)];
     }),
   );

@@ -211,6 +211,20 @@ class TaskEditingTest {
     }
 
     @Test
+    fun endingAClaimClearsItAtOnceAndQueuesRelease() = runTest {
+        val a = repository.add("Send the invoice", null, null, null)
+        db.tasks().upsert(listOf(db.tasks().byLocalId(a.localId)!!.copy(claimName = "claude-code", claimExpiresAt = 99_000)))
+        repository.release(a.localId)
+        val row = db.tasks().byLocalId(a.localId)!!
+        assertNull(row.claimName)
+        assertNull(row.claimExpiresAt)
+        val op = db.outbox().all().last()
+        assertEquals(Mutations.RELEASE, op.mutation)
+        assertEquals(a.localId, op.taskLocalId)
+        assertEquals(setOf("clientId"), lastArgs().keys)
+    }
+
+    @Test
     fun trashAndRestore() = runTest {
         val a = repository.add("A", null, null, null)
         repository.setNow(a.localId)

@@ -19,11 +19,15 @@
     <string name="agents_from">de %1$s</string>
     <string name="agents_policies">Règles d\'outils</string>
     <string name="agents_no_policies">Aucune règle d\'outil : chaque clé d\'agent peut utiliser tous les outils que ses autorisations permettent.</string>
-    <string name="agents_policies_hint">Définissez-les dans le terminal avec dayhand policy set. « Demander » retient l\'appel jusqu\'à ce que vous l\'autorisiez ici.</string>
+    <string name="agents_policies_hint">Touchez une règle pour la modifier. Les règles des autres clés et outils se définissent dans le terminal avec dayhand policy set. « Demander » retient l\'appel jusqu\'à ce que vous l\'autorisiez ici.</string>
     <string name="agents_policy_any_tool">tous les autres outils</string>
     <string name="agents_rule_allow">Autoriser</string>
     <string name="agents_rule_ask">Demander</string>
     <string name="agents_rule_deny">Interdire</string>
+    <string name="agents_policy_name">Clé %1$s : %2$s</string>
+    <string name="agents_rule_allow_note">%1$s appelle %2$s sans demander.</string>
+    <string name="agents_rule_ask_note">%1$s demande d\'abord : vous autorisez ou refusez ici chaque appel de %2$s.</string>
+    <string name="agents_rule_deny_note">Le serveur refuse à %1$s : %2$s ; la lecture reste permise.</string>
     <string name="agents_hint">Dayhand enregistre votre décision et l\'agent s\'y conforme. Dayhand ne peut pas arrêter ce qu\'un agent fait en dehors de Dayhand.</string>
     <string name="agents_gone">Cet élément n\'est plus là : traité, expiré ou supprimé ailleurs.</string>
     <string name="agents_sending">Envoi…</string>
@@ -65,6 +69,13 @@
     <string name="agents_rejected">Rejetée : elle est dans la corbeille.</string>
     <string name="agents_proposal_gone">Cette proposition a déjà été traitée ailleurs.</string>
     <string name="agents_change_failed">Pas de connexion au serveur. Réessayez.</string>
+
+    <string name="agents_policy_title">Règle d\'outil</string>
+    <string name="agents_policy_rule">Règle</string>
+    <string name="agents_policy_hint">Le serveur applique la règle dès le prochain appel de l\'agent, et dayhand policy l\'affiche. « Autoriser » est la valeur par défaut : une règle autorisée quitte cette liste, sauf si la règle de la clé pour tous les autres outils dit autre chose.</string>
+    <string name="agents_policy_set">Règle enregistrée. L\'agent la rencontrera à son prochain appel.</string>
+    <string name="agents_policy_key_gone">Le serveur n\'a pas modifié la règle : cette clé d\'agent a été révoquée ou supprimée.</string>
+    <string name="agents_policy_refused">Le serveur n\'a pas accepté cette règle pour cette clé et cet outil.</string>
 
     <string name="channel_approvals">Demandes d\'approbation</string>
     <string name="channel_approvals_description">Un agent demande avant d\'agir. Vérifié toutes les 15 minutes quand Dayhand est fermé.</string>

@@ -21,8 +21,10 @@ These stay as they were, because they are stored in data or in tokens already gi
 issuer `https://helm.local` of the local backend and the user ids made from it, the JWT audience
 `helm`, the device and OAuth token prefixes (`helmdev_`, `helmat_`, `helmrt_`…), the calendar
 UIDs `…@helm` (a new suffix would duplicate every event in Google and Apple Calendar), the
-Android app's storage names and Kotlin package `dev.helm.planner`, and the GitHub repository
-`maiarowsky/helm`.
+Android app's storage names and Kotlin package `dev.helm.planner`.
+
+The GitHub repository is now `maiarowsky/dayhand`; GitHub redirects the old `maiarowsky/helm`
+addresses, including `git clone` and existing checkouts.
 
 ## Known risk: another DayHand
 

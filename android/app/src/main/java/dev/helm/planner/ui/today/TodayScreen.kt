@@ -67,6 +67,8 @@ fun TodayScreen(
     bottomBar: @Composable () -> Unit = {},
     /** Under the status lines, above the list: the plan health card. */
     header: @Composable () -> Unit = {},
+    /** The moment quick add reads a date phrase at ("2pm" is today until 14:00, then tomorrow). */
+    now: () -> Long = System::currentTimeMillis,
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -92,7 +94,8 @@ fun TodayScreen(
     }
     if (adding) {
         QuickAddSheet(
-            today = date,
+            timezone = state.timezone,
+            now = now,
             onDismiss = { adding = false },
             onSave = { title, day, time, note ->
                 actions.add(title, day, time, note)
@@ -149,12 +152,12 @@ private fun TodayItems(
             item {
                 SectionHeader(stringResource(R.string.section_overdue, sections.overdue.size), Modifier.testTag(TodayTags.OVERDUE), p.danger)
             }
-            items(sections.overdue, key = { it.localId }) { OverdueRow(it, today, actions) }
+            items(sections.overdue, key = { it.localId }) { OverdueRow(it, today, actions, state.blocked[it.localId]) }
         }
-        sections.now?.let { now -> item(key = "now:${now.localId}") { NowCard(now, today, actions) } }
+        sections.now?.let { now -> item(key = "now:${now.localId}") { NowCard(now, today, actions, state.blocked[now.localId]) } }
         if (sections.today.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.section_today), Modifier.testTag(TodayTags.TODAY)) }
-            items(sections.today, key = { it.localId }) { TodayRow(it, today, actions) }
+            items(sections.today, key = { it.localId }) { TodayRow(it, today, actions, state.blocked[it.localId]) }
         }
         if (sections.done.isNotEmpty()) {
             item { DoneHeader(sections.done.size, doneExpanded) { doneExpanded = !doneExpanded } }

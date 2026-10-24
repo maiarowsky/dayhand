@@ -1,3 +1,4 @@
+import CryptoKit
 import DayhandLocalization
 import Foundation
 import GRDB
@@ -17,19 +18,24 @@ public final class TaskRepository: Sendable {
     private let newId: @Sendable () -> String
     private let onOutboxChanged: @Sendable () -> Void
     private let localTimezone: @Sendable () -> String
+    private let repeatsOnMac: @Sendable () -> Bool
 
+    /// [repeatsOnMac] is true only while the Mac has no server; the Mac then creates the next occurrence locally.
+    /// With a server, completion is queued and the server handles recurrence, even while the network is unavailable.
     public init(
         database: AppDatabase,
         clock: @escaping @Sendable () -> Int64 = Clock.nowMs,
         newId: @escaping @Sendable () -> String = { UUID().uuidString.lowercased() },
         onOutboxChanged: @escaping @Sendable () -> Void = {},
-        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier }
+        localTimezone: @escaping @Sendable () -> String = { TimeZone.current.identifier },
+        repeatsOnMac: @escaping @Sendable () -> Bool = { false }
     ) {
         self.database = database
         self.clock = clock
         self.newId = newId
         self.onOutboxChanged = onOutboxChanged
         self.localTimezone = localTimezone
+        self.repeatsOnMac = repeatsOnMac
     }
 
     private var writer: DatabaseQueue { database.writer }
@@ -56,6 +62,20 @@ public final class TaskRepository: Sendable {
     /// The number of changes waiting for the server, again after each change.
     public func observePendingCount() -> AsyncValueObservation<Int> {
         ValueObservation.tracking { db in try OutboxOp.fetchCount(db) }.values(in: writer)
+    }
+
+    /// The cached change history of a task the server knows, newest first.
+    public func history(_ serverId: String) async throws -> [TaskEvent] {
+        try await writer.read { db in try Self.history(db, serverId) }
+    }
+
+    /// The cached change history of [serverId], newest first, again after each change.
+    public func observeHistory(_ serverId: String) -> AsyncValueObservation<[TaskEvent]> {
+        ValueObservation.tracking { db in try Self.history(db, serverId) }.values(in: writer)
+    }
+
+    private static func history(_ db: Database, _ serverId: String) throws -> [TaskEvent] {
+        try TaskEvent.filter(Column("taskServerId") == serverId).order(Column("at").desc, Column("id")).fetchAll(db)
     }
 
     // MARK: Changes
@@ -88,12 +108,45 @@ public final class TaskRepository: Sendable {
         return task
     }
 
+    /**
+     * Marks a task done. Without a server the Mac creates its next occurrence from the locally stored fields,
+     * clears the completed task's repeat rule, and queues the rule-clear, completion and new task together.
+     * With a server, only completion is queued and the server creates the next occurrence when it receives it.
+     */
     public func complete(_ localId: String) async throws {
-        try await edit(localId, Mutations.complete) { task, now in
+        let onMac = repeatsOnMac()
+        let zone = localTimezone()
+        let now = clock()
+        let completeOp = makeOp(Mutations.complete, localId, [:], now: now)
+        let changed = try await writer.write { db -> Bool in
+            guard var task = try TaskItem.fetchOne(db, key: localId), !task.inTrash else { return false }
+            let rule = task.repeat
+            let wasDone = task.status == .done
             task.status = .done
             task.completedAt = now
             task.isNow = false
+            task.updatedAt = now
+            var complete = completeOp
+            guard onMac, let rule, !wasDone else {
+                try task.save(db)
+                try complete.insert(db)
+                return true
+            }
+            let today = HelmDates.localDate(now, try Meta.settings(db, localTimezone: zone).timezone)
+            task.repeat = nil
+            try task.save(db)
+            var stopRepeating = self.makeOp(Mutations.update, localId, ["repeat": .null], now: now)
+            try stopRepeating.insert(db)
+            try complete.insert(db)
+            if let occurrence = Recurrence.advance(rule, dueDate: task.dueDate, today: today) {
+                let next = self.nextOccurrence(of: task, occurrence, now: now)
+                try next.save(db)
+                var add = self.makeOp(Mutations.add, next.localId, Self.addArgs(next), now: now, clientId: next.localId)
+                try add.insert(db)
+            }
+            return true
         }
+        if changed { onOutboxChanged() }
     }
 
     /// Back from done to the to-do list.
@@ -105,8 +158,8 @@ public final class TaskRepository: Sendable {
         }
     }
 
-    /// To do and in progress through `setStatus`, done through `complete` (which also creates a repeating task's
-    /// next occurrence on the server). Leaving "in progress" ends the "now" flag, as on the server.
+    /// To do and in progress through `setStatus`, done through `complete`, which creates the next occurrence
+    /// locally only without a server. Leaving in progress clears the "now" flag, as on the server.
     public func move(_ localId: String, to status: TaskStatus) async throws {
         guard let current = try await task(localId), current.status != status else { return }
         switch status {
@@ -268,7 +321,17 @@ public final class TaskRepository: Sendable {
             let plan = SnapshotMerger.merge(local: local, pending: pending, remote: snapshot.tasks, nowMs: now)
             for task in plan.upserts { try task.save(db) }
             if !plan.deletes.isEmpty { _ = try TaskItem.deleteAll(db, keys: plan.deletes) }
+            // History of tasks that no longer exist on the Mac (purged from the trash on the server).
+            try db.execute(sql: "DELETE FROM taskEvent WHERE taskServerId NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)")
             try Meta.write(db, snapshot.settings)
+        }
+    }
+
+    /// Replaces the cached history of [serverId] with the server's copy: the server's history is the whole truth.
+    public func saveHistory(_ serverId: String, _ events: [TaskEvent]) async throws {
+        try await writer.write { db in
+            _ = try TaskEvent.filter(Column("taskServerId") == serverId).deleteAll(db)
+            for event in events { try event.insert(db) }
         }
     }
 
@@ -284,10 +347,11 @@ public final class TaskRepository: Sendable {
         return ValueObservation.tracking { db in try Meta.settings(db, localTimezone: zone) }.values(in: writer)
     }
 
-    /// Forgets every task and waiting change (Disconnect and pairing with another account).
+    /// Forgets every task, its history and every waiting change (Disconnect and pairing with another account).
     public func eraseAll() async throws {
         try await writer.write { db in
             _ = try TaskItem.deleteAll(db)
+            _ = try TaskEvent.deleteAll(db)
             _ = try OutboxOp.deleteAll(db)
             _ = try db.execute(sql: "DELETE FROM meta")
         }
@@ -337,6 +401,35 @@ public final class TaskRepository: Sendable {
         if changed { onOutboxChanged() }
     }
 
+    private static func nextOccurrencePrefix(_ localId: String) -> String {
+        "repeat-" + SHA256.hash(data: Data(localId.utf8)).map { String(format: "%02x", $0) }.joined() + "-"
+    }
+
+    /// A next occurrence made without a server: the locally stored fields on the next date, with the checklist unticked.
+    private func nextOccurrence(of task: TaskItem, _ occurrence: Recurrence.Next, now: Int64) -> TaskItem {
+        let id = Self.nextOccurrencePrefix(task.localId) + newId()
+        return TaskItem(
+            localId: id, clientId: id, title: task.title, note: task.note, dueDate: occurrence.dueDate,
+            dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat, labels: task.labels,
+            links: task.links, checklist: task.checklist.map { ChecklistItem(id: $0.id, title: $0.title) },
+            reminders: task.reminders
+        )
+    }
+
+    /// The `add` arguments of a whole task, unset fields left out.
+    private static func addArgs(_ task: TaskItem) -> [String: JSONValue] {
+        var args: [String: JSONValue] = ["title": .string(task.title)]
+        if let note = task.note { args["note"] = .string(note) }
+        if let dueDate = task.dueDate { args["dueDate"] = .string(dueDate) }
+        if let dueTime = task.dueTime { args["dueTime"] = .string(dueTime) }
+        if let rule = task.repeat { args["repeat"] = rule.wire }
+        if !task.labels.isEmpty { args["labels"] = .array(task.labels.map(JSONValue.string)) }
+        if !task.links.isEmpty { args["links"] = .array(task.links.map(\.wire)) }
+        if !task.checklist.isEmpty { args["checklist"] = .array(task.checklist.map(\.wire)) }
+        if let reminders = task.reminders { args["reminders"] = .array(reminders.map(\.wire)) }
+        return args
+    }
+
     /// A change with its own `clientId`, which makes the server apply it once however often it is sent.
     private func makeOp(_ mutation: String, _ taskLocalId: String?, _ args: [String: JSONValue], now: Int64, clientId: String? = nil) -> OutboxOp {
         let clientId = clientId ?? newId()
@@ -379,6 +472,21 @@ extension TaskRepository: OutboxStore {
         try await writer.write { db in
             _ = try OutboxOp.deleteOne(db, key: op.seq)
             guard let localId = op.taskLocalId else { return }
+            let clearsRepeat = op.mutation == Mutations.update && JSONValue.decode(op.argsJson)?["repeat"] == .null
+            if op.mutation == Mutations.add || op.mutation == Mutations.complete || clearsRepeat {
+                var parents = [localId]
+                while let parent = parents.popLast() {
+                    let children = try TaskItem.fetchAll(db, sql: """
+                        SELECT task.* FROM task JOIN outbox ON outbox.taskLocalId = task.localId
+                        WHERE task.serverId IS NULL AND outbox.mutation = ? AND task.localId LIKE ?
+                        """, arguments: [Mutations.add, Self.nextOccurrencePrefix(parent) + "%"])
+                    for child in children {
+                        _ = try OutboxOp.filter(Column("taskLocalId") == child.localId).deleteAll(db)
+                        _ = try TaskItem.deleteOne(db, key: child.localId)
+                        parents.append(child.localId)
+                    }
+                }
+            }
             if op.mutation == Mutations.add {
                 // The task never existed on the server: drop it and every change made to it since.
                 _ = try OutboxOp.filter(Column("taskLocalId") == localId).deleteAll(db)

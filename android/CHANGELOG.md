@@ -3,6 +3,37 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.11.0 (unreleased)
+
+### Added
+
+- Date phrases in quick add, as on the Mac, on Linux and in `dayhand ui`: a phrase at the end of
+  the title sets the day and time, so "Call the accountant fri 2pm" is "Call the accountant" on
+  the coming Friday at 14:00. The grammar of `dayhand` (English phrases such as `tomorrow 9am`,
+  `next mon`, `in 3 days`, `23 oct`), read in the server's time zone, or the phone's on this phone
+  only. A grey line under the title says what was understood ("Friday 23 Oct, 14:00 · from
+  “fri 2pm”", or "No date phrase: today"), **Keep in title** keeps the words as text, and a day or
+  time picked under "More options" wins over the phrase. Quick add on the board reads them too.
+- `WhenParserTest` runs every case of `linux/tests/cases/when.json`, the phrases shared with the
+  CLI, macOS and Linux; `QuickAddPhraseTest` types a phrase and checks the row in Today.
+- Task details have an **Agent** card (backend 0.10.0): "agent: \<name\> works until \<time\>"
+  while a claim lasts, the blocked reason in red ("Blocked: the client has not answered"), the
+  tasks it waits for, each with its number and how far it is ("#12 Send the invoice (done)"), and
+  the plan, all read-only as an agent or `dayhand edit` set them.
+- **End the claim** under a live claim takes the task over from the agent after a confirmation:
+  the claim ends on the phone at once and `app:release` goes through the outbox, offline too. The
+  history calls it "Claim ended".
+- Blocked marks on Today and the board, with reasons for screen readers; the rules and phone-only
+  dependency lookup limits are in [Screens](README.md#screens).
+- Room version 5 keeps the task's number, plan, dependencies and blocked reason (auto-migration 4
+  to 5, with `MigrationTest`; the next snapshot fills them in).
+- Tool policies can be edited in Settings → Agents; choices, server responses and retry behaviour
+  are described in [Screens](README.md#screens).
+- `AgentsScreenTest` opens a rule, checks the three choices and sends another one;
+  `AgentsViewModelTest` and `AgentControlTest` check what goes to `app:setToolPolicy` and the
+  words for each refusal; `scripts/e2e-tool-policy.py` sets a rule on the phone and reads it back
+  with `dayhand policy` on a local backend.
+
 ## 0.10.1 (2026-10-24)
 
 ### Added

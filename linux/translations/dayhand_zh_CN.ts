@@ -181,6 +181,90 @@
         <translation>（当天不存在 %1）</translation>
     </message>
     <message>
+        <source>Does not repeat</source>
+        <translation>不重复</translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n day(s)</source>
+        <translation>
+            <numerusform>每%n天</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n week(s)</source>
+        <translation>
+            <numerusform>每%n周</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n month(s)</source>
+        <translation>
+            <numerusform>每%n个月</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n year(s)</source>
+        <translation>
+            <numerusform>每%n年</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Last day of the month</source>
+        <translation>每月最后一天</translation>
+    </message>
+    <message>
+        <source>Day of month: %1</source>
+        <translation>每月日期：%1日</translation>
+    </message>
+    <message>
+        <source>Weekday of month: %1, %2</source>
+        <translation>每月星期规则：%1，%2</translation>
+    </message>
+    <message>
+        <source>From completion</source>
+        <translation>从完成日期起算</translation>
+    </message>
+    <message>
+        <source>From due date</source>
+        <translation>从到期日期起算</translation>
+    </message>
+    <message>
+        <source>Until %1</source>
+        <translation>直到%1</translation>
+    </message>
+    <message>
+        <source>Occurrences left: %1</source>
+        <translation>剩余次数：%1</translation>
+    </message>
+    <message>
+        <source>Next: %1</source>
+        <translation>下次：%1</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) before</source>
+        <translation>
+            <numerusform>提前%n分钟</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1, %n day(s) before</source>
+        <translation>
+            <numerusform>提前%n天，%1</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 on the due day</source>
+        <translation>到期当天%1</translation>
+    </message>
+    <message>
+        <source>Default: %1</source>
+        <translation>默认：%1</translation>
+    </message>
+    <message>
         <source>Not connected to a server; tasks stay on this computer.</source>
         <translation>未连接服务器；任务保存在这台电脑上。</translation>
     </message>
@@ -346,6 +430,160 @@
     </message>
 </context>
 <context>
+    <name>TaskDetails</name>
+    <message>
+        <source>Back</source>
+        <translation>返回</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Task details</source>
+        <translation>任务详情</translation>
+    </message>
+    <message>
+        <source>In Trash — restore to edit.</source>
+        <translation>在回收站中，恢复后可编辑。</translation>
+    </message>
+    <message>
+        <source>Archived</source>
+        <translation>已归档</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>标题</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>状态</translation>
+    </message>
+    <message>
+        <source>To do</source>
+        <translation>待办</translation>
+    </message>
+    <message>
+        <source>In progress</source>
+        <translation>进行中</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>已完成</translation>
+    </message>
+    <message>
+        <source>Working on it now</source>
+        <translation>我正在处理此任务</translation>
+    </message>
+    <message>
+        <source>Where I stopped</source>
+        <translation>上次进度</translation>
+    </message>
+    <message>
+        <source>Due</source>
+        <translation>截止日期</translation>
+    </message>
+    <message>
+        <source>Date phrase</source>
+        <translation>日期短语</translation>
+    </message>
+    <message>
+        <source>e.g. tomorrow 9am</source>
+        <translation>例如 tomorrow 9am</translation>
+    </message>
+    <message>
+        <source>I understand: %1</source>
+        <translation>理解为：%1</translation>
+    </message>
+    <message>
+        <source>Set date</source>
+        <translation>设置日期</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>今天</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>无日期</translation>
+    </message>
+    <message>
+        <source>Remove time</source>
+        <translation>移除时间</translation>
+    </message>
+    <message>
+        <source>Labels (comma-separated)</source>
+        <translation>标签（逗号分隔）</translation>
+    </message>
+    <message>
+        <source>Checklist</source>
+        <translation>检查清单</translation>
+    </message>
+    <message>
+        <source>Checklist item</source>
+        <translation>清单项</translation>
+    </message>
+    <message>
+        <source>Remove item</source>
+        <translation>移除项目</translation>
+    </message>
+    <message>
+        <source>Add item</source>
+        <translation>添加项目</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>备注</translation>
+    </message>
+    <message>
+        <source>Save note</source>
+        <translation>保存备注</translation>
+    </message>
+    <message>
+        <source>Repeat</source>
+        <translation>重复</translation>
+    </message>
+    <message>
+        <source>Reminders</source>
+        <translation>提醒</translation>
+    </message>
+    <message>
+        <source>Links</source>
+        <translation>链接</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Archive</source>
+        <translation>归档</translation>
+    </message>
+    <message>
+        <source>Move to Trash</source>
+        <translation>移到回收站</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>恢复</translation>
+    </message>
+</context>
+<context>
+    <name>TaskRepository</name>
+    <message>
+        <source>The note is too long.</source>
+        <translation>备注过长。</translation>
+    </message>
+    <message>
+        <source>Use up to 20 labels, at most 50 characters each.</source>
+        <translation>最多20个标签，每个不超过50个字符。</translation>
+    </message>
+    <message>
+        <source>Use up to 100 checklist items, at most 500 characters each.</source>
+        <translation>最多100个清单项，每个不超过500个字符。</translation>
+    </message>
+</context>
+<context>
     <name>TaskRow</name>
     <message>
         <source>Mark as not done</source>
@@ -450,12 +688,28 @@
         <translation>无法读取密钥环（%1），因此 Dayhand 在没有服务器的情况下启动。</translation>
     </message>
     <message>
+        <source>No day</source>
+        <translation>无日期</translation>
+    </message>
+    <message>
         <source>Reading tasks failed: %1</source>
         <translation>读取任务失败：%1</translation>
     </message>
     <message>
         <source>Today</source>
         <translation>今天</translation>
+    </message>
+    <message>
+        <source>Enter a title (up to 500 characters).</source>
+        <translation>请输入标题（最多500个字符）。</translation>
+    </message>
+    <message>
+        <source>Use up to 2000 characters for where you stopped.</source>
+        <translation>上次进度最多2000个字符。</translation>
+    </message>
+    <message>
+        <source>Date not understood. Try: tomorrow 9am, fri, 2026-10-30.</source>
+        <translation>无法理解日期。请尝试：tomorrow 9am、fri、2026-10-30。</translation>
     </message>
     <message>
         <source>The change could not be saved: %1</source>

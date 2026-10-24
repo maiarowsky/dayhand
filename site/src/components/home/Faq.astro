@@ -1,0 +1,100 @@
+---
+// Short answers to what people ask before they install. Native details elements, so it works without scripts.
+import { DOCS_PATH, repoFile } from "../../site";
+---
+
+<section id="faq" aria-labelledby="faq-title">
+  <h2 id="faq-title">Questions</h2>
+  <div class="faq">
+    <details>
+      <summary>Is Dayhand really free?</summary>
+      <p>
+        Yes. Every app, the server and the command line are free, with no paid plan and no trial. A server on your
+        computer costs nothing, and so does a server on Convex's Free plan; its limits are in the
+        <a href={repoFile("docs/deploy.md")}>deployment guide</a>.
+      </p>
+    </details>
+    <details>
+      <summary>Why is it free?</summary>
+      <p>
+        Dayhand is a personal project with no hosted service, so there is nothing to bill for. It is shared under the
+        Apache License 2.0, and support is what the issues on GitHub offer: bugs you can reproduce and ideas, with no
+        promise of a reply time.
+      </p>
+    </details>
+    <details>
+      <summary>Do I need an account?</summary>
+      <p>
+        Not with us; there is no Dayhand account. A server on your computer needs no account. To reach it from your
+        phone you put Tailscale in front of it, which has its own sign-in, and <code>dayhand server deploy</code> asks
+        you to log in to your own Convex account.
+      </p>
+    </details>
+    <details>
+      <summary>Where does my data live?</summary>
+      <p>
+        On your devices and on the server you chose: your computer or your own Convex account. Each app keeps a copy
+        for working offline. Nothing goes to us, because there is no server of ours to send it to.
+      </p>
+    </details>
+    <details>
+      <summary>Which agents can use it?</summary>
+      <p>
+        Any MCP client, with the server address and an <code>Authorization: Bearer</code> header; Claude Code is one
+        command. The Claude apps connect as a custom connector with OAuth, which you approve on the phone. Agents that
+        run shell commands can use <code>dayhand</code>, and a ready Agent Skill teaches them how.
+      </p>
+    </details>
+    <details>
+      <summary>Can an agent do something I did not allow?</summary>
+      <p>
+        Inside Dayhand, a policy per agent key allows, asks for or denies each tool, risky steps wait for your answer,
+        and one switch pauses every agent. Dayhand cannot stop what an agent does outside Dayhand.
+      </p>
+    </details>
+    <details>
+      <summary>Does it work offline?</summary>
+      <p>
+        Yes. The Android, macOS and Linux apps keep the plan on the device and send changes to the server, in order,
+        when it can be reached.
+      </p>
+    </details>
+    <details>
+      <summary>Is there an app for iPhone or Windows?</summary>
+      <p>
+        The iPhone app is in the works and not out yet. On Windows, the <code>dayhand</code> command line works with
+        a server on your own Convex account; there is no desktop app.
+      </p>
+    </details>
+    <details>
+      <summary>When can I download a ready-made app?</summary>
+      <p>
+        The apps have no published release yet and there is no date. The signed Android build is prepared; until it
+        is out, the apps build from the source as shown under <a href="#download">Download</a>, beside the commands
+        that install the command line.
+      </p>
+    </details>
+    <details>
+      <summary>Can I see my tasks in Google Calendar?</summary>
+      <p>
+        Yes, through a read-only calendar feed that any calendar app can subscribe to. Changes are made in Dayhand.
+      </p>
+    </details>
+    <details>
+      <summary>Why do some names still say helm?</summary>
+      <p>
+        Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0, and the repository moved from
+        <code>maiarowsky/helm</code> to <code>maiarowsky/dayhand</code>; old links redirect. The old <code>hlm</code>
+        command still works with a warning, and a few names stored in data stay as they were:
+        <a href={repoFile("docs/rename.md")}>what changed</a>.
+      </p>
+    </details>
+    <details>
+      <summary>Where is the full documentation?</summary>
+      <p>
+        In <a href={DOCS_PATH}>the documentation</a>: installing, the command line, MCP, the REST API, webhooks, the
+        calendar feed and running your own server.
+      </p>
+    </details>
+  </div>
+</section>

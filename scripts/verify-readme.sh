@@ -15,7 +15,9 @@
 # neither your Dayhand login, your keychain (keys go to a file), your Claude settings nor ~/.claude/skills.
 # A few lines cannot run as written here; they are changed like this, and anything not run is listed at
 # the end as SKIPPED:
-# - `git clone https://github.com/maiarowsky/helm.git dayhand` copies this checkout's files instead
+# - `npm i -g dayhand` installs the package packed from this checkout with `npm pack`, as npm would publish it
+#   (DAYHAND_VERIFY_FROM_NPM=1 installs the published package);
+# - `git clone https://github.com/maiarowsky/dayhand.git` copies this checkout's files instead
 #   (DAYHAND_VERIFY_FROM_GITHUB=1 clones the real repository);
 # - `dayhand server start` runs in the background with --yes on ports DAYHAND_VERIFY_PORT (default 3410)
 #   and the next one, and `127.0.0.1:3211` in any line becomes that HTTP port;
@@ -71,9 +73,15 @@ cat >"$PRELUDE" <<'EOF'
 step() { printf '\n\033[1m$ %s\033[0m\n' "$1"; }
 skip() { printf 'SKIPPED: %s (%s)\n' "$1" "$2" | tee -a "$SKIPPED"; }
 copy_checkout() {
-  if [ -n "${DAYHAND_VERIFY_FROM_GITHUB:-}" ]; then git clone https://github.com/maiarowsky/helm.git "$1"; return; fi
+  if [ -n "${DAYHAND_VERIFY_FROM_GITHUB:-}" ]; then git clone https://github.com/maiarowsky/dayhand.git "$1"; return; fi
   mkdir -p "$1"
   git -C "$ROOT" ls-files -z -co --exclude-standard | tar -C "$ROOT" --null -T - -cf - | tar -C "$1" -xf -
+}
+install_package() { # `npm i -g dayhand`, into this run's own npm prefix
+  if [ -n "${DAYHAND_VERIFY_FROM_NPM:-}" ]; then npm install -g dayhand; return; fi
+  copy_checkout "$WORK/package"
+  (cd "$WORK/package/cli" && npm ci --ignore-scripts --no-audit --no-fund >/dev/null && npm pack --silent --pack-destination "$WORK" >/dev/null)
+  npm install -g "$WORK"/dayhand-*.tgz
 }
 start_server() { # name, port, site port: runs `dayhand server start` until the script ends
   local log="$WORK/server-$1.log"
@@ -110,7 +118,8 @@ SCRIPT="$WORK/readme.sh"
   while IFS= read -r line; do
     run=${line//127.0.0.1:3211/127.0.0.1:$SITE_PORT}
     case "$line" in
-      "git clone https://github.com/maiarowsky/helm.git dayhand") run="copy_checkout dayhand" ;;
+      "npm i -g dayhand") run="install_package" ;;
+      "git clone https://github.com/maiarowsky/dayhand.git") run="copy_checkout dayhand" ;;
       "dayhand server start") run="start_server readme $PORT $SITE_PORT" ;;
       "dayhand ui") run="run_ui" ;;
       "open "*Dayhand.app)

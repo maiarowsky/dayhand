@@ -2,8 +2,8 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// A task's details with basic editing: title, status and "now", the day and time, labels, the checklist and the
-/// note. Repeat and reminders are shown; editing them comes with full parity with the Android app.
+/// A task's details with editing: title, status and "now", the day and time, repeat and reminders (each a draft until
+/// it is saved), labels, the checklist and the note, and its change history at the bottom.
 struct TaskDetailView: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
@@ -16,6 +16,7 @@ struct TaskDetailView: View {
     @State private var duePhraseFailed = false
     @State private var newItem = ""
     @State private var confirmTrash = false
+    @StateObject private var history = HistoryModel()
     @FocusState private var focus: FieldName?
 
     enum FieldName: Hashable { case title, resume, labels, note }
@@ -74,9 +75,9 @@ struct TaskDetailView: View {
                     Button(tr("Remove the time")) { model.setDue(task.localId, date: task.dueDate, time: nil) }
                         .buttonStyle(.link)
                 }
-                LabeledContent(tr("Repeat"), value: task.repeat.map(Formatting.repeatRule) ?? tr("Does not repeat"))
-                LabeledContent(tr("Reminders"), value: Formatting.reminders(task.reminders, defaults: model.settings.reminderMinutes))
             }
+            RepeatEditor(task: task, today: today)
+            ReminderEditor(task: task, defaults: model.settings.reminderMinutes)
             Section(tr("Labels")) {
                 TextField(tr("Labels"), text: $labels, prompt: Text(tr("home, work")))
                     .focused($focus, equals: .labels)
@@ -140,9 +141,14 @@ struct TaskDetailView: View {
                     }
                 }
             }
+            HistorySection(history: history, today: today)
         }
         .formStyle(.grouped)
         .navigationTitle(task.title)
+        .task(id: task.serverId) { await history.watchHistory(task.serverId, in: model.repository) }
+        .task(id: HistoryModel.RefreshKey(serverId: task.serverId, revision: model.historyRefreshRevision)) {
+            await history.refresh(task.serverId, with: model)
+        }
         .onAppear(perform: load)
         .onChange(of: task) { _ in load() }
         .onChange(of: focus) { [focus] _ in saveLeaving(focus) }

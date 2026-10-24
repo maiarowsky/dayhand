@@ -1,0 +1,22 @@
+---
+// One documentation page for each file src/docs/pages.ts lists, rendered from docs/*.md.
+import { getEntry } from "astro:content";
+import Docs from "../../layouts/Docs.astro";
+import { prepareDocsHtml } from "../../docs/html.ts";
+import { PAGES, docsSlug } from "../../docs/pages.ts";
+
+export function getStaticPaths() {
+  return PAGES.map((page, index) => ({ params: { slug: docsSlug(page.src) || undefined }, props: { index } }));
+}
+
+const { index } = Astro.props;
+const page = PAGES[index];
+const entry = await getEntry("docs", page.src);
+if (!entry?.rendered) throw new Error(`docs/${page.src} is listed in src/docs/pages.ts but did not render`);
+const doc = prepareDocsHtml(page.src, entry.rendered.html);
+const headings = entry.rendered.metadata?.headings ?? [];
+---
+
+<Docs index={index} title={doc.title} description={doc.description} headings={headings}>
+  <Fragment set:html={doc.html} />
+</Docs>

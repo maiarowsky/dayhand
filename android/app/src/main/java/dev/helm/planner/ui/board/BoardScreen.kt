@@ -121,7 +121,7 @@ fun BoardScreen(
     }
     if (adding) {
         QuickAddSheet(
-            today = today,
+            timezone = state.timezone,
             onDismiss = { adding = false },
             onSave = { title, day, time, note ->
                 actions.add(title, day, time, note)
@@ -211,8 +211,8 @@ private fun ColumnList(
                 )
             }
         }
-        if (now != null) item(key = "now:${now.localId}") { NowBoardCard(now, today, actions, drag) }
-        items(tasks.filter { it.localId != now?.localId }, key = { it.localId }) { BoardCard(it, today, actions, drag) }
+        if (now != null) item(key = "now:${now.localId}") { NowBoardCard(now, today, actions, drag, state.blocked[now.localId]) }
+        items(tasks.filter { it.localId != now?.localId }, key = { it.localId }) { BoardCard(it, today, actions, drag, state.blocked[it.localId]) }
     }
 }
 

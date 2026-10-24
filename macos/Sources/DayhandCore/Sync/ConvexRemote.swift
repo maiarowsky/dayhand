@@ -10,6 +10,11 @@ public protocol SnapshotSource: Sendable {
     func snapshot() async -> Result<Snapshot, FeedError>
 }
 
+/// Runs one query of the app layer, e.g. `app:getTask`.
+public protocol QueryRunner: Sendable {
+    func query(_ path: String, args: JSONValue) async -> SendResult
+}
+
 public enum FeedError: Error, Hashable, Sendable {
     case unauthorized
     case failed(String)
@@ -21,7 +26,7 @@ public enum FeedError: Error, Hashable, Sendable {
  * from [tokens]; a refused one is refreshed and the call tried once more. Live updates come from polling
  * [snapshot]: `listAll`, `listTrash` and `getSettings`.
  */
-public struct ConvexRemote: MutationSender, SnapshotSource {
+public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
     public static let udfFailed = 560
 
     let deploymentUrl: String

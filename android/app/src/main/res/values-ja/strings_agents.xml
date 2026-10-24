@@ -19,11 +19,15 @@
     <string name="agents_from">%1$s から</string>
     <string name="agents_policies">ツールポリシー</string>
     <string name="agents_no_policies">ツールポリシーはありません。各エージェントキーは、スコープで許可されたすべてのツールを使えます。</string>
-    <string name="agents_policies_hint">ターミナルで dayhand policy set を実行して設定します。「確認」にすると、ここで許可するまで呼び出しが保留されます。</string>
+    <string name="agents_policies_hint">ルールをタップすると変更できます。ほかのキーやツールのルールはターミナルで dayhand policy set を実行して設定します。「確認」にすると、ここで許可するまで呼び出しが保留されます。</string>
     <string name="agents_policy_any_tool">その他すべてのツール</string>
     <string name="agents_rule_allow">許可</string>
     <string name="agents_rule_ask">確認</string>
     <string name="agents_rule_deny">拒否</string>
+    <string name="agents_policy_name">キー %1$s: %2$s</string>
+    <string name="agents_rule_allow_note">%1$s は確認なしで %2$s を呼び出します。</string>
+    <string name="agents_rule_ask_note">%1$s は先に確認します。%2$s の呼び出しごとに、ここで許可または拒否します。</string>
+    <string name="agents_rule_deny_note">サーバーは %1$s による %2$s を拒否します。読み取りは引き続き可能です。</string>
     <string name="agents_hint">Dayhand はあなたの判断を記録し、エージェントはそれに従って動作します。エージェントが Dayhand の外で行うことは、Dayhand では止められません。</string>
     <string name="agents_gone">これはもうありません。回答済み、期限切れ、または別の場所で削除されました。</string>
     <string name="agents_sending">送信中…</string>
@@ -65,6 +69,13 @@
     <string name="agents_rejected">却下しました。ゴミ箱に移動しました。</string>
     <string name="agents_proposal_gone">この提案はすでに別の場所で処理されています。</string>
     <string name="agents_change_failed">サーバーに接続できません。もう一度お試しください。</string>
+
+    <string name="agents_policy_title">ツールのルール</string>
+    <string name="agents_policy_rule">ルール</string>
+    <string name="agents_policy_hint">サーバーはエージェントの次の呼び出しからルールを適用し、dayhand policy にも表示されます。「許可」が既定です。許可にしたルールは、キーのその他すべてのツールのルールが別の指定でない限り、この一覧から消えます。</string>
+    <string name="agents_policy_set">ルールを保存しました。エージェントの次の呼び出しから適用されます。</string>
+    <string name="agents_policy_key_gone">サーバーはルールを変更しませんでした。このエージェントキーは取り消されたか削除されています。</string>
+    <string name="agents_policy_refused">サーバーはこのキーとツールに対するこのルールを受け付けませんでした。</string>
 
     <string name="channel_approvals">承認リクエスト</string>
     <string name="channel_approvals_description">エージェントが操作の前に承認を求めます。Dayhand を閉じている間は15分ごとに確認します。</string>

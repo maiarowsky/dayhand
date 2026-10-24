@@ -16,6 +16,8 @@
 	<string>%1$@ · d’après « %2$@ »</string>
 	<key>%@, %@</key>
 	<string>%1$@, %2$@</string>
+	<key>%@: %@ → %@</key>
+	<string>%1$@ : %2$@ → %3$@</string>
 	<key>%lld h before</key>
 	<string>%lld h avant</string>
 	<key>%lld min</key>
@@ -28,6 +30,8 @@
 	<string>Un code d’association compte 12 lettres et chiffres, comme E6M8-FE02-XSNT.</string>
 	<key>About</key>
 	<string>À propos</string>
+	<key>Add</key>
+	<string>Ajouter</string>
 	<key>Add Task</key>
 	<string>Ajouter une tâche</string>
 	<key>Add a task (try: Pay rent fri 9am)</key>
@@ -38,14 +42,28 @@
 	<string>Ajouter ces mots au titre au lieu de les lire comme une date</string>
 	<key>Address</key>
 	<string>Adresse</string>
+	<key>After a number of times</key>
+	<string>Après un nombre de fois</string>
+	<key>Agent</key>
+	<string>Agent</string>
+	<key>Agent: %@</key>
+	<string>Agent : %@</string>
 	<key>All done for today.</key>
 	<string>Tout est fait pour aujourd’hui.</string>
 	<key>Allow Notifications</key>
 	<string>Autoriser les notifications</string>
 	<key>Archive</key>
 	<string>Archiver</string>
+	<key>Archived</key>
+	<string>Archivée</string>
+	<key>As in Settings</key>
+	<string>Comme dans Réglages</string>
 	<key>As in settings (%@)</key>
 	<string>Comme dans les réglages (%@)</string>
+	<key>At a time of day</key>
+	<string>À une heure précise</string>
+	<key>Before the due time</key>
+	<string>Avant l’heure d’échéance</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>Conçu avec GRDB.swift (MIT), KeyboardShortcuts (MIT) et Sparkle (MIT).</string>
 	<key>Cancel</key>
@@ -70,6 +88,12 @@
 	<string>Vérification…</string>
 	<key>Checklist</key>
 	<string>Liste de contrôle</string>
+	<key>Claim ended</key>
+	<string>Prise en charge terminée</string>
+	<key>Claim renewed</key>
+	<string>Prise en charge prolongée</string>
+	<key>Claimed</key>
+	<string>Prise en charge</string>
 	<key>Close</key>
 	<string>Fermer</string>
 	<key>Connect</key>
@@ -86,8 +110,22 @@
 	<string>Connexion</string>
 	<key>Connect…</key>
 	<string>Connecter…</string>
+	<key>Count the next date from</key>
+	<string>Compter la prochaine date à partir de</string>
+	<key>Created</key>
+	<string>Créée</string>
+	<key>Created as the next repeat</key>
+	<string>Créée comme répétition suivante</string>
+	<key>Custom</key>
+	<string>Personnalisés</string>
 	<key>Daily</key>
 	<string>Tous les jours</string>
+	<key>Day</key>
+	<string>Jour</string>
+	<key>Day %lld</key>
+	<string>Le %lld</string>
+	<key>Day of the month</key>
+	<string>Jour du mois</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dayhand %@ (préversion) est disponible</string>
 	<key>Dayhand %@ is available</key>
@@ -118,6 +156,8 @@
 	<string>Dayhand, plus rien aujourd’hui</string>
 	<key>Default reminders</key>
 	<string>Rappels par défaut</string>
+	<key>Deleted %@ · gone after %@</key>
+	<string>Supprimée : %1$@ · effacée après : %2$@</string>
 	<key>Disconnect</key>
 	<string>Déconnecter</string>
 	<key>Disconnect this Mac?</key>
@@ -138,10 +178,26 @@
 	<string>Téléchargement… %lld %%</string>
 	<key>Due</key>
 	<string>Échéance</string>
+	<key>Edited</key>
+	<string>Modifiée</string>
+	<key>Ends</key>
+	<string>Se termine</string>
+	<key>Enter a number from 1 to %lld.</key>
+	<string>Saisissez un nombre de 1 à %lld.</string>
+	<key>Every how many</key>
+	<string>Tous les combien</string>
+	<key>Frequency</key>
+	<string>Fréquence</string>
 	<key>General</key>
 	<string>Général</string>
 	<key>Hides the tasks done today</key>
 	<string>Masque les tâches terminées aujourd’hui</string>
+	<key>History</key>
+	<string>Historique</string>
+	<key>History is unavailable offline.</key>
+	<string>L’historique n’est pas disponible hors ligne.</string>
+	<key>How many times</key>
+	<string>Combien de fois</string>
 	<key>In progress</key>
 	<string>En cours</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -162,6 +218,8 @@
 	<string>Langue</string>
 	<key>Last checked %@.</key>
 	<string>Dernière vérification : %@.</string>
+	<key>Last date</key>
+	<string>Dernière date</string>
 	<key>Later</key>
 	<string>Plus tard</string>
 	<key>Links</key>
@@ -174,6 +232,8 @@
 	<string>Marquer comme terminée</string>
 	<key>Mark as not done</key>
 	<string>Marquer comme non terminée</string>
+	<key>Marked done</key>
+	<string>Marquée comme terminée</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>Les menus fournis par macOS changent de langue au redémarrage de Dayhand.</string>
 	<key>Monthly</key>
@@ -184,6 +244,12 @@
 	<string>Mettre à la corbeille</string>
 	<key>Move “%@” to the trash?</key>
 	<string>Mettre « %@ » à la corbeille ?</string>
+	<key>Moved on the board</key>
+	<string>Déplacée sur le tableau</string>
+	<key>Moved to the trash</key>
+	<string>Mise à la corbeille</string>
+	<key>Never</key>
+	<string>Jamais</string>
 	<key>New Task</key>
 	<string>Nouvelle tâche</string>
 	<key>New Task…</key>
@@ -194,8 +260,14 @@
 	<string>Nouvelle tâche (⌘N, ou le raccourci d’ajout rapide depuis n’importe quelle app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Nouvelle tâche, par ex. Appeler le comptable fri 2pm</string>
+	<key>No changes recorded yet.</key>
+	<string>Aucune modification enregistrée pour l’instant.</string>
 	<key>No day</key>
 	<string>Aucun jour</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>Aucun jour choisi : le jour de la semaine où je la termine.</string>
+	<key>No day picked: the due date's weekday.</key>
+	<string>Aucun jour choisi : le jour de la semaine de l’échéance.</string>
 	<key>No server connected.</key>
 	<string>Aucun serveur connecté.</string>
 	<key>None</key>
@@ -230,12 +302,22 @@
 	<string>Les notifications exigent le paquet de l’app (scripts/build-app.sh) ; swift run n’en a pas.</string>
 	<key>Now</key>
 	<string>Maintenant</string>
+	<key>Now changed</key>
+	<string>« Maintenant » changé</string>
 	<key>Now, %@</key>
 	<string>Maintenant, %@</string>
 	<key>OK</key>
 	<string>OK</string>
+	<key>Offline: this is the history from the last connection.</key>
+	<string>Hors ligne : voici l’historique de la dernière connexion.</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>Sur un ordinateur connecté à votre serveur, lancez dayhand pair et saisissez le code affiché, ou ouvrez le lien qu’il imprime. Le code sert une fois, pendant 10 minutes.</string>
+	<key>On a day</key>
+	<string>À une date</string>
+	<key>On the due day</key>
+	<string>Le jour de l’échéance</string>
+	<key>On these days</key>
+	<string>Ces jours-là</string>
 	<key>Open Dayhand</key>
 	<string>Ouvrir Dayhand</string>
 	<key>Open System Settings</key>
@@ -256,6 +338,10 @@
 	<string>Impossible de lire les tâches : %@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
 	<string>Les versions publiées sont signées et se mettent à jour seules ; une copie compilée sur ce Mac, non.</string>
+	<key>Reminder day</key>
+	<string>Jour du rappel</string>
+	<key>Reminder time</key>
+	<string>Heure du rappel</string>
 	<key>Reminders</key>
 	<string>Rappels</string>
 	<key>Reminders and the morning summary are on.</key>
@@ -270,10 +356,20 @@
 	<string>Redémarrer Dayhand</string>
 	<key>Restore</key>
 	<string>Restaurer</string>
+	<key>Restore %@</key>
+	<string>Restaurer : %@</string>
+	<key>Restored</key>
+	<string>Restaurée</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Retour l’ajoute pour aujourd’hui ; une date à la fin, en anglais (tomorrow 9am, fri, 23 oct), fixe le jour.</string>
+	<key>Revert</key>
+	<string>Rétablir</string>
 	<key>Save Note</key>
 	<string>Enregistrer la note</string>
+	<key>Save Reminders</key>
+	<string>Enregistrer les rappels</string>
+	<key>Save Repeat</key>
+	<string>Enregistrer la répétition</string>
 	<key>Select a task to see its details.</key>
 	<string>Sélectionnez une tâche pour voir ses détails.</string>
 	<key>Server</key>
@@ -282,6 +378,8 @@
 	<string>Adresse du serveur</string>
 	<key>Shortcut from any app:</key>
 	<string>Raccourci depuis n’importe quelle app :</string>
+	<key>Show</key>
+	<string>Afficher</string>
 	<key>Shows the tasks done today</key>
 	<string>Affiche les tâches terminées aujourd’hui</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
@@ -310,8 +408,18 @@
 	<string>La modification n’a pas pu être enregistrée : %@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>Le code est faux, déjà utilisé ou expiré. Relancez dayhand pair pour en obtenir un nouveau.</string>
+	<key>The day I complete it</key>
+	<string>Le jour où je la termine</string>
+	<key>The day before</key>
+	<string>La veille</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>La mise à jour téléchargée n’a pas passé la vérification de signature ; elle n’a donc pas été installée.</string>
+	<key>The due date</key>
+	<string>La date d’échéance</string>
+	<key>The history starts once this task reaches the server.</key>
+	<string>L’historique commence dès que cette tâche arrive sur le serveur.</string>
+	<key>The last day of the month</key>
+	<string>Le dernier jour du mois</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>La liste des nouvelles versions n’a pas pu être lue. Réessayez plus tard.</string>
 	<key>The note is too long.</key>
@@ -350,12 +458,16 @@
 	<string>Il y a trop d’étiquettes, ou l’une est trop longue.</string>
 	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
 	<string>Ces valeurs viennent des réglages du serveur, pour que le téléphone, l’agent et ce Mac soient d’accord. Modifiez-les sur le téléphone ou avec dayhand.</string>
+	<key>These ring only when the task has a time.</key>
+	<string>Ils ne sonnent que si la tâche a une heure.</string>
 	<key>This Mac</key>
 	<string>Ce Mac</string>
 	<key>This version</key>
 	<string>Cette version</string>
 	<key>Tick %@</key>
 	<string>Cocher : %@</string>
+	<key>Time</key>
+	<string>Heure</string>
 	<key>Time zone</key>
 	<string>Fuseau horaire</string>
 	<key>Title</key>
@@ -374,6 +486,8 @@
 	<string>Demain</string>
 	<key>Too many wrong codes on this server. Try again in %@.</key>
 	<string>Trop de codes erronés sur ce serveur. Réessayez dans %@.</string>
+	<key>Trash</key>
+	<string>Corbeille</string>
 	<key>Try Again</key>
 	<string>Réessayer</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
@@ -418,6 +532,10 @@
 	<string>Tous les ans</string>
 	<key>Yesterday</key>
 	<string>Hier</string>
+	<key>You (CLI)</key>
+	<string>Vous (CLI)</string>
+	<key>You (app)</key>
+	<string>Vous (app)</string>
 	<key>You have %@.</key>
 	<string>Vous avez la %@.</string>
 	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
@@ -438,6 +556,10 @@
 	<string>maison, travail</string>
 	<key>next step</key>
 	<string>prochaine étape</string>
+	<key>no</key>
+	<string>non</string>
+	<key>none</key>
+	<string>aucun</string>
 	<key>now</key>
 	<string>maintenant</string>
 	<key>on %@</key>
@@ -534,5 +656,7 @@
 	<string>le troisième mercredi</string>
 	<key>until %@</key>
 	<string>jusqu’au %@</string>
+	<key>yes</key>
+	<string>oui</string>
 </dict>
 </plist>

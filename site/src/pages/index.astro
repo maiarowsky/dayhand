@@ -1,0 +1,26 @@
+---
+// dayhand.dev: the home page, one section per component.
+import Page from "../layouts/Page.astro";
+import Hero from "../components/home/Hero.astro";
+import Screens from "../components/home/Screens.astro";
+import Agents from "../components/home/Agents.astro";
+import SelfHost from "../components/home/SelfHost.astro";
+import Download from "../components/home/Download.astro";
+import OpenSource from "../components/home/OpenSource.astro";
+import Faq from "../components/home/Faq.astro";
+import Closing from "../components/home/Closing.astro";
+---
+
+<Page
+  title="Dayhand: a day plan for you and your AI agents"
+  description="Dayhand is a free, open source task list, calendar and day plan for people who run a business on their own and for the AI agents that work for them, on a server you run yourself."
+>
+  <Hero />
+  <Screens />
+  <Agents />
+  <SelfHost />
+  <Download />
+  <OpenSource />
+  <Faq />
+  <Closing />
+</Page>

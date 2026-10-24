@@ -14,9 +14,31 @@ This version is the basic one (MVP):
   (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
   the field says what was understood; **Keep in title** keeps the words as text. Without a phrase the task is
   for today, as on the phone.
-- **Task details** with basic editing: title, status, "working on it now" and the resume note, the day and time
-  (a phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat, reminders
-  and links are shown. A task in the trash is read-only until **Restore**.
+- **Task details** with editing: title, status, "working on it now" and the resume note, the day and time
+  (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
+  Links are shown. A task in the trash is read-only until **Restore**.
+- **Repeat** in the details is an editor: **Frequency** (does not repeat, daily, weekly, monthly, yearly), every
+  how many, and weekdays Monday to Sunday for a weekly rule (none picked: the selected anchor's weekday).
+  Monthly choices are the anchor's day, the last day, or an nth weekday suggested by the due date (today for an
+  undated task), with a last-weekday choice when that date falls in the month's last week. A fixed month day or
+  nth weekday set elsewhere is kept as a choice. Count the next date from the due date or from completion;
+  without a due date it counts from completion. End never, on a day or after a number of times, **this occurrence
+  included**. **Reminders** are as in Settings, none, or custom, at most five: minutes before the due time (only a
+  timed task rings them) and times of day on the due day or the day before. Existing reminders further ahead are
+  kept. Both editors stay a draft until **Save Repeat** or **Save Reminders**, enabled only for a changed rule or
+  reminders the server accepts (`TaskRules`), so a refused change never reaches the outbox; **Revert** drops the draft.
+- **Repeating offline**: next-occurrence generation, sync behavior and the paired-offline, agent-field and
+  cross-device limitations are described in [docs/macos.md](../docs/macos.md#offline-repeating).
+- **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
+  by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
+  cached entries remain available offline. Without cached entries, the details say history is unavailable
+  offline; a task created locally says its history starts once it reaches the server. Refresh rules are under
+  [How it works](#how-it-works).
+- **Trash** shares the left sidebar with Today: a segmented chooser at the top switches the task list, with no
+  count badges. Deleted tasks are listed most recently deleted first, with the deletion day, the day the task
+  expires from the trash and **Restore**, which also works offline. The server keeps deleted tasks for 30 days
+  before its daily purge. The window stays two-column, at least 720 points wide: the sidebar and the selected
+  task's details, with the update button at the bottom left of the sidebar.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
@@ -45,13 +67,19 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  then app:listAll + app:listTrash + app:getSettings (POST /api/query)
                                  ──> SnapshotMerger (last write wins per field) ──> the database
 rounds: every 15 s, and at once after a local change
+
+history loads only when details open, the connection changes from offline/signed out/connecting to synced,
+or Sync Now is requested:
+  TaskHistorySync: app:getTask ──> the task's history replaces its cached copy
+  no answer or no server: the cached copy stays, marked as such
+  ordinary polls (even with a newer task version): no history request or cancellation; no retry loop
 ```
 
-The code is a Swift package with six targets:
+The code is a Swift package with these application and library targets (test targets are described below):
 
 | Target | What it holds |
 |---|---|
-| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
+| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
 | `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
 | `DayhandLocalization` | The texts: the string catalog `Localizable.xcstrings` (English is the source and the keys), the `.lproj` folders compiled from it, `tr(…)`, choosing the language (`Localization`) and days and times in the region's style (`DateText`). |
 | `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
@@ -60,7 +88,8 @@ The code is a Swift package with six targets:
 
 Rules ported from the Android app keep their names and comments, so a change on one side can be carried to the
 other: `domain/Recurrence.kt` → `Recurrence.swift`, `sync/SnapshotMerger.kt` → `SnapshotMerger.swift`,
-`data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`.
+`data/remote/HttpTaskRemote.kt` → `ConvexRemote.swift`, `notify/ReminderEngine.kt` → `ReminderPlanner.swift`,
+`sync/TaskHistorySync.kt` and `domain/HistoryEntries.kt` → `TaskHistorySync.swift` and `TaskHistory.swift`.
 The backend's own rules are in `backend/convex/lib/dates.ts`, `repeat.ts` and `core.ts`.
 
 **Sign-in.** `POST /auth/pair` with the code and this Mac's name gives a device token, which is kept only in the
@@ -81,9 +110,10 @@ Overdue tasks never ring. The summary is quiet (`passive`), so it waits in Notif
 permission when the first reminder is planned, or from Settings.
 
 Where the app keeps things: the database in `~/Library/Application Support/Dayhand/dayhand.sqlite`, the sign-in
-in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`. To try it without
-touching those, start it with `DAYHAND_DATA_DIR=<folder>` (another database) and `DAYHAND_CREDENTIALS=memory`
-(the sign-in is forgotten when the app quits).
+in the Keychain, preferences (the shortcut, the window, the update settings, the language) in `io.github.maiarowsky.dayhand`.
+`DAYHAND_DATA_DIR=<folder>` selects another database, and `DAYHAND_CREDENTIALS=memory` keeps the sign-in only until
+the app quits. These overrides do not isolate preferences or notifications; the [sync-loop check](#tests) uses a
+separate app identity for those.
 
 ## Build and run
 
@@ -124,8 +154,17 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ## Tests
 
 ```sh
-swift test                        # 169 tests, about five seconds; the live one is skipped
+swift test                        # the live-backend test is skipped by default
+scripts/check-sync-loop.sh        # the release app with its sync loop turning, 50 seconds
 ```
+
+`scripts/check-sync-loop.sh` forces a release build of `dist/Dayhand.app`, even when `DAYHAND_CONFIGURATION` is set
+to debug. To use an existing release bundle instead, set `DAYHAND_APP=<path>/Dayhand.app`; `DAYHAND_CHECK_SECONDS`
+changes the default 50-second run. The script opens a temporary copy under a separate bundle id for notifications
+and preferences, then deletes that preferences domain on cleanup. It uses a temporary database and a process-local
+Keychain stand-in for Dayhand's sign-in, pointed at a local server that accepts and closes each connection without
+replying. It fails if the app exits early or makes too few server connections. This exercises the release-app crash
+at the end of the sync loop's wait, which unit tests and debug builds did not reproduce.
 
 - **Rules, case for case with the other clients**: dates and DST (`HelmDatesTest`), Today
   (`TodaySectionsTest`), repeat (`RecurrenceTest` and the backend's `repeat.test.ts`, with the RFC 5545 dates of
@@ -135,7 +174,15 @@ swift test                        # 169 tests, about five seconds; the live one 
 - **The outbox and sync against a fake server** (`FakeServer.swift`, in memory): offline changes reach the server
   in order, a change whose answer was lost is applied once, a waiting change keeps its field against a newer
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
-  refreshed and the call repeated.
+  refreshed and the call repeated. `HistoryTests.swift` checks history parsing and actor attribution, fetching
+  and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
+  is erased. It also checks trash expiry and queuing an offline restore. `RepeatEditingTests.swift` checks the editors'
+  drafts against the rules they make, that rules and reminders `TaskRules` refuses queue nothing, and that a
+  repeating task completed without a server gets its next occurrence locally and keeps one occurrence when the
+  outbox is sent. With a server, generation stays on the server, including after a delayed offline completion.
+  Permanent rejection of a parent add, rule-clear or completion drops its unsent generated descendants, while
+  retryable failures retain them and unrelated additions still sync. The loop's wait ends at its timeout or at
+  a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
 
@@ -150,11 +197,20 @@ swift test                        # 169 tests, about five seconds; the live one 
   and a build without the key sends no request. Also the state machine, the `Info.plist` rules, the notes, the
   error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
-- **Screens**: `swift run DayhandSnapshots <folder>` draws Today (also with the update button), the details, the
-  menu bar, quick add, Connect, Settings, Settings → Updates and every state of the update window from synthetic
-  data into PNG files, off screen (the sidebar's translucent background does not
-  draw off screen, so the Today list is also drawn on its own). `swift run DayhandSnapshots <folder> pl` draws them
-  in another language, and the tool fails when a text on them is missing from the string catalog.
+- **Screens**: `swift run DayhandSnapshots <folder>` draws the two-column Today and Trash windows at 960 and
+  720 points wide, the shared sidebar with its chooser and update button, the details with cached history and
+  with history unavailable offline, the repeat and reminder editors (weekly with the reminders from Settings,
+  monthly on an nth weekday with a count and custom reminders), the menu bar, quick add, Connect, Settings, Settings → Updates and every
+  state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
+  background does not draw off screen, so the sidebar and task lists are also drawn on their own).
+  `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
+  them is missing from the string catalog. It also lays out the main window in a real window with its title bar
+  (wide, narrowest, sidebar closed, light and dark) and fails when the content is taller than the window or quick
+  add sits under the title bar and its window buttons.
+- **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
+  classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,
+  the month choices and counts of the repeat editor in English and Polish, and picker days and times that do not
+  move with the zone. These are unit checks, not clicks through the running app.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources

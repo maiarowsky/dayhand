@@ -79,6 +79,10 @@ object RemoteJson {
         proof = o["proof"]?.let { decodeOrNull(TaskProof.serializer(), it) },
         claimName = (o["claimedBy"] as? JsonObject)?.string("name"),
         claimExpiresAt = o.long("claimExpiresAt"),
+        ref = o.long("ref"),
+        plan = o.string("plan"),
+        dependsOn = (o["dependsOn"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content },
+        blockedReason = o.string("blockedReason"),
     )
 
     /** A task's change history from [QUERY_TASK], newest first. */

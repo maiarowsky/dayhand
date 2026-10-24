@@ -41,6 +41,12 @@
     <string name="quick_add_no_time">Sin hora</string>
     <string name="quick_add_note">Nota</string>
     <string name="quick_add_save">Añadir</string>
+    <string name="quick_add_example">p. ej. Llamar al contable fri 2pm</string>
+    <string name="quick_add_from_phrase">%1$s · de «%2$s»</string>
+    <string name="quick_add_no_phrase">Sin fecha en el texto: hoy</string>
+    <string name="quick_add_from_options">De «Más opciones»: %1$s</string>
+    <string name="quick_add_keep_in_title">Dejar en el título</string>
+    <string name="quick_add_keep_in_title_hint">Añadir las palabras al título en lugar de leerlas como fecha</string>
 
     <plurals name="status_offline">
         <item quantity="one">Sin conexión. Los cambios se guardan y se enviarán cuando vuelva la red (%1$d en espera).</item>
@@ -388,4 +394,21 @@
     <string name="proof_check_pass">superada</string>
     <string name="proof_check_fail">fallida</string>
     <string name="proof_empty">Sin detalles</string>
+    <string name="detail_agent">Agente</string>
+    <string name="detail_blocked">Bloqueada: %1$s</string>
+    <string name="detail_waiting_on">Espera a</string>
+    <string name="detail_plan">Plan</string>
+    <string name="dependency_done">%1$s (hecha)</string>
+    <string name="dependency_in_trash">%1$s (en la papelera)</string>
+    <string name="dependency_missing">Una tarea que no está en este teléfono</string>
+    <string name="release_claim">Terminar la reserva</string>
+    <string name="release_claim_title">¿Terminar la reserva de %1$s?</string>
+    <string name="release_claim_text">%1$s deja de tener esta tarea y cualquier agente puede reservarla de nuevo. Nada más cambia en la tarea.</string>
+    <string name="action_release">Reserva terminada</string>
+    <string name="blocked_reason_and_waiting">%1$s. %2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="one">Espera a %d tarea</item>
+        <item quantity="many">Espera a %d tareas</item>
+        <item quantity="other">Espera a %d tareas</item>
+    </plurals>
 </resources>

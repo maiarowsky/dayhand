@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -33,6 +34,7 @@ import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.local.WeekdayOfMonth
 import dev.helm.planner.domain.Actor
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.FieldChange
 import dev.helm.planner.domain.HistoryEntry
 import dev.helm.planner.domain.HistoryField
@@ -87,10 +89,17 @@ class TaskDetailScreenTest {
         override fun renameItem(localId: String, itemId: String, title: String) { calls += "rename:$itemId:$title" }
         override fun removeItem(localId: String, itemId: String) { calls += "remove:$itemId" }
         override fun moveItem(localId: String, itemId: String, by: Int) { calls += "move:$itemId:$by" }
+        override fun release(localId: String) { calls += "release:$localId" }
     }
 
-    private fun show(task: Task = this.task, actions: TaskDetailActions = Recorder(), state: HistoryState = HistoryState.FRESH, pending: Int = 0) {
-        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Dayhand", "home"), listOf(0, 30))
+    private fun show(
+        task: Task = this.task,
+        actions: TaskDetailActions = Recorder(),
+        state: HistoryState = HistoryState.FRESH,
+        pending: Int = 0,
+        dependencies: List<AgentWork.Dependency> = emptyList(),
+    ) {
+        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Dayhand", "home"), listOf(0, 30), dependencies)
         compose.setContent { HelmTheme { TaskDetailScreen(ui, actions) } }
     }
 
@@ -128,10 +137,56 @@ class TaskDetailScreenTest {
     }
 
     @Test
+    fun showsThePlanWhatTheTaskWaitsForAndWhyItIsBlocked() {
+        show(
+            task.copy(plan = "Draft, then send to the client", blockedReason = "the client has not answered"),
+            dependencies = listOf(
+                AgentWork.Dependency(12, "Send the invoice", AgentWork.DependencyState.DONE),
+                AgentWork.Dependency(14, "Pay the VAT", AgentWork.DependencyState.OPEN),
+                AgentWork.Dependency(null, null, AgentWork.DependencyState.MISSING),
+            ),
+        )
+        compose.onNodeWithTag(AgentWorkTags.BLOCKED).performScrollTo()
+            .assertTextContains(text(R.string.detail_blocked, "the client has not answered"))
+        compose.onNodeWithText(text(R.string.detail_waiting_on)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(AgentWorkTags.dependency(0)).performScrollTo()
+            .assertTextContains(text(R.string.dependency_done, "#12 Send the invoice"), substring = true)
+        compose.onNodeWithTag(AgentWorkTags.dependency(1)).assertTextContains("#14 Pay the VAT", substring = true)
+        compose.onNodeWithTag(AgentWorkTags.dependency(2)).assertTextEquals(text(R.string.dependency_missing))
+        compose.onNodeWithTag(AgentWorkTags.PLAN).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Draft, then send to the client").assertIsDisplayed()
+        // Nobody holds the task: nothing to end.
+        compose.onNodeWithTag(AgentWorkTags.RELEASE).assertDoesNotExist()
+    }
+
+    @Test
+    fun endingAClaimAsksFirst() {
+        val actions = Recorder()
+        show(task.copy(claimName = "claude-code", claimExpiresAt = System.currentTimeMillis() + 60 * 60_000), actions)
+        compose.onNodeWithTag(AgentWorkTags.RELEASE).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithText(text(R.string.release_claim_title, "claude-code")).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.cancel)).performClick()
+        assertEquals(emptyList<String>(), actions.calls)
+
+        compose.onNodeWithTag(AgentWorkTags.RELEASE).performClick()
+        compose.onNodeWithText(text(R.string.release_claim_text, "claude-code")).assertIsDisplayed()
+        compose.onNodeWithTag(AgentWorkTags.RELEASE_CONFIRM).performClick()
+        assertEquals(listOf("release:a"), actions.calls)
+    }
+
+    @Test
+    fun aClaimOnATaskInTheTrashCannotBeEnded() {
+        show(task.copy(claimName = "claude-code", claimExpiresAt = System.currentTimeMillis() + 60 * 60_000, deletedAt = System.currentTimeMillis()))
+        compose.onNodeWithTag(AgentWorkTags.CLAIM).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(AgentWorkTags.RELEASE).assertDoesNotExist()
+    }
+
+    @Test
     fun anExpiredClaimIsNotShown() {
         show(task.copy(claimName = "claude-code", claimExpiresAt = System.currentTimeMillis() - 1_000))
         compose.onNodeWithTag(AgentWorkTags.CLAIM).assertDoesNotExist()
         compose.onNodeWithTag(AgentWorkTags.ACCEPTANCE).assertDoesNotExist()
+        compose.onNodeWithTag(AgentWorkTags.SECTION).assertDoesNotExist()
     }
 
     @Test

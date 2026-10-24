@@ -24,6 +24,14 @@ enum Formatting {
         return pair(dayText, DateText.time(time))
     }
 
+    /// "Deleted Today · gone after Sun 22 Nov" for a task in the trash; nil for one that is not.
+    static func trashDates(_ task: TaskItem, today: String, timezone: String) -> String? {
+        guard let deleted = task.deletedAt, let gone = task.goneForGoodAt else { return nil }
+        let deletedDay = day(HelmDates.localDate(deleted, timezone), today: today)
+        let goneDay = day(HelmDates.localDate(gone, timezone), today: today)
+        return tr("Deleted \(deletedDay) · gone after \(goneDay)")
+    }
+
     static func when(_ when: When, today: String) -> String {
         var text = day(when.date, today: today)
         if let time = when.time { text = pair(text, DateText.time(time)) }
@@ -115,16 +123,19 @@ enum Formatting {
         let separator = DateText.listSeparator
         guard let reminders else { return tr("As in settings (\(defaults.map(minutes).joined(separator: separator)))") }
         if reminders.isEmpty { return tr("None") }
-        return reminders.map { reminder in
-            if let minutes = reminder.minutesBefore { return Self.minutes(minutes) }
-            let days = reminder.daysBefore ?? 0
-            let time = reminder.time.map(DateText.time) ?? "?"
-            switch days {
-            case 0: return tr("\(time) on the day")
-            case 1: return tr("\(time) the day before")
-            default: return pair(time, tr("\(days) days before"))
-            }
-        }.joined(separator: separator)
+        return reminders.map(reminder).joined(separator: separator)
+    }
+
+    /// One reminder: "30 min before", "09:00 on the day", "18:00 the day before".
+    static func reminder(_ reminder: TaskReminder) -> String {
+        if let minutes = reminder.minutesBefore { return Self.minutes(minutes) }
+        let days = reminder.daysBefore ?? 0
+        let time = reminder.time.map(DateText.time) ?? "?"
+        switch days {
+        case 0: return tr("\(time) on the day")
+        case 1: return tr("\(time) the day before")
+        default: return pair(time, tr("\(days) days before"))
+        }
     }
 
     static func minutes(_ minutes: Int) -> String {

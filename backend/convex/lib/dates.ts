@@ -37,6 +37,21 @@ export function localDate(ms: number, timezone: string): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
+/** "YYYY-MM-DD HH:MM" at instant `ms` in `timezone`. */
+export function localDateTime(ms: number, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(ms));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
+}
+
 function toUtcDate(date: string): Date {
   const [y, m, d] = date.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));

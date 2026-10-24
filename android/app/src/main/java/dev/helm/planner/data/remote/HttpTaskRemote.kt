@@ -139,8 +139,9 @@ class HttpTaskRemote(
                 "success" -> SendResult.Applied(body["value"] ?: JsonObject(emptyMap()))
                 "error" -> {
                     val message = (body["errorMessage"] as? JsonPrimitive)?.content ?: "error"
-                    if (RemoteJson.errorCode(body["errorData"]) == "unauthenticated") SendResult.Unauthorized
-                    else SendResult.Rejected(message)
+                    val code = RemoteJson.errorCode(body["errorData"])
+                    if (code == "unauthenticated") SendResult.Unauthorized
+                    else SendResult.Rejected(message, code)
                 }
                 else -> SendResult.Failed("unexpected answer")
             }

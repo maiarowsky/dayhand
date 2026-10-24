@@ -1,0 +1,70 @@
+---
+// Every platform with its real state today: the command line from npm or Homebrew, the apps from the source, and
+// iOS, which is not out yet.
+import { DOCS_PATH, repoFile } from "../../site";
+---
+
+<section id="download" aria-labelledby="download-title">
+  <h2 id="download-title">Download</h2>
+  <p class="status">
+    <span class="badge wip">Pre-release</span>
+    The apps have no published release yet: they build from the source today, and ready-made downloads are marked
+    Coming soon.
+  </p>
+
+  <ul class="cards downloads" role="list">
+    <li class="card wide">
+      <h3>Command line</h3>
+      <p class="meta">macOS, Linux and Windows; Node.js 22.12 or newer</p>
+      <p>
+        <span class="badge ok">npm and Homebrew</span> One command puts <code>dayhand</code> and <code>dh</code> (the
+        same command, shorter) on your PATH:
+      </p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line with npm"><code>npm i -g dayhand</code></pre>
+      <p>Or run it once without installing:</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that runs the command line without installing it"><code>npx dayhand</code></pre>
+      <p>With Homebrew, on macOS and Linux:</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line with Homebrew"><code>brew install maiarowsky/tap/dayhand</code></pre>
+      <p class="later">
+        Running your own server with <code>dayhand server start</code> also needs a copy of the repository, because
+        the server code (<code>backend/</code>) is not in the npm package: <a href={repoFile("docs/deploy.md")}>the
+        deployment guide</a> shows how.
+      </p>
+    </li>
+    <li class="card">
+      <h3>Android</h3>
+      <p class="meta">Android 8.0 or newer</p>
+      <p><span class="badge ok">Works today</span> <a href={repoFile("android/README.md")}>Build the app yourself</a></p>
+      <p class="later"><span class="badge soon">Coming soon</span> A signed APK on GitHub Releases</p>
+      <p class="later"><span class="badge soon">Coming soon</span> Google Play</p>
+    </li>
+    <li class="card">
+      <h3>macOS</h3>
+      <p class="meta">macOS 13 or newer; builds with Xcode 26</p>
+      <p><span class="badge ok">Works today</span> From the source:</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that build the Mac app"><code>(cd macos &amp;&amp; scripts/build-app.sh)
+open macos/dist/Dayhand.app</code></pre>
+      <p class="later"><span class="badge soon">Coming soon</span> A signed download</p>
+    </li>
+    <li class="card">
+      <h3>Linux</h3>
+      <p class="meta">Qt 6; a package for Arch Linux and Omarchy</p>
+      <p><span class="badge ok">Works today</span> From the source:</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that builds the Linux package"><code>(cd packaging/arch &amp;&amp; makepkg -si)</code></pre>
+      <p class="later">
+        Other distributions build with CMake, as the <a href={repoFile("docs/linux.md")}>Linux guide</a> shows. Not on
+        the AUR.
+      </p>
+    </li>
+    <li class="card ios">
+      <h3>iPhone and iPad</h3>
+      <p class="meta">iOS</p>
+      <p><span class="badge wip">In the works</span> Not out yet: there is no app to install and no beta to join.</p>
+      <p class="later">It will use the same server and the same plan as the other apps.</p>
+    </li>
+  </ul>
+  <p class="note">
+    The build commands for the apps run in a copy of the repository; <a href={`${DOCS_PATH}install/`}>the install
+    guide</a> shows how to get one and what each app needs.
+  </p>
+</section>

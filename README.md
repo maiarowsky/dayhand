@@ -1,6 +1,6 @@
 # ✋ Dayhand — a day plan with a spare pair of hands
 
-[![License](https://img.shields.io/github/license/maiarowsky/helm)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/dayhand?style=flat)](LICENSE)
 
 Dayhand is a task list and day plan for people who run a business on their own, and for the AI
 agents that work for them. Your phone keeps the plan offline with a calendar and reminders; a
@@ -26,34 +26,44 @@ TODAY
 
 ## Install
 
-| Where | How | Status |
-|---|---|---|
-| Android 8.0+ | signed APK from GitHub Releases | prepared: the release build is signed and ready, no release is published yet |
-| npm | `npx dayhand` | prepared: the publish workflow is ready, nothing is published yet ([docs/release.md](docs/release.md)) |
-| Homebrew | a tap with `dayhand` | prepared: the formula template is in `packaging/homebrew/` |
-| From source | below | works today on macOS and Linux (the CLI also on Windows) |
+`dayhand`, the command line (short name `dh`), needs [Node.js](https://nodejs.org) 22.12 or newer:
 
-From source you need Node.js 22.12 or newer, git and, for the agent example, `jq`:
+| Where | Command |
+|---|---|
+| macOS, Linux, Windows | `npm i -g dayhand` |
+| macOS, Linux with Homebrew | `brew install maiarowsky/tap/dayhand` |
+| Try it without installing | `npx dayhand --help` |
+| Android 8.0+ | build it yourself ([On the phone](#on-the-phone)); a signed APK on GitHub Releases is prepared, no release is published yet |
+| Dayhand for macOS | build it from a checkout ([On the Mac](#on-the-mac)) |
+| Dayhand for Linux | build it from a checkout ([On Linux](#on-linux)) |
+
+> **npm and Homebrew: available after the first release.** Nothing is published yet; until then, build `dayhand` from a checkout ([Development](#development)).
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git dayhand
-cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+npm i -g dayhand
 ```
 
-`npm link` puts `dayhand` (and its short name `dh`) on your PATH; `npm unlink -g dayhand` removes it.
+`npm rm -g dayhand` removes it. Every way to install, with updates and shell completion:
+[docs/install.md](docs/install.md).
 
 ## Quick start
 
-Start your own server on this computer. No account: the first run downloads the Convex local
-backend once, deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
+Start your own server on this computer (macOS or Linux). On Windows, use the
+[Convex account setup](docs/deploy.md#run-your-own-server-in-5-minutes) instead.
+The server is deployed from the repository's `backend/` folder, so get a copy first (nothing to build).
+No account is needed for the local server: the first run downloads the Convex local backend once,
+deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
 
 ```sh
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand
 dayhand server start
 ```
 
-Leave it running, and in a second terminal in the same folder:
+For the local server, leave it running and select it explicitly in a second terminal in the same folder:
 
 ```sh
+export DAYHAND_URL=http://127.0.0.1:3211
 dayhand add "Call the accountant" --due "today 14:00" -l admin
 dayhand
 dayhand done 1
@@ -65,8 +75,9 @@ are English phrases in your time zone (`fri 2pm`, `in 3 days`, `2026-11-02`), al
 
 ## Your agent
 
-Give each agent its own key. Its changes are signed `agent: <name>` in the history and the
-activity log, and you can revoke the key at any time (`dayhand key revoke`):
+The examples below use `jq` to read JSON responses. Give each agent its own key. Its changes are
+signed `agent: <name>` in the history and the activity log, and you can revoke the key at any time
+(`dayhand key revoke`):
 
 ```sh
 AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
@@ -78,16 +89,24 @@ Tasks can carry acceptance criteria and a plan. An agent claims a task so other 
 alone, and a task with criteria is done only when they are met and the agent says what it did:
 
 ```sh
-dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals"
-DAYHAND_API_KEY=$AGENT_KEY dayhand claim 3 --minutes 30
-DAYHAND_API_KEY=$AGENT_KEY dayhand criteria 3 --met all
-DAYHAND_API_KEY=$AGENT_KEY dayhand done 3 --summary "3 PDFs sent" --check totals=pass
+TASK_ID=$(dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals" --json | jq -er .id)
+DAYHAND_API_KEY=$AGENT_KEY dayhand claim "$TASK_ID" --minutes 30
+DAYHAND_API_KEY=$AGENT_KEY dayhand criteria "$TASK_ID" --met all
+DAYHAND_API_KEY=$AGENT_KEY dayhand done "$TASK_ID" --summary "3 PDFs sent" --check totals=pass
 ```
 
 For agents, `--json` prints exactly what the MCP tools return ([schemas](docs/schemas)), exit
-codes say what to do next, and `dayhand prime` prints Today with a short guide, ready for a
-session-start hook. More: [docs/agent-work.md](docs/agent-work.md) (activity cursors,
-dependencies, claims) and [docs/cli.md](docs/cli.md) (every command).
+codes say what to do next, and `dayhand prime` prints Today, the agent's claims, the approvals it
+waits for and its next steps with a short guide, ready for a session-start hook. Over MCP the
+same is `agent_brief`, and three guides walk an agent through one task, from writing it down to
+closing it with proof (`dayhand://workflow/intake`, `…/execution`, `…/finalization`). More:
+[docs/agent-work.md](docs/agent-work.md) (activity cursors, dependencies, claims) and
+[docs/cli.md](docs/cli.md) (every command).
+
+A plan kept in [Backlog.md](https://github.com/MrLesk/Backlog.md) task files comes in with
+`dayhand backlog import backlog --dry-run` (then without `--dry-run`) and goes out with
+`dayhand backlog export backlog-out`: criteria, plan, dependencies and status carry over, and a folder
+imported again brings only what is new ([docs/backlog-md.md](docs/backlog-md.md)).
 
 You stay in charge of your agents. Before a risky step an agent asks (`dayhand ask`, the MCP tool
 `request_approval`) and you pick an option on the phone or with `dayhand approvals decide`; one
@@ -103,7 +122,7 @@ The server speaks [MCP](https://modelcontextprotocol.io) at `/mcp`, with the sam
 the app. For Claude Code, with the agent key from above:
 
 ```sh
-claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header "Authorization: Bearer $AGENT_KEY"
+claude mcp add --transport http dayhand "$DAYHAND_URL/mcp" --header "Authorization: Bearer $AGENT_KEY"
 ```
 
 Any other MCP client works the same way: the address and an `Authorization: Bearer` header.
@@ -120,7 +139,8 @@ mkdir -p ~/.claude/skills && cp -R docs/skills/dayhand ~/.claude/skills/
 ## On the phone
 
 The Android app starts without any server: under **On this phone only** choose **Start with an
-empty plan**, or **Try with sample data** (one tap removes it). Today with quick add, the week
+empty plan**, or **Try with sample data** (one tap removes it). Today with quick add (a date
+phrase at the end sets the day: `Call the accountant fri 2pm`), the week
 and day calendar, the board, task details with repeats, checklists and reminders, the morning
 summary and a backup file (**Settings → Data → Backup**) all work there. Without a server the
 plan lives only on the phone: Android backups are off for Dayhand, so keep a backup file.
@@ -142,7 +162,7 @@ Tasks you added on the phone before are sent to the server. Building the app you
 Dayhand has no shared server to sign up for, and the app has no built-in server address. You
 run yours in one of two ways:
 
-- **On this computer**: `dayhand server start` (above). Data and keys stay in a private folder.
+- **On this computer**: follow [Quick start](#quick-start). Data and keys stay in a private folder.
 - **On your own free Convex account**: `dayhand server deploy` logs in to Convex in the browser,
   deploys, signs `dayhand` in and prints the server address and a pairing code. This gives a
   public HTTPS address, which the Claude apps and a phone away from home need. Run it again to
@@ -178,9 +198,11 @@ to choose); everything scripts and agents read stays English.
 ## On the Mac
 
 Dayhand for macOS has Today, quick add from the menu bar or a global shortcut, reminders and the
-morning summary, and works offline like the phone, in English, Polish, German, Spanish, French,
-Brazilian Portuguese, Japanese or Simplified Chinese. It is built from source (Xcode 26 or later;
-runs on macOS 13 or later) and is not signed for other Macs yet:
+morning summary, the trash and each task's change history, repeat and reminder editors, and offline editing.
+Repeating tasks create their next occurrence locally only without a server; a paired Mac without network waits
+until sync. The app speaks English,
+Polish, German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese. It is built from source
+(Xcode 26 or later; runs on macOS 13 or later) and is not signed for other Macs yet:
 
 ```sh
 (cd macos && scripts/build-app.sh)
@@ -192,7 +214,7 @@ More: [macos/README.md](macos/README.md) and [docs/macos.md](docs/macos.md).
 
 ## On Linux
 
-Dayhand for Linux (Qt 6) has Today, a quick add window for a keyboard binding, a tray icon, reminders
+Dayhand for Linux (Qt 6) has Today with task details, a quick add window for a keyboard binding, a tray icon, reminders
 and the morning summary as desktop notifications, works offline, and speaks eight languages. On Arch
 Linux or Omarchy it is built as a package from this repository (not on the AUR):
 
@@ -221,6 +243,14 @@ android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
+site/      dayhand.dev: the landing page and the docs from docs/, an Astro site built into site/dist; check it with scripts/check-site.sh --build
+```
+
+To run `dayhand` from this checkout instead of the npm package (also the way to get it before the
+first release), build it and link it onto your PATH; `npm unlink -g dayhand` removes the link:
+
+```sh
+(cd cli && npm ci --ignore-scripts && npm run build && npm link)
 ```
 
 The tests start their own throwaway backend:
@@ -236,7 +266,8 @@ Every command in this README runs against a local backend with sample data in
 
 ## Help
 
-Start with `dayhand help`, [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
+Start with `dayhand help` and the [documentation](docs/README.md): [quick start](docs/getting-started.md),
+[FAQ and troubleshooting](docs/faq.md), [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
 Dayhand is a personal project with no hosted service and no support promise; issues are for bugs
 you can reproduce and for feature ideas. Security problems go privately, never in an issue
 ([SECURITY.md](SECURITY.md)).

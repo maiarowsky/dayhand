@@ -41,6 +41,12 @@
     <string name="quick_add_no_time">Sans heure</string>
     <string name="quick_add_note">Note</string>
     <string name="quick_add_save">Ajouter</string>
+    <string name="quick_add_example">par ex. Appeler le comptable fri 2pm</string>
+    <string name="quick_add_from_phrase">%1$s · d\'après « %2$s »</string>
+    <string name="quick_add_no_phrase">Pas de date dans le texte : aujourd\'hui</string>
+    <string name="quick_add_from_options">D\'après « Plus d\'options » : %1$s</string>
+    <string name="quick_add_keep_in_title">Garder dans le titre</string>
+    <string name="quick_add_keep_in_title_hint">Ajouter ces mots au titre au lieu de les lire comme une date</string>
 
     <plurals name="status_offline">
         <item quantity="one">Hors ligne. Les modifications sont enregistrées et seront envoyées au retour du réseau (%1$d en attente).</item>
@@ -390,4 +396,21 @@
     <string name="proof_check_pass">réussi</string>
     <string name="proof_check_fail">échoué</string>
     <string name="proof_empty">Aucun détail fourni</string>
+    <string name="detail_agent">Agent</string>
+    <string name="detail_blocked">Bloquée : %1$s</string>
+    <string name="detail_waiting_on">Attend</string>
+    <string name="detail_plan">Plan</string>
+    <string name="dependency_done">%1$s (terminée)</string>
+    <string name="dependency_in_trash">%1$s (dans la corbeille)</string>
+    <string name="dependency_missing">Une tâche qui n\'est pas sur ce téléphone</string>
+    <string name="release_claim">Mettre fin à la prise en charge</string>
+    <string name="release_claim_title">Mettre fin à la prise en charge de %1$s ?</string>
+    <string name="release_claim_text">%1$s ne détient plus cette tâche, et n\'importe quel agent peut la reprendre en charge. Rien d\'autre ne change dans la tâche.</string>
+    <string name="action_release">Prise en charge terminée</string>
+    <string name="blocked_reason_and_waiting">%1$s. %2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="one">Attend %d tâche</item>
+        <item quantity="many">Attend %d tâches</item>
+        <item quantity="other">Attend %d tâches</item>
+    </plurals>
 </resources>

@@ -53,8 +53,8 @@ sealed interface SendResult {
     /** The server applied the mutation (or had already applied it: same `clientId`). */
     data class Applied(val value: JsonElement) : SendResult
 
-    /** The server's function refused it for good (bad argument, task gone); resending cannot help. */
-    data class Rejected(val message: String) : SendResult
+    /** The server's function refused it for good (bad argument, task gone); resending cannot help. [code] is the error's `code`, if any. */
+    data class Rejected(val message: String, val code: String? = null) : SendResult
 
     /** The token is missing, wrong or expired; keep the change until the user fixes it. */
     data object Unauthorized : SendResult
@@ -89,6 +89,11 @@ data class RemoteTask(
     val proof: TaskProof? = null,
     val claimName: String? = null,
     val claimExpiresAt: Long? = null,
+    val ref: Long? = null,
+    val plan: String? = null,
+    /** Server ids of the tasks this one waits for. */
+    val dependsOn: List<String> = emptyList(),
+    val blockedReason: String? = null,
 )
 
 /** One entry of a task's history (`getTask` in `backend/convex/lib/views.ts`); before/after as JSON objects. */

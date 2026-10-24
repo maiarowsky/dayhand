@@ -3,16 +3,16 @@
 ## One operations layer, thin identity layers
 
 ```
-Android app ──(Convex client, JWT)──> convex/app.ts ─┐
+apps (Android, macOS, Linux) ──(JWT)──> convex/app.ts ┐
                                                       ├─> domain operations (convex/lib/*.ts)
 AI agent ──(MCP, API key)──> /mcp (convex/mcp.ts) ───┤      registered as internal functions
 Claude app ──(MCP, OAuth access token)──> /mcp ──────┤      in convex/ops.ts
 dayhand CLI ──(MCP tools/call, API key)──────────────┤
 integration ──(REST /api/v1, API key)──> convex/rest.ts ┘   (same tools, lib/restRoutes.ts)
 
-Android app ──(device token)──> /auth/token ─┐
-            ──(pairing code)──> /auth/pair  ─┼─> convex/pairing.ts ──> convex/devices.ts
-dayhand CLI ──(API key)──> /devices/* ───────┘
+apps ──(device token)──> /auth/token ─┐
+     ──(pairing code)──> /auth/pair  ─┼─> convex/pairing.ts ──> convex/devices.ts
+dayhand CLI ──(API key)──> /devices/* ┘
 
 Claude app ──> /.well-known/*, /oauth/* (convex/oauthHttp.ts) ──> convex/oauth.ts
 Android app ──(JWT)──> app.lookup/decideConnectionRequest ─┐
@@ -146,8 +146,10 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 ## Reminders
 
-Reminders and the morning summary are computed on the phone, not on the server: the server
+Reminders and the morning summary are computed on the devices, not on the server: the server
 stores only the settings (`summaryTime`, `defaultReminderMinutes`) and each task's own
-`reminders` (which replace the defaults for that task), and the Android app arms AlarmManager
-from its Room copy of the tasks, in the time zone from these settings. See
-[android/README.md](../android/README.md#reminders-and-the-morning-summary).
+`reminders` (which replace the defaults for that task). Each app plans them from its local copy
+of the tasks, in the time zone from these settings, with the same rules: the Android app arms
+AlarmManager ([android/README.md](../android/README.md#reminders-and-the-morning-summary)), the
+macOS app leaves notifications with the system ([macos/README.md](../macos/README.md#how-it-works))
+and the Linux app rings them while it runs ([linux.md](linux.md#notifications)).

@@ -19,11 +19,15 @@
     <string name="agents_from">来自 %1$s</string>
     <string name="agents_policies">工具策略</string>
     <string name="agents_no_policies">没有工具策略：每个智能体密钥都可以使用其权限范围允许的所有工具。</string>
-    <string name="agents_policies_hint">在终端中用 dayhand policy set 设置。“询问”会暂停调用，直到你在这里允许。</string>
+    <string name="agents_policies_hint">点按规则即可修改。其他密钥和工具的规则请在终端用 dayhand policy set 设置。“询问”会暂停调用，直到你在这里允许。</string>
     <string name="agents_policy_any_tool">其他所有工具</string>
     <string name="agents_rule_allow">允许</string>
     <string name="agents_rule_ask">询问</string>
     <string name="agents_rule_deny">禁止</string>
+    <string name="agents_policy_name">密钥 %1$s：%2$s</string>
+    <string name="agents_rule_allow_note">%1$s 调用 %2$s 时无需询问。</string>
+    <string name="agents_rule_ask_note">%1$s 会先询问：每次调用 %2$s 都由你在这里允许或拒绝。</string>
+    <string name="agents_rule_deny_note">服务器拒绝 %1$s 调用 %2$s；读取仍然允许。</string>
     <string name="agents_hint">Dayhand 会记录你的决定，智能体据此行动。Dayhand 无法阻止智能体在 Dayhand 之外的操作。</string>
     <string name="agents_gone">此项已不在这里：已处理、已过期或已在别处移除。</string>
     <string name="agents_sending">正在发送…</string>
@@ -65,6 +69,13 @@
     <string name="agents_rejected">已拒绝：它已移到回收站。</string>
     <string name="agents_proposal_gone">此提议已在别处处理。</string>
     <string name="agents_change_failed">无法连接服务器。请重试。</string>
+
+    <string name="agents_policy_title">工具规则</string>
+    <string name="agents_policy_rule">规则</string>
+    <string name="agents_policy_hint">服务器从代理的下一次调用开始应用此规则，dayhand policy 也会显示。“允许”是默认值：设为允许的规则会从此列表消失，除非该密钥对其他所有工具的规则另有规定。</string>
+    <string name="agents_policy_set">规则已保存。代理下一次调用时生效。</string>
+    <string name="agents_policy_key_gone">服务器未修改规则：此代理密钥已被撤销或删除。</string>
+    <string name="agents_policy_refused">服务器不接受此密钥和工具的这条规则。</string>
 
     <string name="channel_approvals">审批请求</string>
     <string name="channel_approvals_description">智能体在执行操作前会先征求你的同意。Dayhand 关闭时每 15 分钟检查一次。</string>

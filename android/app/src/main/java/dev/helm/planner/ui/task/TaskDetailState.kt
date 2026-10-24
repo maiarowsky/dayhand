@@ -5,6 +5,7 @@ import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.HistoryEntry
 import dev.helm.planner.sync.HistoryState
 
@@ -26,6 +27,8 @@ sealed interface TaskDetailUiState {
         val knownLabels: List<String>,
         /** The default reminders from the settings, in minutes before the due time. */
         val defaultReminders: List<Int> = emptyList(),
+        /** The tasks this one waits for (`dependsOn`), as the phone knows them. */
+        val dependencies: List<AgentWork.Dependency> = emptyList(),
     ) : TaskDetailUiState
 }
 
@@ -49,5 +52,7 @@ interface TaskDetailActions {
     fun saveResumeNote(localId: String, note: String) {}
     fun moveToTrash(localId: String) {}
     fun restore(localId: String) {}
+    /** Ends an agent's claim on the task (`app:release`). */
+    fun release(localId: String) {}
     fun back() {}
 }

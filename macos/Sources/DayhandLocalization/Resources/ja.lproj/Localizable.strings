@@ -16,6 +16,8 @@
 	<string>%1$@ ·「%2$@」から</string>
 	<key>%@, %@</key>
 	<string>%1$@、%2$@</string>
+	<key>%@: %@ → %@</key>
+	<string>%1$@：%2$@ → %3$@</string>
 	<key>%lld h before</key>
 	<string>%lld時間前</string>
 	<key>%lld min</key>
@@ -28,6 +30,8 @@
 	<string>ペアリングコードは英数字12文字です（例：E6M8-FE02-XSNT）。</string>
 	<key>About</key>
 	<string>情報</string>
+	<key>Add</key>
+	<string>追加</string>
 	<key>Add Task</key>
 	<string>タスクを追加</string>
 	<key>Add a task (try: Pay rent fri 9am)</key>
@@ -38,14 +42,28 @@
 	<string>日付として読まずにタイトルの一部にします</string>
 	<key>Address</key>
 	<string>アドレス</string>
+	<key>After a number of times</key>
+	<string>回数で終了</string>
+	<key>Agent</key>
+	<string>エージェント</string>
+	<key>Agent: %@</key>
+	<string>エージェント：%@</string>
 	<key>All done for today.</key>
 	<string>今日の分はすべて完了しました。</string>
 	<key>Allow Notifications</key>
 	<string>通知を許可</string>
 	<key>Archive</key>
 	<string>アーカイブ</string>
+	<key>Archived</key>
+	<string>アーカイブ</string>
+	<key>As in Settings</key>
+	<string>設定どおり</string>
 	<key>As in settings (%@)</key>
 	<string>設定どおり（%@）</string>
+	<key>At a time of day</key>
+	<string>指定の時刻</string>
+	<key>Before the due time</key>
+	<string>期限の時刻の前</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>GRDB.swift（MIT）、KeyboardShortcuts（MIT）、Sparkle（MIT）を使用しています。</string>
 	<key>Cancel</key>
@@ -70,6 +88,12 @@
 	<string>確認中…</string>
 	<key>Checklist</key>
 	<string>チェックリスト</string>
+	<key>Claim ended</key>
+	<string>担当を終了</string>
+	<key>Claim renewed</key>
+	<string>担当を延長</string>
+	<key>Claimed</key>
+	<string>担当を取得</string>
 	<key>Close</key>
 	<string>閉じる</string>
 	<key>Connect</key>
@@ -86,8 +110,22 @@
 	<string>接続</string>
 	<key>Connect…</key>
 	<string>接続…</string>
+	<key>Count the next date from</key>
+	<string>次の日付の起点</string>
+	<key>Created</key>
+	<string>作成</string>
+	<key>Created as the next repeat</key>
+	<string>次の繰り返しとして作成</string>
+	<key>Custom</key>
+	<string>カスタム</string>
 	<key>Daily</key>
 	<string>毎日</string>
+	<key>Day</key>
+	<string>日付</string>
+	<key>Day %lld</key>
+	<string>%lld日</string>
+	<key>Day of the month</key>
+	<string>毎月の日</string>
 	<key>Dayhand %@ (preview) is available</key>
 	<string>Dayhand %@（プレビュー版）が利用できます</string>
 	<key>Dayhand %@ is available</key>
@@ -118,6 +156,8 @@
 	<string>Dayhand、今日の残りはありません</string>
 	<key>Default reminders</key>
 	<string>デフォルトのリマインダー</string>
+	<key>Deleted %@ · gone after %@</key>
+	<string>%1$@に削除 · %2$@以降に消去</string>
 	<key>Disconnect</key>
 	<string>接続を解除</string>
 	<key>Disconnect this Mac?</key>
@@ -138,10 +178,26 @@
 	<string>ダウンロード中… %lld%%</string>
 	<key>Due</key>
 	<string>期限</string>
+	<key>Edited</key>
+	<string>編集</string>
+	<key>Ends</key>
+	<string>終了</string>
+	<key>Enter a number from 1 to %lld.</key>
+	<string>1〜%lldの数を入力してください。</string>
+	<key>Every how many</key>
+	<string>間隔</string>
+	<key>Frequency</key>
+	<string>頻度</string>
 	<key>General</key>
 	<string>一般</string>
 	<key>Hides the tasks done today</key>
 	<string>今日完了したタスクを隠します</string>
+	<key>History</key>
+	<string>履歴</string>
+	<key>History is unavailable offline.</key>
+	<string>オフラインでは履歴を表示できません。</string>
+	<key>How many times</key>
+	<string>回数</string>
 	<key>In progress</key>
 	<string>進行中</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
@@ -162,6 +218,8 @@
 	<string>言語</string>
 	<key>Last checked %@.</key>
 	<string>最終確認：%@。</string>
+	<key>Last date</key>
+	<string>最終日</string>
 	<key>Later</key>
 	<string>あとで</string>
 	<key>Links</key>
@@ -174,6 +232,8 @@
 	<string>完了にする</string>
 	<key>Mark as not done</key>
 	<string>未完了に戻す</string>
+	<key>Marked done</key>
+	<string>完了にした</string>
 	<key>Menus that come with macOS change language when Dayhand restarts.</key>
 	<string>macOS 標準のメニューは Dayhand の再起動後に切り替わります。</string>
 	<key>Monthly</key>
@@ -184,6 +244,12 @@
 	<string>ゴミ箱に入れる</string>
 	<key>Move “%@” to the trash?</key>
 	<string>「%@」をゴミ箱に入れますか？</string>
+	<key>Moved on the board</key>
+	<string>ボード上で移動</string>
+	<key>Moved to the trash</key>
+	<string>ゴミ箱に移動</string>
+	<key>Never</key>
+	<string>なし</string>
 	<key>New Task</key>
 	<string>新規タスク</string>
 	<key>New Task…</key>
@@ -194,8 +260,14 @@
 	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
+	<key>No changes recorded yet.</key>
+	<string>まだ変更の記録はありません。</string>
 	<key>No day</key>
 	<string>日付なし</string>
+	<key>No day picked: the completion day's weekday.</key>
+	<string>曜日を選ばない場合は完了日の曜日になります。</string>
+	<key>No day picked: the due date's weekday.</key>
+	<string>曜日を選ばない場合は期限日の曜日になります。</string>
 	<key>No server connected.</key>
 	<string>サーバーが接続されていません。</string>
 	<key>None</key>
@@ -230,12 +302,22 @@
 	<string>通知にはアプリバンドル（scripts/build-app.sh）が必要です。swift run にはありません。</string>
 	<key>Now</key>
 	<string>いま</string>
+	<key>Now changed</key>
+	<string>「いま」を変更</string>
 	<key>Now, %@</key>
 	<string>いま（%@）</string>
 	<key>OK</key>
 	<string>OK</string>
+	<key>Offline: this is the history from the last connection.</key>
+	<string>オフライン：前回接続したときの履歴です。</string>
 	<key>On a computer signed in to your server, run dayhand pair and type the code it shows, or open the link it prints. The code works once, for 10 minutes.</key>
 	<string>サーバーにサインインしているコンピュータで dayhand pair を実行し、表示されたコードを入力するか、出力されたリンクを開いてください。コードは1回だけ、10分間有効です。</string>
+	<key>On a day</key>
+	<string>日付で終了</string>
+	<key>On the due day</key>
+	<string>期限日</string>
+	<key>On these days</key>
+	<string>曜日</string>
 	<key>Open Dayhand</key>
 	<string>Dayhand を開く</string>
 	<key>Open System Settings</key>
@@ -256,6 +338,10 @@
 	<string>タスクを読み込めませんでした：%@</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
 	<string>公開版は署名されており自動でアップデートできます。この Mac でビルドしたコピーはできません。</string>
+	<key>Reminder day</key>
+	<string>通知の日</string>
+	<key>Reminder time</key>
+	<string>通知の時刻</string>
 	<key>Reminders</key>
 	<string>リマインダー</string>
 	<key>Reminders and the morning summary are on.</key>
@@ -270,10 +356,20 @@
 	<string>Dayhand を再起動</string>
 	<key>Restore</key>
 	<string>元に戻す</string>
+	<key>Restore %@</key>
+	<string>元に戻す：%@</string>
+	<key>Restored</key>
+	<string>復元</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日になります。</string>
+	<key>Revert</key>
+	<string>元に戻す</string>
 	<key>Save Note</key>
 	<string>メモを保存</string>
+	<key>Save Reminders</key>
+	<string>通知を保存</string>
+	<key>Save Repeat</key>
+	<string>繰り返しを保存</string>
 	<key>Select a task to see its details.</key>
 	<string>タスクを選ぶと詳細が表示されます。</string>
 	<key>Server</key>
@@ -282,6 +378,8 @@
 	<string>サーバーアドレス</string>
 	<key>Shortcut from any app:</key>
 	<string>どのアプリからでも使えるショートカット：</string>
+	<key>Show</key>
+	<string>表示</string>
 	<key>Shows the tasks done today</key>
 	<string>今日完了したタスクを表示します</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
@@ -310,8 +408,18 @@
 	<string>変更を保存できませんでした：%@</string>
 	<key>The code is wrong, used or expired. Run dayhand pair again for a new one.</key>
 	<string>コードが間違っているか、使用済みか、期限切れです。dayhand pair をもう一度実行して新しいコードを取得してください。</string>
+	<key>The day I complete it</key>
+	<string>完了した日</string>
+	<key>The day before</key>
+	<string>前日</string>
 	<key>The downloaded update did not pass its signature check, so it was not installed.</key>
 	<string>ダウンロードしたアップデートは署名の確認に失敗したため、インストールされませんでした。</string>
+	<key>The due date</key>
+	<string>期限日</string>
+	<key>The history starts once this task reaches the server.</key>
+	<string>履歴は、このタスクがサーバーに届いてから記録されます。</string>
+	<key>The last day of the month</key>
+	<string>月末</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>新しいバージョンの一覧を読み取れませんでした。後でもう一度お試しください。</string>
 	<key>The note is too long.</key>
@@ -350,12 +458,16 @@
 	<string>ラベルが多すぎるか、長すぎるものがあります。</string>
 	<key>These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.</key>
 	<string>これらはサーバーの設定から取得されるため、電話、エージェント、この Mac で一致します。電話または dayhand で変更してください。</string>
+	<key>These ring only when the task has a time.</key>
+	<string>タスクに時刻があるときだけ通知します。</string>
 	<key>This Mac</key>
 	<string>この Mac</string>
 	<key>This version</key>
 	<string>このバージョン</string>
 	<key>Tick %@</key>
 	<string>チェック：%@</string>
+	<key>Time</key>
+	<string>時刻</string>
 	<key>Time zone</key>
 	<string>タイムゾーン</string>
 	<key>Title</key>
@@ -374,6 +486,8 @@
 	<string>明日</string>
 	<key>Too many wrong codes on this server. Try again in %@.</key>
 	<string>このサーバーで間違ったコードが多すぎます。%@後にもう一度お試しください。</string>
+	<key>Trash</key>
+	<string>ゴミ箱</string>
 	<key>Try Again</key>
 	<string>再試行</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
@@ -418,6 +532,10 @@
 	<string>毎年</string>
 	<key>Yesterday</key>
 	<string>昨日</string>
+	<key>You (CLI)</key>
+	<string>あなた（CLI）</string>
+	<key>You (app)</key>
+	<string>あなた（アプリ）</string>
 	<key>You have %@.</key>
 	<string>現在のバージョンは %@ です。</string>
 	<key>Your day plan, offline first. Licensed under the Apache License 2.0.</key>
@@ -438,6 +556,10 @@
 	<string>家, 仕事</string>
 	<key>next step</key>
 	<string>次のステップ</string>
+	<key>no</key>
+	<string>いいえ</string>
+	<key>none</key>
+	<string>なし</string>
 	<key>now</key>
 	<string>いま</string>
 	<key>on %@</key>
@@ -534,5 +656,7 @@
 	<string>第3水曜日</string>
 	<key>until %@</key>
 	<string>%@まで</string>
+	<key>yes</key>
+	<string>はい</string>
 </dict>
 </plist>

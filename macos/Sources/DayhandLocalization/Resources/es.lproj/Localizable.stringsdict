@@ -98,6 +98,38 @@
 			<string>%lld tareas hoy</string>
 		</dict>
 	</dict>
+	<key>%lld times, this one included</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld vez, contando esta</string>
+			<key>other</key>
+			<string>%lld veces, contando esta</string>
+		</dict>
+	</dict>
+	<key>At most %lld reminders.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Como máximo %lld recordatorio.</string>
+			<key>other</key>
+			<string>Como máximo %lld recordatorios.</string>
+		</dict>
+	</dict>
 	<key>Dayhand, %lld open today</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -210,6 +242,22 @@
 			<string>Enviando %lld cambios…</string>
 		</dict>
 	</dict>
+	<key>Tasks stay here for %lld days, then they are deleted for good.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Las tareas se quedan aquí %lld día y después se eliminan definitivamente.</string>
+			<key>other</key>
+			<string>Las tareas se quedan aquí %lld días y después se eliminan definitivamente.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -224,6 +272,22 @@
 			<string>El título debe tener de 1 a %lld carácter.</string>
 			<key>other</key>
 			<string>El título debe tener de 1 a %lld caracteres.</string>
+		</dict>
+	</dict>
+	<key>The trash is empty. Deleted tasks stay here for %lld days.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>La papelera está vacía. Las tareas eliminadas se quedan aquí %lld día.</string>
+			<key>other</key>
+			<string>La papelera está vacía. Las tareas eliminadas se quedan aquí %lld días.</string>
 		</dict>
 	</dict>
 </dict>

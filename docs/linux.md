@@ -31,6 +31,18 @@ later and sends them. **⋯ → Disconnect** forgets the sign-in here; `dayhand 
 Closing the window keeps Dayhand in the tray, so reminders keep ringing. **Quit Dayhand** (tray or **⋯**) stops it.
 Without a tray, closing the window quits.
 
+## Task details
+
+Click a task row to open its details on the right (windows at least 800 pixels wide).
+In a narrower window, the details replace Today and **Back** returns to the list.
+Title, status, current work, where you stopped, comma-separated labels and checklist edits save locally and queue for sync.
+The due field reads English date phrases like quick add, previews them with **I understand**, and applies them with Return or **Set date**.
+**Today** keeps the time, **No day** clears day and time, and **Remove time** keeps the day.
+Notes save only with **Save note**; repeat rules, reminders and links are previews, not editors.
+Archive or trash keeps the selected details open even though the row leaves Today.
+In the trash, all edits are disabled and **Restore** brings the task back.
+There is no trash list in this version.
+
 ## Quick add from any app (Hyprland)
 
 `dayhand-qt --quick-add` opens the small quick add window. Only one Dayhand runs per session: when it is already
