@@ -171,8 +171,8 @@ run yours in one of two ways:
 - **On this computer**: follow [Quick start](#quick-start). Data and keys stay in a private folder.
 - **On your own free Convex account**: `dayhand server deploy` logs in to Convex in the browser,
   deploys, signs `dayhand` in and prints the server address and a pairing code. This gives a
-  public HTTPS address, which the Claude apps and a phone away from home need. Run it again to
-  update; keys and data are kept.
+  public HTTPS address, which the Claude apps and a phone away from home need. Follow the
+  [server update guide](docs/deploy.md#updating) to update; keys and data are kept.
 
 See every step first, without changing anything:
 

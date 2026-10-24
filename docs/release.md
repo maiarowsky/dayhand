@@ -15,7 +15,7 @@ The CLI goes to npm as `dayhand` (`npm i -g dayhand`) and to the Homebrew tap `m
 | `release-please-config.json`, `.release-please-manifest.json` | release-please setup: only `cli/`, component `dayhand`, also bumps the Homebrew formula | |
 | `.github/workflows/publish-npm.yml` | on a `dayhand-v*` tag: tests, then `npm publish --provenance` with trusted publishing (OIDC, no token) | variable `DAYHAND_PUBLISH_ENABLED=true`, the `npm` environment, and `cli/scripts/check-release.mjs` |
 | `packaging/homebrew/dayhand.rb` | the formula: installs the npm tarball, links `dayhand` and `dh`, man pages and completion | copied into the tap `maiarowsky/homebrew-tap` by hand, with the tarball's `sha256` |
-| `cli/package.json` | name `dayhand`, public, `repository` `maiarowsky/dayhand` (`cli/`); `npm pack` holds `dist/`, the man pages, README and LICENSE | |
+| [`cli/package.json`](../cli/package.json) | owns package metadata and the `files`, `bin`, `man` and `prepack` fields; [`pack-files.mjs`](../cli/scripts/pack-files.mjs) stages the packaged backend and other release files | |
 
 `check-release.mjs` stops the publish job while the package is private, when the tag does not
 match the version, when `repository.url` is missing, or when npm is older than 11.5.1.
@@ -104,8 +104,8 @@ fixed X.Y.Z+1. In the tap, revert the formula commit. To stop all releases at on
 ```sh
 cd cli
 npm ci --ignore-scripts
-npm pack --dry-run               # the file list: dist/, man/dayhand.1, man/dh.1, README.md, LICENSE, package.json
-npm pack                         # runs prepack: build, copies man/dayhand.1, man/dh.1 and LICENSE into the package
+npm pack --dry-run               # inspect the generated file list
+npm pack                         # prepack builds the CLI and stages release files with scripts/pack-files.mjs
 mkdir -p /tmp/dayhand-try && cd /tmp/dayhand-try
 npm init -y >/dev/null && npm install --ignore-scripts <path to>/dayhand-X.Y.Z.tgz
 npx dayhand --version && npx dh --help && npx dayhand completion bash | head

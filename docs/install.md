@@ -70,17 +70,9 @@ repository and nothing to build:
 - **On your own free Convex account** (from macOS, Linux or Windows): `dayhand server deploy` logs in
   to Convex in the browser and deploys. The server gets a public HTTPS address.
 
-The packaged backend is not run from the package folder (it may be read-only, as with Homebrew): the
-first run copies it to a folder in your user data folder, one per `dayhand` version
-(`~/Library/Application Support/dayhand-data/backend/<version>` on macOS,
-`${XDG_DATA_HOME:-~/.local/share}/dayhand-data/backend/<version>` on Linux,
-`%LOCALAPPDATA%\dayhand-data\Data\backend\<version>` on Windows),
-installs the dependencies there and reuses the folder on the next run. After an update the new
-version makes its own copy; you can delete the folders of older versions. Keys and the server's data
-stay where they were, in the server's private folder. A clone of the repository still works, and wins
-when you run `dayhand` from it (or pass `--backend <folder>`).
-
-Both are described step by step, with costs, backups and updates, in [Your own server](deploy.md).
+Backend selection, the writable copy's location, and keeping keys and data across updates are
+covered in [Your own server](deploy.md#run-your-own-server-in-5-minutes), together with costs,
+backups and updates.
 The apps also work with no server at all, each on its own device.
 
 ## Android

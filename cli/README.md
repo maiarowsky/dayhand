@@ -27,10 +27,9 @@ source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help com
 In a checkout, build and link it from this folder instead: `npm ci --ignore-scripts && npm run build && npm link`
 (also the way to get it before the first release; [every way to install](../docs/install.md)).
 
-`dayhand server start` and `dayhand server deploy` need no clone of the repository: the package carries
-the Dayhand backend (`backend/`, copied in by prepack), runs it from a copy in your system's data
-folder, once per version, and uses the `backend/` of a clone instead when you run from one
-or pass `--backend` ([your own server](../docs/deploy.md#run-your-own-server-in-5-minutes)).
+The package includes the backend for `dayhand server start` and `dayhand server deploy`; no checkout
+is needed. [Your own server](../docs/deploy.md#run-your-own-server-in-5-minutes) explains backend
+selection and the writable per-version copy.
 
 For key creation, automatic sign-in during server setup, and credential storage, see
 [signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
@@ -90,7 +89,7 @@ tests/                unit tests (*.unit.test.ts) and tests against a real local
 (cd ../backend && npm ci --ignore-scripts)   # the tests start the backend with its scripts
 npm test                                      # builds, then runs everything
 npm run test:unit                             # pure tests only (dates, config, output, completion)
-npm pack                                      # the tarball npm publishes: dist/, the man pages, the backend, README and LICENSE
+npm pack                                      # create the release tarball locally (nothing is published)
 ```
 
 The tests never touch the real keychain or config folder: every run gets its own

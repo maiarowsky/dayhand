@@ -22,15 +22,18 @@ first release, from source: [Install](install.md)). The package carries the serv
 `backend/` folder of this repository, so there is nothing to clone. Because the installed package
 folder may be read-only (a Homebrew keg, a global npm prefix), `dayhand server` runs the setup from a
 copy of that backend in your user data folder: `~/Library/Application Support/dayhand-data/backend/<version>`
-on macOS, `${XDG_DATA_HOME:-~/.local/share}/dayhand-data/backend/<version>` on Linux,
-`%LOCALAPPDATA%\dayhand-data\Data\backend\<version>` on Windows.
-The copy is made once per `dayhand` version: the dependencies are installed and the Convex local
-backend is downloaded into it once, and the next run, or `dayhand server start`, reuses it. A new
+on macOS, `${XDG_DATA_HOME:-$HOME/.local/share}/dayhand-data/backend/<version>` on Linux
+(relative `XDG_DATA_HOME` values are ignored), `%LOCALAPPDATA%\dayhand-data\Data\backend\<version>`
+on Windows.
+The copy is made once per `dayhand` version: dependencies are installed there when missing, and
+`dayhand server start` also downloads the Convex local backend there once. Later runs reuse it. A new
 `dayhand` version makes a new copy (delete the folders of old versions when you like). Your keys and
 server state stay in the server's private folder (`DAYHAND_SERVER_CONFIG_DIR`, below), not in the copy.
 
-A clone of the repository still works and wins when you run `dayhand` from it, or from a folder next to its
-`backend/`, or pass `--backend <folder>` or set `DAYHAND_BACKEND_DIR`; it is then used in place, as before:
+An explicit `--backend <folder>` (or `DAYHAND_BACKEND_DIR` when the flag is absent) selects a backend;
+an invalid selection fails rather than falling back. Without an explicit path, the order is the
+backend in the CLI's own source checkout, a backend in the current folder or its ancestors (including
+their `backend/` subfolders), then the packaged backend. Checkouts run in place:
 
 ```sh
 git clone https://github.com/maiarowsky/dayhand.git
@@ -169,11 +172,8 @@ small next to these numbers; the Convex dashboard shows what you use.
 
 For an npm or Homebrew installation, use the writable backend copy made by `dayhand server deploy`
 or `dayhand server start`, not the installed package directory. `<backend-copy>` is the path printed
-as `Using the Dayhand backend in …` during setup, for the version shown by `dayhand --version`:
-
-- macOS: `~/Library/Application Support/dayhand-data/backend/<version>`;
-- Linux: `${XDG_DATA_HOME:-$HOME/.local/share}/dayhand-data/backend/<version>`;
-- Windows: `%LOCALAPPDATA%\dayhand-data\Data\backend\<version>`.
+as `Using the Dayhand backend in …` during setup, for the version shown by `dayhand --version`.
+The platform-specific locations are listed in [server setup](#run-your-own-server-in-5-minutes).
 
 Export the data (tasks, history, keys' hashes, devices) to an absolute zip-file path outside the
 backend copy and the server's private folder:

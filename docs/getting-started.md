@@ -5,7 +5,7 @@ tasks from the command line, the plan full screen in the terminal, the phone con
 agent working on the plan with a key of its own. It takes about ten minutes, most of it the first
 download.
 
-You need [Node.js](https://nodejs.org) 22.12 or newer and git. On macOS and Linux, steps 2–6 use the
+You need [Node.js](https://nodejs.org) 22.12 or newer. On macOS and Linux, steps 2–6 use the
 same local server and plan. On Windows, use `dayhand server deploy` in step 2 and keep that Convex
 server for the whole walkthrough; the local server is for macOS and Linux only. The shell examples
 use a POSIX shell (for example, Git Bash on Windows).
@@ -33,10 +33,10 @@ dayhand server start
 
 The first run copies the packaged backend to your user data folder (once per `dayhand` version),
 installs its dependencies from the lockfile, downloads the Convex local backend once (a pinned version
-whose checksum is checked), deploys Dayhand to it, creates a key for `dayhand` and signs this computer in with it, and prints a
-pairing code for the phone. Data and keys stay in a private folder on this computer; no account is
-needed. The server listens on `127.0.0.1` only and runs until you press Ctrl+C. The same command starts
-it again later, with its data.
+whose checksum is checked), deploys Dayhand to it, creates a key for `dayhand`, signs this computer
+in with it and prints a pairing code for the phone. Data and keys stay in a private folder on this
+computer; no account is needed. The server listens on `127.0.0.1` only and runs until you press Ctrl+C.
+The same command starts it again later, with its data.
 
 Leave it running and open a second terminal for the next steps. In that second
 terminal, select the local server explicitly:
