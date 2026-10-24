@@ -30,7 +30,7 @@ import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
-/** One way to use Helm at first start: an outline icon on a tile, a heading, what it means, then its buttons. */
+/** One way to use Dayhand at first start: an outline icon on a tile, a heading, what it means, then its buttons. */
 @Composable
 internal fun ChoiceCard(icon: LineIcon, title: String, body: String, tag: String, buttons: @Composable ColumnScope.() -> Unit) {
     val p = palette

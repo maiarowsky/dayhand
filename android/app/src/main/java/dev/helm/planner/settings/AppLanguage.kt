@@ -13,7 +13,7 @@ enum class AppLanguage(val tag: String?) {
 }
 
 object AppLanguages {
-    /** Per-app languages exist from Android 13; before that Helm follows the phone. */
+    /** Per-app languages exist from Android 13; before that Dayhand follows the phone. */
     val supported: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     fun current(context: Context): AppLanguage {

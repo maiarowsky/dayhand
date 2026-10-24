@@ -57,7 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// `helm://pair?…` and `dayhand://pair?…` links (the QR code of `hlm pair`).
+    /// `dayhand://pair?…` and `helm://pair?…` links (the QR code of `dayhand pair`).
     func application(_ application: NSApplication, open urls: [URL]) {
         MainActor.assumeIsolated {
             for url in urls { AppModel.shared.open(url) }

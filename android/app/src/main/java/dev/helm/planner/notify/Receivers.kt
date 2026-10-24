@@ -21,7 +21,7 @@ private fun BroadcastReceiver.handle(context: Context, block: suspend AppContain
     }
 }
 
-/** Helm's own alarms and the "Done" button of a reminder; not reachable from other apps. */
+/** Dayhand's own alarms and the "Done" button of a reminder; not reachable from other apps. */
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {

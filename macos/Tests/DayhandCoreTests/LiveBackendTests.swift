@@ -4,11 +4,11 @@ import Testing
 
 /**
  * Against a real local backend (`npm run backend:start` in backend/, never production): pairs with a code from
- * `hlm pair`, works offline, syncs, and checks every change on the server. Off unless these are set:
+ * `dayhand pair`, works offline, syncs, and checks every change on the server. Off unless these are set:
  *
  *     DAYHAND_LIVE_SITE=http://127.0.0.1:3211   # the HTTP actions URL
- *     DAYHAND_LIVE_CODE=XXXX-XXXX-XXXX          # from hlm pair, used once
- *     DAYHAND_LIVE_CLI_TASK="<title>"           # optional: a task added with hlm before the run
+ *     DAYHAND_LIVE_CODE=XXXX-XXXX-XXXX          # from dayhand pair, used once
+ *     DAYHAND_LIVE_CLI_TASK="<title>"           # optional: a task added with dayhand before the run
  */
 @Suite(.enabled(if: LiveBackend.site != nil && LiveBackend.code != nil), .serialized)
 struct LiveBackendTests {

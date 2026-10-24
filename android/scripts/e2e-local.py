@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end check of Helm on this phone only, and of moving that plan to a server later.
+"""End-to-end check of Dayhand on this phone only, and of moving that plan to a server later.
 
 1. First start: "On this phone only" comes first. "Try with sample data" fills Today, the
    calendar and the board; the banner's "Remove them" takes the sample plan away again.
@@ -16,7 +16,7 @@ The second address of the same backend is the emulator's own 127.0.0.1, forwarde
 `adb reverse` (the script sets it up), so one local backend plays both servers.
 
 Requirements as for e2e-offline.py: a running emulator, the debug APK, the local backend
-(npm run backend:start), HELM_URL and HELM_API_KEY of the app user, here with scope full for
+(npm run backend:start), DAYHAND_URL and DAYHAND_API_KEY of the app user, here with scope full for
 the import check.
 
   python3 android/scripts/e2e-local.py --apk app-debug.apk --shots DIR
@@ -49,7 +49,7 @@ def absent(text, timeout=3):
 
 
 def server_titles():
-    return {t["title"] for t in json.loads(base.helm_cli("list", "--done", "--json"))}
+    return {t["title"] for t in json.loads(base.dayhand_cli("list", "--done", "--json"))["result"]}
 
 
 def type_code(code):
@@ -108,7 +108,7 @@ def first_start():
     shell("pm", "clear", PACKAGE)
     time.sleep(2)
     shell("am", "start", "-S", "-W", "-n", base.ACTIVITY)
-    find(text="Welcome to Helm", timeout=120)
+    find(text="Welcome to Dayhand", timeout=120)
 
 
 def open_settings_page(row):
@@ -132,11 +132,11 @@ def pull_backup():
 
 
 def import_dry_run(content):
-    url = os.environ.get("HELM_URL", "").rstrip("/") + "/api/v1/import?dryRun=true"
+    url = base.env("URL", "").rstrip("/") + "/api/v1/import?dryRun=true"
     request = urllib.request.Request(
         url,
         data=json.dumps({"content": content}).encode(),
-        headers={"Authorization": f"Bearer {os.environ.get('HELM_API_KEY', '')}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {base.env('API_KEY', '')}", "Content-Type": "application/json"},
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=30) as response:
@@ -182,7 +182,7 @@ def main():
     tap(find(text="Share a backup"))
     time.sleep(3)
     shell("input", "keyevent", "KEYCODE_BACK")
-    find(text="Saved helm-backup-")
+    find(text="Saved dayhand-backup-")
     shot("05-settings-backup.png")
     name, backup, content = pull_backup()
     titles = {t["title"] for t in backup["tasks"]}
@@ -267,8 +267,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True)
     parser.add_argument("--server-url", default="http://10.0.2.2:3211", help="HTTP actions URL as the emulator sees it")
-    parser.add_argument("--site-port", type=int, default=3211, help="the backend's HTTP actions port (HELM_SITE_PORT)")
-    parser.add_argument("--convex-port", type=int, default=3210, help="the backend's Convex port (HELM_PORT)")
+    parser.add_argument("--site-port", type=int, default=3211, help="the backend's HTTP actions port (DAYHAND_SITE_PORT)")
+    parser.add_argument("--convex-port", type=int, default=3210, help="the backend's Convex port (DAYHAND_PORT)")
     parser.add_argument("--shots", help="directory for screenshots")
     parser.add_argument("--backup-out", help="where to save the backup pulled from the phone")
     parser.add_argument("--import-check", action="store_true", help="dry-run the backup through POST /api/v1/import")

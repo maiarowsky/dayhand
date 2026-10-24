@@ -174,10 +174,10 @@ class HttpTaskRemoteTest {
         val remote = HttpTaskRemote("http://h", "t", transport = { url, _, body ->
             assertEquals("http://h/api/query", url)
             sent = Json.parseToJsonElement(body).jsonObject
-            HttpResponse(200, """{"status":"success","value":{"format":"markdown","content":"# Helm plan"}}""")
+            HttpResponse(200, """{"status":"success","value":{"format":"markdown","content":"# Dayhand plan"}}""")
         })
         val result = PlanExporter(remote).export(ExportFormat.MARKDOWN, at = 1_761_130_000_000L, today = "2026-10-22")
-        assertEquals(ExportResult.Ready(ExportFormat.MARKDOWN, "helm-plan-2026-10-22.md", "# Helm plan"), result)
+        assertEquals(ExportResult.Ready(ExportFormat.MARKDOWN, "dayhand-plan-2026-10-22.md", "# Dayhand plan"), result)
         assertEquals("app:exportPlan", sent!!.getValue("path").jsonPrimitive.content)
         val args = sent!!.getValue("args").jsonArray[0].jsonObject
         assertEquals("markdown", args.getValue("format").jsonPrimitive.content)

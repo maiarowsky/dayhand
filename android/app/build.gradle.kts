@@ -11,15 +11,26 @@ val commitCount = providers.exec {
     isIgnoreExitValue = true
 }.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }
 
-// The server the Connect screen offers first (HTTP actions URL), -Phelm.serverUrl=…; empty by default, so a
-// public build starts with an empty address and the offline choice.
-val defaultServerUrl = providers.gradleProperty("helm.serverUrl").orElse("")
+// The server the Connect screen offers first (HTTP actions URL), -Pdayhand.serverUrl=…; empty by default, so a
+// public build starts with an empty address and the offline choice. -Phelm.serverUrl, the name before the
+// rename, still works.
+val defaultServerUrl = providers.gradleProperty("dayhand.serverUrl")
+    .orElse(providers.gradleProperty("helm.serverUrl"))
+    .orElse("")
 
-// Release signing from a keystore kept outside the repository: HELM_RELEASE_KEYSTORE (PKCS12),
-// HELM_RELEASE_PASSWORD_FILE (one line; store and key password) and HELM_RELEASE_KEY_ALIAS (default helm).
-// Without HELM_RELEASE_KEYSTORE the release build stays unsigned; debug builds never use it.
-val releaseKeystore = providers.environmentVariable("HELM_RELEASE_KEYSTORE").orNull?.let(::File)
-val releasePassword = providers.environmentVariable("HELM_RELEASE_PASSWORD_FILE").orNull
+// DAYHAND_<name>, else HELM_<name> from before the rename (with a warning in the build output).
+fun releaseVariable(name: String): String? =
+    providers.environmentVariable("DAYHAND_$name").orNull
+        ?: providers.environmentVariable("HELM_$name").orNull?.also {
+            logger.warn("HELM_$name is deprecated; set DAYHAND_$name instead")
+        }
+
+// Release signing from a keystore kept outside the repository: DAYHAND_RELEASE_KEYSTORE (PKCS12),
+// DAYHAND_RELEASE_PASSWORD_FILE (one line; store and key password) and DAYHAND_RELEASE_KEY_ALIAS (default
+// helm, the alias of the key made before the rename). Without DAYHAND_RELEASE_KEYSTORE the release build stays
+// unsigned; debug builds never use it.
+val releaseKeystore = releaseVariable("RELEASE_KEYSTORE")?.let(::File)
+val releasePassword = releaseVariable("RELEASE_PASSWORD_FILE")
     ?.let { path -> providers.fileContents(layout.projectDirectory.file(path)).asText.map { it.trim() } }
 
 android {
@@ -32,7 +43,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount.get()
-        versionName = "0.8.4"
+        versionName = "0.9.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER_URL", "\"${defaultServerUrl.get()}\"")
 
@@ -45,12 +56,12 @@ android {
     signingConfigs {
         if (releaseKeystore != null) {
             create("release") {
-                require(releaseKeystore.isFile) { "HELM_RELEASE_KEYSTORE is not a file: $releaseKeystore" }
-                val password = requireNotNull(releasePassword) { "HELM_RELEASE_PASSWORD_FILE is not set" }.get()
+                require(releaseKeystore.isFile) { "DAYHAND_RELEASE_KEYSTORE is not a file: $releaseKeystore" }
+                val password = requireNotNull(releasePassword) { "DAYHAND_RELEASE_PASSWORD_FILE is not set" }.get()
                 storeFile = releaseKeystore
                 storeType = "PKCS12"
                 storePassword = password
-                keyAlias = providers.environmentVariable("HELM_RELEASE_KEY_ALIAS").getOrElse("helm")
+                keyAlias = releaseVariable("RELEASE_KEY_ALIAS") ?: "helm"
                 keyPassword = password
             }
         }

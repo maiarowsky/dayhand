@@ -35,7 +35,7 @@
     <string name="calendar_feed_title">Calendar</string>
     <string name="calendar_feed_off">Off</string>
     <string name="calendar_feed_on">On</string>
-    <string name="calendar_feed_intro">Show your dated tasks in Google Calendar or Apple Calendar. The calendar is read-only: plan in Helm, and it follows. Tasks with a time are events, the rest all-day events, repeating ones with their rule, reminders as alerts.</string>
+    <string name="calendar_feed_intro">Show your dated tasks in Google Calendar or Apple Calendar. The calendar is read-only: plan in Dayhand, and it follows. Tasks with a time are events, the rest all-day events, repeating ones with their rule, reminders as alerts.</string>
     <string name="calendar_feed_turn_on">Turn on the calendar address</string>
     <string name="calendar_feed_address">Address</string>
     <string name="calendar_feed_secret">Anyone with this address can see your dated tasks. Share it only with your own calendar; if it leaks, create a new address.</string>
@@ -59,9 +59,9 @@
     <string name="calendar_feed_exporting">Preparing the file…</string>
     <string name="calendar_feed_export_failed">Cannot export: the server cannot be reached.</string>
     <string name="calendar_feed_loading">Reading the calendar address…</string>
-    <string name="calendar_feed_not_connected">Connect to a server first: the calendar address is served by your Helm server.</string>
+    <string name="calendar_feed_not_connected">Connect to a server first: the calendar address is served by your Dayhand server.</string>
     <string name="calendar_feed_failed">The server cannot be reached. Try again when the phone is online.</string>
     <string name="calendar_feed_unauthorized">The server signed this phone out. Connect again in Settings → Server.</string>
     <string name="calendar_feed_retry">Try again</string>
-    <string name="calendar_feed_share_title">Helm calendar</string>
+    <string name="calendar_feed_share_title">Dayhand calendar</string>
 </resources>

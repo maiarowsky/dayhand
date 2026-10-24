@@ -35,7 +35,7 @@
     <string name="calendar_feed_title">Kalendarz</string>
     <string name="calendar_feed_off">Wyłączony</string>
     <string name="calendar_feed_on">Włączony</string>
-    <string name="calendar_feed_intro">Pokaż zadania z datą w Kalendarzu Google lub Apple. Kalendarz jest tylko do odczytu: planujesz w Helmie, a on nadąża. Zadania z godziną są wydarzeniami, pozostałe całodniowymi, powtarzające się mają swoją regułę, a przypomnienia są alertami.</string>
+    <string name="calendar_feed_intro">Pokaż zadania z datą w Kalendarzu Google lub Apple. Kalendarz jest tylko do odczytu: planujesz w aplikacji Dayhand, a on nadąża. Zadania z godziną są wydarzeniami, pozostałe całodniowymi, powtarzające się mają swoją regułę, a przypomnienia są alertami.</string>
     <string name="calendar_feed_turn_on">Włącz adres kalendarza</string>
     <string name="calendar_feed_address">Adres</string>
     <string name="calendar_feed_secret">Każdy, kto zna ten adres, widzi Twoje zadania z datą. Dodaj go tylko do własnego kalendarza; jeśli wycieknie, utwórz nowy adres.</string>
@@ -59,9 +59,9 @@
     <string name="calendar_feed_exporting">Przygotowuję plik…</string>
     <string name="calendar_feed_export_failed">Nie można wyeksportować: brak połączenia z serwerem.</string>
     <string name="calendar_feed_loading">Odczytuję adres kalendarza…</string>
-    <string name="calendar_feed_not_connected">Najpierw połącz się z serwerem: adres kalendarza udostępnia Twój serwer Helma.</string>
+    <string name="calendar_feed_not_connected">Najpierw połącz się z serwerem: adres kalendarza udostępnia Twój serwer Dayhand.</string>
     <string name="calendar_feed_failed">Brak połączenia z serwerem. Spróbuj ponownie, gdy telefon będzie online.</string>
     <string name="calendar_feed_unauthorized">Serwer wylogował ten telefon. Połącz się ponownie w Ustawienia → Serwer.</string>
     <string name="calendar_feed_retry">Spróbuj ponownie</string>
-    <string name="calendar_feed_share_title">Kalendarz Helma</string>
+    <string name="calendar_feed_share_title">Kalendarz Dayhand</string>
 </resources>

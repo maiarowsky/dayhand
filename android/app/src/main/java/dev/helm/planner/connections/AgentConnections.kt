@@ -27,7 +27,7 @@ enum class AgentScope(val wire: String) {
 data class AgentConnection(
     val id: String,
     val clientName: String,
-    /** The host Helm fetched the client's metadata from; null for a client that registered itself. */
+    /** The host Dayhand fetched the client's metadata from; null for a client that registered itself. */
     val clientHost: String?,
     val redirectHost: String,
     val scopes: Set<AgentScope>,

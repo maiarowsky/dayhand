@@ -82,7 +82,7 @@ class AndroidNotifier(private val context: Context) : ReminderNotifier {
 
     /**
      * The icon tint: the accent of the chosen palette for the shade's own light or dark look (the system draws the
-     * shade by its mode, not Helm's), so it keeps its contrast there.
+     * shade by its mode, not Dayhand's), so it keeps its contrast there.
      */
     private fun accent(): Int {
         val night = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES

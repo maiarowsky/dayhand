@@ -42,7 +42,7 @@ class HistoryEntriesTest {
     }
 
     @Test
-    fun `changes from the hlm CLI and from unknown sources are never shown as the app's`() {
+    fun `changes from the dayhand CLI and from unknown sources are never shown as the app's`() {
         assertEquals(Actor.CLI, historyEntry(event("cli", "update", null, null)).actor)
         assertEquals(Actor.AGENT, historyEntry(event("something-new", "update", null, null)).actor)
         assertEquals(Actor.APP, historyEntry(event("app", "update", null, null)).actor)

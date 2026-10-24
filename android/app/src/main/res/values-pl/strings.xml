@@ -45,7 +45,7 @@
 
     <string name="status_offline">Offline. Zmiany są zapisane i pójdą na serwer, gdy wróci sieć (w kolejce: %1$d).</string>
     <string name="status_unauthorized">Serwer wylogował ten telefon. Połącz ponownie w Ustawieniach.</string>
-    <string name="status_error">Nie mogę połączyć się z serwerem. Helm próbuje dalej.</string>
+    <string name="status_error">Nie mogę połączyć się z serwerem. Dayhand próbuje dalej.</string>
     <string name="status_sending">Wysyłanie zmian: %1$d…</string>
 
     <string name="settings_title">Ustawienia</string>
@@ -248,7 +248,7 @@
     <string name="settings_language">Język</string>
     <string name="settings_language_title">Język aplikacji</string>
     <string name="language_system">Język telefonu</string>
-    <string name="settings_language_unsupported">Helm używa języka telefonu.</string>
+    <string name="settings_language_unsupported">Dayhand używa języka telefonu.</string>
     <string name="connection_label">Stan: %1$s</string>
     <string name="connection_synced">połączono</string>
     <string name="connection_connecting">łączenie…</string>
@@ -273,7 +273,7 @@
     <string name="export_not_configured">Najpierw połącz się z serwerem.</string>
     <string name="export_write_failed">Nie udało się zapisać pliku.</string>
     <string name="settings_about">O aplikacji</string>
-    <string name="about_text">Helm to otwarte oprogramowanie na licencji Apache 2.0. Bez analityki i reklam; plan zostaje na tym telefonie albo na Twoim serwerze.</string>
+    <string name="about_text">Dayhand to otwarte oprogramowanie na licencji Apache 2.0. Bez analityki i reklam; plan zostaje na tym telefonie albo na Twoim serwerze.</string>
     <string name="about_license">Przeczytaj licencję</string>
 
     <!-- Reguły powtarzania (0.6) -->

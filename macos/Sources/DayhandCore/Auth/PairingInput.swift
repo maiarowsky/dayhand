@@ -1,6 +1,6 @@
 import Foundation
 
-/// A pairing link from `hlm pair` (text or QR), see docs/pairing.md.
+/// A pairing link from `dayhand pair` (text or QR), see docs/pairing.md.
 public struct PairingLink: Hashable, Sendable {
     public let serverUrl: String?
     public let code: String?
@@ -12,8 +12,8 @@ public enum PairingInput {
     static let codeAlphabet = Set("0123456789ABCDEFGHJKMNPQRSTVWXYZ")
     static let codeLength = 12
     static let loopbackHosts: Set<String> = ["127.0.0.1", "localhost", "0.0.0.0", "::1", "[::1]"]
-    /// `helm://pair` is what `hlm pair` prints; `dayhand://pair` is the same link under the app's new name.
-    public static let linkSchemes: Set<String> = ["helm", "dayhand"]
+    /// `dayhand://pair` is what `dayhand pair` prints; `helm://pair` is the same link from `hlm pair` before the rename.
+    public static let linkSchemes: Set<String> = ["dayhand", "helm"]
 
     /**
      * `XXXX-XXXX-XXXX` from a typed code (any case, with or without dashes and spaces; `O` is read as `0`, `I` and `L`
@@ -52,7 +52,7 @@ public enum PairingInput {
         return url
     }
 
-    /// The server and code from a `helm://pair?url=…&code=…` or `dayhand://pair?…` link, or nil when it is not one.
+    /// The server and code from a `dayhand://pair?url=…&code=…` or `helm://pair?…` link, or nil when it is not one.
     public static func parseLink(_ text: String) -> PairingLink? {
         guard let components = URLComponents(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
               let scheme = components.scheme?.lowercased(), linkSchemes.contains(scheme),

@@ -121,14 +121,14 @@ class SnapshotMergerTest {
         val server = remote("s1", 10) {
             copy(
                 repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)),
-                labels = listOf("home", "Helm"),
+                labels = listOf("home", "Dayhand"),
                 links = listOf(TaskLink("https://example.com", "Spec")),
                 deletedAt = 7,
             )
         }
         val task = SnapshotMerger.merge(emptyList(), emptyList(), listOf(server), now).upserts.single()
         assertEquals(RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), task.repeat)
-        assertEquals(listOf("home", "Helm"), task.labels)
+        assertEquals(listOf("home", "Dayhand"), task.labels)
         assertEquals(listOf(TaskLink("https://example.com", "Spec")), task.links)
         assertEquals(7L, task.deletedAt)
     }

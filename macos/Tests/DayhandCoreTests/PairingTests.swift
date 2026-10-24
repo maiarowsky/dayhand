@@ -90,9 +90,9 @@ struct PairingAPITests {
         #expect(await pair(.success(HTTPReply(status: 429, json: ["error": "rate_limited"], retryAfter: " 120 "))) == .rateLimited(retryAfterSeconds: 120))
         #expect(await pair(.success(HTTPReply(status: 400, json: ["error": "invalid_request"]))) == .serverError(400))
         #expect(await pair(.success(HTTPReply(status: 503, json: ["error": "x"]))) == .serverError(503))
-        #expect(await pair(.success(HTTPReply(status: 404, body: Data("<html>".utf8)))) == .notHelm)
-        #expect(await pair(.success(HTTPReply(status: 401, body: Data("proxy says no".utf8)))) == .notHelm)
-        #expect(await pair(.success(HTTPReply(status: 200, json: ["something": "else"]))) == .notHelm)
+        #expect(await pair(.success(HTTPReply(status: 404, body: Data("<html>".utf8)))) == .notDayhand)
+        #expect(await pair(.success(HTTPReply(status: 401, body: Data("proxy says no".utf8)))) == .notDayhand)
+        #expect(await pair(.success(HTTPReply(status: 200, json: ["something": "else"]))) == .notDayhand)
         #expect(await pair(.failure(URLError(.cannotConnectToHost))) == .unreachable("URLError \(URLError.cannotConnectToHost.rawValue)"))
     }
 

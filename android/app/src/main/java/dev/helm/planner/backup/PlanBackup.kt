@@ -48,7 +48,7 @@ data class BackupTask(
     val archivedAt: Long? = null,
 )
 
-/** Why a file is not a backup Helm can read. */
+/** Why a file is not a backup Dayhand can read. */
 enum class BackupProblem { NOT_JSON, NOT_HELM, TOO_MANY }
 
 sealed interface BackupRead {
@@ -64,8 +64,8 @@ sealed interface BackupRead {
 }
 
 /**
- * A backup of the plan on this phone in Helm's JSON export format (version 1, as `app:exportPlan` and
- * `hlm export --format json` write it), so the server's import (`POST /api/v1/import`, `hlm import`) reads it too.
+ * A backup of the plan on this phone in Dayhand's JSON export format (version 1, as `app:exportPlan` and
+ * `dayhand export --format json` write it), so the server's import (`POST /api/v1/import`, `dayhand import`) reads it too.
  * The phone has no change history and no task numbers, so `events` is empty and `ref` is left out.
  */
 object PlanBackup {
@@ -76,8 +76,8 @@ object PlanBackup {
 
     private val pretty = Json { prettyPrint = true }
 
-    /** `helm-backup-2026-10-23.json`: the name offered in the save dialog and the share sheet. */
-    fun fileName(today: String) = "helm-backup-$today.json"
+    /** `dayhand-backup-2026-10-23.json`: the name offered in the save dialog and the share sheet. */
+    fun fileName(today: String) = "dayhand-backup-$today.json"
 
     /** The backup file of [tasks] (trash included, as in the server's export) with [settings], made at [at]. */
     fun write(tasks: List<Task>, settings: BackupSettings, at: Long): String {

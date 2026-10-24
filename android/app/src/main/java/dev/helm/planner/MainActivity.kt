@@ -56,7 +56,7 @@ import dev.helm.planner.ui.trash.TrashScreen
 import dev.helm.planner.ui.trash.TrashViewModel
 
 class MainActivity : ComponentActivity() {
-    /** A `helm://pair` link (QR code from `hlm pair`) waiting to fill in the Connect screen. */
+    /** A `dayhand://pair` (or older `helm://pair`) link (QR code from `dayhand pair`) waiting to fill in the Connect screen. */
     private var pairingLink by mutableStateOf<PairingLink?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {

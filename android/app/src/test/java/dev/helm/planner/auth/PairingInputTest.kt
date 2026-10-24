@@ -41,14 +41,21 @@ class PairingInputTest {
 
     @Test
     fun `a pairing link gives the server and the code`() {
+        val link = PairingInput.parseLink("dayhand://pair?url=https%3A%2F%2Fimpressive-grouse-796.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
+        assertEquals(PairingLink("https://impressive-grouse-796.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
+        assertEquals(PairingLink("http://10.0.2.2:3211", null), PairingInput.parseLink("dayhand://pair?url=http://10.0.2.2:3211"))
+    }
+
+    @Test
+    fun `a helm pairing link from hlm before the rename still works`() {
         val link = PairingInput.parseLink("helm://pair?url=https%3A%2F%2Fimpressive-grouse-796.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
         assertEquals(PairingLink("https://impressive-grouse-796.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
-        assertEquals(PairingLink("http://10.0.2.2:3211", null), PairingInput.parseLink("helm://pair?url=http://10.0.2.2:3211"))
     }
 
     @Test
     fun `other links are not pairing links`() {
         assertNull(PairingInput.parseLink("https://example.com/pair?code=E6M8-FE02-XSNT"))
+        assertNull(PairingInput.parseLink("dayhand://task?id=1"))
         assertNull(PairingInput.parseLink("helm://task?id=1"))
         assertNull(PairingInput.parseLink("not a link"))
     }

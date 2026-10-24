@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """End-to-end check of reminders, the morning summary and Settings on an emulator.
 
-The agent (helm CLI) adds a task with a time and the server summary time is moved to the same
+The agent (dayhand CLI) adds a task with a time and the server summary time is moved to the same
 minute; the phone gets both through sync, and with the app in the background Android fires the
 alarms: a reminder and a morning summary appear. Then, in Settings: a default reminder is added
 (it reaches the server), the plan is exported as Markdown through the system save dialog, and
@@ -10,7 +10,7 @@ after a reboot the alarms are armed again.
 Time is sped up by using the next whole minute (at least 90 s away) instead of a real 05:00.
 
 Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend,
-HELM_URL and HELM_API_KEY for the CLI of the app user (the app is paired with a code), and
+DAYHAND_URL and DAYHAND_API_KEY for the CLI of the app user (the app is paired with a code), and
 backend/.env.local from `npm run backend:start` for `npx convex run`.
 
   python3 android/scripts/e2e-reminders.py --apk app-debug.apk --shots DIR
@@ -37,7 +37,7 @@ _ui_nodes = base.ui_nodes
 
 
 def _ui_nodes_without_anr():
-    """On a loaded host system apps raise "isn't responding" dialogs over Helm: answer Wait."""
+    """On a loaded host system apps raise "isn't responding" dialogs over Dayhand: answer Wait."""
     nodes = _ui_nodes()
     if any("isn't responding" in n.get("text", "") for n in nodes):
         wait = next(n for n in nodes if n.get("text") == "Wait")
@@ -79,8 +79,8 @@ def find_exact(text, timeout=30):
     raise RuntimeError(f"no node with text {text!r}")
 
 
-def helm_notifications():
-    """Titles of Helm's notifications, from the notification service."""
+def dayhand_notifications():
+    """Titles of Dayhand's notifications, from the notification service."""
     titles = []
     for record in shell("dumpsys", "notification", "--noredact").split("NotificationRecord(")[1:]:
         if f"pkg={PACKAGE}" not in record.split("\n", 1)[0]:
@@ -95,11 +95,11 @@ def helm_notifications():
 
 def wait_for_notifications(expected, until):
     while time.time() < until:
-        titles = helm_notifications()
+        titles = dayhand_notifications()
         if all(any(e in t for t in titles) for e in expected):
             return titles
         time.sleep(2)
-    raise RuntimeError(f"notifications {expected} not shown; Helm has {helm_notifications()}")
+    raise RuntimeError(f"notifications {expected} not shown; Dayhand has {dayhand_notifications()}")
 
 
 def allow_notifications():
@@ -136,7 +136,7 @@ def main():
 
     adb("install", "-r", "-t", args.apk)
     shell("pm", "clear", PACKAGE)
-    # Pairing first: at first start without a server Helm opens Connect, not Today.
+    # Pairing first: at first start without a server Dayhand opens Connect, not Today.
     configure(args.server_url)
     allow_notifications()
 
@@ -146,9 +146,9 @@ def main():
     hhmm = due.strftime("%H:%M")
     convex_run("ops:updateSettings", {"userId": USER, "actor": "agent", "summaryTime": hhmm, "defaultReminderMinutes": [0]})
     title = f"Call the accountant {int(time.time())}"
-    base.helm_cli("add", title, "--date", due.date().isoformat(), "--time", hhmm)
+    base.dayhand_cli("add", title, "--due", due.date().isoformat(), "--time", hhmm)
     tomorrow = (due + datetime.timedelta(days=1)).date().isoformat()
-    base.helm_cli("add", f"Plan the week {int(time.time())}", "--date", tomorrow, "--time", "09:00")
+    base.dayhand_cli("add", f"Plan the week {int(time.time())}", "--due", tomorrow, "--time", "09:00")
     log(f"agent added '{title}' at {hhmm} and set the summary to {hhmm}")
     find(text=title, timeout=60)
     log("the phone has the task")
@@ -174,12 +174,12 @@ def main():
         time.sleep(3)
     log("default reminders [0, 10] reached the server through the outbox")
 
-    shell("rm", "-f", "/sdcard/Download/helm-plan-*.md")
+    shell("rm", "-f", "/sdcard/Download/dayhand-plan-*.md")
     tap(find_scrolling(text="Export Markdown"))
     tap(find_exact("Save") if _has_text("Save") else find_exact("SAVE"))
-    find_scrolling(text="Saved helm-plan-")
-    exported = shell("cat", "/sdcard/Download/helm-plan-*.md")
-    if title not in exported or not exported.startswith("# Helm plan"):
+    find_scrolling(text="Saved dayhand-plan-")
+    exported = shell("cat", "/sdcard/Download/dayhand-plan-*.md")
+    if title not in exported or not exported.startswith("# Dayhand plan"):
         raise RuntimeError("the exported Markdown does not contain the plan")
     log("Markdown export saved through the system dialog and contains the task")
     base.screenshot(args.shots, "settings-export-saved.png")

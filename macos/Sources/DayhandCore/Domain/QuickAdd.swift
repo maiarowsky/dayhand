@@ -15,7 +15,7 @@ public struct QuickAddInput: Hashable, Sendable {
 }
 
 /**
- * Quick add reads a date phrase at the end of the line, with the same grammar as `hlm add --due` (`WhenParser`):
+ * Quick add reads a date phrase at the end of the line, with the same grammar as `dayhand add --due` (`WhenParser`):
  * "Call the accountant fri 2pm" is "Call the accountant" on Friday at 14:00. The longest ending that is a whole
  * phrase wins and at least one word stays as the title, so "Plan next week" is "Plan" next Monday but a line that is
  * only a date ("tomorrow") stays a title. Without a phrase the line is the title and the day is the caller's default.

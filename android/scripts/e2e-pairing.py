@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""End-to-end pairing check on an emulator against a local Helm backend.
+"""End-to-end pairing check on an emulator against a local Dayhand backend.
 
-1. First start: Helm asks where the plan lives; "Start with an empty plan" (on this phone only)
+1. First start: Dayhand asks where the plan lives; "Start with an empty plan" (on this phone only)
    goes on without a server and a task is added on the phone before any server is known.
-2. The CLI adds a task and prints a one-time code (`hlm pair`). A wrong code is refused with a
+2. The CLI adds a task and prints a one-time code (`dayhand pair`). A wrong code is refused with a
    readable message; the right one, typed by hand in lower case without dashes, pairs the phone.
 3. Sync both ways: the CLI's task appears on the phone, the phone's earlier task on the server.
 4. Offline: with airplane mode a task added on the phone waits; when the network is back it
@@ -11,8 +11,8 @@
 5. Disconnect in Settings forgets the sign-in; the tasks stay on the phone.
 
 Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend
-(npm run backend:start), HELM_URL and HELM_API_KEY (or HLM_*) of the app user (`https://helm.local|me`)
-and the built hlm CLI (cli/: npm ci --ignore-scripts && npm run build).
+(npm run backend:start), DAYHAND_URL and DAYHAND_API_KEY (or the old HELM_* names) of the app user (`https://helm.local|me`)
+and the built dayhand CLI (cli/: npm ci --ignore-scripts && npm run build).
 
   python3 android/scripts/e2e-pairing.py --apk app-debug.apk --shots DIR
 """
@@ -20,7 +20,6 @@ import argparse
 import importlib.util
 import json
 import os
-import subprocess
 import sys
 import time
 
@@ -32,22 +31,8 @@ adb, shell, log, find, tap, find_button, find_scrolling = (
 )
 PACKAGE = base.PACKAGE
 ACTIVITY = base.ACTIVITY
-HLM = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "cli", "dist", "bin", "hlm.js")
-
-
-def hlm(*args):
-    # hlm reads HLM_URL and HLM_API_KEY; the other scripts' HELM_* work too.
-    env = {
-        **os.environ,
-        "HLM_URL": os.environ.get("HLM_URL", os.environ.get("HELM_URL", "")),
-        "HLM_API_KEY": os.environ.get("HLM_API_KEY", os.environ.get("HELM_API_KEY", "")),
-    }
-    out = subprocess.run(["node", HLM, *args], check=True, capture_output=True, text=True, env=env)
-    return out.stdout
-
-
-def server_titles():
-    return {t["title"] for t in json.loads(hlm("list", "--done", "--json"))["result"]}
+dayhand = base.dayhand_cli
+server_titles = base.server_titles
 
 
 def wait_on_server(titles, timeout):
@@ -86,7 +71,7 @@ def main():
     shell("am", "start", "-n", ACTIVITY)
 
     # 1. First start: on this phone only comes first; the server is the second choice.
-    find(text="Welcome to Helm", timeout=120)
+    find(text="Welcome to Dayhand", timeout=120)
     find(text="Connect to my server")
     shot("01-first-start-connect.png")
     tap(find(text="Start with an empty plan"))
@@ -95,7 +80,7 @@ def main():
     log("first start: on this phone only chosen, task added without a server")
 
     # 2. A task from the CLI, a wrong code, then the right one.
-    hlm("add", from_cli)
+    dayhand("add", from_cli)
     log(f"CLI added: {from_cli}")
     base.open_connect(args.server_url)
     type_code("e6m8fe02xsnt")
@@ -103,8 +88,8 @@ def main():
     find(text="This code is wrong")
     shot("03-wrong-code.png")
     log("a wrong code is refused with a readable message")
-    pairing = json.loads(hlm("pair", "--json"))
-    log(f"hlm pair: {pairing['code']}, link {pairing['link']}")
+    pairing = json.loads(dayhand("pair", "--json"))
+    log(f"dayhand pair: {pairing['code']}, link {pairing['link']}")
     type_code(pairing["code"].lower().replace("-", ""))
     shot("04-code-typed.png")
     tap(find_button("Connect"))
@@ -116,8 +101,8 @@ def main():
         raise RuntimeError("the task added before pairing did not reach the server")
     log("the task added before pairing reached the server")
     shot("05-synced-after-pairing.png")
-    devices = json.loads(hlm("device", "list", "--json"))["devices"]
-    log("hlm device list: " + ", ".join(f"{d['name']} ({d['id']})" for d in devices))
+    devices = json.loads(dayhand("device", "list", "--json"))["devices"]
+    log("dayhand device list: " + ", ".join(f"{d['name']} ({d['id']})" for d in devices))
 
     # 4. Offline and back.
     base.set_network(False)
@@ -134,16 +119,16 @@ def main():
     if not wait_on_server({offline}, 120):
         raise RuntimeError("the offline task did not reach the server after the network came back")
     log(f"server has the offline task {time.time() - started:.0f} s after the network came back")
-    today = hlm("today")
+    today = dayhand("today")
     assert from_cli in today and before in today and offline in today, today
-    log("hlm today lists all three tasks:\n" + today)
+    log("dayhand today lists all three tasks:\n" + today)
 
     # 5. Settings: connected, then disconnect.
     tap(find(desc="Settings"))
     find_scrolling(text="Connected to 10.0.2.2")
     shot("07-settings-connected.png")
     tap(find_scrolling(text="Disconnect"))
-    find(text="hlm revoke")
+    find(text="dayhand revoke")
     shot("08-disconnect-dialog.png")
     tap(find_button("Disconnect"))
     find_scrolling(text="On this phone only")

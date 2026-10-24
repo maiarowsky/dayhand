@@ -12,7 +12,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 
 /**
- * The engine's alarms on AlarmManager. Exact and allowed in Doze when the user lets Helm set
+ * The engine's alarms on AlarmManager. Exact and allowed in Doze when the user lets Dayhand set
  * exact alarms (Android 12+ asks for that); otherwise an inexact alarm, which Android may
  * deliver a few minutes late. Settings shows which of the two is in use.
  */

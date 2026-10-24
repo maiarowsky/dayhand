@@ -63,7 +63,7 @@ fun SettingsRoute(container: AppContainer, versionName: String, onBack: () -> Un
     }
     val data by viewModel.state.collectAsStateWithLifecycle()
 
-    // Permissions can change in the system settings while Helm is in the background.
+    // Permissions can change in the system settings while Dayhand is in the background.
     var resumes by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) {
         resumes++
@@ -207,5 +207,5 @@ private suspend fun shareBackup(context: Context, fileName: String, content: Str
     return true
 }
 
-/** True on Android 13+ while Helm may not post notifications yet. */
+/** True on Android 13+ while Dayhand may not post notifications yet. */
 fun needsNotificationPermission(context: Context): Boolean = !hasPermission(context)

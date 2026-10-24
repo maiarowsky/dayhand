@@ -22,7 +22,7 @@ enum class SampleText {
 }
 
 /**
- * A plan to try Helm with, for the first minute and for screenshots: two overdue tasks, the "now" task, today's
+ * A plan to try Dayhand with, for the first minute and for screenshots: two overdue tasks, the "now" task, today's
  * tasks (with a checklist, a repeating stand-up and a task of its own reminders), something done, one timed task on
  * every other day of this week (done before today), a task in progress with a link and one without a day. Sample
  * tasks are only on the phone: their ids start with [ID_PREFIX], the outbox never sends them, and they go with one

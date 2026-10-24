@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Helm</string>
+    <string name="app_name">Dayhand</string>
 
     <string name="today_title">Today</string>
     <string name="section_overdue">Overdue (%1$d)</string>
@@ -47,7 +47,7 @@
 
     <string name="status_offline">Offline. Changes are saved and will be sent when the network is back (%1$d waiting).</string>
     <string name="status_unauthorized">The server signed this phone out. Connect again in Settings.</string>
-    <string name="status_error">Cannot reach the server. Helm keeps trying.</string>
+    <string name="status_error">Cannot reach the server. Dayhand keeps trying.</string>
     <string name="status_sending">Sending %1$d changes…</string>
 
     <string name="settings_title">Settings</string>
@@ -232,7 +232,7 @@
     <string name="language_system">Phone language</string>
     <string name="language_polish" translatable="false">Polski</string>
     <string name="language_english" translatable="false">English</string>
-    <string name="settings_language_unsupported">Helm follows the phone\'s language.</string>
+    <string name="settings_language_unsupported">Dayhand follows the phone\'s language.</string>
     <string name="connection_label">Status: %1$s</string>
     <string name="connection_synced">connected</string>
     <string name="connection_connecting">connecting…</string>
@@ -255,7 +255,7 @@
     <string name="export_not_configured">Connect to a server first.</string>
     <string name="export_write_failed">Could not save the file.</string>
     <string name="settings_about">About</string>
-    <string name="about_text">Helm is open source under the Apache License 2.0. No analytics and no ads; your plan stays on this phone or on your own server.</string>
+    <string name="about_text">Dayhand is open source under the Apache License 2.0. No analytics and no ads; your plan stays on this phone or on your own server.</string>
     <string name="about_license">Read the license</string>
 
     <!-- Repeat rules (0.6) -->

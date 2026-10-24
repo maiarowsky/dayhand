@@ -1,29 +1,30 @@
-# Helm for Android
+# Dayhand for Android
 
 Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **calendar**
 (week and day), the **board**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
 on the phone, has the **Settings** screen, connects to a server by **pairing** with a one-time
-code from `hlm pair`, approves and disconnects **agent connections** such as the Claude app, and
+code from `dayhand pair`, approves and disconnects **agent connections** such as the Claude app, and
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
 **Install**: download the `.apk` from the
 [latest release](https://github.com/maiarowsky/helm/releases/latest), allow your browser or file
 manager to install apps when Android asks, and on the first start choose **On this phone only**
-to use Helm without a server. What works without a server, what needs one and how to connect
+to use Dayhand without a server. What works without a server, what needs one and how to connect
 your own: [Install on Android](../README.md#install-on-android). To build it yourself, see
 [Run it locally](#run-it-locally) and [Release build](#release-build).
 
-Helm works **on this phone only**, without an account or a server, and that is what the first
+Dayhand works **on this phone only**, without an account or a server, and that is what the first
 start offers first: the plan lives in Room, reminders and the morning summary ring from the phone,
-and a **backup file** (Helm's JSON export format) can be saved, shared and restored. A server of
+and a **backup file** (Dayhand's JSON export format) can be saved, shared and restored. A server of
 your own can be connected later; everything made on the phone then goes to it
 (["On this phone only"](#on-this-phone-only)).
 
 - Application id `io.github.maiarowsky.dayhand` (fixed from the first public release; it cannot
-  change once people have installed it). The code keeps the namespace `dev.helm.planner`, so
+  change once people have installed it). The code keeps the namespace `dev.helm.planner` from
+  before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.8.4 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.9.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -47,7 +48,7 @@ phone is offline (and how many changes wait), while changes are being sent, or w
 signed the phone out; on this phone only there is no such line. While the sample plan is on the
 phone, a line says so with **Remove them**, which removes every sample task.
 
-**First start** asks where the plan lives (**Welcome to Helm**), on two cards, the phone first:
+**First start** asks where the plan lives (**Welcome to Dayhand**), on two cards, the phone first:
 
 1. **On this phone only**: no account and no server. **Start with an empty plan**, or **Try with
    sample data**: two overdue tasks, the "now" task with its note, today's tasks (a checklist, a
@@ -60,18 +61,18 @@ phone, a line says so with **Remove them**, which removes every sample task.
    the first start any other way is on this phone only.
 
 **Connect to my server** (the form) opens from the first start, from Settings and from a
-`helm://pair` link (the QR code of `hlm pair`):
+`dayhand://pair` link (the QR code of `dayhand pair`):
 
 1. **Server address**: the link's `url`, else the last server used, else the built-in default
    (`BuildConfig.DEFAULT_SERVER_URL`), which is **empty** unless the build sets
-   `-Phelm.serverUrl=…`. Public builds leave it empty, so the form starts with an empty address;
+   `-Pdayhand.serverUrl=…`. Public builds leave it empty, so the form starts with an empty address;
    the author builds their own copy with
-   `-Phelm.serverUrl=https://impressive-grouse-796.eu-west-1.convex.site`. A `.convex.cloud`
+   `-Pdayhand.serverUrl=https://impressive-grouse-796.eu-west-1.convex.site`. A `.convex.cloud`
    address is turned into its `.convex.site` one.
-2. **Pairing code** from `hlm pair` (or `npx helm pair` in `backend/`): any case, with or
+2. **Pairing code** from `dayhand pair`: any case, with or
    without dashes; `O` is read as `0`, `I` and `L` as `1`.
 3. **Connect**. Errors are said in words: a wrong, used or expired code; too many wrong codes
-   (with the wait); no network; the server cannot be reached; no Helm server at the address;
+   (with the wait); no network; the server cannot be reached; no Dayhand server at the address;
    a problem on the server. A code for **another server** than the one whose plan is on the
    phone first asks **Replace the plan on this phone?** (see ["On this phone only"](#on-this-phone-only)).
 
@@ -135,7 +136,7 @@ series starts with every item unticked.
 and times of day on the due day or a day before (at most five). Each field is edited in place or in a small dialog and checked against
 the backend's limits before it is queued, so a change the server would refuse is never queued.
 **Move to trash** keeps the task for 30 days; a task in the trash is read-only until restored.
-**Change history** lists who changed what, newest first: **You (app)**, **You (CLI)** (`hlm` with a
+**Change history** lists who changed what, newest first: **You (app)**, **You (CLI)** (`dayhand` with a
 `cli` key) or **Agent**.
 
 **Trash**: tasks deleted by you or the agent, newest first, with the day each one goes for good;
@@ -160,7 +161,7 @@ in its preview and on the other screens. Top to bottom:
    the system settings, and one that allows exact alarms); **Morning summary** (the time, default
    05:00, picked on a clock); **Default reminders** (at the due time, 5, 10, 15, 30 min, 1 h, 2 h
    or 1 day before, any number of them or none).
-3. **Data**: **Backup**, the plan on this phone as a file in Helm's JSON export format: **Save a
+3. **Data**: **Backup**, the plan on this phone as a file in Dayhand's JSON export format: **Save a
    backup file** (the system save dialog), **Share a backup** (the share sheet, from the app's
    cache through its `FileProvider`) and **Restore from a file**, with the time of the last
    backup and what the last action did; see [Backups](#backups). **Remove sample tasks** while
@@ -177,7 +178,7 @@ in its preview and on the other screens. Top to bottom:
    server its changes wait for), **Connect to my server**, and how a server of your own is set
    up; the time zone is the phone's. Connected: the status (connected, connecting, no network,
    signed out, cannot reach the server) and the number of changes waiting, the server and this
-   phone's name with **Disconnect** (after a confirmation that names the `hlm revoke <deviceId>`
+   phone's name with **Disconnect** (after a confirmation that names the `dayhand revoke <deviceId>`
    command); the time zone is the server's, with **Use this phone's time zone** when the two
    differ. **Agent connections** (with a server): the agents connected with
    OAuth, such as the Claude app ([docs/oauth.md](../docs/oauth.md)), each with where it comes
@@ -222,7 +223,7 @@ are exact (`setExactAndAllowWhileIdle`) when the user allows exact alarms (Andro
 default from Android 14), otherwise inexact and possibly a few minutes late; Settings says
 which. They are armed again on every change of tasks or reminder settings, at app start, after
 a reboot, an app update, a clock or time zone change and a change of the exact-alarm
-permission (`SystemEventsReceiver`). After a force stop Android drops the alarms until Helm is
+permission (`SystemEventsReceiver`). After a force stop Android drops the alarms until Dayhand is
 opened again. A reminder's **Done** button completes the task offline-first, like a tap on
 Today. Android 13+ asks for the notification permission when the first task with a time is
 added, or from Settings.
@@ -299,12 +300,12 @@ Why: "nothing leaves the phone" is what on this phone only promises; the device 
 Tink keyset are bound to a Keystore key that a restore cannot bring back; and a restored outbox
 and server copy of another phone would be hard to reason about.
 
-The **backup file** (`backup/PlanBackup.kt`) is Helm's JSON export format, version 1, as
-`app:exportPlan` and `hlm export --format json` write it (`docs/schemas/export.schema.json`):
+The **backup file** (`backup/PlanBackup.kt`) is Dayhand's JSON export format, version 1, as
+`app:exportPlan` and `dayhand export --format json` write it (`docs/schemas/export.schema.json`):
 `version`, `exportedAt`, `settings`, `tasks` (with the server id where the server knows a task,
 else the phone's) and an empty `events` (the phone has no history and no task numbers, so `ref`
-is left out). Sample tasks are not in it. A server reads it (`hlm import`, `POST /api/v1/import`,
-format `helm-json`), and so does **Restore from a file**: every task the backend's rules accept
+is left out). Sample tasks are not in it. A server reads it (`dayhand import`, `POST /api/v1/import`,
+format `dayhand-json`), and so does **Restore from a file**: every task the backend's rules accept
 is added as a new task and queued like one added on the phone (a done task without its rule, so
 a server does not repeat it again; archived tasks archived); one whose id is already on the
 phone is skipped, so the same file restores once; tasks in the trash and tasks that fail a check
@@ -325,19 +326,19 @@ Convex client and HTTP API with that JWT       ──> app.* as the owner
 - The **device token** is encrypted with AES-256-GCM by Tink under a key in the Android
   Keystore and never logged or shown. Backups and device transfers are switched off for the app
   ([Backups](#backups)).
-  The device name sent is the phone model (`Build.MODEL`); `hlm devices` shows it.
+  The device name sent is the phone model (`Build.MODEL`); `dayhand devices` shows it.
 - `DeviceTokens` keeps one JWT for the live feed, the outbox and the export, and fetches a new
   one when less than 5 minutes are left. The Convex client gets the new token before the old
   one ends, and asks again when the server refuses one; the HTTP API retries once with a new
   token.
 - **Network errors and `503`** keep the device token; a cached JWT that is still valid is used
   meanwhile, and changes wait in the outbox. **`401` from `/auth/token`** means the phone was
-  revoked (`hlm revoke`): the device token is deleted, Today and Settings say the server signed
+  revoked (`dayhand revoke`): the device token is deleted, Today and Settings say the server signed
   the phone out, and Connect asks for a new code. Tasks and waiting changes stay on the phone.
 - On a local backend `/auth/pair` returns `http://127.0.0.1:3210` as the Convex URL; the app
   keeps the port and uses the host it paired with (`10.0.2.2` on the emulator).
 - **Disconnect** forgets the sign-in on the phone only. The backend has no endpoint for a
-  device to revoke itself, so the dialog names `hlm revoke <deviceId>` for that.
+  device to revoke itself, so the dialog names `dayhand revoke <deviceId>` for that.
 - A phone that had an app token pasted in version 0.2 keeps using it until it is paired or
   disconnected; pasting tokens is no longer offered.
 
@@ -358,12 +359,13 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
    npm run backend:start
    ```
 
-2. In a second terminal, in `backend/`, create a CLI key for the app user and a pairing code:
+2. In a second terminal, in `backend/`, create a CLI key for the app user and a pairing code
+   (with the CLI built in `cli/`: `npm ci --ignore-scripts && npm run build`):
 
    ```sh
    npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}'
-   export HELM_URL=http://127.0.0.1:3211 HELM_API_KEY=<key>
-   npx helm pair                               # or hlm pair with HLM_URL / HLM_API_KEY
+   export DAYHAND_URL=http://127.0.0.1:3211 DAYHAND_API_KEY=<key>
+   node ../cli/dist/bin/dayhand.js pair          # or dayhand pair, after npm link in cli/
    ```
 
    Optionally set your time zone:
@@ -377,13 +379,13 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
 
 4. In the app, on Connect, enter `http://10.0.2.2:3211` on the emulator (on a phone in the
    same network use the computer's address; debug builds allow plain HTTP, release builds only
-   HTTPS) and the code, then Connect. Or open the link from `helm pair` on the emulator:
-   `adb shell am start -a android.intent.action.VIEW -d "'helm://pair?url=http%3A%2F%2F10.0.2.2%3A3211&code=<code>'"`.
+   HTTPS) and the code, then Connect. Or open the link from `dayhand pair` on the emulator:
+   `adb shell am start -a android.intent.action.VIEW -d "'dayhand://pair?url=http%3A%2F%2F10.0.2.2%3A3211&code=<code>'"`.
 
-5. Check from the computer: `npx helm today` and `npx helm devices`.
+5. Check from the computer: `dayhand today` and `dayhand device list`.
 
 For a production deployment see [docs/deploy.md](../docs/deploy.md); the app's default server
-(empty unless set) is `-Phelm.serverUrl=…`, read in `app/build.gradle.kts`.
+(empty unless set) is `-Pdayhand.serverUrl=…`, read in `app/build.gradle.kts`.
 
 ## Release build
 
@@ -391,14 +393,14 @@ The APK on the releases page is `assembleRelease` signed with the project's rele
 is kept outside the repository. Point the build at the keystore with environment variables:
 
 ```sh
-export HELM_RELEASE_KEYSTORE=~/.config/helm/release/helm-release.p12   # PKCS12
-export HELM_RELEASE_PASSWORD_FILE=~/.config/helm/release/keystore-password  # one line, store and key password
-# HELM_RELEASE_KEY_ALIAS defaults to helm
+export DAYHAND_RELEASE_KEYSTORE=~/.config/dayhand-release/release.p12        # PKCS12
+export DAYHAND_RELEASE_PASSWORD_FILE=~/.config/dayhand-release/keystore-password  # one line, store and key password
+# DAYHAND_RELEASE_KEY_ALIAS defaults to helm, the alias of the key made before the rename
 ./gradlew :app:assembleRelease
 $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
 ```
 
-Without `HELM_RELEASE_KEYSTORE` the release APK is left unsigned; debug builds and tests never
+Without `DAYHAND_RELEASE_KEYSTORE` the release APK is left unsigned; debug builds and tests never
 use the key. Every update must be signed with the same key, or Android refuses to install it
 over the installed app: keep a copy of the keystore and its password somewhere safe.
 
@@ -430,7 +432,7 @@ needs no question. `e2e-pairing.py`: first start, on this phone only, a task add
 a wrong code refused, the right one typed by hand, the CLI's task on the phone and the phone's
 on the server, a task added in airplane mode reaching the server when the network is back,
 Disconnect. `e2e-offline.py`: the same offline path with a killed and a force-stopped app. With
-the backend running, `HELM_URL`/`HELM_API_KEY` set and the CLI built (`cli/`: `npm ci
+the backend running, `DAYHAND_URL`/`DAYHAND_API_KEY` set and the CLI built (`cli/`: `npm ci
 --ignore-scripts && npm run build`):
 
 ```sh
@@ -445,7 +447,7 @@ added by the agent is dragged to "In progress", moved to "Done" from its menu, r
 label, a time and a link; offline it goes to the trash and the change reaches the server after the
 app was killed; it is restored from the Trash screen, and an agent edit shows in its history as
 the agent's. Every step is checked on the server through MCP, with an agent key of the same user
-in `HELM_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
+in `DAYHAND_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
 
 `scripts/e2e-connections.py` (same arguments, plus `--site-url` for the HTTP actions URL as the
 computer sees it) plays the Claude app over HTTP: it registers, opens the authorization page and

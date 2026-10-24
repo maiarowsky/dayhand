@@ -69,7 +69,7 @@ class BoardTour {
         todo = listOf(
             task("a", "Podlać kwiaty") { copy(dueDate = "2026-10-21") },
             task("b", "Zadzwonić do dentysty") { copy(dueDate = "2026-10-22", dueTime = "09:30", labels = listOf("dom")) },
-            task("c", "Przejrzeć pull request") { copy(labels = listOf("Helm", "praca")) },
+            task("c", "Przejrzeć pull request") { copy(labels = listOf("Dayhand", "praca")) },
             task("d", "Kupić chleb"),
         ),
         doing = listOf(
@@ -82,7 +82,7 @@ class BoardTour {
     private val detailTask = task("a", "Zadzwonić do księgowej") {
         copy(
             serverId = "s1", note = "Zapytać o VAT za wrzesień i termin zeznania.", dueDate = "2026-10-23", dueTime = "09:30",
-            repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), labels = listOf("Helm", "finanse"),
+            repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), labels = listOf("Dayhand", "finanse"),
             links = listOf(TaskLink("https://example.com/umowa", "Umowa"), TaskLink("https://example.com/faktury")),
             checklist = listOf(
                 ChecklistItem("c1", "Wyciągi z banku", done = true),
@@ -100,7 +100,7 @@ class BoardTour {
     )
 
     private fun detail(task: Task) =
-        TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, HistoryState.FRESH, 1, listOf("Helm", "dom", "praca"), listOf(0, 30))
+        TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, HistoryState.FRESH, 1, listOf("Dayhand", "dom", "praca"), listOf(0, 30))
 
     @Test
     fun board() {

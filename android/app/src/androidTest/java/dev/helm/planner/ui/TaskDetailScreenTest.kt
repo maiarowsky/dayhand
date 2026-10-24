@@ -58,7 +58,7 @@ class TaskDetailScreenTest {
     private val task = Task(
         localId = "a", serverId = "s1", title = "Call the accountant", note = "Ask about VAT",
         dueDate = "2026-10-23", dueTime = "09:30", status = TaskStatus.TODO,
-        repeat = RepeatRule(RepeatEvery.DAY), labels = listOf("Helm"),
+        repeat = RepeatRule(RepeatEvery.DAY), labels = listOf("Dayhand"),
         links = listOf(TaskLink("https://example.com", "Spec")), createdAt = 0, updatedAt = 0,
     )
 
@@ -86,7 +86,7 @@ class TaskDetailScreenTest {
     }
 
     private fun show(task: Task = this.task, actions: TaskDetailActions = Recorder(), state: HistoryState = HistoryState.FRESH, pending: Int = 0) {
-        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Helm", "home"), listOf(0, 30))
+        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Dayhand", "home"), listOf(0, 30))
         compose.setContent { HelmTheme { TaskDetailScreen(ui, actions) } }
     }
 
@@ -96,7 +96,7 @@ class TaskDetailScreenTest {
         compose.onNodeWithTag(TaskDetailTags.TITLE).assertTextContains("Call the accountant").assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.DUE).assertTextContains(text(R.string.day_and_time, text(R.string.day_tomorrow), "09:30"))
         compose.onNodeWithTag(TaskDetailTags.REPEAT).assertTextContains(context.resources.getQuantityString(R.plurals.repeat_days, 1, 1), substring = true)
-        compose.onNodeWithContentDescription(text(R.string.remove_label, "Helm")).assertIsDisplayed()
+        compose.onNodeWithContentDescription(text(R.string.remove_label, "Dayhand")).assertIsDisplayed()
         compose.onNodeWithText("Spec").assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().assertTextContains("Ask about VAT", substring = true)
     }
@@ -144,7 +144,7 @@ class TaskDetailScreenTest {
             listOf(
                 "move:doing",
                 "repeat:${RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4))}",
-                "labels:[Helm, home]",
+                "labels:[Dayhand, home]",
                 "links:[https://example.com, https://example.org/plan]",
                 "due:null:null",
             ),

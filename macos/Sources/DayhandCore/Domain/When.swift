@@ -19,9 +19,9 @@ public struct WhenError: Error, Hashable, Sendable {
 }
 
 /**
- * Dates in plain English, the grammar of `hlm` (`cli/src/when/parse.ts`), case for case: "tomorrow", "fri 2pm",
+ * Dates in plain English, the grammar of `dayhand` (`cli/src/when/parse.ts`), case for case: "tomorrow", "fri 2pm",
  * "next mon", "in 3 days", "23 oct", "2026-10-23". A small deterministic grammar (no NLP): the same phrase at the
- * same moment in the same time zone always gives the same day. English only, as in `hlm`.
+ * same moment in the same time zone always gives the same day. English only, as in `dayhand`.
  */
 public enum WhenParser {
     /// Forms shown in help (`WHEN_EXAMPLES`).

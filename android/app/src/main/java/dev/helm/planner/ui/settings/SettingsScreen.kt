@@ -72,14 +72,14 @@ object SettingsTags {
     const val EXPORT_STATUS = "settings_export_status"
 }
 
-/** Whether Helm may show notifications, and what the button does when it may not. */
+/** Whether Dayhand may show notifications, and what the button does when it may not. */
 enum class NotificationAccess {
     ALLOWED,
 
     /** Android can still show its permission dialog. */
     ASK,
 
-    /** The user said no or blocked Helm; only the system settings can change it. */
+    /** The user said no or blocked Dayhand; only the system settings can change it. */
     BLOCKED,
 }
 

@@ -2,14 +2,15 @@
 
 Swift and SwiftUI, macOS 13 or later, all open source (Apache-2.0; the libraries GRDB.swift and
 KeyboardShortcuts are MIT). Dayhand is the new name of Helm: the app, its folder and its bundle id
-(`io.github.maiarowsky.dayhand`) use it from the start, while the server protocol keeps its name
-(`hlm pair`, `helm://pair`, the `app:*` functions). This version is the basic one (MVP):
+(`io.github.maiarowsky.dayhand`) used it from the start, and the server, `dayhand pair` and its
+`dayhand://pair` link use it now (the app also opens `helm://pair` links from older versions).
+This version is the basic one (MVP):
 
 - **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first by time) and
   done today (folded). One click ticks a task off; the context menu works on it now, moves it to today or
   tomorrow, archives it or moves it to the trash.
 - **Quick add** at the top of Today, in the menu bar and in a floating panel from any app (**⌃⌥N** by default,
-  changed in Settings). A date phrase at the end of the line sets the day and time, with the grammar of `hlm`
+  changed in Settings). A date phrase at the end of the line sets the day and time, with the grammar of `dayhand`
   (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
   the field says what was understood; **Keep in title** keeps the words as text. Without a phrase the task is
   for today, as on the phone.
@@ -18,7 +19,7 @@ KeyboardShortcuts are MIT). Dayhand is the new name of Helm: the app, its folder
   and links are shown. A task in the trash is read-only until **Restore**.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
-- **Connect** with a code from `hlm pair`, typed or from a `helm://pair?…` or `dayhand://pair?…` link (the app
+- **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
   registers both schemes). **Not now** keeps everything on the Mac until a server is connected.
 - **Offline first**: every change is in the local database and the outbox at once; the screens never wait for
   the network. Changes are sent in order when the server can be reached.
@@ -54,9 +55,9 @@ The backend's own rules are in `backend/convex/lib/dates.ts`, `repeat.ts` and `c
 **Sign-in.** `POST /auth/pair` with the code and this Mac's name gives a device token, which is kept only in the
 login Keychain (one generic password item, service `io.github.maiarowsky.dayhand`). `POST /auth/token` turns it
 into an app JWT for an hour, kept in memory only and fetched again five minutes before it ends. `401` from
-`/auth/token` means the Mac was revoked (`hlm revoke`): the token is dropped and Today says so; tasks and waiting
+`/auth/token` means the Mac was revoked (`dayhand revoke`): the token is dropped and Today says so; tasks and waiting
 changes stay. Network errors and `503` keep the token and retry. **Disconnect** forgets the sign-in on the Mac and
-names `hlm revoke <deviceId>` for the server.
+names `dayhand revoke <deviceId>` for the server.
 
 **Live updates** come from polling every 15 seconds while the app runs (three queries, well under the server's
 limits). The official Swift client (`convex-swift`) ships its core as a binary Rust framework, so it is not used:
@@ -91,7 +92,7 @@ The app is not signed with a Developer ID, not notarized and not in a DMG: see
 built it; after each rebuild macOS may ask once whether Dayhand may use its Keychain item.
 
 `swift run Dayhand` starts the app without a bundle, which is enough for the screens and sync but not for
-notifications or the `helm://` link (both need the bundle id).
+notifications or the `dayhand://` link (both need the bundle id).
 
 To try it against a local backend (never your production one), start the backend as in the top-level README,
 create a key and a pairing code there, then connect with `http://127.0.0.1:3211` and the code:
@@ -99,7 +100,7 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 ```sh
 (cd ../backend && npm ci --ignore-scripts && npm run backend:start)
 (cd ../backend && npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"cli","kind":"cli"}')
-(cd ../backend && HELM_URL=http://127.0.0.1:3211 HELM_API_KEY=<key> npx helm pair)
+(cd ../cli && npm ci --ignore-scripts && npm run build && DAYHAND_URL=http://127.0.0.1:3211 DAYHAND_API_KEY=<key> node dist/bin/dayhand.js pair)
 ```
 
 ## Tests
@@ -121,7 +122,7 @@ swift test                        # 122 tests, under a second; the live one is s
   phrase, works offline, syncs, and checks every change with a fresh client.
 
   ```sh
-  DAYHAND_LIVE_SITE=http://127.0.0.1:3211 DAYHAND_LIVE_CODE=<code from hlm pair> swift test --filter LiveBackend
+  DAYHAND_LIVE_SITE=http://127.0.0.1:3211 DAYHAND_LIVE_CODE=<code from dayhand pair> swift test --filter LiveBackend
   ```
 
 - **Screens**: `swift run DayhandSnapshots <folder>` draws Today, the details, the menu bar, quick add, Connect

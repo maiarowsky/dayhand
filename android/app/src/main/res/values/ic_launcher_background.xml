@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Espresso from the Helm icon palette (design/icon/helm-icon.svg). -->
+    <!-- Espresso from the Dayhand icon palette (design/icon/dayhand-icon.svg). -->
     <color name="ic_launcher_background">#3B2417</color>
 </resources>

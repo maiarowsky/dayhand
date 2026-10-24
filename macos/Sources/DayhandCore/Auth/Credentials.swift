@@ -104,7 +104,7 @@ public enum ConnectError: Error, Hashable, Sendable {
     case invalidCode
     case rateLimited(retryAfterSeconds: Int?)
     case unreachable
-    case notHelm
+    case notDayhand
     case serverError
     case storage
 }
@@ -147,7 +147,7 @@ public struct DevicePairing: Sendable {
         case .invalidCode: return .failure(.invalidCode)
         case .rateLimited(let seconds): return .failure(.rateLimited(retryAfterSeconds: seconds))
         case .unreachable: return .failure(.unreachable)
-        case .notHelm: return .failure(.notHelm)
+        case .notDayhand: return .failure(.notDayhand)
         case .serverError: return .failure(.serverError)
         }
     }

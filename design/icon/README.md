@@ -1,12 +1,12 @@
-# Helm app icon
+# Dayhand app icon
 
-`helm-icon.svg` is the source of truth: a flat vector redrawing of variant 17
+`dayhand-icon.svg` is the source of truth: a flat vector redrawing of variant 17
 ("piasta-kanciasta") from the icon variant gallery, chosen by the owner. The generated
 PNG was measured and redrawn with exact symmetry, smooth edges and no generator noise.
 
 | File | Use |
 |---|---|
-| `helm-icon.svg` | Master artwork, 1024 x 1024, full-bleed square (platforms apply their own mask). |
+| `dayhand-icon.svg` | Master artwork, 1024 x 1024, full-bleed square (platforms apply their own mask). |
 | `play-store-512.png` | Google Play listing icon, 512 x 512, no alpha, no rounding. |
 | `ios-1024.png` | iOS App Store master, 1024 x 1024, no alpha. Not wired into `ios/` yet. |
 

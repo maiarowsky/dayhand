@@ -4,7 +4,7 @@
     <string name="connections_approve_row">Zatwierdź połączenie</string>
     <string name="connections_approve_note">Wpisz kod ze strony logowania Claude albo innego agenta</string>
     <string name="connections_active">Połączone</string>
-    <string name="connections_none">Żaden agent nie jest połączony. Gdy Claude poprosi o połączenie z Helmem, jego strona pokaże kod: zatwierdź go tutaj.</string>
+    <string name="connections_none">Żaden agent nie jest połączony. Gdy Claude poprosi o połączenie z Dayhand, jego strona pokaże kod: zatwierdź go tutaj.</string>
     <string name="connections_hint">Połączony tu agent czyta i zmienia Twój plan we własnym imieniu; jego zmiany widać w historii pod jego nazwą. Rozłączenie działa od razu. Klucze API do terminala nie są tu pokazane.</string>
     <string name="connections_loading">Wczytuję połączenia…</string>
     <string name="connections_failed">Nie udało się wczytać połączeń. Sprawdź połączenie z serwerem.</string>
@@ -28,7 +28,7 @@
     <string name="approve_not_found">Żadna oczekująca prośba nie ma tego kodu. Sprawdź go albo zacznij łączenie od nowa: kod jest ważny 10 minut.</string>
     <string name="approve_rate_limited">Za dużo błędnych kodów. Spróbuj ponownie za kilka minut.</string>
     <string name="approve_failed">Brak połączenia z serwerem. Spróbuj ponownie.</string>
-    <string name="approve_asks">%1$s prosi o dostęp do Twojego planu w Helmie</string>
+    <string name="approve_asks">%1$s prosi o dostęp do Twojego planu w aplikacji Dayhand</string>
     <string name="approve_client_verified">Tożsamość z %1$s</string>
     <string name="approve_client_registered">Zarejestrował się sam (nazwa niepotwierdzona)</string>
     <string name="approve_returns_to">Odpowiedź trafi do %1$s</string>

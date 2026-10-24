@@ -36,7 +36,7 @@ struct GeneralSettings: View {
                 LabeledContent("Morning summary", value: model.settings.summaryTime)
                 LabeledContent("Default reminders", value: model.settings.reminderMinutes.isEmpty ? "None" : model.settings.reminderMinutes.map(Formatting.minutes).joined(separator: ", "))
                 LabeledContent("Time zone", value: model.settings.timezone)
-                Text("These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with hlm.")
+                Text("These come from the server's settings, so the phone, the agent and this Mac agree. Change them on the phone or with dayhand.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -102,7 +102,7 @@ struct ConnectionSettings: View {
         .confirmationDialog("Disconnect this Mac?", isPresented: $confirmDisconnect) {
             Button("Disconnect", role: .destructive) { model.disconnect() }
         } message: {
-            Text("Dayhand forgets the sign-in on this Mac; your tasks stay here. To end it on the server too, run: hlm revoke \(model.credential?.deviceId ?? "<deviceId>")")
+            Text("Dayhand forgets the sign-in on this Mac; your tasks stay here. To end it on the server too, run: dayhand revoke \(model.credential?.deviceId ?? "<deviceId>")")
         }
     }
 }

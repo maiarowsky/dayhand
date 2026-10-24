@@ -388,7 +388,7 @@ class SettingsScreenTest {
         compose.onNodeWithTag(ServerTags.CONNECT).assertDoesNotExist()
         compose.onNodeWithTag(ServerTags.DISCONNECT).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
         // The dialog names the device id for revoking it on the server too.
-        compose.onNodeWithText("hlm revoke jd7device", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("dayhand revoke jd7device", substring = true).assertIsDisplayed()
         compose.onNodeWithTag(ServerTags.DISCONNECT_CONFIRM).performClick()
         assertEquals(listOf("disconnect"), actions.calls)
     }

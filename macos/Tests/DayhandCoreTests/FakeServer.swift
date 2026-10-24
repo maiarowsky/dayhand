@@ -2,7 +2,7 @@ import Foundation
 @testable import DayhandCore
 
 /**
- * A Helm server in memory, behind the same `HTTPTransport` the app uses: `/auth/pair`, `/auth/token`, and the app
+ * A Dayhand server in memory, behind the same `HTTPTransport` the app uses: `/auth/pair`, `/auth/token`, and the app
  * functions over `/api/mutation` and `/api/query`, with the backend's rules that sync depends on (one now task,
  * `clientId` idempotency, the trash, `updatedAt`). It can go offline, lose an answer after applying a change, and
  * revoke the device. No network, no production.

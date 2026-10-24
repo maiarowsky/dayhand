@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""End-to-end offline check on an emulator against a local Helm backend.
+"""End-to-end offline check on an emulator against a local Dayhand backend.
 
 Add a task, turn the network off, add another, kill the app, turn the network on, and check
-on the server (through the helm CLI) that both tasks arrived without opening the app again.
+on the server (through the dayhand CLI) that both tasks arrived without opening the app again.
 A second round does the same with a force-stopped app, which Android lets run again only
 after it is opened.
 
 Requirements: a running emulator (adb), the debug APK, the local backend
-(npm run backend:start) and, in the environment, HELM_URL and HELM_API_KEY for the CLI of the
-app user (`https://helm.local|me`). The app is paired with a code from `helm pair`.
+(npm run backend:start) and, in the environment, DAYHAND_URL and DAYHAND_API_KEY for the CLI of the
+app user (`https://helm.local|me`). The app is paired with a code from `dayhand pair`.
 
   python3 android/scripts/e2e-offline.py --apk app-debug.apk --shots DIR
 """
@@ -26,6 +26,12 @@ PACKAGE = "io.github.maiarowsky.dayhand"
 # The code's namespace, which differs from the application id.
 ACTIVITY = f"{PACKAGE}/dev.helm.planner.MainActivity"
 BACKEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "backend")
+CLI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "cli", "dist", "bin", "dayhand.js")
+
+
+def env(name, default=""):
+    """DAYHAND_<name>, else HELM_<name>, the name before the rename."""
+    return os.environ.get(f"DAYHAND_{name}") or os.environ.get(f"HELM_{name}", default)
 
 
 def adb(*args, check=True):
@@ -41,8 +47,8 @@ def log(message):
 
 
 def ui_nodes():
-    shell("uiautomator", "dump", "/sdcard/helm-ui.xml")
-    root = ET.fromstring(adb("exec-out", "cat", "/sdcard/helm-ui.xml"))
+    shell("uiautomator", "dump", "/sdcard/dayhand-ui.xml")
+    root = ET.fromstring(adb("exec-out", "cat", "/sdcard/dayhand-ui.xml"))
     return list(root.iter("node"))
 
 
@@ -80,13 +86,14 @@ def type_text(value):
         shell("input", "text", value[start:start + 40].replace(" ", "%s"))
 
 
-def helm_cli(*args):
-    out = subprocess.run(["npx", "helm", *args], cwd=BACKEND_DIR, check=True, capture_output=True, text=True)
+def dayhand_cli(*args):
+    # The built CLI reads DAYHAND_URL and DAYHAND_API_KEY (the old HELM_* and HLM_* names too, with a warning).
+    out = subprocess.run(["node", CLI, *args], check=True, capture_output=True, text=True)
     return out.stdout
 
 
 def server_titles():
-    return {t["title"] for t in json.loads(helm_cli("list", "--done", "--json"))}
+    return {t["title"] for t in json.loads(dayhand_cli("list", "--done", "--json"))["result"]}
 
 
 def wait_on_server(titles, timeout):
@@ -133,12 +140,12 @@ def app_pid():
 
 def pairing_code():
     """A fresh one-time code from the CLI (POST /devices/pairing-code)."""
-    return json.loads(helm_cli("pair", "--json"))["code"]
+    return json.loads(dayhand_cli("pair", "--json"))["code"]
 
 
 def open_connect(server_url):
     """Opens Connect through a pairing link that carries only the server address."""
-    link = "helm://pair?url=" + urllib.parse.quote(server_url, safe="")
+    link = "dayhand://pair?url=" + urllib.parse.quote(server_url, safe="")
     shell("am", "start", "-a", "android.intent.action.VIEW", "-d", f"'{link}'", PACKAGE)
     # A cold start right after installing can take a while on a loaded emulator.
     find(text="Pairing code", timeout=60)
@@ -197,9 +204,9 @@ def main():
     if not wait_on_server({online, offline}, 180):
         raise RuntimeError("the offline task did not reach the server after the network came back")
     log(f"server has both tasks {time.time() - started:.0f} s after the network came back, app not opened (pid now: {app_pid() or 'none'})")
-    today = helm_cli("today")
+    today = dayhand_cli("today")
     assert online in today and offline in today, today
-    log("helm today lists both tasks:\n" + today)
+    log("dayhand today lists both tasks:\n" + today)
 
     # Round 2: force-stop. Android cancels the app's jobs until it is opened again.
     shell("am", "start", "-n", ACTIVITY)

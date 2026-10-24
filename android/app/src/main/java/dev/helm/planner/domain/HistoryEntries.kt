@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-/** Who made a change, as the backend records it (`actorValidator`): the app, a person with `hlm`, or an agent. */
+/** Who made a change, as the backend records it (`actorValidator`): the app, a person with `dayhand`, or an agent. */
 enum class Actor { APP, CLI, AGENT;
 
     companion object {

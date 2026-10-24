@@ -42,7 +42,7 @@ class PairingApiTest {
     }
 
     @Test
-    fun `an address that is not a Helm server is recognized`() = runTest {
+    fun `an address that is not a Dayhand server is recognized`() = runTest {
         assertEquals(PairResult.NotHelm, api(PairReply(404, "Not found")).pair("https://x", "c", "n"))
         assertEquals(PairResult.NotHelm, api(PairReply(200, "<html>login</html>")).pair("https://x", "c", "n"))
         assertEquals(PairResult.NotHelm, api(PairReply(200, """{"status":"ok"}""")).pair("https://x", "c", "n"))

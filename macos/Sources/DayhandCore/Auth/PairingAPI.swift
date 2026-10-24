@@ -8,9 +8,9 @@ public enum PairResult: Hashable, Sendable {
     case rateLimited(retryAfterSeconds: Int?)
     /// No answer at all (no route, timeout, TLS failure).
     case unreachable(String)
-    /// Something answered, but not a Helm server (404, HTML, another JSON).
-    case notHelm
-    /// A Helm server with a problem of its own (5xx, 400).
+    /// Something answered, but not a Dayhand server (404, HTML, another JSON).
+    case notDayhand
+    /// A Dayhand server with a problem of its own (5xx, 400).
     case serverError(Int)
 }
 
@@ -35,7 +35,7 @@ public struct PairingAPI: Sendable {
     }
 
     public func pair(serverUrl: String, code: String, deviceName: String) async -> PairResult {
-        guard let url = URL(string: serverUrl + "/auth/pair") else { return .notHelm }
+        guard let url = URL(string: serverUrl + "/auth/pair") else { return .notDayhand }
         let body: JSONValue = ["code": .string(code), "deviceName": .string(deviceName)]
         let reply: HTTPReply
         do {
@@ -47,18 +47,18 @@ public struct PairingAPI: Sendable {
         switch reply.status {
         case 200:
             guard let id = answer?["deviceId"]?.string, let name = answer?["deviceName"]?.string,
-                  let token = answer?["deviceToken"]?.string, let convexUrl = answer?["convexUrl"]?.string else { return .notHelm }
+                  let token = answer?["deviceToken"]?.string, let convexUrl = answer?["convexUrl"]?.string else { return .notDayhand }
             return .paired(deviceId: id, deviceName: name, deviceToken: token, convexUrl: convexUrl)
         case 401:
-            return answer?["error"]?.string == "invalid_grant" ? .invalidCode : .notHelm
+            return answer?["error"]?.string == "invalid_grant" ? .invalidCode : .notDayhand
         case 429:
             return .rateLimited(retryAfterSeconds: reply.retryAfter.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) })
         case 400:
-            return answer?["error"]?.string != nil ? .serverError(400) : .notHelm
+            return answer?["error"]?.string != nil ? .serverError(400) : .notDayhand
         case 500...599:
             return .serverError(reply.status)
         default:
-            return .notHelm
+            return .notDayhand
         }
     }
 

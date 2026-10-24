@@ -72,7 +72,7 @@ data class ConnectUiState(
     val address: String,
     val code: String,
     val phase: ConnectPhase,
-    /** Opened by itself at first start: offers Helm on this phone only first, the server second. */
+    /** Opened by itself at first start: offers Dayhand on this phone only first, the server second. */
     val firstRun: Boolean,
     /** The server signed this phone out; said once at the top. */
     val signedOut: Boolean = false,
@@ -90,7 +90,7 @@ interface ConnectActions {
 /**
  * Where the plan lives. At first start: on this phone only (empty, or with the sample plan), or a server of one's
  * own, whose card opens the pairing form. From Settings or a pairing link: the form, server address and the
- * one-time code from `hlm pair` (docs/pairing.md).
+ * one-time code from `dayhand pair` (docs/pairing.md).
  */
 @Composable
 fun ConnectScreen(state: ConnectUiState, actions: ConnectActions) {
@@ -124,7 +124,7 @@ fun ConnectScreen(state: ConnectUiState, actions: ConnectActions) {
     (state.phase as? ConnectPhase.ConfirmReplace)?.let { ReplacePlanDialog(it.replace, actions::cancelReplace, actions::confirmReplace) }
 }
 
-/** The two ways to use Helm, the phone first: it needs nothing and is what a new user wants. */
+/** The two ways to use Dayhand, the phone first: it needs nothing and is what a new user wants. */
 @Composable
 private fun ColumnScope.Choices(enabled: Boolean, actions: ConnectActions, openForm: () -> Unit) {
     val p = palette

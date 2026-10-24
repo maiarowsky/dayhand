@@ -9,7 +9,7 @@ import dev.helm.planner.domain.morningSummary
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** The two alarms Helm keeps: the next reminder and the next morning summary. */
+/** The two alarms Dayhand keeps: the next reminder and the next morning summary. */
 enum class AlarmKind { REMINDER, SUMMARY }
 
 /** AlarmManager, seen from the engine; [set] replaces the alarm of the same kind. */

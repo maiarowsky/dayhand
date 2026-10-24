@@ -115,7 +115,7 @@ class PlanBackupTest {
 
     @Test
     fun theServersExportReadsTooWrappedOrNot() {
-        // What app:exportPlan returns (numbers as doubles, as Convex sends them) and what hlm export writes.
+        // What app:exportPlan returns (numbers as doubles, as Convex sends them) and what dayhand export writes.
         val content = """
             {"version":1.0,"exportedAt":1.7E12,"settings":{"timezone":"Europe/London","summaryTime":"05:00","defaultReminderMinutes":[0.0]},
              "tasks":[{"id":"jd7x","ref":4.0,"title":"From the server","status":"todo","isNow":false,"labels":[],"links":[],
@@ -193,7 +193,7 @@ class PlanBackupTest {
 
     @Test
     fun theFileIsNamedAfterToday() {
-        assertEquals("helm-backup-2026-10-23.json", PlanBackup.fileName("2026-10-23"))
+        assertEquals("dayhand-backup-2026-10-23.json", PlanBackup.fileName("2026-10-23"))
         assertTrue(parse(PlanBackup.write(emptyList(), settings, 0)).getValue("tasks") is JsonArray)
         assertTrue(parse(PlanBackup.write(emptyList(), settings, 0)).getValue("settings") is JsonObject)
     }

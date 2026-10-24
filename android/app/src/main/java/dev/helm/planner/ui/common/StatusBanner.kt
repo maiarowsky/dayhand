@@ -13,7 +13,7 @@ import dev.helm.planner.ui.components.StatusBanner as ToneBanner
 /**
  * The connection line at the top of Today and the board when it needs a word: offline, changes waiting, refused
  * token; a warning or danger tone by how serious it is. On this phone only ([ConnectionStatus.LOCAL]) is a way of
- * using Helm, not a problem, so it has no line.
+ * using Dayhand, not a problem, so it has no line.
  */
 @Composable
 fun StatusBanner(status: ConnectionStatus, pending: Int, openSettings: () -> Unit, modifier: Modifier = Modifier) {

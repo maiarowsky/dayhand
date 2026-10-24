@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end check of the board and task details on an emulator against a local Helm backend.
+"""End-to-end check of the board and task details on an emulator against a local Dayhand backend.
 
 The agent adds a task through MCP; in the app it is dragged to "In progress" on the board and
 moved to "Done" from the card's menu (no dragging). In the details screen the title, a label,
@@ -9,8 +9,8 @@ Trash screen. Finally an agent edit must show up in the task's history marked "A
 step is checked on the server through MCP, as the agent sees it.
 
 Requirements as for e2e-offline.py: a running emulator (adb), the debug APK, the local backend
-and HELM_URL / HELM_API_KEY of the app user in the environment; the app is paired with a code
-from `helm pair`. HELM_AGENT_KEY is an agent key of the same user (`"kind":"agent"`), so the
+and DAYHAND_URL / DAYHAND_API_KEY of the app user in the environment; the app is paired with a code
+from `dayhand pair`. DAYHAND_AGENT_KEY is an agent key of the same user (`"kind":"agent"`), so the
 agent's changes are recorded as the agent's: a `cli` key records them as the person's.
 
   python3 android/scripts/e2e-board-details.py --apk app-debug.apk --shots DIR
@@ -44,13 +44,13 @@ SYNC_TIMEOUT = 150
 
 
 def mcp(tool, **arguments):
-    """Calls one MCP tool with the agent key (HELM_AGENT_KEY) and returns its JSON result."""
-    url = os.environ["HELM_URL"].rstrip("/") + "/mcp"
+    """Calls one MCP tool with the agent key (DAYHAND_AGENT_KEY) and returns its JSON result."""
+    url = base.env("URL").rstrip("/") + "/mcp"
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": tool, "arguments": arguments}})
     request = urllib.request.Request(url, data=body.encode(), method="POST", headers={
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
-        "Authorization": f"Bearer {os.environ['HELM_AGENT_KEY']}",
+        "Authorization": f"Bearer {base.env('AGENT_KEY')}",
     })
     with urllib.request.urlopen(request, timeout=15) as response:
         message = json.loads(response.read())
@@ -151,7 +151,7 @@ def main():
     # A first start (keystore key, database) on a loaded emulator drops taps for a while.
     time.sleep(10)
 
-    task = mcp("add_task", title=title, dueDate="today", labels=["Helm"])
+    task = mcp("add_task", title=title, dueDate="today", labels=["Dayhand"])
     task_id = task["id"]
     log(f"agent added {title} ({task_id})")
     # Without the native Convex client the app polls every 30 s, so allow for one round.
@@ -191,13 +191,13 @@ def main():
     tap(edit_text())
     type_text("Family")
     tap(button("Add"))
-    wait_server(task_id, lambda t: t["labels"] == ["Helm", "Family"], "labels Helm, Family")
+    wait_server(task_id, lambda t: t["labels"] == ["Dayhand", "Family"], "labels Dayhand, Family")
 
     tap(find(text="Add a time"))
     tap(button("OK"))
     wait_server(task_id, lambda t: t.get("dueTime") == "09:00", "time 09:00")
     # The first task with a time asks for the notification permission (Android 13+).
-    find(text="Allow Helm to send you notifications?")
+    find(text="Allow Dayhand to send you notifications?")
     tap(button("Allow"))
     log("notification permission asked for the first timed task, allowed")
 

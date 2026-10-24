@@ -108,15 +108,15 @@ class TaskEditingTest {
         repository.setRepeat(a.localId, null)
         assertEquals(JsonNull, lastArgs()["repeat"])
 
-        repository.setLabels(a.localId, listOf(" Helm", "home", "Helm"))
-        assertEquals(listOf("Helm", "home"), lastArgs().getValue("labels").jsonArray.map { it.jsonPrimitive.content })
+        repository.setLabels(a.localId, listOf(" Dayhand", "home", "Dayhand"))
+        assertEquals(listOf("Dayhand", "home"), lastArgs().getValue("labels").jsonArray.map { it.jsonPrimitive.content })
 
         repository.setLinks(a.localId, listOf(TaskLink("https://example.com", "Spec")))
         val link = lastArgs().getValue("links").jsonArray.single().jsonObject
         assertEquals("https://example.com", link.getValue("url").jsonPrimitive.content)
 
         row = db.tasks().byLocalId(a.localId)!!
-        assertEquals(listOf("Helm", "home"), row.labels)
+        assertEquals(listOf("Dayhand", "home"), row.labels)
         assertEquals(listOf(TaskLink("https://example.com", "Spec")), row.links)
         assertTrue(db.outbox().all().drop(1).all { it.mutation == Mutations.UPDATE })
     }

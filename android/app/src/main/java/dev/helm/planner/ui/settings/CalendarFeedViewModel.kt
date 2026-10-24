@@ -44,7 +44,7 @@ data class CalendarFeedUiState(
 
 /**
  * Settings → Calendar. Nothing is cached: the address is read when the page opens and after every change, so a
- * new address made with `hlm calendar rotate` shows here too. [api] and [exporter] are null while the phone is not
+ * new address made with `dayhand calendar rotate` shows here too. [api] and [exporter] are null while the phone is not
  * paired (or in the offline test mode).
  */
 class CalendarFeedViewModel(

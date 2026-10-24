@@ -42,7 +42,7 @@ object CalendarDays {
     private const val MINUTES_PER_DAY = 24 * 60
     private const val MAX_REPEATS_PER_TASK = 62
 
-    /** The Monday of [date]'s week (weeks start on Monday, as Helm's repeat rules do). */
+    /** The Monday of [date]'s week (weeks start on Monday, as Dayhand's repeat rules do). */
     fun weekStart(date: LocalDate): LocalDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
     /**

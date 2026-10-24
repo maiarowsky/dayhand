@@ -2,9 +2,9 @@
 """End-to-end check of agent connections (OAuth, docs/oauth.md) on an emulator against a local backend.
 
 A simulated Claude app (this script, over HTTP from the computer) asks for access; the owner
-approves it in the Helm app on the emulator by typing the code from the sign-in page:
+approves it in the Dayhand app on the emulator by typing the code from the sign-in page:
 
-1. The app is paired (hlm pair) and Settings → Agent connections is empty.
+1. The app is paired (dayhand pair) and Settings → Agent connections is empty.
 2. Claude registers itself (DCR) and opens the authorization page; the page shows a code.
 3. In the app: Approve a connection → the code → the consent screen (who, where it returns, what
    it may do) → Approve. The page continues with an authorization code for claude.ai.
@@ -14,7 +14,7 @@ approves it in the Helm app on the emulator by typing the code from the sign-in 
 6. Disconnecting in the app stops the token at once (401 on /mcp).
 
 Requirements as for e2e-pairing.py: a running emulator (adb), the debug APK, the local backend
-(npm run backend:start), HELM_URL and HELM_API_KEY of the app user (`https://helm.local|me`).
+(npm run backend:start), DAYHAND_URL and DAYHAND_API_KEY of the app user (`https://helm.local|me`).
 
   python3 android/scripts/e2e-connections.py --apk app-debug.apk --shots DIR
 """
@@ -136,7 +136,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--apk", required=True)
     parser.add_argument("--server-url", default="http://10.0.2.2:3211", help="HTTP actions URL as the emulator sees it")
-    parser.add_argument("--site-url", default=os.environ.get("HELM_URL", "http://127.0.0.1:3211"), help="the same URL as this computer sees it")
+    parser.add_argument("--site-url", default=base.env("URL", "http://127.0.0.1:3211"), help="the same URL as this computer sees it")
     parser.add_argument("--shots", help="directory for screenshots")
     args = parser.parse_args()
     shot = lambda name: base.screenshot(args.shots, name)  # noqa: E731
@@ -148,7 +148,7 @@ def main():
     adb("install", "-r", args.apk)
     shell("pm", "clear", PACKAGE)
     shell("am", "start", "-n", ACTIVITY)
-    find(text="Welcome to Helm", timeout=120)
+    find(text="Welcome to Dayhand", timeout=120)
     base.configure(args.server_url, args.shots)
 
     # 1. Nothing connected yet.

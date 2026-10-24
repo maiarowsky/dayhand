@@ -199,7 +199,7 @@ final class AppModel: ObservableObject {
 
     var lastServerUrl: String? { credential?.serverUrl ?? defaults.string(forKey: Keys.lastServer) }
 
-    /// Forgets the sign-in on this Mac. Tasks and waiting changes stay; `hlm revoke <deviceId>` ends it on the server.
+    /// Forgets the sign-in on this Mac. Tasks and waiting changes stay; `dayhand revoke <deviceId>` ends it on the server.
     func disconnect() {
         stopSession()
         do {
@@ -216,7 +216,7 @@ final class AppModel: ObservableObject {
         Task { await engine.round() }
     }
 
-    /// A `helm://pair` or `dayhand://pair` link (the QR code of `hlm pair`) opens Connect filled in.
+    /// A `dayhand://pair` or `helm://pair` link (the QR code of `dayhand pair`) opens Connect filled in.
     func open(_ url: URL) {
         guard let link = PairingInput.parseLink(url.absoluteString) else { return }
         connectPrefill = link

@@ -4,7 +4,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
 
-/** A `helm://pair?url=…&code=…` link from `hlm pair` (text or QR), see docs/pairing.md. */
+/** A `dayhand://pair?url=…&code=…` link from `dayhand pair` (text or QR), see docs/pairing.md. */
 data class PairingLink(val serverUrl: String?, val code: String?)
 
 /** Checks of what the user types on the Connect screen, the same rules as the backend. */
@@ -14,6 +14,9 @@ object PairingInput {
     private const val CODE_LENGTH = 12
     private const val GROUP = 4
     private val LOOPBACK_HOSTS = setOf("127.0.0.1", "localhost", "0.0.0.0", "::1", "[::1]")
+
+    /** `dayhand://pair` is what `dayhand pair` prints; `helm://pair` is the same link from `hlm` before the rename. */
+    private val LINK_SCHEMES = setOf("dayhand", "helm")
 
     /**
      * `XXXX-XXXX-XXXX` from a typed code (any case, with or without dashes and spaces; `O` is
@@ -47,7 +50,7 @@ object PairingInput {
     /** The server and code from a pairing link, or null when [uri] is not one. */
     fun parseLink(uri: String): PairingLink? {
         val parsed = parse(uri.trim()) ?: return null
-        if (parsed.scheme != "helm" || parsed.host != "pair") return null
+        if (parsed.scheme !in LINK_SCHEMES || parsed.host != "pair") return null
         val params = parsed.rawQuery.orEmpty().split('&').mapNotNull { pair ->
             val parts = pair.split('=', limit = 2)
             if (parts.size != 2) return@mapNotNull null

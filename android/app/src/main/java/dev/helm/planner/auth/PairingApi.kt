@@ -33,10 +33,10 @@ sealed interface PairResult {
     /** No answer at all (no route, timeout, TLS failure). */
     data class Unreachable(val reason: String) : PairResult
 
-    /** Something answered, but not a Helm server (404, HTML, another JSON). */
+    /** Something answered, but not a Dayhand server (404, HTML, another JSON). */
     data object NotHelm : PairResult
 
-    /** A Helm server with a problem of its own (5xx, 400). */
+    /** A Dayhand server with a problem of its own (5xx, 400). */
     data class ServerError(val status: Int) : PairResult
 }
 

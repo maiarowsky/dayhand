@@ -24,7 +24,7 @@ val helmType: HelmType
     @Composable @ReadOnlyComposable get() = LocalHelmType.current
 
 /**
- * The theme of the whole app: the palette and type scale for Helm's own components, and a Material 3 scheme, type
+ * The theme of the whole app: the palette and type scale for Dayhand's own components, and a Material 3 scheme, type
  * scale and shapes built from them for fields, switches, dialogs, menus and pickers. Changing [appearance] redraws
  * the whole tree at once.
  */

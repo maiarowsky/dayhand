@@ -96,7 +96,7 @@ class ConnectViewModel(
     }
 
     /**
-     * Helm on this phone only, empty or with the sample plan in the app's language ([text]). Outlives this screen,
+     * Dayhand on this phone only, empty or with the sample plan in the app's language ([text]). Outlives this screen,
      * which closes right away.
      */
     fun useLocally(sample: Boolean, text: (SampleText) -> String) {

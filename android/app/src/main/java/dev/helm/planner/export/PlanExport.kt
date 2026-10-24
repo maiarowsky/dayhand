@@ -39,8 +39,8 @@ class PlanExporter(private val remote: HttpTaskRemote) {
 object PlanExport {
     private val pretty = Json { prettyPrint = true }
 
-    /** `helm-plan-2026-10-22.md`: the name offered in the system save dialog. */
-    fun fileName(format: ExportFormat, today: String) = "helm-plan-$today.${format.extension}"
+    /** `dayhand-plan-2026-10-22.md`: the name offered in the system save dialog. */
+    fun fileName(format: ExportFormat, today: String) = "dayhand-plan-$today.${format.extension}"
 
     /** The file content from the answer `{format, content}`: the Markdown or iCalendar text, or the JSON copy indented. */
     fun content(format: ExportFormat, value: JsonElement): String? {

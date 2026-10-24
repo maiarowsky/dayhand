@@ -14,6 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "helm-android"
+rootProject.name = "dayhand-android"
 
 include(":app")

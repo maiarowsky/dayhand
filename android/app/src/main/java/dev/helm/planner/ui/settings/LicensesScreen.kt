@@ -23,7 +23,7 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
 /**
- * Licenses of what the app ships: Helm itself, then one row per bundled font; tapping a row shows its full license text
+ * Licenses of what the app ships: Dayhand itself, then one row per bundled font; tapping a row shows its full license text
  * under it.
  */
 @Composable

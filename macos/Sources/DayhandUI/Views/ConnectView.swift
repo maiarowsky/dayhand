@@ -1,7 +1,7 @@
 import DayhandCore
 import SwiftUI
 
-/// Connect to a server with a one-time code from `hlm pair` (or a `helm://pair` / `dayhand://pair` link).
+/// Connect to a server with a one-time code from `dayhand pair` (or a `dayhand://pair` / `helm://pair` link).
 struct ConnectView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -13,7 +13,7 @@ struct ConnectView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Connect to your server").font(.title2).bold()
-            Text("On a computer signed in to your server, run `hlm pair` and type the code it shows, or open the link it prints. The code works once, for 10 minutes.")
+            Text("On a computer signed in to your server, run `dayhand pair` and type the code it shows, or open the link it prints. The code works once, for 10 minutes.")
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Form {
@@ -63,12 +63,12 @@ struct ConnectView: View {
         switch error {
         case .badAddress: return "That is not a server address. It looks like https://<name>.convex.site."
         case .badCode: return "A pairing code has 12 letters and digits, like E6M8-FE02-XSNT."
-        case .invalidCode: return "The code is wrong, used or expired. Run hlm pair again for a new one."
+        case .invalidCode: return "The code is wrong, used or expired. Run dayhand pair again for a new one."
         case .rateLimited(let seconds):
             let wait = seconds.map { $0 >= 60 ? "\(($0 + 59) / 60) min" : "\($0) s" } ?? "a few minutes"
             return "Too many wrong codes on this server. Try again in \(wait)."
         case .unreachable: return "The server cannot be reached. Check the address and the network."
-        case .notHelm: return "Something answered at that address, but it is not a Dayhand server."
+        case .notDayhand: return "Something answered at that address, but it is not a Dayhand server."
         case .serverError: return "The server has a problem. Try again later."
         case .storage: return "The sign-in could not be saved in the Keychain."
         }
