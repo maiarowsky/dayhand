@@ -17,6 +17,13 @@ export const RESOURCES = [
     mimeType: "application/json",
   },
   {
+    uri: "dayhand://activity",
+    name: "activity",
+    title: "Activity log",
+    description: "The newest task changes as list_events returns them, with the cursor to follow the log from (dayhand://activity?since=<cursor>).",
+    mimeType: "application/json",
+  },
+  {
     uri: "dayhand://guide",
     name: "guide",
     title: "How to work with Dayhand",
@@ -26,6 +33,13 @@ export const RESOURCES = [
 ];
 
 export const RESOURCE_TEMPLATES = [
+  {
+    uriTemplate: "dayhand://activity{?since}",
+    name: "activity-since",
+    title: "Activity log since a cursor",
+    description: "Task changes after a cursor (nextCursor of an earlier read) or a time, oldest first, as list_events with since.",
+    mimeType: "application/json",
+  },
   {
     uriTemplate: "dayhand://tasks/{ref}",
     name: "task",
@@ -53,6 +67,17 @@ export async function readResource(ctx: ActionCtx, identity: Identity, uri: stri
   if (name === "dayhand://today") {
     const today = await ctx.runQuery(internal.ops.listToday, { ...identity, at: Date.now() });
     return { uri, mimeType: "application/json", text: JSON.stringify(today, null, 2) };
+  }
+  const activity = /^dayhand:\/\/activity(?:\?since=([^&#]*))?$/.exec(name);
+  if (activity) {
+    let since: string | undefined;
+    try {
+      since = activity[1] === undefined ? undefined : decodeURIComponent(activity[1]);
+    } catch {
+      return null;
+    }
+    const log = await ctx.runQuery(internal.ops.listEvents, { ...identity, ...(since ? { since } : {}) });
+    return { uri, mimeType: "application/json", text: JSON.stringify(log, null, 2) };
   }
   const task = /^dayhand:\/\/tasks\/(\d{1,15})$/.exec(name);
   if (task) {

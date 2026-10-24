@@ -11,7 +11,7 @@ const OUTPUT = new URL("../convex/lib/outputSchemas.ts", import.meta.url);
 // The tool results (and the tool error), the REST API's own results and its
 // problem details (lib/openapi.ts), and what they reference.
 const ROOTS = [
-  "task", "task-list", "today", "board", "task-detail", "complete", "set-now", "export", "settings", "tool-error",
+  "task", "task-list", "today", "board", "task-detail", "complete", "set-now", "export", "settings", "tool-error", "event-list",
   "problem", "api-key-list", "api-key-created", "api-key-revoke",
   "webhook-list", "webhook-one", "webhook-created", "webhook-delete", "webhook-test", "webhook-delivery-list", "webhook-event",
   "import-result",

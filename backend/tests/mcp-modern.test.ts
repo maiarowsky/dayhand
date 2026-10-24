@@ -38,7 +38,7 @@ describe("MCP 2026-07-28 on the wire", () => {
     const key = await createKey(newUserId());
     const tools = await post(key, "tools/list");
     expect(tools.body.result).toMatchObject({ resultType: "complete", ttlMs: 300000, cacheScope: "public" });
-    expect(tools.body.result.tools).toHaveLength(17);
+    expect(tools.body.result.tools).toHaveLength(21);
     const added = await post(key, "tools/call", { name: "add_task", arguments: { title: "Modern" } });
     expect(added.body.result).toMatchObject({
       resultType: "complete",
@@ -124,7 +124,7 @@ describe("MCP 2026-07-28 on the wire", () => {
     const response = await mcpPost(key, { jsonrpc: "2.0", id: 1, method: "tools/list" }, { Origin: "https://evil.example" });
     expect(response.status).toBe(403);
     const { body } = await post(key, "tools/list");
-    expect(body.result.tools).toHaveLength(17);
+    expect(body.result.tools).toHaveLength(21);
   });
 });
 
@@ -136,7 +136,7 @@ describe("the official v2 SDK client", () => {
     expect(client.getProtocolEra()).toBe("modern");
     expect(client.getServerVersion()).toMatchObject({ name: "dayhand" });
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(17);
+    expect(tools).toHaveLength(21);
     const added = await client.callTool({ name: "add_task", arguments: { title: "From the v2 client", dueDate: "today" } });
     expect(added.structuredContent).toMatchObject({ title: "From the v2 client" });
     const page = await client.callTool({ name: "list_all", arguments: { query: "v2", limit: 1 } });
@@ -157,7 +157,7 @@ describe("the official v2 SDK client", () => {
     const legacy = v2Client(key);
     await legacy.connect();
     expect(legacy.client.getProtocolEra()).toBe("legacy");
-    expect((await legacy.client.listTools()).tools).toHaveLength(17);
+    expect((await legacy.client.listTools()).tools).toHaveLength(21);
     await legacy.client.close();
     // And the v1 client (2025-11-25 handshake) sees the same data.
     const v1 = await mcpClient(key);

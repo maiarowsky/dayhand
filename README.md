@@ -16,6 +16,11 @@ there ([docs/oauth.md](docs/oauth.md)). Other tools use the REST API `/api/v1` w
 import from Dayhand JSON, iCalendar or Todoist CSV. Every change is recorded with who made it
 (`app`, `cli` or `agent: <name>`).
 
+Several agents can work on one plan: an activity log returns only what changed since an agent's
+own cursor, tasks carry acceptance criteria, a plan and proof of completion, dependencies and a
+blocked reason (`list_all` `ready`), and an agent claims a task for a while so others leave it
+alone, while the owner can always take it over ([docs/agent-work.md](docs/agent-work.md)).
+
 Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0; see
 [Renamed from Helm](#renamed-from-helm) for what changed and what keeps working.
 

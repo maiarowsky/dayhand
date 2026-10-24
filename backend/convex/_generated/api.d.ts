@@ -17,6 +17,8 @@ import type * as connections from "../connections.js";
 import type * as crons from "../crons.js";
 import type * as devices from "../devices.js";
 import type * as http from "../http.js";
+import type * as lib_activity from "../lib/activity.js";
+import type * as lib_agentWork from "../lib/agentWork.js";
 import type * as lib_appToken from "../lib/appToken.js";
 import type * as lib_args from "../lib/args.js";
 import type * as lib_cimd from "../lib/cimd.js";
@@ -82,6 +84,8 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   devices: typeof devices;
   http: typeof http;
+  "lib/activity": typeof lib_activity;
+  "lib/agentWork": typeof lib_agentWork;
   "lib/appToken": typeof lib_appToken;
   "lib/args": typeof lib_args;
   "lib/cimd": typeof lib_cimd;

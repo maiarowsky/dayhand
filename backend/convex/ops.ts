@@ -4,6 +4,8 @@
 import { ConvexError, v, type ObjectType, type PropertyValidators } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
+import { listEvents as listEventsOp } from "./lib/activity";
+import { claimTask, releaseTask, renewClaim as renewClaimOp } from "./lib/agentWork";
 import { args, DRY_RUN_CODE, dryRunArgs } from "./lib/args";
 import { appliedOperation, fail, identityOf as who, loadTask, versionTag, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
@@ -78,6 +80,9 @@ export const softDelete = change(args.softDelete, softDeleteTask);
 export const restore = change(args.restore, restoreTask);
 export const updateSettings = change(args.updateSettings, updateSettingsOp);
 export const importTasks = change(importArgs, importTasksOp);
+export const claim = change(args.claim, claimTask);
+export const renewClaim = change(args.renewClaim, renewClaimOp);
+export const release = change(args.release, releaseTask);
 
 export const listToday = internalQuery({
   args: { ...identity, ...args.listToday },
@@ -106,6 +111,10 @@ export const getTask = internalQuery({
 export const exportPlan = internalQuery({
   args: { ...identity, ...args.exportPlan },
   handler: (ctx, a) => exportPlanOp(ctx, who(a), a),
+});
+export const listEvents = internalQuery({
+  args: { ...identity, ...args.listEvents },
+  handler: (ctx, a) => listEventsOp(ctx, who(a), a),
 });
 export const getSettings = internalQuery({
   args: { ...identity, ...args.getSettings },

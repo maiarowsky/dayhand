@@ -57,8 +57,9 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 | Table | Purpose |
 |---|---|
-| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
-| `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId` |
+| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
+| `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId`, and for task changes `seq`, the position in the activity log (`list_events`) |
+| `eventCounters` | Last activity log position given per user (`lastSeq`); every task change reads and writes it, so positions follow the commit order |
 | `taskCounters` | Last task number given per user (`lastRef`) |
 | `apiKeys` | `name`, `kind` (`cli` or `agent`), `scope` (`read`, `write` or `full`; absent = `full`), `expiresAt`, `parentKeyId` (the key that created it through `/api/v1/keys`), SHA-256 `hash` of the key, `createdAt`, `revokedAt` |
 | `pairingCodes` | One-time pairing codes: public `selector`, SHA-256 `secretHash` of the secret part, `createdBy`, `expiresAt` (10 minutes), `usedAt`, `failedAttempts` |

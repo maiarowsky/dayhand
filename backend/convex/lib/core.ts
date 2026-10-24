@@ -32,7 +32,8 @@ export function actorLabel(event: { actor: Actor; actorName?: string }): string 
   return event.actor === "agent" && event.actorName ? `agent: ${event.actorName}` : event.actor;
 }
 
-export type ErrorCode = "invalid_argument" | "not_found" | "unauthenticated" | "precondition_failed";
+// conflict (since 0.10.0): another agent holds the task's claim (claim_task).
+export type ErrorCode = "invalid_argument" | "not_found" | "unauthenticated" | "precondition_failed" | "conflict";
 
 export function fail(code: ErrorCode, message: string): never {
   throw new ConvexError({ code, message });
@@ -112,6 +113,24 @@ export async function nextTaskRef(ctx: MutationCtx, userId: string): Promise<num
   return ref;
 }
 
+/**
+ * The next position in the user's activity log (taskEvents.seq). It starts
+ * from the change's time in microseconds and grows by one past the last
+ * position, so it follows the order changes commit even when two changes
+ * share a millisecond: every task change reads and writes the counter, and
+ * Convex runs such mutations one after the other.
+ */
+async function nextEventSeq(ctx: MutationCtx, userId: string, at: number): Promise<number> {
+  const counter = await ctx.db
+    .query("eventCounters")
+    .withIndex("by_user", (q) => q.eq("userId", userId))
+    .unique();
+  const seq = Math.max((counter?.lastSeq ?? 0) + 1, at * 1000);
+  if (counter) await ctx.db.patch(counter._id, { lastSeq: seq });
+  else await ctx.db.insert("eventCounters", { userId, lastSeq: seq });
+  return seq;
+}
+
 export async function recordEvent(
   ctx: MutationCtx,
   identity: Identity,
@@ -131,6 +150,8 @@ export async function recordEvent(
     connectionId: identity.connectionId,
     actorName: identity.actorName,
     at,
+    // Only changes of a task enter the activity log (list_events).
+    seq: event.taskId ? await nextEventSeq(ctx, identity.userId, at) : undefined,
     ...event,
   });
   // A change of a task is also an event for the user's webhooks (lib/webhookEvents.ts).
@@ -178,6 +199,15 @@ export async function appliedOperation(ctx: QueryCtx, userId: string, clientId?:
     .query("taskEvents")
     .withIndex("by_user_clientId", (q) => q.eq("userId", userId).eq("clientId", clientId))
     .first();
+}
+
+/** Current state of the task touched by an already applied operation, or null. */
+export async function replay(ctx: MutationCtx, userId: string, clientId?: string) {
+  const event = await appliedOperation(ctx, userId, checkClientId(clientId));
+  if (!event) return null;
+  const task = event.taskId ? await ctx.db.get(event.taskId) : null;
+  if (!task) fail("not_found", "Task of this operation no longer exists");
+  return task;
 }
 
 // ---- Input checks shared by all operations ----

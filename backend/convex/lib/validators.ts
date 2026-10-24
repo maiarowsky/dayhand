@@ -82,3 +82,39 @@ export type Reminder = Infer<typeof reminderValidator>;
 /** Optional field in an update: omitted = keep, null = clear. */
 export const clearable = <T extends Parameters<typeof v.union>[0]>(validator: T) =>
   v.optional(v.union(validator, v.null()));
+
+// Since 0.10.0 (docs/agent-work.md): what "done" means for a task. One
+// acceptance criterion; the list's order is the order shown.
+export const acceptanceItemValidator = v.object({ id: v.string(), text: v.string(), met: v.boolean() });
+export type AcceptanceItem = Infer<typeof acceptanceItemValidator>;
+
+// Criteria as clients send them: a new one may leave out its id (the server gives `a<n>`) and met.
+export const acceptanceInputValidator = v.object({
+  id: v.optional(v.string()),
+  text: v.string(),
+  met: v.optional(v.boolean()),
+});
+export type AcceptanceInput = Infer<typeof acceptanceInputValidator>;
+
+// One check behind a completion, e.g. a test run or a CI job, and where to see it.
+export const proofCheckValidator = v.object({
+  name: v.string(),
+  result: v.union(v.literal("pass"), v.literal("fail")),
+  url: v.optional(v.string()),
+});
+
+// What complete_task was given to show the work is done; kept on the task.
+export const proofValidator = v.object({
+  summary: v.optional(v.string()),
+  links: v.optional(v.array(linkValidator)),
+  checks: v.optional(v.array(proofCheckValidator)),
+});
+export type Proof = Infer<typeof proofValidator>;
+
+// Who holds a task's claim (claim_task): an API key or an agent connection, and its name.
+export const claimHolderValidator = v.object({
+  keyId: v.optional(v.id("apiKeys")),
+  connectionId: v.optional(v.id("oauthGrants")),
+  name: v.string(),
+});
+export type ClaimHolder = Infer<typeof claimHolderValidator>;

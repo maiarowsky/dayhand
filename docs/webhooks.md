@@ -32,7 +32,7 @@ A user may have at most 10 webhooks.
 | Type | When |
 |---|---|
 | `task.created` | A task is added (also the next occurrence of a repeating task, and imported tasks) |
-| `task.updated` | A task's fields, status or now flag change, or it is archived |
+| `task.updated` | A task's fields, status or now flag change, it is archived, or it is claimed or released (`claim_task`, `release_task`; renewing a claim sends nothing) |
 | `task.completed` | A task is marked done |
 | `task.deleted` | A task goes to the trash |
 | `task.restored` | A task comes back from the trash or the archive |

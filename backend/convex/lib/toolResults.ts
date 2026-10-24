@@ -8,7 +8,7 @@ import type { ErrorCode } from "./core";
 export type ToolErrorCode = ErrorCode | "rate_limited" | "internal";
 export type ToolError = { code: ToolErrorCode; message: string; retryAfterMs?: number };
 
-const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated", "precondition_failed"];
+const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated", "precondition_failed", "conflict"];
 
 /** Error safe to show the caller: domain errors and argument errors, nothing internal. */
 export function describeError(error: unknown): ToolError {

@@ -76,6 +76,19 @@ export const TOOL_ROUTES: ToolRoute[] = [
   { method: "DELETE", path: "/now", tool: "set_now", input: "body", fixed: { taskId: null }, operationId: "clearNowTask", tag: task, scope: "write", summary: "Clear the now task" },
   { method: "POST", path: "/tasks/{taskId}/archive", tool: "archive_task", input: "body", operationId: "archiveTask", tag: task, scope: "write", etag: true, ifMatch: true, summary: "Archive a task" },
   { method: "POST", path: "/tasks/{taskId}/restore", tool: "restore_task", input: "body", operationId: "restoreTask", tag: task, scope: "write", etag: true, ifMatch: true, summary: "Restore a task from the trash or the archive" },
+  {
+    method: "POST", path: "/tasks/{taskId}/claim", tool: "claim_task", input: "body", operationId: "claimTask", tag: task, scope: "write", etag: true, ifMatch: true,
+    summary: "Claim a task for a while (409 while another agent holds it)",
+  },
+  {
+    method: "POST", path: "/tasks/{taskId}/claim/renew", tool: "renew_claim", input: "body", operationId: "renewClaim", tag: task, scope: "write", etag: true, ifMatch: true,
+    summary: "Extend your claim of a task",
+  },
+  {
+    method: "POST", path: "/tasks/{taskId}/release", tool: "release_task", input: "body", operationId: "releaseTask", tag: task, scope: "write", etag: true, ifMatch: true,
+    summary: "End your claim of a task, optionally with a checkpoint note",
+  },
+  { method: "GET", path: "/events", tool: "list_events", input: "query", operationId: "listEvents", tag: views, scope: "read", summary: "The activity log: task changes after a cursor" },
   { method: "GET", path: "/today", tool: "list_today", input: "query", operationId: "getToday", tag: views, scope: "read", summary: "The Today screen" },
   { method: "GET", path: "/board", tool: "board", input: "query", operationId: "getBoard", tag: views, scope: "read", summary: "The board: todo, doing, done" },
   { method: "GET", path: "/trash", tool: "list_trash", input: "query", operationId: "listTrash", tag: views, scope: "read", summary: "Tasks in the trash" },

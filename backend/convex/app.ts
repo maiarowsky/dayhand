@@ -17,6 +17,7 @@ import { fail, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { scopeValidator } from "./lib/oauthConfig";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
+import { releaseTask } from "./lib/agentWork";
 import {
   addTask,
   archiveTask,
@@ -73,6 +74,11 @@ export const softDelete = mutation({
 export const restore = mutation({
   args: args.restore,
   handler: async (ctx, a) => restoreTask(ctx, await appUser(ctx), a),
+});
+// The owner takes a task over from an agent: the claim ends at once (owner wins).
+export const release = mutation({
+  args: args.release,
+  handler: async (ctx, a) => releaseTask(ctx, await appUser(ctx), a),
 });
 export const updateSettings = mutation({
   args: args.updateSettings,

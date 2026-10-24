@@ -5,7 +5,9 @@ import { CALL_LIMITS } from "../callLimits";
 export const INSTRUCTIONS =
   'Dayhand is the user\'s personal task list and day plan. Start with list_today (or read dayhand://today). Refer to a task by its id or its number as "#42". ' +
   "Find tasks with list_all (query, status, labels, dueBefore/dueAfter, overdue, limit/cursor) instead of reading the whole plan. " +
-  "Pass a clientId with changes you might retry, and dryRun: true to preview a change. Read dayhand://guide for the full rules.";
+  "Pass a clientId with changes you might retry, and dryRun: true to preview a change. " +
+  "After a pause, call list_events with the nextCursor you kept to see only what changed. Before working on a task, claim_task it; complete it with proof. " +
+  "Read dayhand://guide for the full rules.";
 
 export const AGENT_GUIDE = `# Working with Dayhand
 
@@ -44,11 +46,36 @@ their API key; every change you make is recorded in the task's history as
 - \`dryRun: true\` checks a change and returns what it would produce without
   saving it. Use it to show the user a plan of several changes first.
 
+## Working on a task
+
+- Pick work with \`list_all\` and \`ready: true\`: not done, not blocked
+  (\`blockedReason\`), every task in \`dependsOn\` done.
+- \`claim_task\` before you start (120 minutes unless you pass \`minutes\`),
+  \`renew_claim\` while you work, \`release_task\` with a checkpoint
+  \`note\` when you stop. While you hold the claim, other agents get
+  \`conflict\`; if you get \`conflict\`, pick another task. The user in
+  the app can always take a task over.
+- Write down what done means in \`acceptance\` and how you will get there
+  in \`plan\`. Tick criteria with \`update_task\` (\`met: true\`), then
+  \`complete_task\` with \`proof\`: a \`summary\`, \`links\` and
+  \`checks\` (\`pass\` or \`fail\`). With unmet criteria or no summary the
+  call fails with \`precondition_failed\`.
+- If you cannot go on, set \`blockedReason\` and say why.
+
+## Coming back after a pause
+
+- Keep the \`nextCursor\` of \`list_events\` (or \`dayhand://activity\`).
+  Next time call \`list_events\` with \`since\` set to it: you get only the
+  changes made meanwhile, oldest first (\`hasMore\`: call again). \`by\`
+  and \`taskId\` narrow the log.
+
 ## Errors and limits
 
 - A failed call returns \`isError: true\` with \`structuredContent.error\`:
-  \`invalid_argument\` (fix the arguments), \`not_found\`, \`rate_limited\`
-  (wait \`retryAfterMs\`, then retry) or \`internal\`.
+  \`invalid_argument\` (fix the arguments), \`not_found\`, \`conflict\`
+  (another agent holds the task's claim), \`precondition_failed\` (the
+  task's state does not allow it yet), \`rate_limited\` (wait
+  \`retryAfterMs\`, then retry) or \`internal\`.
 - Each key may make ${CALL_LIMITS.read} reads and ${CALL_LIMITS.write} changes a minute.
 
 ## Routines

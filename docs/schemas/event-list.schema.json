@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/event-list.schema.json",
+  "title": "Activity log",
+  "description": "list_events and the resource dayhand://activity (dayhand log): task changes oldest first, and the cursor to continue from (since 0.10.0).",
+  "type": "object",
+  "required": [
+    "events",
+    "nextCursor",
+    "hasMore"
+  ],
+  "properties": {
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "at",
+          "taskId",
+          "ref",
+          "title",
+          "action",
+          "actor",
+          "actorName",
+          "by",
+          "before",
+          "after"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of the history entry"
+          },
+          "at": {
+            "type": "number",
+            "description": "Unix time in milliseconds"
+          },
+          "taskId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The task changed"
+          },
+          "ref": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "The task's number"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The task's title now"
+          },
+          "action": {
+            "type": "string",
+            "description": "create, update, setStatus, setNow, complete, repeat, archive, delete, restore, import, claim, renewClaim, release (values may be added)"
+          },
+          "actor": {
+            "type": "string",
+            "description": "app, cli or agent (values may be added)"
+          },
+          "actorName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The key's or client's name; null for the app"
+          },
+          "by": {
+            "type": "string",
+            "description": "app, cli, agent or agent: <name>, as history shows it"
+          },
+          "before": {
+            "description": "Changed fields before the change, or null"
+          },
+          "after": {
+            "description": "Changed fields after the change, or null"
+          }
+        }
+      }
+    },
+    "nextCursor": {
+      "type": "string",
+      "description": "Pass as since next time to get only the changes after these; an opaque string starting with c"
+    },
+    "hasMore": {
+      "type": "boolean",
+      "description": "true: more changes after nextCursor are already there; call again with since: nextCursor"
+    }
+  }
+}

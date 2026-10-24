@@ -34,6 +34,9 @@ const TYPE_OF_ACTION: Record<string, WebhookEvent> = {
   setStatus: "task.updated",
   setNow: "task.updated",
   archive: "task.updated",
+  // Claims (since 0.10.0); a renewal only moves the expiry and is not sent.
+  claim: "task.updated",
+  release: "task.updated",
   complete: "task.completed",
   delete: "task.deleted",
   restore: "task.restored",

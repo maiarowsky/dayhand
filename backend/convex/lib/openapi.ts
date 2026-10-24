@@ -131,7 +131,10 @@ function responses(route: Route): Json {
   result["401"] = problemResponse("Unauthenticated");
   result["403"] = problemResponse("InsufficientScope");
   if (pathParams(route.path).length) result["404"] = problemResponse("NotFound");
-  if (isToolRoute(route) && route.ifMatch) result["412"] = problemResponse("PreconditionFailed");
+  if (isToolRoute(route) && route.ifMatch) {
+    result["409"] = problemResponse("Conflict");
+    result["412"] = problemResponse("PreconditionFailed");
+  }
   result["422"] = problemResponse("InvalidArgument");
   result["429"] = problemResponse("RateLimited");
   result.default = problemResponse("Problem");
@@ -210,7 +213,10 @@ export function openApiDocument(base: string | null = publicUrl()): Json {
         Unauthenticated: problemOf("Missing, invalid, expired or revoked API key"),
         InsufficientScope: problemOf("The key's scope does not allow this route"),
         NotFound: problemOf("No such task, key or webhook"),
-        PreconditionFailed: problemOf("If-Match: the task has changed since that version"),
+        PreconditionFailed: problemOf(
+          "If-Match: the task has changed since that version; or the task's state does not allow the change yet (an agent completing a task with unmet acceptance criteria, renewing a claim it does not hold)",
+        ),
+        Conflict: problemOf("Another agent holds the task's claim (claim_task) until the time the detail names"),
         InvalidArgument: problemOf("Wrong or missing arguments, or a change the task's state does not allow"),
         RateLimited: { ...problemOf("Too many calls with this key; Retry-After says when to try again"), headers: { "Retry-After": { schema: { type: "integer" } } } },
       },

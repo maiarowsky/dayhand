@@ -5,7 +5,6 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import type { args } from "./args";
 import {
-  appliedOperation,
   checkChecklist,
   checkClientId,
   checkDueDate,
@@ -23,10 +22,12 @@ import {
   nextTaskRef,
   patchTask,
   recordEvent,
+  replay,
   toTask,
   todayFor,
   type Identity,
 } from "./core";
+import { checkAcceptance, checkClaim, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
 import { localDate } from "./dates";
 import { advance } from "./repeat";
 import type { Status } from "./validators";
@@ -35,17 +36,14 @@ export const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
 
-/** Current state of the task touched by an already applied operation. */
-async function replay(ctx: MutationCtx, userId: string, clientId?: string) {
-  const event = await appliedOperation(ctx, userId, checkClientId(clientId));
-  if (!event) return null;
-  const task = event.taskId ? await ctx.db.get(event.taskId) : null;
-  if (!task) fail("not_found", "Task of this operation no longer exists");
+function activeTask(task: Doc<"tasks">) {
+  if (task.deletedAt !== undefined) fail("invalid_argument", "Task is in the trash; restore it first");
   return task;
 }
 
-function activeTask(task: Doc<"tasks">) {
-  if (task.deletedAt !== undefined) fail("invalid_argument", "Task is in the trash; restore it first");
+/** A task the caller may change: another agent's live claim refuses it (lib/agentWork.ts). */
+function writable(task: Doc<"tasks">, identity: Identity) {
+  checkClaim(task, identity);
   return task;
 }
 
@@ -77,6 +75,10 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     links: checkLinks(input.links ?? []),
     checklist: input.checklist === undefined ? undefined : checkChecklist(input.checklist),
     reminders: input.reminders === undefined ? undefined : checkReminders(input.reminders),
+    acceptance: input.acceptance === undefined ? undefined : checkAcceptance(input.acceptance),
+    plan: input.plan === undefined ? undefined : checkLongText("plan", input.plan),
+    dependsOn: input.dependsOn === undefined ? undefined : await checkDependsOn(ctx, identity.userId, null, input.dependsOn),
+    blockedReason: input.blockedReason === undefined ? undefined : checkLongText("blockedReason", input.blockedReason),
     createdAt: now,
     updatedAt: now,
     clientId,
@@ -91,7 +93,7 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
 export async function updateTask(ctx: MutationCtx, identity: Identity, input: Args<"update">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
-  const task = activeTask(await loadTask(ctx, identity.userId, input.taskId));
+  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   const { timezone } = await loadSettings(ctx, identity.userId);
   const today = localDate(Date.now(), timezone);
   const patch: Partial<Doc<"tasks">> = {};
@@ -110,6 +112,12 @@ export async function updateTask(ctx: MutationCtx, identity: Identity, input: Ar
   if (input.links !== undefined) patch.links = checkLinks(input.links);
   if (input.checklist !== undefined) patch.checklist = input.checklist === null ? undefined : checkChecklist(input.checklist);
   if (input.reminders !== undefined) patch.reminders = input.reminders === null ? undefined : checkReminders(input.reminders);
+  if (input.acceptance !== undefined) patch.acceptance = input.acceptance === null ? undefined : checkAcceptance(input.acceptance);
+  if (input.plan !== undefined) patch.plan = input.plan === null ? undefined : checkLongText("plan", input.plan);
+  if (input.dependsOn !== undefined) patch.dependsOn = await checkDependsOn(ctx, identity.userId, task._id, input.dependsOn);
+  if (input.blockedReason !== undefined) {
+    patch.blockedReason = input.blockedReason === null ? undefined : checkLongText("blockedReason", input.blockedReason);
+  }
   checkSchedule(
     "dueDate" in patch ? patch.dueDate : task.dueDate,
     "dueTime" in patch ? patch.dueTime : task.dueTime,
@@ -133,9 +141,12 @@ async function clearNow(ctx: MutationCtx, identity: Identity, exceptId?: Id<"tas
 }
 
 /**
- * Marks a task done. A repeating task gets its next occurrence, unless its
- * series has ended (`until`, `count`): same title, note, labels, links and
- * reminders, the checklist unticked, counted on per the rule (lib/repeat.ts).
+ * Marks a task done, keeping the proof it was given and ending its claim. An
+ * agent completing a task with acceptance criteria needs them all met and a
+ * proof summary (lib/agentWork.ts). A repeating task gets its next
+ * occurrence, unless its series has ended (`until`, `count`): same title,
+ * note, labels, links, reminders and plan, the checklist and the criteria
+ * unticked, counted on per the rule (lib/repeat.ts).
  */
 export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
@@ -148,16 +159,13 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     const next = spawned ? await ctx.db.get(spawned) : null;
     return { task: toTask(replayed), next: next ? toTask(next) : null };
   }
-  const task = activeTask(await loadTask(ctx, identity.userId, input.taskId));
+  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   if (task.status === "done") return { task: toTask(task), next: null };
-  const done = await patchTask(
-    ctx,
-    identity,
-    task,
-    "complete",
-    { status: "done", isNow: false, completedAt: Date.now() },
-    input.clientId,
-  );
+  const proof = input.proof === undefined ? undefined : checkProof(input.proof);
+  checkCompletion(task, identity, proof);
+  const patch: Partial<Doc<"tasks">> = { status: "done", isNow: false, completedAt: Date.now(), claimedBy: undefined, claimExpiresAt: undefined };
+  if (proof) patch.proof = proof;
+  const done = await patchTask(ctx, identity, task, "complete", patch, input.clientId);
   if (!task.repeat) return { task: toTask(done), next: null };
 
   const today = await todayFor(ctx, identity.userId, Date.now());
@@ -176,6 +184,8 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     links: task.links,
     checklist: task.checklist?.map((item) => ({ ...item, done: false })),
     reminders: task.reminders,
+    acceptance: task.acceptance?.map((item) => ({ ...item, met: false })),
+    plan: task.plan,
     createdAt: now,
     updatedAt: now,
   };
@@ -199,7 +209,7 @@ export async function setStatus(ctx: MutationCtx, identity: Identity, input: Arg
   }
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
-  const task = activeTask(await loadTask(ctx, identity.userId, input.taskId));
+  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   const patch: Partial<Doc<"tasks">> = { status: input.status, completedAt: undefined };
   // Only a task in progress can be the "now" task.
   if (input.status !== "doing") patch.isNow = false;
@@ -214,7 +224,7 @@ export async function setNow(ctx: MutationCtx, identity: Identity, input: Args<"
     await clearNow(ctx, identity);
     return null;
   }
-  const task = activeTask(await loadTask(ctx, identity.userId, input.taskId));
+  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   if (task.archivedAt !== undefined) fail("invalid_argument", "Task is archived; restore it first");
   await clearNow(ctx, identity, task._id);
   const patch: Partial<Doc<"tasks">> = { isNow: true, status: "doing", completedAt: undefined };
@@ -225,7 +235,7 @@ export async function setNow(ctx: MutationCtx, identity: Identity, input: Args<"
 export async function archiveTask(ctx: MutationCtx, identity: Identity, input: Args<"archive">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
-  const task = activeTask(await loadTask(ctx, identity.userId, input.taskId));
+  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   if (task.archivedAt !== undefined) return toTask(task);
   return toTask(
     await patchTask(ctx, identity, task, "archive", { archivedAt: Date.now(), isNow: false }, input.clientId),
@@ -236,7 +246,7 @@ export async function archiveTask(ctx: MutationCtx, identity: Identity, input: A
 export async function softDeleteTask(ctx: MutationCtx, identity: Identity, input: Args<"softDelete">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
-  const task = await loadTask(ctx, identity.userId, input.taskId);
+  const task = writable(await loadTask(ctx, identity.userId, input.taskId), identity);
   if (task.deletedAt !== undefined) return toTask(task);
   return toTask(
     await patchTask(ctx, identity, task, "delete", { deletedAt: Date.now(), isNow: false }, input.clientId),
@@ -247,7 +257,7 @@ export async function softDeleteTask(ctx: MutationCtx, identity: Identity, input
 export async function restoreTask(ctx: MutationCtx, identity: Identity, input: Args<"restore">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
-  const task = await loadTask(ctx, identity.userId, input.taskId);
+  const task = writable(await loadTask(ctx, identity.userId, input.taskId), identity);
   const patch: Partial<Doc<"tasks">> =
     task.deletedAt !== undefined ? { deletedAt: undefined } : { archivedAt: undefined };
   return toTask(await patchTask(ctx, identity, task, "restore", patch, input.clientId));

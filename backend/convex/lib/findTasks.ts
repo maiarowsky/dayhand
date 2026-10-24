@@ -4,6 +4,7 @@ import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
+import { isReady } from "./agentWork";
 import { fail, loadSettings, toTask, type Identity } from "./core";
 import { isOverdue, localDate, resolveDate } from "./dates";
 
@@ -66,8 +67,11 @@ function checkQuery(query: string | undefined): string | undefined {
   return needle === "" ? undefined : needle;
 }
 
-/** A predicate for the filters; `status`, when given, decides alone whether done tasks count. */
-function matcher(input: Args, today: string) {
+/**
+ * A predicate for the filters; `status`, when given, decides alone whether done
+ * tasks count. `ready` looks the dependencies up among the user's tasks.
+ */
+function matcher(input: Args, today: string, byId: Map<string, Doc<"tasks">>) {
   const wanted = (input.labels ?? []).map((l) => l.trim()).filter((l) => l !== "");
   const needle = checkQuery(input.query);
   const before = checkDay("dueBefore", input.dueBefore, today);
@@ -79,6 +83,7 @@ function matcher(input: Args, today: string) {
     (statuses ? statuses.includes(t.status) : input.includeDone !== false || t.status !== "done") &&
     wanted.every((label) => t.labels.includes(label)) &&
     (input.overdue === undefined || isOverdue(t, today) === input.overdue) &&
+    (input.ready === undefined || isReady(t, byId) === input.ready) &&
     (before === undefined || (t.dueDate !== undefined && t.dueDate < before)) &&
     (after === undefined || (t.dueDate !== undefined && t.dueDate > after)) &&
     (needle === undefined ||
@@ -91,11 +96,11 @@ export async function findTasks(ctx: QueryCtx, identity: Identity, input: Args) 
   const today = localDate(at, (await loadSettings(ctx, identity.userId)).timezone);
   const limit = checkLimit(input.limit);
   const after = input.cursor === undefined ? undefined : decodeCursor(input.cursor);
-  const matches = matcher(input, today);
   const tasks = await ctx.db
     .query("tasks")
     .withIndex("by_user", (q) => q.eq("userId", identity.userId))
     .collect();
+  const matches = matcher(input, today, new Map(tasks.map((t) => [t._id as string, t])));
   const found = tasks
     .filter(matches)
     .map((t) => ({ task: t, key: sortKey(t) }))

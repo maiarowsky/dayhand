@@ -199,6 +199,101 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       }
     }
   },
+  "event-list": {
+    "title": "Activity log",
+    "description": "list_events and the resource dayhand://activity (dayhand log): task changes oldest first, and the cursor to continue from (since 0.10.0).",
+    "type": "object",
+    "required": [
+      "events",
+      "nextCursor",
+      "hasMore"
+    ],
+    "properties": {
+      "events": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "id",
+            "at",
+            "taskId",
+            "ref",
+            "title",
+            "action",
+            "actor",
+            "actorName",
+            "by",
+            "before",
+            "after"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Id of the history entry"
+            },
+            "at": {
+              "type": "number",
+              "description": "Unix time in milliseconds"
+            },
+            "taskId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The task changed"
+            },
+            "ref": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "The task's number"
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The task's title now"
+            },
+            "action": {
+              "type": "string",
+              "description": "create, update, setStatus, setNow, complete, repeat, archive, delete, restore, import, claim, renewClaim, release (values may be added)"
+            },
+            "actor": {
+              "type": "string",
+              "description": "app, cli or agent (values may be added)"
+            },
+            "actorName": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The key's or client's name; null for the app"
+            },
+            "by": {
+              "type": "string",
+              "description": "app, cli, agent or agent: <name>, as history shows it"
+            },
+            "before": {
+              "description": "Changed fields before the change, or null"
+            },
+            "after": {
+              "description": "Changed fields after the change, or null"
+            }
+          }
+        }
+      },
+      "nextCursor": {
+        "type": "string",
+        "description": "Pass as since next time to get only the changes after these; an opaque string starting with c"
+      },
+      "hasMore": {
+        "type": "boolean",
+        "description": "true: more changes after nextCursor are already there; call again with since: nextCursor"
+      }
+    }
+  },
   "export": {
     "title": "Export",
     "description": "export_plan (dayhand export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, dayhand prints {written: <file>, format}.",
@@ -421,12 +516,71 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "code": {
         "type": "string",
-        "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
+        "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, conflict, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
       },
       "retryAfterMs": {
         "type": "integer",
         "minimum": 0,
         "description": "Only with rate_limited: milliseconds until the key may call again"
+      }
+    }
+  },
+  "proof": {
+    "title": "Proof of completion",
+    "description": "What complete_task was given to show the work is done (dayhand done --summary, --check, --proof-link), kept on the task as `proof` (since 0.10.0).",
+    "type": "object",
+    "required": [
+      "links",
+      "checks"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "What was done; required when an agent completes a task with acceptance criteria"
+      },
+      "links": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Where to see the result: a pull request, a document, a deployment"
+      },
+      "checks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "name",
+            "result"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "e.g. unit tests, CI"
+            },
+            "result": {
+              "enum": [
+                "pass",
+                "fail"
+              ]
+            },
+            "url": {
+              "type": "string",
+              "description": "Where the check's run can be seen"
+            }
+          }
+        }
       }
     }
   },
@@ -684,6 +838,72 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
           ]
         }
       },
+      "acceptance": {
+        "type": "array",
+        "description": "Acceptance criteria in order: what done means; missing when the task has none. An agent can complete the task only when every criterion is met (since 0.10.0)",
+        "items": {
+          "type": "object",
+          "required": [
+            "id",
+            "text",
+            "met"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            },
+            "met": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "plan": {
+        "type": "string",
+        "description": "How the work will be done (since 0.10.0)"
+      },
+      "proof": {
+        "$ref": "#/$defs/proof"
+      },
+      "dependsOn": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Ids of the tasks that must be done first; missing when there are none (since 0.10.0)"
+      },
+      "blockedReason": {
+        "type": "string",
+        "description": "Why the task cannot go on; a blocked task is not ready (since 0.10.0)"
+      },
+      "claimedBy": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "description": "Who claimed the task (claim_task): an API key or an agent connection and its name. Kept after the claim expires until it is released or claimed again; compare claimExpiresAt with the time (since 0.10.0)",
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "description": "The API key holding the claim"
+          },
+          "connectionId": {
+            "type": "string",
+            "description": "The agent connection (OAuth) holding the claim"
+          },
+          "name": {
+            "type": "string",
+            "description": "The key's or the client's name, as history shows it"
+          }
+        }
+      },
+      "claimExpiresAt": {
+        "type": "number",
+        "description": "When the claim ends, Unix time in milliseconds; in the past = expired, the task can be claimed again (since 0.10.0)"
+      },
       "completedAt": {
         "type": "number",
         "description": "Unix time in milliseconds"
@@ -874,7 +1094,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "properties": {
           "code": {
             "type": "string",
-            "description": "invalid_argument, not_found, unauthenticated, rate_limited, internal (values may be added; treat an unknown code like internal)"
+            "description": "invalid_argument, not_found, unauthenticated, precondition_failed, conflict, rate_limited, internal (values may be added; treat an unknown code like internal)"
           },
           "message": {
             "type": "string"

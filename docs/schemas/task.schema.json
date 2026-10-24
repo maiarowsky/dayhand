@@ -209,6 +209,72 @@
         ]
       }
     },
+    "acceptance": {
+      "type": "array",
+      "description": "Acceptance criteria in order: what done means; missing when the task has none. An agent can complete the task only when every criterion is met (since 0.10.0)",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "met"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "met": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": "string",
+      "description": "How the work will be done (since 0.10.0)"
+    },
+    "proof": {
+      "$ref": "proof.schema.json"
+    },
+    "dependsOn": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ids of the tasks that must be done first; missing when there are none (since 0.10.0)"
+    },
+    "blockedReason": {
+      "type": "string",
+      "description": "Why the task cannot go on; a blocked task is not ready (since 0.10.0)"
+    },
+    "claimedBy": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "description": "Who claimed the task (claim_task): an API key or an agent connection and its name. Kept after the claim expires until it is released or claimed again; compare claimExpiresAt with the time (since 0.10.0)",
+      "properties": {
+        "keyId": {
+          "type": "string",
+          "description": "The API key holding the claim"
+        },
+        "connectionId": {
+          "type": "string",
+          "description": "The agent connection (OAuth) holding the claim"
+        },
+        "name": {
+          "type": "string",
+          "description": "The key's or the client's name, as history shows it"
+        }
+      }
+    },
+    "claimExpiresAt": {
+      "type": "number",
+      "description": "When the claim ends, Unix time in milliseconds; in the past = expired, the task can be claimed again (since 0.10.0)"
+    },
     "completedAt": {
       "type": "number",
       "description": "Unix time in milliseconds"

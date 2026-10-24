@@ -18,7 +18,9 @@
 - Pass a `clientId` (e.g. a UUID) with changes you might retry; a repeated `clientId` is not
   applied twice. Pass `dryRun: true` to check a change without saving it ([Dry runs](#dry-runs)).
 - Each key or connection may make 120 reads and 60 changes a minute ([Limits](#limits)).
-- The server identifies itself as `{ "name": "dayhand", "version": "0.9.0" }` (`serverInfo` of
+- Several agents can share the plan: an activity log, acceptance criteria and proof, dependencies
+  and time-boxed claims ([agent-work.md](agent-work.md)).
+- The server identifies itself as `{ "name": "dayhand", "version": "0.10.0" }` (`serverInfo` of
   `initialize`, `_meta` of 2026-07-28 results); see [Versions](#versions).
 
 ## Tools
@@ -38,11 +40,11 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 
 | Tool | Title | Hints | Result ([schema](schemas/)) | Operation |
 |---|---|---|---|---|
-| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders) |
+| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason) |
 | `update_task` | Update task | | `task` | Change fields; `null` clears an optional field |
 | `set_status` | Set task status | | `task` | `todo` / `doing` / `done` |
 | `set_now` | Set the now task | | `set-now` | Make one task the "now" task, optionally with a resume note; `taskId: null` clears it |
-| `complete_task` | Complete task | | `complete` | Mark done; repeating tasks return their next occurrence (`next: null` when the series has ended) |
+| `complete_task` | Complete task | | `complete` | Mark done, optionally with `proof`; ends the claim; repeating tasks return their next occurrence (`next: null` when the series has ended). An agent needs every acceptance criterion met and a proof summary ([below](#agent-work)) |
 | `reschedule_task` | Reschedule task | | `task` | Move to another day/time; `dueDate: null` removes the date |
 | `archive_task` | Archive task | | `task` | Archive |
 | `delete_task` | Move task to trash | D | `task` | Move to the trash (purged after 30 days) |
@@ -55,6 +57,10 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `export_plan` | Export plan | R | `export` | Markdown, JSON or iCalendar (`ics`, [calendar.md](calendar.md)) export of the whole plan |
 | `get_settings` | Settings | R | `settings` | Time zone, summary time, default reminders |
 | `update_settings` | Update settings | D | `settings` | Change them |
+| `list_events` | Activity log | R | `event-list` | Task changes after a cursor ([below](#activity-log-list_events)) |
+| `claim_task` | Claim task | | `task` | Claim a task for `minutes` (default 120); other agents get `conflict` ([below](#claims)) |
+| `renew_claim` | Renew claim | | `task` | Extend your claim by `minutes` from now |
+| `release_task` | Release task | | `task` | End your claim, optionally with a checkpoint `note` (saved as the resume note) |
 
 ### Results
 
@@ -76,6 +82,7 @@ under `$defs`: clients never fetch a URL. The top level is an object, as 2025 cl
 | `query` | Tasks whose title, note, resume note or labels contain this text, in any case |
 | `status` | Only these statuses, e.g. `["todo", "doing"]`; done tasks are included only when listed |
 | `labels` | Only tasks having all of these labels |
+| `ready` | `true`: only tasks ready to work on (not done, no `blockedReason`, every task in `dependsOn` done); `false`: only the others |
 | `dueBefore`, `dueAfter` | Only tasks due before / after this day (`YYYY-MM-DD`, `"today"`, `"tomorrow"`); tasks without a day never match |
 | `overdue` | `true`: only overdue tasks; `false`: only the others |
 | `includeDone`, `includeArchived` | Done tasks (default `true`; ignored when `status` is given), archived ones (default `false`) |
@@ -91,6 +98,57 @@ Without `limit`, every match comes back at once and the text block holds the pla
 as before 0.4.0, so clients that read the text keep working; with `limit` or `cursor` the text
 block holds the whole object.
 
+### Agent work
+
+Since 0.10.0 a task may carry fields for agents working on it ([agent-work.md](agent-work.md) has
+the reasons). None of them is a new status: the board stays `todo`, `doing`, `done`.
+
+| Field | Set with | Meaning |
+|---|---|---|
+| `acceptance` | `add_task`, `update_task` | Criteria `{ id, text, met }` in order; new ones get `a1`, `a2`, …; the list is replaced as a whole, `null` or `[]` removes it (at most 50, up to 500 characters each) |
+| `plan` | `add_task`, `update_task` | How the work will be done (up to 20000 characters) |
+| `proof` | `complete_task` | `{ summary?, links, checks: [{ name, result: "pass" \| "fail", url? }] }`, kept on the task ([schema](schemas/proof.schema.json)) |
+| `dependsOn` | `add_task`, `update_task` | Ids of the tasks that must be done first (given as ids or `"#42"`); `[]` removes them; no cycles (at most 50) |
+| `blockedReason` | `add_task`, `update_task` | Why the task cannot go on; `null` clears it |
+| `claimedBy`, `claimExpiresAt` | `claim_task`, `renew_claim`, `release_task` | Who holds the claim (`keyId` or `connectionId`, and `name`) and until when (Unix ms); kept after expiry until released or claimed again |
+
+When a task has acceptance criteria, an **agent** (an `agent` key or an agent connection) can
+complete it only when every criterion is met and the proof has a `summary`; otherwise
+`complete_task` (and `set_status` to `done`) fails with `precondition_failed`. The app and `cli`
+keys complete tasks as before. A repeating task's next occurrence keeps the criteria, unticked,
+and the plan.
+
+#### Claims
+
+`claim_task` gives the caller's key or connection the task for `minutes` (1 to 1440, default 120).
+While the claim lasts, another agent's `claim_task`, `renew_claim`, `release_task` and every change
+of that task (`update_task`, `set_status`, `set_now`, `complete_task`, `reschedule_task`,
+`archive_task`, `delete_task`, `restore_task`) fail with `conflict`, whose message names the holder
+and the expiry. Claiming again extends your own claim. `renew_claim` works while nobody else has
+claimed the task, also after your claim ran out; without a claim of yours it is
+`precondition_failed`. `release_task` ends the claim and saves `note` as the resume note.
+Completing the task ends its claim. Done, archived and trashed tasks cannot be claimed
+(`invalid_argument`). The owner wins: changes from the app and from `cli` keys are never refused,
+and the app can end any claim (`app.release`).
+
+#### Activity log (`list_events`)
+
+| Argument | Meaning |
+|---|---|
+| `since` | `nextCursor` of an earlier call (`"c…"`), or a time as Unix milliseconds or ISO 8601 with a zone (the changes from then on); without it, the newest changes |
+| `by` | Only changes by `app`, `cli`, `agent` (any agent) or `"agent: <name>"` |
+| `taskId` | Only changes of this task |
+| `limit` | 1 to 500, default 100 |
+
+The result is `{ "events": [...], "nextCursor": "c…", "hasMore": <bool> }`
+([schema](schemas/event-list.schema.json)). Each event has `id`, `at`, `taskId`, `ref` and `title`
+(the task's now), `action`, `actor`, `actorName`, `by`, `before` and `after`, like a history
+entry. Events come oldest first, in the order the changes were committed. Pass `nextCursor` as
+`since` next time to get only what changed in between; `hasMore: true` means another page is
+already there. Only task changes are listed, not changes of API keys, webhooks or devices. Changes
+made before 0.10.0 appear once the deployment ran `migrations:backfillEventSeqs`
+([deploy.md](deploy.md#upgrading-to-0100)).
+
 ### Dry runs
 
 Every changing tool takes `dryRun: true`. The change runs with every check, then Dayhand rolls it
@@ -105,10 +163,12 @@ the [limits](#limits).
 | URI | Type | Content |
 |---|---|---|
 | `dayhand://today` | `application/json` | `list_today` |
+| `dayhand://activity` | `application/json` | `list_events` without `since`: the newest changes and the cursor to follow from |
+| `dayhand://activity{?since}` (template) | `application/json` | `list_events` with `since`, e.g. `dayhand://activity?since=c1793011200000123` |
 | `dayhand://guide` | `text/markdown` | How an agent should work with Dayhand: numbers, the now task, retries, dry runs, limits |
 | `dayhand://tasks/{ref}` (template) | `application/json` | `get_task` of task `#ref`, e.g. `dayhand://tasks/42` |
 
-`resources/list` returns the first two, `resources/templates/list` the template. The `helm://`
+`resources/list` returns the first three, `resources/templates/list` the two templates. The `helm://`
 URIs of the same resources, from before the rename, can still be read. Reading a
 resource that does not exist (also a task number that does not) is a JSON-RPC error with
 `data: { "uri" }`: `-32602` on 2026-07-28, `-32002` on 2025 revisions.
@@ -129,7 +189,7 @@ larger changes with `dryRun`. An unknown prompt or argument is a JSON-RPC error 
 Each API key, and each agent connection (OAuth), may make 120 reads and 60 changes a minute
 (`convex/callLimits.ts`). The minute
 starts with the first call; reads and changes are counted apart. Reads are tool calls of
-read-only tools, `resources/read` of `dayhand://today` and `dayhand://tasks/…`, and `prompts/get`;
+read-only tools, `resources/read` of `dayhand://today`, `dayhand://activity…` and `dayhand://tasks/…`, and `prompts/get`;
 listing tools, resources and prompts, `server/discover` and `dayhand://guide` are not counted.
 
 A call over the limit is refused before it runs, so nothing is applied:
@@ -214,7 +274,8 @@ for people; `structuredContent.error` holds the same message and a code for prog
 | `not_found` | No such task (or API key, device) for this user | `Task #404 not found` |
 | `rate_limited` | Too many calls with this key or connection; `retryAfterMs` says when to try again | `Too many changes with this API key: at most 60 a minute. Try again in 12 s.` |
 | `unauthenticated` | Reserved for identity errors inside a tool; a missing, wrong or revoked key or token gets HTTP 401 before any tool runs | |
-| `precondition_failed` | Only through the REST API: `If-Match` names a version the task is no longer at ([api.md](api.md#idempotency-versions-and-dry-runs)) | `The task has changed since that version (it is now "1793011200000"); read it again` |
+| `precondition_failed` | The task's state does not allow the change yet: an agent completing a task with unmet acceptance criteria or without a proof summary, `renew_claim` without a claim of yours; through the REST API also `If-Match` naming a version the task is no longer at ([api.md](api.md#idempotency-versions-and-dry-runs)) | `Acceptance criteria not met: a2; mark them met with update_task first`; `The task has changed since that version (it is now "1793011200000"); read it again` |
+| `conflict` | Another agent holds the task's claim ([Claims](#claims)); pick another task or wait for the time named | `Task #42 is claimed by claude-code until 2026-10-24T14:30:00.000Z` |
 | `internal` | Anything unexpected; the message says only `Internal error` | `Internal error` |
 
 New codes may be added in a minor version; treat an unknown code like `internal`.
@@ -323,6 +384,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.10.0 | Agent work ([agent-work.md](agent-work.md)): `list_events` and the resource `dayhand://activity` (the activity log); task fields `acceptance`, `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; `complete_task` takes `proof`; `list_all` takes `ready`; `claim_task`, `renew_claim`, `release_task`; error code `conflict`, and `precondition_failed` outside `If-Match` too |
 | 0.9.0 | The rename to Dayhand: `serverInfo.name` `dayhand`; resources `dayhand://today`, `dayhand://guide` and `dayhand://tasks/{ref}` (the `helm://` URIs are still read); new API keys start with `dayhand_` (`helm_` keys keep working); import format `dayhand-json` (`helm-json` still accepted); `WWW-Authenticate` realm `dayhand`; `x-dayhand-scope` in the OpenAPI document; problem types under `https://schemas.dayhand.invalid/`; deployment variables `DAYHAND_*` (`HELM_*` still read, [deploy.md](deploy.md#renamed-variables)) |
 | 0.8.0 | API keys with a `scope` (`read`, `write`, `full`) and `expiresAt` (a read key sees and calls only reading tools); the error code `precondition_failed` (REST `If-Match` only); the REST API `/api/v1` with OpenAPI 3.1 ([api.md](api.md)), webhooks ([webhooks.md](webhooks.md)) and import. Devices, connections and the calendar feed need a full key |
 | 0.7.0 | `export_plan` format `ics`; the read-only calendar feed `GET /cal/<token>.ics` and its endpoints `/calendar/feed*` ([calendar.md](calendar.md)) |

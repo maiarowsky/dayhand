@@ -19,7 +19,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "description": "usage, config, invalid_argument, not_found, unauthenticated, rate_limited, unavailable, interrupted, internal (values may be added)"
+          "description": "usage, config, invalid_argument, not_found, unauthenticated, precondition_failed, conflict, rate_limited, unavailable, interrupted, internal (values may be added)"
         },
         "message": {
           "type": "string"
@@ -32,6 +32,7 @@
             3,
             4,
             5,
+            6,
             130
           ]
         },

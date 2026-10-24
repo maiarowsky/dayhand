@@ -13,6 +13,7 @@ const TITLES: Record<ProblemCode, string> = {
   not_found: "Not found",
   unauthenticated: "Unauthenticated",
   precondition_failed: "Precondition failed",
+  conflict: "Conflict",
   rate_limited: "Too many requests",
   internal: "Internal error",
   insufficient_scope: "Insufficient scope",
@@ -27,6 +28,7 @@ export const STATUS_OF: Record<ToolErrorCode, number> = {
   not_found: 404,
   unauthenticated: 401,
   precondition_failed: 412,
+  conflict: 409,
   rate_limited: 429,
   internal: 500,
 };

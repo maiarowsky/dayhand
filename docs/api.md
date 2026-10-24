@@ -38,18 +38,22 @@ for an agent key, `cli` for a CLI key.
 
 | Method and path | MCP tool | Scope |
 |---|---|---|
-| `GET /tasks` | `list_all` (query parameters `query`, `status`, `labels`, `dueBefore`, `dueAfter`, `overdue`, `includeDone`, `includeArchived`, `limit`, `cursor`, `at`) | read |
+| `GET /tasks` | `list_all` (query parameters `query`, `status`, `labels`, `dueBefore`, `dueAfter`, `overdue`, `ready`, `includeDone`, `includeArchived`, `limit`, `cursor`, `at`) | read |
 | `POST /tasks` | `add_task` (`201`, `Location: /api/v1/tasks/<number>`) | write |
 | `GET /tasks/{taskId}` | `get_task`: `{ task, history }` | read |
 | `PATCH /tasks/{taskId}` | `update_task` | write |
 | `DELETE /tasks/{taskId}` | `delete_task` (to the trash) | write |
-| `POST /tasks/{taskId}/complete` | `complete_task` | write |
+| `POST /tasks/{taskId}/complete` | `complete_task` (`{ "proof": { "summary": "…", "checks": [ … ] } }` optional) | write |
 | `POST /tasks/{taskId}/status` | `set_status` (`{ "status": "doing" }`) | write |
 | `POST /tasks/{taskId}/reschedule` | `reschedule_task` (`{ "dueDate": "2026-11-09", "dueTime": "07:00" }`) | write |
 | `POST /tasks/{taskId}/now` | `set_now` (`{ "resumeNote": "…" }` optional) | write |
 | `DELETE /now` | `set_now` with `taskId: null` | write |
 | `POST /tasks/{taskId}/archive` | `archive_task` | write |
 | `POST /tasks/{taskId}/restore` | `restore_task` | write |
+| `POST /tasks/{taskId}/claim` | `claim_task` (`{ "minutes": 30 }` optional; `409` while another agent holds it) | write |
+| `POST /tasks/{taskId}/claim/renew` | `renew_claim` (`{ "minutes": 30 }` optional) | write |
+| `POST /tasks/{taskId}/release` | `release_task` (`{ "note": "…" }` optional) | write |
+| `GET /events` | `list_events` (query parameters `since`, `by`, `taskId`, `limit`): the activity log ([agent-work.md](agent-work.md)) | read |
 | `GET /today` | `list_today` | read |
 | `GET /board` | `board` | read |
 | `GET /trash` | `list_trash` | read |
@@ -132,7 +136,8 @@ is the same code an MCP tool error has ([mcp.md](mcp.md#errors)), and `detail` t
 | 403 | `insufficient_scope` | The key's scope does not cover the route |
 | 404 | `not_found` | No such task, key or webhook, or no such route |
 | 405 | `method_not_allowed` | The path exists with other methods (`Allow` lists them) |
-| 412 | `precondition_failed` | `If-Match` does not match the task's version |
+| 409 | `conflict` | Another agent holds the task's claim (`claim_task`) |
+| 412 | `precondition_failed` | `If-Match` does not match the task's version, or the task's state does not allow the change yet (an agent completing a task with unmet acceptance criteria, renewing a claim it does not hold) |
 | 413 | `payload_too_large` | A body over 256 KB (2 MB for `POST /import`) |
 | 415 | `unsupported_media_type` | A body that is not JSON |
 | 422 | `invalid_argument` | Wrong or missing arguments, an unknown field or query parameter, or a change the task's state does not allow |

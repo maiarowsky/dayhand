@@ -39,6 +39,15 @@ const STEPS: Step[] = [
   { tool: "delete_task", args: { taskId: "#1" }, method: "DELETE", path: "/tasks/1" },
   { tool: "list_trash", args: {}, method: "GET", path: "/trash" },
   { tool: "restore_task", args: { taskId: "#1" }, method: "POST", path: "/tasks/1/restore" },
+  { tool: "update_task", args: { taskId: "#1", acceptance: [{ text: "Numbers checked" }], plan: "Draft, then tables", blockedReason: "waiting for Q3" },
+    method: "PATCH", path: "/tasks/1", body: { acceptance: [{ text: "Numbers checked" }], plan: "Draft, then tables", blockedReason: "waiting for Q3" } },
+  { tool: "list_all", args: { ready: true, at: AT }, method: "GET", path: `/tasks?ready=true&at=${AT}` },
+  { tool: "claim_task", args: { taskId: "#1", minutes: 30 }, method: "POST", path: "/tasks/1/claim", body: { minutes: 30 } },
+  { tool: "renew_claim", args: { taskId: "#1", minutes: 60 }, method: "POST", path: "/tasks/1/claim/renew", body: { minutes: 60 } },
+  { tool: "release_task", args: { taskId: "#1", note: "tables next" }, method: "POST", path: "/tasks/1/release", body: { note: "tables next" } },
+  { tool: "renew_claim", args: { taskId: "#1" }, method: "POST", path: "/tasks/1/claim/renew" },
+  { tool: "complete_task", args: { taskId: "#1" }, method: "POST", path: "/tasks/1/complete" },
+  { tool: "list_events", args: { taskId: "#1", by: "agent: integration", limit: 3 }, method: "GET", path: "/events?taskId=%231&by=agent%3A%20integration&limit=3" },
   { tool: "export_plan", args: { format: "markdown", at: AT }, method: "GET", path: `/export?format=markdown&at=${AT}` },
   { tool: "export_plan", args: { format: "ics", at: AT }, method: "GET", path: `/export?format=ics&at=${AT}` },
   { tool: "get_settings", args: {}, method: "GET", path: "/settings" },
@@ -49,7 +58,7 @@ const STEPS: Step[] = [
 ];
 
 const ID_FIELDS = new Set(["id", "taskId", "repeatedFrom", "keyId"]);
-const TIME_FIELDS = new Set(["createdAt", "updatedAt", "completedAt", "archivedAt", "deletedAt", "at", "exportedAt"]);
+const TIME_FIELDS = new Set(["createdAt", "updatedAt", "completedAt", "archivedAt", "deletedAt", "at", "exportedAt", "claimExpiresAt"]);
 
 /** Ids become their order of appearance and times a placeholder, so two users' results compare. */
 function normalize(value: unknown, ids = new Map<string, string>()): unknown {
@@ -62,6 +71,7 @@ function normalize(value: unknown, ids = new Map<string, string>()): unknown {
         return [key, ids.get(v)];
       }
       if (TIME_FIELDS.has(key) && typeof v === "number") return [key, "<time>"];
+      if (key === "nextCursor" && typeof v === "string" && /^c\d+$/.test(v)) return [key, "<cursor>"];
       if (key === "content" && typeof v === "string") return [key, v.replace(/(DTSTAMP|CREATED|LAST-MODIFIED):\d{8}T\d{6}Z/g, "$1:<time>").replace(/UID:[^\r\n]+/g, "UID:<uid>")];
       return [key, normalize(v, ids)];
     }),

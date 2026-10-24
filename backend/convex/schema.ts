@@ -3,11 +3,14 @@ import { v } from "convex/values";
 import { scopeValidator } from "./lib/oauthConfig";
 import { webhookEventValidator } from "./lib/webhookEvents";
 import {
+  acceptanceItemValidator,
   actorValidator,
   checklistItemValidator,
+  claimHolderValidator,
   keyKindValidator,
   keyScopeValidator,
   linkValidator,
+  proofValidator,
   reminderValidator,
   repeatValidator,
   statusValidator,
@@ -40,6 +43,21 @@ export default defineSchema({
     checklist: v.optional(v.array(checklistItemValidator)),
     // Absent = the default reminders from settings; [] = no reminders.
     reminders: v.optional(v.array(reminderValidator)),
+    // Since 0.10.0, agent work (docs/agent-work.md); all optional so older tasks stay valid.
+    // What "done" means; absent = no criteria.
+    acceptance: v.optional(v.array(acceptanceItemValidator)),
+    // How the work will be done, as free text.
+    plan: v.optional(v.string()),
+    // What the last complete_task was given to show the work is done.
+    proof: v.optional(proofValidator),
+    // Tasks that must be done before this one is ready; absent = none.
+    dependsOn: v.optional(v.array(v.id("tasks"))),
+    // Why the task cannot go on; a blocked task is not ready.
+    blockedReason: v.optional(v.string()),
+    // A time-boxed claim (claim_task): who works on the task and until when.
+    // Kept after it expires until it is released or claimed again.
+    claimedBy: v.optional(claimHolderValidator),
+    claimExpiresAt: v.optional(v.number()),
     completedAt: v.optional(v.number()),
     archivedAt: v.optional(v.number()),
     // Soft delete: the task sits in the trash for 30 days, then a cron purges it.
@@ -75,10 +93,23 @@ export default defineSchema({
     at: v.number(),
     // Id of the client operation that caused this change (idempotency).
     clientId: v.optional(v.string()),
+    // Since 0.10.0: position of a task change in the user's activity log
+    // (list_events), strictly growing in commit order (lib/activity.ts).
+    // Absent on changes that are not about a task, and on task changes from
+    // before 0.10.0 until migrations:backfillEventSeqs has run.
+    seq: v.optional(v.number()),
   })
     .index("by_task", ["taskId", "at"])
     .index("by_user_clientId", ["userId", "clientId"])
-    .index("by_user", ["userId", "at"]),
+    .index("by_user", ["userId", "at"])
+    .index("by_user_seq", ["userId", "seq"]),
+
+  // Last activity log position given per user (taskEvents.seq). Every task
+  // change reads and writes it, so positions follow the order changes commit.
+  eventCounters: defineTable({
+    userId: v.string(),
+    lastSeq: v.number(),
+  }).index("by_user", ["userId"]),
 
   // Last task number given per user; numbers only grow, so a purged task's
   // number is never given again.

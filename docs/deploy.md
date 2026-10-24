@@ -229,6 +229,37 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.10.0
+
+0.10.0 adds agent work ([agent-work.md](agent-work.md)): the activity log (`list_events`,
+`dayhand://activity`, `GET /api/v1/events`), acceptance criteria, a plan and proof on tasks,
+dependencies with a blocked reason and `list_all` `ready`, and time-boxed claims with the new error
+code `conflict`. Everything is new, optional fields, tools, routes and one table
+(`eventCounters`); no field changes its meaning, there is no new status and no new secret. Older
+clients keep working; they just do not see the new fields.
+
+One migration numbers the history from before 0.10.0 into the activity log. Until it has run,
+`list_events` shows only changes made after the deploy; nothing else depends on it.
+
+1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.10.0.zip`.
+2. Deploy: `dayhand server deploy` (or `npx convex deploy`).
+3. Number the old history: `npx convex run migrations:backfillEventSeqs`. It works in batches and
+   schedules itself; `npx convex run migrations:status` shows `taskEventsWithoutSeq: 0` when it is
+   done. Running it again changes nothing.
+4. Check: `dayhand version` shows server 0.10.0 and `dayhand log --since 0 --limit 5` lists the
+   oldest changes.
+
+Agents get the new behaviour only when they use it: an agent completing a task that has acceptance
+criteria needs them met and a proof summary, and another agent's claim refuses its changes with
+`conflict`. The app and `cli` keys are never refused. The Android app 0.9.1 shows a claim, the
+criteria and the proof in a task's details; older apps ignore the new fields.
+
+Rollback: 0.9.x's schema does not know the new fields, so Convex refuses to deploy it while any
+task has them or any history row has `seq` (which the migration gives every old row). Restore the
+snapshot from step 1 first, `npx convex import --replace-all dayhand-before-0.10.0.zip` (this also
+drops every change made since), then deploy 0.9.x. To keep those changes, roll forward with a fix
+instead.
+
 ## Upgrading to 0.9.0
 
 0.9.0 renames Helm to Dayhand. There is no schema change, no migration and no new secret: tasks,

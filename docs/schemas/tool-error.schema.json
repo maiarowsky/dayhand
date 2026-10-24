@@ -17,7 +17,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "description": "invalid_argument, not_found, unauthenticated, rate_limited, internal (values may be added; treat an unknown code like internal)"
+          "description": "invalid_argument, not_found, unauthenticated, precondition_failed, conflict, rate_limited, internal (values may be added; treat an unknown code like internal)"
         },
         "message": {
           "type": "string"

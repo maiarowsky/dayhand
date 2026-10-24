@@ -23,6 +23,15 @@ const FIELD_DOCS: Record<string, string> = {
     "Checklist items in order: {title, done?, id?}. The whole list is replaced; keep the ids of existing items (new items get one). Null or [] removes the checklist.",
   reminders:
     'Reminders of this task, replacing the default ones from settings: {minutesBefore} (before the due time; only timed tasks) or {time: "HH:MM", daysBefore?} (on the due day, or that many days before). [] = no reminders; null = back to the defaults.',
+  acceptance:
+    "Acceptance criteria, what done means: {text, met?, id?} in order. The whole list is replaced; keep the ids of existing criteria (new ones get a1, a2, ...). An agent can complete the task only when every criterion is met. Null or [] removes them.",
+  plan: "How the work will be done, as free text (up to 20000 characters). Null clears it.",
+  dependsOn:
+    'Tasks that must be done first: ids or numbers as "#42". The whole list is replaced; [] removes all. A task with an open dependency is not ready (list_all ready).',
+  blockedReason: "Why the task cannot go on now; a blocked task is not ready. Null clears it.",
+  proof:
+    "What shows the work is done: {summary, links?, checks?: [{name, result: pass|fail, url?}]}. Kept on the task. An agent completing a task with acceptance criteria must give a summary.",
+  minutes: "Length of the claim in minutes from now, 1 to 1440 (default 120).",
   labels: "Labels (projects).",
   links: "Links attached to the task (URL and optional title). Files are not supported.",
   clientId:
@@ -47,8 +56,17 @@ const FIND_DOCS: Record<string, string> = {
   dueBefore: 'Only tasks due before this day: YYYY-MM-DD, "today" or "tomorrow". Tasks without a day never match.',
   dueAfter: 'Only tasks due after this day: YYYY-MM-DD, "today" or "tomorrow". Tasks without a day never match.',
   overdue: "true: only overdue tasks; false: only tasks that are not overdue.",
+  ready: "true: only tasks ready to work on (not done, not blocked, every dependency done); false: only the others.",
   limit: "Page size, 1 to 200. Without it every matching task is returned at once.",
   cursor: "nextCursor of the previous page, to get the next one.",
+};
+
+const EVENT_DOCS: Record<string, string> = {
+  since:
+    'Where to continue: nextCursor of the previous call ("c…"), or a time as Unix milliseconds or ISO 8601 (changes from then on). Without it: the newest changes and the cursor to follow from.',
+  by: 'Only changes by app, cli, agent (any agent) or one agent as "agent: <name>" (the `by` of each change).',
+  taskId: 'Only changes of this task: its id or number as "#42".',
+  limit: "At most this many changes, 1 to 500 (default 100).",
 };
 
 export type ToolKind = "read" | "write";
@@ -115,7 +133,8 @@ export const TOOLS: Tool[] = [
   }),
   write("update_task", {
     title: "Update task",
-    description: "Change a task's title, note, due date/time, resume note, repeat rule, labels, links, checklist or reminders.",
+    description:
+      "Change a task's title, note, due date/time, resume note, repeat rule, labels, links, checklist, reminders, acceptance criteria, plan, dependencies or blocked reason.",
     fields: args.update,
     output: "task",
     ref: internal.ops.update,
@@ -138,7 +157,7 @@ export const TOOLS: Tool[] = [
   write("complete_task", {
     title: "Complete task",
     description:
-      "Mark a task done. A repeating task gets its next occurrence (checklist unticked), returned as `next`; null when its series has ended.",
+      "Mark a task done, optionally with proof (summary, links, checks); it ends the task's claim. An agent completing a task with acceptance criteria needs every criterion met and a proof summary, else precondition_failed. A repeating task gets its next occurrence (checklist and criteria unticked), returned as `next`; null when its series has ended.",
     fields: args.complete,
     output: "complete",
     ref: internal.ops.complete,
@@ -231,6 +250,38 @@ export const TOOLS: Tool[] = [
     output: "settings",
     ref: internal.ops.updateSettings,
     hints: { destructiveHint: true },
+  }),
+  read("list_events", {
+    title: "Activity log",
+    description:
+      "Task changes in the order they happened, after a cursor: who changed which task, how (before and after). Keep nextCursor and pass it as since next time to get only what changed meanwhile, without reading the whole plan.",
+    fields: args.listEvents,
+    output: "event-list",
+    ref: internal.ops.listEvents,
+    docs: EVENT_DOCS,
+  }),
+  write("claim_task", {
+    title: "Claim task",
+    description:
+      "Claim a task for a while (default 120 minutes) so other agents leave it alone: their changes and claims get the error conflict until the claim is released or expires. Claiming it again extends your claim. The owner in the app can always take over.",
+    fields: args.claim,
+    output: "task",
+    ref: internal.ops.claim,
+  }),
+  write("renew_claim", {
+    title: "Renew claim",
+    description: "Extend your claim of a task by minutes from now (default 120). precondition_failed when you hold no claim on it; conflict when another agent does.",
+    fields: args.renewClaim,
+    output: "task",
+    ref: internal.ops.renewClaim,
+  }),
+  write("release_task", {
+    title: "Release task",
+    description: "End your claim of a task, optionally with a checkpoint note (where you stopped, the next step) saved as its resume note.",
+    fields: args.release,
+    output: "task",
+    ref: internal.ops.release,
+    docs: { note: "Checkpoint: where the work stopped and the next step; saved as the task's resume note." },
   }),
 ];
 

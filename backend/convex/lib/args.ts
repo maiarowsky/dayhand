@@ -2,11 +2,13 @@
 // domain functions, the app layer and the MCP tool schemas.
 import { v } from "convex/values";
 import {
+  acceptanceInputValidator,
   checklistInputValidator,
   clearable,
   keyKindValidator,
   keyScopeValidator,
   linkValidator,
+  proofValidator,
   reminderValidator,
   repeatInputValidator,
   statusValidator,
@@ -16,6 +18,14 @@ const clientId = v.optional(v.string());
 // A task id, or the task's number written as "#42".
 const taskId = v.string();
 const at = v.optional(v.number());
+
+// Agent work fields of a task (docs/agent-work.md), in add_task and update_task.
+const agentWork = {
+  acceptance: v.optional(v.array(acceptanceInputValidator)),
+  plan: v.optional(v.string()),
+  dependsOn: v.optional(v.array(taskId)),
+  blockedReason: v.optional(v.string()),
+};
 
 export const args = {
   add: {
@@ -30,6 +40,7 @@ export const args = {
     links: v.optional(v.array(linkValidator)),
     checklist: v.optional(v.array(checklistInputValidator)),
     reminders: v.optional(v.array(reminderValidator)),
+    ...agentWork,
     clientId,
   },
   update: {
@@ -44,11 +55,15 @@ export const args = {
     links: v.optional(v.array(linkValidator)),
     checklist: clearable(v.array(checklistInputValidator)),
     reminders: clearable(v.array(reminderValidator)),
+    acceptance: clearable(v.array(acceptanceInputValidator)),
+    plan: clearable(v.string()),
+    dependsOn: v.optional(v.array(taskId)),
+    blockedReason: clearable(v.string()),
     clientId,
   },
   setStatus: { taskId, status: statusValidator, clientId },
   setNow: { taskId: v.union(taskId, v.null()), resumeNote: v.optional(v.string()), clientId },
-  complete: { taskId, clientId },
+  complete: { taskId, proof: v.optional(proofValidator), clientId },
   reschedule: { taskId, dueDate: v.union(v.string(), v.null()), dueTime: clearable(v.string()), clientId },
   archive: { taskId, clientId },
   softDelete: { taskId, clientId },
@@ -70,9 +85,22 @@ export const args = {
     dueBefore: v.optional(v.string()),
     dueAfter: v.optional(v.string()),
     overdue: v.optional(v.boolean()),
+    ready: v.optional(v.boolean()),
     limit: v.optional(v.number()),
     cursor: v.optional(v.string()),
     at,
+  },
+  // Time-boxed claims (claim_task, renew_claim, release_task).
+  claim: { taskId, minutes: v.optional(v.number()), clientId },
+  renewClaim: { taskId, minutes: v.optional(v.number()), clientId },
+  release: { taskId, note: v.optional(v.string()), clientId },
+  // The activity log (list_events): task changes after a position.
+  listEvents: {
+    since: v.optional(v.string()),
+    // The actor filter: app, cli, agent or "agent: <name>"; `actor` is the caller's own identity.
+    by: v.optional(v.string()),
+    taskId: v.optional(taskId),
+    limit: v.optional(v.number()),
   },
   listTrash: {},
   board: { doneLimit: v.optional(v.number()), at },
