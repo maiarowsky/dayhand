@@ -19,11 +19,15 @@
     <string name="agents_from">de %1$s</string>
     <string name="agents_policies">Políticas de ferramentas</string>
     <string name="agents_no_policies">Nenhuma política de ferramenta: toda chave de agente pode usar qualquer ferramenta que seu escopo permita.</string>
-    <string name="agents_policies_hint">Defina-as no terminal com dayhand policy set. “Perguntar” retém a chamada até você permiti-la aqui.</string>
+    <string name="agents_policies_hint">Toque em uma regra para alterá-la. Regras de outras chaves e ferramentas são definidas no terminal com dayhand policy set. “Perguntar” retém a chamada até você permiti-la aqui.</string>
     <string name="agents_policy_any_tool">qualquer outra ferramenta</string>
     <string name="agents_rule_allow">Permitir</string>
     <string name="agents_rule_ask">Perguntar</string>
     <string name="agents_rule_deny">Negar</string>
+    <string name="agents_policy_name">Chave %1$s: %2$s</string>
+    <string name="agents_rule_allow_note">%1$s chama %2$s sem perguntar.</string>
+    <string name="agents_rule_ask_note">%1$s pergunta antes: você permite ou nega aqui cada chamada de %2$s.</string>
+    <string name="agents_rule_deny_note">O servidor nega a %1$s: %2$s; a leitura continua permitida.</string>
     <string name="agents_hint">O Dayhand registra sua decisão e o agente age de acordo com ela. O Dayhand não pode impedir o que um agente faz fora do Dayhand.</string>
     <string name="agents_gone">Isto não está mais aqui: foi decidido, expirou ou foi removido em outro lugar.</string>
     <string name="agents_sending">Enviando…</string>
@@ -65,6 +69,13 @@
     <string name="agents_rejected">Rejeitada: está na lixeira.</string>
     <string name="agents_proposal_gone">Esta proposta já foi tratada em outro lugar.</string>
     <string name="agents_change_failed">Sem conexão com o servidor. Tente de novo.</string>
+
+    <string name="agents_policy_title">Regra de ferramenta</string>
+    <string name="agents_policy_rule">Regra</string>
+    <string name="agents_policy_hint">O servidor aplica a regra a partir da próxima chamada do agente, e dayhand policy a mostra. “Permitir” é o padrão: uma regra permitida sai desta lista, a menos que a regra da chave para qualquer outra ferramenta diga outra coisa.</string>
+    <string name="agents_policy_set">Regra salva. O agente vai encontrá-la na próxima chamada.</string>
+    <string name="agents_policy_key_gone">O servidor não alterou a regra: esta chave de agente foi revogada ou removida.</string>
+    <string name="agents_policy_refused">O servidor não aceitou esta regra para esta chave e ferramenta.</string>
 
     <string name="channel_approvals">Solicitações de aprovação</string>
     <string name="channel_approvals_description">Um agente pergunta antes de fazer algo. Verificado a cada 15 minutos enquanto o Dayhand está fechado.</string>

@@ -51,7 +51,10 @@ class AgentControlTest {
         assertTrue(controls.paused)
         assertEquals(1000L, controls.pausedAt)
         assertEquals("lunch", controls.reason)
-        assertEquals(listOf(ToolPolicy("worker", "*", "ask"), ToolPolicy("worker", "delete_task", "deny")), controls.policies)
+        assertEquals(
+            listOf(ToolPolicy("k1", "worker", "*", PolicyRule.ASK), ToolPolicy("k1", "worker", "delete_task", PolicyRule.DENY)),
+            controls.policies,
+        )
 
         val proposals = AgentControlJson.proposals(json(PROPOSALS))!!
         assertEquals(
@@ -96,6 +99,34 @@ class AgentControlTest {
         assertEquals(mapOf("taskId" to "t1", "intoTaskId" to "t2", "clientId" to "c1"), sent[2].second.mapValues { it.value.jsonPrimitive.content })
         assertEquals(setOf("taskId", "clientId"), sent[3].second.keys)
         assertEquals("true", sent[4].second.getValue("paused").jsonPrimitive.content)
+    }
+
+    @Test
+    fun `a policy without its key or with an unknown rule is left out`() {
+        val controls = AgentControlJson.controls(
+            json("""{"paused":false,"policies":[{"keyName":"a","tool":"*","rule":"ask"},{"keyId":"k2","keyName":"b","tool":"*","rule":"maybe"}]}"""),
+        )!!
+        assertEquals(emptyList<ToolPolicy>(), controls.policies)
+    }
+
+    @Test
+    fun `a rule goes to app setToolPolicy, and a refusal keeps the server's reason`() = runTest {
+        val sent = mutableListOf<Pair<String, JsonObject>>()
+        var answer: SendResult = SendResult.Applied(Json.parseToJsonElement(CONTROLS))
+        val api = AgentControlApi(queries = { _, _ -> SendResult.Failed("offline") }, mutations = { path, args ->
+            sent += path to args
+            answer
+        })
+        assertEquals(Change.Done, api.setPolicy("k1", "complete_task", PolicyRule.DENY))
+        assertEquals(AgentControlApi.SET_POLICY, sent.single().first)
+        assertEquals(
+            mapOf("apiKeyId" to "k1", "toolName" to "complete_task", "rule" to "deny"),
+            sent.single().second.mapValues { it.value.jsonPrimitive.content },
+        )
+
+        answer = SendResult.Rejected("API key k1 not found", "not_found")
+        assertEquals(Change.Refused("API key k1 not found", "not_found"), api.setPolicy("k1", "*", PolicyRule.ALLOW))
+        assertEquals("allow", sent.last().second.getValue("rule").jsonPrimitive.content)
     }
 
     companion object {

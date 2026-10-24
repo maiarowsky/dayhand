@@ -238,10 +238,10 @@ app and from `cli` keys, are never refused.
 
 Each **agent key** can also have a **policy**: for a tool that changes the plan, or for `"*"`
 (every such tool without its own rule), `allow` (the default), `ask` or `deny`
-(`dayhand policy set <key> <tool> <rule>`, `set_tool_policy`). `deny` refuses the call with
-`forbidden`. `ask` refuses it with `approval_required` and the id of an approval request Dayhand
-made for exactly that call; once the owner picks "Allow once", the agent repeats the call with
-`approvalId` and it runs, once. Reading tools have no policy.
+(`dayhand policy set <key> <tool> <rule>`, `set_tool_policy`; [phone controls](../android/README.md#screens)).
+`deny` refuses the call with `forbidden`. `ask` refuses it with `approval_required` and the id of
+an approval request Dayhand made for exactly that call; once the owner picks "Allow once", the
+agent repeats the call with `approvalId` and it runs, once. Reading tools have no policy.
 
 Decisions:
 
@@ -432,6 +432,6 @@ The same steps are in the `dayhand://guide` resource, one phase at a time in
 ## Not in this release
 
 Backlog.md import and export are copies, not sync: a change made on one side afterwards stays
-there, and importing a changed file again does not update its task. The phone
-does not edit tool policies yet (it shows them; `dayhand policy` sets them), and it notifies about
-approval requests at most every 15 minutes while the app is closed.
+there, and importing a changed file again does not update its task. For the phone's tool-policy
+controls and their limits, see [Android screens](../android/README.md#screens). The phone notifies
+about approval requests at most every 15 minutes while the app is closed.

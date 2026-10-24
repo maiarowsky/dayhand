@@ -2,6 +2,7 @@ package dev.helm.planner.ui.agents
 
 import dev.helm.planner.agents.AgentControlApi
 import dev.helm.planner.agents.AgentControlTest
+import dev.helm.planner.agents.PolicyRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.data.remote.SendResult
@@ -120,6 +121,39 @@ class AgentsViewModelTest {
         vm.setPaused(false)
         assertEquals("false", sent.single().second.getValue("paused").jsonPrimitive.content)
         assertEquals(AgentsMessage.PAUSE_FAILED, vm.ui.value.message)
+    }
+
+    @Test
+    fun `a rule changed on its page goes to the server and the list says so`() {
+        val vm = AgentsViewModel(api = { api })
+        vm.open(AgentsPage.Policy("k1", "*"))
+        vm.setPolicy("k1", "*", PolicyRule.DENY)
+        val (path, args) = sent.single()
+        assertEquals(AgentControlApi.SET_POLICY, path)
+        assertEquals(mapOf("apiKeyId" to "k1", "toolName" to "*", "rule" to "deny"), args.mapValues { it.value.jsonPrimitive.content })
+        assertEquals(AgentsPage.Main, vm.ui.value.page)
+        assertEquals(AgentsMessage.POLICY_SET, vm.ui.value.message)
+    }
+
+    @Test
+    fun `a refused rule says why in words, and no connection keeps its page`() {
+        val vm = AgentsViewModel(api = { api })
+        mutationAnswer = { SendResult.Rejected("API key k1 not found", "not_found") }
+        vm.open(AgentsPage.Policy("k1", "*"))
+        vm.setPolicy("k1", "*", PolicyRule.ASK)
+        assertEquals(AgentsMessage.POLICY_KEY_GONE, vm.ui.value.message)
+        assertEquals(AgentsPage.Main, vm.ui.value.page)
+
+        mutationAnswer = { SendResult.Rejected("Policies are for agent keys", "invalid_argument") }
+        vm.open(AgentsPage.Policy("k1", "delete_task"))
+        vm.setPolicy("k1", "delete_task", PolicyRule.ALLOW)
+        assertEquals(AgentsMessage.POLICY_REFUSED, vm.ui.value.message)
+
+        mutationAnswer = { SendResult.Failed("offline") }
+        vm.open(AgentsPage.Policy("k1", "delete_task"))
+        vm.setPolicy("k1", "delete_task", PolicyRule.ALLOW)
+        assertEquals(AgentsMessage.FAILED, vm.ui.value.message)
+        assertEquals(AgentsPage.Policy("k1", "delete_task"), vm.ui.value.page)
     }
 
     @Test

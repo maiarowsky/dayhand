@@ -12,6 +12,7 @@ import dev.helm.planner.agents.AgentControlApi
 import dev.helm.planner.agents.AgentControls
 import dev.helm.planner.agents.Change
 import dev.helm.planner.agents.Load
+import dev.helm.planner.agents.PolicyRule
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.ui.common.appLocale
@@ -28,8 +29,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Settings → Agents: the switch that pauses every agent, approval requests, the proposal inbox and the tool
- * policies. Nothing is cached: everything is read when the page opens and after every change. [api] is null while
- * the phone is not connected to a server; [tasks] are the plan on the phone, the tasks a proposal can merge into.
+ * policies, changed one rule at a time. Nothing is persisted: sections are read on entry and after a decision
+ * succeeds or is finally refused. Failed sends keep the current state for retry. [api] is null while the phone
+ * is not connected to a server; [tasks] are the plan on the phone, the tasks a proposal can merge into.
  */
 class AgentsViewModel(
     private val api: suspend () -> AgentControlApi?,
@@ -74,23 +76,30 @@ class AgentsViewModel(
     fun decide(approvalId: String, optionId: String, note: String?) = change(
         run = { it.decide(approvalId, optionId, note) },
         done = AgentsMessage.DECIDED,
-        refused = AgentsMessage.DECIDE_REFUSED,
+        refused = { AgentsMessage.DECIDE_REFUSED },
         after = { cancelNotification(approvalId) },
     )
 
-    fun accept(proposalId: String) = change({ it.accept(proposalId) }, AgentsMessage.ACCEPTED, AgentsMessage.PROPOSAL_GONE)
+    fun accept(proposalId: String) = change({ it.accept(proposalId) }, AgentsMessage.ACCEPTED, { AgentsMessage.PROPOSAL_GONE })
 
     fun merge(proposalId: String, intoTaskId: String) =
-        change({ it.merge(proposalId, intoTaskId) }, AgentsMessage.MERGED, AgentsMessage.PROPOSAL_GONE)
+        change({ it.merge(proposalId, intoTaskId) }, AgentsMessage.MERGED, { AgentsMessage.PROPOSAL_GONE })
 
     fun reject(proposalId: String, reason: String?) =
-        change({ it.reject(proposalId, reason) }, AgentsMessage.REJECTED, AgentsMessage.PROPOSAL_GONE)
+        change({ it.reject(proposalId, reason) }, AgentsMessage.REJECTED, { AgentsMessage.PROPOSAL_GONE })
 
-    /** Sends one decision; after it the list is read again and the page returns to the list with what happened. */
+    /** The rule goes to the server at once; `dayhand policy` shows it after. A refusal says why in words. */
+    fun setPolicy(keyId: String, tool: String, rule: PolicyRule) = change(
+        run = { it.setPolicy(keyId, tool, rule) },
+        done = AgentsMessage.POLICY_SET,
+        refused = { if (it.code == "not_found") AgentsMessage.POLICY_KEY_GONE else AgentsMessage.POLICY_REFUSED },
+    )
+
+    /** Success or a final refusal reloads the list; a failed send keeps the page open for retry. */
     private fun change(
         run: suspend (AgentControlApi) -> Change,
         done: AgentsMessage,
-        refused: AgentsMessage,
+        refused: (Change.Refused) -> AgentsMessage,
         after: () -> Unit = {},
     ) = launch {
         if (state.value.busy) return@launch
@@ -98,7 +107,7 @@ class AgentsViewModel(
         val result = api()?.let { run(it) }
         val message = when (result) {
             Change.Done -> done
-            is Change.Refused -> refused
+            is Change.Refused -> refused(result)
             Change.Unauthorized, is Change.Failed, null -> AgentsMessage.FAILED
         }
         if (result == Change.Done || result is Change.Refused) after()
@@ -151,6 +160,7 @@ fun AgentsRoute(container: AppContainer, onBack: () -> Unit) {
             override fun accept(proposalId: String) = viewModel.accept(proposalId)
             override fun merge(proposalId: String, intoTaskId: String) = viewModel.merge(proposalId, intoTaskId)
             override fun reject(proposalId: String, reason: String?) = viewModel.reject(proposalId, reason)
+            override fun setPolicy(keyId: String, tool: String, rule: PolicyRule) = viewModel.setPolicy(keyId, tool, rule)
         }
     }
     AgentsScreen(ui.copy(timeLabel = { format.format(Instant.ofEpochMilli(it)) }), actions)

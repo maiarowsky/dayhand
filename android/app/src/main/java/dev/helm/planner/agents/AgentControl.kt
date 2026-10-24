@@ -48,7 +48,24 @@ data class ApprovalRequest(
     val decision: ApprovalDecision?,
 )
 
-data class ToolPolicy(val keyName: String, val tool: String, val rule: String)
+/** What an agent key may do with a write tool (docs/agent-work.md#6-pausing-agents-and-tool-policies). */
+enum class PolicyRule(val wire: String) {
+    ALLOW("allow"),
+    ASK("ask"),
+    DENY("deny"),
+    ;
+
+    companion object {
+        fun of(wire: String?): PolicyRule? = entries.firstOrNull { it.wire == wire }
+    }
+}
+
+/** One rule of the owner's: [tool] is a write tool, or "*" for every tool of the key without a rule of its own. */
+data class ToolPolicy(val keyId: String, val keyName: String, val tool: String, val rule: PolicyRule) {
+    companion object {
+        const val ANY_TOOL = "*"
+    }
+}
 
 /** The switch that pauses every agent, and the rules per agent key (`app:getAgentControls`). */
 data class AgentControls(val paused: Boolean, val pausedAt: Long?, val reason: String?, val policies: List<ToolPolicy>)
@@ -92,8 +109,8 @@ sealed interface Load<out T> {
 sealed interface Change {
     data object Done : Change
 
-    /** The server refused it for good: decided elsewhere, expired, the task gone. */
-    data class Refused(val message: String) : Change
+    /** The server refused it for good: decided elsewhere, expired, the task gone. [code] is the server's reason, e.g. `not_found`. */
+    data class Refused(val message: String, val code: String? = null) : Change
     data object Unauthorized : Change
     data class Failed(val message: String) : Change
 }
@@ -146,7 +163,12 @@ object AgentControlJson {
         val o = value as? JsonObject ?: return null
         val policies = (o["policies"] as? JsonArray).orEmpty().mapNotNull { item ->
             val p = item as? JsonObject ?: return@mapNotNull null
-            ToolPolicy(p.string("keyName") ?: return@mapNotNull null, p.string("tool") ?: return@mapNotNull null, p.string("rule") ?: return@mapNotNull null)
+            ToolPolicy(
+                keyId = p.string("keyId") ?: return@mapNotNull null,
+                keyName = p.string("keyName") ?: return@mapNotNull null,
+                tool = p.string("tool") ?: return@mapNotNull null,
+                rule = PolicyRule.of(p.string("rule")) ?: return@mapNotNull null,
+            )
         }
         return AgentControls(o.bool("paused"), o.long("pausedAt"), o.string("reason"), policies)
     }
@@ -211,6 +233,13 @@ class AgentControlApi(
 
     suspend fun pause(paused: Boolean): Change = change(PAUSE, buildJsonObject { put("paused", paused) })
 
+    /** The owner's rule for one agent key and one write tool (or "*"); the server drops an "allow" it does not need. */
+    suspend fun setPolicy(keyId: String, tool: String, rule: PolicyRule): Change = change(SET_POLICY, buildJsonObject {
+        put("apiKeyId", keyId)
+        put("toolName", tool)
+        put("rule", rule.wire)
+    })
+
     suspend fun proposals(): Load<List<Proposal>> = read(LIST_PROPOSALS, JsonObject(emptyMap()), AgentControlJson::proposals)
 
     suspend fun accept(taskId: String): Change = change(ACCEPT, buildJsonObject {
@@ -243,7 +272,7 @@ class AgentControlApi(
     private suspend fun change(path: String, args: JsonObject): Change = when (val result = mutations.send(path, args)) {
         is SendResult.Applied -> Change.Done
         SendResult.Unauthorized -> Change.Unauthorized
-        is SendResult.Rejected -> Change.Refused(result.message)
+        is SendResult.Rejected -> Change.Refused(result.message, result.code)
         is SendResult.Failed -> Change.Failed(result.message)
     }
 
@@ -252,6 +281,7 @@ class AgentControlApi(
         const val DECIDE_APPROVAL = "app:decideApproval"
         const val GET_CONTROLS = "app:getAgentControls"
         const val PAUSE = "app:pauseAgents"
+        const val SET_POLICY = "app:setToolPolicy"
         const val LIST_PROPOSALS = "app:listProposals"
         const val ACCEPT = "app:acceptProposal"
         const val MERGE = "app:mergeProposal"

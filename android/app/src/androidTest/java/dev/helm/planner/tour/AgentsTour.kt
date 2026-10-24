@@ -15,6 +15,7 @@ import dev.helm.planner.agents.ApprovalOption
 import dev.helm.planner.agents.ApprovalRequest
 import dev.helm.planner.agents.ApprovalStatus
 import dev.helm.planner.agents.PlanHealth
+import dev.helm.planner.agents.PolicyRule
 import dev.helm.planner.agents.Proposal
 import dev.helm.planner.agents.ToolPolicy
 import dev.helm.planner.data.local.Task
@@ -38,7 +39,7 @@ import org.junit.runner.RunWith
 
 /**
  * Screenshots of Settings → Agents (the switch, requests, proposals, policies), a request and its decision, a
- * proposal and merging it, and the plan health card above Today. Synthetic data in Polish, like [ScreenTour].
+ * proposal and merging it, one tool policy's rules, and the plan health card above Today. Synthetic data in Polish, like [ScreenTour].
  */
 @RunWith(AndroidJUnit4::class)
 class AgentsTour {
@@ -70,7 +71,7 @@ class AgentsTour {
         Proposal("p2", 32, "Odpowiedzieć Annie w sprawie umowy", null, "Anna", "email", "m-2210", null, 0),
     )
     private val state = AgentsUiState(
-        controls = Section.Loaded(AgentControls(paused = false, pausedAt = null, reason = null, policies = listOf(ToolPolicy("worker", "*", "ask"), ToolPolicy("worker", "delete_task", "deny")))),
+        controls = Section.Loaded(AgentControls(paused = false, pausedAt = null, reason = null, policies = listOf(ToolPolicy("k1", "worker", "*", PolicyRule.ASK), ToolPolicy("k1", "worker", "delete_task", PolicyRule.DENY), ToolPolicy("k2", "claude", "complete_task", PolicyRule.ASK)))),
         approvals = Section.Loaded(listOf(deploy, held, earlier)),
         proposals = Section.Loaded(proposals),
         targets = listOf(
@@ -109,6 +110,7 @@ class AgentsTour {
         page("55-proposal", state.copy(page = AgentsPage.Proposal("p1")))
         page("56-proposal-merge", state.copy(page = AgentsPage.Merge("p1")))
         page("57-approval-decided", state.copy(page = AgentsPage.Approval("ap0")))
+        page("59-policy", state.copy(page = AgentsPage.Policy("k2", "complete_task")))
     }
 
     @Test

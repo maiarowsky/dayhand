@@ -27,6 +27,12 @@ called Helm until 0.9.0.
   dependency lookup limits are in [Screens](README.md#screens).
 - Room version 5 keeps the task's number, plan, dependencies and blocked reason (auto-migration 4
   to 5, with `MigrationTest`; the next snapshot fills them in).
+- Tool policies can be edited in Settings → Agents; choices, server responses and retry behaviour
+  are described in [Screens](README.md#screens).
+- `AgentsScreenTest` opens a rule, checks the three choices and sends another one;
+  `AgentsViewModelTest` and `AgentControlTest` check what goes to `app:setToolPolicy` and the
+  words for each refusal; `scripts/e2e-tool-policy.py` sets a rule on the phone and reads it back
+  with `dayhand policy` on a local backend.
 
 ## 0.10.1 (2026-10-24)
 

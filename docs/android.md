@@ -177,7 +177,7 @@ With a server, two pages under Settings → Connection keep you in charge of you
 - **Agents** has **Pause agents**, one switch that refuses every change from every agent while they can
   still read; the **approval requests** waiting for you, each with what the agent wants to do and the
   options it offers; the **proposals** agents and integrations made, to accept, merge into a task or
-  reject; and the **tool policies** of your agent keys, read only here (`dayhand policy set` changes them).
+  reject; and the **tool policies** of your agent keys ([phone controls](../android/README.md#screens)).
 
 While the app is closed, the phone looks for new approval requests every 15 minutes and shows a
 notification for each. There is no push service in between, so a request can wait up to about 15
