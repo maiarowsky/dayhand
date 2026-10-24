@@ -80,7 +80,7 @@ public enum ScreenSnapshots {
         let detailsSize = CGSize(width: 560, height: 2100)
         if let task = model.selection.flatMap(model.task) {
             try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details.png"))
-            // The same task repeating monthly on its nth weekday, counted from completion, six more times.
+            // The same task repeating monthly on its nth weekday, counted from completion, six times including this one.
             var monthly = task
             if let due = task.dueDate.flatMap(CivilDate.init) {
                 monthly.repeat = RepeatRule(

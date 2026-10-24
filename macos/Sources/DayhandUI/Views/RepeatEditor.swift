@@ -3,11 +3,9 @@ import DayhandLocalization
 import SwiftUI
 
 /**
- * The details' Repeat section, the Android app's `RepeatDialog` in place: no repeat, or every N days, weeks (on the
- * weekdays picked), months (on the due date's day, the last day or an nth weekday) or years; counted from the due date
- * or from completion; ending never, on a day or after a number of times. The choices stay a draft until
- * **Save Repeat**, which only a rule the backend accepts enables (`RepeatDraft.isValid`), so a refused rule is never
- * queued. A task without a day counts from its completion day.
+ * Keeps repeat choices separate from the stored task until Save; `RepeatDraft.isValid` gates persistence.
+ * Implicit day labels must use the effective anchor, not today's date: completion can happen on a later day.
+ * Choices and usage: macos/README.md.
  */
 struct RepeatEditor: View {
     @EnvironmentObject private var model: AppModel

@@ -18,24 +18,17 @@ This version is the basic one (MVP):
   (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
   Links are shown. A task in the trash is read-only until **Restore**.
 - **Repeat** in the details is an editor: **Frequency** (does not repeat, daily, weekly, monthly, yearly), every
-  how many, the weekdays Monday to Sunday for a weekly rule (none picked: the selected anchor's weekday), the day of the
-  month for a monthly one (the anchor's day, the last day, an nth weekday or, in the month's last week, the last
-  one), counting the next date from the due date or from completion, and the end: never, on a day or after a
-  number of times. **Reminders** are as in Settings, none, or custom, at most five: minutes before the due time
-  (only a timed task rings them) and times of day on the due day or the day before. Both stay a draft, with a
-  summary line, until **Save Repeat** or **Save Reminders**, which only a rule or reminders the server accepts
-  enable (`TaskRules`), so a refused change never reaches the outbox; **Revert** drops the draft.
-- **Repeating offline**: only without a server (**Not now**, disconnected or signed out), ticking off a repeating
-  task creates its next occurrence on the Mac at once (`Recurrence.advance`). The done task loses its rule before
-  completion is sent, so a server connected later does not also generate an occurrence for that completion.
-  Resends reuse the queued occurrence's `clientId`. If the parent add, rule-clear or completion is permanently
-  refused, its unsent generated occurrences are discarded. Known limitations:
-  - A paired Mac without network queues completion but creates no next occurrence until it syncs; a
-    completion-anchored rule then counts from the sync date, not the local completion date.
-  - A Mac without a server does not keep agent acceptance criteria or plans, so a locally created next occurrence
-    lacks those fields.
-  - Completing the same cached occurrence on two devices before sync can yield two next occurrences, as on
-    Android; this release adds no cross-device correlation protocol.
+  how many, and weekdays Monday to Sunday for a weekly rule (none picked: the selected anchor's weekday).
+  Monthly choices are the anchor's day, the last day, or an nth weekday suggested by the due date (today for an
+  undated task), with a last-weekday choice when that date falls in the month's last week. A fixed month day or
+  nth weekday set elsewhere is kept as a choice. Count the next date from the due date or from completion;
+  without a due date it counts from completion. End never, on a day or after a number of times, **this occurrence
+  included**. **Reminders** are as in Settings, none, or custom, at most five: minutes before the due time (only a
+  timed task rings them) and times of day on the due day or the day before. Existing reminders further ahead are
+  kept. Both editors stay a draft until **Save Repeat** or **Save Reminders**, enabled only for a changed rule or
+  reminders the server accepts (`TaskRules`), so a refused change never reaches the outbox; **Revert** drops the draft.
+- **Repeating offline**: next-occurrence generation, sync behavior and the paired-offline, agent-field and
+  cross-device limitations are described in [docs/macos.md](../docs/macos.md#offline-repeating).
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
   by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
   cached entries remain available offline. Without cached entries, the details say history is unavailable

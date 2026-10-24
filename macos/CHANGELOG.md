@@ -8,21 +8,16 @@ latest one below).
 
 ### Added
 
-- **Repeat** and **Reminders** in the task details are editors: frequency, every how many, weekdays, the day of the
-  month (the due date's day, the last day, an nth weekday), counted from the due date or completion, ending never,
-  on a day or after a number of times; reminders as in Settings, none, or up to five of the task's own (minutes
-  before, a time on the due day or the day before). Save is enabled only for what the server accepts
-  (`TaskRules`), so a refused rule never enters the outbox. Usage: [README.md](README.md).
+- **Repeat** and **Reminders** in the task details are now editors, with drafts validated before saving.
+  Choices and usage: [README.md](README.md).
 
 - **Trash** with **Restore** in the task sidebar, and per-task **History** in the details.
   Usage and offline behavior: [README.md](README.md).
 
 ### Changed
 
-- Ticking off a repeating task without a server (Not now, disconnected or signed out) creates its next occurrence
-  on the Mac at once. The done task's rule is cleared before sending completion, and permanently refused parent
-  changes discard their unsent generated occurrences. With a server, generation remains on the server; see the
-  paired-offline, agent-field and cross-device limitations in [docs/macos.md](../docs/macos.md#offline-repeating).
+- Repeating tasks completed without a server now create their next occurrence locally.
+  Sync behavior and limitations: [docs/macos.md](../docs/macos.md#offline-repeating).
 - The existing sidebar now switches between Today and Trash; the window keeps its two-column layout.
 - The local database now caches server history; the cache leaves the Mac with a purged task.
   Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).

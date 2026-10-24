@@ -151,8 +151,9 @@ version before announcing it.
 
 The Mac creates a repeating task's next occurrence locally only when it has no server (**Not now**, disconnected
 or signed out). It clears the completed task's rule before sending completion, then uploads the locally created
-occurrence. If the parent add, rule-clear or completion is permanently refused, its unsent generated occurrences
-are discarded.
+occurrence, so connecting a server later does not also generate an occurrence for that completion. Retries reuse
+the queued occurrence's `clientId`. If the parent add, rule-clear or completion is permanently refused, its unsent
+generated occurrences are discarded.
 
 Known limitations:
 
