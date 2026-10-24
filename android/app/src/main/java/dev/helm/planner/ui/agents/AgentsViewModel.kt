@@ -41,29 +41,30 @@ class AgentsViewModel(
     private val state = MutableStateFlow(AgentsUiState())
     val ui: StateFlow<AgentsUiState> = state.asStateFlow()
 
+    /** Counts the refreshes begun (and the switch flips): an answer is shown only if no newer one began after it. */
+    private var epoch = 0
+
     init {
         reload()
         viewModelScope.launch { tasks.collect { all -> state.update { it.copy(targets = mergeTargets(all)) } } }
     }
 
-    fun reload() = launch {
-        val remote = api() ?: return@launch state.update {
-            it.copy(controls = Section.Failed(true), approvals = Section.Failed(true), proposals = Section.Failed(true))
-        }
-        val controls = remote.controls().toSection()
-        val approvals = remote.approvals().toSection()
-        val proposals = remote.proposals().toSection()
-        state.update { it.copy(controls = controls, approvals = approvals, proposals = proposals) }
-    }
+    fun reload() = launch { refresh() }
 
     /** One tap pauses every agent key and connection; reading stays allowed. */
     fun setPaused(paused: Boolean) = launch {
         val current = (state.value.controls as? Section.Loaded)?.value ?: return@launch
         if (state.value.busy) return@launch
+        // A refresh already on its way read the old position; it must not undo the one just shown.
+        epoch++
         state.update { it.copy(busy = true, message = null, controls = Section.Loaded(current.copy(paused = paused))) }
-        val done = api()?.pause(paused) == Change.Done
-        state.update { it.copy(busy = false, message = if (done) null else AgentsMessage.PAUSE_FAILED) }
-        reload()
+        try {
+            val done = api()?.pause(paused) == Change.Done
+            state.update { it.copy(message = if (done) null else AgentsMessage.PAUSE_FAILED) }
+            refresh()
+        } finally {
+            state.update { it.copy(busy = false) }
+        }
     }
 
     fun open(page: AgentsPage) = state.update { it.copy(page = page, message = null) }
@@ -95,7 +96,10 @@ class AgentsViewModel(
         refused = { if (it.code == "not_found") AgentsMessage.POLICY_KEY_GONE else AgentsMessage.POLICY_REFUSED },
     )
 
-    /** Success or a final refusal reloads the list; a failed send keeps the page open for retry. */
+    /**
+     * Success or a final refusal reloads the list; a failed send keeps the page open for retry. The page stays busy
+     * until the reload has finished, so the next change cannot start while an older answer is still on its way.
+     */
     private fun change(
         run: suspend (AgentControlApi) -> Change,
         done: AgentsMessage,
@@ -104,18 +108,38 @@ class AgentsViewModel(
     ) = launch {
         if (state.value.busy) return@launch
         state.update { it.copy(busy = true, message = null) }
-        val result = api()?.let { run(it) }
-        val message = when (result) {
-            Change.Done -> done
-            is Change.Refused -> refused(result)
-            Change.Unauthorized, is Change.Failed, null -> AgentsMessage.FAILED
+        try {
+            val result = api()?.let { run(it) }
+            val message = when (result) {
+                Change.Done -> done
+                is Change.Refused -> refused(result)
+                Change.Unauthorized, is Change.Failed, null -> AgentsMessage.FAILED
+            }
+            if (result == Change.Done || result is Change.Refused) after()
+            // A failure keeps the page open so the owner can try again; anything else goes back to the list.
+            state.update { it.copy(message = message, page = if (message == AgentsMessage.FAILED) it.page else AgentsPage.Main) }
+            if (message != AgentsMessage.FAILED) refresh()
+        } finally {
+            state.update { it.copy(busy = false) }
         }
-        if (result == Change.Done || result is Change.Refused) after()
-        // A failure keeps the page open so the owner can try again; anything else goes back to the list.
-        state.update {
-            it.copy(busy = false, message = message, page = if (message == AgentsMessage.FAILED) it.page else AgentsPage.Main)
+    }
+
+    /** Reads the three sections; the answer is dropped when a newer refresh began meanwhile, as it may be older. */
+    private suspend fun refresh() {
+        val mine = ++epoch
+        val remote = api()
+        if (remote == null) {
+            if (mine == epoch) {
+                state.update {
+                    it.copy(controls = Section.Failed(true), approvals = Section.Failed(true), proposals = Section.Failed(true))
+                }
+            }
+            return
         }
-        if (message != AgentsMessage.FAILED) reload()
+        val controls = remote.controls().toSection()
+        val approvals = remote.approvals().toSection()
+        val proposals = remote.proposals().toSection()
+        if (mine == epoch) state.update { it.copy(controls = controls, approvals = approvals, proposals = proposals) }
     }
 
     private fun launch(block: suspend () -> Unit) {

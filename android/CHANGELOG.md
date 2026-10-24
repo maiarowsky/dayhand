@@ -34,6 +34,12 @@ called Helm until 0.9.0.
   words for each refusal; `scripts/e2e-tool-policy.py` sets a rule on the phone and reads it back
   with `dayhand policy` on a local backend.
 
+### Fixed
+
+- Settings → Agents no longer shows an older rule or pause state when a refresh started earlier
+  finishes later. `AgentsRefreshRaceTest` holds back the answers of the server and checks the rule
+  and the switch for each order they arrive in.
+
 ## 0.10.1 (2026-10-24)
 
 ### Added
