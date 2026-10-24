@@ -132,14 +132,12 @@ fun AgentsScreen(state: AgentsUiState, actions: AgentsActions) {
         is AgentsPage.Approval -> {
             val request = (state.approvals as? Section.Loaded)?.value?.firstOrNull { it.id == page.id }
             SettingsPage(stringResource(R.string.agents_approval_title), actions::back, AgentsTags.APPROVAL_PAGE) {
-                MessageGroup(state.message)
                 if (request == null) ListNote(stringResource(R.string.agents_gone)) else ApprovalPage(request, state, actions)
             }
         }
         is AgentsPage.Proposal -> {
             val proposal = (state.proposals as? Section.Loaded)?.value?.firstOrNull { it.id == page.id }
             SettingsPage(stringResource(R.string.agents_proposal_title), actions::back, AgentsTags.PROPOSAL_PAGE) {
-                MessageGroup(state.message)
                 if (proposal == null) ListNote(stringResource(R.string.agents_gone)) else ProposalPage(proposal, state, actions)
             }
         }
@@ -445,7 +443,6 @@ private fun MergePage(proposalId: String, state: AgentsUiState, actions: AgentsA
             )
         },
     ) {
-        MessageGroup(state.message)
         if (shown.isEmpty()) {
             ListNote(stringResource(R.string.agents_merge_none))
         } else {

@@ -203,21 +203,11 @@ class AgentsScreenTest {
     }
 
     @Test
-    fun failedChangesAreVisibleOnEveryAgentsPage() {
-        var state by mutableStateOf(loaded)
-        compose.setContent { HelmTheme { AgentsScreen(state, Recorder()) } }
-        val pages = listOf(
-            AgentsPage.Main,
-            AgentsPage.Approval("ap1"),
-            AgentsPage.Proposal("t1"),
-            AgentsPage.Merge("t1"),
-            AgentsPage.Policy("k1", "complete_task"),
-        )
-        pages.forEach { page ->
-            compose.runOnIdle { state = loaded.copy(page = page, message = AgentsMessage.FAILED) }
-            compose.onNodeWithTag(AgentsTags.MESSAGE).performScrollTo().assertIsDisplayed()
-            compose.onNodeWithText(text(R.string.agents_change_failed)).assertIsDisplayed()
-        }
+    fun failedChangesAreVisibleOnTheRetainedPolicyPage() {
+        show(loaded.copy(page = AgentsPage.Policy("k1", "complete_task"), message = AgentsMessage.FAILED), Recorder())
+        compose.onNodeWithTag(AgentsTags.POLICY_PAGE).assertIsDisplayed()
+        compose.onNodeWithTag(AgentsTags.MESSAGE).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_change_failed)).assertIsDisplayed()
     }
 
     @Test
