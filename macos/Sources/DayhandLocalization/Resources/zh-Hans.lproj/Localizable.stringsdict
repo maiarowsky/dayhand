@@ -86,6 +86,34 @@
 			<string>今天有 %lld 项任务</string>
 		</dict>
 	</dict>
+	<key>%lld times, this one included</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>%lld 次（含本次）</string>
+		</dict>
+	</dict>
+	<key>At most %lld reminders.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>最多 %lld 个提醒。</string>
+		</dict>
+	</dict>
 	<key>Dayhand, %lld open today</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

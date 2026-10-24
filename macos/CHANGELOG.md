@@ -8,11 +8,16 @@ latest one below).
 
 ### Added
 
+- **Repeat** and **Reminders** in the task details are now editors, with drafts validated before saving.
+  Choices and usage: [README.md](README.md).
+
 - **Trash** with **Restore** in the task sidebar, and per-task **History** in the details.
   Usage and offline behavior: [README.md](README.md).
 
 ### Changed
 
+- Repeating tasks completed without a server now create their next occurrence locally.
+  Sync behavior and limitations: [docs/macos.md](../docs/macos.md#offline-repeating).
 - The existing sidebar now switches between Today and Trash; the window keeps its two-column layout.
 - The local database now caches server history; the cache leaves the Mac with a purged task.
   Migration details: [`AppDatabase.swift`](Sources/DayhandCore/Store/AppDatabase.swift).

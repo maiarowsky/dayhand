@@ -14,9 +14,21 @@ This version is the basic one (MVP):
   (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
   the field says what was understood; **Keep in title** keeps the words as text. Without a phrase the task is
   for today, as on the phone.
-- **Task details** with basic editing: title, status, "working on it now" and the resume note, the day and time
-  (a phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat, reminders
-  and links are shown. A task in the trash is read-only until **Restore**.
+- **Task details** with editing: title, status, "working on it now" and the resume note, the day and time
+  (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
+  Links are shown. A task in the trash is read-only until **Restore**.
+- **Repeat** in the details is an editor: **Frequency** (does not repeat, daily, weekly, monthly, yearly), every
+  how many, and weekdays Monday to Sunday for a weekly rule (none picked: the selected anchor's weekday).
+  Monthly choices are the anchor's day, the last day, or an nth weekday suggested by the due date (today for an
+  undated task), with a last-weekday choice when that date falls in the month's last week. A fixed month day or
+  nth weekday set elsewhere is kept as a choice. Count the next date from the due date or from completion;
+  without a due date it counts from completion. End never, on a day or after a number of times, **this occurrence
+  included**. **Reminders** are as in Settings, none, or custom, at most five: minutes before the due time (only a
+  timed task rings them) and times of day on the due day or the day before. Existing reminders further ahead are
+  kept. Both editors stay a draft until **Save Repeat** or **Save Reminders**, enabled only for a changed rule or
+  reminders the server accepts (`TaskRules`), so a refused change never reaches the outbox; **Revert** drops the draft.
+- **Repeating offline**: next-occurrence generation, sync behavior and the paired-offline, agent-field and
+  cross-device limitations are described in [docs/macos.md](../docs/macos.md#offline-repeating).
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`, or an agent
   by name) and when, newest first, each field from its old value to the new one. Only server history is shown;
   cached entries remain available offline. Without cached entries, the details say history is unavailable
@@ -164,7 +176,12 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   snapshot, a refused change is dropped and repaired, a revoked Mac stops with its changes kept, a refused JWT is
   refreshed and the call repeated. `HistoryTests.swift` checks history parsing and actor attribution, fetching
   and cache replacement, retaining cached history offline, and removing it when a task is purged or local data
-  is erased. It also checks trash expiry and queuing an offline restore. The loop's wait ends at its timeout or at
+  is erased. It also checks trash expiry and queuing an offline restore. `RepeatEditingTests.swift` checks the editors'
+  drafts against the rules they make, that rules and reminders `TaskRules` refuses queue nothing, and that a
+  repeating task completed without a server gets its next occurrence locally and keeps one occurrence when the
+  outbox is sent. With a server, generation stays on the server, including after a delayed offline completion.
+  Permanent rejection of a parent add, rule-clear or completion drops its unsent generated descendants, while
+  retryable failures retain them and unrelated additions still sync. The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
   phrase, works offline, syncs, and checks every change with a fresh client.
@@ -182,16 +199,18 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
 - **Screens**: `swift run DayhandSnapshots <folder>` draws the two-column Today and Trash windows at 960 and
   720 points wide, the shared sidebar with its chooser and update button, the details with cached history and
-  with history unavailable offline, the menu bar, quick add, Connect, Settings, Settings → Updates and every
+  with history unavailable offline, the repeat and reminder editors (weekly with the reminders from Settings,
+  monthly on an nth weekday with a count and custom reminders), the menu bar, quick add, Connect, Settings, Settings → Updates and every
   state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
   them is missing from the string catalog. It also lays out the main window in a real window with its title bar
   (wide, narrowest, sidebar closed, light and dark) and fails when the content is taller than the window or quick
   add sits under the title bar and its window buttons.
-- **History presentation** (`DayhandUITests`): refresh-key equality and connection-recovery classification,
-  placeholders for fresh, cached and local-only history, and translated, actor-neutral claim labels. These
-  are unit checks, not clicks through the running app.
+- **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
+  classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,
+  the month choices and counts of the repeat editor in English and Polish, and picker days and times that do not
+  move with the zone. These are unit checks, not clicks through the running app.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources

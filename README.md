@@ -188,7 +188,9 @@ to choose); everything scripts and agents read stays English.
 ## On the Mac
 
 Dayhand for macOS has Today, quick add from the menu bar or a global shortcut, reminders and the
-morning summary, the trash and each task's change history, and works offline like the phone, in English,
+morning summary, the trash and each task's change history, repeat and reminder editors, and offline editing.
+Repeating tasks create their next occurrence locally only without a server; a paired Mac without network waits
+until sync. The app speaks English,
 Polish, German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese. It is built from source
 (Xcode 26 or later; runs on macOS 13 or later) and is not signed for other Macs yet:
 
