@@ -7,6 +7,7 @@ export const INSTRUCTIONS =
   "Find tasks with list_all (query, status, labels, dueBefore/dueAfter, overdue, limit/cursor) instead of reading the whole plan. " +
   "Pass a clientId with changes you might retry, and dryRun: true to preview a change. " +
   "After a pause, call list_events with the nextCursor you kept to see only what changed. Before working on a task, claim_task it; complete it with proof. " +
+  "Ask the owner with request_approval before anything risky; plan_health shows what needs a look. " +
   "Read dayhand://guide for the full rules.";
 
 export const AGENT_GUIDE = `# Working with Dayhand
@@ -69,18 +70,46 @@ their API key; every change you make is recorded in the task's history as
   changes made meanwhile, oldest first (\`hasMore\`: call again). \`by\`
   and \`taskId\` narrow the log.
 
+## Asking the owner
+
+- Before something risky or hard to undo, ask with \`request_approval\`:
+  \`action\` (what you want to do), 2 to 4 \`options\` with their
+  \`consequence\`, \`reversible\` and \`expiresInMinutes\`. The owner
+  decides on the phone; read the outcome with \`get_approval\` (status
+  \`pending\`, \`decided\` or \`expired\`). Dayhand records the decision;
+  acting on it, and not acting without it, is up to you.
+- The owner can pause every agent: your changes then fail with
+  \`agents_paused\` while reading still works. Stop and wait; do not retry
+  in a loop.
+- The owner can set a policy per key and tool. \`forbidden\`: that tool is
+  denied to you. \`approval_required\`: the error carries \`approvalId\`;
+  wait until \`get_approval\` shows it decided, then repeat exactly the same
+  call with \`approvalId\`. One approval lets one call through.
+
+## Proposing work
+
+- Work you were not asked for goes in as a proposal: \`add_task\` with
+  \`proposal: true\`. It waits in the owner's inbox, out of Today, until they
+  accept, merge or reject it. Give a \`source\` (\`{kind, ref, url}\`, e.g.
+  the alert or issue) so the same source never makes two tasks, and
+  \`returnTo\` (one of the user's webhooks) to hear back, with the proof,
+  when the task closes.
+- \`plan_health\` (or the \`plan_health\` prompt) shows in one read what
+  needs a look.
+
 ## Errors and limits
 
 - A failed call returns \`isError: true\` with \`structuredContent.error\`:
   \`invalid_argument\` (fix the arguments), \`not_found\`, \`conflict\`
   (another agent holds the task's claim), \`precondition_failed\` (the
-  task's state does not allow it yet), \`rate_limited\` (wait
-  \`retryAfterMs\`, then retry) or \`internal\`.
+  task's state does not allow it yet), \`agents_paused\`, \`forbidden\`,
+  \`approval_required\` (the owner's controls, above), \`rate_limited\`
+  (wait \`retryAfterMs\`, then retry) or \`internal\`.
 - Each key may make ${CALL_LIMITS.read} reads and ${CALL_LIMITS.write} changes a minute.
 
 ## Routines
 
-The prompts \`plan_day\`, \`weekly_review\` and \`triage_overdue\` start the
-three routines: planning today, reviewing the week, and deciding what
-happens to overdue tasks.
+The prompts \`plan_day\`, \`weekly_review\`, \`triage_overdue\` and
+\`plan_health\` start the four routines: planning today, reviewing the week,
+deciding what happens to overdue tasks, and checking what needs a look.
 `;

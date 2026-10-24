@@ -2,6 +2,87 @@
 // Run `npm run schemas` after changing a schema there.
 
 export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
+  "agent-controls": {
+    "title": "Agent controls",
+    "description": "get_agent_controls, pause_agents, set_tool_policy (dayhand agents, dayhand policy): whether the owner paused every agent, and the tool policies of agent keys (since 0.11.0).",
+    "type": "object",
+    "required": [
+      "paused",
+      "pausedAt",
+      "pausedBy",
+      "reason",
+      "policies"
+    ],
+    "properties": {
+      "paused": {
+        "type": "boolean",
+        "description": "true: every agent key and agent connection can read, but its changes are refused with agents_paused"
+      },
+      "pausedAt": {
+        "type": [
+          "number",
+          "null"
+        ],
+        "description": "Since when, Unix time in milliseconds"
+      },
+      "pausedBy": {
+        "anyOf": [
+          {
+            "enum": [
+              "app",
+              "cli"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Where the owner paused them"
+      },
+      "reason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "policies": {
+        "type": "array",
+        "description": "Rules other than the default allow; a key's \"*\" rule covers every write tool without its own rule",
+        "items": {
+          "type": "object",
+          "required": [
+            "keyId",
+            "keyName",
+            "tool",
+            "rule",
+            "updatedAt"
+          ],
+          "properties": {
+            "keyId": {
+              "type": "string"
+            },
+            "keyName": {
+              "type": "string"
+            },
+            "tool": {
+              "type": "string",
+              "description": "A write tool, or \"*\""
+            },
+            "rule": {
+              "enum": [
+                "allow",
+                "ask",
+                "deny"
+              ]
+            },
+            "updatedAt": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  },
   "api-key": {
     "title": "API key",
     "description": "One personal API key as GET /api/v1/keys lists it (dayhand key list). Never the key itself or its hash.",
@@ -142,6 +223,221 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       "revokedAt": {
         "type": "integer",
         "description": "Unix milliseconds"
+      }
+    }
+  },
+  "approval": {
+    "title": "Approval request",
+    "description": "An approval request (request_approval, get_approval, decide_approval; dayhand ask, dayhand approval): what an agent wants to do, the options, and the owner's decision (since 0.11.0). Fields may be added.",
+    "type": "object",
+    "required": [
+      "id",
+      "taskId",
+      "ref",
+      "taskTitle",
+      "action",
+      "detail",
+      "options",
+      "reversible",
+      "status",
+      "expiresAt",
+      "createdAt",
+      "requestedBy",
+      "source",
+      "tool",
+      "arguments",
+      "used",
+      "decision"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Id of the request"
+      },
+      "taskId": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "The task it is about, if any"
+      },
+      "ref": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "That task's number"
+      },
+      "taskTitle": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "That task's title"
+      },
+      "action": {
+        "type": "string",
+        "description": "What the agent wants to do"
+      },
+      "detail": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "Why, and what the owner needs to decide"
+      },
+      "options": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "required": [
+            "id",
+            "label",
+            "consequence"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "consequence": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "What happens if the owner picks it"
+            }
+          }
+        }
+      },
+      "reversible": {
+        "type": "boolean",
+        "description": "Whether what the agent wants to do can be undone"
+      },
+      "status": {
+        "enum": [
+          "pending",
+          "decided",
+          "expired"
+        ],
+        "description": "pending until the owner decides or expiresAt passes"
+      },
+      "expiresAt": {
+        "type": "number",
+        "description": "Until when the owner can decide, Unix time in milliseconds"
+      },
+      "createdAt": {
+        "type": "number",
+        "description": "Unix time in milliseconds"
+      },
+      "requestedBy": {
+        "type": "object",
+        "required": [
+          "type",
+          "name"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "app",
+              "cli",
+              "agent"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The key's or the client's name"
+          }
+        }
+      },
+      "source": {
+        "enum": [
+          "agent",
+          "policy"
+        ],
+        "description": "agent: asked with request_approval; policy: made when the owner's tool policy asks before a call"
+      },
+      "tool": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "policy: the tool the call is for"
+      },
+      "arguments": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "policy: the call's arguments as JSON (shortened)"
+      },
+      "used": {
+        "type": "boolean",
+        "description": "policy: an allowed call has already run with it"
+      },
+      "decision": {
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "optionId",
+              "label",
+              "note",
+              "decidedAt",
+              "by"
+            ],
+            "properties": {
+              "optionId": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "note": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The owner's word for the agent"
+              },
+              "decidedAt": {
+                "type": "number",
+                "description": "Unix time in milliseconds"
+              },
+              "by": {
+                "enum": [
+                  "app",
+                  "cli",
+                  "agent"
+                ],
+                "description": "Where the owner decided: app (the phone) or cli"
+              }
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  },
+  "approval-list": {
+    "title": "Approval requests",
+    "description": "list_approvals (dayhand approvals): approval requests, newest first (since 0.11.0).",
+    "type": "object",
+    "required": [
+      "approvals"
+    ],
+    "properties": {
+      "approvals": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/approval"
+        }
       }
     }
   },
@@ -487,6 +783,390 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       }
     }
   },
+  "merge": {
+    "title": "Merged proposal",
+    "description": "merge_proposal (dayhand proposals merge): the task the proposal was merged into, and the proposal, now in the trash (null when the call was a retry) (since 0.11.0).",
+    "type": "object",
+    "required": [
+      "task",
+      "merged"
+    ],
+    "properties": {
+      "task": {
+        "$ref": "#/$defs/task"
+      },
+      "merged": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/task"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  },
+  "plan-health": {
+    "title": "Plan health",
+    "description": "plan_health (dayhand health): what needs a look in the plan, in one read (since 0.11.0). Each section counts every task and lists the first 20. Fields may be added.",
+    "type": "object",
+    "required": [
+      "at",
+      "date",
+      "timezone",
+      "agentsPaused",
+      "overdue",
+      "dueToday",
+      "inProgress",
+      "expiredClaims",
+      "blocked",
+      "awaitingApproval",
+      "proposals",
+      "completedToday",
+      "oldestOpen"
+    ],
+    "properties": {
+      "at": {
+        "type": "number",
+        "description": "As of, Unix time in milliseconds"
+      },
+      "date": {
+        "type": "string",
+        "description": "Today in the user's time zone, YYYY-MM-DD"
+      },
+      "timezone": {
+        "type": "string"
+      },
+      "agentsPaused": {
+        "type": "boolean"
+      },
+      "overdue": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks"
+        ],
+        "description": "Not done, due before today",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "dueToday": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks"
+        ],
+        "description": "Not done, due today",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "inProgress": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks"
+        ],
+        "description": "In doing, and who works on them",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "isNow",
+                    "workingBy"
+                  ],
+                  "properties": {
+                    "isNow": {
+                      "type": "boolean"
+                    },
+                    "workingBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "\"agent: <name>\" while an agent's claim lasts; null when nobody holds a claim"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expiredClaims": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks"
+        ],
+        "description": "Not done, claimed by an agent whose claim ran out",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "claimedBy",
+                    "claimExpiresAt"
+                  ],
+                  "properties": {
+                    "claimedBy": {
+                      "type": "string"
+                    },
+                    "claimExpiresAt": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "blocked": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks"
+        ],
+        "description": "Not done and blocked: a blocked reason, or a dependency not done yet",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "reasons"
+                  ],
+                  "properties": {
+                    "reasons": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "awaitingApproval": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks",
+          "pendingApprovals"
+        ],
+        "description": "Not done, with a pending approval request",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "approvals"
+                  ],
+                  "properties": {
+                    "approvals": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "pendingApprovals": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Every pending request, also those not about a task"
+          }
+        }
+      },
+      "proposals": {
+        "type": "object",
+        "required": [
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Proposals waiting in the inbox"
+          }
+        }
+      },
+      "completedToday": {
+        "type": "object",
+        "required": [
+          "count",
+          "tasks",
+          "withProof",
+          "withoutProof"
+        ],
+        "description": "Completed today",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many in all"
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "The first 20",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/task-brief"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "proof"
+                  ],
+                  "properties": {
+                    "proof": {
+                      "type": "boolean",
+                      "description": "Completed with proof (a summary, links or checks)"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "withProof": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "withoutProof": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "oldestOpen": {
+        "description": "The open task created longest ago, or null",
+        "anyOf": [
+          {
+            "allOf": [
+              {
+                "$ref": "#/$defs/task-brief"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "createdAt",
+                  "ageDays"
+                ],
+                "properties": {
+                  "createdAt": {
+                    "type": "number"
+                  },
+                  "ageDays": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  },
   "problem": {
     "title": "Problem",
     "description": "An error of the REST API /api/v1 as problem details (RFC 9457, application/problem+json). code is the same code as an MCP tool error.",
@@ -516,12 +1196,16 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "code": {
         "type": "string",
-        "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, conflict, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
+        "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, conflict, agents_paused, forbidden, approval_required, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
       },
       "retryAfterMs": {
         "type": "integer",
         "minimum": 0,
         "description": "Only with rate_limited: milliseconds until the key may call again"
+      },
+      "approvalId": {
+        "type": "string",
+        "description": "Only with approval_required: the approval request to wait for; once allowed, repeat the same request with approvalId in the body (since 0.11.0)"
       }
     }
   },
@@ -904,6 +1588,47 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "type": "number",
         "description": "When the claim ends, Unix time in milliseconds; in the past = expired, the task can be claimed again (since 0.10.0)"
       },
+      "proposedAt": {
+        "type": "number",
+        "description": "Set while the task is a proposal waiting in the owner's inbox (add_task with proposal: true), Unix time in milliseconds; it stays out of Today, the board, list_all and the calendar until accepted (since 0.11.0)"
+      },
+      "source": {
+        "type": "object",
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "description": "Where the task came from outside Dayhand; one source makes at most one task (since 0.11.0)",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "The kind of source, e.g. sentry, github-issue, email"
+          },
+          "ref": {
+            "type": "string",
+            "description": "The item's id in that source"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where to see the item"
+          }
+        }
+      },
+      "requestedBy": {
+        "type": "string",
+        "description": "Who asked for the task: as given by the caller, or the agent that added it (since 0.11.0)"
+      },
+      "returnTo": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Webhooks that get task.returned, with the proof, when the task is completed, rejected or merged (since 0.11.0)"
+      },
+      "mergedInto": {
+        "type": "string",
+        "description": "The task a proposal was merged into (it is then in the trash) (since 0.11.0)"
+      },
       "completedAt": {
         "type": "number",
         "description": "Unix time in milliseconds"
@@ -931,6 +1656,52 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       "overdue": {
         "type": "boolean",
         "description": "Only in list_all, board and get_task"
+      }
+    }
+  },
+  "task-brief": {
+    "title": "Task in short",
+    "description": "A task as the plan health report lists it: enough to name it and find it (since 0.11.0).",
+    "type": "object",
+    "required": [
+      "id",
+      "ref",
+      "title",
+      "status",
+      "dueDate",
+      "dueTime"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "ref": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "title": {
+        "type": "string"
+      },
+      "status": {
+        "enum": [
+          "todo",
+          "doing",
+          "done"
+        ]
+      },
+      "dueDate": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "dueTime": {
+        "type": [
+          "string",
+          "null"
+        ]
       }
     }
   },
@@ -1094,7 +1865,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "properties": {
           "code": {
             "type": "string",
-            "description": "invalid_argument, not_found, unauthenticated, precondition_failed, conflict, rate_limited, internal (values may be added; treat an unknown code like internal)"
+            "description": "invalid_argument, not_found, unauthenticated, precondition_failed, conflict, agents_paused, forbidden, approval_required, rate_limited, internal (values may be added; treat an unknown code like internal)"
           },
           "message": {
             "type": "string"
@@ -1103,6 +1874,10 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
             "type": "integer",
             "minimum": 0,
             "description": "Only with rate_limited: milliseconds until the key may call again"
+          },
+          "approvalId": {
+            "type": "string",
+            "description": "Only with approval_required: the approval request the call waits for; once the owner allows it, repeat exactly the same call with approvalId (since 0.11.0)"
           }
         }
       }
@@ -1141,7 +1916,8 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
             "task.completed",
             "task.deleted",
             "task.restored",
-            "now.changed"
+            "now.changed",
+            "approval.decided"
           ]
         },
         "description": "Event types sent to this webhook (values may be added)"
@@ -1343,7 +2119,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
     "properties": {
       "type": {
         "type": "string",
-        "description": "task.created, task.updated, task.completed, task.deleted, task.restored, now.changed or webhook.test (values may be added)"
+        "description": "task.created, task.updated, task.completed, task.deleted, task.restored, now.changed, approval.decided, task.returned or webhook.test (values may be added)"
       },
       "timestamp": {
         "type": "string",
@@ -1351,7 +2127,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "data": {
         "type": "object",
-        "description": "task: the task after the change (task.schema.json); now.changed adds isNow; webhook.test has webhookId",
+        "description": "task: the task after the change (task.schema.json); now.changed adds isNow; webhook.test has webhookId; approval.decided has approval; task.returned has outcome, task, proof, source, requestedBy and, by outcome, reason or mergedInto",
         "properties": {
           "task": {
             "$ref": "#/$defs/task"
@@ -1361,6 +2137,28 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
           },
           "webhookId": {
             "type": "string"
+          },
+          "approval": {
+            "$ref": "#/$defs/approval"
+          },
+          "outcome": {
+            "enum": [
+              "completed",
+              "rejected",
+              "merged"
+            ],
+            "description": "task.returned: how the task closed"
+          },
+          "proof": {
+            "description": "task.returned: the task's proof (proof.schema.json), or null",
+            "anyOf": [
+              {
+                "$ref": "#/$defs/proof"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },

@@ -204,9 +204,9 @@ function eventLines(task: Doc<"tasks">, occurrence: Occurrence, options: Calenda
   ];
 }
 
-/** Whether the task belongs in the calendar: dated, active, and not done long ago. */
+/** Whether the task belongs in the calendar: dated, active, not a proposal (0.11.0), and not done long ago. */
 export function inCalendar(task: Doc<"tasks">, today: string): boolean {
-  if (task.dueDate === undefined || task.deletedAt !== undefined || task.archivedAt !== undefined) return false;
+  if (task.dueDate === undefined || task.deletedAt !== undefined || task.archivedAt !== undefined || task.proposedAt !== undefined) return false;
   return task.status !== "done" || task.dueDate >= addDays(today, -DONE_DAYS);
 }
 

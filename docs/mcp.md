@@ -19,8 +19,10 @@
   applied twice. Pass `dryRun: true` to check a change without saving it ([Dry runs](#dry-runs)).
 - Each key or connection may make 120 reads and 60 changes a minute ([Limits](#limits)).
 - Several agents can share the plan: an activity log, acceptance criteria and proof, dependencies
-  and time-boxed claims ([agent-work.md](agent-work.md)).
-- The server identifies itself as `{ "name": "dayhand", "version": "0.10.0" }` (`serverInfo` of
+  and time-boxed claims; agents can ask the owner first, the owner can pause them or set a policy
+  per tool, agents propose work into an inbox, and a health report shows what needs a look
+  ([agent-work.md](agent-work.md)).
+- The server identifies itself as `{ "name": "dayhand", "version": "0.11.0" }` (`serverInfo` of
   `initialize`, `_meta` of 2026-07-28 results); see [Versions](#versions).
 
 ## Tools
@@ -33,14 +35,16 @@ through the trash, the archive and a restore, and never given to another task, e
 task is purged. Every tool that takes a `taskId` accepts either the `id` or the number written
 as `"#42"`.
 
-`tools/list` returns the tools in this order. Read-only tools are marked R, destructive ones D
+`tools/list` returns the tools in this order. Tools marked O are the owner's: only the app and
+`cli` keys may call them, and `tools/list` leaves them out for agents (agent keys and agent
+connections; since 0.11.0). Read-only tools are marked R, destructive ones D
 (`destructiveHint`); every change except `add_task` is idempotent (`idempotentHint`: repeating
 it with the same arguments changes nothing more), and no tool reaches outside Dayhand
 (`openWorldHint: false`). Each tool also has a `title`.
 
 | Tool | Title | Hints | Result ([schema](schemas/)) | Operation |
 |---|---|---|---|---|
-| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason) |
+| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo) |
 | `update_task` | Update task | | `task` | Change fields; `null` clears an optional field |
 | `set_status` | Set task status | | `task` | `todo` / `doing` / `done` |
 | `set_now` | Set the now task | | `set-now` | Make one task the "now" task, optionally with a resume note; `taskId: null` clears it |
@@ -61,6 +65,17 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `claim_task` | Claim task | | `task` | Claim a task for `minutes` (default 120); other agents get `conflict` ([below](#claims)) |
 | `renew_claim` | Renew claim | | `task` | Extend your claim by `minutes` from now |
 | `release_task` | Release task | | `task` | End your claim, optionally with a checkpoint `note` (saved as the resume note) |
+| `request_approval` | Ask the owner | | `approval` | Ask the owner to decide before you act: `action`, 2 to 4 `options`, `reversible`, `expiresInMinutes`, optional `taskId` ([below](#approvals-pausing-and-policies)) |
+| `get_approval` | Approval request | R | `approval` | One request: `pending`, `decided` (with the chosen option and note) or `expired` |
+| `list_approvals` | Approval requests | R | `approval-list` | Requests, newest first, by `status` and `taskId` |
+| `decide_approval` | Decide approval request | O | `approval` | Pick an option of a pending request |
+| `get_agent_controls` | Agent controls | R | `agent-controls` | Whether agents are paused, and the tool policies |
+| `pause_agents` | Pause agents | O | `agent-controls` | `paused: true` refuses every agent's changes until `paused: false` |
+| `set_tool_policy` | Set tool policy | O | `agent-controls` | `apiKeyId`, `toolName` (or `"*"`), `rule`: `allow`, `ask` or `deny` |
+| `accept_proposal` | Accept proposal | O | `task` | A proposal joins the plan ([below](#proposals)) |
+| `merge_proposal` | Merge proposal | O | `merge` | Fold a proposal into a task already in the plan (`intoTaskId`) |
+| `reject_proposal` | Reject proposal | O, D | `task` | Move a proposal to the trash, optionally with a `reason` |
+| `plan_health` | Plan health | R | `plan-health` | What needs a look, in one read ([below](#plan-health-plan_health)) |
 
 ### Results
 
@@ -82,7 +97,8 @@ under `$defs`: clients never fetch a URL. The top level is an object, as 2025 cl
 | `query` | Tasks whose title, note, resume note or labels contain this text, in any case |
 | `status` | Only these statuses, e.g. `["todo", "doing"]`; done tasks are included only when listed |
 | `labels` | Only tasks having all of these labels |
-| `ready` | `true`: only tasks ready to work on (not done, no `blockedReason`, every task in `dependsOn` done); `false`: only the others |
+| `ready` | `true`: only tasks ready to work on (not done, no `blockedReason`, not a proposal, every task in `dependsOn` done); `false`: only the others |
+| `proposed` | `true`: only proposals waiting in the inbox; without it, or `false`, proposals are left out (since 0.11.0) |
 | `dueBefore`, `dueAfter` | Only tasks due before / after this day (`YYYY-MM-DD`, `"today"`, `"tomorrow"`); tasks without a day never match |
 | `overdue` | `true`: only overdue tasks; `false`: only the others |
 | `includeDone`, `includeArchived` | Done tasks (default `true`; ignored when `status` is given), archived ones (default `false`) |
@@ -149,6 +165,58 @@ already there. Only task changes are listed, not changes of API keys, webhooks o
 made before 0.10.0 appear once the deployment ran `migrations:backfillEventSeqs`
 ([deploy.md](deploy.md#upgrading-to-0100)).
 
+### Approvals, pausing and policies
+
+Since 0.11.0 ([agent-work.md](agent-work.md#5-approval-requests) has the reasons):
+
+- `request_approval` stores a request `{ action, detail?, options: [{ label, consequence?, id? }],
+  reversible, expiresInMinutes? (1 to 10080, default 1440), taskId?, clientId? }`; options get
+  `o1`, `o2`, … unless they carry an id. The owner decides on the phone (or with a `cli` key,
+  `decide_approval`); the agent reads the outcome with `get_approval` or gets the webhook
+  `approval.decided` ([webhooks.md](webhooks.md#events)). A request about a task enters that
+  task's history and the activity log (`approvalRequest`, `approvalDecide`). **Dayhand records the
+  decision; it does not stop an agent from acting without one.** The agent's own tooling has to
+  check it.
+- `pause_agents` with `paused: true` refuses every change by an agent key or agent connection
+  with `agents_paused`, dry runs included, until `paused: false`; reads keep working, and the
+  owner's own changes (app, `cli` keys) are never refused.
+- `set_tool_policy` sets, for one agent key, `allow`, `ask` or `deny` on a tool that changes the
+  plan, or on `"*"` (every such tool without its own rule); no rule means `allow`. `deny` fails
+  the call with `forbidden`. `ask` fails it with `approval_required` and an `approvalId`: Dayhand
+  has made a request with the options `allow` ("Allow once") and `deny`, bound to this key, this
+  tool and these arguments (without `clientId`, `dryRun` and `approvalId`); calling again while it
+  waits returns the same request. Once the owner allows it, the same call with `approvalId` runs
+  once; another call, a second use, a denied or an expired request is refused. A dry run needs no
+  approval. Policies are per API key; agent connections (OAuth) follow only the pause and their
+  scopes.
+
+### Proposals
+
+`add_task` with `proposal: true` adds a task with `proposedAt`: it waits in the owner's inbox and
+stays out of `list_today`, `board`, `list_all` (unless `proposed: true`), `ready`, the calendar
+feed and the phone's Today until the owner accepts it (`accept_proposal`), merges it into another
+task (`merge_proposal`: that task gets the proposal's note after a line naming it, its links,
+labels, source and return webhooks; the proposal goes to the trash with `mergedInto`) or rejects
+it (`reject_proposal`: to the trash). A proposal cannot be claimed, made the now task, moved to
+`doing` or completed (`invalid_argument`). Three fields work on any new task:
+
+| Field | Meaning |
+|---|---|
+| `source` | `{ kind, ref, url? }`, e.g. `{ "kind": "sentry", "ref": "CHECKOUT-42" }`. One source makes one task: `add_task` with a source that already made a task returns that task, also when it is in the trash; once the trash is purged the source is free again. A merged proposal's source leads to the task it was merged into |
+| `requestedBy` | Who asked for it (up to 200 characters); an agent's proposal without it says `agent: <name>` |
+| `returnTo` | Id of one of the user's webhooks: it gets `task.returned` with the outcome (`completed`, `rejected` or `merged`) and the proof, whatever events it subscribes to ([webhooks.md](webhooks.md#events)) |
+
+### Plan health (`plan_health`)
+
+`plan_health` (also `GET /api/v1/health`, `dayhand health`, the prompt `plan_health`) returns, as
+of `at`, in the user's time zone: `agentsPaused`; `overdue`, `dueToday`, `inProgress` (each with
+`workingBy`: `"agent: <name>"` while a claim lasts), `expiredClaims`, `blocked` (each with
+`reasons`: the blocked reason and every dependency not done yet), `awaitingApproval` (tasks with a
+pending request, and `pendingApprovals` in all), `completedToday` (each with `proof`, and
+`withProof`, `withoutProof`): each `{ count, tasks }` with the first 20 tasks; `proposals.count`;
+and `oldestOpen`, the open task created longest ago with `ageDays`
+([schema](schemas/plan-health.schema.json)). Proposals and archived tasks are not counted as open.
+
 ### Dry runs
 
 Every changing tool takes `dryRun: true`. The change runs with every check, then Dayhand rolls it
@@ -180,6 +248,7 @@ resource that does not exist (also a task number that does not) is a JSON-RPC er
 | `plan_day` | `focus` (optional) | Go through overdue and today's tasks, agree on an order and set the now task; the Today screen is attached as the resource `dayhand://today` |
 | `weekly_review` | | Look back at the last 7 days (board's done column) and ahead at the next 7 (`list_all` with dates), then tidy the plan |
 | `triage_overdue` | | Decide, task by task, what happens to each overdue task; the overdue tasks are attached |
+| `plan_health` | | Go through what needs a look, most urgent first; the `plan_health` report is attached (since 0.11.0) |
 
 Each prompt tells the agent to ask before changing anything, to pass a `clientId` and to preview
 larger changes with `dryRun`. An unknown prompt or argument is a JSON-RPC error `-32602`.
@@ -276,6 +345,9 @@ for people; `structuredContent.error` holds the same message and a code for prog
 | `unauthenticated` | Reserved for identity errors inside a tool; a missing, wrong or revoked key or token gets HTTP 401 before any tool runs | |
 | `precondition_failed` | The task's state does not allow the change yet: an agent completing a task with unmet acceptance criteria or without a proof summary, `renew_claim` without a claim of yours; through the REST API also `If-Match` naming a version the task is no longer at ([api.md](api.md#idempotency-versions-and-dry-runs)) | `Acceptance criteria not met: a2; mark them met with update_task first`; `The task has changed since that version (it is now "1793011200000"); read it again` |
 | `conflict` | Another agent holds the task's claim ([Claims](#claims)); pick another task or wait for the time named | `Task #42 is claimed by claude-code until 2026-10-24T14:30:00.000Z` |
+| `agents_paused` | The owner paused every agent; reading works, changes wait until they resume (since 0.11.0) | `The owner has paused all agents (holiday): reading works, changes are refused until they resume agents` |
+| `forbidden` | Only the owner may do this, or the owner's policy denies the tool to this key, or the owner denied the approval (since 0.11.0) | `Only the owner can accept proposals (in the app or with a cli key)`; `The owner's policy does not let this key call delete_task` |
+| `approval_required` | The owner's policy asks first; `approvalId` names the request to wait for, then repeat the same call with it (since 0.11.0) | `The owner's policy asks before this key calls complete_task. Approval request … waits for the owner until …` |
 | `internal` | Anything unexpected; the message says only `Internal error` | `Internal error` |
 
 New codes may be added in a minor version; treat an unknown code like `internal`.
@@ -314,7 +386,8 @@ One endpoint serves both eras of MCP, the way the specification describes a dual
   the capabilities and the instructions. Every result has `resultType: "complete"` and
   `_meta["io.modelcontextprotocol/serverInfo"]`; `server/discover`, `tools/list`,
   `prompts/list`, `resources/list` and `resources/templates/list` carry `ttlMs: 300000` and
-  `cacheScope: "public"`, `resources/read` carries `ttlMs: 0` and `cacheScope: "private"`
+  `cacheScope: "public"` (`tools/list` of an agent, or of a token with fewer scopes: `private`,
+  since it leaves tools out), `resources/read` carries `ttlMs: 0` and `cacheScope: "private"`
   (`dayhand://guide`: public). `ping` no longer exists and unknown methods get HTTP 404.
 
 Not offered in either era: `subscriptions/listen` (and `listChanged` notifications), logging,
@@ -384,6 +457,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.11.0 | Agents and the owner ([agent-work.md](agent-work.md)): `request_approval`, `get_approval`, `list_approvals`, `decide_approval`; `get_agent_controls`, `pause_agents`, `set_tool_policy`, and `approvalId` on every change an agent makes; proposals (`add_task` takes `proposal`, `source`, `requestedBy`, `returnTo`; task fields `proposedAt`, `source`, `requestedBy`, `returnTo`, `mergedInto`; `list_all` takes `proposed`; `accept_proposal`, `merge_proposal`, `reject_proposal`); `plan_health` and the prompt `plan_health`; error codes `agents_paused`, `forbidden`, `approval_required` (with `approvalId`); webhook events `approval.decided` and `task.returned`; the owner's tools (O) are left out of an agent's `tools/list` |
 | 0.10.0 | Agent work ([agent-work.md](agent-work.md)): `list_events` and the resource `dayhand://activity` (the activity log); task fields `acceptance`, `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; `complete_task` takes `proof`; `list_all` takes `ready`; `claim_task`, `renew_claim`, `release_task`; error code `conflict`, and `precondition_failed` outside `If-Match` too |
 | 0.9.0 | The rename to Dayhand: `serverInfo.name` `dayhand`; resources `dayhand://today`, `dayhand://guide` and `dayhand://tasks/{ref}` (the `helm://` URIs are still read); new API keys start with `dayhand_` (`helm_` keys keep working); import format `dayhand-json` (`helm-json` still accepted); `WWW-Authenticate` realm `dayhand`; `x-dayhand-scope` in the OpenAPI document; problem types under `https://schemas.dayhand.invalid/`; deployment variables `DAYHAND_*` (`HELM_*` still read, [deploy.md](deploy.md#renamed-variables)) |
 | 0.8.0 | API keys with a `scope` (`read`, `write`, `full`) and `expiresAt` (a read key sees and calls only reading tools); the error code `precondition_failed` (REST `If-Match` only); the REST API `/api/v1` with OpenAPI 3.1 ([api.md](api.md)), webhooks ([webhooks.md](webhooks.md)) and import. Devices, connections and the calendar feed need a full key |

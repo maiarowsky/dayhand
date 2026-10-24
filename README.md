@@ -89,6 +89,14 @@ codes say what to do next, and `dayhand prime` prints Today with a short guide, 
 session-start hook. More: [docs/agent-work.md](docs/agent-work.md) (activity cursors,
 dependencies, claims) and [docs/cli.md](docs/cli.md) (every command).
 
+You stay in charge of your agents. Before a risky step an agent asks (`dayhand ask`, the MCP tool
+`request_approval`) and you pick an option on the phone or with `dayhand approvals decide`; one
+switch pauses every agent (`dayhand agents pause`); a policy per agent key allows, asks for or
+denies each tool (`dayhand policy set`); work an agent or an alert proposes waits in an inbox
+until you accept, merge or reject it (`dayhand proposals`); and `dayhand health`, also a card
+above Today on the phone, shows what needs a look. Dayhand records your decisions; it cannot stop
+what an agent does outside Dayhand.
+
 ### MCP
 
 The server speaks [MCP](https://modelcontextprotocol.io) at `/mcp`, with the same operations as

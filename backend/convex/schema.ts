@@ -5,15 +5,18 @@ import { webhookEventValidator } from "./lib/webhookEvents";
 import {
   acceptanceItemValidator,
   actorValidator,
+  approvalOptionValidator,
   checklistItemValidator,
   claimHolderValidator,
   keyKindValidator,
   keyScopeValidator,
   linkValidator,
+  policyRuleValidator,
   proofValidator,
   reminderValidator,
   repeatValidator,
   statusValidator,
+  taskSourceValidator,
 } from "./lib/validators";
 
 const clientTypeValidator = v.union(v.literal("cimd"), v.literal("dcr"));
@@ -58,6 +61,18 @@ export default defineSchema({
     // Kept after it expires until it is released or claimed again.
     claimedBy: v.optional(claimHolderValidator),
     claimExpiresAt: v.optional(v.number()),
+    // Since 0.11.0, proposals (docs/agent-work.md#7-the-proposal-inbox): a task an
+    // agent or integration proposed stays out of Today, the board, list_all and
+    // the calendar until the owner accepts it (the field is then removed).
+    proposedAt: v.optional(v.number()),
+    // Where the task came from (an alert, an issue); one source makes one task.
+    source: v.optional(taskSourceValidator),
+    // Who asked for the task: given by the caller, or the agent that added it.
+    requestedBy: v.optional(v.string()),
+    // Webhooks that get task.returned with the proof when the task closes.
+    returnTo: v.optional(v.array(v.id("webhooks"))),
+    // A proposal merged into another task (it is then in the trash).
+    mergedInto: v.optional(v.id("tasks")),
     completedAt: v.optional(v.number()),
     archivedAt: v.optional(v.number()),
     // Soft delete: the task sits in the trash for 30 days, then a cron purges it.
@@ -73,7 +88,82 @@ export default defineSchema({
     .index("by_user_status_dueDate", ["userId", "status", "dueDate"])
     .index("by_user_isNow", ["userId", "isNow"])
     .index("by_user_completedAt", ["userId", "completedAt"])
+    .index("by_user_proposedAt", ["userId", "proposedAt"])
     .index("by_deletedAt", ["deletedAt"]),
+
+  // Since 0.11.0: which task each outside source made (task.source), so the same
+  // alert never makes two tasks. A merged proposal's sources point at the task it
+  // was merged into. Removed with the task when the trash is purged.
+  taskSources: defineTable({
+    userId: v.string(),
+    kind: v.string(),
+    ref: v.string(),
+    taskId: v.id("tasks"),
+  })
+    .index("by_user_source", ["userId", "kind", "ref"])
+    .index("by_task", ["taskId"]),
+
+  // Since 0.11.0: approval requests (request_approval). An agent asks before it
+  // does something; the owner picks one of 2 to 4 options on the phone before
+  // expiresAt. Dayhand records the decision; acting on it is the agent's job,
+  // except for requests made by a tool policy "ask" (source "policy"), which
+  // let exactly one matching call through (usedAt).
+  approvals: defineTable({
+    userId: v.string(),
+    taskId: v.optional(v.id("tasks")),
+    title: v.string(),
+    detail: v.optional(v.string()),
+    options: v.array(approvalOptionValidator),
+    reversible: v.boolean(),
+    expiresAt: v.number(),
+    // Who asked: the API key or agent connection, its kind and name.
+    requestedBy: v.object({
+      actor: actorValidator,
+      keyId: v.optional(v.id("apiKeys")),
+      connectionId: v.optional(v.id("oauthGrants")),
+      name: v.string(),
+    }),
+    source: v.union(v.literal("agent"), v.literal("policy")),
+    // Policy requests: the tool, the SHA-256 of its arguments and what they were.
+    tool: v.optional(v.string()),
+    argsHash: v.optional(v.string()),
+    arguments: v.optional(v.string()),
+    usedAt: v.optional(v.number()),
+    // The owner's decision.
+    decidedAt: v.optional(v.number()),
+    optionId: v.optional(v.string()),
+    note: v.optional(v.string()),
+    decidedBy: v.optional(actorValidator),
+    createdAt: v.number(),
+    clientId: v.optional(v.string()),
+  })
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_user_clientId", ["userId", "clientId"])
+    .index("by_task", ["taskId"])
+    .index("by_user_hash", ["userId", "argsHash"]),
+
+  // Since 0.11.0: the owner's switch that pauses every agent (one row per user,
+  // absent = agents run). While pausedAt is set, agent keys and agent connections
+  // can read but every change they try is refused with agents_paused.
+  agentControls: defineTable({
+    userId: v.string(),
+    pausedAt: v.optional(v.number()),
+    pausedBy: v.optional(actorValidator),
+    reason: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  // Since 0.11.0: what one agent key may do with one write tool (or "*", every
+  // write tool without its own row). No row = allow.
+  toolPolicies: defineTable({
+    userId: v.string(),
+    keyId: v.id("apiKeys"),
+    tool: v.string(),
+    rule: policyRuleValidator,
+    updatedAt: v.number(),
+  })
+    .index("by_key_tool", ["keyId", "tool"])
+    .index("by_user", ["userId"]),
 
   // History of every change, signed with who made it.
   taskEvents: defineTable({

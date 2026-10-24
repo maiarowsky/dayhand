@@ -12,7 +12,7 @@
   "properties": {
     "type": {
       "type": "string",
-      "description": "task.created, task.updated, task.completed, task.deleted, task.restored, now.changed or webhook.test (values may be added)"
+      "description": "task.created, task.updated, task.completed, task.deleted, task.restored, now.changed, approval.decided, task.returned or webhook.test (values may be added)"
     },
     "timestamp": {
       "type": "string",
@@ -20,7 +20,7 @@
     },
     "data": {
       "type": "object",
-      "description": "task: the task after the change (task.schema.json); now.changed adds isNow; webhook.test has webhookId",
+      "description": "task: the task after the change (task.schema.json); now.changed adds isNow; webhook.test has webhookId; approval.decided has approval; task.returned has outcome, task, proof, source, requestedBy and, by outcome, reason or mergedInto",
       "properties": {
         "task": {
           "$ref": "task.schema.json"
@@ -30,6 +30,28 @@
         },
         "webhookId": {
           "type": "string"
+        },
+        "approval": {
+          "$ref": "approval.schema.json"
+        },
+        "outcome": {
+          "enum": [
+            "completed",
+            "rejected",
+            "merged"
+          ],
+          "description": "task.returned: how the task closed"
+        },
+        "proof": {
+          "description": "task.returned: the task's proof (proof.schema.json), or null",
+          "anyOf": [
+            {
+              "$ref": "proof.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },

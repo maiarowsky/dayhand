@@ -37,9 +37,12 @@ A user may have at most 10 webhooks.
 | `task.deleted` | A task goes to the trash |
 | `task.restored` | A task comes back from the trash or the archive |
 | `now.changed` | A task becomes the now task or stops being it (one message per task whose flag changed) |
+| `approval.decided` | The owner decided an approval request (`request_approval`, since 0.11.0); `data.approval` is the request with its decision ([schema](schemas/approval.schema.json)) |
+| `task.returned` | Only to the webhooks a task names in `returnTo`, whatever they subscribe to: the task was completed, rejected or merged into another task (since 0.11.0) |
 | `webhook.test` | Only from `POST …/test` |
 
-Leaving out `events` subscribes to all of them. Changes from every surface count: the app,
+Leaving out `events` subscribes to the task events and `now.changed`; `approval.decided` has to be
+listed, because its `data` holds an approval, not a task. Changes from every surface count: the app,
 MCP, the REST API and `dayhand`. A dry run (`dryRun`) sends nothing, and neither does a change that
 fails: the message is queued in the same transaction as the change.
 
@@ -60,6 +63,12 @@ The body (`docs/schemas/webhook-event.schema.json`):
 changed, with their values before (`{}` for a new task). `actor` is who made the change: `app`,
 `cli` or `agent` and the key's or client's name. `now.changed` adds `data.isNow`. Fields may be
 added in a minor version.
+
+`task.returned` is how an agent or an integration that asked for a task hears back
+([agent-work.md](agent-work.md#7-the-proposal-inbox)). Its `data` holds `outcome` (`completed`,
+`rejected` or `merged`), `task`, `proof` (the task's proof or `null`), `source`, `requestedBy`,
+and `reason` (rejected) or `mergedInto` (merged: the task it went into, whose own completion
+sends `completed` later). A turned-off webhook gets nothing.
 
 ## Verifying a message
 

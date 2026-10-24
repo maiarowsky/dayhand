@@ -18,6 +18,16 @@ import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { scopeValidator } from "./lib/oauthConfig";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
 import { releaseTask } from "./lib/agentWork";
+import { getAgentControls as getAgentControlsOp, setAgentsPaused, setToolPolicy as setToolPolicyOp } from "./lib/agentControls";
+import { decideApproval as decideApprovalOp, listApprovals as listApprovalsOp } from "./lib/approvals";
+import { planHealth as planHealthOp } from "./lib/health";
+import { TOOLS } from "./lib/mcpTools";
+import {
+  acceptProposal as acceptProposalOp,
+  listProposals as listProposalsOp,
+  mergeProposal as mergeProposalOp,
+  rejectProposal as rejectProposalOp,
+} from "./lib/proposals";
 import {
   addTask,
   archiveTask,
@@ -84,6 +94,46 @@ export const updateSettings = mutation({
   args: args.updateSettings,
   handler: async (ctx, a) => updateSettingsOp(ctx, await appUser(ctx), a),
 });
+
+// Approval requests (docs/agent-work.md#5-approval-requests): the phone lists them and decides.
+export const listApprovals = query({
+  args: args.listApprovals,
+  handler: async (ctx, a) => listApprovalsOp(ctx, await appUser(ctx), a),
+});
+export const decideApproval = mutation({
+  args: args.decideApproval,
+  handler: async (ctx, a) => decideApprovalOp(ctx, await appUser(ctx), a),
+});
+
+// The agent switch and tool policies (docs/agent-work.md#6-pausing-agents-and-tool-policies).
+export const getAgentControls = query({ args: {}, handler: async (ctx) => getAgentControlsOp(ctx, await appUser(ctx)) });
+export const pauseAgents = mutation({
+  args: args.pauseAgents,
+  handler: async (ctx, a) => setAgentsPaused(ctx, await appUser(ctx), a),
+});
+export const setToolPolicy = mutation({
+  args: args.setToolPolicy,
+  handler: async (ctx, a) =>
+    setToolPolicyOp(ctx, await appUser(ctx), a, TOOLS.filter((t) => t.kind === "write" && !t.ownerOnly).map((t) => t.name)),
+});
+
+// The proposal inbox (docs/agent-work.md#7-the-proposal-inbox).
+export const listProposals = query({ args: {}, handler: async (ctx) => listProposalsOp(ctx, await appUser(ctx)) });
+export const acceptProposal = mutation({
+  args: args.acceptProposal,
+  handler: async (ctx, a) => acceptProposalOp(ctx, await appUser(ctx), a),
+});
+export const mergeProposal = mutation({
+  args: args.mergeProposal,
+  handler: async (ctx, a) => mergeProposalOp(ctx, await appUser(ctx), a),
+});
+export const rejectProposal = mutation({
+  args: args.rejectProposal,
+  handler: async (ctx, a) => rejectProposalOp(ctx, await appUser(ctx), a),
+});
+
+// The plan health report (docs/agent-work.md#8-the-plan-health-report).
+export const planHealth = query({ args: args.planHealth, handler: async (ctx, a) => planHealthOp(ctx, await appUser(ctx), a) });
 
 export const listToday = query({
   args: args.listToday,

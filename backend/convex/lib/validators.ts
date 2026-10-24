@@ -118,3 +118,26 @@ export const claimHolderValidator = v.object({
   name: v.string(),
 });
 export type ClaimHolder = Infer<typeof claimHolderValidator>;
+
+// ---- Since 0.11.0 (docs/agent-work.md): approvals, the agent switch, proposals ----
+
+// One option of an approval request: what the person can choose and what follows from it.
+export const approvalOptionValidator = v.object({ id: v.string(), label: v.string(), consequence: v.optional(v.string()) });
+export type ApprovalOption = Infer<typeof approvalOptionValidator>;
+
+// Options as agents send them: a new option may leave out its id (the server gives `o<n>`).
+export const approvalOptionInputValidator = v.object({
+  id: v.optional(v.string()),
+  label: v.string(),
+  consequence: v.optional(v.string()),
+});
+export type ApprovalOptionInput = Infer<typeof approvalOptionInputValidator>;
+
+// What the owner's policy does with a write tool called with one agent key.
+export const policyRuleValidator = v.union(v.literal("allow"), v.literal("ask"), v.literal("deny"));
+export type PolicyRule = Infer<typeof policyRuleValidator>;
+
+// Where a task came from outside Dayhand: an alert, an issue, a message. One
+// source makes at most one task per user (taskSources).
+export const taskSourceValidator = v.object({ kind: v.string(), ref: v.string(), url: v.optional(v.string()) });
+export type TaskSource = Infer<typeof taskSourceValidator>;

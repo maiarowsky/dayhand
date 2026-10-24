@@ -38,7 +38,7 @@ for an agent key, `cli` for a CLI key.
 
 | Method and path | MCP tool | Scope |
 |---|---|---|
-| `GET /tasks` | `list_all` (query parameters `query`, `status`, `labels`, `dueBefore`, `dueAfter`, `overdue`, `ready`, `includeDone`, `includeArchived`, `limit`, `cursor`, `at`) | read |
+| `GET /tasks` | `list_all` (query parameters `query`, `status`, `labels`, `dueBefore`, `dueAfter`, `overdue`, `ready`, `proposed`, `includeDone`, `includeArchived`, `limit`, `cursor`, `at`) | read |
 | `POST /tasks` | `add_task` (`201`, `Location: /api/v1/tasks/<number>`) | write |
 | `GET /tasks/{taskId}` | `get_task`: `{ task, history }` | read |
 | `PATCH /tasks/{taskId}` | `update_task` | write |
@@ -53,6 +53,17 @@ for an agent key, `cli` for a CLI key.
 | `POST /tasks/{taskId}/claim` | `claim_task` (`{ "minutes": 30 }` optional; `409` while another agent holds it) | write |
 | `POST /tasks/{taskId}/claim/renew` | `renew_claim` (`{ "minutes": 30 }` optional) | write |
 | `POST /tasks/{taskId}/release` | `release_task` (`{ "note": "…" }` optional) | write |
+| `POST /tasks/{taskId}/accept` | `accept_proposal`: the proposal joins the plan (the owner: a `cli` key) | write |
+| `POST /tasks/{taskId}/merge` | `merge_proposal` (`{ "intoTaskId": "#12" }`; the owner) | write |
+| `POST /tasks/{taskId}/reject` | `reject_proposal` (`{ "reason": "…" }` optional; the owner) | write |
+| `GET /approvals` | `list_approvals` (query parameters `status`, `taskId`, `limit`) | read |
+| `POST /approvals` | `request_approval` (`201`; `{ "action": "…", "options": [ … ], "reversible": false }`) | write |
+| `GET /approvals/{approvalId}` | `get_approval` | read |
+| `POST /approvals/{approvalId}/decide` | `decide_approval` (`{ "optionId": "o1", "note": "…" }`; the owner) | write |
+| `GET /agents` | `get_agent_controls` | read |
+| `POST /agents/pause` | `pause_agents` (`{ "paused": true, "reason": "…" }`; the owner) | write |
+| `POST /agents/policies` | `set_tool_policy` (`{ "apiKeyId": "…", "toolName": "delete_task", "rule": "deny" }`; the owner) | write |
+| `GET /health` | `plan_health` (query parameter `at`) | read |
 | `GET /events` | `list_events` (query parameters `since`, `by`, `taskId`, `limit`): the activity log ([agent-work.md](agent-work.md)) | read |
 | `GET /today` | `list_today` | read |
 | `GET /board` | `board` | read |
@@ -69,6 +80,14 @@ application/json`; `PATCH` also takes `application/merge-patch+json`); a route w
 no further arguments needs no body. Query parameters are typed as the tool's arguments: lists as
 repeated parameters or comma-separated (`status=todo,doing`), booleans as `true`/`false`. An
 unknown query parameter or body field is refused (`422`), like an unknown tool argument.
+
+Routes marked "the owner" run the owner's tools ([mcp.md](mcp.md#tools)): a `cli` key may call
+them, an `agent` key gets `403 forbidden`. Since 0.11.0 an `agent` key's changes also pass the
+owner's controls ([agent-work.md](agent-work.md#6-pausing-agents-and-tool-policies)): while agents
+are paused every route that changes something (keys and webhooks included) answers
+`403 agents_paused`; a tool policy `deny` answers `403 forbidden`, and `ask` answers
+`403 approval_required` with `approvalId`: once the owner allows that request, send the same
+request again with `"approvalId": "…"` in the body.
 
 Results are the tool's `structuredContent`: an object as it is, a list or `null` as
 `{ "result": … }` (`GET /trash` gives `{ "result": [ … ] }`). The schemas are the ones in
@@ -134,6 +153,9 @@ is the same code an MCP tool error has ([mcp.md](mcp.md#errors)), and `detail` t
 | 400 | `invalid_argument` | The body is not JSON, or not a JSON object |
 | 401 | `unauthenticated` | No key, or an invalid, expired or revoked key, or an OAuth access token (`WWW-Authenticate: Bearer realm="dayhand"`) |
 | 403 | `insufficient_scope` | The key's scope does not cover the route |
+| 403 | `agents_paused` | The owner paused every agent; an agent key's changes wait until they resume agents |
+| 403 | `forbidden` | Only the owner may do this, or the owner's policy denies the tool to this key, or the owner denied the approval |
+| 403 | `approval_required` | The owner's policy asks first; `approvalId` names the request to wait for |
 | 404 | `not_found` | No such task, key or webhook, or no such route |
 | 405 | `method_not_allowed` | The path exists with other methods (`Allow` lists them) |
 | 409 | `conflict` | Another agent holds the task's claim (`claim_task`) |

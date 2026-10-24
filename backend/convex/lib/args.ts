@@ -3,15 +3,18 @@
 import { v } from "convex/values";
 import {
   acceptanceInputValidator,
+  approvalOptionInputValidator,
   checklistInputValidator,
   clearable,
   keyKindValidator,
   keyScopeValidator,
   linkValidator,
+  policyRuleValidator,
   proofValidator,
   reminderValidator,
   repeatInputValidator,
   statusValidator,
+  taskSourceValidator,
 } from "./validators";
 
 const clientId = v.optional(v.string());
@@ -41,6 +44,11 @@ export const args = {
     checklist: v.optional(v.array(checklistInputValidator)),
     reminders: v.optional(v.array(reminderValidator)),
     ...agentWork,
+    // Since 0.11.0 (the proposal inbox): wait for the owner, where it came from, who asked, who hears back.
+    proposal: v.optional(v.boolean()),
+    source: v.optional(taskSourceValidator),
+    requestedBy: v.optional(v.string()),
+    returnTo: v.optional(v.string()),
     clientId,
   },
   update: {
@@ -86,6 +94,7 @@ export const args = {
     dueAfter: v.optional(v.string()),
     overdue: v.optional(v.boolean()),
     ready: v.optional(v.boolean()),
+    proposed: v.optional(v.boolean()),
     limit: v.optional(v.number()),
     cursor: v.optional(v.string()),
     at,
@@ -102,6 +111,34 @@ export const args = {
     taskId: v.optional(taskId),
     limit: v.optional(v.number()),
   },
+  // Approval requests (request_approval, get_approval, list_approvals, decide_approval).
+  requestApproval: {
+    taskId: v.optional(taskId),
+    action: v.string(),
+    detail: v.optional(v.string()),
+    options: v.array(approvalOptionInputValidator),
+    reversible: v.boolean(),
+    expiresInMinutes: v.optional(v.number()),
+    clientId,
+  },
+  getApproval: { approvalId: v.string() },
+  listApprovals: {
+    status: v.optional(v.union(v.literal("pending"), v.literal("decided"), v.literal("expired"))),
+    taskId: v.optional(taskId),
+    limit: v.optional(v.number()),
+  },
+  decideApproval: { approvalId: v.string(), optionId: v.string(), note: v.optional(v.string()) },
+  // The owner's controls over agents (get_agent_controls, pause_agents, set_tool_policy).
+  getAgentControls: {},
+  pauseAgents: { paused: v.boolean(), reason: v.optional(v.string()) },
+  // Not keyId and tool: those name the caller and the tool being called (set by the server).
+  setToolPolicy: { apiKeyId: v.string(), toolName: v.string(), rule: policyRuleValidator },
+  // The proposal inbox (accept_proposal, merge_proposal, reject_proposal).
+  acceptProposal: { taskId, clientId },
+  mergeProposal: { taskId, intoTaskId: taskId, clientId },
+  rejectProposal: { taskId, reason: v.optional(v.string()), clientId },
+  // The plan health report (plan_health).
+  planHealth: { at },
   listTrash: {},
   board: { doneLimit: v.optional(v.number()), at },
   getTask: { taskId, at },
@@ -125,6 +162,9 @@ export const args = {
 
 // Only the MCP endpoint offers a dry run: the app always applies its changes.
 export const dryRunArgs = { dryRun: v.optional(v.boolean()) };
+
+// Since 0.11.0: a change an owner's policy "ask" held back runs with the approved request's id.
+export const approvalArgs = { approvalId: v.optional(v.string()) };
 
 /** Code of the error that rolls a dry run back; its data carries the result the change would have had. */
 export const DRY_RUN_CODE = "dry_run";

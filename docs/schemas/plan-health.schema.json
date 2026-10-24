@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/plan-health.schema.json",
+  "title": "Plan health",
+  "description": "plan_health (dayhand health): what needs a look in the plan, in one read (since 0.11.0). Each section counts every task and lists the first 20. Fields may be added.",
+  "type": "object",
+  "required": [
+    "at",
+    "date",
+    "timezone",
+    "agentsPaused",
+    "overdue",
+    "dueToday",
+    "inProgress",
+    "expiredClaims",
+    "blocked",
+    "awaitingApproval",
+    "proposals",
+    "completedToday",
+    "oldestOpen"
+  ],
+  "properties": {
+    "at": {
+      "type": "number",
+      "description": "As of, Unix time in milliseconds"
+    },
+    "date": {
+      "type": "string",
+      "description": "Today in the user's time zone, YYYY-MM-DD"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "agentsPaused": {
+      "type": "boolean"
+    },
+    "overdue": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks"
+      ],
+      "description": "Not done, due before today",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "dueToday": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks"
+      ],
+      "description": "Not done, due today",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "inProgress": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks"
+      ],
+      "description": "In doing, and who works on them",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "isNow",
+                  "workingBy"
+                ],
+                "properties": {
+                  "isNow": {
+                    "type": "boolean"
+                  },
+                  "workingBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "\"agent: <name>\" while an agent's claim lasts; null when nobody holds a claim"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "expiredClaims": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks"
+      ],
+      "description": "Not done, claimed by an agent whose claim ran out",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "claimedBy",
+                  "claimExpiresAt"
+                ],
+                "properties": {
+                  "claimedBy": {
+                    "type": "string"
+                  },
+                  "claimExpiresAt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "blocked": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks"
+      ],
+      "description": "Not done and blocked: a blocked reason, or a dependency not done yet",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "reasons"
+                ],
+                "properties": {
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "awaitingApproval": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks",
+        "pendingApprovals"
+      ],
+      "description": "Not done, with a pending approval request",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "approvals"
+                ],
+                "properties": {
+                  "approvals": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "pendingApprovals": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Every pending request, also those not about a task"
+        }
+      }
+    },
+    "proposals": {
+      "type": "object",
+      "required": [
+        "count"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Proposals waiting in the inbox"
+        }
+      }
+    },
+    "completedToday": {
+      "type": "object",
+      "required": [
+        "count",
+        "tasks",
+        "withProof",
+        "withoutProof"
+      ],
+      "description": "Completed today",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many in all"
+        },
+        "tasks": {
+          "type": "array",
+          "maxItems": 20,
+          "description": "The first 20",
+          "items": {
+            "allOf": [
+              {
+                "$ref": "task-brief.schema.json"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "proof"
+                ],
+                "properties": {
+                  "proof": {
+                    "type": "boolean",
+                    "description": "Completed with proof (a summary, links or checks)"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "withProof": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "withoutProof": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "oldestOpen": {
+      "description": "The open task created longest ago, or null",
+      "anyOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "task-brief.schema.json"
+            },
+            {
+              "type": "object",
+              "required": [
+                "createdAt",
+                "ageDays"
+              ],
+              "properties": {
+                "createdAt": {
+                  "type": "number"
+                },
+                "ageDays": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

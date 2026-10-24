@@ -33,10 +33,26 @@ export function actorLabel(event: { actor: Actor; actorName?: string }): string 
 }
 
 // conflict (since 0.10.0): another agent holds the task's claim (claim_task).
-export type ErrorCode = "invalid_argument" | "not_found" | "unauthenticated" | "precondition_failed" | "conflict";
+// Since 0.11.0 (docs/agent-work.md): agents_paused, the owner paused every agent;
+// forbidden, only the owner may do this or the owner's policy denies the tool;
+// approval_required, the owner's policy asks first (approvalId says which request).
+export type ErrorCode =
+  | "invalid_argument"
+  | "not_found"
+  | "unauthenticated"
+  | "precondition_failed"
+  | "conflict"
+  | "agents_paused"
+  | "forbidden"
+  | "approval_required";
 
-export function fail(code: ErrorCode, message: string): never {
-  throw new ConvexError({ code, message });
+export function fail(code: ErrorCode, message: string, extra: { approvalId?: string } = {}): never {
+  throw new ConvexError({ code, message, ...extra });
+}
+
+/** Refuses an operation only the owner may run (the app, or a cli key at the owner's terminal). */
+export function ownerOnly(identity: Identity, what: string) {
+  if (identity.actor === "agent") fail("forbidden", `Only the owner can ${what} (in the app or with a cli key)`);
 }
 
 export const DEFAULT_SETTINGS = {

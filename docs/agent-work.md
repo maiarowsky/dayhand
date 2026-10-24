@@ -2,8 +2,11 @@
 
 Since backend 0.10.0 (CLI 0.11.0, Android 0.9.1), Dayhand has four features for AI agents that
 work on the plan next to the person who owns it: an activity log, acceptance criteria with proof
-of completion, dependencies with a blocked reason, and time-boxed claims. This page explains the
-problem each one solves, the decisions behind it and the public designs it follows. The tool
+of completion, dependencies with a blocked reason, and time-boxed claims. Backend 0.11.0 (CLI
+0.12.0, Android 0.10.0) adds four that keep the owner in charge of those agents: approval
+requests decided on the phone, a switch that pauses every agent with a policy per tool, an inbox
+for proposed work, and a plan health report. This page explains the problem each one solves, the
+decisions behind it and the public designs it follows. The tool
 reference is in [mcp.md](mcp.md), the REST routes in [api.md](api.md) and the commands in
 [cli.md](cli.md).
 
@@ -160,18 +163,198 @@ hides a message from other consumers while one works on it, can be extended
 same contract for a task, with the owner allowed to step in. The status code follows RFC 9110
 [409 Conflict](https://www.rfc-editor.org/rfc/rfc9110#name-409-conflict).
 
+## The second problem: who is in charge
+
+The first four features let agents work together. Once they do, for hours and while the owner is
+away from the desk, the owner needs four more things:
+
+5. **A say before something risky.** An agent about to deploy, delete or pay should be able to
+   ask, and the owner should be able to answer from the phone, without a terminal.
+6. **A brake.** When an agent misbehaves, or the owner just wants quiet, one control has to stop
+   every agent at once, and finer rules have to say which agent may use which tool.
+7. **A door for work nobody asked for.** Alerts, issues and agents' own ideas should not land in
+   Today as if the owner had planned them, and the same alert must not make ten tasks.
+8. **One look at the state of things.** What is late, what is stuck, who is working on what, and
+   what was finished without anything to show for it.
+
+The same rule holds: no new statuses. Everything below is new tables, new fields of a task and
+new tools; a client that knows none of them keeps working.
+
+## 5. Approval requests
+
+`request_approval` stores a request: what it is about (optionally a task), what the agent wants
+to do (`action`, with `detail`), 2 to 4 `options`, each with the `consequence` of picking it,
+whether the step is `reversible`, and how long the owner has (`expiresInMinutes`, a day unless
+set, a week at most). The phone shows it under Settings → Agents → Approvals, on the health card
+above Today, and as a notification; the owner picks an option and may add a note. The agent reads
+the outcome with `get_approval` (`pending`, `decided` or `expired`), or is told by the webhook
+`approval.decided`. `dayhand ask` and `dayhand approval` do the same from a terminal, and a `cli`
+key can decide with `dayhand approvals decide`.
+
+**Dayhand records the decision; it does not carry it out and cannot stop an agent from acting
+without one.** The agent, or the tooling around it, has to ask and then respect the answer. What
+Dayhand guarantees is the record: who asked, what they offered, what the owner chose, when, in the
+task's history and the activity log. The one place Dayhand does enforce a decision is its own
+tools, through the tool policy `ask` (next section).
+
+Decisions:
+
+- **Options, not yes or no.** Real decisions often have a third way ("wait until Monday"). The
+  agent offers the choices it can actually carry out and says what follows from each, so the owner
+  decides without asking back. Option ids default to `o1`, `o2`, …, so an agent can branch on them.
+- **Requests expire.** A question that waits forever is a decision by default. After `expiresAt`
+  the request is `expired` and can no longer be decided; the agent has to ask again. Expiry sends
+  no webhook: the agent knows the time.
+- **The owner decides, nobody else.** `decide_approval` is one of the owner's tools: agents do
+  not see it, and an agent that calls it gets `forbidden`. Deciding again the same way changes
+  nothing; deciding differently is `precondition_failed`.
+- **A request about a task is part of that task's story**: asking and deciding enter its history
+  and the activity log (`approvalRequest`, `approvalDecide`).
+- **Closed app.** The phone looks for new requests in the background every 15 minutes (Android's
+  shortest periodic work) and shows a notification for each. A request that needs an answer in
+  less than that will often be seen only when the owner opens the app; the agent should give a
+  realistic `expiresInMinutes`. There is no push service in between, on purpose: Dayhand has no
+  server of its own that could reach the phone.
+
+Public counterpart: MCP [elicitation](https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation)
+lets a server ask the user something through the client, during one request. Dayhand's requests
+are the asynchronous form of the same idea: the agent asks, goes on with something else or waits,
+and the answer comes from another device, maybe hours later. The webhook follows
+[Standard Webhooks](https://www.standardwebhooks.com/), like every other Dayhand event.
+
+## 6. Pausing agents and tool policies
+
+**Pause agents** (Settings → Agents on the phone, `dayhand agents pause`, `pause_agents`) is one
+switch. While it is on, every change by an `agent` key or an agent connection (OAuth) is refused
+with `agents_paused`, including dry runs, approval requests and the account routes of the REST
+API (keys, webhooks, import); reads keep working, so an agent can still see what is going on and
+tell the user. Switching it off lets them change things again. The owner's own changes, from the
+app and from `cli` keys, are never refused.
+
+Each **agent key** can also have a **policy**: for a tool that changes the plan, or for `"*"`
+(every such tool without its own rule), `allow` (the default), `ask` or `deny`
+(`dayhand policy set <key> <tool> <rule>`, `set_tool_policy`). `deny` refuses the call with
+`forbidden`. `ask` refuses it with `approval_required` and the id of an approval request Dayhand
+made for exactly that call; once the owner picks "Allow once", the agent repeats the call with
+`approvalId` and it runs, once. Reading tools have no policy.
+
+Decisions:
+
+- **Checked where the change happens.** The pause and the policies are checked inside the same
+  transaction as the change (`gateAgentWrite` in `convex/lib/agentControls.ts`), for MCP and the
+  REST API alike. There is no way around them through another surface, and no window between the
+  check and the write.
+- **The pause is not a revocation.** Revoking keys would stop agents too, but they would need new
+  keys afterwards and their history would split. A pause keeps every key and connection and only
+  holds their changes back.
+- **An agent cannot lift its own brake.** Pausing, resuming and setting policies are the owner's
+  tools: hidden from agents, and `forbidden` (or, while paused, `agents_paused`) if called.
+- **One approval, one call.** A policy request is bound to the key, the tool and the arguments
+  (their SHA-256, without `clientId`, `dryRun` and `approvalId`), and is used up in the transaction
+  that applies the change; if the change fails, the approval stays unused. Calling again while the
+  request waits returns the same request, so a retrying agent does not flood the phone. A policy
+  request waits an hour.
+- **A dry run needs no approval** under `ask`: it changes nothing, and it is how an agent shows the
+  owner what it is about to do. Under `deny` and while paused it is refused like the call.
+- **Policies are per key.** An agent connection (OAuth) has its scopes (`tasks:read`,
+  `tasks:write`) and obeys the pause, but has no per-tool rules; give an agent that needs finer
+  rules its own API key.
+
+Public counterparts: Claude Code's [permission rules](https://code.claude.com/docs/en/permissions)
+sort tools into allow, ask and deny; Dayhand uses the same three words with the same meaning, per
+agent key and per Dayhand tool, with the "ask" answered on the phone. The pause is the
+[kill switch](https://martinfowler.com/articles/feature-toggles.html) of operations: one
+long-lived toggle that turns a whole capability off without a deploy.
+
+## 7. The proposal inbox
+
+A task added with `proposal: true` is a **proposal**: it has `proposedAt` and waits in the
+owner's inbox (Settings → Agents → Proposals, the health card, `dayhand proposals`). It is not
+in Today, the board, `list_all` (unless asked for with `proposed: true`), the `ready` list, the
+calendar feed or the phone's reminders until the owner decides:
+
+- **Accept**: it joins the plan as it is.
+- **Merge** into a task already in the plan: that task gets the proposal's note (after a line
+  naming it), links, labels, source and return webhooks; the proposal goes to the trash with
+  `mergedInto`.
+- **Reject**: it goes to the trash, restorable for 30 days.
+
+Work waits for the decision: a proposal cannot be claimed, made the now task, moved to `doing` or
+completed. Only the owner decides.
+
+Any new task can carry three more fields:
+
+- `source` `{ kind, ref, url? }`: where it came from, e.g. `{ kind: "sentry", ref: "CHECKOUT-42" }`.
+  **One source makes one task**: adding a task with a source that already made one returns that
+  task instead, also when it was rejected (it is in the trash) or merged (the source then leads to
+  the task it was merged into). Once the trash is purged, the source is free again.
+- `requestedBy`: who asked for it, in words (a customer, a colleague). An agent's proposal without
+  it says `agent: <name>`.
+- `returnTo`: the id of one of the user's webhooks. When the task is completed, rejected or merged,
+  that webhook gets `task.returned` with the outcome and the task's proof (section 2), whatever
+  events it subscribes to. An integration that opened a task from an alert can close the alert with
+  the proof the work left.
+
+Decisions:
+
+- **A field, not a status.** A proposal is a `todo` task with `proposedAt`; accepting removes the
+  field. Clients that do not know proposals never see them, because every list they read leaves
+  proposals out.
+- **The creator chooses.** An agent or integration says `proposal: true` for work nobody asked
+  for; work the owner asked for goes straight in as before.
+- **Uniqueness by source, kept in its own table** (`taskSources`), so it holds across merges and
+  the trash, and two calls with the same source at the same moment still make one task (Convex
+  runs them one after the other).
+- **Rejecting is not purging.** A rejected proposal sits in the trash for 30 days, so a mistaken
+  rejection can be undone and the same alert does not come back as a new task the next minute.
+- **The return target is a registered webhook**, not a free URL: its address was checked when it
+  was added (public HTTPS only) and its messages are signed with its own secret.
+
+Public counterpart: the [Idempotency-Key](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/)
+draft for HTTP makes a repeated request create one resource. A task's `source` is the same promise
+keyed by the outside world's own id, so it also holds when the sender is not the one retrying, e.g.
+an alert that fires again.
+
+## 8. The plan health report
+
+`plan_health` (also `GET /api/v1/health`, `dayhand health`, the MCP prompt `plan_health`) answers
+"what needs a look?" in one read: overdue tasks, tasks due today, tasks in progress and who works
+on them (`agent: <name>` while a claim lasts), claims that ran out, blocked tasks with every
+reason (the blocked reason and each dependency not done yet), tasks waiting for an approval and
+the pending requests in all, proposals in the inbox, tasks completed today with and without
+proof, and the oldest open task with its age in days. Each section has its `count` and lists the
+first 20 tasks. Whether agents are paused comes first.
+
+On the phone, a card above Today shows the same counts and opens the approvals and proposals;
+it is worked out on the phone from its copy of the plan, so it shows offline too, with the
+approvals and proposals from the last time the phone reached the server.
+
+Decisions:
+
+- **Counts and names, not judgements.** The report says what is there; the agent or the owner
+  decides what to do about it. The `plan_health` prompt asks the agent to go through it with the
+  owner, most urgent first, and to ask before changing anything.
+- **Open means in the plan**: not done, not archived, not in the trash and not a proposal.
+- **"Done without proof"** counts tasks completed today with no summary, link or check. It is a
+  prompt to look, not an error: people complete tasks without proof all the time.
+
 ## What an agent does
 
-1. Back from a pause: `list_events` with the `nextCursor` it kept.
+1. Back from a pause: `list_events` with the `nextCursor` it kept; `plan_health` for the overview.
 2. Pick work: `list_all` with `ready: true`.
 3. `claim_task`; on `conflict`, pick another task.
 4. Write `acceptance` and `plan` if the task has none; `renew_claim` while working.
-5. Tick the criteria with `update_task`, then `complete_task` with `proof`.
-6. Stopping early: `release_task` with a checkpoint `note`; stuck: `blockedReason`.
+5. Before a risky step: `request_approval`, then act on what `get_approval` says.
+6. Tick the criteria with `update_task`, then `complete_task` with `proof`.
+7. Stopping early: `release_task` with a checkpoint `note`; stuck: `blockedReason`.
+8. Work nobody asked for: `add_task` with `proposal: true` and a `source`.
+9. `agents_paused`: stop changing things and wait. `forbidden`: do not retry.
+   `approval_required`: wait for that request, then repeat the call with `approvalId`.
 
 The same steps are in the `dayhand://guide` resource and in `dayhand prime` for agents.
 
 ## Not in this release
 
-Approval requests, an agent off switch, a proposals inbox, a health report, guides and Backlog.md
-import or export are planned separately.
+Phase guides as MCP resources and Backlog.md import or export are planned separately. The phone
+does not edit tool policies yet (it shows them; `dayhand policy` sets them), and it notifies about
+approval requests at most every 15 minutes while the app is closed.

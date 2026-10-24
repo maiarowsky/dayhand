@@ -63,10 +63,10 @@ describe("MCP resources", () => {
 });
 
 describe("MCP prompts", () => {
-  test("three prompts with their arguments", async () => {
+  test("four prompts with their arguments", async () => {
     const client = await mcpClient(await createKey(newUserId()));
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(["plan_day", "weekly_review", "triage_overdue"]);
+    expect(prompts.map((p) => p.name)).toEqual(["plan_day", "weekly_review", "triage_overdue", "plan_health"]);
     expect(prompts[0]!.arguments).toEqual([{ name: "focus", description: expect.any(String), required: false }]);
     await client.close();
   });

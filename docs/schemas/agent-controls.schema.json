@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/agent-controls.schema.json",
+  "title": "Agent controls",
+  "description": "get_agent_controls, pause_agents, set_tool_policy (dayhand agents, dayhand policy): whether the owner paused every agent, and the tool policies of agent keys (since 0.11.0).",
+  "type": "object",
+  "required": [
+    "paused",
+    "pausedAt",
+    "pausedBy",
+    "reason",
+    "policies"
+  ],
+  "properties": {
+    "paused": {
+      "type": "boolean",
+      "description": "true: every agent key and agent connection can read, but its changes are refused with agents_paused"
+    },
+    "pausedAt": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Since when, Unix time in milliseconds"
+    },
+    "pausedBy": {
+      "anyOf": [
+        {
+          "enum": [
+            "app",
+            "cli"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Where the owner paused them"
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "policies": {
+      "type": "array",
+      "description": "Rules other than the default allow; a key's \"*\" rule covers every write tool without its own rule",
+      "items": {
+        "type": "object",
+        "required": [
+          "keyId",
+          "keyName",
+          "tool",
+          "rule",
+          "updatedAt"
+        ],
+        "properties": {
+          "keyId": {
+            "type": "string"
+          },
+          "keyName": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string",
+            "description": "A write tool, or \"*\""
+          },
+          "rule": {
+            "enum": [
+              "allow",
+              "ask",
+              "deny"
+            ]
+          },
+          "updatedAt": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

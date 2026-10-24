@@ -6,17 +6,27 @@ import { DRY_RUN_CODE } from "./args";
 import type { ErrorCode } from "./core";
 
 export type ToolErrorCode = ErrorCode | "rate_limited" | "internal";
-export type ToolError = { code: ToolErrorCode; message: string; retryAfterMs?: number };
+export type ToolError = { code: ToolErrorCode; message: string; retryAfterMs?: number; approvalId?: string };
 
-const ERROR_CODES: ToolErrorCode[] = ["invalid_argument", "not_found", "unauthenticated", "precondition_failed", "conflict"];
+const ERROR_CODES: ToolErrorCode[] = [
+  "invalid_argument",
+  "not_found",
+  "unauthenticated",
+  "precondition_failed",
+  "conflict",
+  "agents_paused",
+  "forbidden",
+  "approval_required",
+];
 
 /** Error safe to show the caller: domain errors and argument errors, nothing internal. */
 export function describeError(error: unknown): ToolError {
   if (error instanceof ConvexError) {
-    const data = error.data as { code?: string; message?: string } | string;
+    const data = error.data as { code?: string; message?: string; approvalId?: string } | string;
     if (typeof data === "string") return { code: "internal", message: data };
     const code = ERROR_CODES.find((c) => c === data.code) ?? "internal";
-    return { code, message: data.message ?? "Request failed" };
+    const described: ToolError = { code, message: data.message ?? "Request failed" };
+    return typeof data.approvalId === "string" ? { ...described, approvalId: data.approvalId } : described;
   }
   const message = error instanceof Error ? error.message : "";
   const validation = /ArgumentValidationError:([\s\S]*?)(\n\s*\n|$)/.exec(message);

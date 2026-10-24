@@ -13,7 +13,7 @@ import { fail, identityOf, recordEvent } from "./lib/core";
 import { serverEnv } from "./lib/env";
 import { SERVER_INFO } from "./lib/mcpProtocol";
 import { identityFields as identityArgs } from "./lib/validators";
-import { queueDelivery, WEBHOOK_EVENTS, webhookArgs, type WebhookEvent } from "./lib/webhookEvents";
+import { DEFAULT_WEBHOOK_EVENTS, queueDelivery, WEBHOOK_EVENTS, webhookArgs, type WebhookEvent } from "./lib/webhookEvents";
 import { newWebhookSecret, signWebhook } from "./lib/webhookSign";
 import { targetProblem } from "./lib/webhookTarget";
 
@@ -116,7 +116,7 @@ export const insert = internalMutation({
   handler: async (ctx, input): Promise<WebhookView> => {
     const problem = targetProblem(input.url);
     if (problem) fail("invalid_argument", problem);
-    const events = [...new Set(input.events ?? WEBHOOK_EVENTS)];
+    const events = [...new Set(input.events ?? DEFAULT_WEBHOOK_EVENTS)];
     if (events.length === 0) fail("invalid_argument", `events must list at least one of ${WEBHOOK_EVENTS.join(", ")}`);
     const description = input.description?.trim() || undefined;
     if (description && description.length > MAX_DESCRIPTION) fail("invalid_argument", `description is longer than ${MAX_DESCRIPTION} characters`);

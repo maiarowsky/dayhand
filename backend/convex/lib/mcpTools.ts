@@ -4,7 +4,7 @@
 import type { PropertyValidators } from "convex/values";
 import type { FunctionReference } from "convex/server";
 import { internal } from "../_generated/api";
-import { args, dryRunArgs } from "./args";
+import { approvalArgs, args, dryRunArgs } from "./args";
 import { objectSchema } from "./jsonSchema";
 import { SCOPES, type Scope } from "./oauthConfig";
 import { SCHEMA_DEFS } from "./outputSchemas";
@@ -32,6 +32,15 @@ const FIELD_DOCS: Record<string, string> = {
   proof:
     "What shows the work is done: {summary, links?, checks?: [{name, result: pass|fail, url?}]}. Kept on the task. An agent completing a task with acceptance criteria must give a summary.",
   minutes: "Length of the claim in minutes from now, 1 to 1440 (default 120).",
+  approvalId:
+    "When the owner's policy asks before this key calls the tool (error approval_required), the id of the approval request the owner allowed: repeat exactly the same call with it. One approval lets one call through.",
+  proposal:
+    "true: the task waits in the owner's proposal inbox, out of Today, the board, list_all and the calendar, until the owner accepts, merges or rejects it.",
+  source:
+    'Where the task comes from: {kind, ref, url?}, e.g. {kind: "sentry", ref: "ISSUE-123"}. One source makes one task: adding it again returns the task it made the first time.',
+  requestedBy: "Who asked for the task, e.g. a customer or a colleague (up to 200 characters). Default for an agent's proposal: the agent itself.",
+  returnTo:
+    "Id of one of the user's webhooks: it gets task.returned, with the proof, when the task is completed (or rejected, or merged into another task).",
   labels: "Labels (projects).",
   links: "Links attached to the task (URL and optional title). Files are not supported.",
   clientId:
@@ -57,6 +66,7 @@ const FIND_DOCS: Record<string, string> = {
   dueAfter: 'Only tasks due after this day: YYYY-MM-DD, "today" or "tomorrow". Tasks without a day never match.',
   overdue: "true: only overdue tasks; false: only tasks that are not overdue.",
   ready: "true: only tasks ready to work on (not done, not blocked, every dependency done); false: only the others.",
+  proposed: "true: only proposals waiting in the owner's inbox; without it (or false) proposals are left out.",
   limit: "Page size, 1 to 200. Without it every matching task is returned at once.",
   cursor: "nextCursor of the previous page, to get the next one.",
 };
@@ -67,6 +77,35 @@ const EVENT_DOCS: Record<string, string> = {
   by: 'Only changes by app, cli, agent (any agent) or one agent as "agent: <name>" (the `by` of each change).',
   taskId: 'Only changes of this task: its id or number as "#42".',
   limit: "At most this many changes, 1 to 500 (default 100).",
+};
+
+const APPROVAL_DOCS: Record<string, string> = {
+  taskId: 'The task the request is about (optional): its id or number as "#42".',
+  action: "What you want to do, as one short sentence the owner reads on the phone (up to 200 characters).",
+  detail: "Why, and anything the owner needs to decide (up to 4000 characters).",
+  options:
+    "2 to 4 choices, in order: {label, consequence?, id?}. consequence says what happens if the owner picks it. Ids default to o1, o2, ...",
+  reversible: "Whether what you want to do can be undone.",
+  expiresInMinutes: "How long the owner has to decide, 1 to 10080 minutes (default 1440, a day). After that the request is expired.",
+  approvalId: "Id of the approval request (the `id` returned by request_approval).",
+  optionId: "Id of the chosen option.",
+  note: "A word for the agent with the decision (optional, up to 1000 characters).",
+  status: "Only requests that are pending, decided or expired.",
+  limit: "At most this many requests, newest first, 1 to 200 (default 50).",
+};
+
+const CONTROL_DOCS: Record<string, string> = {
+  paused: "true: pause every agent (their changes are refused, reading still works); false: let them run again.",
+  reason: "Why, shown to agents in the error (optional, up to 500 characters).",
+  apiKeyId: "Id of an agent API key (dayhand key list).",
+  toolName: 'A tool that changes the plan (e.g. delete_task), or "*" for every such tool without its own rule.',
+  rule: "allow (default), ask (the owner approves each call on the phone first) or deny.",
+};
+
+const PROPOSAL_DOCS: Record<string, string> = {
+  taskId: 'The proposal: its id or number as "#42".',
+  intoTaskId: 'The task the proposal is merged into: its id or number as "#42".',
+  reason: "Why it is rejected; the return webhook gets it (optional).",
 };
 
 export type ToolKind = "read" | "write";
@@ -90,6 +129,8 @@ export type Tool = {
   output: string;
   annotations: Annotations;
   ref: FunctionReference<"query" | "mutation", "internal">;
+  /** Only the owner (the app, a cli key) may call it; agents do not see it (since 0.11.0). */
+  ownerOnly: boolean;
 };
 
 type Spec = {
@@ -101,14 +142,16 @@ type Spec = {
   docs?: Record<string, string>;
   /** Hints that differ from the defaults of the kind. */
   hints?: Partial<Omit<Annotations, "title" | "readOnlyHint">>;
+  ownerOnly?: boolean;
 };
 
 // Changes keep the previous values in history and repeat safely with the same
 // arguments (clientId); only moving a task to the trash and changing settings
 // (which decide what "today" means) are marked destructive.
 const read = (name: string, spec: Spec): Tool => define(name, "read", spec, { destructiveHint: false, idempotentHint: true });
+// Agents' changes can be held back by the owner's policy "ask"; they then repeat the call with approvalId.
 const write = (name: string, spec: Spec): Tool =>
-  define(name, "write", { ...spec, fields: { ...spec.fields, ...dryRunArgs } }, { destructiveHint: false, idempotentHint: true });
+  define(name, "write", { ...spec, fields: { ...spec.fields, ...dryRunArgs, ...(spec.ownerOnly ? {} : approvalArgs) } }, { destructiveHint: false, idempotentHint: true });
 
 function define(name: string, kind: ToolKind, spec: Spec, defaults: Pick<Annotations, "destructiveHint" | "idempotentHint">): Tool {
   const annotations = {
@@ -119,7 +162,7 @@ function define(name: string, kind: ToolKind, spec: Spec, defaults: Pick<Annotat
     ...spec.hints,
   };
   const { title, description, fields, output, ref } = spec;
-  return { name, kind, title, description, fields, output, ref, annotations, docs: { ...FIELD_DOCS, ...spec.docs } };
+  return { name, kind, title, description, fields, output, ref, annotations, docs: { ...FIELD_DOCS, ...spec.docs }, ownerOnly: spec.ownerOnly ?? false };
 }
 
 export const TOOLS: Tool[] = [
@@ -283,6 +326,104 @@ export const TOOLS: Tool[] = [
     ref: internal.ops.release,
     docs: { note: "Checkpoint: where the work stopped and the next step; saved as the task's resume note." },
   }),
+  write("request_approval", {
+    title: "Ask the owner",
+    description:
+      "Ask the owner to decide before you do something: what you want to do, 2 to 4 options with their consequences, whether it can be undone, and how long they have. They decide on the phone. Read the outcome with get_approval (or the approval.decided webhook). Dayhand records the decision; you must act on it yourself.",
+    fields: args.requestApproval,
+    output: "approval",
+    ref: internal.ops.requestApproval,
+    docs: APPROVAL_DOCS,
+  }),
+  read("get_approval", {
+    title: "Approval request",
+    description: "One approval request: its status (pending, decided, expired) and, once decided, the option the owner chose and their note.",
+    fields: args.getApproval,
+    output: "approval",
+    ref: internal.ops.getApproval,
+    docs: APPROVAL_DOCS,
+  }),
+  read("list_approvals", {
+    title: "Approval requests",
+    description: "Approval requests, newest first, narrowed by status and task.",
+    fields: args.listApprovals,
+    output: "approval-list",
+    ref: internal.ops.listApprovals,
+    docs: APPROVAL_DOCS,
+  }),
+  write("decide_approval", {
+    title: "Decide approval request",
+    description: "The owner picks an option of a pending approval request. Only the owner (the app or a cli key) can decide.",
+    fields: args.decideApproval,
+    output: "approval",
+    ref: internal.ops.decideApproval,
+    docs: APPROVAL_DOCS,
+    ownerOnly: true,
+  }),
+  read("get_agent_controls", {
+    title: "Agent controls",
+    description: "Whether the owner paused all agents, and the owner's tool policies per agent key (allow, ask or deny).",
+    fields: args.getAgentControls,
+    output: "agent-controls",
+    ref: internal.ops.getAgentControls,
+  }),
+  write("pause_agents", {
+    title: "Pause agents",
+    description:
+      "Pause every agent (agent API keys and agent connections): their changes are refused with agents_paused until the owner resumes them; reading still works. Only the owner can call it.",
+    fields: args.pauseAgents,
+    output: "agent-controls",
+    ref: internal.ops.pauseAgents,
+    docs: CONTROL_DOCS,
+    ownerOnly: true,
+  }),
+  write("set_tool_policy", {
+    title: "Set tool policy",
+    description:
+      'Set what one agent key may do with a tool that changes the plan: allow, ask (each call waits for the owner\'s approval) or deny. toolName "*" covers every such tool without its own rule. Only the owner can call it.',
+    fields: args.setToolPolicy,
+    output: "agent-controls",
+    ref: internal.ops.setToolPolicy,
+    docs: CONTROL_DOCS,
+    ownerOnly: true,
+  }),
+  write("accept_proposal", {
+    title: "Accept proposal",
+    description: "Accept a proposal from the inbox: it joins the plan as it is. Only the owner can call it.",
+    fields: args.acceptProposal,
+    output: "task",
+    ref: internal.ops.acceptProposal,
+    docs: PROPOSAL_DOCS,
+    ownerOnly: true,
+  }),
+  write("merge_proposal", {
+    title: "Merge proposal",
+    description:
+      "Merge a proposal into a task already in the plan: the task gets its note, links, labels, source and return webhooks; the proposal goes to the trash. Only the owner can call it.",
+    fields: args.mergeProposal,
+    output: "merge",
+    ref: internal.ops.mergeProposal,
+    docs: PROPOSAL_DOCS,
+    ownerOnly: true,
+  }),
+  write("reject_proposal", {
+    title: "Reject proposal",
+    description: "Reject a proposal: it goes to the trash (restorable for 30 days) and its return webhook hears it was rejected. Only the owner can call it.",
+    fields: args.rejectProposal,
+    output: "task",
+    ref: internal.ops.rejectProposal,
+    docs: PROPOSAL_DOCS,
+    hints: { destructiveHint: true },
+    ownerOnly: true,
+  }),
+  read("plan_health", {
+    title: "Plan health",
+    description:
+      "What needs a look, in one read: overdue and today's tasks, tasks in progress and who works on them, claims that ran out, blocked tasks with reasons, tasks waiting for an approval, proposals, tasks done today with and without proof, and the age of the oldest open task.",
+    fields: args.planHealth,
+    output: "plan-health",
+    ref: internal.ops.planHealth,
+  }),
 ];
 
 export const findTool = (name: unknown) => TOOLS.find((t) => t.name === name);
@@ -318,9 +459,9 @@ export function outputSchema(name: string) {
 /** The OAuth scope a tool needs (docs/oauth.md): reading tools tasks:read, every other tool tasks:write. */
 export const scopeOf = (tool: Tool): Scope => (tool.kind === "read" ? "tasks:read" : "tasks:write");
 
-/** The tools a caller with these scopes may see and call; an API key has all scopes. */
-export function listTools(scopes: readonly Scope[] = SCOPES) {
-  return TOOLS.filter((t) => scopes.includes(scopeOf(t))).map((t) => ({
+/** The tools a caller with these scopes may see and call; an API key has all scopes. Agents do not see the owner's tools. */
+export function listTools(scopes: readonly Scope[] = SCOPES, actor: "cli" | "agent" = "cli") {
+  return TOOLS.filter((t) => scopes.includes(scopeOf(t)) && !(actor === "agent" && t.ownerOnly)).map((t) => ({
     name: t.name,
     title: t.title,
     description: t.description,

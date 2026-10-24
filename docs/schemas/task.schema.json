@@ -275,6 +275,47 @@
       "type": "number",
       "description": "When the claim ends, Unix time in milliseconds; in the past = expired, the task can be claimed again (since 0.10.0)"
     },
+    "proposedAt": {
+      "type": "number",
+      "description": "Set while the task is a proposal waiting in the owner's inbox (add_task with proposal: true), Unix time in milliseconds; it stays out of Today, the board, list_all and the calendar until accepted (since 0.11.0)"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "description": "Where the task came from outside Dayhand; one source makes at most one task (since 0.11.0)",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "The kind of source, e.g. sentry, github-issue, email"
+        },
+        "ref": {
+          "type": "string",
+          "description": "The item's id in that source"
+        },
+        "url": {
+          "type": "string",
+          "description": "Where to see the item"
+        }
+      }
+    },
+    "requestedBy": {
+      "type": "string",
+      "description": "Who asked for the task: as given by the caller, or the agent that added it (since 0.11.0)"
+    },
+    "returnTo": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Webhooks that get task.returned, with the proof, when the task is completed, rejected or merged (since 0.11.0)"
+    },
+    "mergedInto": {
+      "type": "string",
+      "description": "The task a proposal was merged into (it is then in the trash) (since 0.11.0)"
+    },
     "completedAt": {
       "type": "number",
       "description": "Unix time in milliseconds"

@@ -28,12 +28,24 @@ const ORDER = [
   "claim_task",
   "renew_claim",
   "release_task",
+  "request_approval",
+  "get_approval",
+  "list_approvals",
+  "decide_approval",
+  "get_agent_controls",
+  "pause_agents",
+  "set_tool_policy",
+  "accept_proposal",
+  "merge_proposal",
+  "reject_proposal",
+  "plan_health",
 ];
-const READ_ONLY = ["list_today", "list_all", "list_trash", "board", "get_task", "export_plan", "get_settings", "list_events"];
+const READ_ONLY = ["list_today", "list_all", "list_trash", "board", "get_task", "export_plan", "get_settings", "list_events", "get_approval", "list_approvals", "get_agent_controls", "plan_health"];
 
 describe("tool catalog", () => {
   test("every tool has a title, all four hints and an object output schema, in a fixed order", async () => {
-    const client = await mcpClient(await createKey(newUserId()));
+    // A cli key is the owner: it sees every tool, the owner's own too (agents do not).
+    const client = await mcpClient(await createKey(newUserId(), "laptop", "cli"));
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toEqual(ORDER);
     expect((await client.listTools()).tools).toEqual(tools);
@@ -42,7 +54,7 @@ describe("tool catalog", () => {
       expect(tool.annotations).toEqual({
         title: tool.title,
         readOnlyHint: READ_ONLY.includes(tool.name),
-        destructiveHint: ["delete_task", "update_settings"].includes(tool.name),
+        destructiveHint: ["delete_task", "update_settings", "reject_proposal"].includes(tool.name),
         idempotentHint: tool.name !== "add_task",
         openWorldHint: false,
       });

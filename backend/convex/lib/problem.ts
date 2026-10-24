@@ -14,6 +14,9 @@ const TITLES: Record<ProblemCode, string> = {
   unauthenticated: "Unauthenticated",
   precondition_failed: "Precondition failed",
   conflict: "Conflict",
+  agents_paused: "Agents paused",
+  forbidden: "Forbidden",
+  approval_required: "Approval required",
   rate_limited: "Too many requests",
   internal: "Internal error",
   insufficient_scope: "Insufficient scope",
@@ -29,6 +32,9 @@ export const STATUS_OF: Record<ToolErrorCode, number> = {
   unauthenticated: 401,
   precondition_failed: 412,
   conflict: 409,
+  agents_paused: 403,
+  forbidden: 403,
+  approval_required: 403,
   rate_limited: 429,
   internal: 500,
 };
@@ -40,9 +46,12 @@ export type Problem = {
   detail: string;
   code: ProblemCode;
   retryAfterMs?: number;
+  approvalId?: string;
 };
 
-export function problemBody(status: number, code: ProblemCode, detail: string, extra: { retryAfterMs?: number } = {}): Problem {
+type ProblemExtra = { retryAfterMs?: number; approvalId?: string };
+
+export function problemBody(status: number, code: ProblemCode, detail: string, extra: ProblemExtra = {}): Problem {
   return { type: PROBLEM_TYPE_BASE + code, title: TITLES[code], status, detail, code, ...extra };
 }
 
@@ -51,7 +60,7 @@ export function problem(
   code: ProblemCode,
   detail: string,
   headers: Record<string, string> = {},
-  extra: { retryAfterMs?: number } = {},
+  extra: ProblemExtra = {},
 ): Response {
   return new Response(JSON.stringify(problemBody(status, code, detail, extra)), {
     status,

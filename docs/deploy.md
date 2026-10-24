@@ -229,6 +229,33 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.11.0
+
+0.11.0 lets the owner stay in charge of agents ([agent-work.md](agent-work.md)): approval requests
+decided on the phone, a switch that pauses every agent, a tool policy per agent key, a proposal
+inbox, and the plan health report. Everything is new tools, routes, optional task fields
+(`proposedAt`, `source`, `requestedBy`, `returnTo`, `mergedInto`), error codes (`agents_paused`,
+`forbidden`, `approval_required`), webhook events (`approval.decided`, `task.returned`) and four
+tables (`approvals`, `agentControls`, `toolPolicies`, `taskSources`). There is no migration, no new
+status and no new secret; nothing changes until the owner uses a control or an agent proposes a
+task. Older clients keep working: they do not see proposals (which stay out of every list they
+read), and an old agent that gets `agents_paused` treats it like any unknown error.
+
+1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.11.0.zip`.
+2. Deploy: `dayhand server deploy` (or `npx convex deploy`).
+3. Check: `dayhand version` shows server 0.11.0, `dayhand agents` prints `Agents run`, and
+   `dayhand health` prints the report.
+
+Two things behave differently: `tools/list` of an agent (an `agent` key or an agent connection)
+leaves out the owner's tools (deciding approvals, pausing agents, policies, accepting proposals),
+and is marked `cacheScope: "private"` on 2026-07-28. A webhook added without `events` gets the
+same task events as before; `approval.decided` has to be asked for.
+
+Rollback: 0.10.x's schema does not know the new tables and fields, so Convex refuses to deploy it
+while any of them hold data. Restore the snapshot from step 1 first,
+`npx convex import --replace-all dayhand-before-0.11.0.zip` (this also drops every change made
+since), then deploy 0.10.x. Agents paused at that moment run again after the rollback.
+
 ## Upgrading to 0.10.0
 
 0.10.0 adds agent work ([agent-work.md](agent-work.md)): the activity log (`list_events`,

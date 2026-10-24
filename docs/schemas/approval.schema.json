@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/approval.schema.json",
+  "title": "Approval request",
+  "description": "An approval request (request_approval, get_approval, decide_approval; dayhand ask, dayhand approval): what an agent wants to do, the options, and the owner's decision (since 0.11.0). Fields may be added.",
+  "type": "object",
+  "required": [
+    "id",
+    "taskId",
+    "ref",
+    "taskTitle",
+    "action",
+    "detail",
+    "options",
+    "reversible",
+    "status",
+    "expiresAt",
+    "createdAt",
+    "requestedBy",
+    "source",
+    "tool",
+    "arguments",
+    "used",
+    "decision"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id of the request"
+    },
+    "taskId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The task it is about, if any"
+    },
+    "ref": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "That task's number"
+    },
+    "taskTitle": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "That task's title"
+    },
+    "action": {
+      "type": "string",
+      "description": "What the agent wants to do"
+    },
+    "detail": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Why, and what the owner needs to decide"
+    },
+    "options": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "consequence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "consequence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What happens if the owner picks it"
+          }
+        }
+      }
+    },
+    "reversible": {
+      "type": "boolean",
+      "description": "Whether what the agent wants to do can be undone"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "decided",
+        "expired"
+      ],
+      "description": "pending until the owner decides or expiresAt passes"
+    },
+    "expiresAt": {
+      "type": "number",
+      "description": "Until when the owner can decide, Unix time in milliseconds"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Unix time in milliseconds"
+    },
+    "requestedBy": {
+      "type": "object",
+      "required": [
+        "type",
+        "name"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "app",
+            "cli",
+            "agent"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "The key's or the client's name"
+        }
+      }
+    },
+    "source": {
+      "enum": [
+        "agent",
+        "policy"
+      ],
+      "description": "agent: asked with request_approval; policy: made when the owner's tool policy asks before a call"
+    },
+    "tool": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "policy: the tool the call is for"
+    },
+    "arguments": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "policy: the call's arguments as JSON (shortened)"
+    },
+    "used": {
+      "type": "boolean",
+      "description": "policy: an allowed call has already run with it"
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "optionId",
+            "label",
+            "note",
+            "decidedAt",
+            "by"
+          ],
+          "properties": {
+            "optionId": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "note": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The owner's word for the agent"
+            },
+            "decidedAt": {
+              "type": "number",
+              "description": "Unix time in milliseconds"
+            },
+            "by": {
+              "enum": [
+                "app",
+                "cli",
+                "agent"
+              ],
+              "description": "Where the owner decided: app (the phone) or cli"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

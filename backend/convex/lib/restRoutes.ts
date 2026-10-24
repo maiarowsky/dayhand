@@ -59,6 +59,8 @@ export type Route = ToolRoute | HandlerRoute;
 const task = "Tasks";
 const views = "Views";
 const settings = "Settings";
+const approvals = "Approvals";
+const agents = "Agents";
 
 export const TOOL_ROUTES: ToolRoute[] = [
   { method: "GET", path: "/tasks", tool: "list_all", input: "query", operationId: "listTasks", tag: task, scope: "read", summary: "Find tasks (search, filters, pages)" },
@@ -88,6 +90,29 @@ export const TOOL_ROUTES: ToolRoute[] = [
     method: "POST", path: "/tasks/{taskId}/release", tool: "release_task", input: "body", operationId: "releaseTask", tag: task, scope: "write", etag: true, ifMatch: true,
     summary: "End your claim of a task, optionally with a checkpoint note",
   },
+  {
+    method: "POST", path: "/tasks/{taskId}/accept", tool: "accept_proposal", input: "body", operationId: "acceptProposal", tag: task, scope: "write", etag: true, ifMatch: true,
+    summary: "Accept a proposal into the plan (the owner: a cli key)",
+  },
+  {
+    method: "POST", path: "/tasks/{taskId}/merge", tool: "merge_proposal", input: "body", operationId: "mergeProposal", tag: task, scope: "write",
+    summary: "Merge a proposal into a task already in the plan (the owner: a cli key)",
+  },
+  {
+    method: "POST", path: "/tasks/{taskId}/reject", tool: "reject_proposal", input: "body", operationId: "rejectProposal", tag: task, scope: "write", etag: true, ifMatch: true,
+    summary: "Reject a proposal: it goes to the trash (the owner: a cli key)",
+  },
+  { method: "GET", path: "/approvals", tool: "list_approvals", input: "query", operationId: "listApprovals", tag: approvals, scope: "read", summary: "Approval requests, newest first" },
+  { method: "POST", path: "/approvals", tool: "request_approval", input: "body", operationId: "requestApproval", tag: approvals, scope: "write", status: 201, summary: "Ask the owner to decide before doing something" },
+  { method: "GET", path: "/approvals/{approvalId}", tool: "get_approval", input: "query", operationId: "getApproval", tag: approvals, scope: "read", summary: "One approval request and its decision" },
+  {
+    method: "POST", path: "/approvals/{approvalId}/decide", tool: "decide_approval", input: "body", operationId: "decideApproval", tag: approvals, scope: "write",
+    summary: "Decide a pending approval request (the owner: a cli key)",
+  },
+  { method: "GET", path: "/agents", tool: "get_agent_controls", input: "query", operationId: "getAgentControls", tag: agents, scope: "read", summary: "Whether agents are paused, and the tool policies" },
+  { method: "POST", path: "/agents/pause", tool: "pause_agents", input: "body", operationId: "pauseAgents", tag: agents, scope: "write", summary: "Pause or resume every agent (the owner: a cli key)" },
+  { method: "POST", path: "/agents/policies", tool: "set_tool_policy", input: "body", operationId: "setToolPolicy", tag: agents, scope: "write", summary: "Set one agent key's rule for a tool (the owner: a cli key)" },
+  { method: "GET", path: "/health", tool: "plan_health", input: "query", operationId: "getPlanHealth", tag: views, scope: "read", summary: "The plan health report" },
   { method: "GET", path: "/events", tool: "list_events", input: "query", operationId: "listEvents", tag: views, scope: "read", summary: "The activity log: task changes after a cursor" },
   { method: "GET", path: "/today", tool: "list_today", input: "query", operationId: "getToday", tag: views, scope: "read", summary: "The Today screen" },
   { method: "GET", path: "/board", tool: "board", input: "query", operationId: "getBoard", tag: views, scope: "read", summary: "The board: todo, doing, done" },
@@ -125,7 +150,7 @@ export const HANDLER_ROUTES: HandlerRoute[] = [
     body: webhookArgs.create,
     docs: {
       url: "HTTPS address on a public host that receives the events.",
-      events: "Event types to send (default: all): task.created, task.updated, task.completed, task.deleted, task.restored, now.changed.",
+      events: "Event types to send (default: every task event): task.created, task.updated, task.completed, task.deleted, task.restored, now.changed, approval.decided.",
       description: "What the webhook is for (up to 200 characters).",
     },
     summary: "Add a webhook; its signing secret is shown once",

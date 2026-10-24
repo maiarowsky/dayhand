@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/task-brief.schema.json",
+  "title": "Task in short",
+  "description": "A task as the plan health report lists it: enough to name it and find it (since 0.11.0).",
+  "type": "object",
+  "required": [
+    "id",
+    "ref",
+    "title",
+    "status",
+    "dueDate",
+    "dueTime"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "ref": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "todo",
+        "doing",
+        "done"
+      ]
+    },
+    "dueDate": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dueTime": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

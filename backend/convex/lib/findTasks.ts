@@ -77,8 +77,11 @@ function matcher(input: Args, today: string, byId: Map<string, Doc<"tasks">>) {
   const before = checkDay("dueBefore", input.dueBefore, today);
   const after = checkDay("dueAfter", input.dueAfter, today);
   const statuses = input.status;
+  // Proposals (since 0.11.0) wait in the inbox: only `proposed: true` lists them.
+  const proposed = input.proposed ?? false;
   return (t: Doc<"tasks">) =>
     t.deletedAt === undefined &&
+    (t.proposedAt !== undefined) === proposed &&
     (input.includeArchived || t.archivedAt === undefined) &&
     (statuses ? statuses.includes(t.status) : input.includeDone !== false || t.status !== "done") &&
     wanted.every((label) => t.labels.includes(label)) &&

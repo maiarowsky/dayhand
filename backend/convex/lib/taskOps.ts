@@ -29,6 +29,7 @@ import {
 } from "./core";
 import { checkAcceptance, checkClaim, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
 import { localDate } from "./dates";
+import { addSource, checkRequestedBy, checkReturnTo, checkSource, notProposal, sendReturn, taskOfSource } from "./proposals";
 import { advance } from "./repeat";
 import type { Status } from "./validators";
 
@@ -56,6 +57,12 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
       .first();
     if (existing) return toTask(existing);
   }
+  // One source, one task: the same alert again returns the task it made the first time.
+  const source = input.source === undefined ? undefined : checkSource(input.source);
+  if (source) {
+    const existing = await taskOfSource(ctx, identity.userId, source);
+    if (existing) return toTask(existing);
+  }
   const { timezone } = await loadSettings(ctx, identity.userId);
   const today = localDate(Date.now(), timezone);
   const dueDate = input.dueDate === undefined ? undefined : checkDueDate(input.dueDate, today);
@@ -79,12 +86,18 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     plan: input.plan === undefined ? undefined : checkLongText("plan", input.plan),
     dependsOn: input.dependsOn === undefined ? undefined : await checkDependsOn(ctx, identity.userId, null, input.dependsOn),
     blockedReason: input.blockedReason === undefined ? undefined : checkLongText("blockedReason", input.blockedReason),
+    proposedAt: input.proposal ? now : undefined,
+    source,
+    requestedBy: checkRequestedBy(identity, input.requestedBy, input.proposal === true),
+    returnTo: input.returnTo === undefined ? undefined : await checkReturnTo(ctx, identity.userId, input.returnTo),
     createdAt: now,
     updatedAt: now,
     clientId,
   };
+  if (fields.proposedAt !== undefined && fields.status !== "todo") fail("invalid_argument", "A proposal starts in todo; it can be worked on once accepted");
   const ref = await nextTaskRef(ctx, identity.userId);
   const taskId = await ctx.db.insert("tasks", { userId: identity.userId, ref, ...fields });
+  if (source) await addSource(ctx, identity.userId, source, taskId);
   const { createdAt, updatedAt, ...snapshot } = fields;
   await recordEvent(ctx, identity, { taskId, action: "create", after: snapshot, clientId });
   return toTask((await ctx.db.get(taskId))!);
@@ -159,13 +172,15 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     const next = spawned ? await ctx.db.get(spawned) : null;
     return { task: toTask(replayed), next: next ? toTask(next) : null };
   }
-  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
+  const task = notProposal(writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity));
   if (task.status === "done") return { task: toTask(task), next: null };
   const proof = input.proof === undefined ? undefined : checkProof(input.proof);
   checkCompletion(task, identity, proof);
   const patch: Partial<Doc<"tasks">> = { status: "done", isNow: false, completedAt: Date.now(), claimedBy: undefined, claimExpiresAt: undefined };
   if (proof) patch.proof = proof;
   const done = await patchTask(ctx, identity, task, "complete", patch, input.clientId);
+  // Whoever asked for the task through a return webhook hears it is done, with the proof (since 0.11.0).
+  await sendReturn(ctx, identity, done, "completed");
   if (!task.repeat) return { task: toTask(done), next: null };
 
   const today = await todayFor(ctx, identity.userId, Date.now());
@@ -209,7 +224,7 @@ export async function setStatus(ctx: MutationCtx, identity: Identity, input: Arg
   }
   const replayed = await replay(ctx, identity.userId, input.clientId);
   if (replayed) return toTask(replayed);
-  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
+  const task = notProposal(writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity));
   const patch: Partial<Doc<"tasks">> = { status: input.status, completedAt: undefined };
   // Only a task in progress can be the "now" task.
   if (input.status !== "doing") patch.isNow = false;
@@ -224,7 +239,7 @@ export async function setNow(ctx: MutationCtx, identity: Identity, input: Args<"
     await clearNow(ctx, identity);
     return null;
   }
-  const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
+  const task = notProposal(writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity));
   if (task.archivedAt !== undefined) fail("invalid_argument", "Task is archived; restore it first");
   await clearNow(ctx, identity, task._id);
   const patch: Partial<Doc<"tasks">> = { isNow: true, status: "doing", completedAt: undefined };
@@ -277,6 +292,12 @@ export async function purgeExpiredTrash(ctx: MutationCtx, now: number) {
       .withIndex("by_task", (q) => q.eq("taskId", task._id))
       .collect();
     for (const event of events) await ctx.db.delete(event._id);
+    // Its sources may make a task again once it is gone for good.
+    const sources = await ctx.db
+      .query("taskSources")
+      .withIndex("by_task", (q) => q.eq("taskId", task._id))
+      .collect();
+    for (const source of sources) await ctx.db.delete(source._id);
     await ctx.db.delete(task._id);
   }
   return { purged: expired.length, more: expired.length === PURGE_BATCH };

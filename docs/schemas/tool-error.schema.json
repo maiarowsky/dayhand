@@ -17,7 +17,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "description": "invalid_argument, not_found, unauthenticated, precondition_failed, conflict, rate_limited, internal (values may be added; treat an unknown code like internal)"
+          "description": "invalid_argument, not_found, unauthenticated, precondition_failed, conflict, agents_paused, forbidden, approval_required, rate_limited, internal (values may be added; treat an unknown code like internal)"
         },
         "message": {
           "type": "string"
@@ -26,6 +26,10 @@
           "type": "integer",
           "minimum": 0,
           "description": "Only with rate_limited: milliseconds until the key may call again"
+        },
+        "approvalId": {
+          "type": "string",
+          "description": "Only with approval_required: the approval request the call waits for; once the owner allows it, repeat exactly the same call with approvalId (since 0.11.0)"
         }
       }
     }

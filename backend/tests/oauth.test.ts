@@ -129,7 +129,7 @@ describe("the flow with a Client ID Metadata Document", () => {
     expect(tokens.body.refresh_token).toMatch(/^helmrt_/);
 
     const mcp = await mcpWith(tokens.body.access_token);
-    expect((await mcp.listTools()).tools).toHaveLength(21);
+    expect((await mcp.listTools()).tools).toHaveLength(26);
     const today = await callTool(mcp, "list_today");
     expect(today.today.map((t: any) => t.title)).toEqual(["Call the accountant"]);
     const added = await callTool(mcp, "add_task", { title: "Book the dentist" });
@@ -149,7 +149,7 @@ describe("the flow with a Client ID Metadata Document", () => {
     expect(names).toEqual(expect.arrayContaining(["list_today", "get_task", "export_plan"]));
     expect(names).not.toContain("delete_task");
     expect(names).not.toContain("add_task");
-    expect(names).toHaveLength(8);
+    expect(names).toHaveLength(12);
 
     const refused = await callToolRaw(tokens.access_token, "delete_task", { taskId: "#1" });
     expect(refused.status).toBe(403);
@@ -236,7 +236,7 @@ describe("the flow with Dynamic Client Registration, driven by the MCP SDK's OAu
 
     const client = new Client({ name: "claude-sim", version: "0.0.0" });
     await client.connect(new StreamableHTTPClientTransport(new URL(resource()), { authProvider: provider as any }));
-    expect((await client.listTools()).tools).toHaveLength(21);
+    expect((await client.listTools()).tools).toHaveLength(26);
     await callTool(client, "add_task", { title: "From the SDK client" });
 
     // A refresh through the SDK rotates both tokens.
@@ -541,6 +541,6 @@ describe("tokens at the protected resource", () => {
     expect((await fetch(`${site()}/connections`, { headers: bearer })).status).toBe(401);
     const key = await createKey(owner.userId, "claude-code");
     expect((await listTools(key)).status).toBe(200);
-    expect((await (await listTools(key)).json()).result.tools).toHaveLength(21);
+    expect((await (await listTools(key)).json()).result.tools).toHaveLength(26);
   });
 });

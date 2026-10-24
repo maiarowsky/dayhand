@@ -57,10 +57,14 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 | Table | Purpose |
 |---|---|
-| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
+| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; proposals since 0.11.0: `proposedAt` (waiting in the inbox), `source` (`kind`, `ref`, `url`), `requestedBy`, `returnTo` (webhook ids), `mergedInto`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
 | `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId`, and for task changes `seq`, the position in the activity log (`list_events`) |
 | `eventCounters` | Last activity log position given per user (`lastSeq`); every task change reads and writes it, so positions follow the commit order |
 | `taskCounters` | Last task number given per user (`lastRef`) |
+| `taskSources` | Since 0.11.0: which task each outside source (`kind`, `ref`) made, so one source makes one task; re-pointed when a proposal is merged, removed when the task is purged |
+| `approvals` | Since 0.11.0: approval requests: `taskId`, `title` (what the agent wants to do), `detail`, `options` (`id`, `label`, `consequence`), `reversible`, `expiresAt`, `requestedBy`, `source` (`agent` or `policy`; a policy request also has `tool`, `argsHash`, `arguments`, `usedAt`), the decision (`decidedAt`, `optionId`, `note`, `decidedBy`), `clientId` |
+| `agentControls` | Since 0.11.0: the owner's switch, one row per user: `pausedAt`, `pausedBy`, `reason` |
+| `toolPolicies` | Since 0.11.0: one agent key's rule for one write tool or `*`: `keyId`, `tool`, `rule` (`allow`, `ask`, `deny`) |
 | `apiKeys` | `name`, `kind` (`cli` or `agent`), `scope` (`read`, `write` or `full`; absent = `full`), `expiresAt`, `parentKeyId` (the key that created it through `/api/v1/keys`), SHA-256 `hash` of the key, `createdAt`, `revokedAt` |
 | `pairingCodes` | One-time pairing codes: public `selector`, SHA-256 `secretHash` of the secret part, `createdBy`, `expiresAt` (10 minutes), `usedAt`, `failedAttempts` |
 | `devices` | Paired phones: `name`, token `selector`, SHA-256 `secretHash`, `pairedBy`, `createdAt`, `lastUsedAt`, `revokedAt` |
@@ -91,6 +95,12 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
   for completing and `occurrences` for listing a series ahead; `convex/lib/rrule.ts` maps rules
   to and from RFC 5545 RRULE ([mcp.md](mcp.md#repeat-rules)). The Android app has the same
   logic in `domain/Recurrence.kt`.
+- **The owner's controls.** Every change an agent makes (an `agent` key or an agent connection)
+  first passes `gateAgentWrite` (`convex/lib/agentControls.ts`) inside the same mutation:
+  paused agents are refused, a key's tool policy `deny` is refused, and `ask` needs an approval
+  request decided "allow", used up by that change. The app and `cli` keys are never refused.
+  Proposals (`proposedAt`) are left out of Today, the board, `list_all`, `ready` and the
+  calendar until accepted ([agent-work.md](agent-work.md)).
 - **Trash.** `softDelete` sets `deletedAt`; `restore` clears it. A daily cron
   (`convex/crons.ts`, 03:30 UTC) permanently removes tasks deleted more than 30 days ago,
   with their history.

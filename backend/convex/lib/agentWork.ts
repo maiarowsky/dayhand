@@ -141,11 +141,11 @@ async function refuseCycle(ctx: QueryCtx, taskId: Id<"tasks">, start: Id<"tasks"
 }
 
 /**
- * Ready to work on: not done, not blocked, and every dependency done. A
- * dependency in the trash or purged no longer holds the task back.
+ * Ready to work on: not done, not blocked, not a proposal, and every dependency
+ * done. A dependency in the trash or purged no longer holds the task back.
  */
 export function isReady(task: Doc<"tasks">, byId: Map<string, Doc<"tasks">>): boolean {
-  if (task.status === "done" || task.blockedReason !== undefined) return false;
+  if (task.status === "done" || task.blockedReason !== undefined || task.proposedAt !== undefined) return false;
   return (task.dependsOn ?? []).every((id) => {
     const dependency = byId.get(id);
     return dependency === undefined || dependency.deletedAt !== undefined || dependency.status === "done";
@@ -198,6 +198,7 @@ function claimable(task: Doc<"tasks">) {
   if (task.deletedAt !== undefined) fail("invalid_argument", "Task is in the trash; restore it first");
   if (task.archivedAt !== undefined) fail("invalid_argument", "Task is archived; restore it first");
   if (task.status === "done") fail("invalid_argument", "Task is done; reopen it first");
+  if (task.proposedAt !== undefined) fail("invalid_argument", "Task is a proposal; it can be claimed once the owner accepts it");
   return task;
 }
 

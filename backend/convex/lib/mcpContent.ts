@@ -109,6 +109,12 @@ export const PROMPTS: Prompt[] = [
     description: "Decide with the user, task by task, what happens to everything overdue.",
     arguments: [],
   },
+  {
+    name: "plan_health",
+    title: "Check the plan's health",
+    description: "Read the plan health report and go through what needs a look: overdue, blocked, stale claims, waiting approvals, proposals, work done without proof.",
+    arguments: [],
+  },
 ];
 
 export class PromptArgumentError extends Error {}
@@ -157,6 +163,21 @@ export async function getPrompt(ctx: ActionCtx, identity: Identity, name: string
             `4. Without a day: call list_all with status ["todo"] and offer a day for the tasks that have no dueDate.\n` +
             SAFE_CHANGES,
         ),
+      ],
+    };
+  }
+  if (name === "plan_health") {
+    const health = await ctx.runQuery(internal.ops.planHealth, { ...identity, at: now });
+    return {
+      description: prompt.description,
+      messages: [
+        text(
+          `Check the health of my plan in Dayhand (today is ${today}). The report from plan_health is below. ` +
+            "Summarise it in a few lines, most urgent first, then go through what needs a decision: overdue tasks, blocked tasks (is the reason still true?), claims that ran out (release_task or ask the agent), tasks waiting for an approval, proposals in the inbox (I accept or reject them on the phone), and tasks done today without proof. " +
+            "If agents are paused, say so first. " +
+            SAFE_CHANGES,
+        ),
+        text(`Plan health (plan_health):\n${JSON.stringify(health, null, 2)}`),
       ],
     };
   }

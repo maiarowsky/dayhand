@@ -12,8 +12,9 @@ type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_DONE_LIMIT = 50;
 
+/** In the plan: not archived, not in the trash, and not a proposal waiting in the inbox (since 0.11.0). */
 function isActive(task: Doc<"tasks">) {
-  return task.archivedAt === undefined && task.deletedAt === undefined;
+  return task.archivedAt === undefined && task.deletedAt === undefined && task.proposedAt === undefined;
 }
 
 /** Timed tasks first by time, then untimed by creation. */
@@ -76,7 +77,7 @@ export async function listAll(ctx: QueryCtx, identity: Identity, input: Args<"li
     .withIndex("by_user", (q) => q.eq("userId", identity.userId))
     .collect();
   return tasks
-    .filter((t) => t.deletedAt === undefined)
+    .filter((t) => t.deletedAt === undefined && t.proposedAt === undefined)
     .filter((t) => input.includeArchived || t.archivedAt === undefined)
     .filter((t) => input.includeDone !== false || t.status !== "done")
     .filter((t) => wanted.every((label) => t.labels.includes(label)))

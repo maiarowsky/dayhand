@@ -38,6 +38,7 @@ const PATH_DOCS: Record<string, string> = {
   taskId: 'The task number (42) or the task id. "#42" works too, written %2342.',
   keyId: "Id of the API key (GET /keys).",
   webhookId: "Id of the webhook (GET /webhooks).",
+  approvalId: "Id of the approval request (POST /approvals, GET /approvals).",
 };
 
 const RATE_HEADERS = {
@@ -135,6 +136,7 @@ function responses(route: Route): Json {
     result["409"] = problemResponse("Conflict");
     result["412"] = problemResponse("PreconditionFailed");
   }
+  if (route.method !== "GET") result["403"] = problemResponse("Refused");
   result["422"] = problemResponse("InvalidArgument");
   result["429"] = problemResponse("RateLimited");
   result.default = problemResponse("Problem");
@@ -212,6 +214,9 @@ export function openApiDocument(base: string | null = publicUrl()): Json {
         Problem: problemOf("An error (problem details, RFC 9457)"),
         Unauthenticated: problemOf("Missing, invalid, expired or revoked API key"),
         InsufficientScope: problemOf("The key's scope does not allow this route"),
+        Refused: problemOf(
+          "The key's scope does not allow this route (insufficient_scope); or the owner refused the change: agents are paused (agents_paused), only the owner may do this or the owner's policy denies the tool to this key (forbidden), or the policy asks first (approval_required, with the approvalId of the request to wait for)",
+        ),
         NotFound: problemOf("No such task, key or webhook"),
         PreconditionFailed: problemOf(
           "If-Match: the task has changed since that version; or the task's state does not allow the change yet (an agent completing a task with unmet acceptance criteria, renewing a claim it does not hold)",

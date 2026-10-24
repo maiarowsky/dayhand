@@ -8,7 +8,11 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import type { Actor } from "./validators";
 
-export const WEBHOOK_EVENTS = ["task.created", "task.updated", "task.completed", "task.deleted", "task.restored", "now.changed"] as const;
+// approval.decided since 0.11.0. task.returned (0.11.0) is not subscribed to: it goes
+// only to the webhooks a task names in returnTo (queueReturn).
+export const WEBHOOK_EVENTS = ["task.created", "task.updated", "task.completed", "task.deleted", "task.restored", "now.changed", "approval.decided"] as const;
+/** What a webhook added without `events` gets: the task events, as before 0.11.0 (their data is a task). */
+export const DEFAULT_WEBHOOK_EVENTS = WEBHOOK_EVENTS.filter((event) => event !== "approval.decided");
 export const webhookEventValidator = v.union(
   v.literal("task.created"),
   v.literal("task.updated"),
@@ -16,6 +20,7 @@ export const webhookEventValidator = v.union(
   v.literal("task.deleted"),
   v.literal("task.restored"),
   v.literal("now.changed"),
+  v.literal("approval.decided"),
 );
 export type WebhookEvent = Infer<typeof webhookEventValidator>;
 
@@ -37,6 +42,10 @@ const TYPE_OF_ACTION: Record<string, WebhookEvent> = {
   // Claims (since 0.10.0); a renewal only moves the expiry and is not sent.
   claim: "task.updated",
   release: "task.updated",
+  // Proposals (since 0.11.0): accepting one changes it, rejecting or merging one moves it to the trash.
+  accept: "task.updated",
+  merge: "task.deleted",
+  reject: "task.deleted",
   complete: "task.completed",
   delete: "task.deleted",
   restore: "task.restored",
@@ -105,4 +114,47 @@ export async function queueDelivery(ctx: MutationCtx, webhook: Doc<"webhooks">, 
   });
   await ctx.scheduler.runAfter(0, internal.webhooks.deliver, { deliveryId });
   return deliveryId;
+}
+
+type EventActor = { type: Actor; name: string | null };
+
+/** approval.decided (since 0.11.0) for every live webhook of the user that wants it. */
+export async function queueApprovalDecided(ctx: MutationCtx, userId: string, approvalId: string, approval: unknown, actor: EventActor, at: number) {
+  const webhooks = (
+    await ctx.db
+      .query("webhooks")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()
+  ).filter((w) => w.disabledAt === undefined && w.events.includes("approval.decided"));
+  const payload = JSON.stringify({ type: "approval.decided", timestamp: new Date(at).toISOString(), data: { approval }, previous: {}, actor });
+  for (const webhook of webhooks) await queueDelivery(ctx, webhook, messageId(`ap${approvalId}`), "approval.decided", payload);
+}
+
+export type ReturnOutcome = "completed" | "rejected" | "merged";
+
+/**
+ * task.returned (since 0.11.0): tells the webhooks a task names in returnTo that
+ * it closed, with its proof; sent whatever events they subscribe to, unless off.
+ */
+export async function queueReturn(
+  ctx: MutationCtx,
+  task: Doc<"tasks">,
+  outcome: ReturnOutcome,
+  details: Record<string, unknown>,
+  actor: EventActor,
+  view: (task: Doc<"tasks">) => unknown,
+) {
+  const at = Date.now();
+  const payload = JSON.stringify({
+    type: "task.returned",
+    timestamp: new Date(at).toISOString(),
+    data: { outcome, task: view(task), proof: task.proof ?? null, source: task.source ?? null, requestedBy: task.requestedBy ?? null, ...details },
+    previous: {},
+    actor,
+  });
+  for (const id of new Set(task.returnTo ?? [])) {
+    const webhook = await ctx.db.get(id);
+    if (!webhook || webhook.userId !== task.userId || webhook.disabledAt !== undefined) continue;
+    await queueDelivery(ctx, webhook, messageId(`rt${task._id}${outcome[0]}${at}`), "task.returned", payload);
+  }
 }

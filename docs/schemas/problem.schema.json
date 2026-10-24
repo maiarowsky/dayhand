@@ -12,8 +12,9 @@
     "detail": { "type": "string", "description": "What went wrong, for people" },
     "code": {
       "type": "string",
-      "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, conflict, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
+      "description": "invalid_argument, not_found, unauthenticated, insufficient_scope, precondition_failed, conflict, agents_paused, forbidden, approval_required, rate_limited, method_not_allowed, unsupported_media_type, payload_too_large, internal (values may be added; treat an unknown code like internal)"
     },
-    "retryAfterMs": { "type": "integer", "minimum": 0, "description": "Only with rate_limited: milliseconds until the key may call again" }
+    "retryAfterMs": { "type": "integer", "minimum": 0, "description": "Only with rate_limited: milliseconds until the key may call again" },
+    "approvalId": { "type": "string", "description": "Only with approval_required: the approval request to wait for; once allowed, repeat the same request with approvalId in the body (since 0.11.0)" }
   }
 }

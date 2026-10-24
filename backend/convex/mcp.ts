@@ -149,7 +149,7 @@ const retryAfter = (refusal: Refusal) => ({ "Retry-After": String(Math.max(1, Ma
 
 // ---- Tools ----
 
-const IDENTITY_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName"];
+const IDENTITY_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName", "tool"];
 
 /** A failed tool call: the message as text, and `{ error: { code, message } }` for programs. */
 function toolError(error: ToolError) {
@@ -197,6 +197,8 @@ async function callTool(ctx: ActionCtx, owner: Caller, params: any): Promise<Out
   }
   const callArgs: Record<string, unknown> = { ...input, ...identityOf(owner) };
   if ("at" in tool.fields && callArgs.at === undefined) callArgs.at = Date.now();
+  // The tool's name decides which of the owner's policies applies to the change.
+  if (tool.kind === "write") callArgs.tool = tool.name;
   try {
     const value =
       tool.kind === "read"
@@ -206,8 +208,34 @@ async function callTool(ctx: ActionCtx, owner: Caller, params: any): Promise<Out
   } catch (error) {
     const dryRun = dryRunResult(error);
     if (dryRun) return { result: toolSuccess(tool, dryRun.result, { dryRun: true }) };
-    return { result: toolError(describeError(error)) };
+    return { result: toolError(await withApprovalRequest(ctx, owner, tool.name, callArgs, describeError(error))) };
   }
+}
+
+/**
+ * A call the owner's policy "ask" held back gets the approval request it waits
+ * for (a new one, or the one already waiting for the same call): the agent
+ * reads its outcome with get_approval and repeats the call with approvalId.
+ */
+export async function withApprovalRequest(
+  ctx: ActionCtx,
+  owner: { userId: string; actor: "cli" | "agent"; keyId?: Id<"apiKeys">; connectionId?: Id<"oauthGrants">; actorName: string },
+  tool: string,
+  callArgs: Record<string, unknown>,
+  error: ToolError,
+): Promise<ToolError> {
+  if (error.code !== "approval_required" || error.approvalId !== undefined) return error;
+  const approval: { id: string; expiresAt: number } = await ctx.runMutation(internal.ops.requestForPolicy, {
+    ...identityOf(owner as Caller),
+    tool,
+    arguments: Object.fromEntries(Object.entries(callArgs).filter(([, value]) => value !== undefined)),
+  });
+  const until = new Date(approval.expiresAt).toISOString();
+  return {
+    ...error,
+    message: `${error.message}. Approval request ${approval.id} waits for the owner until ${until}; check it with get_approval, then repeat exactly this call with approvalId.`,
+    approvalId: approval.id,
+  };
 }
 
 // ---- Resources and prompts ----
@@ -288,7 +316,10 @@ function missingScope(owner: Caller, message: RpcRequest): Scope | null {
 async function dispatch(ctx: ActionCtx, owner: Caller, message: RpcRequest, era: Era): Promise<Outcome | null> {
   switch (message.method) {
     case "tools/list":
-      return { result: { tools: listTools(owner.scopes) }, cache: owner.scopes.length === SCOPES.length ? PUBLIC_LIST : PRIVATE_LIST };
+      return {
+        result: { tools: listTools(owner.scopes, owner.actor) },
+        cache: owner.scopes.length === SCOPES.length && owner.actor === "cli" ? PUBLIC_LIST : PRIVATE_LIST,
+      };
     case "tools/call":
       return callTool(ctx, owner, message.params);
     case "resources/list":

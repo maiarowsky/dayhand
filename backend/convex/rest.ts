@@ -31,11 +31,12 @@ import {
 import { describeError, dryRunResult, structuredResult } from "./lib/toolResults";
 import { keyIdentity, keyOwner, type KeyOwner } from "./pairing";
 import { ACCOUNT_HANDLERS } from "./restAccount";
+import { withApprovalRequest } from "./mcp";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const JSON_TYPES = ["application/json", "application/merge-patch+json"];
 // Set by the server, never by the caller (as on /mcp), and the precondition comes from If-Match only.
-const RESERVED_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName", "ifMatch"];
+const RESERVED_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName", "ifMatch", "tool"];
 const PRIVATE = { "Cache-Control": "no-store" };
 const CHALLENGE = { "WWW-Authenticate": 'Bearer realm="dayhand"' };
 
@@ -146,6 +147,8 @@ async function runTool(ctx: ActionCtx, request: Request, url: URL, match: Match 
   if (route.ifMatch && ifMatch !== null) callArgs.ifMatch = entityTags(ifMatch);
   if (dryRun) callArgs.dryRun = true;
   if ("at" in tool.fields && callArgs.at === undefined) callArgs.at = Date.now();
+  // The owner's tool policies apply to the change as to the same MCP tool.
+  if (tool.kind === "write") callArgs.tool = tool.name;
 
   let value: unknown;
   try {
@@ -156,8 +159,9 @@ async function runTool(ctx: ActionCtx, request: Request, url: URL, match: Match 
   } catch (error) {
     const preview = dryRunResult(error);
     if (!preview) {
-      const { code, message } = describeError(error);
-      return problem(STATUS_OF[code], code, message);
+      const failure = await withApprovalRequest(ctx, keyIdentity(owner), tool.name, callArgs, describeError(error));
+      const { code, message, approvalId } = failure;
+      return problem(STATUS_OF[code], code, message, {}, approvalId ? { approvalId } : {});
     }
     return json(200, structuredResult(preview.result, true));
   }
@@ -189,6 +193,10 @@ async function runHandler(ctx: ActionCtx, request: Request, url: URL, match: Mat
   const query = queryArgs(url.searchParams, route.query ?? {}, ["dryRun"]);
   const body = route.method === "GET" || route.method === "DELETE" ? {} : await readBody(request, route.maxBodyBytes ?? MAX_BODY_BYTES);
   refuseReserved(body, Object.keys(params));
+  // A paused agent's key cannot change the account either (keys, webhooks); import is a change and checks itself.
+  if (route.method !== "GET" && owner.kind === "agent" && (await ctx.runQuery(internal.ops.agentsPaused, { userId: owner.userId }))) {
+    return problem(403, "agents_paused", "The owner has paused all agents: reading works, changes are refused until they resume agents");
+  }
   try {
     const result = await handler(ctx, { owner, identity: keyIdentity(owner), params, query, body, dryRun });
     return json(result.status ?? route.status ?? 200, result.body, result.headers);

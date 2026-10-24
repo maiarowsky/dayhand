@@ -55,10 +55,26 @@ const STEPS: Step[] = [
   { tool: "add_task", args: { title: "x", dueDate: "someday" }, method: "POST", path: "/tasks", body: { title: "x", dueDate: "someday" } },
   { tool: "get_task", args: { taskId: "#99" }, method: "GET", path: "/tasks/99" },
   { tool: "set_status", args: { taskId: "#3", status: "doing" }, method: "POST", path: "/tasks/3/status", body: { status: "doing" } },
+  // Since 0.11.0: approval requests, the owner's controls (refused to an agent key), proposals and plan health.
+  { tool: "request_approval", args: { taskId: "#3", action: "Send the report", options: [{ label: "Send" }, { label: "Hold", consequence: "It waits" }], reversible: false, expiresInMinutes: 60 },
+    method: "POST", path: "/approvals", body: { taskId: "#3", action: "Send the report", options: [{ label: "Send" }, { label: "Hold", consequence: "It waits" }], reversible: false, expiresInMinutes: 60 } },
+  { tool: "list_approvals", args: { status: "pending" }, method: "GET", path: "/approvals?status=pending" },
+  { tool: "get_approval", args: { approvalId: "nonsense" }, method: "GET", path: "/approvals/nonsense" },
+  { tool: "decide_approval", args: { approvalId: "nonsense", optionId: "o1" }, method: "POST", path: "/approvals/nonsense/decide", body: { optionId: "o1" } },
+  { tool: "get_agent_controls", args: {}, method: "GET", path: "/agents" },
+  { tool: "pause_agents", args: { paused: true }, method: "POST", path: "/agents/pause", body: { paused: true } },
+  { tool: "set_tool_policy", args: { apiKeyId: "k", toolName: "*", rule: "deny" }, method: "POST", path: "/agents/policies", body: { apiKeyId: "k", toolName: "*", rule: "deny" } },
+  { tool: "add_task", args: { title: "Proposed", proposal: true, source: { kind: "email", ref: "m-1" } },
+    method: "POST", path: "/tasks", body: { title: "Proposed", proposal: true, source: { kind: "email", ref: "m-1" } } },
+  { tool: "list_all", args: { proposed: true, limit: 5, at: AT }, method: "GET", path: `/tasks?proposed=true&limit=5&at=${AT}` },
+  { tool: "accept_proposal", args: { taskId: "#4" }, method: "POST", path: "/tasks/4/accept" },
+  { tool: "merge_proposal", args: { taskId: "#4", intoTaskId: "#3" }, method: "POST", path: "/tasks/4/merge", body: { intoTaskId: "#3" } },
+  { tool: "reject_proposal", args: { taskId: "#4" }, method: "POST", path: "/tasks/4/reject" },
+  { tool: "plan_health", args: { at: AT }, method: "GET", path: `/health?at=${AT}` },
 ];
 
 const ID_FIELDS = new Set(["id", "taskId", "repeatedFrom", "keyId"]);
-const TIME_FIELDS = new Set(["createdAt", "updatedAt", "completedAt", "archivedAt", "deletedAt", "at", "exportedAt", "claimExpiresAt"]);
+const TIME_FIELDS = new Set(["createdAt", "updatedAt", "completedAt", "archivedAt", "deletedAt", "at", "exportedAt", "claimExpiresAt", "proposedAt", "expiresAt"]);
 
 /** Ids become their order of appearance and times a placeholder, so two users' results compare. */
 function normalize(value: unknown, ids = new Map<string, string>()): unknown {
