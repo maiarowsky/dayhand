@@ -7,7 +7,6 @@
 //   Linux and others  $XDG_DATA_HOME/dayhand (~/.local/share/dayhand)
 //   macOS             ~/Library/Application Support/dayhand
 //   Windows           %LOCALAPPDATA%\dayhand\Data
-// overridden by DAYHAND_DATA_DIR.
 // The config folder of the hlm command (the same places, named hlm) is used
 // while there is no dayhand folder, with a warning that says how to move it.
 import { existsSync } from "node:fs";
@@ -45,8 +44,6 @@ export function resolvePaths(
 
 /** Where dayhand keeps data it makes itself and wants to find again (not config, not a throwaway cache). */
 export function resolveDataDir(env: Env, platform: Platform = process.platform, home: string = homedir()): string {
-  const explicit = readEnv(env, "DAYHAND_DATA_DIR").value;
-  if (explicit) return explicit;
   const join = platform === "win32" ? path.win32.join : path.posix.join;
   if (platform === "win32") return join(env.LOCALAPPDATA || join(home, "AppData", "Local"), NAME, "Data");
   if (platform === "darwin") return join(home, "Library", "Application Support", NAME);

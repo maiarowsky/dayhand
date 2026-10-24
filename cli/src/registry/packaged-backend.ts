@@ -58,7 +58,7 @@ export function writableBackend(source: string, version: string, dataDir: string
     throw new CliError(
       "internal",
       `Cannot copy the packaged Dayhand backend to ${target}: ${(error as Error).message}`,
-      { hint: "Set DAYHAND_DATA_DIR to a folder you can write to, or pass --backend <folder> of a Dayhand repository" },
+      { hint: "Check that your system's data folder is writable, or pass --backend <folder> of a Dayhand repository" },
       { cause: error },
     );
   }

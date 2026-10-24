@@ -124,7 +124,7 @@ describe("writableBackend", () => {
     })();
     expect(error).toBeInstanceOf(CliError);
     expect((error as CliError).message).toContain(join(data, "backend", "1.2.3"));
-    expect((error as CliError).details.hint).toContain("DAYHAND_DATA_DIR");
+    expect((error as CliError).details.hint).toContain("--backend <folder>");
     expect((error as CliError).cause).toBeDefined();
   });
 });

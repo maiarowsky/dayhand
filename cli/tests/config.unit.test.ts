@@ -59,14 +59,13 @@ describe("folders follow each system's convention", () => {
     expect(resolvePaths({}, "win32", "C:\\Users\\ann").configDir).toBe("C:\\Users\\ann\\AppData\\Roaming\\dayhand");
   });
 
-  test("the data folder: XDG_DATA_HOME, Application Support, LOCALAPPDATA; DAYHAND_DATA_DIR wins everywhere", () => {
+  test("the data folder: XDG_DATA_HOME, Application Support, LOCALAPPDATA", () => {
     expect(resolveDataDir({}, "linux", "/home/ann")).toBe("/home/ann/.local/share/dayhand");
     expect(resolveDataDir({ XDG_DATA_HOME: "/x/data" }, "linux", "/home/ann")).toBe("/x/data/dayhand");
     expect(resolveDataDir({ XDG_DATA_HOME: "relative" }, "linux", "/home/ann")).toBe("/home/ann/.local/share/dayhand");
     expect(resolveDataDir({}, "darwin", "/Users/ann")).toBe("/Users/ann/Library/Application Support/dayhand");
     expect(resolveDataDir({ LOCALAPPDATA: "C:\\Users\\ann\\AppData\\Local" }, "win32", "C:\\Users\\ann")).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand\\Data");
     expect(resolveDataDir({}, "win32", "C:\\Users\\ann")).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand\\Data");
-    for (const platform of ["linux", "darwin", "win32"] as const) expect(resolveDataDir({ DAYHAND_DATA_DIR: "/d" }, platform, "/home/ann")).toBe("/d");
   });
 
   test("DAYHAND_CONFIG_DIR and DAYHAND_CACHE_DIR win everywhere", () => {

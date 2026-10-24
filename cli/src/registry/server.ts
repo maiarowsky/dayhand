@@ -214,7 +214,7 @@ const server: CommandSpec = {
   summary: "Your own Dayhand server: on your free Convex account, or on this computer",
   description:
     "Runs backend/scripts/setup.mjs from the backend/ folder of a Dayhand repository you run from, " +
-    "else from the backend the dayhand package carries, copied once per version to the data folder (DAYHAND_DATA_DIR). " +
+    "else from the backend the dayhand package carries, copied once per version to the system's data folder. " +
     "Then signs dayhand in. Keys stay in a private folder (DAYHAND_SERVER_CONFIG_DIR) and are never printed. See docs/deploy.md.",
   tools: [],
   subcommands: [

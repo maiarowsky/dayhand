@@ -28,8 +28,8 @@ In a checkout, build and link it from this folder instead: `npm ci --ignore-scri
 (also the way to get it before the first release; [every way to install](../docs/install.md)).
 
 `dayhand server start` and `dayhand server deploy` need no clone of the repository: the package carries
-the Dayhand backend (`backend/`, copied in by prepack), runs it from a copy in your data folder
-(`DAYHAND_DATA_DIR`), once per version, and uses the `backend/` of a clone instead when you run from one
+the Dayhand backend (`backend/`, copied in by prepack), runs it from a copy in your system's data
+folder, once per version, and uses the `backend/` of a clone instead when you run from one
 or pass `--backend` ([your own server](../docs/deploy.md#run-your-own-server-in-5-minutes)).
 
 For key creation, automatic sign-in during server setup, and credential storage, see

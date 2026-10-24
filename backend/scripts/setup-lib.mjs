@@ -167,6 +167,18 @@ function httpsOrigin(value, flag) {
 /** DAYHAND_JWT_ISSUER: an https origin. It becomes part of every user id. */
 export const checkIssuer = (value) => httpsOrigin(value, "--issuer");
 
+export function npmCli(env = process.env, execPath = process.execPath) {
+  const nodeDir = path.dirname(execPath);
+  const candidates = [
+    env.npm_execpath,
+    path.join(nodeDir, "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(nodeDir, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(nodeDir, "..", "libexec", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+    path.join(nodeDir, "..", "..", "..", "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+  ];
+  return candidates.find((file) => file && /npm-cli\.js$/.test(file) && existsSync(file));
+}
+
 /** Node.js new enough for dayhand too (22.12+); returns an error message or null. */
 export function nodeProblem(version = process.versions.node) {
   const major = Number(version.split(".")[0]);

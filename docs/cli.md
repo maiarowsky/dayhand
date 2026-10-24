@@ -186,7 +186,6 @@ terminal (or with `--no-input` / `DAYHAND_NO_INPUT=1`) it never waits for input 
 | `DAYHAND_NO_INPUT` | 1 to never prompt |
 | `DAYHAND_CONFIG_DIR` | Folder of config.toml and credentials.json (default: the system's config folder) |
 | `DAYHAND_CACHE_DIR` | Folder of the completion cache (default: the system's cache folder) |
-| `DAYHAND_DATA_DIR` | Folder of the copy of the packaged server backend that dayhand server runs, one per version (default: the system's data folder) |
 | `DAYHAND_CREDENTIAL_STORE` | keychain or file: where dayhand login keeps keys (default: keychain, else file) |
 | `NO_COLOR, FORCE_COLOR` | Turn colors off or on when neither --color nor config.toml decides |
 | `VISUAL, EDITOR` | Editor for dayhand note <ref> and dayhand edit <ref> on a terminal (default: vi, notepad on Windows) |
