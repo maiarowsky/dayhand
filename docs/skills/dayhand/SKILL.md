@@ -20,11 +20,13 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 
 - Pass --json and read stdout; on failure stdout is empty and stderr has one line {"error":{"code","message","exitCode","retryable","clientId"}}.
 - Refer to tasks by number: #42 or 42 (stable, never reused), or now for the now task.
-- Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun).
+- Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun), 6 refused by the task's state (conflict: another agent holds it, pick another task; precondition_failed: meet the acceptance criteria and give --summary).
 - After exit 5 the change may have been applied: rerun the same command line with --client-id <the clientId from the error>; it is never applied twice.
 - dayhand never prompts without a terminal; changing 3 or more tasks at once needs --yes.
 - Dates are English phrases in the user's time zone: today, tomorrow, fri 14:00, in 3 days, 2026-10-23. Check one with dayhand when "<phrase>" or add --dry-run.
 - Before stopping work on a task, record where you are: dayhand now <ref> --note "<next step>".
+- Working on a task alongside other agents: dayhand claim <ref> first (exit 6 conflict: pick another task), dayhand renew <ref> while you work, dayhand release <ref> --note "<checkpoint>" when you stop.
+- Back after a pause: dayhand log --since <the nextCursor you kept> --json shows only what changed meanwhile.
 - Anything the commands do not cover: dayhand tools (schemas), then dayhand call <tool> '<json>'.
 
 ## Common commands
@@ -39,6 +41,11 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 | `dayhand note <ref> "<text>" --json` | Append to a task's note |
 | `dayhand move <ref> <when> --json` | Reschedule (none removes the date) |
 | `dayhand done <ref>... --json` | Complete; a repeating task returns its next occurrence |
+| `dayhand list --ready --json` | Tasks ready to work on: not done, not blocked, every dependency done |
+| `dayhand claim <ref> --json` | Claim a task for 120 minutes (--minutes); others get conflict (exit 6) |
+| `dayhand criteria <ref> --met 1,2 --json` | Mark acceptance criteria met (--add adds one) |
+| `dayhand done <ref> --summary "<what was done>" --check "tests=pass <url>" --json` | Complete with proof; needed for a task with acceptance criteria |
+| `dayhand log --since <cursor> --json` | The changes since your last cursor (nextCursor) |
 
 ## Patterns
 
@@ -69,6 +76,7 @@ dayhand call update_task '{"taskId":"#42","note":null}'
 | 3 | Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one |
 | 4 | Not found: no such task (#n), device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
+| 6 | Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed) |
 | 130 | Interrupted (Ctrl-C) |
 
 ## JSON
@@ -91,7 +99,7 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `dayhand note <ref> [text...]` | Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it |
 | `dayhand checklist <ref>` | Print a task's checklist, or tick, untick, move, remove and add items |
 | `dayhand move <ref> <date>` | Move a task to another day, optionally with a time (none removes the date) |
-| `dayhand done <refs...>` | Mark tasks done; a repeating task gets its next occurrence |
+| `dayhand done <refs...>` | Mark tasks done, optionally with proof; a repeating task gets its next occurrence |
 | `dayhand start <refs...>` | Set tasks to doing |
 | `dayhand stop <refs...>` | Set tasks back to todo (from doing) |
 | `dayhand reopen <refs...>` | Set done tasks back to todo |
@@ -100,6 +108,11 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `dayhand rm <refs...>` | Move tasks to the trash (purged after 30 days) |
 | `dayhand restore <refs...>` | Restore tasks from the trash (or the archive) |
 | `dayhand trash` | Tasks in the trash, newest first |
+| `dayhand log` | The activity log: task changes after a cursor or a time, oldest first (who changed what) |
+| `dayhand claim <ref>` | Claim a task for a while (default 120 minutes) so other agents leave it alone |
+| `dayhand renew <ref>` | Extend your claim of a task by --minutes from now (default 120) |
+| `dayhand release <ref>` | End your claim of a task, optionally leaving a checkpoint as its resume note |
+| `dayhand criteria <ref>` | Print a task's acceptance criteria, or mark them met, unmet, remove and add them |
 | `dayhand settings` | Show settings (time zone, morning summary time, default reminders) |
 | `dayhand settings get` | Show settings |
 | `dayhand settings set <pairs...>` | Change settings: timezone, summaryTime (summary-time), defaultReminderMinutes (reminders) |

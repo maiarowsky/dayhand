@@ -79,6 +79,18 @@ This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due tim
 .TP
 .B \-\-no\-reminders
 No reminders for this task
+.TP
+.B \-\-accept <text>
+Acceptance criterion: what done means (repeatable, in order)
+.TP
+.B \-\-plan <text>
+How the work will be done
+.TP
+.B \-\-depends\-on <ref>
+A task that must be done first (repeatable)
+.TP
+.B \-\-blocked <reason>
+Why the task cannot go on; a blocked task is not ready
 .RE
 .TP
 .B dayhand list
@@ -101,6 +113,9 @@ Only these statuses, comma\-separated: todo, doing, done (done implies \-\-done)
 .TP
 .B \-\-overdue
 Only overdue tasks
+.TP
+.B \-\-ready
+Only tasks ready to work on: not done, not blocked, every dependency done (backend 0.10.0)
 .TP
 .B \-\-due\-before <when>
 Only tasks due before this day, e.g. eow, next mon, 2026\-11\-01
@@ -222,6 +237,30 @@ No reminders for this task
 .TP
 .B \-\-default\-reminders
 Back to the default reminders from settings
+.TP
+.B \-\-accept <text>
+Replace the acceptance criteria (repeatable; dayhand criteria edits single ones)
+.TP
+.B \-\-clear\-acceptance
+Remove the acceptance criteria
+.TP
+.B \-\-plan <text>
+How the work will be done
+.TP
+.B \-\-clear\-plan
+Remove the plan
+.TP
+.B \-\-depends\-on <ref>
+Replace the dependencies: a task that must be done first (repeatable)
+.TP
+.B \-\-clear\-depends
+Remove all dependencies
+.TP
+.B \-\-blocked <reason>
+Why the task cannot go on; a blocked task is not ready
+.TP
+.B \-\-unblock
+Remove the blocked reason
 .RE
 .TP
 .B dayhand note <ref> [text...]
@@ -269,7 +308,20 @@ Remove the due time
 .RE
 .TP
 .B dayhand done <refs...>
-Mark tasks done; a repeating task gets its next occurrence
+Mark tasks done, optionally with proof; a repeating task gets its next occurrence
+.br
+An agent completing a task with acceptance criteria needs every criterion met (dayhand criteria) and \-\-summary; otherwise it fails with precondition_failed (exit 6).
+.RS
+.TP
+.B \-\-summary <text>
+Proof: what was done (an agent needs it for a task with acceptance criteria)
+.TP
+.B \-\-check <check>
+Proof: a check and its result, "<name>=pass" or "<name>=fail", optionally followed by a URL (repeatable)
+.TP
+.B \-\-proof\-link <url>
+Proof: where to see the result, "https://… Title" (repeatable)
+.RE
 .TP
 .B dayhand start <refs...>
 Set tasks to doing
@@ -304,6 +356,73 @@ Restore tasks from the trash (or the archive)
 .TP
 .B dayhand trash
 Tasks in the trash, newest first
+.TP
+.B dayhand log
+The activity log: task changes after a cursor or a time, oldest first (who changed what)
+.br
+Without \-\-since: the newest changes. Keep nextCursor and pass it as \-\-since next time to see only what changed meanwhile; hasMore says there are more already.
+.RS
+.TP
+.B \-\-since <from>
+nextCursor of an earlier log (c…), a time ago (30m, 2h, 3d), a date phrase (yesterday, mon 09:00) or an ISO time
+.TP
+.B \-\-by <actor>
+Only changes by app, cli, agent (any agent) or "agent: <name>"
+.TP
+.B \-\-task <ref>
+Only changes of this task
+.TP
+.B \-\-limit <n>
+At most this many changes, 1 to 500 (default 100)
+.RE
+.TP
+.B dayhand claim <ref>
+Claim a task for a while (default 120 minutes) so other agents leave it alone
+.br
+While the claim lasts another agent's changes and claims of the task fail with conflict (exit 6). Claiming it again extends your claim.
+.RS
+.TP
+.B \-\-minutes <n>
+Length of the claim in minutes from now, 1 to 1440 (default 120)
+.RE
+.TP
+.B dayhand renew <ref>
+Extend your claim of a task by \-\-minutes from now (default 120)
+.RS
+.TP
+.B \-\-minutes <n>
+Length of the claim in minutes from now, 1 to 1440 (default 120)
+.RE
+.TP
+.B dayhand release <ref>
+End your claim of a task, optionally leaving a checkpoint as its resume note
+.RS
+.TP
+.B \-\-note <text>
+Checkpoint: where you stopped and the next step (saved as the resume note)
+.RE
+.TP
+.B dayhand criteria <ref>
+Print a task's acceptance criteria, or mark them met, unmet, remove and add them
+.br
+Criteria are numbered from 1 as printed. Changes apply in this order: \-\-met, \-\-unmet, \-\-rm, then \-\-add. An agent can complete a task only when every criterion is met.
+.RS
+.TP
+.B \-\-add <text>
+Add a criterion at the end (repeatable)
+.TP
+.B \-\-met <n>
+Mark criteria met: 2, 1,3 or all (repeatable)
+.TP
+.B \-\-unmet <n>
+Mark criteria not met (repeatable)
+.TP
+.B \-\-rm <n>
+Remove criteria (repeatable)
+.TP
+.B \-\-clear
+Remove all criteria
+.RE
 .TP
 .B dayhand settings
 Show settings (time zone, morning summary time, default reminders)
@@ -632,6 +751,9 @@ Not found: no such task (#n), device or now task
 .TP
 .B 5
 Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same \-\-client\-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names
+.TP
+.B 6
+Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed)
 .TP
 .B 130
 Interrupted (Ctrl\-C)

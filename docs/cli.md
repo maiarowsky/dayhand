@@ -24,7 +24,7 @@ Without a command, `dayhand` shows Today.
 | `dayhand note <ref> [text...] [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's note (on a terminal: edit it in $VISUAL/$EDITOR), or append text to it |
 | `dayhand checklist <ref> [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's checklist, or tick, untick, move, remove and add items |
 | `dayhand move <ref> <date> [options]` | `reschedule_task` | [task](schemas/task.schema.json) | Move a task to another day, optionally with a time (none removes the date) |
-| `dayhand done <refs...>` | `complete_task` | [complete](schemas/complete.schema.json) | Mark tasks done; a repeating task gets its next occurrence |
+| `dayhand done <refs...> [options]` | `complete_task` | [complete](schemas/complete.schema.json) | Mark tasks done, optionally with proof; a repeating task gets its next occurrence |
 | `dayhand start <refs...>` | `set_status` | [task](schemas/task.schema.json) | Set tasks to doing |
 | `dayhand stop <refs...>` | `set_status` | [task](schemas/task.schema.json) | Set tasks back to todo (from doing) |
 | `dayhand reopen <refs...>` | `set_status` | [task](schemas/task.schema.json) | Set done tasks back to todo |
@@ -33,6 +33,11 @@ Without a command, `dayhand` shows Today.
 | `dayhand rm <refs...>` | `delete_task` | [task](schemas/task.schema.json) | Move tasks to the trash (purged after 30 days) |
 | `dayhand restore <refs...>` | `restore_task` | [task](schemas/task.schema.json) | Restore tasks from the trash (or the archive) |
 | `dayhand trash` | `list_trash` | [task-list](schemas/task-list.schema.json) | Tasks in the trash, newest first |
+| `dayhand log [options]` | `list_events` | [event-list](schemas/event-list.schema.json) | The activity log: task changes after a cursor or a time, oldest first (who changed what) |
+| `dayhand claim <ref> [options]` | `claim_task` | [task](schemas/task.schema.json) | Claim a task for a while (default 120 minutes) so other agents leave it alone |
+| `dayhand renew <ref> [options]` | `renew_claim` | [task](schemas/task.schema.json) | Extend your claim of a task by --minutes from now (default 120) |
+| `dayhand release <ref> [options]` | `release_task` | [task](schemas/task.schema.json) | End your claim of a task, optionally leaving a checkpoint as its resume note |
+| `dayhand criteria <ref> [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's acceptance criteria, or mark them met, unmet, remove and add them |
 | `dayhand settings` | `get_settings` | [settings](schemas/settings.schema.json) | Show settings (time zone, morning summary time, default reminders) |
 | `dayhand settings get` | `get_settings` | [settings](schemas/settings.schema.json) | Show settings |
 | `dayhand settings set <pairs...>` | `update_settings` | [settings](schemas/settings.schema.json) | Change settings: timezone, summaryTime (summary-time), defaultReminderMinutes (reminders) |
@@ -134,10 +139,11 @@ On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options ope
 | 3 | Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one |
 | 4 | Not found: no such task (#n), device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
+| 6 | Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed) |
 | 130 | Interrupted (Ctrl-C) |
 
 Backend error codes map to exit codes: `invalid_argument` → 2, `unauthenticated` → 3,
-`not_found` → 4, `rate_limited` → 5, `internal` and unknown codes → 1.
+`not_found` → 4, `rate_limited` → 5, `conflict` and `precondition_failed` → 6, `internal` and unknown codes → 1.
 
 ## Retries
 
@@ -396,6 +402,10 @@ dayhand add <title...> [options]
 | `--item <text>` | Checklist item (repeatable, in order) |
 | `--remind <when>` | This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due time), 09:00 or "18:00 -1d" (repeatable) |
 | `--no-reminders` | No reminders for this task |
+| `--accept <text>` | Acceptance criterion: what done means (repeatable, in order) |
+| `--plan <text>` | How the work will be done |
+| `--depends-on <ref>` | A task that must be done first (repeatable) |
+| `--blocked <reason>` | Why the task cannot go on; a blocked task is not ready |
 
 ```sh
 dayhand add Call the accountant --due "fri 2pm" -l home
@@ -405,6 +415,7 @@ dayhand add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 
 dayhand add Water plants --every day --interval 3 --from-completion
 dayhand add Pack --due fri --item passport --item charger
 dayhand add Buy a present --no-due --json
+dayhand add "Ship the export" --no-due --accept "CSV opens in a spreadsheet" --plan "write, then test" --depends-on 41
 ```
 
 ### dayhand list
@@ -422,6 +433,7 @@ dayhand list [options]
 | `--archived` | Include archived tasks |
 | `--status <statuses>` | Only these statuses, comma-separated: todo, doing, done (done implies --done) |
 | `--overdue` | Only overdue tasks |
+| `--ready` | Only tasks ready to work on: not done, not blocked, every dependency done (backend 0.10.0) |
 | `--due-before <when>` | Only tasks due before this day, e.g. eow, next mon, 2026-11-01 |
 | `--due-after <when>` | Only tasks due after this day, e.g. today |
 | `--search <text>` | Only tasks whose title, note, resume note or labels contain the text (any case) |
@@ -434,6 +446,7 @@ dayhand list --overdue
 dayhand list --due-before eow --search accountant --limit 20
 dayhand list --limit 50 --cursor <nextCursor> --json
 dayhand list --done --json --fields ref,title,status
+dayhand list --ready --json
 ```
 
 ### dayhand board
@@ -510,6 +523,14 @@ dayhand edit <ref> [options]
 | `--remind <when>` | This task's reminder instead of the defaults: 0, 15m, 2h, 1d (before the due time), 09:00 or "18:00 -1d" (repeatable) |
 | `--no-reminders` | No reminders for this task |
 | `--default-reminders` | Back to the default reminders from settings |
+| `--accept <text>` | Replace the acceptance criteria (repeatable; dayhand criteria edits single ones) |
+| `--clear-acceptance` | Remove the acceptance criteria |
+| `--plan <text>` | How the work will be done |
+| `--clear-plan` | Remove the plan |
+| `--depends-on <ref>` | Replace the dependencies: a task that must be done first (repeatable) |
+| `--clear-depends` | Remove all dependencies |
+| `--blocked <reason>` | Why the task cannot go on; a blocked task is not ready |
+| `--unblock` | Remove the blocked reason |
 
 ```sh
 dayhand edit 42 --title "Call the bank" --due "tomorrow 10:00"
@@ -518,6 +539,8 @@ dayhand edit 42 --every month --month-day last --until 2027-06-30
 dayhand edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"
 dayhand edit 42 --remind 15m --remind 1d
 dayhand edit 42 --clear-repeat
+dayhand edit 42 --blocked "waiting for the client's brief"
+dayhand edit 42 --depends-on 40 --depends-on 41
 dayhand edit 42
 ```
 
@@ -594,18 +617,27 @@ dayhand move 42 none
 
 ### dayhand done
 
-Mark tasks done; a repeating task gets its next occurrence
+Mark tasks done, optionally with proof; a repeating task gets its next occurrence
+
+An agent completing a task with acceptance criteria needs every criterion met (dayhand criteria) and --summary; otherwise it fails with precondition_failed (exit 6).
 
 ```
-dayhand done <refs...>
+dayhand done <refs...> [options]
 ```
 
 - `refs`: Tasks: #42 or 42, now, or ids
+
+| Option | Meaning |
+|---|---|
+| `--summary <text>` | Proof: what was done (an agent needs it for a task with acceptance criteria) |
+| `--check <check>` | Proof: a check and its result, "<name>=pass" or "<name>=fail", optionally followed by a URL (repeatable) |
+| `--proof-link <url>` | Proof: where to see the result, "https://… Title" (repeatable) |
 
 ```sh
 dayhand done 42
 dayhand done 42 43 now
 dayhand done 1 2 3 --yes --client-id 7f3c
+dayhand done 42 --summary "Export shipped" --check "unit tests=pass https://ci.example/run/7" --proof-link "https://example.com/pr/7 PR"
 ```
 
 ### dayhand start
@@ -725,6 +757,115 @@ dayhand trash
 ```sh
 dayhand trash
 dayhand trash --json
+```
+
+### dayhand log
+
+The activity log: task changes after a cursor or a time, oldest first (who changed what)
+
+Without --since: the newest changes. Keep nextCursor and pass it as --since next time to see only what changed meanwhile; hasMore says there are more already.
+
+```
+dayhand log [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--since <from>` | nextCursor of an earlier log (c…), a time ago (30m, 2h, 3d), a date phrase (yesterday, mon 09:00) or an ISO time |
+| `--by <actor>` | Only changes by app, cli, agent (any agent) or "agent: <name>" |
+| `--task <ref>` | Only changes of this task |
+| `--limit <n>` | At most this many changes, 1 to 500 (default 100) |
+
+```sh
+dayhand log
+dayhand log --since 2h --by cli
+dayhand log --since c1793011200000123 --json
+dayhand log --task 42 --by "agent: claude-code"
+```
+
+### dayhand claim
+
+Claim a task for a while (default 120 minutes) so other agents leave it alone
+
+While the claim lasts another agent's changes and claims of the task fail with conflict (exit 6). Claiming it again extends your claim.
+
+```
+dayhand claim <ref> [options]
+```
+
+- `ref`: Task: #42 or 42 (its number), now, or its id
+
+| Option | Meaning |
+|---|---|
+| `--minutes <n>` | Length of the claim in minutes from now, 1 to 1440 (default 120) |
+
+```sh
+dayhand claim 42
+dayhand claim 42 --minutes 30 --json
+```
+
+### dayhand renew
+
+Extend your claim of a task by --minutes from now (default 120)
+
+```
+dayhand renew <ref> [options]
+```
+
+- `ref`: Task: #42 or 42 (its number), now, or its id
+
+| Option | Meaning |
+|---|---|
+| `--minutes <n>` | Length of the claim in minutes from now, 1 to 1440 (default 120) |
+
+```sh
+dayhand renew 42
+dayhand renew 42 --minutes 60
+```
+
+### dayhand release
+
+End your claim of a task, optionally leaving a checkpoint as its resume note
+
+```
+dayhand release <ref> [options]
+```
+
+- `ref`: Task: #42 or 42 (its number), now, or its id
+
+| Option | Meaning |
+|---|---|
+| `--note <text>` | Checkpoint: where you stopped and the next step (saved as the resume note) |
+
+```sh
+dayhand release 42
+dayhand release 42 --note "tables migrated; indexes next"
+```
+
+### dayhand criteria
+
+Print a task's acceptance criteria, or mark them met, unmet, remove and add them
+
+Criteria are numbered from 1 as printed. Changes apply in this order: --met, --unmet, --rm, then --add. An agent can complete a task only when every criterion is met.
+
+```
+dayhand criteria <ref> [options]
+```
+
+- `ref`: Task: #42 or 42 (its number), now, or its id
+
+| Option | Meaning |
+|---|---|
+| `--add <text>` | Add a criterion at the end (repeatable) |
+| `--met <n>` | Mark criteria met: 2, 1,3 or all (repeatable) |
+| `--unmet <n>` | Mark criteria not met (repeatable) |
+| `--rm <n>` | Remove criteria (repeatable) |
+| `--clear` | Remove all criteria |
+
+```sh
+dayhand criteria 42
+dayhand criteria 42 --add "Tests pass" --add "Docs updated"
+dayhand criteria 42 --met 1,2
 ```
 
 ### dayhand settings

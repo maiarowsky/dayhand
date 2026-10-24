@@ -3,7 +3,7 @@
 // The human format is the same on a terminal and in a pipe, except that a
 // terminal gets colors (unless turned off) and long titles cut to its width.
 import type { HeldCall } from "../transport/client.js";
-import { cell, describeReminder, describeRepeat, fieldCells, formatDay, formatTimestamp, refOf, relativeDate, taskCells, taskRow, tsv } from "./format.js";
+import { cell, describeChange, describeReminder, describeRepeat, fieldCells, formatDay, formatTimestamp, refOf, relativeDate, taskCells, taskRow, tsv } from "./format.js";
 import type { Connection, Device, HistoryEntry, Task, TodayView } from "./model.js";
 import { PLAIN_STYLE, type Style } from "./style.js";
 import { cellOf, padTo, table } from "./table.js";
@@ -212,12 +212,21 @@ function renderDetail(task: Task, history: HistoryEntry[], timezone: string | un
   add("labels", task.labels.join(", "));
   add("links", task.links.map((l) => (l.title ? `${l.title} <${l.url}>` : l.url)).join(", "));
   add("next", task.resumeNote);
+  add("blocked", task.blockedReason as string | undefined);
+  add("depends", (task.dependsOn as string[] | undefined)?.join(", "));
+  add("claimed", claimLine(task, timezone));
   add("archived", task.archivedAt ? formatTimestamp(task.archivedAt, timezone) : undefined);
   add("deleted", task.deletedAt ? formatTimestamp(task.deletedAt, timezone) : undefined);
   add("id", task.id);
   if (task.checklist?.length) {
     lines.push(style.dim("checklist:"), ...task.checklist.map((item, i) => `  ${i + 1}. ${item.done ? "[x]" : "[ ]"} ${item.title}`));
   }
+  const acceptance = (task.acceptance as { text: string; met: boolean }[] | undefined) ?? [];
+  if (acceptance.length) {
+    lines.push(style.dim("acceptance:"), ...acceptance.map((item, i) => `  ${i + 1}. ${item.met ? "[x]" : "[ ]"} ${item.text}`));
+  }
+  if (typeof task.plan === "string") lines.push(style.dim("plan:"), ...task.plan.split("\n").map((l) => `  ${l}`));
+  lines.push(...proofLines(task.proof as Proof | undefined, style));
   if (task.note) lines.push(style.dim("note:"), ...task.note.split("\n").map((l) => `  ${l}`));
   lines.push(style.dim("history:"));
   for (const h of history) {
@@ -227,10 +236,24 @@ function renderDetail(task: Task, history: HistoryEntry[], timezone: string | un
   return lines.join("\n");
 }
 
-function describeChange(before: Record<string, unknown> | null, after: Record<string, unknown>): string {
-  return Object.keys(after)
-    .map((k) => (before && k in before ? `${k}: ${JSON.stringify(before[k])} → ${JSON.stringify(after[k])}` : `${k}: ${JSON.stringify(after[k])}`))
-    .join("; ");
+type Proof = { summary?: string; links: { url: string; title?: string }[]; checks: { name: string; result: string; url?: string }[] };
+
+/** "agent-name until 14:30", or "(expired …)" once the claim has run out. */
+function claimLine(task: Task, timezone?: string): string | undefined {
+  const holder = task.claimedBy as { name: string } | undefined;
+  const until = task.claimExpiresAt as number | undefined;
+  if (!holder || until === undefined) return undefined;
+  const when = formatTimestamp(until, timezone);
+  return until > Date.now() ? `${holder.name} until ${when}` : `${holder.name} (expired ${when})`;
+}
+
+function proofLines(proof: Proof | undefined, style: Style): string[] {
+  if (!proof) return [];
+  const lines = [style.dim("proof:")];
+  if (proof.summary) lines.push(...proof.summary.split("\n").map((l) => `  ${l}`));
+  lines.push(...proof.checks.map((c) => `  ${c.result === "pass" ? "pass" : "FAIL"}  ${c.name}${c.url ? ` <${c.url}>` : ""}`));
+  lines.push(...proof.links.map((l) => `  ${l.title ? `${l.title} <${l.url}>` : l.url}`));
+  return lines;
 }
 
 const connectionState = (c: Connection) => (c.revokedAt ? "revoked" : c.active ? "active" : "expired");

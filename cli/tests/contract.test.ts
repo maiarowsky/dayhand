@@ -3,7 +3,7 @@
 // and every --json output follows docs/schemas.
 import { describe, expect, test } from "vitest";
 import { flatten } from "../src/registry/index.js";
-import { connectAgent, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
+import { admin, connectAgent, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
 
 const validate = schemaValidator();
 const specOf = (path: string) => flatten().find((c) => c.path === path)!.spec;
@@ -44,6 +44,16 @@ const CASES: Case[] = [
   { path: "reopen", command: ["reopen", "2", "--client-id", "c-reopen"], tool: "set_status", args: { taskId: "#2", status: "todo", clientId: "c-reopen" } },
   { path: "stop", command: ["stop", "1", "--client-id", "c-stop"], tool: "set_status", args: { taskId: "#1", status: "todo", clientId: "c-stop" } },
   { path: "now", command: ["now", "--clear", "--client-id", "c-clear"], tool: "set_now", args: { taskId: null, clientId: "c-clear" } },
+  { path: "add", command: ["add", "Ship export", "--no-due", "--accept", "CSV opens", "--plan", "write then test", "--depends-on", "2", "--client-id", "c-add-5"], tool: "add_task", args: { title: "Ship export", acceptance: [{ text: "CSV opens" }], plan: "write then test", dependsOn: ["#2"], clientId: "c-add-5" } },
+  { path: "criteria", command: ["criteria", "6", "--met", "1", "--add", "Docs", "--client-id", "c-crit"], tool: "update_task", args: { taskId: "#6", acceptance: [{ id: "a1", text: "CSV opens", met: true }, { text: "Docs" }], clientId: "c-crit" } },
+  { path: "criteria", command: ["criteria", "#6"], tool: "get_task", args: { taskId: "#6" } },
+  { path: "edit", command: ["edit", "6", "--blocked", "waiting", "--client-id", "c-edit-3"], tool: "update_task", args: { taskId: "#6", blockedReason: "waiting", clientId: "c-edit-3" } },
+  { path: "list", command: ["list", "--ready"], tool: "list_all", args: { includeDone: false, includeArchived: false, ready: true } },
+  { path: "claim", command: ["claim", "6", "--minutes", "30", "--client-id", "c-claim"], tool: "claim_task", args: { taskId: "#6", minutes: 30, clientId: "c-claim" } },
+  { path: "renew", command: ["renew", "6", "--client-id", "c-renew"], tool: "renew_claim", args: { taskId: "#6", clientId: "c-renew" } },
+  { path: "release", command: ["release", "6", "--note", "half way", "--client-id", "c-release"], tool: "release_task", args: { taskId: "#6", note: "half way", clientId: "c-release" } },
+  { path: "log", command: ["log", "--task", "6", "--limit", "3"], tool: "list_events", args: { taskId: "#6", limit: 3 } },
+  { path: "done", command: ["done", "6", "--summary", "Shipped", "--check", "tests=pass https://ci.example/1", "--client-id", "c-done-2"], tool: "complete_task", args: { taskId: "#6", proof: { summary: "Shipped", checks: [{ name: "tests", result: "pass", url: "https://ci.example/1" }] }, clientId: "c-done-2" } },
   { path: "archive", command: ["archive", "1", "--client-id", "c-archive"], tool: "archive_task", args: { taskId: "#1", clientId: "c-archive" } },
   { path: "restore", command: ["restore", "1", "--client-id", "c-restore"], tool: "restore_task", args: { taskId: "#1", clientId: "c-restore" } },
   { path: "rm", command: ["rm", "1", "--client-id", "c-rm"], tool: "delete_task", args: { taskId: "#1", clientId: "c-rm" } },
@@ -52,19 +62,21 @@ const CASES: Case[] = [
 ];
 
 describe("agent contract", () => {
-  test("every one of the 17 MCP tools is reachable by a command", async () => {
+  test("every one of the 21 MCP tools is reachable by a command", async () => {
     const { key } = await newUser();
     const tools: string[] = (await dayhandJson(key, ["tools"])).tools.map((t: { name: string }) => t.name);
-    expect(tools).toHaveLength(17);
+    expect(tools).toHaveLength(21);
     const covered = new Set(flatten().flatMap((c) => c.spec.tools));
     expect(tools.filter((t) => !covered.has(t))).toEqual([]);
     expect(new Set(CASES.map((c) => c.tool))).toEqual(new Set(tools));
   });
 
   test("--json and dayhand call print the MCP SDK client's structuredContent, valid against docs/schemas", async () => {
-    const { key } = await newUser();
+    const { key, keyId } = await newUser();
     const sdk = await mcpClient(key);
-    for (const c of CASES) {
+    for (const [i, c] of CASES.entries()) {
+      // Each case makes up to three changes with one key: keep under the 60 a minute.
+      if (i % 15 === 0) await admin("mutation", "callLimits:reset", { keyId });
       const viaCommand = await dayhandJson(key, c.command);
       const viaCall = await dayhandJson(key, ["call", c.tool, JSON.stringify(c.args)]);
       const viaSdk = await sdkCall(sdk, c.tool, c.args);

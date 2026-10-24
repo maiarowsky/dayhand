@@ -58,7 +58,7 @@ describe("candidates", () => {
     const keys = await complete(["settings", "set", "s"], sources);
     expect(keys).toEqual({ candidates: [{ value: "summary-time=" }], directive: NO_FILES | NO_SPACE });
     expect(await values("completion", "")).toEqual([...SHELLS]);
-    expect(await values("call", "list_")).toEqual(["list_all", "list_today", "list_trash"]);
+    expect(await values("call", "list_")).toEqual(["list_all", "list_events", "list_today", "list_trash"]);
     expect(await values("move", "4", "n")).toEqual(["next", "none"]);
   });
 

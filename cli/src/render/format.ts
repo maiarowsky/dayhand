@@ -140,3 +140,10 @@ export function cell(value: unknown): string {
 }
 
 export const tsv = (rows: string[][]) => rows.map((r) => r.join("\t")).join("\n");
+
+/** The fields a history entry changed: `field: before → after`, or `field: value` for a new one. */
+export function describeChange(before: Record<string, unknown> | null, after: Record<string, unknown>): string {
+  return Object.keys(after)
+    .map((k) => (before && k in before ? `${k}: ${JSON.stringify(before[k])} → ${JSON.stringify(after[k])}` : `${k}: ${JSON.stringify(after[k])}`))
+    .join("; ");
+}

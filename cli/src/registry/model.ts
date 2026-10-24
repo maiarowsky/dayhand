@@ -70,13 +70,13 @@ export function parseReminder(text: string): Reminder {
 export const checklistOf = (titles: string[]): ChecklistItem[] => titles.map((title) => ({ title }) as ChecklistItem);
 
 /** 1-based item numbers ("2", "1,3", "all") → 0-based indexes into a checklist of `size` items. */
-export function itemIndexes(texts: string[], size: number): number[] {
+export function itemIndexes(texts: string[], size: number, what = "checklist"): number[] {
   const indexes = texts.flatMap((text) =>
     text.split(",").map((part) => {
       const word = part.trim().toLowerCase();
       if (word === "all") return [...Array(size).keys()];
       if (!/^\d{1,3}$/.test(word) || Number(word) < 1 || Number(word) > size) {
-        throw usageError(size === 0 ? "The task has no checklist" : `Not an item number: "${part.trim()}" (1 to ${size})`);
+        throw usageError(size === 0 ? `The task has no ${what}` : `Not an item number: "${part.trim()}" (1 to ${size})`);
       }
       return [Number(word) - 1];
     }),

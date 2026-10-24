@@ -35,7 +35,7 @@ export type HeldCall =
   | { endpoint: string; body: unknown; method?: "PATCH" | "DELETE" };
 
 /** Tools that only read; every other tool (including unknown ones) counts as a change. */
-export const READ_ONLY_TOOLS = new Set(["list_today", "list_all", "board", "get_task", "list_trash", "get_settings", "export_plan"]);
+export const READ_ONLY_TOOLS = new Set(["list_today", "list_all", "board", "get_task", "list_trash", "get_settings", "export_plan", "list_events"]);
 
 type RpcResponse = { result?: any; error?: { code: number; message: string } };
 

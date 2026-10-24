@@ -97,6 +97,19 @@ describe("exit codes", () => {
     expect(many.ref).toBe("999");
   });
 
+  test("6: another agent holds the claim (conflict), or the acceptance criteria are not met (precondition_failed)", async () => {
+    const { userId, key } = await newUser("agent");
+    const other = (await createKey(userId, "other-agent", "agent")).key;
+    await dayhand(key, ["add", "Shared", "--accept", "It works"]);
+    expect((await dayhand(key, ["claim", "1"])).code).toBe(0);
+    const conflict = expectFailure(await dayhand(other, ["claim", "1", "--json"]), 6, "conflict");
+    expect(conflict.message).toContain("claimed by claude-code");
+    expectFailure(await dayhand(other, ["done", "1", "--json"]), 6, "conflict");
+    expectFailure(await dayhand(key, ["done", "1", "--summary", "done", "--json"]), 6, "precondition_failed");
+    expect((await dayhand(key, ["release", "1"])).code).toBe(0);
+    expectFailure(await dayhand(key, ["renew", "1", "--json"]), 6, "precondition_failed");
+  });
+
   test("5: backend unreachable, 5xx, or 429 (rate_limited), with a clientId to retry", async () => {
     const { key } = await newUser();
     const closed = `http://127.0.0.1:${await freePort()}`;

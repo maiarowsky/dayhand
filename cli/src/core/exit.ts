@@ -8,6 +8,8 @@ export const EXIT = {
   auth: 3,
   notFound: 4,
   unavailable: 5,
+  /** The task's state refuses the change for now: another agent's claim, unmet acceptance criteria. */
+  refused: 6,
   interrupted: 130,
 } as const;
 
@@ -22,6 +24,8 @@ export type ErrorCode =
   | "invalid_argument"
   | "not_found"
   | "unauthenticated"
+  | "precondition_failed"
+  | "conflict"
   | "rate_limited"
   | "unavailable"
   | "interrupted"
@@ -33,6 +37,9 @@ const EXIT_BY_CODE: Record<ErrorCode, number> = {
   invalid_argument: EXIT.usage,
   not_found: EXIT.notFound,
   unauthenticated: EXIT.auth,
+  // Nothing was applied; the message says what the task needs first (backend 0.10.0).
+  precondition_failed: EXIT.refused,
+  conflict: EXIT.refused,
   // Too many calls with the key: nothing was applied; wait, then run it again.
   rate_limited: EXIT.unavailable,
   unavailable: EXIT.unavailable,

@@ -15,6 +15,7 @@ const MAX_PAGE = 200;
 export const FILTER_OPTIONS: OptSpec[] = [
   { flags: "--status <statuses>", description: "Only these statuses, comma-separated: todo, doing, done (done implies --done)" },
   { flags: "--overdue", description: "Only overdue tasks" },
+  { flags: "--ready", description: "Only tasks ready to work on: not done, not blocked, every dependency done (backend 0.10.0)" },
   { flags: "--due-before <when>", description: "Only tasks due before this day, e.g. eow, next mon, 2026-11-01" },
   { flags: "--due-after <when>", description: "Only tasks due after this day, e.g. today" },
   { flags: "--search <text>", description: "Only tasks whose title, note, resume note or labels contain the text (any case)" },
@@ -32,7 +33,7 @@ export function parseStatuses(raw: unknown): string[] | undefined {
 }
 
 export const hasFilters = (opts: Opts) =>
-  ["status", "overdue", "dueBefore", "dueAfter", "search", "limit", "cursor"].some((k) => opts[k] !== undefined);
+  ["status", "overdue", "ready", "dueBefore", "dueAfter", "search", "limit", "cursor"].some((k) => opts[k] !== undefined);
 
 export type TaskList = { result: Task[]; total?: number; nextCursor?: string | null };
 
@@ -50,7 +51,7 @@ async function readFilters(ctx: RunContext, opts: Opts): Promise<Filters> {
 
 /** A 0.3 backend rejects list_all arguments it does not know. */
 const oldBackend = (error: unknown) =>
-  error instanceof CliError && error.code === "invalid_argument" && /extra field `(query|status|dueBefore|dueAfter|overdue|limit|cursor)`/.test(error.message);
+  error instanceof CliError && error.code === "invalid_argument" && /extra field `(query|status|dueBefore|dueAfter|overdue|ready|limit|cursor)`/.test(error.message);
 
 /** list_all with the filters applied by the backend; pages are fetched until --limit is reached. */
 async function serverList(ctx: RunContext, base: Record<string, unknown>, filters: Filters, cursor?: string): Promise<TaskList> {
@@ -92,12 +93,13 @@ export async function listTasks(ctx: RunContext, base: Record<string, unknown>, 
   if (!hasFilters(opts)) return tool<TaskList>(ctx, "list_all", base);
   const filters = await readFilters(ctx, opts);
   const cursor = opts.cursor === undefined ? undefined : String(opts.cursor);
-  const server = opts.overdue ? { ...base, overdue: true } : base;
+  const server = { ...base, ...(opts.overdue ? { overdue: true } : {}), ...(opts.ready ? { ready: true } : {}) };
   try {
     return await serverList(ctx, server, filters, cursor);
   } catch (error) {
     if (!oldBackend(error)) throw error;
     if (cursor !== undefined) throw usageError("--cursor needs backend 0.4.0 or later (dayhand version)");
+    if (opts.ready) throw usageError("--ready needs backend 0.10.0 or later (dayhand version)");
     const listed = await tool<TaskList>(ctx, "list_all", base);
     return { ...listed, result: localFilter(filters, opts)(listed.result ?? []) };
   }

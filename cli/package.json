@@ -1,6 +1,6 @@
 {
   "name": "dayhand",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "description": "dayhand: the Dayhand command line client for people and agents",
   "license": "Apache-2.0",

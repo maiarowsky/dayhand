@@ -7,6 +7,7 @@ import { eachRef, oneOrMany, tool, userTimezone } from "./ops.js";
 import { checklistOf, editChecklist, REMINDER_OPTIONS, remindersInput, REPEAT_OPTIONS, repeatInput } from "./model.js";
 import { parseLink, resolveRef } from "./parse.js";
 import type { CommandSpec, OptSpec, Opts, RunContext } from "./types.js";
+import { criteriaOf, PROOF_OPTIONS, proofInput } from "./work.js";
 
 const REF = { name: "ref", description: "Task: #42 or 42 (its number), now, or its id", required: true };
 const REFS = { name: "refs", description: "Tasks: #42 or 42, now, or ids", required: true, variadic: true };
@@ -16,6 +17,23 @@ const SCHEDULE_OPTIONS: OptSpec[] = [
   { flags: "--time <HH:MM>", description: "Due time, 24h, in your time zone" },
   ...REPEAT_OPTIONS,
 ];
+
+// Agent work fields (backend 0.10.0): what done means, how, and what has to happen first.
+const WORK_OPTIONS: OptSpec[] = [
+  { flags: "--accept <text>", description: "Acceptance criterion: what done means (repeatable, in order)", kind: "list" },
+  { flags: "--plan <text>", description: "How the work will be done" },
+  { flags: "--depends-on <ref>", description: "A task that must be done first (repeatable)", kind: "list" },
+  { flags: "--blocked <reason>", description: "Why the task cannot go on; a blocked task is not ready" },
+];
+
+/** --accept, --plan, --depends-on and --blocked as tool arguments. */
+async function workArgs(ctx: RunContext, opts: Opts, input: Record<string, unknown>) {
+  if ((opts.accept as string[]).length) input.acceptance = criteriaOf(opts.accept as string[]);
+  if (opts.plan !== undefined) input.plan = opts.plan;
+  if (opts.blocked !== undefined) input.blockedReason = opts.blocked;
+  const depends = opts.dependsOn as string[];
+  if (depends.length) input.dependsOn = await Promise.all(depends.map((ref) => resolveRef(ctx, ref)));
+}
 
 type TaskPair = { task: Task; next: Task | null };
 
@@ -74,6 +92,7 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--link <url>", description: 'Link, optionally followed by a title: "https://… Title" (repeatable)', kind: "list" },
       { flags: "--item <text>", description: "Checklist item (repeatable, in order)", kind: "list" },
       ...REMINDER_OPTIONS,
+      ...WORK_OPTIONS,
     ],
     tools: ["add_task"],
     fields: "task",
@@ -85,6 +104,7 @@ export const taskCommands: CommandSpec[] = [
       "dayhand add Water plants --every day --interval 3 --from-completion",
       "dayhand add Pack --due fri --item passport --item charger",
       "dayhand add Buy a present --no-due --json",
+      'dayhand add "Ship the export" --no-due --accept "CSV opens in a spreadsheet" --plan "write, then test" --depends-on 41',
     ],
     run: async (ctx, args, opts) => {
       const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId() };
@@ -97,6 +117,7 @@ export const taskCommands: CommandSpec[] = [
       if ((opts.item as string[]).length) input.checklist = checklistOf(opts.item as string[]);
       const reminders = remindersInput(opts);
       if (reminders) input.reminders = reminders;
+      await workArgs(ctx, opts, input);
       const task = await tool<Task>(ctx, "add_task", input);
       return { value: task, view: { kind: "task", verb: "Added", task } };
     },
@@ -120,6 +141,7 @@ export const taskCommands: CommandSpec[] = [
       'dayhand list --due-before eow --search accountant --limit 20',
       "dayhand list --limit 50 --cursor <nextCursor> --json",
       "dayhand list --done --json --fields ref,title,status",
+      "dayhand list --ready --json",
     ],
     run: async (ctx, _args, opts) => {
       const statuses = parseStatuses(opts.status);
@@ -183,6 +205,14 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--clear-checklist", description: "Remove the checklist" },
       ...REMINDER_OPTIONS,
       { flags: "--default-reminders", description: "Back to the default reminders from settings" },
+      { ...WORK_OPTIONS[0]!, description: "Replace the acceptance criteria (repeatable; dayhand criteria edits single ones)" },
+      { flags: "--clear-acceptance", description: "Remove the acceptance criteria" },
+      WORK_OPTIONS[1]!,
+      { flags: "--clear-plan", description: "Remove the plan" },
+      { ...WORK_OPTIONS[2]!, description: "Replace the dependencies: a task that must be done first (repeatable)" },
+      { flags: "--clear-depends", description: "Remove all dependencies" },
+      WORK_OPTIONS[3]!,
+      { flags: "--unblock", description: "Remove the blocked reason" },
     ],
     tools: ["update_task"],
     fields: "task",
@@ -193,6 +223,8 @@ export const taskCommands: CommandSpec[] = [
       'dayhand edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"',
       "dayhand edit 42 --remind 15m --remind 1d",
       "dayhand edit 42 --clear-repeat",
+      'dayhand edit 42 --blocked "waiting for the client\'s brief"',
+      "dayhand edit 42 --depends-on 40 --depends-on 41",
       "dayhand edit 42",
     ],
     run: async (ctx, args, opts) => {
@@ -287,14 +319,23 @@ export const taskCommands: CommandSpec[] = [
   {
     name: "done",
     schema: "complete.schema.json",
-    summary: "Mark tasks done; a repeating task gets its next occurrence",
+    summary: "Mark tasks done, optionally with proof; a repeating task gets its next occurrence",
+    description:
+      "An agent completing a task with acceptance criteria needs every criterion met (dayhand criteria) and --summary; otherwise it fails with precondition_failed (exit 6).",
     args: [REFS],
+    options: PROOF_OPTIONS,
     tools: ["complete_task"],
     fields: "task",
-    examples: ["dayhand done 42", "dayhand done 42 43 now", "dayhand done 1 2 3 --yes --client-id 7f3c"],
-    run: async (ctx, args) => {
+    examples: [
+      "dayhand done 42",
+      "dayhand done 42 43 now",
+      "dayhand done 1 2 3 --yes --client-id 7f3c",
+      'dayhand done 42 --summary "Export shipped" --check "unit tests=pass https://ci.example/run/7" --proof-link "https://example.com/pr/7 PR"',
+    ],
+    run: async (ctx, args, opts) => {
+      const proof = proofInput(opts);
       const results = await eachRef(ctx, args.refs as string[], "complete", (taskId, clientId) =>
-        tool<TaskPair>(ctx, "complete_task", { taskId, clientId }),
+        tool<TaskPair>(ctx, "complete_task", proof ? { taskId, proof, clientId } : { taskId, clientId }),
       );
       if (results.length === 1) return { value: results[0], view: { kind: "task", verb: "Done", ...results[0]! } };
       const tasks = results.flatMap((r) => (r.next ? [r.task, r.next] : [r.task]));
@@ -393,7 +434,17 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
   const input: Record<string, unknown> = {};
   copy(opts, input, { title: "title", note: "note", time: "dueTime", resumeNote: "resumeNote" });
   if (opts.due !== undefined) await applyDue(ctx, input, opts.due as string, opts);
-  const clears: Record<string, string> = { clearNote: "note", clearDue: "dueDate", clearTime: "dueTime", clearRepeat: "repeat", clearResumeNote: "resumeNote" };
+  await workArgs(ctx, opts, input);
+  const clears: Record<string, string> = {
+    clearNote: "note",
+    clearDue: "dueDate",
+    clearTime: "dueTime",
+    clearRepeat: "repeat",
+    clearResumeNote: "resumeNote",
+    clearAcceptance: "acceptance",
+    clearPlan: "plan",
+    unblock: "blockedReason",
+  };
   for (const [flag, field] of Object.entries(clears)) {
     if (!opts[flag]) continue;
     if (input[field] !== undefined) throw usageError(`--${kebab(flag)} cannot be combined with a new value for it`);
@@ -420,6 +471,10 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
   if (added.length || removed.length) {
     const current = (await tool<Detail>(ctx, "get_task", { taskId })).task.labels;
     input.labels = [...new Set([...current, ...added])].filter((l) => !removed.includes(l));
+  }
+  if (opts.clearDepends) {
+    if (input.dependsOn !== undefined) throw usageError("--depends-on cannot be combined with --clear-depends");
+    input.dependsOn = [];
   }
   const links = opts.link as string[];
   if (links.length && opts.clearLinks) throw usageError("--link cannot be combined with --clear-links");
