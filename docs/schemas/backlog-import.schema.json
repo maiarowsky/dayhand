@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/backlog-import.schema.json",
+  "title": "Backlog.md import",
+  "description": "import_backlog (dayhand backlog import): what importing Backlog.md task files did, or with dryRun what it would do (since 0.12.0). Fields may be added.",
+  "type": "object",
+  "required": [
+    "format",
+    "dryRun",
+    "files",
+    "created",
+    "tasks",
+    "skipped",
+    "failed",
+    "warnings"
+  ],
+  "properties": {
+    "format": {
+      "const": "backlog-md"
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "true: nothing was stored; numbers and ids are not reserved"
+    },
+    "files": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Files given"
+    },
+    "created": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Tasks created (or that would be)"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "$ref": "task.schema.json"
+      },
+      "description": "The tasks created, dependencies first"
+    },
+    "skipped": {
+      "type": "array",
+      "description": "Files not imported and why: imported before (with the task), not a task file, a draft archived, a document, a decision, a milestone, an id given twice",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "reason"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string",
+            "description": "The Backlog.md id"
+          },
+          "title": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string",
+            "description": "The task an earlier import made"
+          },
+          "ref": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "failed": {
+      "type": "array",
+      "description": "Task files that failed add_task's checks, with the reason",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "title",
+          "message"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "What could not be carried over: header keys without a Dayhand field, statuses read by their words, dependencies not found",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "message"
+        ],
+        "properties": {
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The file, or null for the whole import"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

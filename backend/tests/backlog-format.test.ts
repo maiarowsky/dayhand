@@ -1,0 +1,205 @@
+// The Backlog.md file format without a backend: the YAML header, the sections,
+// places in the folder and the nearest status. The files are written here for
+// the tests (docs/backlog-md.md describes the format).
+import { describe, expect, test } from "vitest";
+import { placeOf, readDate, readTask, slugOf, statusesOf, statusFor, writeTask, type TaskFile } from "../convex/lib/backlogMd";
+import { FrontmatterError, parseFrontmatter, splitFrontmatter, writeFrontmatter, yamlScalar } from "../convex/lib/frontmatter";
+
+const TASK = `---
+id: TASK-7
+title: "Sort the receipts: Q3"
+status: In Progress
+assignee:
+  - '@sam'
+created_date: '2026-10-01 09:15'
+updated_date: 2026-10-20T08:00:00Z
+labels: [finance, 'q3, late']
+dependencies:
+  - TASK-2
+  - task-3 # the scanner
+priority: high
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Scan the paper receipts and file them by month.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [x] #1 Every receipt from July is scanned
+- [ ] #2 The folder has one file per month
+<!-- AC:END -->
+
+## Definition of Done
+<!-- DOD:BEGIN -->
+- [ ] #1 The accountant has the link
+<!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Scan
+2. Rename
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+July done, the scanner jams on thin paper.
+
+\`\`\`
+## not a heading inside a code block
+\`\`\`
+<!-- SECTION:NOTES:END -->
+`;
+
+describe("the YAML header", () => {
+  test("scalars, quotes, flow and block lists, comments and block text", () => {
+    const { front, body } = splitFrontmatter(TASK);
+    expect(body.startsWith("\n## Description")).toBe(true);
+    const header = parseFrontmatter(front!);
+    expect(header).toMatchObject({
+      id: "TASK-7",
+      title: "Sort the receipts: Q3",
+      status: "In Progress",
+      assignee: ["@sam"],
+      created_date: "2026-10-01 09:15",
+      labels: ["finance", "q3, late"],
+      dependencies: ["TASK-2", "task-3"],
+      priority: "high",
+    });
+    expect(parseFrontmatter("note: |\n  line one\n  line two\nempty:\nlist: []\nq: 'it''s'\n")).toEqual({
+      note: "line one\nline two",
+      empty: null,
+      list: [],
+      q: "it's",
+    });
+    expect(parseFrontmatter('title: "a \\"b\\" \\u00e9"\nfold: >\n  one\n  two\n')).toEqual({ title: 'a "b" é', fold: "one two" });
+  });
+
+  test("a broken header is an error, a file without one has none", () => {
+    expect(splitFrontmatter("# Just notes\n").front).toBeNull();
+    expect(() => splitFrontmatter("---\ntitle: x\n")).toThrow(FrontmatterError);
+    expect(() => parseFrontmatter("  indented: x\n")).toThrow(FrontmatterError);
+  });
+
+  test("written values read back as the same text", () => {
+    const values = ["To Do", "Sort the receipts: Q3", "it's", "@sam", "123", "true", "", " padded ", "- dash", "#hash", "https://example.com/a?b=c"];
+    const header = writeFrontmatter([["list", values], ["one", "plain-value"], ["none", []]]);
+    expect(parseFrontmatter(splitFrontmatter(`${header}\n`).front!)).toEqual({ list: values, one: "plain-value", none: [] });
+    expect(yamlScalar("plain")).toBe("plain");
+    expect(yamlScalar("yes")).toBe("'yes'");
+  });
+});
+
+describe("task files", () => {
+  test("a task file: header, criteria from both lists, plan and the other sections", () => {
+    const task = readTask({ path: "backlog/tasks/task-7 - Sort-the-receipts.md", content: TASK });
+    expect(task).toMatchObject({
+      place: "task",
+      id: "TASK-7",
+      ref: "TASK-7",
+      title: "Sort the receipts: Q3",
+      status: "In Progress",
+      labels: ["finance", "q3, late"],
+      dependencies: ["TASK-2", "task-3"],
+      description: "Scan the paper receipts and file them by month.",
+      acceptance: [
+        { text: "Every receipt from July is scanned", met: true },
+        { text: "The folder has one file per month", met: false },
+        { text: "The accountant has the link", met: false },
+      ],
+      plan: "1. Scan\n2. Rename",
+      updated: "2026-10-20T08:00:00Z",
+      dropped: ["assignee", "priority"],
+    });
+    expect(task.extra).toEqual(["## Implementation Notes\n\nJuly done, the scanner jams on thin paper.\n\n```\n## not a heading inside a code block\n```"]);
+  });
+
+  test("files without a header or a title are not tasks; a file without an id is known by its path", () => {
+    expect(() => readTask({ path: "tasks/readme.md", content: "# Tasks\n" })).toThrow(/no YAML header/);
+    expect(() => readTask({ path: "tasks/x.md", content: "---\nstatus: To Do\n---\n" })).toThrow(/no title/);
+    const loose = readTask({ path: "tasks/loose.md", content: "---\ntitle: Loose\n---\nJust text before any heading.\n" });
+    expect(loose).toMatchObject({ ref: "tasks/loose.md", description: "Just text before any heading.", id: undefined });
+  });
+
+  test("the folder decides what a file is", () => {
+    expect(placeOf("backlog/tasks/task-1 - a.md")).toBe("task");
+    expect(placeOf("completed/task-1 - a.md")).toBe("completed");
+    expect(placeOf("drafts/draft-1 - a.md")).toBe("draft");
+    expect(placeOf("archive/tasks/task-1 - a.md")).toBe("archived");
+    expect(placeOf("archive/drafts/draft-1 - a.md")).toBe("archived-draft");
+    expect(placeOf("docs/doc-1 - a.md")).toBe("doc");
+    expect(placeOf("decisions/decision-1 - a.md")).toBe("decision");
+    expect(placeOf("milestones/m-1 - a.md")).toBe("milestone");
+    expect(placeOf("backlog/config.yml")).toBe("config");
+    expect(placeOf("task-1 - loose.md")).toBe("task");
+  });
+});
+
+describe("statuses and dates", () => {
+  test("first is todo, last is done, between is doing; others by their words", () => {
+    const statuses = statusesOf('statuses: ["Backlog", "Doing", "Review", "Shipped"]\ndefault_status: Backlog\n');
+    expect(statuses).toEqual(["Backlog", "Doing", "Review", "Shipped"]);
+    expect(statusFor("backlog", statuses)).toEqual({ status: "todo", guessed: false });
+    expect(statusFor("Review", statuses)).toEqual({ status: "doing", guessed: false });
+    expect(statusFor("Shipped", statuses)).toEqual({ status: "done", guessed: false });
+    expect(statusFor("Done", statuses)).toEqual({ status: "done", guessed: true });
+    expect(statusFor("Waiting on legal", statuses)).toEqual({ status: "todo", guessed: true });
+    expect(statusFor(undefined, statuses)).toEqual({ status: "todo", guessed: false });
+    expect(statusesOf("project_name: x\n")).toEqual(["To Do", "In Progress", "Done"]);
+  });
+
+  test("dates with a zone, and local dates in the user's time zone", () => {
+    expect(readDate("2026-10-20T08:00:00Z", "Europe/Warsaw")).toBe(Date.parse("2026-10-20T08:00:00Z"));
+    expect(readDate("2026-10-20 10:00", "Europe/Warsaw")).toBe(Date.parse("2026-10-20T08:00:00Z"));
+    expect(readDate("2026-10-20", "UTC")).toBe(Date.parse("2026-10-20T00:00:00Z"));
+    expect(readDate("someday", "UTC")).toBeNull();
+  });
+});
+
+describe("writing", () => {
+  const file: TaskFile = {
+    id: "TASK-12",
+    place: "task",
+    title: "Renew the domain / DNS",
+    status: "In Progress",
+    labels: ["ops"],
+    dependencies: ["TASK-3"],
+    references: ["https://registrar.example.com/renew"],
+    created: "2026-10-01 09:00",
+    updated: "2026-10-02 10:30",
+    description: "Before it lapses.",
+    acceptance: [{ text: "Paid until 2027", met: true }, { text: "DNS still resolves", met: false }],
+    plan: "Pay, then check.",
+    notes: "Resume: invoice saved",
+  };
+
+  test("a written file reads back with the same fields", () => {
+    const written = writeTask(file);
+    expect(written.path).toBe("tasks/task-12 - Renew-the-domain-DNS.md");
+    expect(written.content).toContain("<!-- AC:BEGIN -->\n- [x] #1 Paid until 2027\n- [ ] #2 DNS still resolves\n<!-- AC:END -->");
+    const back = readTask(written);
+    expect(back).toMatchObject({
+      id: "TASK-12",
+      title: file.title,
+      status: "In Progress",
+      labels: ["ops"],
+      dependencies: ["TASK-3"],
+      references: file.references,
+      description: "Before it lapses.",
+      acceptance: file.acceptance,
+      plan: "Pay, then check.",
+      extra: ["## Implementation Notes\n\nResume: invoice saved"],
+      dropped: [],
+    });
+  });
+
+  test("file names keep letters of any script and drop what a file system refuses", () => {
+    expect(slugOf("Zażółć: gęślą/jaźń?")).toBe("Zażółć-gęślą-jaźń");
+    expect(slugOf("***")).toBe("task");
+    expect(slugOf("a".repeat(200))).toHaveLength(80);
+  });
+});

@@ -64,6 +64,9 @@ for an agent key, `cli` for a CLI key.
 | `POST /agents/pause` | `pause_agents` (`{ "paused": true, "reason": "…" }`; the owner) | write |
 | `POST /agents/policies` | `set_tool_policy` (`{ "apiKeyId": "…", "toolName": "delete_task", "rule": "deny" }`; the owner) | write |
 | `GET /health` | `plan_health` (query parameter `at`) | read |
+| `GET /brief` | `agent_brief` (query parameter `at`): Today plus claims, approvals, ready tasks and next steps | read |
+| `POST /import/backlog` | `import_backlog` (`{ "files": [{ "path": "tasks/task-1 - x.md", "content": "…" }] }`; `?dryRun=true` stores nothing; [backlog-md.md](backlog-md.md)) | write |
+| `GET /export/backlog` | `export_backlog` (query parameters `prefix`, `includeArchived`) | read |
 | `GET /events` | `list_events` (query parameters `since`, `by`, `taskId`, `limit`): the activity log ([agent-work.md](agent-work.md)) | read |
 | `GET /today` | `list_today` | read |
 | `GET /board` | `board` | read |

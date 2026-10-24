@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/backlog-export.schema.json",
+  "title": "Backlog.md export",
+  "description": "export_backlog (dayhand backlog export): the plan as Backlog.md task files to write into a backlog folder (since 0.12.0). Fields may be added.",
+  "type": "object",
+  "required": [
+    "format",
+    "prefix",
+    "total",
+    "config",
+    "files",
+    "notes"
+  ],
+  "properties": {
+    "format": {
+      "const": "backlog-md"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "ID prefix of tasks that did not come from Backlog.md"
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Task files"
+    },
+    "config": {
+      "type": "object",
+      "required": [
+        "path",
+        "content"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative to the backlog folder"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "description": "config.yml with the statuses To Do, In Progress and Done"
+    },
+    "files": {
+      "type": "array",
+      "description": "One file per task: tasks/, drafts/ (proposals) or archive/tasks/ (archived)",
+      "items": {
+        "allOf": [
+          {
+            "type": "object",
+            "required": [
+              "path",
+              "content"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative to the backlog folder"
+              },
+              "content": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "id",
+              "taskId",
+              "ref"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The Backlog.md id, e.g. TASK-12"
+              },
+              "taskId": {
+                "type": "string"
+              },
+              "ref": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "What Backlog.md has no place for (due dates, repeat rules, reminders) and dependencies left out"
+    }
+  }
+}

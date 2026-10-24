@@ -2,6 +2,443 @@
 // Run `npm run schemas` after changing a schema there.
 
 export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
+  "agent-brief": {
+    "title": "Agent brief",
+    "description": "agent_brief (dayhand prime --json): list_today plus what an agent needs at the start of a session (since 0.12.0). Sections count every item and list the first 10. Fields may be added.",
+    "allOf": [
+      {
+        "$ref": "#/$defs/today"
+      },
+      {
+        "type": "object",
+        "required": [
+          "at",
+          "caller",
+          "agentsPaused",
+          "pausedReason",
+          "policies",
+          "claims",
+          "approvals",
+          "ready",
+          "nextSteps"
+        ],
+        "properties": {
+          "at": {
+            "type": "number",
+            "description": "As of, Unix time in milliseconds"
+          },
+          "caller": {
+            "type": "object",
+            "required": [
+              "type",
+              "name"
+            ],
+            "description": "Who asked: the actor and the name of the key or connection",
+            "properties": {
+              "type": {
+                "enum": [
+                  "app",
+                  "cli",
+                  "agent"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "agentsPaused": {
+            "type": "boolean",
+            "description": "true: the owner paused all agents; their changes are refused with agents_paused"
+          },
+          "pausedReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "policies": {
+            "type": "array",
+            "description": "The owner's rules for the caller's own API key other than allow",
+            "items": {
+              "type": "object",
+              "required": [
+                "tool",
+                "rule"
+              ],
+              "properties": {
+                "tool": {
+                  "type": "string",
+                  "description": "A write tool, or \"*\""
+                },
+                "rule": {
+                  "enum": [
+                    "allow",
+                    "ask",
+                    "deny"
+                  ]
+                }
+              }
+            }
+          },
+          "claims": {
+            "type": "object",
+            "required": [
+              "active",
+              "expired"
+            ],
+            "properties": {
+              "active": {
+                "type": "object",
+                "required": [
+                  "count",
+                  "items"
+                ],
+                "description": "Claims in force, the soonest to end first",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "How many in all"
+                  },
+                  "items": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "description": "The first 10",
+                    "items": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/task-brief"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "claimedBy",
+                            "claimExpiresAt",
+                            "mine"
+                          ],
+                          "properties": {
+                            "claimedBy": {
+                              "type": "string",
+                              "description": "Name of the API key or agent connection holding the claim"
+                            },
+                            "claimExpiresAt": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "When the claim ends, Unix time in milliseconds"
+                            },
+                            "mine": {
+                              "type": "boolean",
+                              "description": "true: the caller holds it"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "expired": {
+                "type": "object",
+                "required": [
+                  "count",
+                  "items"
+                ],
+                "description": "Claims that ran out on tasks not done; anyone may claim those tasks",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "How many in all"
+                  },
+                  "items": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "description": "The first 10",
+                    "items": {
+                      "allOf": [
+                        {
+                          "$ref": "#/$defs/task-brief"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "claimedBy",
+                            "claimExpiresAt",
+                            "mine"
+                          ],
+                          "properties": {
+                            "claimedBy": {
+                              "type": "string",
+                              "description": "Name of the API key or agent connection holding the claim"
+                            },
+                            "claimExpiresAt": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "description": "When the claim ends, Unix time in milliseconds"
+                            },
+                            "mine": {
+                              "type": "boolean",
+                              "description": "true: the caller holds it"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "approvals": {
+            "type": "object",
+            "required": [
+              "pending",
+              "decided"
+            ],
+            "properties": {
+              "pending": {
+                "type": "object",
+                "required": [
+                  "count",
+                  "items"
+                ],
+                "description": "Approval requests waiting for the owner, the soonest to expire first",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "How many in all"
+                  },
+                  "items": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "description": "The first 10",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "action",
+                        "taskId",
+                        "ref",
+                        "expiresAt",
+                        "requestedBy",
+                        "mine",
+                        "decision"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Approval request id (get_approval)"
+                        },
+                        "action": {
+                          "type": "string"
+                        },
+                        "taskId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "ref": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "type": "number",
+                          "description": "Unix time in milliseconds"
+                        },
+                        "requestedBy": {
+                          "type": "string",
+                          "description": "Name of the key or connection that asked"
+                        },
+                        "mine": {
+                          "type": "boolean",
+                          "description": "true: the caller asked"
+                        },
+                        "decision": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "optionId",
+                                "label",
+                                "note",
+                                "decidedAt"
+                              ],
+                              "properties": {
+                                "optionId": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "decidedAt": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "decided": {
+                "type": "object",
+                "required": [
+                  "count",
+                  "items"
+                ],
+                "description": "The caller's requests the owner decided in the last 24 hours, newest first",
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "How many in all"
+                  },
+                  "items": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "description": "The first 10",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "action",
+                        "taskId",
+                        "ref",
+                        "expiresAt",
+                        "requestedBy",
+                        "mine",
+                        "decision"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Approval request id (get_approval)"
+                        },
+                        "action": {
+                          "type": "string"
+                        },
+                        "taskId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "ref": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "expiresAt": {
+                          "type": "number",
+                          "description": "Unix time in milliseconds"
+                        },
+                        "requestedBy": {
+                          "type": "string",
+                          "description": "Name of the key or connection that asked"
+                        },
+                        "mine": {
+                          "type": "boolean",
+                          "description": "true: the caller asked"
+                        },
+                        "decision": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "optionId",
+                                "label",
+                                "note",
+                                "decidedAt"
+                              ],
+                              "properties": {
+                                "optionId": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "decidedAt": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ready": {
+            "type": "object",
+            "required": [
+              "count",
+              "items"
+            ],
+            "description": "Tasks ready to work on (not done, not blocked, every dependency done) that no other agent holds, the soonest due first",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "How many in all"
+              },
+              "items": {
+                "type": "array",
+                "maxItems": 10,
+                "description": "The first 10",
+                "items": {
+                  "$ref": "#/$defs/task-brief"
+                }
+              }
+            }
+          },
+          "nextSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What to do next, most pressing first, as sentences naming the tools to use"
+          }
+        }
+      }
+    ],
+    "type": "object"
+  },
   "agent-controls": {
     "title": "Agent controls",
     "description": "get_agent_controls, pause_agents, set_tool_policy (dayhand agents, dayhand policy): whether the owner paused every agent, and the tool policies of agent keys (since 0.11.0).",
@@ -437,6 +874,230 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "type": "array",
         "items": {
           "$ref": "#/$defs/approval"
+        }
+      }
+    }
+  },
+  "backlog-export": {
+    "title": "Backlog.md export",
+    "description": "export_backlog (dayhand backlog export): the plan as Backlog.md task files to write into a backlog folder (since 0.12.0). Fields may be added.",
+    "type": "object",
+    "required": [
+      "format",
+      "prefix",
+      "total",
+      "config",
+      "files",
+      "notes"
+    ],
+    "properties": {
+      "format": {
+        "const": "backlog-md"
+      },
+      "prefix": {
+        "type": "string",
+        "description": "ID prefix of tasks that did not come from Backlog.md"
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Task files"
+      },
+      "config": {
+        "type": "object",
+        "required": [
+          "path",
+          "content"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative to the backlog folder"
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "description": "config.yml with the statuses To Do, In Progress and Done"
+      },
+      "files": {
+        "type": "array",
+        "description": "One file per task: tasks/, drafts/ (proposals) or archive/tasks/ (archived)",
+        "items": {
+          "allOf": [
+            {
+              "type": "object",
+              "required": [
+                "path",
+                "content"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Relative to the backlog folder"
+                },
+                "content": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": [
+                "id",
+                "taskId",
+                "ref"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The Backlog.md id, e.g. TASK-12"
+                },
+                "taskId": {
+                  "type": "string"
+                },
+                "ref": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "What Backlog.md has no place for (due dates, repeat rules, reminders) and dependencies left out"
+      }
+    }
+  },
+  "backlog-import": {
+    "title": "Backlog.md import",
+    "description": "import_backlog (dayhand backlog import): what importing Backlog.md task files did, or with dryRun what it would do (since 0.12.0). Fields may be added.",
+    "type": "object",
+    "required": [
+      "format",
+      "dryRun",
+      "files",
+      "created",
+      "tasks",
+      "skipped",
+      "failed",
+      "warnings"
+    ],
+    "properties": {
+      "format": {
+        "const": "backlog-md"
+      },
+      "dryRun": {
+        "type": "boolean",
+        "description": "true: nothing was stored; numbers and ids are not reserved"
+      },
+      "files": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Files given"
+      },
+      "created": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Tasks created (or that would be)"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/task"
+        },
+        "description": "The tasks created, dependencies first"
+      },
+      "skipped": {
+        "type": "array",
+        "description": "Files not imported and why: imported before (with the task), not a task file, a draft archived, a document, a decision, a milestone, an id given twice",
+        "items": {
+          "type": "object",
+          "required": [
+            "path",
+            "reason"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string",
+              "description": "The Backlog.md id"
+            },
+            "title": {
+              "type": "string"
+            },
+            "taskId": {
+              "type": "string",
+              "description": "The task an earlier import made"
+            },
+            "ref": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "failed": {
+        "type": "array",
+        "description": "Task files that failed add_task's checks, with the reason",
+        "items": {
+          "type": "object",
+          "required": [
+            "path",
+            "title",
+            "message"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "warnings": {
+        "type": "array",
+        "description": "What could not be carried over: header keys without a Dayhand field, statuses read by their words, dependencies not found",
+        "items": {
+          "type": "object",
+          "required": [
+            "path",
+            "message"
+          ],
+          "properties": {
+            "path": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The file, or null for the whole import"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
         }
       }
     }

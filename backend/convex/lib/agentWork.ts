@@ -161,7 +161,8 @@ function holderOf(identity: Identity): ClaimHolder {
   return fail("invalid_argument", "Only an API key or an agent connection can claim a task");
 }
 
-const sameHolder = (a: ClaimHolder | undefined, identity: Identity) =>
+/** Whether the caller (its API key or agent connection) is the holder. */
+export const sameHolder = (a: ClaimHolder | undefined, identity: Pick<Identity, "keyId" | "connectionId">) =>
   a !== undefined && ((a.keyId !== undefined && a.keyId === identity.keyId) || (a.connectionId !== undefined && a.connectionId === identity.connectionId));
 
 /** The live claim of someone other than the caller, if any. */

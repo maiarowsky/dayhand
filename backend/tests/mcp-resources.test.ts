@@ -9,7 +9,14 @@ describe("MCP resources", () => {
     const client = await mcpClient(await createKey(newUserId()));
     expect(client.getServerCapabilities()).toMatchObject({ tools: {}, resources: {}, prompts: {} });
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual(["dayhand://today", "dayhand://activity", "dayhand://guide"]);
+    expect(resources.map((r) => r.uri)).toEqual([
+      "dayhand://today",
+      "dayhand://activity",
+      "dayhand://guide",
+      "dayhand://workflow/intake",
+      "dayhand://workflow/execution",
+      "dayhand://workflow/finalization",
+    ]);
     const { resourceTemplates } = await client.listResourceTemplates();
     expect(resourceTemplates).toEqual([
       expect.objectContaining({ uriTemplate: "dayhand://activity{?since}", mimeType: "application/json" }),

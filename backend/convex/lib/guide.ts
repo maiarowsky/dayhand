@@ -1,14 +1,15 @@
-// The dayhand://guide resource and the server instructions: how an agent should
-// work with the user's plan. Keep in step with docs/mcp.md.
+// The dayhand://guide resource, the phase guides dayhand://workflow/* and the
+// server instructions: how an agent should work with the user's plan. Keep in
+// step with docs/mcp.md and docs/agent-work.md.
 import { CALL_LIMITS } from "../callLimits";
 
 export const INSTRUCTIONS =
-  'Dayhand is the user\'s personal task list and day plan. Start with list_today (or read dayhand://today). Refer to a task by its id or its number as "#42". ' +
+  'Dayhand is the user\'s personal task list and day plan. Start with agent_brief (or list_today, dayhand://today). Refer to a task by its id or its number as "#42". ' +
   "Find tasks with list_all (query, status, labels, dueBefore/dueAfter, overdue, limit/cursor) instead of reading the whole plan. " +
   "Pass a clientId with changes you might retry, and dryRun: true to preview a change. " +
   "After a pause, call list_events with the nextCursor you kept to see only what changed. Before working on a task, claim_task it; complete it with proof. " +
   "Ask the owner with request_approval before anything risky; plan_health shows what needs a look. " +
-  "Read dayhand://guide for the full rules.";
+  "Read dayhand://guide for the full rules and dayhand://workflow/intake, /execution and /finalization for each phase of a task.";
 
 export const AGENT_GUIDE = `# Working with Dayhand
 
@@ -31,7 +32,9 @@ their API key; every change you make is recorded in the task's history as
 
 ## Reading
 
-- Start with \`list_today\` (or the resource \`dayhand://today\`).
+- Start a session with \`agent_brief\`: Today plus the claims in force,
+  approvals waiting, the tasks ready to work on and your next steps. Or
+  \`list_today\` (the resource \`dayhand://today\`) for Today alone.
 - Look tasks up with \`list_all\`: \`query\` searches titles, notes, resume
   notes and labels; \`status\`, \`labels\`, \`dueBefore\`, \`dueAfter\` and
   \`overdue\` narrow the list; \`limit\` and \`cursor\` page through it.
@@ -107,9 +110,174 @@ their API key; every change you make is recorded in the task's history as
   (wait \`retryAfterMs\`, then retry) or \`internal\`.
 - Each key may make ${CALL_LIMITS.read} reads and ${CALL_LIMITS.write} changes a minute.
 
+## Phases of a task
+
+Three resources walk through one task from start to end:
+\`dayhand://workflow/intake\` (writing a task down so that done can be
+checked), \`dayhand://workflow/execution\` (working on it under a claim)
+and \`dayhand://workflow/finalization\` (closing it with proof, or handing
+it back).
+
+## Moving plans
+
+\`import_backlog\` reads task files in the Backlog.md format (Markdown with a
+YAML header) and \`export_backlog\` writes the plan as such files. A file
+imported before is skipped, so importing a folder again brings only what is
+new.
+
 ## Routines
 
 The prompts \`plan_day\`, \`weekly_review\`, \`triage_overdue\` and
 \`plan_health\` start the four routines: planning today, reviewing the week,
 deciding what happens to overdue tasks, and checking what needs a look.
 `;
+
+export const WORKFLOW_INTAKE = `# Intake: writing a task down
+
+Use this when you add a task, or pick up one that is only a title. The goal is
+a task another agent could finish without asking you, and whose end the owner
+can check.
+
+## 1. Is it already there?
+
+- Search before adding: \`list_all\` with \`query\` (a few words of the
+  title) and, for work from outside, the same \`source\` you would give.
+- One \`source\` (\`{kind, ref, url}\`) makes one task: adding it again
+  returns the task it made the first time, even if the owner rejected it.
+
+## 2. Asked for, or your idea?
+
+- Work the owner asked for: \`add_task\`.
+- Work nobody asked for (an alert, an issue you noticed, a follow-up you
+  think is needed): \`add_task\` with \`proposal: true\` and a
+  \`source\`. It waits in the owner's inbox until they accept, merge or
+  reject it; you cannot claim or complete it before that.
+
+## 3. Write down what done means
+
+- \`acceptance\`: two to five criteria, each one a statement someone can
+  check by looking (a test passes, a page shows X, a file exists), not a
+  step. They get ids \`a1\`, \`a2\`, … that stay put when you edit them.
+- \`plan\`: how you will get there, in a few lines; write it right before
+  you start, so it reflects what is true then.
+- \`checklist\`: the steps, if they help; criteria are the test, the
+  checklist is the way.
+- \`dependsOn\`: the tasks that must be done first (\`"#42"\`). A cycle
+  is refused. \`blockedReason\`: why it cannot start, in words.
+- A due day only if the owner gave one. Do not invent deadlines.
+
+## 4. Check before you save
+
+- \`dryRun: true\` shows the task as it would be stored. Pass a
+  \`clientId\` so a retry never adds it twice.
+- Adding many tasks at once (more than three): show the owner the list
+  first and wait for a yes.
+- Moving a whole Backlog.md folder in: \`import_backlog\` with
+  \`dryRun: true\` first; it reports what it would skip and why.
+
+Next: \`dayhand://workflow/execution\`.
+`;
+
+export const WORKFLOW_EXECUTION = `# Execution: working on a task
+
+Use this from the moment you choose a task until you stop working on it.
+
+## 1. Choose
+
+- \`agent_brief\` shows your claims, approvals waiting for the owner and
+  the first tasks ready to work on. \`list_all\` with \`ready: true\`
+  gives all of them: not done, not blocked, every dependency done.
+- Take one task at a time. A task without acceptance criteria goes back to
+  \`dayhand://workflow/intake\` first.
+
+## 2. Claim
+
+- \`claim_task\` before you change anything (120 minutes unless you pass
+  \`minutes\`, at most 1440). While you hold it, other agents get
+  \`conflict\`. If you get \`conflict\`, choose another task; do not wait
+  for the claim to run out.
+- Claiming does not change the status: \`set_status\` to \`doing\` when
+  you really start.
+- \`renew_claim\` before \`claimExpiresAt\`, for as long as you work. A
+  claim that ran out can be renewed while nobody else has taken the task.
+- The owner can take the task over at any time. If your changes start
+  failing, read the task again with \`get_task\`.
+
+## 3. Work
+
+- Tick each criterion when it is true, not before: \`update_task\` with
+  the whole \`acceptance\` list, keeping the ids, and \`met: true\` on
+  the ones done.
+- Keep the \`plan\` honest: if the approach changes, change it.
+- Leave the owner a trail: \`set_now\` with a resume note for the task
+  they follow on Today, or \`release_task\` with a \`note\` when you stop.
+- Before anything risky or hard to undo (deleting, deploying, paying,
+  writing outside the plan): \`request_approval\` with 2 to 4 options and
+  their consequences, then \`get_approval\` until it is \`decided\`.
+  Do only what the chosen option says; \`expired\` means ask again.
+
+## 4. Stuck or interrupted
+
+- Waiting on something outside the plan: \`blockedReason\` in words, then
+  \`release_task\` with a checkpoint \`note\`.
+- Waiting on another task: add it to \`dependsOn\`.
+- \`agents_paused\`: stop changing things and wait. \`forbidden\`: the
+  owner denied this tool to you; do not retry. \`approval_required\`: wait
+  for the request in \`approvalId\`, then repeat exactly the same call with
+  it.
+- Back after a pause: \`list_events\` with the \`nextCursor\` you kept
+  shows what changed meanwhile.
+
+Next: \`dayhand://workflow/finalization\`.
+`;
+
+export const WORKFLOW_FINALIZATION = `# Finalization: closing a task
+
+Use this when you believe the task is done, or when you hand it back.
+
+## 1. Check the criteria yourself
+
+- \`get_task\` and read every criterion again. Run what proves it (the
+  tests, the page, the command) now, not from memory.
+- Every criterion must be \`met\` before an agent can complete a task that
+  has criteria. If one cannot be met, do not tick it: say why in the task
+  and ask the owner (step 3).
+
+## 2. Complete with proof
+
+- \`complete_task\` with \`proof\`: a \`summary\` of what changed and
+  how you know, \`links\` (a pull request, a deploy, a document) and
+  \`checks\` (\`{name, result: "pass" | "fail", url}\`). Record a failed
+  check as \`fail\`; do not leave it out.
+- Without met criteria or a summary the call fails with
+  \`precondition_failed\` and nothing changes.
+- Completing ends your claim. A repeating task returns its next occurrence
+  as \`next\`, with the criteria unticked.
+- If the task came with \`returnTo\`, that webhook hears about it with
+  your proof.
+
+## 3. When the owner has to decide
+
+- The last step needs a yes (merging, releasing, sending, spending):
+  \`request_approval\` before it, with what happens under each option and
+  whether it can be undone. Complete the task only after you did what the
+  owner chose.
+- Done differently than the criteria say: ask before changing the criteria;
+  do not rewrite them to fit the result.
+
+## 4. Handing back instead
+
+- Not finished: \`release_task\` with a \`note\` that says what is done,
+  what is left and the next step. Leave the criteria as they are.
+- Found more work on the way: a proposal (\`add_task\` with
+  \`proposal: true\`), not a change of this task's scope.
+- Afterwards \`agent_brief\` (or \`plan_health\`) shows what needs a look
+  next.
+`;
+
+/** The phase guides by their resource URI. */
+export const WORKFLOWS: Record<string, string> = {
+  "dayhand://workflow/intake": WORKFLOW_INTAKE,
+  "dayhand://workflow/execution": WORKFLOW_EXECUTION,
+  "dayhand://workflow/finalization": WORKFLOW_FINALIZATION,
+};

@@ -16,6 +16,7 @@ const ROOTS = [
   "webhook-list", "webhook-one", "webhook-created", "webhook-delete", "webhook-test", "webhook-delivery-list", "webhook-event",
   "import-result",
   "approval", "approval-list", "agent-controls", "merge", "plan-health",
+  "agent-brief", "backlog-import", "backlog-export",
 ];
 
 const nameOf = (file) => file.replace(/\.schema\.json$/, "");

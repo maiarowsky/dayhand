@@ -229,6 +229,21 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.12.0
+
+0.12.0 adds the phase guides `dayhand://workflow/intake`, `/execution` and `/finalization`, the
+`agent_brief` tool and Backlog.md import and export (`import_backlog`, `export_backlog`;
+[backlog-md.md](backlog-md.md)), with their REST routes `/brief`, `/import/backlog` and
+`/export/backlog`. There is no new table, field, status, error code or secret, and no migration:
+imported tasks use the `source` field and the `taskSources` table of 0.11.0.
+
+1. Deploy: `dayhand server deploy` (or `npx convex deploy`).
+2. Check: `dayhand version` shows server 0.12.0 and `dayhand prime` prints an "Agent brief"
+   section.
+
+Rollback: deploy 0.11.x again; nothing needs restoring. Tasks imported from Backlog.md stay
+ordinary tasks with a source.
+
 ## Upgrading to 0.11.0
 
 0.11.0 lets the owner stay in charge of agents ([agent-work.md](agent-work.md)): approval requests

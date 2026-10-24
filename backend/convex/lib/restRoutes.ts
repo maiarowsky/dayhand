@@ -112,6 +112,12 @@ export const TOOL_ROUTES: ToolRoute[] = [
   { method: "GET", path: "/agents", tool: "get_agent_controls", input: "query", operationId: "getAgentControls", tag: agents, scope: "read", summary: "Whether agents are paused, and the tool policies" },
   { method: "POST", path: "/agents/pause", tool: "pause_agents", input: "body", operationId: "pauseAgents", tag: agents, scope: "write", summary: "Pause or resume every agent (the owner: a cli key)" },
   { method: "POST", path: "/agents/policies", tool: "set_tool_policy", input: "body", operationId: "setToolPolicy", tag: agents, scope: "write", summary: "Set one agent key's rule for a tool (the owner: a cli key)" },
+  { method: "GET", path: "/brief", tool: "agent_brief", input: "query", operationId: "getAgentBrief", tag: views, scope: "read", summary: "The agent brief: Today, claims, approvals, ready tasks, next steps" },
+  {
+    method: "POST", path: "/import/backlog", tool: "import_backlog", input: "body", operationId: "importBacklog", tag: task, scope: "write",
+    summary: "Import Backlog.md task files (dryRun=true shows what would happen)",
+  },
+  { method: "GET", path: "/export/backlog", tool: "export_backlog", input: "query", operationId: "exportBacklog", tag: views, scope: "read", summary: "The plan as Backlog.md task files" },
   { method: "GET", path: "/health", tool: "plan_health", input: "query", operationId: "getPlanHealth", tag: views, scope: "read", summary: "The plan health report" },
   { method: "GET", path: "/events", tool: "list_events", input: "query", operationId: "listEvents", tag: views, scope: "read", summary: "The activity log: task changes after a cursor" },
   { method: "GET", path: "/today", tool: "list_today", input: "query", operationId: "getToday", tag: views, scope: "read", summary: "The Today screen" },

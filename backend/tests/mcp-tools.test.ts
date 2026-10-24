@@ -38,9 +38,12 @@ const ORDER = [
   "accept_proposal",
   "merge_proposal",
   "reject_proposal",
+  "agent_brief",
+  "import_backlog",
+  "export_backlog",
   "plan_health",
 ];
-const READ_ONLY = ["list_today", "list_all", "list_trash", "board", "get_task", "export_plan", "get_settings", "list_events", "get_approval", "list_approvals", "get_agent_controls", "plan_health"];
+const READ_ONLY = ["list_today", "list_all", "list_trash", "board", "get_task", "export_plan", "get_settings", "list_events", "get_approval", "list_approvals", "get_agent_controls", "agent_brief", "export_backlog", "plan_health"];
 
 describe("tool catalog", () => {
   test("every tool has a title, all four hints and an object output schema, in a fixed order", async () => {

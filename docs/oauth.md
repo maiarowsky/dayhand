@@ -90,7 +90,7 @@ client or a wrong redirect URI gets an error page and is never redirected.
   ignored. The phone may grant a non-empty part of what was asked, never more. `tools/list`
   shows only the tools the token's scopes allow; calling another tool gets
   `403` with `WWW-Authenticate: Bearer error="insufficient_scope", scope="…"`. Reading the
-  user's data through `resources/read` (all but `dayhand://guide`) and `prompts/get` needs
+  user's data through `resources/read` (all but `dayhand://guide` and `dayhand://workflow/…`) and `prompts/get` needs
   `tasks:read` the same way.
 - **Resource indicators** ([RFC 8707](https://www.rfc-editor.org/rfc/rfc8707)): `resource`, when
   sent to `/oauth/authorize` or `/oauth/token`, must be `<issuer>/mcp`; every token is bound to
