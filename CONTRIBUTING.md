@@ -68,6 +68,19 @@ npm run test:unit                         # pure tests only, under a second
 - The CLI is released on its own (`dayhand-vX.Y.Z` tags, release-please); do not bump
   `cli/package.json` by hand in a feature PR.
 
+## The landing page
+
+`site/` is the dayhand.dev page: plain HTML and CSS that open from the file system, with nothing
+loaded from other servers. How it is built and the CSS rules it follows: [site/STYLE.md](site/STYLE.md).
+
+```sh
+scripts/check-site.sh           # fixed site/: HTML, metadata, links, CSS/JS lint (needs python3)
+scripts/render-site-images.sh   # after changing og-image.svg or the icon (needs Chrome)
+```
+
+Write only what is true today: a package or a download without a published release is "Coming soon",
+with no command or link for it.
+
 ## Secrets
 
 Never commit keys, tokens or `.env` files. `.env.example` lists the variable names only.
