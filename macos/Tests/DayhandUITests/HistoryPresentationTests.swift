@@ -5,19 +5,34 @@ import Testing
 
 @MainActor
 struct HistoryPresentationTests {
-    @Test func successfulSyncInvalidatesHistoryWithoutATaskChange() {
-        let before = HistoryModel.RefreshKey(serverId: "s1", version: 10, syncStatus: .synced(at: 100))
-        let after = HistoryModel.RefreshKey(serverId: "s1", version: 10, syncStatus: .synced(at: 200))
-        let offline = HistoryModel.RefreshKey(serverId: "s1", version: 10, syncStatus: .offline("No connection"))
-        #expect(before != after)
-        #expect(offline != after)
-        let syncing = HistoryModel.RefreshKey(serverId: "s1", version: 10, syncStatus: .connecting)
-        #expect(before != syncing)
-        #expect(offline != syncing)
-        #expect(before == HistoryModel.RefreshKey(serverId: "s1", version: 10, syncStatus: .synced(at: 100)))
-        #expect(before != HistoryModel.RefreshKey(serverId: "s1", version: 11, syncStatus: .synced(at: 100)))
-        #expect(before != HistoryModel.RefreshKey(serverId: "s2", version: 10, syncStatus: .synced(at: 100)))
-        #expect(before != HistoryModel.RefreshKey(serverId: nil, version: nil, syncStatus: .synced(at: 100)))
+    @Test func ordinaryPollsKeepAnInFlightHistoryRequest() {
+        let opened = HistoryModel.RefreshKey(serverId: "s1", revision: 0)
+        var previous: SyncStatus = .synced(at: 100)
+        var revision = 0
+        for at in [Int64(15_100), 30_100, 45_100] {
+            let next = SyncStatus.synced(at: at)
+            if AppModel.historyRecovered(from: previous, to: next) { revision += 1 }
+            #expect(HistoryModel.RefreshKey(serverId: "s1", revision: revision) == opened)
+            previous = next
+        }
+        #expect(opened != HistoryModel.RefreshKey(serverId: "s1", revision: 1))
+        #expect(opened != HistoryModel.RefreshKey(serverId: "s2", revision: 0))
+        #expect(opened != HistoryModel.RefreshKey(serverId: nil, revision: 0))
+    }
+
+    @Test func onlyConnectionRecoveryInvalidatesHistory() {
+        let synced = SyncStatus.synced(at: 100)
+        let recoverable: [SyncStatus] = [.offline("No connection"), .signedOut, .connecting]
+        for previous in recoverable {
+            #expect(AppModel.historyRecovered(from: previous, to: synced))
+            #expect(!AppModel.historyRecovered(from: synced, to: previous))
+            for next in recoverable {
+                #expect(!AppModel.historyRecovered(from: previous, to: next))
+            }
+        }
+        #expect(!AppModel.historyRecovered(from: .notConnected, to: synced))
+        #expect(!AppModel.historyRecovered(from: synced, to: .notConnected))
+        #expect(!AppModel.historyRecovered(from: .offline("one"), to: .offline("two")))
     }
 
     @Test func onlyASuccessfulFetchCanAssertEmptyHistory() {

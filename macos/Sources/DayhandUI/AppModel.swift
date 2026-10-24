@@ -21,7 +21,12 @@ final class AppModel: ObservableObject {
     /// The tasks in the trash, the most recently deleted first.
     @Published private(set) var trash: [TaskItem] = []
     @Published private(set) var pending = 0
-    @Published private(set) var status: SyncStatus = .notConnected
+    @Published private(set) var status: SyncStatus = .notConnected {
+        didSet {
+            if Self.historyRecovered(from: oldValue, to: status) { historyRefreshRevision += 1 }
+        }
+    }
+    @Published private(set) var historyRefreshRevision = 0
     @Published private(set) var settings = ReminderSettings()
     @Published private(set) var credential: DeviceCredential?
     @Published var selection: String?
@@ -319,10 +324,16 @@ final class AppModel: ObservableObject {
         status = .notConnected
     }
 
-    func syncNow() {
-        guard let engine else { return }
-        status = .connecting
-        Task { await engine.round() }
+    static func historyRecovered(from previous: SyncStatus, to current: SyncStatus) -> Bool {
+        switch (previous, current) {
+        case (.offline, .synced), (.signedOut, .synced), (.connecting, .synced): return true
+        default: return false
+        }
+    }
+
+    func syncNow() async {
+        if let engine { await engine.round() }
+        historyRefreshRevision += 1
     }
 
     /// A `dayhand://pair` or `helm://pair` link (the QR code of `dayhand pair`) opens Connect filled in.

@@ -10,8 +10,7 @@ final class HistoryModel: ObservableObject {
 
     struct RefreshKey: Hashable {
         let serverId: String?
-        let version: Int64?
-        let syncStatus: SyncStatus
+        let revision: Int
     }
 
     /// The cached history of [serverId], again after each change, until the view goes.

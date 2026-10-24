@@ -53,9 +53,10 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  ──> SnapshotMerger (last write wins per field) ──> the database
 rounds: every 15 s, and at once after a local change
 
-task details open, a newer server copy arrives, sync succeeds, or Sync Now is requested:
+history loads only when details open, the connection recovers to synced, or Sync Now is requested:
   TaskHistorySync: app:getTask ──> the task's history replaces its cached copy (taskEvent table)
   no answer or no server: the cached copy, marked as such; without a copy, history is unavailable offline
+  ordinary polls (even with a newer task version): no history request or cancellation; no retry loop
 ```
 
 The code is a Swift package with six targets:
@@ -171,9 +172,10 @@ swift test                        # the live-backend test is skipped by default
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
   them is missing from the string catalog.
-- **History presentation** (`DayhandUITests`): sync status invalidates the refresh key even without a task
-  change, an empty offline cache never asserts an empty server history, and claim labels are actor-neutral
-  in every language.
+- **History presentation** (`DayhandUITests`): history loads only when details open, the connection recovers
+  from offline, signed out or connecting to synced, or **Sync Now** is requested. Ordinary synced timestamps
+  and task-version changes do not invalidate an in-flight request; there is no retry loop. An empty offline
+  cache never asserts an empty server history, and claim labels are actor-neutral in every language.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources
