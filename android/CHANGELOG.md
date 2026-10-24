@@ -34,6 +34,11 @@ called Helm until 0.9.0.
   words for each refusal; `scripts/e2e-tool-policy.py` sets a rule on the phone and reads it back
   with `dayhand policy` on a local backend.
 
+### Fixed
+
+- Fixed stale rule and pause states in Settings → Agents after overlapping refreshes. See
+  [Screens](README.md#screens) for the controls and [Tests](README.md#tests) for regression coverage.
+
 ## 0.10.1 (2026-10-24)
 
 ### Added

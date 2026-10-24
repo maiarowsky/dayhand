@@ -243,7 +243,9 @@ in its preview and on the other screens. Top to bottom:
    its consequence, and a confirmation with an optional word for the agent. A proposal is
    **accepted** (it becomes a task of the plan), **merged** into an open task found by its title
    (its note, links and labels join that task) or **rejected** with an optional reason. Dayhand
-   records the decision; it cannot stop what an agent does outside Dayhand.
+   records the decision; it cannot stop what an agent does outside Dayhand. Agent changes run
+   one at a time: the pause switch, rule choices and decision buttons stay disabled until the
+   current send and any follow-up refresh finish, even if you reopen a rule.
 5. **About**: the Apache License 2.0, the licenses of the bundled fonts (SIL Open Font License
    1.1) and the version.
 
@@ -491,6 +493,9 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # (ReminderDeliveryTest, about 80 s, with no server configured),
                                             # the eight languages and switching them in Settings (LanguageSwitchTest)
 ```
+
+`AgentsRefreshRaceTest` covers overlapping control reads and the busy interval of agent changes,
+releasing held replies newest first and holding a pause mutation in flight.
 
 `ReminderDeliveryTest` speeds time up by setting a task and the summary to the next whole
 minute: Android fires the real alarm, the test checks both notifications and taps **Done**.
