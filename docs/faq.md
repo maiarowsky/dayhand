@@ -58,10 +58,11 @@ The Android, macOS and Linux apps and `dayhand ui` speak English, Polish, German
 Brazilian Portuguese, Japanese and Simplified Chinese. Date phrases (`fri 2pm`) are English everywhere,
 and so are the other `dayhand` commands, `--json` and the MCP tools.
 
-### Why is the repository called helm?
+### Why do some names still say helm?
 
 Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0. The old `hlm` command and `HELM_*` names
-still work with a warning ([renamed from Helm](rename.md)).
+still work with a warning, and a few stored names stay as they were ([renamed from Helm](rename.md)).
+The repository moved to `maiarowsky/dayhand`; links to `maiarowsky/helm` redirect.
 
 ## Troubleshooting
 
@@ -160,5 +161,5 @@ it; the item holds the Mac's sign-in to your server.
 
 Run the failing command with `--json` to see the error code, check `dayhand version` and `dayhand whoami`,
 and look at the server's logs (`npx convex logs` in `backend/` with the deployment's `--env-file`). A bug
-you can reproduce is welcome as an [issue](https://github.com/maiarowsky/helm/issues); a security problem
+you can reproduce is welcome as an [issue](https://github.com/maiarowsky/dayhand/issues); a security problem
 goes privately ([security](security.md#reporting-a-problem)).

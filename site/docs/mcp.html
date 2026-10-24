@@ -28,7 +28,7 @@
         <li><a href="../index.html">Home</a></li>
         <li><a href="index.html">Docs</a></li>
         <li><a href="install.html">Install</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
       </ul>
     </nav>
   </header>
@@ -136,7 +136,7 @@ per tool, agents propose work into an inbox, and a health report shows what need
 </ul>
 <h2 id="tools">Tools</h2>
 <p>The input schemas are generated from the same validators the operations enforce; the output
-schemas come from <a href="https://github.com/maiarowsky/helm/tree/main/docs/schemas">schemas/</a>, the contract <code>dayhand --json</code> follows too.</p>
+schemas come from <a href="https://github.com/maiarowsky/dayhand/tree/main/docs/schemas">schemas/</a>, the contract <code>dayhand --json</code> follows too.</p>
 <p>Every task has an <code>id</code> and a <code>ref</code>: the user's task number (1, 2, 3, …). It is given once, kept
 through the trash, the archive and a restore, and never given to another task, even after the
 task is purged. Every tool that takes a <code>taskId</code> accepts either the <code>id</code> or the number written
@@ -148,7 +148,7 @@ connections; since 0.11.0). Read-only tools are marked R, destructive ones D
 it with the same arguments changes nothing more), and no tool reaches outside Dayhand
 (<code>openWorldHint: false</code>). Each tool also has a <code>title</code>.</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Tools"><table>
-<thead><tr><th scope="col">Tool</th><th scope="col">Title</th><th scope="col">Hints</th><th scope="col">Result (<a href="https://github.com/maiarowsky/helm/tree/main/docs/schemas">schema</a>)</th><th scope="col">Operation</th></tr></thead>
+<thead><tr><th scope="col">Tool</th><th scope="col">Title</th><th scope="col">Hints</th><th scope="col">Result (<a href="https://github.com/maiarowsky/dayhand/tree/main/docs/schemas">schema</a>)</th><th scope="col">Operation</th></tr></thead>
 <tbody>
 <tr><td><code>add_task</code></td><td>Add task</td><td></td><td><code>task</code></td><td>Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo)</td></tr>
 <tr><td><code>update_task</code></td><td>Update task</td><td></td><td><code>task</code></td><td>Change fields; <code>null</code> clears an optional field</td></tr>
@@ -189,8 +189,8 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 <code>null</code> as <code>{ &quot;result&quot;: null }</code>) and as JSON in its text block. A Markdown export's text block is
 the Markdown itself and its <code>structuredContent</code> is <code>{ &quot;format&quot;: &quot;markdown&quot;, &quot;content&quot;: &quot;…&quot; }</code>;
 an iCalendar export (<code>format: &quot;ics&quot;</code>) likewise has the calendar text in both.</p>
-<p>Each tool's <code>outputSchema</code> is the result's schema from <a href="https://github.com/maiarowsky/helm/tree/main/docs/schemas">schemas/</a> or the
-<a href="https://github.com/maiarowsky/helm/blob/main/docs/schemas/tool-error.schema.json">tool error</a> (<code>anyOf</code>), with every referenced schema inlined
+<p>Each tool's <code>outputSchema</code> is the result's schema from <a href="https://github.com/maiarowsky/dayhand/tree/main/docs/schemas">schemas/</a> or the
+<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/tool-error.schema.json">tool error</a> (<code>anyOf</code>), with every referenced schema inlined
 under <code>$defs</code>: clients never fetch a URL. The top level is an object, as 2025 clients require.
 <code>backend/convex/lib/outputSchemas.ts</code> is generated from <code>docs/schemas</code> by <code>npm run schemas</code> in
 <code>backend/</code>; a test fails when it is out of date.</p>
@@ -225,7 +225,7 @@ the reasons). None of them is a new status: the board stays <code>todo</code>, <
 <tbody>
 <tr><td><code>acceptance</code></td><td><code>add_task</code>, <code>update_task</code></td><td>Criteria <code>{ id, text, met }</code> in order; new ones get <code>a1</code>, <code>a2</code>, …; the list is replaced as a whole, <code>null</code> or <code>[]</code> removes it (at most 50, up to 500 characters each)</td></tr>
 <tr><td><code>plan</code></td><td><code>add_task</code>, <code>update_task</code></td><td>How the work will be done (up to 20000 characters)</td></tr>
-<tr><td><code>proof</code></td><td><code>complete_task</code></td><td><code>{ summary?, links, checks: [{ name, result: &quot;pass&quot; | &quot;fail&quot;, url? }] }</code>, kept on the task (<a href="https://github.com/maiarowsky/helm/blob/main/docs/schemas/proof.schema.json">schema</a>)</td></tr>
+<tr><td><code>proof</code></td><td><code>complete_task</code></td><td><code>{ summary?, links, checks: [{ name, result: &quot;pass&quot; | &quot;fail&quot;, url? }] }</code>, kept on the task (<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/proof.schema.json">schema</a>)</td></tr>
 <tr><td><code>dependsOn</code></td><td><code>add_task</code>, <code>update_task</code></td><td>Ids of the tasks that must be done first (given as ids or <code>&quot;#42&quot;</code>); <code>[]</code> removes them; no cycles (at most 50)</td></tr>
 <tr><td><code>blockedReason</code></td><td><code>add_task</code>, <code>update_task</code></td><td>Why the task cannot go on; <code>null</code> clears it</td></tr>
 <tr><td><code>claimedBy</code>, <code>claimExpiresAt</code></td><td><code>claim_task</code>, <code>renew_claim</code>, <code>release_task</code></td><td>Who holds the claim (<code>keyId</code> or <code>connectionId</code>, and <code>name</code>) and until when (Unix ms); kept after expiry until released or claimed again</td></tr>
@@ -258,7 +258,7 @@ and the app can end any claim (<code>app.release</code>).</p>
 </tbody>
 </table></div>
 <p>The result is <code>{ &quot;events&quot;: [...], &quot;nextCursor&quot;: &quot;c…&quot;, &quot;hasMore&quot;: &lt;bool&gt; }</code>
-(<a href="https://github.com/maiarowsky/helm/blob/main/docs/schemas/event-list.schema.json">schema</a>). Each event has <code>id</code>, <code>at</code>, <code>taskId</code>, <code>ref</code> and <code>title</code>
+(<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/event-list.schema.json">schema</a>). Each event has <code>id</code>, <code>at</code>, <code>taskId</code>, <code>ref</code> and <code>title</code>
 (the task's now), <code>action</code>, <code>actor</code>, <code>actorName</code>, <code>by</code>, <code>before</code> and <code>after</code>, like a history
 entry. Events come oldest first, in the order the changes were committed. Pass <code>nextCursor</code> as
 <code>since</code> next time to get only what changed in between; <code>hasMore: true</code> means another page is
@@ -312,7 +312,7 @@ of <code>at</code>, in the user's time zone: <code>agentsPaused</code>; <code>ov
 pending request, and <code>pendingApprovals</code> in all), <code>completedToday</code> (each with <code>proof</code>, and
 <code>withProof</code>, <code>withoutProof</code>): each <code>{ count, tasks }</code> with the first 20 tasks; <code>proposals.count</code>;
 and <code>oldestOpen</code>, the open task created longest ago with <code>ageDays</code>
-(<a href="https://github.com/maiarowsky/helm/blob/main/docs/schemas/plan-health.schema.json">schema</a>). Proposals and archived tasks are not counted as open.</p>
+(<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/plan-health.schema.json">schema</a>). Proposals and archived tasks are not counted as open.</p>
 <h3 id="dry-runs">Dry runs</h3>
 <p>Every changing tool takes <code>dryRun: true</code>. The change runs with every check, then Dayhand rolls it
 back: nothing is saved and nothing enters the history. The result is what the real call would
@@ -554,11 +554,11 @@ on the phone. The steps are in <a href="oauth.html#connecting-the-claude-app-man
       Apache License 2.0.</p>
     <nav aria-label="Footer">
       <ul>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/mcp.md">This page on GitHub</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/mcp.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
         <li><a href="security.html">Security</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
       </ul>
     </nav>
     <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>

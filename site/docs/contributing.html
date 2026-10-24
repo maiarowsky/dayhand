@@ -28,7 +28,7 @@
         <li><a href="../index.html">Home</a></li>
         <li><a href="index.html">Docs</a></li>
         <li><a href="install.html">Install</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
       </ul>
     </nav>
   </header>
@@ -103,36 +103,36 @@
     </nav>
 <p>Dayhand is open source under the Apache License 2.0, and contributions are welcome. The rules for a
 change, signing off your commits, the commit format and the tests each part needs are in
-<a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>; this page is a map of the repository and of these docs.</p>
+<a href="https://github.com/maiarowsky/dayhand/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>; this page is a map of the repository and of these docs.</p>
 <h2 id="the-repository">The repository</h2>
 <div class="table-wrap" tabindex="0" role="region" aria-label="The repository"><table>
 <thead><tr><th scope="col">Folder</th><th scope="col">What it is</th><th scope="col">Start with</th></tr></thead>
 <tbody>
 <tr><td><code>backend/</code></td><td>the Convex backend: data model, operations, MCP, REST API, webhooks, OAuth</td><td><a href="architecture.html">architecture</a></td></tr>
-<tr><td><code>cli/</code></td><td><code>dayhand</code>, the command line and <code>dayhand ui</code></td><td><a href="https://github.com/maiarowsky/helm/blob/main/cli/README.md">cli/README.md</a></td></tr>
-<tr><td><code>android/</code></td><td>the Android app (Kotlin, Compose)</td><td><a href="https://github.com/maiarowsky/helm/blob/main/android/README.md">android/README.md</a></td></tr>
-<tr><td><code>macos/</code></td><td>Dayhand for macOS (Swift, SwiftUI)</td><td><a href="https://github.com/maiarowsky/helm/blob/main/macos/README.md">macos/README.md</a></td></tr>
-<tr><td><code>linux/</code></td><td>Dayhand for Linux (Qt 6, QML, C++)</td><td><a href="https://github.com/maiarowsky/helm/blob/main/linux/README.md">linux/README.md</a></td></tr>
+<tr><td><code>cli/</code></td><td><code>dayhand</code>, the command line and <code>dayhand ui</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/README.md">cli/README.md</a></td></tr>
+<tr><td><code>android/</code></td><td>the Android app (Kotlin, Compose)</td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md">android/README.md</a></td></tr>
+<tr><td><code>macos/</code></td><td>Dayhand for macOS (Swift, SwiftUI)</td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/macos/README.md">macos/README.md</a></td></tr>
+<tr><td><code>linux/</code></td><td>Dayhand for Linux (Qt 6, QML, C++)</td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/linux/README.md">linux/README.md</a></td></tr>
 <tr><td><code>packaging/</code></td><td>the Arch Linux package and the Homebrew formula template</td><td></td></tr>
 <tr><td><code>docs/</code></td><td>these pages, the JSON schemas of <code>--json</code> and the MCP results, the Agent Skill</td><td>below</td></tr>
 <tr><td><code>man/</code></td><td>the manual pages, generated from the CLI</td><td></td></tr>
-<tr><td><code>site/</code></td><td>dayhand.dev: the landing page and the built docs</td><td><a href="https://github.com/maiarowsky/helm/blob/main/site/STYLE.md">site/STYLE.md</a></td></tr>
+<tr><td><code>site/</code></td><td>dayhand.dev: the landing page and the built docs</td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/site/STYLE.md">site/STYLE.md</a></td></tr>
 <tr><td><code>scripts/</code></td><td>checks and builders for the README and the site</td><td></td></tr>
 </tbody>
 </table></div>
 <p>Test setup and the checks each change needs:
-<a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#testing">backend</a>, <a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#the-dayhand-cli">CLI</a>.</p>
+<a href="https://github.com/maiarowsky/dayhand/blob/main/CONTRIBUTING.md#testing">backend</a>, <a href="https://github.com/maiarowsky/dayhand/blob/main/CONTRIBUTING.md#the-dayhand-cli">CLI</a>.</p>
 <h2 id="writing-these-docs">Writing these docs</h2>
 <p>Edit the Markdown in <code>docs/</code>, not the generated pages in <code>site/docs/</code>. Rebuild and check commands
-are in <a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#the-site-and-the-documentation">CONTRIBUTING.md</a>; how the generated site
-works is in <a href="https://github.com/maiarowsky/helm/blob/main/site/STYLE.md#documentation-pages-docs">site/STYLE.md</a>.</p>
+are in <a href="https://github.com/maiarowsky/dayhand/blob/main/CONTRIBUTING.md#the-site-and-the-documentation">CONTRIBUTING.md</a>; how the generated site
+works is in <a href="https://github.com/maiarowsky/dayhand/blob/main/site/STYLE.md#documentation-pages-docs">site/STYLE.md</a>.</p>
 <ul>
 <li>Which files become pages, their titles in the menu and their order are in <code>scripts/docs/pages.mjs</code>. A
 new page goes there.</li>
 <li>Link to other pages by their file name (<code>[webhooks](webhooks.md#events)</code>). Links to any other file in
 the repository become links to it on GitHub. A link to a missing file or heading stops the build.</li>
 <li>For generated command references and the Agent Skill, follow the
-<a href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md#the-dayhand-cli">CLI contribution instructions</a> instead of editing the output.</li>
+<a href="https://github.com/maiarowsky/dayhand/blob/main/CONTRIBUTING.md#the-dayhand-cli">CLI contribution instructions</a> instead of editing the output.</li>
 <li>Write only what is true in <code>main</code>. Something that is not released or not built yet is marked as
 planned or coming soon, with no command for it. Check a command before you document it.</li>
 <li>English, short sentences, plain words.</li>
@@ -149,7 +149,7 @@ fails when a text is missing in a language:</p>
 <p>Corrections from native speakers are welcome.</p>
 <h2 id="releases">Releases</h2>
 <p>The CLI is released on its own with release-please, and nothing is published yet. How a release will
-work, for maintainers: <a href="https://github.com/maiarowsky/helm/blob/main/docs/release.md">release.md</a>.</p>
+work, for maintainers: <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/release.md">release.md</a>.</p>
       </article>
       <nav class="docs-pager" aria-label="Previous and next page"><a href="faq.html" rel="prev"><span>Previous</span> FAQ and troubleshooting</a><a href="rename.html" rel="next"><span>Next</span> Renamed from Helm</a></nav>
     </main>
@@ -160,11 +160,11 @@ work, for maintainers: <a href="https://github.com/maiarowsky/helm/blob/main/doc
       Apache License 2.0.</p>
     <nav aria-label="Footer">
       <ul>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/contributing.md">This page on GitHub</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/contributing.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
         <li><a href="security.html">Security</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
       </ul>
     </nav>
     <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>

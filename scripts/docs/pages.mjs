@@ -3,7 +3,7 @@
 // Links between these files become links between the pages; links to any other file in the repository
 // go to that file on GitHub.
 
-export const REPOSITORY = "https://github.com/maiarowsky/helm";
+export const REPOSITORY = "https://github.com/maiarowsky/dayhand";
 export const BRANCH = "main";
 export const ORIGIN = "https://dayhand.dev";
 

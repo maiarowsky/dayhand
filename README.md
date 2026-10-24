@@ -1,6 +1,6 @@
 # ✋ Dayhand — a day plan with a spare pair of hands
 
-[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/helm?style=flat)](https://github.com/maiarowsky/helm/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/helm?style=flat)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/dayhand?style=flat)](LICENSE)
 
 Dayhand is a task list and day plan for people who run a business on their own, and for the AI
 agents that work for them. Your phone keeps the plan offline with a calendar and reminders; a
@@ -36,7 +36,7 @@ TODAY
 From source you need Node.js 22.12 or newer, git and, for the agent example, `jq`:
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git dayhand
+git clone https://github.com/maiarowsky/dayhand.git dayhand
 cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 ```
 

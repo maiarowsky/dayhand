@@ -28,7 +28,7 @@
         <li><a href="../index.html">Home</a></li>
         <li><a href="index.html">Docs</a></li>
         <li><a href="install.html">Install</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
       </ul>
     </nav>
   </header>
@@ -129,9 +129,10 @@ account (<code>dayhand server deploy</code>); there is no desktop app.</p>
 <p>The Android, macOS and Linux apps and <code>dayhand ui</code> speak English, Polish, German, Spanish, French,
 Brazilian Portuguese, Japanese and Simplified Chinese. Date phrases (<code>fri 2pm</code>) are English everywhere,
 and so are the other <code>dayhand</code> commands, <code>--json</code> and the MCP tools.</p>
-<h3 id="why-is-the-repository-called-helm">Why is the repository called helm?</h3>
+<h3 id="why-do-some-names-still-say-helm">Why do some names still say helm?</h3>
 <p>Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0. The old <code>hlm</code> command and <code>HELM_*</code> names
-still work with a warning (<a href="rename.html">renamed from Helm</a>).</p>
+still work with a warning, and a few stored names stay as they were (<a href="rename.html">renamed from Helm</a>).
+The repository moved to <code>maiarowsky/dayhand</code>; links to <code>maiarowsky/helm</code> redirect.</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="dayhand-command-not-found"><code>dayhand: command not found</code></h3>
 <p><code>npm link</code> puts the command in npm's global folder. Check that <code>npm prefix -g</code> followed by <code>/bin</code> is on
@@ -212,7 +213,7 @@ it; the item holds the Mac's sign-in to your server.</p>
 <h3 id="something-else">Something else</h3>
 <p>Run the failing command with <code>--json</code> to see the error code, check <code>dayhand version</code> and <code>dayhand whoami</code>,
 and look at the server's logs (<code>npx convex logs</code> in <code>backend/</code> with the deployment's <code>--env-file</code>). A bug
-you can reproduce is welcome as an <a href="https://github.com/maiarowsky/helm/issues">issue</a>; a security problem
+you can reproduce is welcome as an <a href="https://github.com/maiarowsky/dayhand/issues">issue</a>; a security problem
 goes privately (<a href="security.html#reporting-a-problem">security</a>).</p>
       </article>
       <nav class="docs-pager" aria-label="Previous and next page"><a href="oauth-threat-model.html" rel="prev"><span>Previous</span> OAuth threat model</a><a href="contributing.html" rel="next"><span>Next</span> Contributing</a></nav>
@@ -224,11 +225,11 @@ goes privately (<a href="security.html#reporting-a-problem">security</a>).</p>
       Apache License 2.0.</p>
     <nav aria-label="Footer">
       <ul>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/faq.md">This page on GitHub</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/faq.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
         <li><a href="security.html">Security</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
       </ul>
     </nav>
     <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>

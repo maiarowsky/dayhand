@@ -80,8 +80,9 @@ Pages that describe a planned piece say so where it matters, and give no command
 ## Help and feedback
 
 Dayhand is a personal open source project (Apache-2.0) with no hosted service and no support promise.
-Issues on [GitHub](https://github.com/maiarowsky/helm/issues) are for bugs you can reproduce and for
+Issues on [GitHub](https://github.com/maiarowsky/dayhand/issues) are for bugs you can reproduce and for
 feature ideas. Security problems go privately, never in an issue: see [security](security.md#reporting-a-problem).
 
-The project was called Helm until backend 0.9.0 and CLI 0.10.0, so the repository is still
-`maiarowsky/helm` and some old names keep working with a warning ([renamed from Helm](rename.md)).
+The project was called Helm until backend 0.9.0 and CLI 0.10.0, and some old names keep working
+with a warning ([renamed from Helm](rename.md)). The repository moved from `maiarowsky/helm` to
+`maiarowsky/dayhand`; the old addresses redirect.

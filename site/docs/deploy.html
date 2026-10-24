@@ -28,7 +28,7 @@
         <li><a href="../index.html">Home</a></li>
         <li><a href="index.html">Docs</a></li>
         <li><a href="install.html">Install</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
       </ul>
     </nav>
   </header>
@@ -119,10 +119,10 @@ the phone app, the MCP endpoint for AI agents, the REST API and <code>dayhand</c
 maintains anything for you, and nobody else can see your tasks.</p>
 <p>You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex account is made
 (or signed in to) in your browser during the setup.</p>
-<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git clone https://github.com/maiarowsky/helm.git
-cd helm/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..
 dayhand server deploy</code></pre>
-<p>Without <code>dayhand</code>, the same setup is <code>cd helm/backend &amp;&amp; npm run setup</code> (it then prints the
+<p>Without <code>dayhand</code>, the same setup is <code>cd dayhand/backend &amp;&amp; npm run setup</code> (it then prints the
 <code>dayhand login</code> command to use later). <code>npm link</code> puts <code>dayhand</code> on the PATH; where it needs
 administrator rights, run <code>node cli/dist/bin/dayhand.js server deploy</code> instead.</p>
 <p><code>dayhand server deploy</code> (which runs <code>backend/scripts/setup.mjs</code>):</p>
@@ -546,11 +546,11 @@ the old and the new key, and deploy (<code>auth.config.ts</code> is read at depl
       Apache License 2.0.</p>
     <nav aria-label="Footer">
       <ul>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/deploy.md">This page on GitHub</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/deploy.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
         <li><a href="security.html">Security</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
       </ul>
     </nav>
     <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>

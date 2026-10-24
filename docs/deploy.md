@@ -13,12 +13,12 @@ You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex 
 (or signed in to) in your browser during the setup.
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git
-cd helm/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 dayhand server deploy
 ```
 
-Without `dayhand`, the same setup is `cd helm/backend && npm run setup` (it then prints the
+Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` (it then prints the
 `dayhand login` command to use later). `npm link` puts `dayhand` on the PATH; where it needs
 administrator rights, run `node cli/dist/bin/dayhand.js server deploy` instead.
 

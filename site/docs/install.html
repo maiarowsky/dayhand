@@ -28,7 +28,7 @@
         <li><a href="../index.html">Home</a></li>
         <li><a href="index.html">Docs</a></li>
         <li><a href="install.html" aria-current="page">Install</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">GitHub</a></li>
       </ul>
     </nav>
   </header>
@@ -120,7 +120,7 @@ works yet.</p>
 app; on Windows the command line works with a server on your own Convex account.</p>
 <h2 id="command-line-dayhand">Command line: dayhand</h2>
 <p>You need <a href="https://nodejs.org">Node.js</a> 22.12 or newer and git, on macOS, Linux or Windows.</p>
-<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git clone https://github.com/maiarowsky/helm.git dayhand
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git clone https://github.com/maiarowsky/dayhand.git dayhand
 cd dayhand/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..</code></pre>
 <ul>
 <li><code>npm link</code> puts <code>dayhand</code> and <code>dh</code> (the same command, shorter) on your PATH. Where that needs
@@ -153,7 +153,7 @@ to Convex in the browser and deploys. The server gets a public HTTPS address.</l
 The apps also work with no server at all, each on its own device.</p>
 <h2 id="android">Android</h2>
 <p>Android 8.0 (API 26) or newer.</p>
-<p><strong>Coming soon:</strong> a signed APK on <a href="https://github.com/maiarowsky/helm/releases">GitHub Releases</a> and
+<p><strong>Coming soon:</strong> a signed APK on <a href="https://github.com/maiarowsky/dayhand/releases">GitHub Releases</a> and
 Google Play. The release build is prepared and signed with the project's key, but no release is
 published yet.</p>
 <p><strong>Build it yourself</strong> with JDK 17 or newer and the Android SDK (platform 36). With a phone connected
@@ -163,7 +163,7 @@ over USB with debugging on, or an emulator running, in the checkout:</p>
 <p><code>./gradlew :app:assembleDebug</code> makes the APK (<code>app/build/outputs/apk/debug/app-debug.apk</code>) without
 installing it. A debug build can also talk to a server over plain HTTP, which helps with a server on
 your computer during development; release builds use HTTPS only. A release build needs a signing key of
-your own (<code>DAYHAND_RELEASE_KEYSTORE</code>): see <a href="https://github.com/maiarowsky/helm/blob/main/android/README.md#release-build">android/README.md</a>. Keep
+your own (<code>DAYHAND_RELEASE_KEYSTORE</code>): see <a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#release-build">android/README.md</a>. Keep
 that key, because every update must be signed with the same one.</p>
 <p>Then open Dayhand and choose <strong>On this phone only</strong> or <strong>Connect to my server</strong>: <a href="android.html">Android</a>.</p>
 <h2 id="macos">macOS</h2>
@@ -206,11 +206,11 @@ everywhere else; <a href="omarchy.html">dayhand ui on Omarchy</a> makes it an ap
       Apache License 2.0.</p>
     <nav aria-label="Footer">
       <ul>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/install.md">This page on GitHub</a></li>
-        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/install.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/cli/CHANGELOG.md">Changelog</a></li>
         <li><a href="security.html">Security</a></li>
-        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+        <li><a href="https://github.com/maiarowsky/dayhand/blob/main/LICENSE">License</a></li>
       </ul>
     </nav>
     <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>

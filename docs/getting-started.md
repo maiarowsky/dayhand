@@ -15,7 +15,7 @@ use a POSIX shell (for example, Git Bash on Windows).
 No package is published yet, so build `dayhand` from the repository:
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git dayhand
+git clone https://github.com/maiarowsky/dayhand.git dayhand
 cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 ```
 

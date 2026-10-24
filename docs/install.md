@@ -21,7 +21,7 @@ app; on Windows the command line works with a server on your own Convex account.
 You need [Node.js](https://nodejs.org) 22.12 or newer and git, on macOS, Linux or Windows.
 
 ```sh
-git clone https://github.com/maiarowsky/helm.git dayhand
+git clone https://github.com/maiarowsky/dayhand.git dayhand
 cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
 ```
 
@@ -61,7 +61,7 @@ The apps also work with no server at all, each on its own device.
 
 Android 8.0 (API 26) or newer.
 
-**Coming soon:** a signed APK on [GitHub Releases](https://github.com/maiarowsky/helm/releases) and
+**Coming soon:** a signed APK on [GitHub Releases](https://github.com/maiarowsky/dayhand/releases) and
 Google Play. The release build is prepared and signed with the project's key, but no release is
 published yet.
 

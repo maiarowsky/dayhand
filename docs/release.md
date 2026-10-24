@@ -48,7 +48,7 @@ maintainer's explicit go-ahead.
    package that exists. On a trusted machine, with 2FA: `cd cli && npm ci --ignore-scripts &&
    npm test && npm publish --access public` (no provenance for this one).
 6. **Add the trusted publisher on npmjs.com:** package → Settings → *Trusted publishing* →
-   GitHub Actions: organization or user `<owner>`, repository `helm`, workflow
+   GitHub Actions: organization or user `<owner>`, repository `dayhand`, workflow
    `publish-npm.yml`, environment `npm`. Then, in the same settings, choose *Require two-factor
    authentication and disallow tokens*, so only the workflow can publish.
 7. **Set the repository variables** (Settings → Secrets and variables → Actions → Variables):
