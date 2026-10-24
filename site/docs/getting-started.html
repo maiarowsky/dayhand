@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quick start · Dayhand docs</title>
+  <meta name="description" content="This page takes you from nothing to a running Dayhand on one computer: your own server, your first tasks from the command line, the plan full screen in the…">
+  <link rel="canonical" href="https://dayhand.dev/docs/getting-started.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="quick-start">Quick start</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#1-build-the-command-line">1. Build the command line</a></li>
+      <li><a href="#2-start-your-own-server">2. Start your own server</a></li>
+      <li><a href="#3-plan-your-day">3. Plan your day</a></li>
+      <li><a href="#4-see-it-full-screen">4. See it full screen</a></li>
+      <li><a href="#5-connect-your-phone">5. Connect your phone</a></li>
+      <li><a href="#6-let-an-agent-work-on-the-plan">6. Let an agent work on the plan</a></li>
+      <li><a href="#next">Next</a></li>
+      </ul>
+    </nav>
+<p>This page takes you from nothing to a running Dayhand on one computer: your own server, your first
+tasks from the command line, the plan full screen in the terminal, the phone connected, and an AI
+agent working on the plan with a key of its own. It takes about ten minutes, most of it the first
+download.</p>
+<p>You need macOS or Linux, <a href="https://nodejs.org">Node.js</a> 22.12 or newer and git. On Windows, follow the
+same steps but start the server with <code>dayhand server deploy</code> instead (step 2): the server that runs on
+your computer is for macOS and Linux only.</p>
+<h2 id="1-build-the-command-line">1. Build the command line</h2>
+<p>No package is published yet, so build <code>dayhand</code> from the repository:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git clone https://github.com/maiarowsky/helm.git dayhand
+cd dayhand/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..</code></pre>
+<p><code>npm link</code> puts <code>dayhand</code> and its short name <code>dh</code> on your PATH; <code>npm unlink -g dayhand</code> removes them.
+<code>dayhand --version</code> prints the version. Other ways to install, and the state of each: <a href="install.html">Install</a>.</p>
+<h2 id="2-start-your-own-server">2. Start your own server</h2>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand server start</code></pre>
+<p>The first run downloads the Convex local backend once (a pinned version whose checksum is checked),
+deploys Dayhand to it, creates a key for <code>dayhand</code> and signs this computer in with it, and prints a
+pairing code for the phone. Data and keys stay in a private folder on this computer; no account is
+needed. The server listens on <code>127.0.0.1</code> only and runs until you press Ctrl+C. The same command starts
+it again later, with its data.</p>
+<p>Leave it running and open a second terminal in the same folder for the next steps.</p>
+<p>To see every step first without changing anything, run <code>dayhand server start --dry-run</code>. Running the
+server on your own Convex account instead, which gives it a public HTTPS address: <a href="deploy.html">Your own server</a>.</p>
+<h2 id="3-plan-your-day">3. Plan your day</h2>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand add &quot;Call the accountant&quot; --due &quot;today 14:00&quot; -l admin
+dayhand add &quot;Send the invoice to Anna&quot; --due fri
+dayhand
+dayhand done 1</code></pre>
+<p><code>dayhand</code> alone shows Today: the task you are working on now, what is overdue, what is due today and
+what you finished today. Tasks are referred to by their number (<code>1</code> or <code>#1</code>). Dates are English phrases
+read in your time zone: <code>fri 2pm</code>, <code>tomorrow 9am</code>, <code>in 3 days</code>, <code>23 oct</code>, <code>2026-11-02</code>. Try one without
+changing anything:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand when &quot;next mon 9am&quot;</code></pre>
+<p>The time zone comes from the server's settings, <code>Europe/London</code> until you change it:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand settings set timezone=Europe/Warsaw</code></pre>
+<p>A few more things to try: <code>dayhand list</code> (every open task), <code>dayhand board</code>, <code>dayhand now 2 --note &quot;waiting for the bank statement&quot;</code> (the task you are on, and where you stopped), <code>dayhand show 2</code> (a task with its
+history), <code>dayhand rm 2</code> and <code>dayhand restore 2</code>. Every command and flag: <a href="cli.html">command reference</a>.</p>
+<h2 id="4-see-it-full-screen">4. See it full screen</h2>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand ui</code></pre>
+<p>Today, the board, the week and the trash in the terminal, with keys like vim (<code>j</code>/<code>k</code>, <code>h</code>/<code>l</code>), <code>a</code> to
+add a task with a date phrase, <code>?</code> for every key and <code>q</code> to quit: <a href="terminal.html">Terminal</a>.</p>
+<h2 id="5-connect-your-phone">5. Connect your phone</h2>
+<p>The Android app works without any server (<strong>On this phone only</strong>). To share the plan between the phone,
+this computer and your agents, connect it to your server. No APK is published yet, so for now you
+build the app yourself (<a href="install.html#android">Install</a>).</p>
+<p>A phone cannot reach a server that listens on <code>127.0.0.1</code>, and release builds of the app talk to their
+server over HTTPS only. Pick one:</p>
+<ul>
+<li><strong>Keep the server on this computer</strong> and give it an HTTPS address inside your own
+<a href="https://tailscale.com">Tailscale</a> network: <code>tailscale serve</code>, then
+<code>dayhand server start --public-url https://&lt;machine&gt;.&lt;tailnet&gt;.ts.net</code>
+(<a href="deploy.html#phone-and-computer-tailscale">the steps</a>). The phone syncs while the computer is on.</li>
+<li><strong>Move the server to your own free Convex account</strong> with <code>dayhand server deploy</code>. It gets a public
+HTTPS address that the phone reaches from anywhere, and the Claude apps can connect to it too
+(<a href="deploy.html#run-your-own-server-in-5-minutes">the steps</a>).</li>
+</ul>
+<p>Then, in the app: <strong>Settings → Server → Connect to my server</strong> (or <strong>Connect to my server</strong> on the first
+start), and scan the QR code that this prints, or type the address and the code:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand pair</code></pre>
+<p>The code works once, for 10 minutes. Tasks you added on the phone before are sent to the server.
+<code>dayhand devices</code> lists paired phones and <code>dayhand revoke &lt;deviceId&gt;</code> signs one out. How pairing works:
+<a href="pairing.html">Phone pairing</a>.</p>
+<h2 id="6-let-an-agent-work-on-the-plan">6. Let an agent work on the plan</h2>
+<p>Give every agent its own key. Its changes are then signed <code>agent: &lt;name&gt;</code>, and you can revoke it alone:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
+DAYHAND_API_KEY=$AGENT_KEY dayhand add &quot;Draft the VAT reply&quot; --due &quot;today 16:00&quot; --remind 30
+dayhand log --by agent</code></pre>
+<p>The key is printed once; keep it where the agent reads it. <code>jq</code> extracts it from the JSON here. The
+agent can use <code>dayhand</code> with that key, or the MCP endpoint of your server. For Claude Code:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header &quot;Authorization: Bearer $AGENT_KEY&quot;</code></pre>
+<p>Then ask it what is on your list today. Acceptance criteria, claims, approvals on the phone, the switch
+that pauses every agent and the rest: <a href="agents.html">Agents and you</a>.</p>
+<h2 id="next">Next</h2>
+<ul>
+<li>Keep the server: <a href="deploy.html">backups, updates and costs</a>.</li>
+<li>Use the apps: <a href="android.html">Android</a>, <a href="macos-app.html">macOS</a>, <a href="linux.html">Linux</a>.</li>
+<li>See your tasks in Google or Apple Calendar: <a href="calendar.html">calendar feed</a>.</li>
+<li>Something did not work: <a href="faq.html">FAQ and troubleshooting</a>.</li>
+</ul>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="index.html" rel="prev"><span>Previous</span> Overview</a><a href="install.html" rel="next"><span>Next</span> Install</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/getting-started.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

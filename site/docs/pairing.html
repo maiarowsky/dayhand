@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phone pairing and app sign-in · Dayhand docs</title>
+  <meta name="description" content="The phone app never holds a signing key. It is paired once with a one-time code and then asks the backend for short-lived app tokens.">
+  <link rel="canonical" href="https://dayhand.dev/docs/pairing.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="phone-pairing-and-app-sign-in">Phone pairing and app sign-in</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#pairing-link">Pairing link</a></li>
+      <li><a href="#post-authpair">POST /auth/pair</a></li>
+      <li><a href="#post-authtoken">POST /auth/token</a></li>
+      <li><a href="#using-the-token-in-the-android-app">Using the token in the Android app</a></li>
+      <li><a href="#managing-devices-cli">Managing devices (CLI)</a></li>
+      <li><a href="#security-notes">Security notes</a></li>
+      </ul>
+    </nav>
+<p>The phone app never holds a signing key. It is paired once with a one-time code and then
+asks the backend for short-lived app tokens.</p>
+<pre class="code" tabindex="0" aria-label="Example"><code>dayhand pair (API key) ──&gt; code XXXX-XXXX-XXXX, valid 10 min, single use
+phone: POST /auth/pair  {code}         ──&gt; deviceToken (long-lived, revocable)
+phone: POST /auth/token {deviceToken}  ──&gt; app JWT (ES256, 1 hour)
+phone: Convex client with that JWT     ──&gt; app.* queries and mutations as the owner</code></pre>
+<p>All endpoints are HTTP actions on the deployment's HTTP actions URL (<code>https://&lt;name&gt;.convex.site</code>,
+locally <code>http://127.0.0.1:3211</code>). Requests and responses are JSON (<code>Content-Type: application/json</code>); token responses carry <code>Cache-Control: no-store</code>.</p>
+<h2 id="pairing-link">Pairing link</h2>
+<p><code>dayhand pair</code> prints the code, a deep link and the same link as a QR code:</p>
+<pre class="code" tabindex="0" aria-label="Example"><code>dayhand://pair?url=&lt;URL-encoded HTTP actions URL&gt;&amp;code=&lt;XXXX-XXXX-XXXX&gt;</code></pre>
+<p>The app reads <code>url</code> (the HTTP actions URL, where <code>/auth/pair</code> and <code>/auth/token</code> live) and
+<code>code</code> from it. Typed codes may be lower case and may omit the dashes; <code>O</code> is read as <code>0</code>,
+<code>I</code> and <code>L</code> as <code>1</code>.</p>
+<h2 id="post-authpair">POST /auth/pair</h2>
+<p>Request:</p>
+<pre class="code" tabindex="0" aria-label="Code: json"><code>{ &quot;code&quot;: &quot;E6M8-FE02-XSNT&quot;, &quot;deviceName&quot;: &quot;Pixel 9&quot; }</code></pre>
+<p><code>deviceName</code> is optional (1 to 100 characters, default <code>&quot;Phone&quot;</code>); it is shown by <code>dayhand devices</code>.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="POST /auth/pair"><table>
+<thead><tr><th scope="col">Status</th><th scope="col">Body</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td>200</td><td><code>{ &quot;deviceId&quot;: &quot;jd7…&quot;, &quot;deviceName&quot;: &quot;Pixel 9&quot;, &quot;deviceToken&quot;: &quot;helmdev_…&quot;, &quot;convexUrl&quot;: &quot;https://&lt;name&gt;.convex.cloud&quot; }</code></td><td>Paired. Store <code>deviceToken</code> in encrypted storage; it is shown only now. <code>convexUrl</code> is the URL for the Convex client.</td></tr>
+<tr><td>400</td><td><code>{ &quot;error&quot;: &quot;invalid_request&quot;, &quot;error_description&quot;: &quot;…&quot; }</code></td><td>Body is not JSON, <code>code</code> is not a string, or <code>deviceName</code> is invalid.</td></tr>
+<tr><td>401</td><td><code>{ &quot;error&quot;: &quot;invalid_grant&quot;, &quot;error_description&quot;: &quot;The code or token is not valid&quot; }</code></td><td>Wrong, unknown, malformed, expired, already used or burned code. The answer is the same for all of them.</td></tr>
+<tr><td>429</td><td><code>{ &quot;error&quot;: &quot;rate_limited&quot;, … }</code>, header <code>Retry-After: &lt;seconds&gt;</code></td><td>Too many failed attempts on this deployment; codes are not checked until the window ends.</td></tr>
+</tbody>
+</table></div>
+<h2 id="post-authtoken">POST /auth/token</h2>
+<p>Request:</p>
+<pre class="code" tabindex="0" aria-label="Code: json"><code>{ &quot;deviceToken&quot;: &quot;helmdev_&lt;22 chars&gt;.&lt;43 chars&gt;&quot; }</code></pre>
+<div class="table-wrap" tabindex="0" role="region" aria-label="POST /auth/token"><table>
+<thead><tr><th scope="col">Status</th><th scope="col">Body</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td>200</td><td><code>{ &quot;token&quot;: &quot;&lt;JWT&gt;&quot;, &quot;tokenType&quot;: &quot;Bearer&quot;, &quot;expiresIn&quot;: 3600, &quot;expiresAt&quot;: 1792691766000 }</code></td><td>App JWT; <code>expiresAt</code> is Unix ms.</td></tr>
+<tr><td>400</td><td><code>{ &quot;error&quot;: &quot;invalid_request&quot;, … }</code></td><td>Body is not JSON or <code>deviceToken</code> is not a string.</td></tr>
+<tr><td>401</td><td><code>{ &quot;error&quot;: &quot;invalid_grant&quot;, &quot;error_description&quot;: &quot;The code or token is not valid&quot; }</code></td><td>Unknown, malformed or revoked device token. Drop the token and pair again.</td></tr>
+<tr><td>503</td><td><code>{ &quot;error&quot;: &quot;not_configured&quot;, … }</code></td><td>The deployment cannot sign tokens (configuration problem on the server). Retry later; do not drop the device token.</td></tr>
+</tbody>
+</table></div>
+<p>The JWT has header <code>{ &quot;alg&quot;: &quot;ES256&quot;, &quot;typ&quot;: &quot;JWT&quot;, &quot;kid&quot;: … }</code> and claims <code>iss</code>
+(<code>DAYHAND_JWT_ISSUER</code>), <code>sub</code> (the owner, e.g. <code>owner</code>), <code>aud: &quot;helm&quot;</code>, <code>iat</code>, <code>exp</code> (<code>iat</code> + 3600).</p>
+<h2 id="using-the-token-in-the-android-app">Using the token in the Android app</h2>
+<ul>
+<li>Give the Convex client an auth callback (<code>ConvexClientWithAuth</code> / <code>setAuth</code> with a token
+fetcher) that calls <code>POST /auth/token</code> and returns <code>token</code>. Fetch a new token before
+<code>expiresAt</code> (for example when less than 5 minutes are left) and whenever the client asks
+for a refresh.</li>
+<li><code>convexUrl</code> is the deployment's own view of its address. On a local backend it is
+<code>http://127.0.0.1:3210</code>, which an emulator cannot reach: there, keep the port and use the
+host of the pairing link's <code>url</code> (e.g. <code>10.0.2.2</code>).</li>
+<li>Network errors and <code>503</code> are temporary: keep the device token and retry with backoff.</li>
+<li><code>401</code> from <code>/auth/token</code> means the device was revoked (or the token is corrupt): delete the
+device token and show the pairing screen.</li>
+<li>Revoking a device stops new tokens at once; a JWT it already holds stays valid until its
+<code>exp</code> (at most one hour).</li>
+</ul>
+<p>The app does all of the above from version 0.3.0: the Connect screen, the <code>dayhand://pair</code> link,
+the encrypted device token and the refresh are described in
+<a href="https://github.com/maiarowsky/helm/blob/main/android/README.md#signing-in">android/README.md</a>. A device cannot revoke itself (the
+<code>/devices/*</code> routes need an API key), so the app's Disconnect only forgets the sign-in on the
+phone and names <code>dayhand revoke &lt;deviceId&gt;</code> for the server side.</p>
+<h2 id="managing-devices-cli">Managing devices (CLI)</h2>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand pair         # code + link + QR; --no-qr for text only, --json for scripts
+dayhand devices      # name, paired when and by which key, last used, revoked
+dayhand revoke &lt;deviceId&gt;</code></pre>
+<p>They call <code>POST /devices/pairing-code</code>, <code>GET /devices</code> and <code>POST /devices/revoke</code>
+(<code>{ &quot;deviceId&quot;: … }</code>) with <code>Authorization: Bearer &lt;personal API key&gt;</code> (scope full, since 0.8.0). Pairing codes and
+revocations are recorded in the history under the key's kind and name (<code>cli</code>, or
+<code>agent: &lt;name&gt;</code>; see <a href="mcp.html#keys-and-actors">mcp.md</a>). The deployment admin can do the same
+without an API key:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>npx convex run devices:createPairingCode '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;}'
+npx convex run devices:list '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;}'
+npx convex run devices:revoke '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;,&quot;deviceId&quot;:&quot;&lt;id&gt;&quot;}'
+npx convex run devices:resetPairLimit     # after someone exhausted the failed-attempt limit</code></pre>
+<p>Only an app user can pair: the API key's user id must be <code>&lt;DAYHAND_JWT_ISSUER&gt;|&lt;subject&gt;</code>, because
+the phone's JWT gives exactly that identity. A key of another user gets an error from <code>dayhand pair</code>.</p>
+<h2 id="security-notes">Security notes</h2>
+<ul>
+<li>Codes: 12 Crockford base32 characters (60 random bits). The first 4 select the code, the
+other 8 are stored as SHA-256 only. A code dies after one use, after 10 minutes, or after 5
+wrong secrets for its selector.</li>
+<li><code>/auth/pair</code> allows 10 failed attempts per 10 minutes for the whole deployment (the endpoint
+is unauthenticated, so there is no user to count per). Over the limit it answers <code>429</code>
+without checking the code. Someone can therefore block pairing for 10 minutes, but cannot
+guess a code; the admin can clear the counter with <code>devices:resetPairLimit</code>.</li>
+<li>Device tokens: a 16-byte selector and a 32-byte secret; the secret is stored as SHA-256
+only and compared in constant time. <code>/auth/token</code> has no attempt limit on purpose: 256-bit
+secrets cannot be guessed, and a limit would let anyone lock the real phone out.</li>
+<li>Error answers never tell whether a code or token existed, was used, expired or revoked.</li>
+<li>The signing key (<code>DAYHAND_JWT_PRIVATE_JWK</code>) lives only in the deployment environment and is
+never returned. See <a href="deploy.html">deploy.md</a>.</li>
+<li>A personal API key can pair a device, and that device keeps working after the key is
+revoked. If a key may have leaked, revoke it and check <code>dayhand devices</code> as well.</li>
+</ul>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="deploy.html" rel="prev"><span>Previous</span> Your own server</a><a href="api.html" rel="next"><span>Next</span> REST API</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/pairing.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

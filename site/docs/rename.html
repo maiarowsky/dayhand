@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Renamed from Helm · Dayhand docs</title>
+  <meta name="description" content="Helm became Dayhand in backend 0.9.0, CLI 0.10.0 and Android app 0.9.0. Nothing has to change at once; the old names keep working with a deprecation warning:">
+  <link rel="canonical" href="https://dayhand.dev/docs/rename.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="renamed-from-helm">Renamed from Helm</h1>
+<p>Helm became Dayhand in backend 0.9.0, CLI 0.10.0 and Android app 0.9.0. Nothing has to change
+at once; the old names keep working with a deprecation warning:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Renamed from Helm"><table>
+<thead><tr><th scope="col">Before</th><th scope="col">Now</th><th scope="col">Old name</th></tr></thead>
+<tbody>
+<tr><td><code>hlm</code> command</td><td><code>dayhand</code>, short <code>dh</code></td><td><code>hlm</code> still runs until CLI 1.0 and warns on every run</td></tr>
+<tr><td>CLI variables <code>HLM_*</code>, <code>HELM_URL</code>, <code>HELM_API_KEY</code>, <code>HELM_BACKEND_DIR</code>, <code>HELM_SERVER_CONFIG_DIR</code></td><td><code>DAYHAND_*</code></td><td>read while the <code>DAYHAND_*</code> name is unset, with a warning</td></tr>
+<tr><td>CLI config folder <code>hlm</code> (e.g. <code>~/.config/hlm</code>)</td><td><code>dayhand</code></td><td>used while there is no <code>dayhand</code> folder, with a warning saying where to move it</td></tr>
+<tr><td>keychain entry <code>hlm</code></td><td><code>dayhand</code></td><td>read when there is no <code>dayhand</code> entry; <code>dayhand logout</code> removes both</td></tr>
+<tr><td>server folder <code>helm-server</code></td><td><code>dayhand-server</code></td><td>used while there is no <code>dayhand-server</code> folder</td></tr>
+<tr><td>deployment variables <code>HELM_*</code></td><td><code>DAYHAND_*</code></td><td>read while <code>DAYHAND_*</code> is unset (<a href="deploy.html#renamed-variables">deploy.md</a>)</td></tr>
+<tr><td>Android build: <code>-Phelm.serverUrl</code>, <code>HELM_RELEASE_*</code></td><td><code>-Pdayhand.serverUrl</code>, <code>DAYHAND_RELEASE_*</code></td><td>read when the new one is unset (Gradle warns)</td></tr>
+<tr><td>API keys <code>helm_…</code></td><td>new keys start with <code>dayhand_</code></td><td>old keys work until revoked</td></tr>
+<tr><td>MCP resources <code>helm://…</code>, pairing links <code>helm://pair</code></td><td><code>dayhand://…</code></td><td>still accepted</td></tr>
+<tr><td>import format <code>helm-json</code></td><td><code>dayhand-json</code></td><td>still accepted</td></tr>
+<tr><td><code>backend/cli/helm.mjs</code> (<code>npx helm</code>)</td><td><code>dayhand</code></td><td>removed</td></tr>
+</tbody>
+</table></div>
+<p>These stay as they were, because they are stored in data or in tokens already given out: the
+issuer <code>https://helm.local</code> of the local backend and the user ids made from it, the JWT audience
+<code>helm</code>, the device and OAuth token prefixes (<code>helmdev_</code>, <code>helmat_</code>, <code>helmrt_</code>…), the calendar
+UIDs <code>…@helm</code> (a new suffix would duplicate every event in Google and Apple Calendar), the
+Android app's storage names and Kotlin package <code>dev.helm.planner</code>, and the GitHub repository
+<code>maiarowsky/helm</code>.</p>
+<h2 id="known-risk-another-dayhand">Known risk: another DayHand</h2>
+<p>There is an unrelated to-do app called DayHand for iPhone, iPad and
+Mac (<a href="https://github.com/amouraux/DayHand">amouraux/DayHand</a>, in public TestFlight beta in
+October 2026). App Store names are unique, so if it gets there first, this project's Apple apps
+would be listed as &quot;Dayhand Planner&quot;. The CLI, npm, Homebrew and Android are not affected.</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="contributing.html" rel="prev"><span>Previous</span> Contributing</a><span></span></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/rename.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

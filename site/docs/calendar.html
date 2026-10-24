@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendar feed and .ics export · Dayhand docs</title>
+  <meta name="description" content="Dayhand can show your dated tasks in Google Calendar, Apple Calendar or any other calendar app that subscribes to a calendar by URL. The feed is read-only:…">
+  <link rel="canonical" href="https://dayhand.dev/docs/calendar.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="calendar-feed-and-ics-export">Calendar feed and .ics export</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#what-the-calendar-shows">What the calendar shows</a></li>
+      <li><a href="#turning-it-on">Turning it on</a></li>
+      <li><a href="#http-endpoints">HTTP endpoints</a></li>
+      <li><a href="#threat-model">Threat model</a></li>
+      <li><a href="#out-of-scope">Out of scope</a></li>
+      </ul>
+    </nav>
+<p>Dayhand can show your dated tasks in Google Calendar, Apple Calendar or any other calendar app
+that subscribes to a calendar by URL. The feed is <strong>read-only</strong>: the calendar shows the plan,
+and changes are made in Dayhand (the app, <code>dayhand</code>, the agent). Two-way sync (CalDAV) is not
+offered: Convex's HTTP router serves only <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>OPTIONS</code> and
+<code>PATCH</code>, not CalDAV's <code>PROPFIND</code> and <code>REPORT</code>, and edits from two sides would need conflict
+handling that a read-only view does not.</p>
+<h2 id="what-the-calendar-shows">What the calendar shows</h2>
+<p>The same iCalendar text (RFC 5545, <code>backend/convex/lib/ical.ts</code>) serves the feed and the
+one-time <code>.ics</code> export:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="What the calendar shows"><table>
+<thead><tr><th scope="col">Task</th><th scope="col">In the calendar</th></tr></thead>
+<tbody>
+<tr><td>Day and time</td><td>An event of 30 minutes at that time, in the time zone from the settings (default <code>Europe/London</code>), with its <code>VTIMEZONE</code></td></tr>
+<tr><td>Day only</td><td>An all-day event</td></tr>
+<tr><td>No day, archived, in the trash</td><td>Left out</td></tr>
+<tr><td>Done</td><td>Kept for 90 days as a single event marked <code>✓</code>, without alarms or repeat</td></tr>
+<tr><td>Repeating</td><td>One event with the rule as <code>RRULE</code> (the same rule <code>dayhand</code> and MCP show as <code>rrule</code>)</td></tr>
+<tr><td>Reminders</td><td><code>VALARM</code>s relative to the start: the task's own reminders, else the default minutes from the settings (those need a time)</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li><code>SUMMARY</code> is the title, <code>DESCRIPTION</code> is <code>Dayhand #&lt;number&gt;</code> and the note, <code>CATEGORIES</code> the
+labels. Events are <code>TRANSP:TRANSPARENT</code>: a task does not make you busy.</li>
+<li><code>UID</code> is <code>&lt;task id&gt;@helm</code> and <code>DTSTAMP</code> the task's last change, so an unchanged plan gives
+the same text and calendar apps update events in place. Completing a repeating task creates
+the next task of the series (a new id), so the calendar gets the done occurrence and a new
+series.</li>
+<li>A repeating task's due date that is not itself a date of the rule (a Mon/Thu task due on a
+Wednesday) is its own event, and the series starts at the next date with its own UID
+(<code>&lt;task id&gt;-next@helm</code>): RFC 5545 leaves such a series undefined. <code>UNTIL</code> of a timed series is
+the end of that day in UTC, as RFC 5545 requires next to a <code>TZID</code>.</li>
+<li>A monthly rule on a 29th to 31st falls on the last day of shorter months in Dayhand. Its RRULE
+form needs <code>BYMONTHDAY</code> with <code>BYSETPOS</code>, which calendar apps do not all expand (ical.js
+ignores <code>BYSETPOS</code> there), so such a series is written as single events for two years ahead
+(UIDs <code>&lt;task id&gt;-&lt;YYYYMMDD&gt;@helm</code>); the feed moves that window along.</li>
+<li>A rule counted from completion (<code>from: &quot;completion&quot;</code>) shows the dates it would have if each
+occurrence were done on its day; its real dates are not known in advance.</li>
+<li>The tests parse every output with ical.js (a separate RFC 5545 parser) and check that each
+repeat rule expands to exactly the dates of Dayhand's own <code>lib/repeat.ts</code>, in the time zone,
+across clock changes (<code>backend/tests/ical.test.ts</code>, <code>calendar.test.ts</code>).</li>
+</ul>
+<h2 id="turning-it-on">Turning it on</h2>
+<ul>
+<li><strong>Android:</strong> Settings → Calendar shows the address with <strong>Copy</strong>, <strong>Add to Google Calendar</strong>,
+<strong>Add to Apple Calendar</strong>, <strong>Create a new address</strong> and <strong>Turn off</strong>, and <strong>Export .ics</strong>,
+which shares a one-time file through the system share sheet.</li>
+<li><strong>CLI:</strong> <code>dayhand calendar on</code> (or <code>dayhand calendar</code> to see it), <code>dayhand calendar rotate</code>,
+<code>dayhand calendar off</code>, <code>dayhand calendar export -o dayhand.ics</code> (<a href="cli.html">cli.md</a>).</li>
+</ul>
+<p>Then:</p>
+<ul>
+<li><strong>Apple Calendar</strong> (iPhone, iPad, Mac): open the <code>webcal://</code> address, or on a Mac File → New
+Calendar Subscription and paste the address. The subscription has a setting to remove
+alerts; leave it off to keep the reminders.</li>
+<li><strong>Google Calendar:</strong> on the web (the phone app cannot add calendars by URL), Settings → Add
+calendar → From URL, and paste the <code>https://</code> address; or open the &quot;Add to Google Calendar&quot;
+link. Google then shows it on the phone too.</li>
+</ul>
+<p><strong>How fresh it is.</strong> The feed asks clients to look again every hour (<code>REFRESH-INTERVAL</code>,
+<code>X-PUBLISHED-TTL</code>) and lets them cache it for 5 minutes. Apple Calendar lets you pick the
+interval. <strong>Google Calendar refreshes subscribed calendars on its own schedule, usually every
+several hours, and ignores these hints</strong>; a change in Dayhand can take that long to show there.
+Google also does not take reminders from subscribed calendars. Neither could be checked from
+this repository (it needs a real Google account and time); treat both as reported behaviour.</p>
+<h2 id="http-endpoints">HTTP endpoints</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="HTTP endpoints"><table>
+<thead><tr><th scope="col">Method and path</th><th scope="col">Key</th><th scope="col">Answer</th></tr></thead>
+<tbody>
+<tr><td><code>GET /cal/&lt;token&gt;.ics</code></td><td>the token in the path</td><td><code>200 text/calendar; charset=utf-8</code>; <code>404</code> for any wrong, old, malformed or revoked token</td></tr>
+<tr><td><code>GET /calendar/feed</code></td><td>personal API key, scope full</td><td><code>{ &quot;feed&quot;: { url, webcalUrl, googleCalendarUrl, createdAt } }</code>, or <code>{ &quot;feed&quot;: null }</code> when off</td></tr>
+<tr><td><code>POST /calendar/feed</code></td><td>personal API key, scope full</td><td>turns it on (keeps an existing address) and returns it</td></tr>
+<tr><td><code>POST /calendar/feed/rotate</code></td><td>personal API key, scope full</td><td>a new address; the old one answers <code>404</code> at once</td></tr>
+<tr><td><code>POST /calendar/feed/revoke</code></td><td>personal API key, scope full</td><td><code>{ &quot;revoked&quot;: true }</code> (or <code>false</code> when it was off)</td></tr>
+</tbody>
+</table></div>
+<p>The app uses <code>app:getCalendarFeed</code>, <code>app:createCalendarFeed</code> (<code>{ replace: true }</code> for a new
+address) and <code>app:revokeCalendarFeed</code>. The export is <code>export_plan</code> with <code>format: &quot;ics&quot;</code> (MCP,
+<code>dayhand export --format ics</code>, <code>app:exportPlan</code>); its text is the calendar itself. Changes to the
+feed are recorded in the history (<code>calendarFeed.create</code>, <code>.rotate</code>, <code>.revoke</code>) without the
+address.</p>
+<h2 id="threat-model">Threat model</h2>
+<p><strong>The address is a password to read the plan.</strong> Whoever has it reads every dated task: titles,
+notes, labels, times and reminders, until the address is replaced. It grants nothing else: no
+changes, no undated or archived tasks, no history, settings or keys.</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Threat model"><table>
+<thead><tr><th scope="col">Threat</th><th scope="col">Control</th><th scope="col">What is left</th></tr></thead>
+<tbody>
+<tr><td>Guessing the address</td><td>44 base64url characters: a 72-bit selector and a 192-bit secret from <code>crypto.getRandomValues</code>, compared in constant time; any miss is the same plain <code>404</code></td><td>Nothing practical; there is no rate limit on misses</td></tr>
+<tr><td>The address leaks (shared calendar, screenshot, a calendar app's sync, a forwarded link)</td><td><strong>Create a new address</strong> (app) or <code>dayhand calendar rotate</code>: the old one answers <code>404</code> at once; <strong>Turn off</strong> / <code>dayhand calendar off</code> stops the feed. The app and <code>dayhand</code> say that the address is secret</td><td>Whoever had it keeps what they already downloaded. Subscriptions must be added again with the new address</td></tr>
+<tr><td>Logs</td><td>Dayhand's code never logs the address or writes it to the history; the feed sends <code>Referrer-Policy: no-referrer</code> and <code>X-Robots-Tag: noindex</code></td><td><strong>The hosting platform logs request paths, the token included</strong>: the Convex local backend writes <code>GET /cal/&lt;token&gt;.ics</code> to its access log (seen in testing), and Convex Cloud and any proxy in between can see it too. Calendar providers (Google, Apple) store the address to poll it. This is inherent to a secret URL, which is what calendar apps support; Google's own &quot;secret address in iCal format&quot; has the same property</td></tr>
+<tr><td>Caches</td><td><code>Cache-Control: private, max-age=300</code>; <code>no-store</code> on the management endpoints</td><td>A client may keep a copy for 5 minutes</td></tr>
+<tr><td>Stored secret</td><td>The server keeps the secret itself (not a hash) so the address can be shown again on the phone and in <code>dayhand</code>. Whoever can read the database already reads the plan the address opens</td><td>Database backups contain the address too</td></tr>
+<tr><td>Someone else's key manages your feed</td><td><code>/calendar/feed*</code> need a personal API key with scope full and act only on its owner's feed; OAuth connections (agents) cannot reach them</td><td>An API key can show the address, as it can read the plan</td></tr>
+</tbody>
+</table></div>
+<h2 id="out-of-scope">Out of scope</h2>
+<p>CalDAV and two-way sync, per-calendar filters (one feed with everything dated), a REST API and
+webhooks, OAuth for calendars.</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="webhooks.html" rel="prev"><span>Previous</span> Webhooks</a><a href="architecture.html" rel="next"><span>Next</span> Architecture</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/calendar.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

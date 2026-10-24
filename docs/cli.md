@@ -274,7 +274,9 @@ Signing in (dayhand login, dayhand logout, dayhand whoami)
   dayhand whoami                                         # URL, profile, where the key came from
   dayhand logout
 
-Create the key in the app (Settings → API keys, kind cli) or with
+dayhand server deploy and dayhand server start make a key of kind cli and sign
+in by themselves. For another computer, make one where dayhand is signed in
+(dayhand key create laptop --kind cli --scope write) or with
 npx convex run apiKeys:create. dayhand login checks it against the server, then stores
 it for that URL in the OS keychain: macOS Keychain, Windows Credential Manager or
 the Secret Service on Linux (GNOME Keyring, KWallet, KeePassXC). Without one (a
@@ -1673,7 +1675,7 @@ dayhand import calendar.ics --format ics --json
 
 Store an API key for the deployment in the OS keychain (or a private file)
 
-Create a key with kind cli in the app (Settings → API keys) or with `npx convex run apiKeys:create`. The key is checked against the server first; DAYHAND_API_KEY, when set, still wins over the stored key.
+dayhand server deploy and dayhand server start sign in by themselves. For another computer, create a key with kind cli where dayhand is signed in (`dayhand key create laptop --kind cli --scope write`) or with `npx convex run apiKeys:create`. The key is checked against the server first; DAYHAND_API_KEY, when set, still wins over the stored key.
 
 ```
 dayhand login [options]

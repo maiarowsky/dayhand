@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dayhand documentation · Dayhand docs</title>
+  <meta name="description" content="Dayhand is a task list and day plan for people who run a business on their own, and for the AI agents that work for them. The plan lives on your phone, your…">
+  <link rel="canonical" href="https://dayhand.dev/docs/">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html" aria-current="page">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="dayhand-documentation">Dayhand documentation</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#what-dayhand-is-made-of">What Dayhand is made of</a></li>
+      <li><a href="#where-to-start">Where to start</a></li>
+      <li><a href="#what-exists-and-what-is-planned">What exists and what is planned</a></li>
+      <li><a href="#help-and-feedback">Help and feedback</a></li>
+      </ul>
+    </nav>
+<p>Dayhand is a task list and day plan for people who run a business on their own, and for the AI
+agents that work for them. The plan lives on your phone, your Mac and your Linux desktop and works
+offline there; a server you run yourself keeps the copies in step and lets your agents add, plan
+and finish tasks over MCP or the <code>dayhand</code> command line. Every change says who made it.</p>
+<p>All of it is free and open source under the Apache License 2.0: the apps, the command line, the server
+and these docs. There is nothing to buy and no account to create.</p>
+<p>These pages are published at <a href="https://dayhand.dev/docs/">dayhand.dev/docs</a> and kept in the
+repository as <code>docs/*.md</code>. They describe what is in the <code>main</code> branch: backend 0.11.0, the <code>dayhand</code>
+CLI 0.13.0, the Android app 0.11.0, Dayhand for macOS 0.3.0 and Dayhand for Linux 0.1.0.</p>
+<h2 id="what-dayhand-is-made-of">What Dayhand is made of</h2>
+<pre class="code" tabindex="0" aria-label="Code: text"><code> Android app ─┐                                       ┌─ /mcp      MCP for agents and dayhand
+ macOS app ───┤  each keeps its own copy and an       │
+ Linux app ───┤  outbox of changes, works offline ──&gt; │  /api/v1   REST API, webhooks, import
+              │                                       │
+ dayhand ─────┤  command line and dayhand ui ───────&gt; │  /auth     phone pairing and app sign-in
+ AI agents ───┘  MCP, or dayhand with --json ───────&gt; │  /cal      read-only calendar feed
+                                                      └─ your own Dayhand server (Convex)</code></pre>
+<ul>
+<li><strong>The plan.</strong> Tasks with a day and an optional time, repeats, checklists, labels, links, reminders
+and a note. One task can be the <em>now</em> task, with a note of where you stopped. Today shows what is
+overdue, the now task, today and what you finished today; the board has three columns (to do, in
+progress, done); deleted tasks wait 30 days in the trash. Every task has a number (<code>#42</code>) that is
+never given to another task.</li>
+<li><strong>The apps.</strong> <a href="android.html">Android</a>, <a href="macos-app.html">macOS</a>, <a href="linux.html">Linux</a> and the
+<a href="terminal.html">terminal</a>. Each keeps the plan on the device, so it works without a network, and
+sends changes to the server in order when it can.</li>
+<li><strong>The server.</strong> There is no hosted Dayhand service. You run the backend yourself: on your
+computer with one command, or on your own free Convex account (<a href="deploy.html">your own server</a>). The
+apps also work with no server at all.</li>
+<li><strong>The agents.</strong> Any MCP client, or any agent that runs shell commands, works on the same plan
+with its own key. Its changes are signed <code>agent: &lt;name&gt;</code>. Tasks can carry acceptance criteria and
+a plan, agents claim tasks for a while and finish them with proof (<a href="agents.html">agents</a>).</li>
+<li><strong>You in charge.</strong> Agents ask before risky steps and you answer on the phone, one switch pauses
+every agent, a policy per key allows, asks for or denies each tool, work nobody asked for waits
+in an inbox, and a health report shows what needs a look.</li>
+</ul>
+<h2 id="where-to-start">Where to start</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Where to start"><table>
+<thead><tr><th scope="col">You want to</th><th scope="col">Read</th></tr></thead>
+<tbody>
+<tr><td>Try Dayhand on one computer in ten minutes</td><td><a href="getting-started.html">Quick start</a></td></tr>
+<tr><td>Install an app or the command line</td><td><a href="install.html">Install</a></td></tr>
+<tr><td>Use the phone app</td><td><a href="android.html">Android</a></td></tr>
+<tr><td>Use the Mac or Linux app</td><td><a href="macos-app.html">macOS</a>, <a href="linux.html">Linux and Omarchy</a></td></tr>
+<tr><td>Work in the terminal</td><td><a href="terminal.html">Terminal: dayhand ui</a>, <a href="cli.html">command reference</a></td></tr>
+<tr><td>Let an AI agent work on your plan</td><td><a href="agents.html">Agents and you</a>, <a href="mcp.html">MCP endpoint</a></td></tr>
+<tr><td>Connect the Claude apps</td><td><a href="oauth.html">Claude apps (OAuth)</a></td></tr>
+<tr><td>Run, update and back up your server</td><td><a href="deploy.html">Your own server</a></td></tr>
+<tr><td>Connect another tool</td><td><a href="api.html">REST API</a>, <a href="webhooks.html">webhooks</a>, <a href="calendar.html">calendar feed</a></td></tr>
+<tr><td>Know what is stored where and who can read it</td><td><a href="security.html">Security and privacy</a></td></tr>
+<tr><td>Fix something that does not work</td><td><a href="faq.html">FAQ and troubleshooting</a></td></tr>
+<tr><td>Change Dayhand itself</td><td><a href="contributing.html">Contributing</a>, <a href="architecture.html">architecture</a></td></tr>
+</tbody>
+</table></div>
+<h2 id="what-exists-and-what-is-planned">What exists and what is planned</h2>
+<p>Everything in these pages can be built and run from the source today. Nothing is published as a
+package or a signed download yet:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="What exists and what is planned"><table>
+<thead><tr><th scope="col">Piece</th><th scope="col">Today</th><th scope="col">Planned</th></tr></thead>
+<tbody>
+<tr><td><code>dayhand</code> CLI and <code>dayhand ui</code></td><td>build from source (macOS, Linux, Windows)</td><td>npm and Homebrew, coming soon</td></tr>
+<tr><td>Android app</td><td>build it yourself</td><td>a signed APK on GitHub Releases and Google Play, coming soon</td></tr>
+<tr><td>Dayhand for macOS</td><td>build from source, runs on the Mac that built it</td><td>a signed, notarized download with updates, coming soon</td></tr>
+<tr><td>Dayhand for Linux</td><td>Arch Linux and Omarchy package built from the repository; CMake elsewhere</td><td>no AUR package yet</td></tr>
+<tr><td>iPhone and iPad</td><td>in development; nothing to install yet</td><td>an iOS app on the same backend</td></tr>
+<tr><td>Windows desktop app</td><td>none; the CLI works on Windows with a server on Convex</td><td></td></tr>
+<tr><td>Backlog.md import and export</td><td>not in <code>main</code></td><td>planned</td></tr>
+</tbody>
+</table></div>
+<p>Pages that describe a planned piece say so where it matters, and give no command for it.</p>
+<h2 id="help-and-feedback">Help and feedback</h2>
+<p>Dayhand is a personal open source project (Apache-2.0) with no hosted service and no support promise.
+Issues on <a href="https://github.com/maiarowsky/helm/issues">GitHub</a> are for bugs you can reproduce and for
+feature ideas. Security problems go privately, never in an issue: see <a href="security.html#reporting-a-problem">security</a>.</p>
+<p>The project was called Helm until backend 0.9.0 and CLI 0.10.0, so the repository is still
+<code>maiarowsky/helm</code> and some old names keep working with a warning (<a href="rename.html">renamed from Helm</a>).</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><span></span><a href="getting-started.html" rel="next"><span>Next</span> Quick start</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/README.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deploying Dayhand · Dayhand docs</title>
+  <meta name="description" content="Dayhand deploys the backend/ folder to a Convex deployment (Convex Cloud or self-hosted). The repository holds no secrets: everything below goes into the…">
+  <link rel="canonical" href="https://dayhand.dev/docs/deploy.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="deploying-dayhand">Deploying Dayhand</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#run-your-own-server-in-5-minutes">Run your own server in 5 minutes</a></li>
+      <li><a href="#environment-variables">Environment variables</a></li>
+      <li><a href="#first-deployment-by-hand">First deployment by hand</a></li>
+      <li><a href="#upgrading-to-0110">Upgrading to 0.11.0</a></li>
+      <li><a href="#upgrading-to-0100">Upgrading to 0.10.0</a></li>
+      <li><a href="#upgrading-to-090">Upgrading to 0.9.0</a></li>
+      <li><a href="#upgrading-to-080">Upgrading to 0.8.0</a></li>
+      <li><a href="#upgrading-to-070">Upgrading to 0.7.0</a></li>
+      <li><a href="#upgrading-to-060">Upgrading to 0.6.0</a></li>
+      <li><a href="#upgrading-to-050">Upgrading to 0.5.0</a></li>
+      <li><a href="#upgrading-to-040">Upgrading to 0.4.0</a></li>
+      <li><a href="#upgrading-to-030">Upgrading to 0.3.0</a></li>
+      <li><a href="#moving-an-existing-key-from-disk-into-the-deployment">Moving an existing key from disk into the deployment</a></li>
+      <li><a href="#rotating-the-signing-key">Rotating the signing key</a></li>
+      </ul>
+    </nav>
+<p>Dayhand deploys the <code>backend/</code> folder to a Convex deployment (Convex Cloud or self-hosted). The
+repository holds no secrets: everything below goes into the deployment's environment.</p>
+<h2 id="run-your-own-server-in-5-minutes">Run your own server in 5 minutes</h2>
+<p>One command sets up a complete Dayhand server of your own on your own free Convex account: sync for
+the phone app, the MCP endpoint for AI agents, the REST API and <code>dayhand</code>. Nobody else runs or
+maintains anything for you, and nobody else can see your tasks.</p>
+<p>You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex account is made
+(or signed in to) in your browser during the setup.</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git clone https://github.com/maiarowsky/helm.git
+cd helm/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..
+dayhand server deploy</code></pre>
+<p>Without <code>dayhand</code>, the same setup is <code>cd helm/backend &amp;&amp; npm run setup</code> (it then prints the
+<code>dayhand login</code> command to use later). <code>npm link</code> puts <code>dayhand</code> on the PATH; where it needs
+administrator rights, run <code>node cli/dist/bin/dayhand.js server deploy</code> instead.</p>
+<p><code>dayhand server deploy</code> (which runs <code>backend/scripts/setup.mjs</code>):</p>
+<ol>
+<li>installs the backend's dependencies from the lockfile when they are missing
+(<code>npm ci --ignore-scripts</code>);</li>
+<li>logs you in to Convex with the browser (<code>npx convex login</code>; skipped when this computer is
+already signed in);</li>
+<li>creates a project, <code>dayhand</code> by default, in your team and its production deployment (or uses
+the one you name with <code>--deployment</code>);</li>
+<li>generates an ES256 key pair for the app's sign-in and sets <code>DAYHAND_JWT_ISSUER</code> (the
+server's address, <code>https://&lt;deployment&gt;.convex.site</code>), <code>DAYHAND_JWKS</code> and
+<code>DAYHAND_JWT_PRIVATE_JWK</code> in the deployment's environment, passing the values on stdin;</li>
+<li>deploys <code>backend/</code> and checks that <code>/api/v1/openapi.json</code>, <code>/auth/token</code> and <code>/mcp</code> answer;</li>
+<li>creates a CLI key (kind <code>cli</code>) and signs <code>dayhand</code> in with it (OS keychain, or a private file),
+and makes a pairing code for the phone, valid for 10 minutes.</li>
+</ol>
+<p>At the end it prints the server address, the pairing code with a QR code, and the next steps:</p>
+<ul>
+<li><strong>Phone</strong>: open Dayhand, type the server address on the Connect screen and the code (or scan
+the QR code). Another phone later: <code>dayhand pair</code>.</li>
+<li><strong>dayhand</strong>: already signed in; <code>dayhand add &quot;First task&quot;</code> and <code>dayhand</code> show it works.</li>
+<li><strong>Claude</strong>: in the Claude app, Settings → Connectors → Add custom connector with
+<code>https://&lt;deployment&gt;.convex.site/mcp</code>; in Claude Code, <code>claude mcp add --transport http dayhand https://&lt;deployment&gt;.convex.site/mcp</code>, then <code>/mcp</code> to sign in. Either way you approve the
+connection on the paired phone (<a href="oauth.html">oauth.md</a>).</li>
+</ul>
+<p>Options: <code>--team &lt;slug&gt;</code> (asked when you belong to several teams), <code>--project &lt;name&gt;</code>,
+<code>--deployment &lt;name&gt;</code> (an existing production deployment, e.g. made in the dashboard),
+<code>--issuer &lt;url&gt;</code> (only for a new server). <code>--dry-run</code> lists every step and command without
+changing anything or using the network. Without a terminal, add <code>--yes</code>: every question then
+gets its safe answer (keep what is there).</p>
+<h3 id="where-the-keys-are">Where the keys are</h3>
+<p>Secrets never go into the repository or the output. They are kept in a private folder (mode 700,
+files mode 600; on Windows the profile folder's permissions): <code>DAYHAND_SERVER_CONFIG_DIR</code>, or
+<code>~/Library/Application Support/dayhand-server</code> (macOS), <code>$XDG_CONFIG_HOME/dayhand-server</code> or
+<code>~/.config/dayhand-server</code> (Linux), <code>%APPDATA%\dayhand-server</code> (Windows). <code>cloud/</code> holds the Convex
+server, <code>local/</code> the one on this computer:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Where the keys are"><table>
+<thead><tr><th scope="col">File</th><th scope="col">What it is</th></tr></thead>
+<tbody>
+<tr><td><code>server.json</code></td><td>The deployment, its address, the issuer and the user id (<code>&lt;issuer&gt;|owner</code>); no secrets</td></tr>
+<tr><td><code>signing-key.json</code></td><td>A copy of the app-signing key. The deployment's environment holds the one in use; keep the copy in a password manager or delete it</td></tr>
+<tr><td><code>cli-key</code></td><td>The CLI key <code>dayhand</code> was signed in with; revoke it with <code>dayhand key revoke</code> if it leaks</td></tr>
+<tr><td><code>convex.env</code></td><td>Which deployment the Convex CLI acts on (<code>local/</code>: the local backend's admin key)</td></tr>
+<tr><td><code>local/instance-secret.json</code>, <code>local/data/</code></td><td>The local backend's secret and database</td></tr>
+</tbody>
+</table></div>
+<p>The Convex CLI keeps its own login in <code>~/.convex</code>. Anyone with admin access to the deployment
+(your Convex account) can read its environment variables.</p>
+<h3 id="updating">Updating</h3>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>git pull
+dayhand server deploy         # or: cd backend &amp;&amp; npm run setup</code></pre>
+<p>A second run deploys the new code and keeps everything else: the deployment, the keys, the CLI
+key (while it still works) and the data. It never replaces <code>DAYHAND_JWT_ISSUER</code> (it is part of every
+user id, so a new one would hide your tasks) and asks before replacing a signing key the
+deployment already has. Read the &quot;Upgrading to&quot; section of the new version below first: some
+versions need a step after the deploy.</p>
+<h3 id="what-it-costs">What it costs</h3>
+<p>Nothing, on Convex's Free plan. Its limits per team, as published on <a href="https://www.convex.dev/pricing">convex.dev/pricing</a> and
+<a href="https://docs.convex.dev/production/state/limits">docs.convex.dev/production/state/limits</a>
+(checked 2026-10-23; check them again, they change):</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="What it costs"><table>
+<thead><tr><th scope="col">Resource</th><th scope="col">Free plan</th></tr></thead>
+<tbody>
+<tr><td>Function calls (app sync, MCP and API requests, scheduled jobs)</td><td>1,000,000 a month</td></tr>
+<tr><td>Database storage</td><td>0.5 GB</td></tr>
+<tr><td>Database I/O</td><td>1 GB a month</td></tr>
+<tr><td>File storage (Dayhand stores no files; backups count)</td><td>1 GB</td></tr>
+<tr><td>Data egress</td><td>1 GB a month</td></tr>
+<tr><td>Action compute</td><td>20 GB-hours a month</td></tr>
+<tr><td>Deployments</td><td>40 per team</td></tr>
+<tr><td>Developers</td><td>1 to 6</td></tr>
+</tbody>
+</table></div>
+<p>On Free the limits are hard caps: once one is reached, new writes may fail; nothing is billed.
+The paid Starter plan instead charges for usage above the same amounts. One person's tasks are
+small next to these numbers; the Convex dashboard shows what you use.</p>
+<h3 id="backups">Backups</h3>
+<p>Export the data (tasks, history, keys' hashes, devices) to a zip file outside the repository:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>cd backend
+npx convex export --env-file &quot;&lt;folder&gt;/cloud/convex.env&quot; --path ~/dayhand-backup-$(date +%F).zip</code></pre>
+<p><code>&lt;folder&gt;</code> is the private folder above. To restore into the same deployment:
+<code>npx convex import --env-file &quot;&lt;folder&gt;/cloud/convex.env&quot; --replace-all &lt;file&gt;.zip</code> (it drops
+changes made since). Into a new deployment, keep the same <code>DAYHAND_JWT_ISSUER</code> (from <code>server.json</code>),
+or the restored tasks belong to a user nobody signs in as: with a new <code>DAYHAND_SERVER_CONFIG_DIR</code>,
+run <code>dayhand server deploy --deployment &lt;new&gt; --issuer &lt;old issuer&gt;</code>, import the zip with that
+folder's <code>convex.env</code>, run <code>dayhand server deploy</code> once more (the import replaced the keys table, so
+it makes a new CLI key) and pair the phone again. The environment variables are not in the
+export; the signing key can be new.</p>
+<h3 id="on-this-computer-without-an-account">On this computer, without an account</h3>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand server start          # or: cd backend &amp;&amp; npm run setup -- --local</code></pre>
+<p>The same setup with the Convex local backend binary on this computer (macOS or Linux, x64 or
+arm64; not Windows), downloaded once from Convex's GitHub releases, version pinned and
+checksum verified. The binary is source-available under the FSL-1.1-Apache-2.0 licence (each
+release becomes Apache 2.0 two years later), not open source. The server runs until Ctrl+C;
+the same command starts it again with its data and keys (<code>local/</code> in the private folder). It
+listens on 127.0.0.1 only (ports 3210 and 3211, <code>--port</code> and <code>--site-port</code> to change them),
+so the phone cannot reach it as it is. The Claude apps need the public HTTPS server above;
+Claude Code on the same computer can use <code>http://127.0.0.1:3211/mcp</code> with an agent key
+(<a href="mcp.html#connecting-a-client">mcp.md</a>).</p>
+<h3 id="phone-and-computer-tailscale">Phone and computer (Tailscale)</h3>
+<p>A release build of the Android app talks to its server over HTTPS only. To use a phone with the
+server on your computer, put both in a <a href="https://tailscale.com">Tailscale</a> network (tailnet):
+<code>tailscale serve</code> gives the computer an HTTPS address with a certificate inside the tailnet.</p>
+<ol>
+<li><p>Install Tailscale on the computer and the phone and sign both in to the same tailnet. In the
+admin console turn on MagicDNS and HTTPS certificates. The computer's name is then
+<code>&lt;machine&gt;.&lt;tailnet&gt;.ts.net</code>.</p></li>
+<li><p>On the computer, publish the HTTP actions (pairing, MCP) on port 443 and the Convex API
+(the app's sync) on port 8443, inside the tailnet only:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>tailscale serve --bg --https=443 http://127.0.0.1:3211
+tailscale serve --bg --https=8443 http://127.0.0.1:3210</code></pre></li>
+<li><p>Start the server with that address, so it gives the phone the HTTPS addresses instead of
+127.0.0.1:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand server start --public-url https://&lt;machine&gt;.&lt;tailnet&gt;.ts.net</code></pre>
+<p>(<code>--public-api-url</code> when the Convex API is not on port 8443.) Then pair the phone with the
+printed address and code.</p></li>
+</ol>
+<p><code>tailscale serve status</code> shows what is published; <code>tailscale serve reset</code> stops it. The phone
+syncs only while the computer is on and in the tailnet. This setup has not been tested by the
+project yet; if the app does not sync, check that the phone opens
+<code>https://&lt;machine&gt;.&lt;tailnet&gt;.ts.net/api/v1/openapi.json</code>.</p>
+<h2 id="environment-variables">Environment variables</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Environment variables"><table>
+<thead><tr><th scope="col">Variable</th><th scope="col">Value</th><th scope="col">Read by</th></tr></thead>
+<tbody>
+<tr><td><code>DAYHAND_JWT_ISSUER</code></td><td>Issuer of app tokens, e.g. <code>https://dayhand.example</code></td><td><code>auth.config.ts</code>, token signing</td></tr>
+<tr><td><code>DAYHAND_JWKS</code></td><td>Public key(s) as a JWKS data URI (<code>data:application/json;base64,…</code>)</td><td><code>auth.config.ts</code> (Convex verifies app JWTs)</td></tr>
+<tr><td><code>DAYHAND_JWT_PRIVATE_JWK</code></td><td>Private ES256 key as a JWK with <code>kid</code>; its public half must be in <code>DAYHAND_JWKS</code> under the same <code>kid</code></td><td><code>POST /auth/token</code> only; never returned</td></tr>
+<tr><td><code>DAYHAND_MCP_ALLOWED_ORIGINS</code></td><td>Optional. Comma-separated browser origins allowed to call <code>/mcp</code>, e.g. <code>https://inspector.example</code>. Unset: any request with an <code>Origin</code> header gets <code>403</code></td><td><code>POST /mcp</code></td></tr>
+<tr><td><code>DAYHAND_PUBLIC_URL</code></td><td>Optional. The URL users add in Claude, without <code>/mcp</code>, when it is not the Convex site URL (a custom domain). Unset: <code>CONVEX_SITE_URL</code></td><td>OAuth issuer and resource (<a href="oauth.html#configuration">oauth.md</a>)</td></tr>
+<tr><td><code>DAYHAND_OAUTH_CIMD_ORIGINS</code></td><td>Optional. Comma-separated origins whose OAuth client metadata documents are fetched. Unset: <code>https://claude.ai</code>; production should leave it unset</td><td><code>GET /oauth/authorize</code></td></tr>
+<tr><td><code>DAYHAND_WEBHOOK_ALLOWED_ORIGINS</code></td><td>Optional. Comma-separated origins exempt from the webhook address rules (HTTPS, public hosts), e.g. a receiver on a self-hosted deployment's own network. Unset: none; production should leave it unset</td><td>Webhooks (<a href="webhooks.html#security">webhooks.md</a>)</td></tr>
+<tr><td><code>DAYHAND_WEBHOOK_RETRY_DELAYS</code></td><td>Optional. Comma-separated seconds before each webhook retry. Unset: <code>5,300,1800,7200,18000,36000,36000</code></td><td>Webhook delivery</td></tr>
+</tbody>
+</table></div>
+<p>App users are <code>&lt;DAYHAND_JWT_ISSUER&gt;|&lt;subject&gt;</code> (single-user deployments use <code>owner</code> as subject).
+Personal API keys for the CLI and agent should belong to that same user, so the phone, the CLI
+and the agent see one task list.</p>
+<h3 id="renamed-variables">Renamed variables</h3>
+<p>Before 0.9.0 these variables were called <code>HELM_*</code> (<code>HELM_JWT_ISSUER</code>, <code>HELM_JWKS</code>,
+<code>HELM_JWT_PRIVATE_JWK</code> and so on). The backend still reads <code>HELM_&lt;name&gt;</code> while
+<code>DAYHAND_&lt;name&gt;</code> is unset, and logs once per variable that it is deprecated (<code>npx convex logs</code>).
+<code>dayhand server deploy</code> and <code>npm run setup</code> leave the old names in place and say which ones the
+deployment still uses. Moving to the new names is optional; to do it, copy each value under its
+new name, deploy, check, then remove the old one:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>cd backend
+npx convex env list                     # which HELM_* names the deployment has
+for name in JWT_ISSUER JWKS JWT_PRIVATE_JWK; do
+  npx convex env get HELM_$name | npx convex env set DAYHAND_$name
+done
+npx convex deploy                       # Convex reads auth.config.ts at deploy time</code></pre>
+<p>Do the same for the optional variables the list shows. The issuer must stay exactly the same
+value (it is part of every user id). Check that the phone still syncs and <code>dayhand whoami</code>
+works, then remove the old names (<code>npx convex env remove HELM_JWT_ISSUER</code> and so on) and deploy
+once more. Before rolling back to 0.8.x, put the <code>HELM_*</code> names back: 0.8.x reads only those.</p>
+<h2 id="first-deployment-by-hand">First deployment by hand</h2>
+<p>What <code>npm run setup</code> does, step by step, for a deployment you manage yourself:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>cd backend
+node scripts/signing-key.mjs new ~/dayhand-signing-key.json       # mode 600, keep it out of the repo
+npx convex env set DAYHAND_JWT_ISSUER https://dayhand.example
+npx convex env set DAYHAND_JWKS &quot;$(node scripts/signing-key.mjs jwks ~/dayhand-signing-key.json)&quot;
+node scripts/signing-key.mjs private ~/dayhand-signing-key.json | npx convex env set DAYHAND_JWT_PRIVATE_JWK
+npx convex deploy
+npx convex run apiKeys:create '{&quot;userId&quot;:&quot;https://dayhand.example|owner&quot;,&quot;actor&quot;:&quot;app&quot;,&quot;name&quot;:&quot;cli&quot;,&quot;kind&quot;:&quot;cli&quot;}'</code></pre>
+<p><code>signing-key.mjs private</code> refuses to print to a terminal; piping into <code>npx convex env set NAME</code>
+(no value argument) keeps the key out of shell history and process lists.</p>
+<h2 id="upgrading-to-0110">Upgrading to 0.11.0</h2>
+<p>0.11.0 lets the owner stay in charge of agents (<a href="agent-work.html">agent-work.md</a>): approval requests
+decided on the phone, a switch that pauses every agent, a tool policy per agent key, a proposal
+inbox, and the plan health report. Everything is new tools, routes, optional task fields
+(<code>proposedAt</code>, <code>source</code>, <code>requestedBy</code>, <code>returnTo</code>, <code>mergedInto</code>), error codes (<code>agents_paused</code>,
+<code>forbidden</code>, <code>approval_required</code>), webhook events (<code>approval.decided</code>, <code>task.returned</code>) and four
+tables (<code>approvals</code>, <code>agentControls</code>, <code>toolPolicies</code>, <code>taskSources</code>). There is no migration, no new
+status and no new secret; nothing changes until the owner uses a control or an agent proposes a
+task. Older clients keep working: they do not see proposals (which stay out of every list they
+read), and an old agent that gets <code>agents_paused</code> treats it like any unknown error.</p>
+<ol>
+<li>Take a snapshot to roll back to: <code>npx convex export --path dayhand-before-0.11.0.zip</code>.</li>
+<li>Deploy: <code>dayhand server deploy</code> (or <code>npx convex deploy</code>).</li>
+<li>Check: <code>dayhand version</code> shows server 0.11.0, <code>dayhand agents</code> prints <code>Agents run</code>, and
+<code>dayhand health</code> prints the report.</li>
+</ol>
+<p>Two things behave differently: <code>tools/list</code> of an agent (an <code>agent</code> key or an agent connection)
+leaves out the owner's tools (deciding approvals, pausing agents, policies, accepting proposals),
+and is marked <code>cacheScope: &quot;private&quot;</code> on 2026-07-28. A webhook added without <code>events</code> gets the
+same task events as before; <code>approval.decided</code> has to be asked for.</p>
+<p>Rollback: 0.10.x's schema does not know the new tables and fields, so Convex refuses to deploy it
+while any of them hold data. Restore the snapshot from step 1 first,
+<code>npx convex import --replace-all dayhand-before-0.11.0.zip</code> (this also drops every change made
+since), then deploy 0.10.x. Agents paused at that moment run again after the rollback.</p>
+<h2 id="upgrading-to-0100">Upgrading to 0.10.0</h2>
+<p>0.10.0 adds agent work (<a href="agent-work.html">agent-work.md</a>): the activity log (<code>list_events</code>,
+<code>dayhand://activity</code>, <code>GET /api/v1/events</code>), acceptance criteria, a plan and proof on tasks,
+dependencies with a blocked reason and <code>list_all</code> <code>ready</code>, and time-boxed claims with the new error
+code <code>conflict</code>. Everything is new, optional fields, tools, routes and one table
+(<code>eventCounters</code>); no field changes its meaning, there is no new status and no new secret. Older
+clients keep working; they just do not see the new fields.</p>
+<p>One migration numbers the history from before 0.10.0 into the activity log. Until it has run,
+<code>list_events</code> shows only changes made after the deploy; nothing else depends on it.</p>
+<ol>
+<li>Take a snapshot to roll back to: <code>npx convex export --path dayhand-before-0.10.0.zip</code>.</li>
+<li>Deploy: <code>dayhand server deploy</code> (or <code>npx convex deploy</code>).</li>
+<li>Number the old history: <code>npx convex run migrations:backfillEventSeqs</code>. It works in batches and
+schedules itself; <code>npx convex run migrations:status</code> shows <code>taskEventsWithoutSeq: 0</code> when it is
+done. Running it again changes nothing.</li>
+<li>Check: <code>dayhand version</code> shows server 0.10.0 and <code>dayhand log --since 0 --limit 5</code> lists the
+oldest changes.</li>
+</ol>
+<p>Agents get the new behaviour only when they use it: an agent completing a task that has acceptance
+criteria needs them met and a proof summary, and another agent's claim refuses its changes with
+<code>conflict</code>. The app and <code>cli</code> keys are never refused. The Android app 0.9.1 shows a claim, the
+criteria and the proof in a task's details; older apps ignore the new fields.</p>
+<p>Rollback: 0.9.x's schema does not know the new fields, so Convex refuses to deploy it while any
+task has them or any history row has <code>seq</code> (which the migration gives every old row). Restore the
+snapshot from step 1 first, <code>npx convex import --replace-all dayhand-before-0.10.0.zip</code> (this also
+drops every change made since), then deploy 0.9.x. To keep those changes, roll forward with a fix
+instead.</p>
+<h2 id="upgrading-to-090">Upgrading to 0.9.0</h2>
+<p>0.9.0 renames Helm to Dayhand. There is no schema change, no migration and no new secret: tasks,
+API keys, paired phones, agent connections and calendar addresses keep working, and every old
+name below is still accepted:</p>
+<ul>
+<li>the variables are <code>DAYHAND_*</code>; the <code>HELM_*</code> ones are read while the new ones are unset
+(<a href="#renamed-variables">Renamed variables</a>);</li>
+<li>MCP <code>serverInfo.name</code> is <code>dayhand</code> and the resources are <code>dayhand://today</code>, <code>dayhand://guide</code>
+and <code>dayhand://tasks/{ref}</code> (<code>helm://</code> URIs are still read);</li>
+<li>new API keys start with <code>dayhand_</code> (<code>helm_</code> keys keep working: keys are found by their hash);</li>
+<li><code>dayhand pair</code> prints <code>dayhand://pair</code> links. The Android app from 0.9.0 and the macOS app open
+both forms; an older Android app opens only <code>helm://pair</code>, so type the code there;</li>
+<li>the import format is <code>dayhand-json</code> (<code>helm-json</code> still accepted), the calendar export file
+<code>dayhand.ics</code>, and the feed's events say <code>Dayhand #&lt;number&gt;</code> (their UIDs stay <code>…@helm</code>, so
+calendars do not show them twice);</li>
+<li><code>WWW-Authenticate</code> says <code>realm=&quot;dayhand&quot;</code>, the OpenAPI document <code>x-dayhand-scope</code>, and problem
+types are under <code>https://schemas.dayhand.invalid/</code>; a client that compares these strings
+exactly needs the new ones;</li>
+<li>the old <code>helm</code> command of <code>backend/</code> (<code>npx helm</code>) is gone; use <code>dayhand</code> from <code>cli/</code>.</li>
+</ul>
+<ol>
+<li>Take a snapshot to roll back to: <code>npx convex export --path dayhand-before-0.9.0.zip</code>.</li>
+<li>Deploy: <code>dayhand server deploy</code> (or <code>npx convex deploy</code>).</li>
+<li>Check: <code>dayhand version</code> shows server 0.9.0, the phone syncs, and <code>npx convex logs</code> shows one
+deprecation line for each <code>HELM_*</code> variable still in use.</li>
+</ol>
+<p>Rollback: deploy 0.8.x again. Nothing in the data changed, and <code>dayhand_</code> keys work there too;
+only the <code>HELM_*</code> variables must be in place (see <a href="#renamed-variables">Renamed variables</a>).</p>
+<p>The sections below were written before the rename: <code>hlm</code> is now <code>dayhand</code>, the <code>helm</code> command
+of <code>backend/</code> is gone, and their <code>HELM_*</code> and <code>HLM_*</code> variables are now <code>DAYHAND_*</code>.</p>
+<h2 id="upgrading-to-080">Upgrading to 0.8.0</h2>
+<p>0.8.0 adds the REST API for integrations (<a href="api.html">api.md</a>), webhooks
+(<a href="webhooks.html">webhooks.md</a>), import, and API keys with a scope and an expiry date:</p>
+<ul>
+<li>new optional fields in <code>apiKeys</code>: <code>scope</code>, <code>expiresAt</code>, <code>parentKeyId</code>;</li>
+<li>new tables <code>webhooks</code> and <code>webhookDeliveries</code>, and a daily cron
+(<code>webhooks.purgeDeliveries</code>, 04:15 UTC) that drops delivery log entries older than 30 days;</li>
+<li>new routes under <code>/api/v1/</code> (<code>/api/v1/openapi.json</code> is public);</li>
+<li>the optional variables <code>HELM_WEBHOOK_ALLOWED_ORIGINS</code> and <code>HELM_WEBHOOK_RETRY_DELAYS</code>
+(leave both unset in production).</li>
+</ul>
+<p>Every new field is optional and every key without a scope is a full key, so there is <strong>no
+migration</strong> and no new secret: existing keys, the app, agents and <code>hlm</code> 0.7 keep working.
+Nothing sends webhooks until a user adds one. One behaviour tightens: <code>/devices*</code>,
+<code>/connections*</code> and <code>/calendar/feed*</code> now need a full key; since every existing key is full,
+this only affects the new <code>read</code> and <code>write</code> keys.</p>
+<ol>
+<li><p>Take a snapshot to roll back to: <code>npx convex export --path helm-before-0.8.0.zip</code> (it holds
+the user's tasks; keep it out of the repository).</p></li>
+<li><p>Deploy: <code>npx convex deploy</code>.</p></li>
+<li><p>Check, with the key <code>hlm</code> uses (<code>hlm whoami</code> shows the URL):</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>curl -s https://&lt;name&gt;.convex.site/api/v1/openapi.json | head -c 200        # public, &quot;openapi&quot;: &quot;3.1.0&quot;
+curl -s -o /dev/null -w '%{http_code}\n' https://&lt;name&gt;.convex.site/api/v1/today \
+  -H &quot;Authorization: Bearer $HLM_API_KEY&quot;                                    # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://&lt;name&gt;.convex.site/api/v1/today   # 401</code></pre>
+<p><code>npx convex logs</code> shows any error. The MCP endpoint reports <code>serverInfo.version</code> <code>0.8.0</code>.</p></li>
+<li><p>Optional: give each integration its own key with the smallest scope and an expiry, from a
+full key (<code>hlm key create n8n --scope read --expires 90d</code>, hlm 0.8.0) or as the admin
+(<code>npx convex run apiKeys:create '{&quot;userId&quot;:&quot;&lt;issuer&gt;|owner&quot;,&quot;actor&quot;:&quot;app&quot;,&quot;name&quot;:&quot;n8n&quot;,&quot;scope&quot;:&quot;read&quot;,&quot;expiresAt&quot;:&lt;ms&gt;}'</code>).</p></li>
+</ol>
+<p>Rollback: first remove what 0.7.0 does not know, then deploy 0.7.0 again.</p>
+<ol>
+<li>Remove the webhooks (<code>hlm webhook rm &lt;id&gt; --yes</code> for each, which also deletes their
+delivery logs) and revoke the keys that have a scope or an expiry date, or were created with a
+key (<code>hlm key list</code>, <code>hlm key revoke &lt;id&gt;</code>).</li>
+<li>Deploy 0.7.0. Its schema has no <code>webhooks</code>, <code>webhookDeliveries</code>, <code>scope</code>, <code>expiresAt</code> or
+<code>parentKeyId</code>, so Convex refuses the push while any row has them. Empty a table the same
+way as <code>callLimits</code> for 0.4.0 below (<code>npx convex import --table webhookDeliveries --replace --yes empty.jsonl</code>, likewise <code>webhooks</code>). A revoked key still carries its <code>scope</code>: delete
+those rows by hand (<code>npx convex data apiKeys</code> shows them) or restore the snapshot from
+step 1 of the upgrade (<code>npx convex import --replace-all helm-before-0.8.0.zip</code>, which drops
+changes made since).</li>
+<li>Tasks created by an import and history entries with the actions <code>import</code>, <code>webhook.*</code> and
+<code>apiKey.*</code> are ordinary rows that 0.7.0 reads as they are; nothing else needs to change.
+Integrations that use <code>/api/v1</code> then get <code>404</code> until 0.8.0 is back.</li>
+</ol>
+<h2 id="upgrading-to-070">Upgrading to 0.7.0</h2>
+<p>0.7.0 adds the read-only calendar feed (<a href="calendar.html">calendar.md</a>): the table <code>calendarFeeds</code>,
+the routes <code>GET /cal/&lt;token&gt;.ics</code> and <code>/calendar/feed*</code>, and the format <code>ics</code> of <code>export_plan</code>.
+Nothing existing changes, so there is no migration and no new environment variable:
+<code>npx convex deploy</code> is enough. The feed URL is built from <code>CONVEX_SITE_URL</code>, which Convex sets
+itself. The feed is off for every user until they turn it on (Android 0.8.0 Settings →
+Calendar, or <code>hlm calendar on</code> with hlm 0.7.0); older apps and <code>hlm</code> keep working without it.</p>
+<p>Rollback: turn the feeds off (<code>hlm calendar off --yes</code>), then deploy 0.6.0 again. Its schema
+has no <code>calendarFeeds</code>; if Convex refuses the push because the table holds rows, empty it the
+same way as <code>callLimits</code> for 0.4.0 below. Subscribed calendars then get <code>404</code> and keep their
+last copy.</p>
+<h2 id="upgrading-to-060">Upgrading to 0.6.0</h2>
+<p>0.6.0 adds OAuth for the Claude apps (<a href="oauth.html">oauth.md</a>): the tables <code>oauthClients</code>,
+<code>oauthRequests</code>, <code>oauthGrants</code> and <code>oauthTokens</code>, the optional field <code>connectionId</code> in
+<code>taskEvents</code> and <code>callLimits</code> (where <code>keyId</code> becomes optional), and a daily cron
+(<code>oauth.purgeExpired</code>, 04:00 UTC). Existing rows stay valid, so there is no migration and no
+new secret: <code>npx convex deploy</code> is enough. API keys, the app and <code>hlm</code> 0.5 keep working; the
+only visible change for them is a longer <code>WWW-Authenticate</code> header on <code>401</code> from <code>/mcp</code>.
+Connecting the Claude app afterwards is a manual step done once on the phone
+(<a href="oauth.html#connecting-the-claude-app-manual-procedure">oauth.md</a>). The Android app needs 0.7.0
+for Settings → Agent connections; older apps keep working without it.</p>
+<p>Rollback: revoke the connections first (<code>hlm connection revoke &lt;id&gt;</code>), then deploy 0.5.0
+again. Its schema has no OAuth tables and no <code>connectionId</code>; if Convex refuses the push because
+of rows in them, empty the four <code>oauth*</code> tables and <code>callLimits</code> the same way as for 0.4.0
+below. History entries written through a connection keep their <code>connectionId</code> and would block
+the push too; they are rare enough to delete by hand (<code>npx convex data taskEvents</code>), or stay on
+0.6.0.</p>
+<h2 id="upgrading-to-050">Upgrading to 0.5.0</h2>
+<p>0.5.0 adds <code>checklist</code> and <code>reminders</code> to tasks and new optional fields to <code>repeat</code> (<code>from</code>,
+<code>monthDay</code>, <code>weekdayOfMonth</code>, <code>until</code>, <code>count</code>). All of them are optional in the schema, so the
+deploy accepts existing data and needs no migration: a task without them repeats, rings and
+exports as before. Deploy with <code>npx convex deploy</code>.</p>
+<p>Clients: the CLI and the agent keep working unchanged. An app older than 0.6.0 shows repeat rules
+with the new fields as their plain unit and does not show checklists or per-task reminders;
+changing such a task's repeat rule in that app replaces the rule with what it shows.</p>
+<p>Rollback: deploying 0.4.0 again fails schema validation once any task uses a new field. Roll
+forward with a fix, or remove the new fields from those tasks first (or restore a snapshot taken
+before the deploy with <code>npx convex export</code>).</p>
+<h2 id="upgrading-to-040">Upgrading to 0.4.0</h2>
+<p>0.4.0 adds the table <code>callLimits</code> (MCP calls per key and minute) and changes nothing in the
+existing tables, so there is no migration: <code>npx convex deploy</code> is enough, and 0.3 clients (the
+app, <code>hlm</code> 0.3, agents) keep working. Calls are now limited per key (120 reads and 60 changes a
+minute), and <code>/mcp</code> refuses requests with a browser <code>Origin</code> that is not in
+<code>HELM_MCP_ALLOWED_ORIGINS</code>; MCP clients outside a browser send no <code>Origin</code>.</p>
+<p>Rollback: deploy 0.3.0 again. Its schema does not define <code>callLimits</code>; if Convex refuses the
+push because that table holds rows, empty it first (<code>npx convex import --table callLimits --replace --yes empty.jsonl</code> with an empty file). The rows only count calls, so nothing is lost.</p>
+<h2 id="upgrading-to-030">Upgrading to 0.3.0</h2>
+<p>0.3.0 adds task numbers (<code>tasks.ref</code>, new table <code>taskCounters</code>) and key kinds (<code>apiKeys.kind</code>,
+<code>taskEvents.keyId</code> and <code>actorName</code>). All new fields are optional in the schema, so the deploy
+accepts existing data, and the app, the agent and old API keys keep working before the
+migration runs. Until then, tasks created before the upgrade have no number (<code>#n</code> does not
+find them) and old keys count as <code>agent</code> keys.</p>
+<ol start="0">
+<li><p>Take a snapshot to roll back to: <code>npx convex export --path helm-before-0.3.0.zip</code> (it holds
+the user's tasks; keep it out of the repository).</p></li>
+<li><p>Deploy: <code>npx convex deploy</code>.</p></li>
+<li><p>Right after, number the existing tasks (oldest first, per user; runs in batches of 200 and
+schedules itself until done) and mark the existing keys as <code>agent</code> keys:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>npx convex run migrations:backfillTaskRefs
+npx convex run migrations:backfillKeyKinds</code></pre>
+<p>Run it right away: tasks added between the deploy and the migration get numbers first, so
+older tasks get the numbers after them. Both migrations are idempotent and can be run again.</p></li>
+<li><p>Check that nothing is left: <code>npx convex run migrations:status</code> must print
+<code>{ &quot;keysWithoutKind&quot;: 0, &quot;tasksWithoutRef&quot;: 0 }</code>. If <code>tasksWithoutRef</code> is not 0 yet, the
+scheduled batches are still running; check again after a few seconds.</p></li>
+<li><p>If the key the user types commands with is a CLI key, make a new one with
+<code>&quot;kind&quot;: &quot;cli&quot;</code> (see <a href="mcp.html#keys-and-actors">mcp.md</a>), switch the CLI to it and revoke the
+old one, so the history shows <code>cli</code> instead of <code>agent: &lt;name&gt;</code>. Kinds cannot be changed on
+an existing key.</p></li>
+</ol>
+<p>Rollback: deploying 0.2.0 again over migrated data fails schema validation (<code>ref</code>, <code>kind</code>,
+<code>actor: &quot;cli&quot;</code>, <code>keyId</code> and <code>actorName</code> are unknown to it). Roll forward with a fix instead, or
+restore the snapshot from step 0 (<code>npx convex import --replace-all helm-before-0.3.0.zip</code>,
+which drops changes made since) and deploy 0.2.0.</p>
+<h2 id="moving-an-existing-key-from-disk-into-the-deployment">Moving an existing key from disk into the deployment</h2>
+<p>For a deployment that already trusts a key pair kept on a computer (the private half was used
+to sign app tokens locally):</p>
+<ol>
+<li><p>Check that the deployment publishes the key you hold:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>npx convex env get DAYHAND_JWKS | node scripts/signing-key.mjs check /path/to/key.json</code></pre>
+<p>It must print <code>OK: DAYHAND_JWKS publishes this key (kid …)</code>. The file may hold the private JWK
+itself or <code>{ &quot;privateJwk&quot;: … }</code>, as written by <code>npm run app-token -- --generate</code> and
+<code>scripts/signing-key.mjs new</code>.</p></li>
+<li><p>Set the private key, then deploy the code with pairing:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>node scripts/signing-key.mjs private /path/to/key.json | npx convex env set DAYHAND_JWT_PRIVATE_JWK
+npx convex deploy</code></pre></li>
+<li><p>Check the configuration without a real device: a bogus device token must get <code>401</code>
+(configured), not <code>503</code> (not configured):</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>curl -s -X POST https://&lt;name&gt;.convex.site/auth/token \
+  -H 'Content-Type: application/json' -d '{&quot;deviceToken&quot;:&quot;helmdev_x.y&quot;}'
+# {&quot;error&quot;:&quot;invalid_grant&quot;,…}</code></pre>
+<p>On <code>503</code>, <code>npx convex logs</code> shows the reason (missing variable, or a key that does not
+match <code>DAYHAND_JWKS</code>).</p></li>
+<li><p>Check that the CLI's API key belongs to the app user: <code>npx convex data apiKeys</code> must show
+<code>userId</code> = <code>&lt;DAYHAND_JWT_ISSUER&gt;|owner</code>. Then <code>dayhand pair</code> works and the phone sees the same tasks.</p></li>
+<li><p>Paste-in tokens issued earlier with <code>npm run app-token</code> keep working until they expire
+(same key). Pair the phone instead, then stop issuing them.</p></li>
+<li><p>Move the key file off the disk into an offline backup (a password manager), or delete it.
+The deployment environment is now the only place that needs it. Anyone with admin access to
+the deployment can read its environment variables.</p></li>
+</ol>
+<h2 id="rotating-the-signing-key">Rotating the signing key</h2>
+<ol>
+<li><code>node scripts/signing-key.mjs new new-key.json</code>.</li>
+<li>Publish both public keys for an hour: set <code>DAYHAND_JWKS</code> to a data URI whose <code>keys</code> array holds
+the old and the new key, and deploy (<code>auth.config.ts</code> is read at deploy time).</li>
+<li>Pipe the new private key into <code>DAYHAND_JWT_PRIVATE_JWK</code>; new tokens are signed with it.</li>
+<li>After an hour (the token lifetime), set <code>DAYHAND_JWKS</code> to the new key only and deploy again.</li>
+</ol>
+<p>Paired devices keep working through a rotation: their device tokens do not depend on the key.</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="oauth.html" rel="prev"><span>Previous</span> Claude apps (OAuth)</a><a href="pairing.html" rel="next"><span>Next</span> Phone pairing</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/deploy.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

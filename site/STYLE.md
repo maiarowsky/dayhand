@@ -80,3 +80,14 @@ scroll-driven animation, `text-box` and `@property`.
 No cookies, no analytics, no fonts or scripts from other servers. `scripts/check-site.sh` checks HTML
 resource references and lints CSS/JS source patterns; it does not prove runtime network behaviour.
 Verify requests separately in a browser's Network panel.
+
+## Documentation pages (`docs/`)
+
+`site/docs/*.html` and `site/docs/search-index.js` are built from `docs/*.md` by `scripts/build-docs.mjs`
+(Node, standard library only) and committed, so serving the site still needs no build step; edit the
+Markdown, never the built pages. Which files become pages, and their menu, are in `scripts/docs/pages.mjs`.
+`site/docs/search.js` (hand-written) folds the menu on narrow screens and searches the index, which is JSON
+assigned to one global so that it also loads from the file system. The docs use `styles.css` (their rules
+are at its end) and `main.js` for Copy buttons. `scripts/check-site.sh` also checks that the built pages are
+current and that every page but `404.html` is in `sitemap.xml`. Pages were checked at 390 px and 1280 px, in
+both themes and printed; Lighthouse accessibility scored 100 on the overview, agents and MCP pages.

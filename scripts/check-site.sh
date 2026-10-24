@@ -6,19 +6,27 @@
 #   points at a file and an id that exist;
 # - resource references: HTML attributes must be local (plain <a href> links may be external);
 # - static CSS/JS lint: CSS url() paths, no @import, outline: none or transition: all, and no
-#   server URL literals in scripts. These pattern scans do not observe browser network behaviour.
+#   server URL literals in scripts. These pattern scans do not observe browser network behaviour;
+# - the documentation (site/docs/): built from docs/*.md by the current scripts/build-docs.mjs, and
+#   every page except 404.html listed in sitemap.xml.
 #
 #   scripts/check-site.sh            # always checks this checkout's site/
 #
-# Needs python3 (standard library only). Exit code 0 when everything passes, 1 with a list of problems.
+# Needs python3 and node (standard libraries only). Exit code 0 when everything passes, 1 with a list
+# of problems.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SITE="$ROOT/site"
 [ -d "$SITE" ] || { echo "check-site: no folder $SITE" >&2; exit 2; }
 command -v python3 >/dev/null || { echo "check-site: python3 is needed" >&2; exit 2; }
+command -v node >/dev/null || { echo "check-site: node is needed" >&2; exit 2; }
 
-exec python3 -I - "$SITE" <<'PY'
+DOCS_STATUS=0
+node "$ROOT/scripts/build-docs.mjs" --check || DOCS_STATUS=1
+
+python3 -I - "$SITE" <<'PY' || exit 1
+
 import os, re, sys
 from html.parser import HTMLParser
 from urllib.parse import urlsplit, unquote
@@ -249,11 +257,17 @@ else:
         locs = root.findall(f"{SITEMAP_NS}url/{SITEMAP_NS}loc")
         if not locs:
             problem(sitemap, 1, "lists no page locations")
+        listed = set()
         for element in locs:
             loc = (element.text or "").strip()
             target = local_target(sitemap, loc) if loc.startswith(ORIGIN + "/") else None
             if target is None or target[0] not in pages:
                 problem(sitemap, 1, f"{loc} is not a page of this site")
+            else:
+                listed.add(target[0])
+        for path in pages:
+            if os.path.basename(path) != "404.html" and path not in listed:
+                problem(sitemap, 1, f"{os.path.relpath(path, SITE)} is not listed")
 if not os.path.isfile(robots):
     problems.append("robots.txt is missing")
 else:
@@ -273,3 +287,4 @@ if problems:
     sys.exit(1)
 print(f"check-site: {len(pages)} page(s) in {os.path.relpath(SITE)} pass")
 PY
+exit $DOCS_STATUS

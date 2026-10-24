@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agents and you · Dayhand docs</title>
+  <meta name="description" content="Dayhand lets AI agents work on your plan next to you: read Today, add and plan tasks, claim one, finish it with proof. You stay in charge: agents ask before…">
+  <link rel="canonical" href="https://dayhand.dev/docs/agents.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="agents-and-you">Agents and you</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#give-each-agent-its-own-key">Give each agent its own key</a></li>
+      <li><a href="#connect-the-agent">Connect the agent</a></li>
+      <li><a href="#what-the-agent-sees">What the agent sees</a></li>
+      <li><a href="#one-task-start-to-finish">One task, start to finish</a></li>
+      <li><a href="#approvals-agents-ask-you-decide-on-the-phone">Approvals: agents ask, you decide on the phone</a></li>
+      <li><a href="#pausing-every-agent">Pausing every agent</a></li>
+      <li><a href="#tool-policies-per-agent-key">Tool policies per agent key</a></li>
+      <li><a href="#the-proposal-inbox">The proposal inbox</a></li>
+      <li><a href="#the-health-report">The health report</a></li>
+      <li><a href="#what-a-well-behaved-agent-does">What a well-behaved agent does</a></li>
+      <li><a href="#planned">Planned</a></li>
+      </ul>
+    </nav>
+<p>Dayhand lets AI agents work on your plan next to you: read Today, add and plan tasks, claim one,
+finish it with proof. You stay in charge: agents ask before risky steps, one switch stops all of
+them, a policy per agent says which tools it may use, and work nobody asked for waits in an inbox.
+This page shows how to set that up and use it. The reasons behind each feature are in
+<a href="agent-work.html">how agent work is designed</a>, the exact tools in <a href="mcp.html">MCP endpoint</a>.</p>
+<p><strong>What Dayhand can and cannot do.</strong> Dayhand records every change an agent makes in your plan and
+enforces your controls on its own tools. It cannot see or stop what an agent does outside Dayhand: an
+approval you give is a record the agent is expected to respect, not a lock on its other tools.</p>
+<h2 id="give-each-agent-its-own-key">Give each agent its own key</h2>
+<p>Every change is signed with who made it: <code>app</code> (you in an app), <code>cli</code> (you with <code>dayhand</code>) or
+<code>agent: &lt;name&gt;</code>. An agent gets a key of its own, so its changes show its name and you can revoke it
+alone:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand key create claude --scope write --json     # prints the key once, in &quot;key&quot;
+dayhand key list
+dayhand key revoke &lt;keyId&gt;</code></pre>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Give each agent its own key"><table>
+<thead><tr><th scope="col">Scope</th><th scope="col">The key may</th></tr></thead>
+<tbody>
+<tr><td><code>read</code> (the default of <code>dayhand key create</code>)</td><td>read the plan: Today, lists, tasks, history, the activity log</td></tr>
+<tr><td><code>write</code></td><td>also change tasks and settings</td></tr>
+<tr><td><code>full</code></td><td>also manage keys, webhooks, devices, connections and the calendar feed; <code>dayhand key create</code> never makes one</td></tr>
+</tbody>
+</table></div>
+<p>A key made with <code>dayhand key create</code> expires after 90 days unless <code>--expires</code> says otherwise (<code>12w</code>, <code>1y</code>,
+a date, <code>never</code>), never outlives the key that made it, and stops when that key is revoked. Each key may
+make 120 reads and 60 changes a minute. More: <a href="mcp.html#keys-and-actors">keys and actors</a>.</p>
+<h2 id="connect-the-agent">Connect the agent</h2>
+<p><strong>Claude Code and other MCP clients</strong> that can send a header connect to your server's <code>/mcp</code> address
+with the key:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header &quot;Authorization: Bearer $AGENT_KEY&quot;</code></pre>
+<p>On a server on your Convex account, the address is <code>https://&lt;deployment&gt;.convex.site/mcp</code>. Any other
+client works the same way: the address and an <code>Authorization: Bearer &lt;key&gt;</code> header.</p>
+<p><strong>The Claude apps</strong> (claude.ai, Claude Desktop, Claude for Android and iOS) add Dayhand as a custom
+connector and sign in with OAuth instead of a key. You approve each connection on your phone, by the code
+the sign-in page shows. This needs a server with a public HTTPS address (<code>dayhand server deploy</code>):
+<a href="oauth.html">Claude apps (OAuth)</a>.</p>
+<p><strong>Agents that run shell commands</strong> can use <code>dayhand</code> with the key in <code>DAYHAND_API_KEY</code> (and the server in
+<code>DAYHAND_URL</code>). With <code>--json</code> it prints exactly what the MCP tools return, and its exit codes say what to
+do next (<a href="terminal.html#for-scripts">for scripts</a>). Two helpers:</p>
+<ul>
+<li>A ready <strong>Agent Skill</strong> teaches an agent the commands and the rules:
+<code>mkdir -p ~/.claude/skills &amp;&amp; cp -R docs/skills/dayhand ~/.claude/skills/</code> from the checkout.</li>
+<li><code>dayhand prime</code> prints Today and a short guide as plain text, for a session-start hook. In Claude Code's
+settings: <code>{&quot;hooks&quot;:{&quot;SessionStart&quot;:[{&quot;hooks&quot;:[{&quot;type&quot;:&quot;command&quot;,&quot;command&quot;:&quot;dayhand prime&quot;}]}]}}</code>.</li>
+</ul>
+<h2 id="what-the-agent-sees">What the agent sees</h2>
+<p>Over MCP your server offers 32 tools, three resources with two resource templates, and four prompts
+(<a href="mcp.html#tools">the full list</a>):</p>
+<ul>
+<li><strong>Tools</strong> for everything the apps do: add, update, complete, reschedule, archive, delete and restore
+tasks; Today, search, the board and the trash; the activity log, claims, approval requests, proposals
+and the health report. Tools that only you may use (deciding approvals, pausing agents, policies,
+accepting proposals) are left out of an agent's list.</li>
+<li><strong>Resources</strong>: <code>dayhand://today</code>, <code>dayhand://activity</code> and <code>dayhand://guide</code>, a short text on how an agent
+should work with Dayhand; the templates <code>dayhand://activity{?since}</code> and <code>dayhand://tasks/{ref}</code> read the
+log from a cursor and one task with its history.</li>
+<li><strong>Prompts</strong>: <code>plan_day</code>, <code>weekly_review</code>, <code>triage_overdue</code> and <code>plan_health</code>, each of which asks the agent
+to go through the plan with you and ask before changing anything.</li>
+</ul>
+<p>Every change takes <code>dryRun: true</code> to check it without saving, and a <code>clientId</code> so that a retry is never
+applied twice (<a href="mcp.html#dry-runs">dry runs</a>).</p>
+<h2 id="one-task-start-to-finish">One task, start to finish</h2>
+<p>Tasks can say what done means (acceptance criteria) and how the work will go (a plan). An agent claims a
+task so other agents leave it alone, ticks the criteria and finishes with proof:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>TASK_ID=$(dayhand add &quot;Send the Q4 invoices&quot; --due &quot;today 17:00&quot; --accept &quot;One PDF per client&quot; --plan &quot;Export, then check the totals&quot; --json | jq -er .id)
+DAYHAND_API_KEY=$AGENT_KEY dayhand claim &quot;$TASK_ID&quot; --minutes 30
+DAYHAND_API_KEY=$AGENT_KEY dayhand criteria &quot;$TASK_ID&quot; --met all
+DAYHAND_API_KEY=$AGENT_KEY dayhand done &quot;$TASK_ID&quot; --summary &quot;3 PDFs sent&quot; --check totals=pass
+dayhand log --by agent</code></pre>
+<ul>
+<li><strong>Acceptance criteria and proof.</strong> When a task has criteria, an agent can complete it only when every
+criterion is met and the proof has a summary; otherwise the call fails (<code>precondition_failed</code>, exit 6)
+and nothing changes. The proof (a summary, links, checks that passed or failed) stays on the task and
+shows in the phone's task details. You complete tasks as always: the rule binds agents, not you.</li>
+<li><strong>Claims are leases.</strong> <code>dayhand claim</code> holds a task for a while (120 minutes unless <code>--minutes</code> says 1 to
+1440). While it lasts, another agent's changes to the task fail with <code>conflict</code> (exit 6), so it picks
+another. The holder extends it with <code>dayhand renew</code> and ends it with <code>dayhand release --note &quot;&lt;where I stopped&gt;&quot;</code>, which becomes the task's resume note. A claim that runs out ends by itself. Your own
+changes always go through, and the phone can take a task over at once.</li>
+<li><strong>Order.</strong> <code>--depends-on</code> names tasks that must be done first and <code>--blocked</code> says why a task cannot go
+on. <code>dayhand list --ready</code> lists what can be worked on now.</li>
+<li><strong>Catching up.</strong> <code>dayhand log</code> lists every change in order with who made it. An agent keeps the
+<code>nextCursor</code> and passes it as <code>--since</code> next time to read only what changed meanwhile.</li>
+</ul>
+<h2 id="approvals-agents-ask-you-decide-on-the-phone">Approvals: agents ask, you decide on the phone</h2>
+<p>Before a risky or irreversible step, an agent asks with two to four options and what each one leads to:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand ask Deploy 2.4 to production --option &quot;Deploy now: live in 10 minutes&quot; --option &quot;Wait: nothing changes until Monday&quot; --expires 2h
+dayhand approval &lt;id&gt; --wait 600 --json</code></pre>
+<p>The request shows on your phone (Settings → Agents, the health card above Today, and a notification) and
+in <code>dayhand approvals</code>. You pick an option, optionally with a note; from a terminal with a <code>cli</code> key:
+<code>dayhand approvals decide &lt;id&gt; o2 --note &quot;after the weekend&quot;</code>. The agent reads the outcome with
+<code>dayhand approval &lt;id&gt;</code> (or the MCP tool <code>get_approval</code>), or hears it through the webhook
+<code>approval.decided</code>. A request expires after a day unless it says otherwise (a week at most); an expired
+one cannot be decided, and the agent has to ask again.</p>
+<p>With the app closed, the phone looks for new requests every 15 minutes, so give a realistic expiry.
+Dayhand records who asked, what was offered and what you chose, in the task's history and the activity
+log. Whether the agent then does what you chose is up to the agent.</p>
+<h2 id="pausing-every-agent">Pausing every agent</h2>
+<p>One switch stops every agent's changes at once, for every key and every OAuth connection, while they can
+still read and tell you what they see:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand agents pause --reason &quot;on holiday&quot;
+dayhand agents
+dayhand agents resume</code></pre>
+<p>The same switch is <strong>Pause agents</strong> under Settings → Agents on the phone. While it is on, every change by an
+agent fails with <code>agents_paused</code> (exit 7), dry runs and approval requests included. Your own changes from
+the apps and <code>cli</code> keys are never refused, and no key needs to be replaced afterwards. An agent cannot
+lift the pause itself.</p>
+<h2 id="tool-policies-per-agent-key">Tool policies per agent key</h2>
+<p>A policy says, for one agent key, whether a tool that changes the plan is allowed (the default), needs your
+approval each time, or is refused. <code>&quot;*&quot;</code> covers every such tool without a rule of its own:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand policy set &lt;keyId&gt; delete_task deny
+dayhand policy set &lt;keyId&gt; complete_task ask
+dayhand policy set &lt;keyId&gt; &quot;*&quot; ask
+dayhand policy</code></pre>
+<ul>
+<li><code>deny</code> refuses the call (<code>forbidden</code>, exit 7). Reading tools have no policy.</li>
+<li><code>ask</code> refuses the call with <code>approval_required</code> and the id of an approval request Dayhand made for
+exactly that call (an hour to decide). Once you choose <strong>Allow once</strong>, the agent repeats the call with
+the approval (<code>--approval &lt;id&gt;</code> in <code>dayhand</code>, <code>approvalId</code> over MCP) and it runs, once.</li>
+<li>The key's id comes from <code>dayhand key list</code>. The phone shows the policies but does not change them yet.</li>
+<li>Policies apply to API keys. An OAuth connection, such as the Claude app, follows the pause and its
+scopes (read, or read and change), but has no per-tool rules: give an agent that needs them a key.</li>
+</ul>
+<h2 id="the-proposal-inbox">The proposal inbox</h2>
+<p>Work an agent or an integration came up with, rather than work you asked for, can be added as a
+<strong>proposal</strong>. It waits in your inbox, out of Today, the board, lists, the calendar and reminders, until
+you decide:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand add &quot;Checkout times out&quot; --propose --source &quot;sentry:CHECKOUT-42 https://sentry.example.com/issues/42&quot;
+dayhand proposals
+dayhand proposals accept 42
+dayhand proposals merge 43 --into 12
+dayhand proposals reject 44 --reason &quot;not now&quot;</code></pre>
+<ul>
+<li><strong>Accept</strong>: it joins the plan as it is. <strong>Merge</strong>: an open task gets its note, links and labels, and the
+proposal goes to the trash. <strong>Reject</strong>: it goes to the trash, restorable for 30 days.</li>
+<li><strong>One source, one task.</strong> A task with a <code>--source</code> (a kind and a reference, such as an alert id) is made
+once: adding it again returns the same task, also after it was rejected or merged. A repeating alert
+does not fill your inbox.</li>
+<li><code>--requested-by</code> says who asked for it; <code>--return-to &lt;webhookId&gt;</code> names a webhook that hears, with the
+task's proof, when it is completed, rejected or merged (<a href="webhooks.html#events">webhooks</a>).</li>
+</ul>
+<p>The phone shows proposals under Settings → Agents and on the health card.</p>
+<h2 id="the-health-report">The health report</h2>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand health</code></pre>
+<p>One read that says what needs a look: whether agents are paused, overdue tasks, tasks due today, tasks
+in progress and who works on them, claims that ran out, blocked tasks with every reason, tasks waiting for
+an approval, proposals, tasks done today with and without proof, and the oldest open task. The phone
+shows the same in one line above Today; agents get it as the tool and prompt <code>plan_health</code>.</p>
+<h2 id="what-a-well-behaved-agent-does">What a well-behaved agent does</h2>
+<ol>
+<li>Back from a pause: read the activity log from its cursor, and the health report.</li>
+<li>Pick work with <code>dayhand list --ready</code> (or <code>list_all</code> with <code>ready: true</code>).</li>
+<li>Claim the task; on <code>conflict</code>, pick another.</li>
+<li>Write criteria and a plan if the task has none; renew the claim while working.</li>
+<li>Before a risky step: ask, and wait for the answer.</li>
+<li>Tick the criteria, then complete with proof.</li>
+<li>Stopping early: release with a note; stuck: set a blocked reason.</li>
+<li>Work nobody asked for: add it as a proposal with a source.</li>
+<li>On <code>agents_paused</code> stop changing things and wait; on <code>forbidden</code> do not retry; on <code>approval_required</code>
+wait for that request, then repeat the call with it.</li>
+</ol>
+<p>The same steps are in the <code>dayhand://guide</code> resource, in <code>dayhand prime</code> and in the Agent Skill.</p>
+<h2 id="planned">Planned</h2>
+<ul>
+<li><strong>Backlog.md import and export</strong> are planned and not in <code>main</code> yet. Dayhand's criteria, plan and
+dependencies follow the same ideas as <a href="https://github.com/MrLesk/Backlog.md">Backlog.md</a>, a Markdown
+task board for people and agents, so a plan can later move between the two.</li>
+<li>Phase guides as MCP resources.</li>
+<li>Changing tool policies on the phone.</li>
+</ul>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="cli.html" rel="prev"><span>Previous</span> Command reference</a><a href="agent-work.html" rel="next"><span>Next</span> How agent work is designed</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/agents.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

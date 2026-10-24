@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dayhand for Android · Dayhand docs</title>
+  <meta name="description" content="The Android app is the fullest Dayhand client: Today with quick add, the week and day calendar, the board, task details with repeats, checklists and…">
+  <link rel="canonical" href="https://dayhand.dev/docs/android.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="dayhand-for-android">Dayhand for Android</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#first-start-where-the-plan-lives">First start: where the plan lives</a></li>
+      <li><a href="#today">Today</a></li>
+      <li><a href="#calendar">Calendar</a></li>
+      <li><a href="#board">Board</a></li>
+      <li><a href="#task-details">Task details</a></li>
+      <li><a href="#trash">Trash</a></li>
+      <li><a href="#reminders-and-the-morning-summary">Reminders and the morning summary</a></li>
+      <li><a href="#connect-to-your-server">Connect to your server</a></li>
+      <li><a href="#settings">Settings</a></li>
+      <li><a href="#agents-and-connections">Agents and connections</a></li>
+      <li><a href="#backups">Backups</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      </ul>
+    </nav>
+<p>The Android app is the fullest Dayhand client: Today with quick add, the week and day calendar, the
+board, task details with repeats, checklists and reminders, the trash, a backup file, and, with a
+server, phone pairing, the calendar address, agent connections and the controls for your agents. It
+works offline, and reminders and the morning summary are worked out on the phone.</p>
+<p>It runs on Android 8.0 or newer and speaks English, Polish, German, Spanish, French, Brazilian
+Portuguese, Japanese and Simplified Chinese. No APK is published yet; <a href="install.html#android">Install</a>
+says how to build it. How the app is built and tested: <a href="https://github.com/maiarowsky/helm/blob/main/android/README.md">android/README.md</a>.</p>
+<h2 id="first-start-where-the-plan-lives">First start: where the plan lives</h2>
+<p>The first start asks where your plan lives, on two cards:</p>
+<ul>
+<li><strong>On this phone only</strong>: no account and no server. <strong>Start with an empty plan</strong>, or <strong>Try with
+sample data</strong> to look around first: a few overdue, today's and done tasks, a repeating one, a
+checklist and labels. One tap removes the sample tasks (on Today, or Settings → Data), and they are
+never sent to a server.</li>
+<li><strong>Connect to my server</strong>: the pairing form (<a href="#connect-to-your-server">below</a>). Back returns to the
+two cards.</li>
+</ul>
+<p>Without a server, the plan lives only on this phone. Android's own backup is off for Dayhand, so
+keep a backup file (<a href="#backups">Backups</a>).</p>
+<h2 id="today">Today</h2>
+<p>From top to bottom:</p>
+<ol>
+<li><strong>Overdue</strong>: not done and due before today in your time zone. Tick it off, move it <strong>To today</strong>,
+or pick another day or archive it from the menu.</li>
+<li><strong>Now</strong>: the one task you are working on, with &quot;where I stopped / next step&quot; under its title. Tap
+the note to edit it. Choose the task with <strong>Work on it now</strong> in a task's menu.</li>
+<li><strong>Today</strong>: tasks due today, timed ones first, by time.</li>
+<li><strong>Done</strong>: what you finished today, folded.</li>
+</ol>
+<p>A line at the top says when the phone is offline and how many changes wait, while changes are sent,
+or when the server signed the phone out.</p>
+<p>With a server, a <strong>plan health</strong> card sits above the lists: one sentence with what needs a look, the
+most pressing first (agents paused, overdue tasks, claims that ran out, approval requests, blocked
+tasks, proposals, tasks done today without proof). It is red when agents are paused or something is
+late and amber when you are asked for something; <strong>Review</strong> opens the agents page.</p>
+<h3 id="quick-add">Quick add</h3>
+<p>The button at the bottom opens one title field. A date phrase at the end sets the day and time:
+&quot;Call the accountant fri 2pm&quot; is &quot;Call the accountant&quot; on the coming Friday at 14:00. Without a
+phrase, the task is for today. A grey line under the field says what will happen; <strong>Keep in title</strong>
+keeps the words as text. <strong>More options</strong> adds a day, a time and a note.</p>
+<p>The phrases are English in every language of the app, the same as <code>dayhand add --due</code>: <code>today</code>,
+<code>tomorrow 9am</code>, <code>fri</code>, <code>next mon</code>, <code>in 3 days</code>, <code>23 oct</code>, <code>2026-10-23</code>, <code>2pm</code>. The full list:
+<a href="cli.html#topic-dates">dates</a>.</p>
+<h2 id="calendar">Calendar</h2>
+<p>The bar at the bottom switches between Today, the calendar and the board.</p>
+<ul>
+<li><strong>Week</strong> shows Monday to Sunday on an hour grid, <strong>Day</strong> one day. Swipe or use the arrows to turn.</li>
+<li>Tasks with a time are blocks at their hour; tasks without a time sit in a band above the hours.
+On a phone held upright the week shows them as bars without titles; tap a day for its titles, or
+long-press a day for a list with <strong>Move</strong> on each task.</li>
+<li><strong>Long-press a task and drag it</strong> to another day and time. It snaps to a quarter of an hour; drop
+it on the day headers or the band to remove its time. <strong>Undo</strong> in the message puts it back.</li>
+<li>Overdue tasks are marked <strong>!</strong>, later dates of a repeating task <strong>↻</strong> and done tasks <strong>✓</strong>. Later
+dates of a series and done tasks do not move.</li>
+</ul>
+<h2 id="board">Board</h2>
+<p>Three columns: <strong>To do</strong>, <strong>In progress</strong> (with the now task first) and <strong>Done</strong> (the 50 most
+recently done). On a phone one column shows at a time under tabs; from 600 dp wide they sit side by
+side. Long-press a card and drag it to another column or tab, or use the card's menu. The bin icon
+opens the trash.</p>
+<h2 id="task-details">Task details</h2>
+<p>Tap a task to open it. You can change its title, status, the now flag and its note, the day with an
+optional time, the repeat, reminders, a checklist, labels and links (http and https only).</p>
+<ul>
+<li><strong>Repeat</strong>: every N days, weeks (on chosen weekdays), months or years; a monthly task on a day of
+the month, the last day, or an nth weekday (&quot;the 2nd Tuesday&quot;, &quot;the last Friday&quot;); counted from the
+due date or from the day you complete it; ending never, on a day or after a number of times. A day
+the month lacks (the 31st in April) falls on its last day.</li>
+<li><strong>Checklist</strong>: items in order; ticking them does not complete the task, and the next occurrence of
+a repeating task starts with every item unticked.</li>
+<li><strong>Reminders</strong>: the defaults from Settings, none, or the task's own: minutes before the due time, or
+a time on the due day or days before (at most five).</li>
+<li><strong>Labels</strong> are also the projects: there is one list for both.</li>
+<li><strong>Move to trash</strong> keeps the task for 30 days. A task in the trash is read only until you restore it.</li>
+<li><strong>Change history</strong> lists who changed what, newest first: you in the app, you with <code>dayhand</code>, or an
+agent by name.</li>
+</ul>
+<p>When an agent works on a task, the details show it: &quot;agent: <em>name</em> works until <em>time</em>&quot; while its
+claim lasts, the acceptance criteria with the met ones ticked, and the proof the task was completed
+with (<a href="agent-work.html">agent work</a>). Your own changes always go through, claim or not.</p>
+<h2 id="trash">Trash</h2>
+<p>Tasks you or an agent deleted, newest first, with the day each one goes for good. <strong>Restore</strong> brings
+one back; it works offline too.</p>
+<h2 id="reminders-and-the-morning-summary">Reminders and the morning summary</h2>
+<p>Reminders are worked out on the phone from its copy of the plan, so they ring without a network and
+without a server.</p>
+<ul>
+<li>A task rings when it has a day and is not done or archived: for each of its own reminders, or the
+default ones from Settings when it has none. Minutes before the due time need a time; a time of day
+(&quot;18:00 the day before&quot;) also works for tasks without one.</li>
+<li><strong>Overdue tasks never ring</strong>; they wait at the top of Today. A reminder that would come more than 15
+minutes late (phone off, battery saving) is dropped.</li>
+<li>The <strong>morning summary</strong> comes every day at the summary time (05:00 unless you change it): how many
+tasks today, how many overdue and where to start. It is quiet, so it waits on the lock screen.</li>
+<li>Times are read in the time zone that decides &quot;today&quot;: the phone's own on this phone only, the
+server's when connected, so the phone and your agents agree.</li>
+<li>A reminder's <strong>Done</strong> button completes the task, offline too.</li>
+</ul>
+<p>Android 13 and newer ask for permission to show notifications when the first task with a time is
+added, or from Settings. For reminders on the minute, also allow <strong>exact alarms</strong> (off by default from
+Android 14); Settings → Notifications says which is missing and has a button for each. After a force
+stop, Android drops the alarms until you open Dayhand again.</p>
+<h2 id="connect-to-your-server">Connect to your server</h2>
+<p><strong>Settings → Server → Connect to my server</strong> (also on the first start, and from a <code>dayhand://pair</code> link):</p>
+<ol>
+<li><strong>Server address</strong>: your server's address, such as <code>https://&lt;deployment&gt;.convex.site</code>. A link or QR
+code fills it in. A <code>.convex.cloud</code> address is turned into its <code>.convex.site</code> one.</li>
+<li><strong>Pairing code</strong> from <code>dayhand pair</code> on a computer signed in to that server. Case and dashes do not
+matter, and <code>O</code> is read as <code>0</code>, <code>I</code> and <code>L</code> as <code>1</code>.</li>
+<li><strong>Connect</strong>. Errors are said in words: a wrong, used or expired code, too many wrong codes (with the
+wait), no network, a server that cannot be reached or is not a Dayhand server.</li>
+</ol>
+<p>Scanning the QR code that <code>dayhand pair</code> prints opens the form filled in. After connecting, every
+change made on the phone is sent in order, the tasks made before included (sample tasks stay behind),
+and the server's plan comes down.</p>
+<ul>
+<li>Release builds of the app connect over <strong>HTTPS only</strong>. A server on your computer needs
+<code>tailscale serve</code> in front of it (<a href="deploy.html#phone-and-computer-tailscale">Phone and computer</a>).</li>
+<li>A code for <strong>another server</strong> than the one whose plan is on the phone first asks <strong>Replace the plan
+on this phone?</strong>, with how many tasks and waiting changes would go. <strong>Cancel</strong> keeps everything.</li>
+<li><strong>Disconnect</strong> (Settings → Server) forgets the sign-in on the phone and keeps the plan. The phone
+cannot sign itself out on the server; the dialog names <code>dayhand revoke &lt;deviceId&gt;</code> for that.</li>
+<li>When the server revokes the phone, Today and Settings say so, and Connect asks for a new code. Tasks
+and waiting changes stay on the phone.</li>
+</ul>
+<p>How the app signs in and stays signed in: <a href="pairing.html">Phone pairing</a>.</p>
+<h2 id="settings">Settings</h2>
+<ul>
+<li><strong>Appearance</strong>: theme (system, light or dark), a colour palette for each of dark and light, the
+font, and the language (the phone's, or one of the eight). Changes apply at once.</li>
+<li><strong>Notifications</strong>: whether notifications and exact alarms are allowed, the morning summary time and
+the default reminders (at the due time, 5, 10, 15 or 30 minutes, 1 or 2 hours or a day before, any
+number of them).</li>
+<li><strong>Data</strong>: the backup file, removing sample tasks and, with a server, <strong>Export</strong> (the whole plan as
+Markdown or JSON with its history) and <strong>Calendar</strong>, the read-only address for Google or Apple
+Calendar (<a href="calendar.html">calendar feed</a>): turn it on, copy it, add it to a calendar app, <strong>Create a
+new address</strong> or <strong>Turn off</strong>. The address is a secret; anyone who has it can read your dated tasks.
+<strong>Export .ics</strong> shares a one-time calendar file.</li>
+<li><strong>Connection</strong>: <strong>Server</strong> (status, waiting changes, the server's time zone with <strong>Use this phone's
+time zone</strong> when they differ, Disconnect), <strong>Agent connections</strong> and <strong>Agents</strong> (<a href="#agents-and-connections">below</a>).</li>
+<li><strong>About</strong>: the licences and the version.</li>
+</ul>
+<p>The summary time and default reminders are server settings once connected, so your agents see them too.</p>
+<h2 id="agents-and-connections">Agents and connections</h2>
+<p>With a server, two pages under Settings → Connection keep you in charge of your agents:</p>
+<ul>
+<li><strong>Agent connections</strong> lists the agents connected with OAuth, such as the Claude app, with where they
+come from, whether they may change tasks and when they were last used. Tap one to disconnect it.
+<strong>Approve a connection</strong> takes the code that an agent's sign-in page shows, then shows who asks, where
+the answer goes and how long ago it asked, with a switch per permission. Approve only a sign-in page
+you opened yourself. The steps for the Claude app: <a href="oauth.html#connecting-the-claude-app-manual-procedure">Claude apps</a>.</li>
+<li><strong>Agents</strong> has <strong>Pause agents</strong>, one switch that refuses every change from every agent while they can
+still read; the <strong>approval requests</strong> waiting for you, each with what the agent wants to do and the
+options it offers; the <strong>proposals</strong> agents and integrations made, to accept, merge into a task or
+reject; and the <strong>tool policies</strong> of your agent keys, read only here (<code>dayhand policy set</code> changes them).</li>
+</ul>
+<p>While the app is closed, the phone looks for new approval requests every 15 minutes and shows a
+notification for each. There is no push service in between, so a request can wait up to about 15
+minutes, longer in battery saving, before the phone shows it. What these controls do and what they
+cannot do: <a href="agents.html">Agents and you</a>.</p>
+<h2 id="backups">Backups</h2>
+<p>Android's Auto Backup is off for Dayhand: the plan, the settings and the sign-in go neither to Google
+Drive nor to a new phone. On this phone only, a backup file is the only copy outside the phone.</p>
+<p><strong>Settings → Data → Backup</strong> saves the plan as a file in Dayhand's JSON export format (<strong>Save a backup
+file</strong> or <strong>Share a backup</strong>) and restores one (<strong>Restore from a file</strong>). The same file can be imported
+into a server with <code>dayhand import</code>. Restoring adds the tasks from the file that the phone does not
+have yet, so the same file restores once.</p>
+<h2 id="privacy">Privacy</h2>
+<p>The app asks for the network (to reach your server), notifications, exact alarms and starting after a
+reboot (to arm reminders again). It has no analytics, no crash reporting and no other outside services:
+the only address it talks to is your server. The sign-in to the server is encrypted with a key in the
+Android Keystore. More: <a href="security.html">Security and privacy</a>.</p>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="install.html" rel="prev"><span>Previous</span> Install</a><a href="macos-app.html" rel="next"><span>Next</span> macOS</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/android.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

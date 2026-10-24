@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dayhand in the terminal · Dayhand docs</title>
+  <meta name="description" content="dayhand is two things in one command: plain commands for people, scripts and agents (dayhand add, dayhand done 3), and dayhand ui, the plan full screen in…">
+  <link rel="canonical" href="https://dayhand.dev/docs/terminal.html">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../main.js" defer></script>
+  <script src="search.js" defer></script>
+</head>
+<body class="docs">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <a class="brand" href="../index.html" aria-label="Dayhand home">
+      <img src="../favicon.svg" alt="" width="32" height="32">
+      <span>Dayhand</span>
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="install.html">Install</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">GitHub</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+      <search class="docs-search" hidden>
+        <label for="docs-search-input">Search the docs</label>
+        <input type="search" id="docs-search-input" autocomplete="off" spellcheck="false"
+          aria-describedby="docs-search-status" aria-controls="docs-search-results">
+        <p class="docs-search-status" id="docs-search-status" role="status"></p>
+        <ol class="docs-results" id="docs-search-results"></ol>
+      </search>
+      <details class="docs-menu" open>
+        <summary>All pages</summary>
+        <p class="docs-nav-title" id="docs-nav-0">Get started</p>
+        <ul aria-labelledby="docs-nav-0">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="getting-started.html">Quick start</a></li>
+          <li><a href="install.html">Install</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-1">Apps</p>
+        <ul aria-labelledby="docs-nav-1">
+          <li><a href="android.html">Android</a></li>
+          <li><a href="macos-app.html">macOS</a></li>
+          <li><a href="linux.html">Linux and Omarchy</a></li>
+          <li><a href="terminal.html">Terminal: dayhand ui</a></li>
+          <li><a href="omarchy.html">dayhand ui on Omarchy</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-2">Command line</p>
+        <ul aria-labelledby="docs-nav-2">
+          <li><a href="cli.html">Command reference</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-3">Agents</p>
+        <ul aria-labelledby="docs-nav-3">
+          <li><a href="agents.html">Agents and you</a></li>
+          <li><a href="agent-work.html">How agent work is designed</a></li>
+          <li><a href="mcp.html">MCP endpoint</a></li>
+          <li><a href="oauth.html">Claude apps (OAuth)</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
+        <ul aria-labelledby="docs-nav-4">
+          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="pairing.html">Phone pairing</a></li>
+          <li><a href="api.html">REST API</a></li>
+          <li><a href="webhooks.html">Webhooks</a></li>
+          <li><a href="calendar.html">Calendar feed</a></li>
+          <li><a href="architecture.html">Architecture</a></li>
+        </ul>
+        <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
+        <ul aria-labelledby="docs-nav-5">
+          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
+          <li><a href="faq.html">FAQ and troubleshooting</a></li>
+          <li><a href="contributing.html">Contributing</a></li>
+          <li><a href="rename.html">Renamed from Helm</a></li>
+        </ul>
+      </details>
+    </nav>
+
+    <main id="main" class="docs-main">
+      <article class="prose">
+<h1 id="dayhand-in-the-terminal">Dayhand in the terminal</h1>
+    <nav class="docs-toc" aria-label="On this page">
+      <p>On this page</p>
+      <ul>
+      <li><a href="#everyday-commands">Everyday commands</a></li>
+      <li><a href="#dayhand-ui">dayhand ui</a></li>
+      <li><a href="#several-servers-and-profiles">Several servers and profiles</a></li>
+      <li><a href="#for-scripts">For scripts</a></li>
+      </ul>
+    </nav>
+<p><code>dayhand</code> is two things in one command: plain commands for people, scripts and agents
+(<code>dayhand add</code>, <code>dayhand done 3</code>), and <code>dayhand ui</code>, the plan full screen in the terminal. Both use your
+server's MCP tools with the key that <code>dayhand login</code> stored, so every change shows up in the apps at
+once and is signed <code>cli</code> in the history. Installing it: <a href="install.html#command-line-dayhand">Install</a>.</p>
+<h2 id="everyday-commands">Everyday commands</h2>
+<div class="table-wrap" tabindex="0" role="region" aria-label="Everyday commands"><table>
+<thead><tr><th scope="col">To</th><th scope="col">Run</th></tr></thead>
+<tbody>
+<tr><td>See Today</td><td><code>dayhand</code> (or <code>dayhand today</code>)</td></tr>
+<tr><td>Add a task</td><td><code>dayhand add Call the accountant --due &quot;fri 2pm&quot; -l admin</code></td></tr>
+<tr><td>See every open task</td><td><code>dayhand list</code>, <code>dayhand list -l admin --due-before eow</code></td></tr>
+<tr><td>See the board</td><td><code>dayhand board</code></td></tr>
+<tr><td>Finish a task</td><td><code>dayhand done 3</code> (several at once: <code>dayhand done 3 4 now</code>)</td></tr>
+<tr><td>Move it to another day</td><td><code>dayhand move 3 &quot;next mon 9am&quot;</code> (<code>none</code> removes the day)</td></tr>
+<tr><td>Work on it now, and note where you stopped</td><td><code>dayhand now 3 --note &quot;waiting for the bank&quot;</code></td></tr>
+<tr><td>Read or change its note, checklist or fields</td><td><code>dayhand note 3</code>, <code>dayhand checklist 3</code>, <code>dayhand edit 3</code></td></tr>
+<tr><td>See a task with who changed what</td><td><code>dayhand show 3</code></td></tr>
+<tr><td>Delete and restore</td><td><code>dayhand rm 3</code>, <code>dayhand trash</code>, <code>dayhand restore 3</code></td></tr>
+<tr><td>Check what a date phrase means</td><td><code>dayhand when &quot;in 3 days at 8:15&quot;</code></td></tr>
+<tr><td>Try a change without saving it</td><td>add <code>--dry-run</code> to the command</td></tr>
+</tbody>
+</table></div>
+<p>Tasks are referred to by number (<code>3</code> or <code>#3</code>), <code>now</code> for the now task, or their id. Dates are English
+phrases in your time zone from the server settings (<a href="cli.html#topic-dates">dates</a>). Changing three or more
+tasks at once asks first (or needs <code>--yes</code> in a script). Every command and option:
+<a href="cli.html">command reference</a>, also as <code>dayhand help &lt;command&gt;</code> and the manual page <code>man/dayhand.1</code>.</p>
+<h2 id="dayhand-ui">dayhand ui</h2>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand ui</code></pre>
+<p>It opens full screen with four views: <strong>Today</strong> (overdue, the now task with its resume note, today, done
+today), the <strong>Board</strong> (to do, in progress, done), the <strong>Week</strong> (Monday to Sunday as bars, the selected day
+in full below) and the <strong>Trash</strong>. <code>Enter</code> opens a task with its history, which names who made each change:
+<code>app</code>, <code>cli</code> or <code>agent: &lt;name&gt;</code>, so an agent's edits stand out.</p>
+<p>The keys most people need:</p>
+<div class="table-wrap" tabindex="0" role="region" aria-label="dayhand ui"><table>
+<thead><tr><th scope="col">Key</th><th scope="col">Does</th></tr></thead>
+<tbody>
+<tr><td><code>j</code> <code>k</code> (or the arrows)</td><td>Next and previous task</td></tr>
+<tr><td><code>h</code> <code>l</code></td><td>Board column, week day</td></tr>
+<tr><td><code>Tab</code>, <code>1</code> <code>2</code> <code>3</code> <code>4</code></td><td>Next view; Today, Board, Week, Trash</td></tr>
+<tr><td><code>a</code></td><td>Add a task: <code>Pay rent fri 2pm #home</code></td></tr>
+<tr><td><code>Space</code> or <code>x</code></td><td>Done or not done</td></tr>
+<tr><td><code>s</code></td><td>Start (doing) or stop (to do)</td></tr>
+<tr><td><code>n</code>, <code>N</code></td><td>Make it the now task with a resume note; clear the now task</td></tr>
+<tr><td><code>e</code>, <code>E</code></td><td>Edit title, day, labels and resume note; title and note in <code>$EDITOR</code></td></tr>
+<tr><td><code>m</code></td><td>Move: <code>tomorrow</code>, <code>fri 9am</code>, <code>none</code></td></tr>
+<tr><td><code>d</code>, <code>u</code>, <code>r</code></td><td>To the trash (asks first), undo, restore</td></tr>
+<tr><td><code>/</code></td><td>Filter by title, <code>#label</code>, note or <code>#42</code></td></tr>
+<tr><td><code>?</code>, <code>q</code></td><td>Every key; quit</td></tr>
+</tbody>
+</table></div>
+<p>The full list is <code>?</code> in the app, <code>dayhand help ui</code> and <a href="cli.html#topic-ui">the reference</a>. The layout and
+keys follow vim and lazygit.</p>
+<ul>
+<li><strong>Quick add</strong> (<code>a</code>) reads a date phrase at the end or the start of the line and <code>#labels</code> anywhere. The
+line below shows how it was read before <code>Enter</code> adds it; <code>no date</code> adds no day, and quotes keep words as
+text.</li>
+<li><strong>The mouse</strong> selects and scrolls. Mouse reporting stops the terminal's own text selection: hold
+<code>Shift</code> while dragging to select anyway, or start <code>dayhand ui --no-mouse</code>.</li>
+<li><strong>Refresh</strong>: what is on screen is read again every 12 seconds (<code>--interval 10</code> to <code>300</code>), within the
+key's limits of 120 reads and 60 changes a minute; <code>R</code> refreshes now. Without a connection it keeps the
+last data on screen, says so in red, and tries again.</li>
+<li><strong>Colours</strong> are the terminal's 16 ANSI colours, so your terminal theme applies.</li>
+<li><strong>Language</strong>: the screens speak English, Polish, German, Spanish, French, Brazilian Portuguese,
+Japanese or Simplified Chinese, following <code>--lang</code>, then <code>DAYHAND_LANG</code>, then the locale (<code>LC_ALL</code>,
+<code>LC_MESSAGES</code>, <code>LANG</code>). Date phrases, the other commands, <code>--json</code> and error codes stay English.</li>
+<li><code>--view week</code> opens another view first.</li>
+</ul>
+<p><code>dayhand ui</code> shows the plan while it is open; it has no reminders. For reminders on a computer, use the
+<a href="macos-app.html">macOS</a> or <a href="linux.html">Linux</a> app. On Omarchy, a launcher entry and a key make it an app of
+its own: <a href="omarchy.html">dayhand ui on Omarchy</a>.</p>
+<h2 id="several-servers-and-profiles">Several servers and profiles</h2>
+<p><code>dayhand login --url &lt;address&gt;</code> stores a key per server address. <code>config.toml</code> can name profiles and
+aliases:</p>
+<pre class="code" tabindex="0" aria-label="Code: toml" data-copy><code>default_profile = &quot;personal&quot;
+
+[profiles.personal]
+url = &quot;https://&lt;deployment&gt;.convex.site&quot;
+
+[profiles.work]
+url = &quot;https://&lt;other&gt;.convex.site&quot;
+
+[aliases]
+week = &quot;list --due-before eow&quot;</code></pre>
+<p><code>dayhand --profile work</code>, or <code>DAYHAND_PROFILE=work</code>, picks one; <code>dayhand week</code> runs the alias.
+<code>dayhand whoami</code> shows which server, profile, key source and file are in use. Where the file lives and
+how the URL and key are chosen: <a href="cli.html#topic-config">config</a>. The key itself never goes into
+<code>config.toml</code>: <code>dayhand login</code> keeps it in the system keychain (macOS Keychain, Windows Credential Manager,
+the Secret Service on Linux) or, without one, in a file only you can read (<a href="cli.html#topic-login">login</a>).</p>
+<h2 id="for-scripts">For scripts</h2>
+<ul>
+<li><code>--json</code> prints exactly what the server's tool returns, in a shape described by the
+<a href="https://github.com/maiarowsky/helm/tree/main/docs/schemas">schemas</a>; <code>--plain</code> prints tab-separated rows without headers.</li>
+<li>Errors with <code>--json</code> are one JSON line on stderr, and the exit code says what to do next: 2 a usage
+error, 3 no or a wrong key, 4 not found, 5 the server is unavailable or the key made too many calls,
+6 refused by the task's state, 7 refused by the owner (<a href="cli.html#exit-codes">exit codes</a>).</li>
+<li>After exit 5, run the same command again with the <code>--client-id</code> the error names: a change is never
+applied twice (<a href="cli.html#retries">retries</a>).</li>
+<li><code>dayhand</code> never asks anything without a terminal (<code>--no-input</code> or <code>DAYHAND_NO_INPUT=1</code> make sure).</li>
+<li><code>DAYHAND_URL</code> and <code>DAYHAND_API_KEY</code> win over the stored login, so a script or an agent can use its own
+key (<a href="agents.html">agents</a>).</li>
+</ul>
+      </article>
+      <nav class="docs-pager" aria-label="Previous and next page"><a href="linux.html" rel="prev"><span>Previous</span> Linux and Omarchy</a><a href="omarchy.html" rel="next"><span>Next</span> dayhand ui on Omarchy</a></nav>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p class="brand-line"><img src="../favicon.svg" alt="" width="24" height="24"> Dayhand, open source under the
+      Apache License 2.0.</p>
+    <nav aria-label="Footer">
+      <ul>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/docs/terminal.md">This page on GitHub</a></li>
+        <li><a href="https://github.com/maiarowsky/helm">Repository</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/cli/CHANGELOG.md">Changelog</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="https://github.com/maiarowsky/helm/blob/main/LICENSE">License</a></li>
+      </ul>
+    </nav>
+    <p class="fineprint">No cookies, no trackers, nothing loaded from other servers.</p>
+  </footer>
+</body>
+</html>

@@ -222,7 +222,7 @@ android/   Android app (Kotlin, Compose)
 macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
-site/      the dayhand.dev landing page (static HTML and CSS); check it with scripts/check-site.sh
+site/      dayhand.dev: the landing page and the docs built from docs/ (scripts/build-docs.mjs); check it with scripts/check-site.sh
 ```
 
 The tests start their own throwaway backend:
@@ -238,7 +238,8 @@ Every command in this README runs against a local backend with sample data in
 
 ## Help
 
-Start with `dayhand help`, [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
+Start with `dayhand help` and the [documentation](docs/README.md): [quick start](docs/getting-started.md),
+[FAQ and troubleshooting](docs/faq.md), [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
 Dayhand is a personal project with no hosted service and no support promise; issues are for bugs
 you can reproduce and for feature ideas. Security problems go privately, never in an issue
 ([SECURITY.md](SECURITY.md)).
