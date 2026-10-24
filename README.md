@@ -75,8 +75,9 @@ are English phrases in your time zone (`fri 2pm`, `in 3 days`, `2026-11-02`), al
 
 ## Your agent
 
-Give each agent its own key. Its changes are signed `agent: <name>` in the history and the
-activity log, and you can revoke the key at any time (`dayhand key revoke`):
+The examples below use `jq` to read JSON responses. Give each agent its own key. Its changes are
+signed `agent: <name>` in the history and the activity log, and you can revoke the key at any time
+(`dayhand key revoke`):
 
 ```sh
 AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)

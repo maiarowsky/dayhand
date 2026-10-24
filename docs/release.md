@@ -118,8 +118,7 @@ The release badge is already live and updates when a release exists. Once `npm v
 “available after the first release” to available:
 
 - [ ] `README.md`: delete the quoted line “**npm and Homebrew: available after the first release.** …”
-  under the Install table, and replace the static npm badge with
-  `[![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand)`.
+  under the Install table, and switch the npm badge as described in [badges.md](badges.md).
 - [ ] `docs/install.md`: delete the same quoted line under the table.
 - [ ] `docs/README.md`: in “What exists and what is planned”, move npm and Homebrew to *Today*.
 - [ ] `docs/contributing.md`: drop “nothing is published yet” from Releases.
