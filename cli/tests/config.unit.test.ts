@@ -1,8 +1,8 @@
 // Folders per system, config.toml checks and precedence, aliases, the
 // credentials file and the color decision. No backend.
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterAll, describe, expect, test } from "vitest";
 import { expandAlias, splitWords } from "../src/config/aliases.js";
 import { emptyConfig, loadConfig, saveProfileUrl } from "../src/config/file.js";
@@ -13,6 +13,7 @@ import { CliError } from "../src/core/exit.js";
 import { FileStore } from "../src/credentials/file.js";
 import { VALUE_OPTIONS } from "../src/globals.js";
 import { commandNames } from "../src/registry/index.js";
+import { writableBackend } from "../src/registry/packaged-backend.js";
 import { colorEnabled } from "../src/render/style.js";
 
 const dir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-config-"));
@@ -60,12 +61,57 @@ describe("folders follow each system's convention", () => {
   });
 
   test("the data folder: XDG_DATA_HOME, Application Support, LOCALAPPDATA", () => {
-    expect(resolveDataDir({}, "linux", "/home/ann")).toBe("/home/ann/.local/share/dayhand");
-    expect(resolveDataDir({ XDG_DATA_HOME: "/x/data" }, "linux", "/home/ann")).toBe("/x/data/dayhand");
-    expect(resolveDataDir({ XDG_DATA_HOME: "relative" }, "linux", "/home/ann")).toBe("/home/ann/.local/share/dayhand");
-    expect(resolveDataDir({}, "darwin", "/Users/ann")).toBe("/Users/ann/Library/Application Support/dayhand");
-    expect(resolveDataDir({ LOCALAPPDATA: "C:\\Users\\ann\\AppData\\Local" }, "win32", "C:\\Users\\ann")).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand\\Data");
-    expect(resolveDataDir({}, "win32", "C:\\Users\\ann")).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand\\Data");
+    expect(resolveDataDir({}, "linux", "/home/ann")).toBe("/home/ann/.local/share/dayhand-data");
+    expect(resolveDataDir({ XDG_DATA_HOME: "/x/data" }, "linux", "/home/ann")).toBe("/x/data/dayhand-data");
+    expect(resolveDataDir({ XDG_DATA_HOME: "relative" }, "linux", "/home/ann")).toBe("/home/ann/.local/share/dayhand-data");
+    expect(resolveDataDir({}, "darwin", "/Users/ann")).toBe("/Users/ann/Library/Application Support/dayhand-data");
+    expect(resolveDataDir({ LOCALAPPDATA: "C:\\Users\\ann\\AppData\\Local" }, "win32", "C:\\Users\\ann")).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand-data\\Data");
+    expect(resolveDataDir({}, "win32", "C:\\Users\\ann")).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand-data\\Data");
+  });
+
+  test("Windows keeps staged data separate when APPDATA and LOCALAPPDATA coincide", () => {
+    const env = { APPDATA: "C:\\Shared", LOCALAPPDATA: "C:\\Shared" };
+    expect(resolvePaths(env, "win32", "C:\\Users\\ann").configDir).toBe("C:\\Shared\\dayhand");
+    expect(resolveDataDir(env, "win32", "C:\\Users\\ann")).toBe("C:\\Shared\\dayhand-data\\Data");
+  });
+
+  test.each(["darwin", "linux"] as const)("%s: staging preserves legacy settings, credentials and the setup login", async (platform) => {
+    const home = join(dir, platform);
+    const env = { HOME: home, XDG_CONFIG_HOME: home, XDG_DATA_HOME: home, LOCALAPPDATA: home };
+    const current = resolvePaths(env, platform, home).configDir;
+    const legacy = join(dirname(current), "hlm");
+    mkdirSync(legacy, { recursive: true });
+    const url = "https://legacy.convex.site";
+    writeFileSync(join(legacy, "config.toml"), `default_profile = "personal"\n[profiles.personal]\nurl = "${url}"\n[aliases]\nhome = "list -l home"\n`);
+    const paths = resolvePaths(env, platform, home);
+    expect(paths.configDir).toBe(legacy);
+    const config = loadConfig(paths.configFile, commandNames());
+    const store = new FileStore(paths.configDir);
+    await store.set(url, "dayhand_legacy");
+    const source = join(home, "package", "backend");
+    mkdirSync(source, { recursive: true });
+    writeFileSync(join(source, "package.json"), JSON.stringify({ name: "dayhand-backend" }));
+    const data = resolveDataDir(env, platform, home);
+    expect(writableBackend(source, "1.2.3", data, false).dir).toBe(source);
+    expect(existsSync(data)).toBe(false);
+    writableBackend(source, "1.2.3", data, true);
+    const localUrl = "http://127.0.0.1:3211";
+    expect(saveProfileUrl(config, "local", localUrl)).toBe("added");
+    await store.set(localUrl, "dayhand_local");
+    for (const version of ["1.2.3", "1.3.0"]) {
+      writableBackend(source, version, data, true);
+      const next = resolvePaths(env, platform, home);
+      expect(next).toEqual(paths);
+      expect(loadConfig(next.configFile, commandNames())).toMatchObject({
+        defaultProfile: "personal",
+        profiles: { personal: { url }, local: { url: localUrl } },
+        aliases: { home: "list -l home" },
+      });
+      const credentials = new FileStore(next.configDir);
+      expect(await credentials.get(url)).toEqual({ key: "dayhand_legacy", source: "file" });
+      expect(await credentials.get(localUrl)).toEqual({ key: "dayhand_local", source: "file" });
+    }
+    expect(existsSync(current)).toBe(false);
   });
 
   test("DAYHAND_CONFIG_DIR and DAYHAND_CACHE_DIR win everywhere", () => {

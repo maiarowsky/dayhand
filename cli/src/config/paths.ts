@@ -4,9 +4,9 @@
 //   Windows           %APPDATA%\dayhand, cache %LOCALAPPDATA%\dayhand\Cache
 // DAYHAND_CONFIG_DIR and DAYHAND_CACHE_DIR override both (tests, portable setups).
 // Data that dayhand builds and keeps (the copy of the packaged server backend, resolveDataDir):
-//   Linux and others  $XDG_DATA_HOME/dayhand (~/.local/share/dayhand)
-//   macOS             ~/Library/Application Support/dayhand
-//   Windows           %LOCALAPPDATA%\dayhand\Data
+//   Linux and others  $XDG_DATA_HOME/dayhand-data (~/.local/share/dayhand-data)
+//   macOS             ~/Library/Application Support/dayhand-data
+//   Windows           %LOCALAPPDATA%\dayhand-data\Data
 // The config folder of the hlm command (the same places, named hlm) is used
 // while there is no dayhand folder, with a warning that says how to move it.
 import { existsSync } from "node:fs";
@@ -19,6 +19,7 @@ export type Platform = NodeJS.Platform;
 export type Paths = { configDir: string; cacheDir: string; configFile: string; warning?: Warning };
 
 const NAME = "dayhand";
+const DATA_NAME = `${NAME}-data`;
 const OLD_NAME = "hlm";
 
 export function resolvePaths(
@@ -45,9 +46,9 @@ export function resolvePaths(
 /** Where dayhand keeps data it makes itself and wants to find again (not config, not a throwaway cache). */
 export function resolveDataDir(env: Env, platform: Platform = process.platform, home: string = homedir()): string {
   const join = platform === "win32" ? path.win32.join : path.posix.join;
-  if (platform === "win32") return join(env.LOCALAPPDATA || join(home, "AppData", "Local"), NAME, "Data");
-  if (platform === "darwin") return join(home, "Library", "Application Support", NAME);
-  return join(absolute(env.XDG_DATA_HOME) ?? join(home, ".local", "share"), NAME);
+  if (platform === "win32") return join(env.LOCALAPPDATA || join(home, "AppData", "Local"), DATA_NAME, "Data");
+  if (platform === "darwin") return join(home, "Library", "Application Support", DATA_NAME);
+  return join(absolute(env.XDG_DATA_HOME) ?? join(home, ".local", "share"), DATA_NAME);
 }
 
 type Join = (...parts: string[]) => string;

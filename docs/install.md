@@ -72,9 +72,9 @@ repository and nothing to build:
 
 The packaged backend is not run from the package folder (it may be read-only, as with Homebrew): the
 first run copies it to a folder in your user data folder, one per `dayhand` version
-(`~/Library/Application Support/dayhand/backend/<version>` on macOS,
-`${XDG_DATA_HOME:-~/.local/share}/dayhand/backend/<version>` on Linux,
-`%LOCALAPPDATA%\dayhand\Data\backend\<version>` on Windows),
+(`~/Library/Application Support/dayhand-data/backend/<version>` on macOS,
+`${XDG_DATA_HOME:-~/.local/share}/dayhand-data/backend/<version>` on Linux,
+`%LOCALAPPDATA%\dayhand-data\Data\backend\<version>` on Windows),
 installs the dependencies there and reuses the folder on the next run. After an update the new
 version makes its own copy; you can delete the folders of older versions. Keys and the server's data
 stay where they were, in the server's private folder. A clone of the repository still works, and wins
