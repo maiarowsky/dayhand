@@ -67,6 +67,8 @@ fun TodayScreen(
     bottomBar: @Composable () -> Unit = {},
     /** Under the status lines, above the list: the plan health card. */
     header: @Composable () -> Unit = {},
+    /** The moment quick add reads a date phrase at ("2pm" is today until 14:00, then tomorrow). */
+    now: () -> Long = System::currentTimeMillis,
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -93,6 +95,8 @@ fun TodayScreen(
     if (adding) {
         QuickAddSheet(
             today = date,
+            timezone = state.timezone,
+            now = now,
             onDismiss = { adding = false },
             onSave = { title, day, time, note ->
                 actions.add(title, day, time, note)

@@ -41,6 +41,12 @@
     <string name="quick_add_no_time">不设时间</string>
     <string name="quick_add_note">备注</string>
     <string name="quick_add_save">添加</string>
+    <string name="quick_add_example">例如 给会计打电话 fri 2pm</string>
+    <string name="quick_add_from_phrase">%1$s · 来自“%2$s”</string>
+    <string name="quick_add_no_phrase">未识别到日期：今天</string>
+    <string name="quick_add_from_options">来自“更多选项”：%1$s</string>
+    <string name="quick_add_keep_in_title">保留在标题中</string>
+    <string name="quick_add_keep_in_title_hint">将这些词作为标题的一部分，而不是识别为日期</string>
 
     <plurals name="status_offline">
         <item quantity="other">离线。更改已保存，联网后会发送（%1$d 项待发送）。</item>

@@ -21,6 +21,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,17 +32,24 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
+import dev.helm.planner.domain.QuickAdd
+import dev.helm.planner.domain.QuickAddInput
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
+import dev.helm.planner.ui.common.minuteTicks
 import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.PrimaryButton
 import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.components.SwitchRow
 import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
@@ -53,29 +61,55 @@ import java.time.LocalTime
 object QuickAddTags {
     const val TITLE = "quick_add_title"
     const val SAVE = "quick_add_save"
+    const val WHEN = "quick_add_when"
+    const val KEEP = "quick_add_keep"
 }
 
 /**
  * One title field and one tap to save; day (today by default), time and note are behind
  * "More options". The keyboard's Done key saves too.
+ *
+ * A date phrase at the end of the title ("Call the accountant fri 2pm") sets the day and time, read in [timezone] at
+ * [now] ([QuickAdd], the grammar of `dayhand`); a grey line under the field says what was understood, and **Keep in
+ * title** keeps the words as text. A day or time picked under "More options" wins over the phrase.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAddSheet(
     today: LocalDate,
+    timezone: String,
     onDismiss: () -> Unit,
     onSave: (title: String, dueDate: String, dueTime: String?, note: String?) -> Unit,
+    now: () -> Long = System::currentTimeMillis,
 ) {
     var title by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     var day by rememberSaveable { mutableStateOf(today.toString()) }
     var time by rememberSaveable { mutableStateOf<String?>(null) }
+    // A day or time picked under "More options" wins over a phrase in the title.
+    var picked by rememberSaveable { mutableStateOf(false) }
+    // "Keep in title", until the title changes again.
+    var keep by rememberSaveable { mutableStateOf(false) }
     var note by rememberSaveable { mutableStateOf("") }
     var pickingDay by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val canSave = title.isNotBlank()
-    val save = { if (canSave) onSave(title.trim(), day, time, note.trim().ifEmpty { null }) }
+    var referenceTime by remember(now) { mutableLongStateOf(now()) }
+    LaunchedEffect(now) { minuteTicks(now).collect { referenceTime = it } }
+    val input = QuickAdd.parse(title, referenceTime, timezone).takeIf { it.`when` != null && !picked }
+    val read = input?.takeIf { !keep }
+    val save = {
+        referenceTime = now()
+        val submitted = QuickAdd.parse(title, referenceTime, timezone).takeIf { !keep && !picked }
+        val trimmedNote = note.trim().ifEmpty { null }
+        val due = submitted?.`when`
+        when {
+            !canSave -> Unit
+            submitted != null && due != null -> onSave(submitted.title, due.date, due.time, trimmedNote)
+            else -> onSave(title.trim(), day, time, trimmedNote)
+        }
+    }
 
     val p = palette
     ModalBottomSheet(
@@ -98,8 +132,14 @@ fun QuickAddSheet(
             Text(stringResource(R.string.quick_add_title), style = helmType.screenTitle, color = p.text)
             HelmTextField(
                 value = title,
-                onValueChange = { if (it.length <= TaskRepository.MAX_TITLE) title = it },
+                onValueChange = {
+                    if (it.length <= TaskRepository.MAX_TITLE) {
+                        if (it != title) keep = false
+                        title = it
+                    }
+                },
                 label = stringResource(R.string.quick_add_field),
+                placeholder = stringResource(R.string.quick_add_example),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { save() }),
@@ -107,7 +147,19 @@ fun QuickAddSheet(
                     .focusRequester(focus)
                     .testTag(QuickAddTags.TITLE),
             )
-            // Save sits right under the title so the keyboard never hides it.
+            if (canSave) {
+                WhenLine(today, read, picked, day, time)
+                if (input != null) {
+                    SwitchRow(
+                        stringResource(R.string.quick_add_keep_in_title),
+                        checked = keep,
+                        onChange = { keep = it },
+                        subtitle = stringResource(R.string.quick_add_keep_in_title_hint),
+                        modifier = Modifier.testTag(QuickAddTags.KEEP),
+                    )
+                }
+            }
+            // Save sits right under the title (and what it understood) so the keyboard never hides it.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 TextAction(
                     stringResource(if (expanded) R.string.quick_add_less else R.string.quick_add_more),
@@ -130,10 +182,16 @@ fun QuickAddSheet(
                     day = day,
                     time = time,
                     note = note,
-                    onDay = { day = it },
+                    onDay = {
+                        day = it
+                        picked = true
+                    },
                     onPickDay = { pickingDay = true },
                     onPickTime = { pickingTime = true },
-                    onClearTime = { time = null },
+                    onClearTime = {
+                        time = null
+                        picked = true
+                    },
                     onNote = { note = it },
                 )
             }
@@ -143,15 +201,49 @@ fun QuickAddSheet(
     if (pickingDay) {
         DayPickerDialog(LocalDate.parse(day), onDismiss = { pickingDay = false }) {
             day = it.toString()
+            picked = true
             pickingDay = false
         }
     }
     if (pickingTime) {
         TimePickerDialog(time?.let(LocalTime::parse) ?: LocalTime.of(9, 0), onDismiss = { pickingTime = false }) {
             time = it
+            picked = true
             pickingTime = false
         }
     }
+}
+
+/**
+ * What the task will get, under the title: "Friday 30 Oct, 14:00 · from “fri 2pm”", "No date phrase: today", or the
+ * day and time picked under "More options". Read out when it changes.
+ */
+@Composable
+private fun WhenLine(today: LocalDate, read: QuickAddInput?, picked: Boolean, day: String, time: String?) {
+    val due = read?.`when`
+    val text = when {
+        read != null && due != null -> stringResource(R.string.quick_add_from_phrase, whenLabel(due.date, due.time, today), read.phrase.orEmpty())
+        picked -> stringResource(R.string.quick_add_from_options, whenLabel(day, time, today))
+        else -> stringResource(R.string.quick_add_no_phrase)
+    }
+    Text(
+        text,
+        style = helmType.small,
+        color = palette.textMuted,
+        modifier = Modifier
+            .testTag(QuickAddTags.WHEN)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    )
+}
+
+/** "Friday 30 Oct, 14:00" in the app's language, with the year when it is not this year's. */
+@Composable
+private fun whenLabel(date: String, time: String?, today: LocalDate): String {
+    val locale = appLocale()
+    val d = LocalDate.parse(date)
+    val day = d.format(dateFormat(if (d.year == today.year) "EEEEdMMM" else "yMMMEEEEd", locale))
+        .replaceFirstChar { it.titlecase(locale) }
+    return time?.let { stringResource(R.string.day_and_time, day, it) } ?: day
 }
 
 @OptIn(ExperimentalLayoutApi::class)

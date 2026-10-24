@@ -2,12 +2,15 @@ package dev.helm.planner.ui.board
 
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.BoardColumns
+import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.ui.today.ConnectionStatus
 
 data class BoardUiState(
     val columns: BoardColumns,
     val connection: ConnectionStatus,
     val pendingChanges: Int,
+    /** The zone quick add reads a date phrase in: the server's, or the phone's on this phone only. */
+    val timezone: String = HelmDates.DEFAULT_TIMEZONE,
 )
 
 /** What the user can do on the board; every call changes Room first and queues the server change. */
