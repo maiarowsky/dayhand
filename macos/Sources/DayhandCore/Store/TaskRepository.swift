@@ -20,6 +20,8 @@ public final class TaskRepository: Sendable {
     private let localTimezone: @Sendable () -> String
     private let repeatsOnMac: @Sendable () -> Bool
 
+    /// [repeatsOnMac] is true only while the Mac has no server; the Mac then creates the next occurrence locally.
+    /// With a server, completion is queued and the server handles recurrence, even while the network is unavailable.
     public init(
         database: AppDatabase,
         clock: @escaping @Sendable () -> Int64 = Clock.nowMs,
@@ -106,6 +108,11 @@ public final class TaskRepository: Sendable {
         return task
     }
 
+    /**
+     * Marks a task done. Without a server the Mac creates its next occurrence from the locally stored fields,
+     * clears the completed task's repeat rule, and queues the rule-clear, completion and new task together.
+     * With a server, only completion is queued and the server creates the next occurrence when it receives it.
+     */
     public func complete(_ localId: String) async throws {
         let onMac = repeatsOnMac()
         let zone = localTimezone()
@@ -133,11 +140,9 @@ public final class TaskRepository: Sendable {
             try complete.insert(db)
             if let occurrence = Recurrence.advance(rule, dueDate: task.dueDate, today: today) {
                 let next = self.nextOccurrence(of: task, occurrence, now: now)
-                if try !TaskItem.exists(db, key: next.localId) {
-                    try next.save(db)
-                    var add = self.makeOp(Mutations.add, next.localId, Self.addArgs(next), now: now, clientId: next.localId)
-                    try add.insert(db)
-                }
+                try next.save(db)
+                var add = self.makeOp(Mutations.add, next.localId, Self.addArgs(next), now: now, clientId: next.localId)
+                try add.insert(db)
             }
             return true
         }
@@ -153,7 +158,8 @@ public final class TaskRepository: Sendable {
         }
     }
 
-    /// To do and in progress through `setStatus`, done through `complete`.
+    /// To do and in progress through `setStatus`, done through `complete`, which creates the next occurrence
+    /// locally only without a server. Leaving in progress clears the "now" flag, as on the server.
     public func move(_ localId: String, to status: TaskStatus) async throws {
         guard let current = try await task(localId), current.status != status else { return }
         switch status {
@@ -395,12 +401,13 @@ public final class TaskRepository: Sendable {
         if changed { onOutboxChanged() }
     }
 
-    private static func nextOccurrenceId(_ localId: String) -> String {
-        "repeat-" + SHA256.hash(data: Data(localId.utf8)).map { String(format: "%02x", $0) }.joined()
+    private static func nextOccurrencePrefix(_ localId: String) -> String {
+        "repeat-" + SHA256.hash(data: Data(localId.utf8)).map { String(format: "%02x", $0) }.joined() + "-"
     }
 
+    /// A next occurrence made without a server: the locally stored fields on the next date, with the checklist unticked.
     private func nextOccurrence(of task: TaskItem, _ occurrence: Recurrence.Next, now: Int64) -> TaskItem {
-        let id = Self.nextOccurrenceId(task.localId)
+        let id = Self.nextOccurrencePrefix(task.localId) + newId()
         return TaskItem(
             localId: id, clientId: id, title: task.title, note: task.note, dueDate: occurrence.dueDate,
             dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat, labels: task.labels,
@@ -467,12 +474,17 @@ extension TaskRepository: OutboxStore {
             guard let localId = op.taskLocalId else { return }
             let clearsRepeat = op.mutation == Mutations.update && JSONValue.decode(op.argsJson)?["repeat"] == .null
             if op.mutation == Mutations.add || op.mutation == Mutations.complete || clearsRepeat {
-                var nextId = Self.nextOccurrenceId(localId)
-                while let next = try TaskItem.fetchOne(db, key: nextId), next.serverId == nil,
-                      try OutboxOp.filter(Column("mutation") == Mutations.add && Column("taskLocalId") == nextId).fetchCount(db) > 0 {
-                    _ = try OutboxOp.filter(Column("taskLocalId") == nextId).deleteAll(db)
-                    _ = try TaskItem.deleteOne(db, key: nextId)
-                    nextId = Self.nextOccurrenceId(nextId)
+                var parents = [localId]
+                while let parent = parents.popLast() {
+                    let children = try TaskItem.fetchAll(db, sql: """
+                        SELECT task.* FROM task JOIN outbox ON outbox.taskLocalId = task.localId
+                        WHERE task.serverId IS NULL AND outbox.mutation = ? AND task.localId LIKE ?
+                        """, arguments: [Mutations.add, Self.nextOccurrencePrefix(parent) + "%"])
+                    for child in children {
+                        _ = try OutboxOp.filter(Column("taskLocalId") == child.localId).deleteAll(db)
+                        _ = try TaskItem.deleteOne(db, key: child.localId)
+                        parents.append(child.localId)
+                    }
                 }
             }
             if op.mutation == Mutations.add {

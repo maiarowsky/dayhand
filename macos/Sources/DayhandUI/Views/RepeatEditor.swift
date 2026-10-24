@@ -7,7 +7,7 @@ import SwiftUI
  * weekdays picked), months (on the due date's day, the last day or an nth weekday) or years; counted from the due date
  * or from completion; ending never, on a day or after a number of times. The choices stay a draft until
  * **Save Repeat**, which only a rule the backend accepts enables (`RepeatDraft.isValid`), so a refused rule is never
- * queued. A task without a day counts from today.
+ * queued. A task without a day counts from its completion day.
  */
 struct RepeatEditor: View {
     @EnvironmentObject private var model: AppModel
@@ -23,7 +23,7 @@ struct RepeatEditor: View {
     }
 
     private var todayDate: CivilDate { CivilDate(today) ?? CivilDate(dayNumber: 0) }
-    private var due: CivilDate { task.dueDate.flatMap(CivilDate.init) ?? todayDate }
+    private var due: CivilDate? { task.dueDate.flatMap(CivilDate.init) }
     private var changed: Bool { draft.rule != task.repeat }
 
     var body: some View {
@@ -43,7 +43,7 @@ struct RepeatEditor: View {
                 if every == .week { weekdays }
                 if every == .month {
                     Picker(tr("Day of the month"), selection: $draft.monthDay) {
-                        ForEach(RepeatDraft.monthDays(due: due, current: task.repeat), id: \.self) { choice in
+                        ForEach(RepeatDraft.monthDays(due: due ?? todayDate, current: task.repeat), id: \.self) { choice in
                             Text(Self.monthText(choice, due: due, fromCompletion: draft.fromCompletion)).tag(choice)
                         }
                     }
@@ -91,14 +91,14 @@ struct RepeatEditor: View {
             }
         }
         if draft.weekdays.isEmpty {
-            Text(Self.weekdayHint(fromCompletion: draft.fromCompletion)).font(.caption).foregroundStyle(.secondary)
+            Text(Self.weekdayHint(due: due, fromCompletion: draft.fromCompletion)).font(.caption).foregroundStyle(.secondary)
         }
     }
 
     @ViewBuilder private var ends: some View {
         Picker(tr("Ends"), selection: Binding(get: { draft.end }, set: { end in
             draft.end = end
-            if end == .until, draft.until == nil { draft.until = RepeatDraft.defaultUntil(due: due, today: todayDate) }
+            if end == .until, draft.until == nil { draft.until = RepeatDraft.defaultUntil(due: due ?? todayDate, today: todayDate) }
         })) {
             Text(tr("Never")).tag(RepeatDraft.End.never)
             Text(tr("On a day")).tag(RepeatDraft.End.until)
@@ -127,13 +127,20 @@ struct RepeatEditor: View {
         }
     }
 
-    static func weekdayHint(fromCompletion: Bool) -> String {
-        fromCompletion ? tr("No day picked: the completion day's weekday.") : tr("No day picked: the due date's weekday.")
+    private static func effectiveAnchor(due: CivilDate?, fromCompletion: Bool) -> CivilDate? {
+        fromCompletion ? nil : due
     }
 
-    static func monthText(_ choice: RepeatDraft.MonthDay, due: CivilDate, fromCompletion: Bool) -> String {
+    static func weekdayHint(due: CivilDate?, fromCompletion: Bool) -> String {
+        effectiveAnchor(due: due, fromCompletion: fromCompletion) == nil
+            ? tr("No day picked: the completion day's weekday.") : tr("No day picked: the due date's weekday.")
+    }
+
+    static func monthText(_ choice: RepeatDraft.MonthDay, due: CivilDate?, fromCompletion: Bool) -> String {
         switch choice {
-        case .sameDay: return fromCompletion ? tr("The day I complete it") : tr("Day \(due.day)")
+        case .sameDay:
+            guard let anchor = effectiveAnchor(due: due, fromCompletion: fromCompletion) else { return tr("The day I complete it") }
+            return tr("Day \(anchor.day)")
         case .lastDay: return tr("The last day of the month")
         case .day(let day): return capitalizedFirst(tr("on day \(day)"))
         case .weekday(let w): return capitalizedFirst(Formatting.weekdayOfMonth(nth: w.nth, weekday: w.weekday))

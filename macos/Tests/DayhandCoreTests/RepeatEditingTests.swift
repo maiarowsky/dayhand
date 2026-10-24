@@ -303,8 +303,11 @@ struct OfflineRepeatTests {
         try await disconnected.complete(t.localId)
         let next = try #require(try await disconnected.allTasks().first { $0.status == .todo })
         try await disconnected.complete(next.localId)
+        try await disconnected.reopen(t.localId)
+        try await disconnected.setRepeat(t.localId, RepeatRule(every: .week))
+        try await disconnected.complete(t.localId)
         let generated = try await disconnected.allTasks().filter { $0.localId != t.localId }.map(\.localId)
-        #expect(generated.count == 2)
+        #expect(generated.count == 3)
         let unrelated = try await disconnected.add(title: "Unrelated", dueDate: nil, dueTime: nil)
         if ruleAlreadySent {
             #expect(try await OutboxProcessor(store: repo, sender: remote, maxOps: 1).drain() == .moreLeft)
@@ -326,6 +329,10 @@ struct OfflineRepeatTests {
         try await repo.complete(t.localId)
         let next = try #require(try await repo.allTasks().first { $0.status == .todo })
         try await repo.complete(next.localId)
+        try await repo.reopen(t.localId)
+        try await repo.setRepeat(t.localId, RepeatRule(every: .week))
+        try await repo.complete(t.localId)
+        #expect(try await repo.allTasks().count == 4)
         _ = try await repo.add(title: "Unrelated", dueDate: nil, dueTime: nil)
         server.rejectNextMutation = true
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
@@ -351,18 +358,65 @@ struct OfflineRepeatTests {
         #expect(try await repo.allTasks().count == 2)
     }
 
-    @Test func recompletingWithARuleDoesNotOverwriteTheExistingNextOccurrence() async throws {
-        let (repo, _, _) = try setUp()
-        let task = try await plants(repo)
+    @Test func recompletingWithANewRuleCreatesADistinctNextOccurrence() async throws {
+        let (repo, engine, _) = try setUp()
+        let task = try await repo.add(title: "Repeating", dueDate: "2026-10-22", dueTime: nil)
+        try await repo.setRepeat(task.localId, RepeatRule(every: .day))
+        try await repo.complete(task.localId)
+        let daily = try #require(try await repo.allTasks().first { $0.status == .todo })
+        #expect(daily.dueDate == "2026-10-23")
+        try await repo.rename(daily.localId, to: "Keep my edit")
+        try await repo.reopen(task.localId)
+        try await repo.setRepeat(task.localId, RepeatRule(every: .week))
+        try await repo.move(task.localId, to: .done)
+        let successors = try await repo.allTasks().filter { $0.localId != task.localId }
+        #expect(successors.count == 2)
+        #expect(Set(successors.map(\.localId)).count == 2)
+        #expect(successors.allSatisfy { $0.clientId == $0.localId })
+        let weekly = try #require(successors.first { $0.localId != daily.localId })
+        #expect(weekly.dueDate == "2026-10-29")
+        #expect(weekly.repeat == RepeatRule(every: .week))
+        #expect(try await repo.task(daily.localId)?.title == "Keep my edit")
+        #expect(try await repo.pendingOps().filter { $0.mutation == Mutations.add }.count == 3)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.allTasks.count == 3)
+        #expect(server.allTasks.filter { $0["status"] == "todo" }.compactMap { $0["dueDate"]?.string }.sorted() == ["2026-10-23", "2026-10-29"])
+        #expect(try await repo.allTasks().count == 3)
+    }
+
+    @Test func aGeneratedAdditionWhoseAnswerWasLostKeepsItsIdentity() async throws {
+        let (repo, engine, remote) = try setUp()
+        let task = try await repo.add(title: "Repeating", dueDate: "2026-10-22", dueTime: nil)
+        try await repo.setRepeat(task.localId, RepeatRule(every: .day))
         try await repo.complete(task.localId)
         let next = try #require(try await repo.allTasks().first { $0.status == .todo })
-        try await repo.rename(next.localId, to: "Keep my edit")
-        try await repo.reopen(task.localId)
-        try await repo.setRepeat(task.localId, task.repeat)
-        try await repo.complete(task.localId)
+        #expect(try await OutboxProcessor(store: repo, sender: remote, maxOps: 4).drain() == .moreLeft)
+        server.loseNextAnswer = true
+        guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
+        #expect(try await repo.pendingOps().map(\.clientId) == [next.localId])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.allTasks.count == 2)
         #expect(try await repo.allTasks().count == 2)
-        #expect(try await repo.task(next.localId)?.title == "Keep my edit")
-        #expect(try await repo.pendingOps().filter { $0.mutation == Mutations.add && $0.taskLocalId == next.localId }.count == 1)
+        #expect(try await repo.task(next.localId)?.serverId != nil)
+    }
+
+    @Test func rejectingARecompletionKeepsAnAlreadyUploadedSuccessor() async throws {
+        let (repo, engine, _) = try setUp()
+        let task = try await plants(repo)
+        try await repo.complete(task.localId)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let uploaded = try #require(try await repo.allTasks().first { $0.status == .todo })
+        let parentId = try #require(try await repo.task(task.localId)?.serverId)
+        try await repo.reopen(task.localId)
+        try await repo.setRepeat(task.localId, RepeatRule(every: .day))
+        try await repo.complete(task.localId)
+        let unsent = try #require(try await repo.allTasks().first { $0.localId != task.localId && $0.localId != uploaded.localId })
+        server.editElsewhere(parentId, ["deletedAt": .of(clock.now)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(unsent.localId) == nil)
+        #expect(try await repo.task(uploaded.localId)?.serverId == uploaded.serverId)
+        #expect(server.allTasks.filter { $0["status"] == "todo" && $0["deletedAt"] == nil }.count == 1)
     }
 
     @Test func theLastOfACountedSeriesAddsNothing() async throws {

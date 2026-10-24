@@ -18,29 +18,36 @@ struct EditorTextTests {
         #expect(run("pl") { RepeatEditor.monthText(.weekday(WeekdayOfMonth(nth: 1, weekday: 1)), due: due, fromCompletion: false) } == "W pierwszy poniedziałek")
     }
 
-    @Test func implicitDaysDescribeTheSelectedAnchor() {
-        let due = CivilDate("2026-10-22")!
-        #expect(run("en") { RepeatEditor.monthText(.sameDay, due: due, fromCompletion: false) } == "Day 22")
-        #expect(run("en") { RepeatEditor.monthText(.sameDay, due: due, fromCompletion: true) } == "The day I complete it")
-        #expect(run("en") { RepeatEditor.weekdayHint(fromCompletion: false) } == "No day picked: the due date's weekday.")
-        #expect(run("en") { RepeatEditor.weekdayHint(fromCompletion: true) } == "No day picked: the completion day's weekday.")
-        #expect(run("pl") { RepeatEditor.weekdayHint(fromCompletion: true) } == "Bez wybranego dnia: dzień tygodnia, w którym ukończę zadanie.")
-        for fromCompletion in [false, true] {
-            #expect(run("en") { RepeatEditor.monthText(.day(15), due: due, fromCompletion: fromCompletion) } == "On day 15")
-            #expect(run("en") { RepeatEditor.monthText(.lastDay, due: due, fromCompletion: fromCompletion) } == "The last day of the month")
-            #expect(run("en") {
-                RepeatEditor.monthText(.weekday(WeekdayOfMonth(nth: 4, weekday: 4)), due: due, fromCompletion: fromCompletion)
-            } == "On the fourth Thursday")
-        }
+    @Test(arguments: [false, true], [false, true])
+    func implicitDaysDescribeTheEffectiveAnchor(_ hasDueDate: Bool, _ fromCompletion: Bool) {
+        let due = hasDueDate ? CivilDate("2026-10-22") : nil
+        let usesCompletion = fromCompletion || !hasDueDate
+        #expect(run("en") { RepeatEditor.monthText(.sameDay, due: due, fromCompletion: fromCompletion) }
+            == (usesCompletion ? "The day I complete it" : "Day 22"))
+        #expect(run("en") { RepeatEditor.weekdayHint(due: due, fromCompletion: fromCompletion) }
+            == (usesCompletion ? "No day picked: the completion day's weekday." : "No day picked: the due date's weekday."))
+        #expect(run("pl") { RepeatEditor.weekdayHint(due: due, fromCompletion: fromCompletion) }
+            == (usesCompletion ? "Bez wybranego dnia: dzień tygodnia, w którym ukończę zadanie." : "Nie wybrano dnia: dzień tygodnia terminu."))
+        let monthly = RepeatRule(every: .month, from: fromCompletion ? .completion : nil)
+        let weekly = RepeatRule(every: .week, from: fromCompletion ? .completion : nil)
+        #expect(Recurrence.advance(monthly, dueDate: due?.description, today: "2026-10-24")?.dueDate
+            == (usesCompletion ? "2026-11-24" : "2026-11-22"))
+        #expect(Recurrence.advance(weekly, dueDate: due?.description, today: "2026-10-24")?.dueDate
+            == (usesCompletion ? "2026-10-31" : "2026-10-29"))
+        #expect(run("en") { RepeatEditor.monthText(.day(15), due: due, fromCompletion: fromCompletion) } == "On day 15")
+        #expect(run("en") { RepeatEditor.monthText(.lastDay, due: due, fromCompletion: fromCompletion) } == "The last day of the month")
+        #expect(run("en") {
+            RepeatEditor.monthText(.weekday(WeekdayOfMonth(nth: 4, weekday: 4)), due: due, fromCompletion: fromCompletion)
+        } == "On the fourth Thursday")
     }
 
     @Test func completionAnchorHintsAreTranslated() {
         for language in Localization.supported {
-            let hint = run(language) { RepeatEditor.weekdayHint(fromCompletion: true) }
+            let hint = run(language) { RepeatEditor.weekdayHint(due: nil, fromCompletion: false) }
             #expect(!hint.isEmpty)
             if language != "en" { #expect(hint != "No day picked: the completion day's weekday.") }
             #expect(run(language) {
-                RepeatEditor.monthText(.sameDay, due: CivilDate("2026-10-22")!, fromCompletion: true)
+                RepeatEditor.monthText(.sameDay, due: nil, fromCompletion: false)
             } == run(language) { tr("The day I complete it") })
         }
     }
