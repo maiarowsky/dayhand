@@ -1,10 +1,11 @@
 // Key names and the key map of dayhand ui. The map is the single source of the
 // in-app help (?) and of `dayhand help ui` / docs/cli.md. Keys follow vim and
 // lazygit: j/k and h/l move, Tab switches views, ? shows help, q quits.
-import type { Key } from "ink";
+import type { Key as InkKey } from "ink";
+import { tIn, type Key } from "../i18n/index.js";
 
 /** "j", "J", "enter", "esc", "tab", "S-tab", "up", "pgdn", "space", "C-d", … */
-export function keyName(input: string, key: Key): string {
+export function keyName(input: string, key: InkKey): string {
   if (key.return) return "enter";
   if (key.escape) return "esc";
   if (key.tab) return key.shift ? "S-tab" : "tab";
@@ -37,63 +38,64 @@ export function chunkKeys(input: string): string[] {
   });
 }
 
-export type Binding = { keys: string; does: string };
-export type KeyGroup = { title: string; bindings: Binding[] };
+/** `title` and `does` are message keys, so the help speaks the UI's language and `dayhand help ui` English. */
+export type Binding = { keys: string; does: Key };
+export type KeyGroup = { title: Key; bindings: Binding[] };
 
 export const KEY_GROUPS: KeyGroup[] = [
   {
-    title: "Move",
+    title: "keys.move",
     bindings: [
-      { keys: "j k  ↓ ↑", does: "Next / previous task" },
-      { keys: "h l  ← →", does: "Board column, week day" },
-      { keys: "g G  Home End", does: "First / last task" },
-      { keys: "C-d C-u  PgDn PgUp", does: "Half a page down / up" },
-      { keys: "Enter", does: "Open a task (an empty day: add)" },
-      { keys: "Esc", does: "Back; clears the filter" },
+      { keys: "j k  ↓ ↑", does: "keys.move.next" },
+      { keys: "h l  ← →", does: "keys.move.column" },
+      { keys: "g G  Home End", does: "keys.move.ends" },
+      { keys: "C-d C-u  PgDn PgUp", does: "keys.move.page" },
+      { keys: "Enter", does: "keys.move.open" },
+      { keys: "Esc", does: "keys.move.back" },
     ],
   },
   {
-    title: "Views",
+    title: "keys.views",
     bindings: [
-      { keys: "Tab S-Tab", does: "Next / previous view" },
-      { keys: "1 2 3 4", does: "Today, Board, Week, Trash" },
-      { keys: "/", does: "Filter: title, #label, note, #42" },
-      { keys: "R", does: "Refresh now (also every 12 s)" },
-      { keys: "?", does: "This help" },
-      { keys: "q  C-c", does: "Quit (q in details: back)" },
+      { keys: "Tab S-Tab", does: "keys.views.next" },
+      { keys: "1 2 3 4", does: "keys.views.pick" },
+      { keys: "/", does: "keys.views.filter" },
+      { keys: "R", does: "keys.views.refresh" },
+      { keys: "?", does: "keys.views.help" },
+      { keys: "q  C-c", does: "keys.views.quit" },
     ],
   },
   {
-    title: "Tasks",
+    title: "keys.tasks",
     bindings: [
-      { keys: "a", does: 'Add: Pay rent fri 2pm #home' },
-      { keys: "Space x", does: "Done / not done (repeats go on)" },
-      { keys: "s", does: "Start (doing) / stop (todo)" },
-      { keys: "n", does: "Now task, with a resume note" },
-      { keys: "N", does: "Clear the now task" },
-      { keys: "e", does: "Edit title, due, labels, resume note" },
-      { keys: "E", does: "Title and note in $EDITOR" },
-      { keys: "m", does: 'Move: tomorrow, fri 9am, none' },
-      { keys: "d", does: "To the trash (asks); u undoes" },
-      { keys: "r", does: "Restore (in the trash)" },
+      { keys: "a", does: "keys.tasks.add" },
+      { keys: "Space x", does: "keys.tasks.done" },
+      { keys: "s", does: "keys.tasks.start" },
+      { keys: "n", does: "keys.tasks.now" },
+      { keys: "N", does: "keys.tasks.clearNow" },
+      { keys: "e", does: "keys.tasks.edit" },
+      { keys: "E", does: "keys.tasks.editor" },
+      { keys: "m", does: "keys.tasks.move" },
+      { keys: "d", does: "keys.tasks.trash" },
+      { keys: "r", does: "keys.tasks.restore" },
     ],
   },
   {
-    title: "Board and week",
+    title: "keys.boardWeek",
     bindings: [
-      { keys: "H L", does: "Board: column left / right" },
-      { keys: "H L", does: "Week: a day earlier / later" },
-      { keys: "[ ]", does: "Week: previous / next week" },
-      { keys: "t", does: "Week: this week" },
+      { keys: "H L", does: "keys.boardWeek.column" },
+      { keys: "H L", does: "keys.boardWeek.day" },
+      { keys: "[ ]", does: "keys.boardWeek.weeks" },
+      { keys: "t", does: "keys.boardWeek.thisWeek" },
     ],
   },
   {
-    title: "Typing",
+    title: "keys.typing",
     bindings: [
-      { keys: "Enter Esc", does: "Save / cancel" },
-      { keys: "Tab S-Tab", does: "Next / previous field (edit)" },
-      { keys: "← → C-a C-e", does: "Move the cursor; start / end" },
-      { keys: "C-u C-k C-w", does: "Delete to start / to end / a word" },
+      { keys: "Enter Esc", does: "keys.typing.save" },
+      { keys: "Tab S-Tab", does: "keys.typing.field" },
+      { keys: "← → C-a C-e", does: "keys.typing.cursor" },
+      { keys: "C-u C-k C-w", does: "keys.typing.delete" },
     ],
   },
 ];
@@ -101,5 +103,5 @@ export const KEY_GROUPS: KeyGroup[] = [
 /** The key map as plain text: `dayhand help ui` and docs/cli.md. */
 export function keysText(): string {
   const width = Math.max(...KEY_GROUPS.flatMap((g) => g.bindings.map((b) => b.keys.length))) + 2;
-  return KEY_GROUPS.map((group) => [`${group.title}:`, ...group.bindings.map((b) => `  ${b.keys.padEnd(width)}${b.does}`)].join("\n")).join("\n\n");
+  return KEY_GROUPS.map((group) => [`${tIn("en", group.title)}:`, ...group.bindings.map((b) => `  ${b.keys.padEnd(width)}${tIn("en", b.does)}`)].join("\n")).join("\n\n");
 }

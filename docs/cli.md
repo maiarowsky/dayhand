@@ -1820,7 +1820,7 @@ dayhand completion powershell | Out-String | Invoke-Expression
 
 Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)
 
-Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them.
+Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
 
 ```
 dayhand ui [options]
@@ -1831,9 +1831,11 @@ dayhand ui [options]
 | `--view <view>` | The view to open with (today, board, week, trash) |
 | `--interval <seconds>` | Seconds between refreshes, 10 to 300 (default 12) |
 | `--no-mouse` | Leave the mouse to the terminal (for selecting text) |
+| `--lang <language>` | The screens' language: en, pl, de, es, fr, pt-BR, ja, zh-Hans (default: DAYHAND_LANG, then the locale) |
 
 ```sh
 dayhand ui
 dayhand ui --view week
 dayhand ui --interval 30 --no-mouse
+dayhand ui --lang pl
 ```

@@ -1,9 +1,10 @@
 // What opens over a view: the help (?) and the edit form (e). Text fields
 // draw their cursor as an inverse cell.
+import { t } from "../../i18n/index.js";
 import { KEY_GROUPS } from "../keys.js";
 import type { Line } from "../line.js";
 import type { EditField } from "../state.js";
-import { columns, cut, seg, toHeight, widthOf, type Row } from "../text.js";
+import { columns, cut, padTo, seg, toHeight, widthOf, type Row } from "../text.js";
 import type { Screen } from "./screen.js";
 
 /** A text field: the text with the cursor cell inverted, scrolled so the cursor stays visible. */
@@ -25,10 +26,10 @@ export function helpRows(width: number): Row[] {
   const group = (index: number) => {
     const g = KEY_GROUPS[index]!;
     const keyWidth = Math.max(...g.bindings.map((b) => widthOf(b.keys))) + 2;
-    return [[seg(g.title, { bold: true, color: "cyan" })], ...g.bindings.map((b) => [seg(`  ${b.keys.padEnd(keyWidth)}`, { color: "yellow" }), seg(b.does)]), []] as Row[];
+    return [[seg(t(g.title), { bold: true, color: "cyan" })], ...g.bindings.map((b) => [seg(`  ${b.keys.padEnd(keyWidth)}`, { color: "yellow" }), seg(t(b.does))]), []] as Row[];
   };
   const all = KEY_GROUPS.map((_, i) => group(i));
-  const intro: Row[] = [[seg("Keys", { bold: true }), seg("  (any other key closes; j/k scroll)", { dim: true })], []];
+  const intro: Row[] = [[seg(t("help.title"), { bold: true }), seg(t("help.closes"), { dim: true })], []];
   if (width < 96) return [...intro, ...all.flat()];
   const left = [...all[0]!, ...all[1]!, ...all[4]!];
   const right = [...all[2]!, ...all[3]!];
@@ -45,18 +46,18 @@ export function helpScreen(scroll: number, width: number, height: number): Scree
 export function editScreen(title: string, fields: EditField[], focus: number, preview: (field: EditField) => Row, width: number, height: number): Screen {
   const labelWidth = Math.max(...fields.map((f) => widthOf(f.label))) + 2;
   const valueWidth = Math.max(10, Math.floor((width - labelWidth - 4) * 0.6));
-  const rows: Row[] = [[seg("Edit ", { bold: true }), seg(title, { bold: true })], []];
+  const rows: Row[] = [[seg(t("edit.title"), { bold: true }), seg(title, { bold: true })], []];
   fields.forEach((field, i) => {
     const focused = i === focus;
     rows.push([
       seg(focused ? "› " : "  ", { color: "cyan", bold: true }),
-      seg(field.label.padEnd(labelWidth), { bold: focused, dim: !focused }),
+      seg(padTo(field.label, labelWidth), { bold: focused, dim: !focused }),
       ...fieldSegs(field.line, valueWidth, focused),
       seg("  "),
       ...preview(field),
     ]);
   });
-  rows.push([], [seg("Due: a phrase like fri 2pm, empty for no day · Labels: home, work", { dim: true })]);
-  rows.push([seg("The note: Esc, then E opens $VISUAL / $EDITOR", { dim: true })]);
+  rows.push([], [seg(t("edit.hintDue"), { dim: true })]);
+  rows.push([seg(t("edit.hintNote"), { dim: true })]);
   return { rows: toHeight(rows, height), hits: [] };
 }

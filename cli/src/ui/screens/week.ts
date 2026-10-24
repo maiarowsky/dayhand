@@ -2,7 +2,8 @@
 // in the status colours (red overdue, yellow doing, green done). Columns 10 or
 // more wide carry the time and title on the bar; narrower ones show bars only,
 // as the phone does, and the selected day's tasks are listed in full below.
-import { formatDay } from "../../render/format.js";
+import { dayText, weekdayAndDay } from "../../i18n/dates.js";
+import { t } from "../../i18n/index.js";
 import type { Task } from "../../render/model.js";
 import type { Day } from "../lists.js";
 import { refWidthOf, taskRow } from "../rows.js";
@@ -18,8 +19,8 @@ export function barColor(task: Task, today: string): Color {
 }
 
 function dayHeading(day: Day, width: number, focused: boolean): Row {
-  const [weekday, dayOfMonth] = formatDay(day.date).split(" ");
-  const label = width >= 6 ? `${weekday} ${dayOfMonth}` : `${weekday!.slice(0, 1)} ${dayOfMonth}`;
+  const [weekday, dayOfMonth] = weekdayAndDay(day.date);
+  const label = width >= 6 ? `${weekday} ${dayOfMonth}` : `${[...weekday][0]} ${dayOfMonth}`;
   return fitRow([seg(cut(label, width), { bold: day.isToday || focused, color: day.isToday ? "cyan" : undefined, underline: day.isToday })], width).map((s) =>
     focused ? { ...s, inverse: true } : s,
   );
@@ -55,8 +56,8 @@ function dayColumn(day: Day, index: number, focus: number, row: number, today: s
 
 function dayPanel(day: Day, dayIndex: number, row: number, today: string, width: number, height: number): Screen {
   const count = day.tasks.length;
-  const heading: Row = [seg(formatDay(day.date), { bold: true }), seg(day.isToday ? " · today" : "", { color: "cyan" }), seg(` · ${count} ${count === 1 ? "task" : "tasks"}`, { dim: true })];
-  if (count === 0) return { rows: toHeight([heading, [seg("  (nothing on this day; a adds a task here)", { dim: true })]], height), hits: [] };
+  const heading: Row = [seg(dayText(day.date), { bold: true }), seg(day.isToday ? t("week.today") : "", { color: "cyan" }), seg(t("week.tasks", { count }), { dim: true })];
+  if (count === 0) return { rows: toHeight([heading, [seg(`  ${t("week.empty")}`, { dim: true })]], height), hits: [] };
   const start = windowStart(count, row, height - 1);
   const refWidth = refWidthOf(day.tasks);
   const shown = day.tasks.slice(start, start + height - 1);

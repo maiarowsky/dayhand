@@ -36,7 +36,10 @@ Dates are English phrases resolved in your time zone (`dayhand help dates`, `day
 the week and the trash, polls what is on screen every 12 s (`--interval`) within the key's
 limits, keeps the last data with a red status line when the server cannot be reached, and
 shows who made each change in a task's history. Keys follow vim and lazygit; `dayhand help ui`
-lists them, and [docs/omarchy.md](../docs/omarchy.md) turns it into an Omarchy app.
+lists them, and [docs/omarchy.md](../docs/omarchy.md) turns it into an Omarchy app. Its screens
+come in English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese and Simplified
+Chinese: `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`, `LC_MESSAGES`, `LANG`). The rest
+of the CLI, `--json`, error codes and the MCP tools stay English.
 
 For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file and the keychain,
 `--json` prints exactly the tool's `structuredContent` (schemas in
@@ -65,6 +68,7 @@ src/credentials/      API key: environment, OS keychain (@napi-rs/keyring), 0600
 src/when/             English date phrases and calendar arithmetic in a time zone
 src/render/           human (tables, colors, relative days) and plain (TSV) output
 src/ui/               dayhand ui: controller (polling, changes, mouse), key reducer, screens as rows, Ink app
+src/i18n/             dayhand ui's languages: en.ts is the source, one catalog per language, t() and plurals
 src/completion/       dayhand __complete and the bash, zsh, fish and PowerShell scripts
 src/docs.ts, man.ts, skill.ts   docs/cli.md, man/dayhand.1 and the agent skill, rendered from the registry
 scripts/              gen-docs (npm run docs), pack-files (prepack), check-release (publish workflow)

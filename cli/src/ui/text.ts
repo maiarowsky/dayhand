@@ -33,6 +33,9 @@ export function cut(text: string, width: number): string {
   return out + "…";
 }
 
+/** Text padded with spaces to at least `width` columns (by display width, so "期限" counts as four). */
+export const padTo = (text: string, width: number): string => text + " ".repeat(Math.max(0, width - widthOf(text)));
+
 /** Text cut or padded with spaces to exactly `width` columns. */
 export function fit(text: string, width: number): string {
   const cutText = cut(text, width);

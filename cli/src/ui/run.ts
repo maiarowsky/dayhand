@@ -3,6 +3,7 @@
 // and the terminal restored on every way out (q, C-c, a crash, a signal).
 import { writeSync } from "node:fs";
 import { render } from "ink";
+import { setLanguage, type Language } from "../i18n/index.js";
 import { createElement } from "react";
 import { App } from "./app.js";
 import type { Api } from "./api.js";
@@ -19,12 +20,15 @@ export type UiOptions = {
   interval: number;
   mouse: boolean;
   color: boolean;
+  /** The screens' language (registry/ui.ts resolves it from --lang, DAYHAND_LANG and the locale). */
+  language: Language;
   editText: (text: string, fileName: string) => string;
   stdin?: NodeJS.ReadStream;
   stdout?: NodeJS.WriteStream;
 };
 
 export async function runUi(options: UiOptions): Promise<void> {
+  setLanguage(options.language);
   const stdout = options.stdout ?? process.stdout;
   const fd = stdout === process.stdout ? 1 : undefined;
   const mouse = (on: boolean) => {

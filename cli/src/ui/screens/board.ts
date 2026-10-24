@@ -1,5 +1,6 @@
 // The board: todo, doing and done side by side, each column scrolling on its
 // own; below 60 columns one column at a time with the others named on top.
+import { t } from "../../i18n/index.js";
 import type { Column } from "../lists.js";
 import { refWidthOf, taskRow } from "../rows.js";
 import { columns, fitRow, seg, toHeight, windowStart, type Row } from "../text.js";
@@ -14,7 +15,7 @@ function columnBlock(column: Column, cursor: number, focused: boolean, today: st
   const refWidth = refWidthOf(column.tasks);
   const rows: Row[] = [focused ? heading.map((s) => ({ ...s, inverse: true })) : heading];
   const hits: Hit[] = [];
-  if (column.tasks.length === 0) rows.push([seg("  (empty)", { dim: true })]);
+  if (column.tasks.length === 0) rows.push([seg(`  ${t("column.empty")}`, { dim: true })]);
   shown.forEach((task, i) => {
     const index = start + i;
     rows.push(taskRow(task, { width, today, selected: focused && index === cursor, refWidth, due: "day" }));

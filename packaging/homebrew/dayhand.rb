@@ -6,7 +6,7 @@
 class Dayhand < Formula
   desc "Command-line client for the Dayhand task manager, for people and agents"
   homepage "https://github.com/maiarowsky/helm"
-  url "https://registry.npmjs.org/dayhand/-/dayhand-0.12.0.tgz" # x-release-please-version
+  url "https://registry.npmjs.org/dayhand/-/dayhand-0.13.0.tgz" # x-release-please-version
   sha256 "REPLACE_WITH_THE_SHA256_OF_THE_NPM_TARBALL"
   license "Apache-2.0"
 

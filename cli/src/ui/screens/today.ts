@@ -1,5 +1,6 @@
 // Today (overdue, the now task with its resume note, today, done today) and
 // the trash: sections of task rows in a window that follows the cursor.
+import { t } from "../../i18n/index.js";
 import { formatTimestamp } from "../../render/format.js";
 import type { Task } from "../../render/model.js";
 import type { Section } from "../lists.js";
@@ -34,7 +35,7 @@ export function todayScreen(sections: Section[], cursor: number, today: string, 
     for (const task of section.tasks) {
       lines.push({ row: taskRow(task, { width, today, selected: index === cursor, refWidth, due: mode(section.key), dueWidth }), index });
       if (section.key === "now" && task.resumeNote) {
-        lines.push({ row: [seg(" ".repeat(refWidth + 5)), seg("next: ", { color: "green" }), seg(task.resumeNote)], index });
+        lines.push({ row: [seg(" ".repeat(refWidth + 5)), seg(t("today.next"), { color: "green" }), seg(task.resumeNote)], index });
       }
       index++;
     }
@@ -43,7 +44,7 @@ export function todayScreen(sections: Section[], cursor: number, today: string, 
 }
 
 export function trashScreen(tasks: Task[], cursor: number, today: string, timezone: string | undefined, width: number, height: number): Screen {
-  if (tasks.length === 0) return { rows: toHeight([[seg("  (the trash is empty)", { dim: true })]], height), hits: [] };
+  if (tasks.length === 0) return { rows: toHeight([[seg(`  ${t("trash.empty")}`, { dim: true })]], height), hits: [] };
   const refWidth = refWidthOf(tasks);
   const lines: Line[] = tasks.map((task, index) => ({
     row: taskRow(task, {
@@ -51,7 +52,7 @@ export function trashScreen(tasks: Task[], cursor: number, today: string, timezo
       today,
       selected: index === cursor,
       refWidth,
-      note: task.deletedAt ? `deleted ${formatTimestamp(task.deletedAt, timezone)}` : undefined,
+      note: task.deletedAt ? t("trash.deleted", { time: formatTimestamp(task.deletedAt, timezone) }) : undefined,
     }),
     index,
   }));

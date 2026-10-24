@@ -3,6 +3,7 @@
 // limits, the cursor following its task). The screens are checked as text.
 import { describe, expect, test } from "vitest";
 import { CliError } from "../src/core/exit.js";
+import { setLanguage, tIn } from "../src/i18n/index.js";
 import type { Board, Detail, Task, TodayView } from "../src/render/model.js";
 import { makeApi, retryAfterMs, Throttled, type Api } from "../src/ui/api.js";
 import { Budget } from "../src/ui/budget.js";
@@ -14,7 +15,7 @@ import { todaySections, weekDays, weekStart } from "../src/ui/lists.js";
 import { derive } from "../src/ui/model.js";
 import { parseMove, parseQuickAdd } from "../src/ui/quickadd.js";
 import { initialState, type Lists, type UiState } from "../src/ui/state.js";
-import { cut, fitRow, rowsText, seg, windowStart } from "../src/ui/text.js";
+import { cut, fitRow, rowWidth, rowsText, seg, windowStart } from "../src/ui/text.js";
 import { TOPICS } from "../src/topics.js";
 
 // Friday 23 October 2026, 11:00 in London.
@@ -120,7 +121,7 @@ describe("line editor and keys", () => {
     expect(keyName(" ", none)).toBe("space");
     expect(chunkKeys("aB c\t\u0015")).toEqual(["a", "B", "space", "c", "tab", "C-u"]);
     expect(TOPICS.ui).toContain(keysText());
-    for (const group of KEY_GROUPS) expect(keysText()).toContain(`${group.title}:`);
+    for (const group of KEY_GROUPS) expect(keysText()).toContain(`${tIn("en", group.title)}:`);
     expect(TOPICS.ui).toContain("Backlog.md");
   });
 
@@ -348,5 +349,33 @@ describe("controller", () => {
     expect(narrow).toContain("Fri 23 Oct 2026 · today · 1 task");
     expect(derive(ui.snapshot()).lists.week[4]).toHaveLength(1);
     ui.stop();
+  });
+
+  test("the screens switch language and stay inside the terminal; the key map in dayhand help ui stays English", async () => {
+    const { api } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 80, rows: 16 });
+    await ui.refresh();
+    try {
+      setLanguage("pl");
+      const polish = rowsText(ui.frame().rows);
+      expect(polish).toContain("Dzisiaj, pt., 23 paź 2026 · Europe/London");
+      expect(polish).toMatch(/ZALEGŁE \(1\)\n› #\d+ ○ wczoraj Pay rent +#home/);
+      expect(polish).toContain("? pomoc");
+      setLanguage("ja");
+      for (const key of ["2", "3", "4", "?"]) {
+        ui.key(key);
+        await ui.refresh();
+        for (const row of ui.frame().rows) expect(rowWidth(row), key).toBeLessThanOrEqual(80);
+      }
+      expect(rowsText(ui.frame().rows)).toContain("キー");
+      expect(keysText()).toContain("Next / previous task");
+      setLanguage("en");
+      ui.key("esc");
+      ui.key("?");
+      expect(rowsText(ui.frame().rows)).toContain("Keys");
+    } finally {
+      setLanguage("en");
+      ui.stop();
+    }
   });
 });

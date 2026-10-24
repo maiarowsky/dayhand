@@ -3,6 +3,7 @@
 // keeps the last data on screen when the server cannot be reached, so the
 // screen never waits on the network. Ink only paints `frame()` (app.tsx).
 import { CliError, toCliError } from "../core/exit.js";
+import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import { isoWeekday, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
@@ -99,7 +100,7 @@ export class Controller {
 
   private async editText(text: string, fileName: string): Promise<string> {
     const edit = this.options.editText;
-    if (!edit) throw new CliError("usage", "No editor here");
+    if (!edit) throw new CliError("usage", t("error.noEditor"));
     let saved = text;
     const run = async () => {
       saved = edit(text, fileName);
@@ -318,7 +319,7 @@ export class Controller {
   /** Changes run one after another; each ends with a refresh of what is on screen. */
   private change(effect: Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" }>, today: string, form?: UiState["mode"]): void {
     if (!this.timezone) {
-      this.say("Not connected yet; try again in a moment", "error");
+      this.say(t("conn.notYet"), "error");
       this.emit();
       return;
     }
@@ -365,6 +366,6 @@ export class Controller {
 }
 
 function changeError(error: CliError): string {
-  if (error.code === "unavailable") return `Not saved: ${error.message}`;
+  if (error.code === "unavailable") return t("error.notSaved", { message: error.message });
   return error.message;
 }

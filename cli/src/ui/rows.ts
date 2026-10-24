@@ -1,10 +1,10 @@
 // One task as a row: cursor mark, number, status icon, due day, title, then
 // labels and markers on the right. The parts that do not fit are dropped from
 // the right first, so the title keeps its room on narrow terminals.
-import { relativeDate } from "../render/format.js";
+import { relativeDay } from "../i18n/dates.js";
 import type { Task } from "../render/model.js";
 import { addDays } from "../when/calendar.js";
-import { fitRow, seg, styled, widthOf, type Color, type Row, type Seg } from "./text.js";
+import { fitRow, padTo, seg, styled, widthOf, type Color, type Row, type Seg } from "./text.js";
 
 export const ICONS: Record<Task["status"], string> = { todo: "○", doing: "◐", done: "✔" };
 const ICON_COLORS: Partial<Record<Task["status"], Color>> = { doing: "yellow", done: "green" };
@@ -28,7 +28,7 @@ export type RowOptions = {
 
 export function dueText(task: Task, today: string, mode: "day" | "time"): string {
   if (!task.dueDate) return "";
-  return [mode === "day" ? relativeDate(task.dueDate, today) : "", task.dueTime].filter(Boolean).join(" ");
+  return [mode === "day" ? relativeDay(task.dueDate, today) : "", task.dueTime].filter(Boolean).join(" ");
 }
 
 export function dueColor(task: Task, today: string): Color | undefined {
@@ -57,7 +57,7 @@ export function taskRow(task: Task, options: RowOptions): Row {
     seg(" "),
   ];
   const due = options.due === "none" ? "" : dueText(task, today, options.due ?? "day");
-  const padded = due.padEnd(options.dueWidth ?? 0);
+  const padded = padTo(due, options.dueWidth ?? 0);
   const dueSeg: Row = padded ? [seg(padded, { color: dueColor(task, today), dim: done }), seg(" ")] : [];
   const title = seg(task.title, { bold: task.isNow && !done, dim: done, strike: done });
   const right: Row = [...markers(task), ...(options.note ? [seg(" "), seg(options.note, { dim: true })] : [])];
@@ -80,7 +80,7 @@ export function taskRow(task: Task, options: RowOptions): Row {
 }
 
 /** The widest due text among `tasks`, for lining up titles. */
-export const dueWidthOf = (tasks: Task[], today: string, mode: "day" | "time") => Math.max(0, ...tasks.map((t) => dueText(t, today, mode).length));
+export const dueWidthOf = (tasks: Task[], today: string, mode: "day" | "time") => Math.max(0, ...tasks.map((t) => widthOf(dueText(t, today, mode))));
 
 /** The widest task number among `tasks`, for lining up titles. */
 export const refWidthOf = (tasks: Task[]) => Math.max(0, ...tasks.map((t) => refText(t).length));

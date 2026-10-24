@@ -3,7 +3,7 @@
 // prebuilt binaries for macOS and Windows only; elsewhere these tests are skipped.
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { createKey, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
+import { createKey, dayhand, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
 import { loadPty, uiSession, type UiSession } from "./screen.js";
 
 const pty = loadPty();
@@ -228,4 +228,35 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await s.waitFor(/Keys[\s\S]*Move[\s\S]*Board and week/);
     await s.shot("help");
   });
+
+  test("speaks the terminal's language, DAYHAND_LANG and --lang choose another; what scripts read stays English", async () => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday", "-l", "home"]);
+    const polish = open(key, [], undefined, { LANG: "pl_PL.UTF-8" });
+    const screen = await polish.waitFor("ZALEGŁE");
+    expect(screen).toMatch(/^ Dayhand +1 Dzisiaj +2 Tablica +3 Tydzień +4 Kosz/);
+    expect(screen).toMatch(/ZALEGŁE \(1\)\n› #1 ○ wczoraj Pay rent +#home/);
+    await polish.press("a", ..."Zadzwoń tomorrow 2pm");
+    await polish.press("enter");
+    await polish.waitFor("Dodano #2 Zadzwoń · jutro 14:00");
+    await polish.shot("today-pl");
+    await polish.press("q");
+    expect(await polish.exit).toBe(0);
+
+    const japanese = open(key, ["--lang", "ja"], undefined, { LANG: "pl_PL.UTF-8", DAYHAND_LANG: "de" });
+    await japanese.waitFor(/期限切れ \(1\)/);
+    await japanese.press("?");
+    await japanese.waitFor(/キー[\s\S]*移動/);
+    await japanese.press("q", "q");
+    expect(await japanese.exit).toBe(0);
+
+    const german = open(key, [], undefined, { LANG: "pl_PL.UTF-8", DAYHAND_LANG: "de" });
+    await german.waitFor("ÜBERFÄLLIG");
+
+    const unknown = open(key, ["--lang", "tlh"]);
+    await unknown.waitFor("--lang must be one of en, pl, de, es, fr, pt-BR, ja, zh-Hans");
+    expect(await unknown.exit).toBe(2);
+    const listed = await dayhand(key, ["list", "--json"], { env: { LANG: "pl_PL.UTF-8", DAYHAND_LANG: "pl" } });
+    expect(listed.stdout).toMatch(/"title": ?"Zadzwoń"/);
+  }, 30_000);
 });

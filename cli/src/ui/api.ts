@@ -4,6 +4,7 @@
 // server applied before the connection dropped is not applied twice.
 import { randomUUID } from "node:crypto";
 import { CliError } from "../core/exit.js";
+import { t } from "../i18n/index.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import type { DayhandClient } from "../transport/client.js";
 import { addDays } from "../when/calendar.js";
@@ -12,7 +13,7 @@ import { Budget, CHANGES_PER_MINUTE, READS_PER_MINUTE } from "./budget.js";
 /** The UI's own limit was reached; nothing was sent. */
 export class Throttled extends Error {
   constructor(readonly waitMs: number) {
-    super(`Waiting ${Math.ceil(waitMs / 1000)} s to stay under the server's limits`);
+    super(t("conn.throttled", { seconds: Math.ceil(waitMs / 1000) }));
   }
 }
 

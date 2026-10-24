@@ -1,6 +1,7 @@
 // What each screen lists, from the backend's results: Today's sections, the
 // board's columns, the week's days and the trash, narrowed by the `/` filter.
 // The cursor moves over these lists, so the screens and the keys share them.
+import { t } from "../i18n/index.js";
 import type { Board, Task, TodayView } from "../render/model.js";
 import { addDays, isoWeekday } from "../when/calendar.js";
 
@@ -23,10 +24,10 @@ export function todaySections(view: TodayView, filter = ""): Section[] {
   const now = view.now && matches(view.now, filter) ? [view.now] : [];
   const open = (tasks: Task[]) => only(tasks, filter).filter((t) => !t.isNow);
   const sections: Section[] = [
-    { key: "now", label: "NOW", tasks: now },
-    { key: "overdue", label: "OVERDUE", tasks: open(view.overdue) },
-    { key: "today", label: "TODAY", tasks: open(view.today), empty: filter ? "no match" : "nothing planned" },
-    { key: "done", label: "DONE TODAY", tasks: only(view.doneToday, filter) },
+    { key: "now", label: t("section.now"), tasks: now },
+    { key: "overdue", label: t("section.overdue"), tasks: open(view.overdue) },
+    { key: "today", label: t("section.today"), tasks: open(view.today), empty: filter ? t("section.noMatch") : t("section.nothingPlanned") },
+    { key: "done", label: t("section.doneToday"), tasks: only(view.doneToday, filter) },
   ];
   return sections.filter((s) => s.tasks.length > 0 || s.key === "today");
 }
@@ -36,9 +37,9 @@ export const todayTasks = (sections: Section[]) => sections.flatMap((s) => s.tas
 
 export function boardColumns(board: Board, filter = ""): Column[] {
   return [
-    { key: "todo", label: "TODO", tasks: only(board.todo, filter) },
-    { key: "doing", label: "DOING", tasks: only(board.doing, filter) },
-    { key: "done", label: "DONE", tasks: only(board.done, filter) },
+    { key: "todo", label: t("column.todo"), tasks: only(board.todo, filter) },
+    { key: "doing", label: t("column.doing"), tasks: only(board.doing, filter) },
+    { key: "done", label: t("column.done"), tasks: only(board.done, filter) },
   ];
 }
 

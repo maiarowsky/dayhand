@@ -1,6 +1,7 @@
 // What a key does: a pure function from the state, the key name and the lists
 // to the next state and at most one effect (a server call, a reload, quitting),
 // which the controller carries out. Keys follow keys.ts.
+import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import { addDays, isoWeekday } from "../when/calendar.js";
 import { editLine, line } from "./line.js";
@@ -59,7 +60,7 @@ function normal(state: UiState, name: string, lists: Lists): Result {
   if (moved) return moved;
   const task = selectedTask(state, lists);
   const inTrash = Boolean(task?.deletedAt);
-  const act = (make: (task: Task) => Result): Result => (!task ? flash(state, "No task selected") : inTrash ? flash(state, "In the trash: r restores it") : make(task));
+  const act = (make: (task: Task) => Result): Result => (!task ? flash(state, t("flash.noTask")) : inTrash ? flash(state, t("flash.inTrash")) : make(task));
   switch (name) {
     case "a":
       return { state: { ...state, mode: { kind: "prompt", prompt: "add", line: line(), date: addDate(state, lists), ...(boardDoing(state) ? { status: "doing" as const } : {}) } } };
@@ -81,9 +82,9 @@ function normal(state: UiState, name: string, lists: Lists): Result {
     case "d":
       return act((t) => ({ state: { ...state, mode: { kind: "confirm", taskId: t.id, ref: t.ref === undefined ? "" : `#${t.ref}`, title: t.title } } }));
     case "r":
-      return task && inTrash ? { state, effect: { kind: "restore", task } } : flash(state, "r restores a task in the trash (4)");
+      return task && inTrash ? { state, effect: { kind: "restore", task } } : flash(state, t("flash.restoreWhere"));
     case "u":
-      return state.lastDeleted ? { state: { ...state, lastDeleted: undefined }, effect: { kind: "undo", taskId: state.lastDeleted } } : flash(state, "Nothing to undo");
+      return state.lastDeleted ? { state: { ...state, lastDeleted: undefined }, effect: { kind: "undo", taskId: state.lastDeleted } } : flash(state, t("flash.nothingToUndo"));
     case "H":
     case "L":
       return act((t) => sideways(state, t, name === "H" ? -1 : 1));
@@ -156,11 +157,11 @@ const boardDoing = (state: UiState) => state.view === "board" && !state.detail &
 /** H/L: on the board the next column (status), in the week the next day. */
 function sideways(state: UiState, task: Task, delta: number): Result {
   if (state.view === "week") {
-    if (!task.dueDate) return flash(state, "The task has no day");
+    if (!task.dueDate) return flash(state, t("flash.noDay"));
     const cursor = { ...state.cursor, weekDay: clamp(state.cursor.weekDay + delta, 7) };
     return { state: { ...state, cursor }, effect: { kind: "shift", task, days: delta } };
   }
-  if (state.view !== "board") return flash(state, "H and L work on the board and in the week");
+  if (state.view !== "board") return flash(state, t("flash.shiftWhere"));
   const to = STATUSES[STATUSES.indexOf(task.status) + delta];
   if (!to) return { state };
   const board = [...state.cursor.board] as UiState["cursor"]["board"];
@@ -194,7 +195,7 @@ function prompt(state: UiState, mode: Extract<Mode, { kind: "prompt" }>, name: s
 
 function confirm(state: UiState, mode: Extract<Mode, { kind: "confirm" }>, name: string): Result {
   const closed = { ...state, mode: NORMAL };
-  if (name !== "y" && name !== "Y") return { state: closed, effect: { kind: "flash", text: "Kept" } };
+  if (name !== "y" && name !== "Y") return { state: closed, effect: { kind: "flash", text: t("flash.kept") } };
   return { state: { ...closed, detail: undefined, lastDeleted: mode.taskId }, effect: { kind: "delete", taskId: mode.taskId, label: `${mode.ref} ${mode.title}`.trim() } };
 }
 
@@ -203,7 +204,7 @@ function edit(state: UiState, mode: Extract<Mode, { kind: "edit" }>, name: strin
   const focus = (delta: number) => ({ state: { ...state, mode: { ...mode, focus: (mode.focus + delta + mode.fields.length) % mode.fields.length } } });
   switch (name) {
     case "esc":
-      return { state: closed, effect: { kind: "flash", text: "Edit cancelled" } };
+      return { state: closed, effect: { kind: "flash", text: t("flash.editCancelled") } };
     case "tab":
     case "down":
       return focus(1);
@@ -213,7 +214,7 @@ function edit(state: UiState, mode: Extract<Mode, { kind: "edit" }>, name: strin
     case "enter": {
       const task = findTask(lists, mode.taskId, state);
       const changes = Object.fromEntries(mode.fields.filter((f) => f.line.text.trim() !== f.initial).map((f) => [f.key, f.line.text.trim()]));
-      if (!task || Object.keys(changes).length === 0) return { state: closed, effect: { kind: "flash", text: "No changes" } };
+      if (!task || Object.keys(changes).length === 0) return { state: closed, effect: { kind: "flash", text: t("done.noChanges") } };
       return { state: closed, effect: { kind: "edit", task, changes } };
     }
     default: {
@@ -229,10 +230,10 @@ function edit(state: UiState, mode: Extract<Mode, { kind: "edit" }>, name: strin
 /** The edit form's fields, prefilled from the task (the due field as "YYYY-MM-DD HH:MM"). */
 export function editFields(task: Task): EditField[] {
   const values: [EditKey, string, string][] = [
-    ["title", "Title", task.title],
-    ["due", "Due", [task.dueDate, task.dueTime].filter(Boolean).join(" ")],
-    ["labels", "Labels", task.labels.join(", ")],
-    ["resumeNote", "Resume note", task.resumeNote ?? ""],
+    ["title", t("field.title"), task.title],
+    ["due", t("field.due"), [task.dueDate, task.dueTime].filter(Boolean).join(" ")],
+    ["labels", t("field.labels"), task.labels.join(", ")],
+    ["resumeNote", t("field.resumeNote"), task.resumeNote ?? ""],
   ];
   return values.map(([key, label, value]) => ({ key, label, line: line(value), initial: value }));
 }

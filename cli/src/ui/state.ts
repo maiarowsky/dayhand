@@ -1,12 +1,13 @@
 // The state of dayhand ui that keys change: the view, the cursor in each view,
 // what is open over it (help, details, a prompt, the edit form) and the filter.
 // Data from the server is not here: keys see it through `Lists`.
+import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import type { Line } from "./line.js";
 
 export type ViewName = "today" | "board" | "week" | "trash";
 export const VIEWS: ViewName[] = ["today", "board", "week", "trash"];
-export const VIEW_LABELS: Record<ViewName, string> = { today: "Today", board: "Board", week: "Week", trash: "Trash" };
+export const viewLabel = (view: ViewName): string => t(`view.${view}`);
 
 export type Prompt = "add" | "move" | "note" | "filter";
 
