@@ -4,6 +4,21 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.2.1 (2026-10-24)
+
+### Fixed
+
+- The main window's content starts below the title bar again. Once Today held tasks while the status line
+  ("Not connected to a server; tasks stay on this Mac.") was shown, the window's content grew taller than the
+  window and slid up under it: the status line and its **Connect…** button were cut off at the top and quick add sat
+  among the window buttons, next to the sidebar button and the title. The update button at the bottom of the
+  sidebar was cut off the same way.
+
+### Changed
+
+- `DayhandSnapshots` also lays out the main window in a real window with its title bar and fails when the content
+  does not fit it or quick add sits under the title bar.
+
 ## 0.2.0 (2026-10-24)
 
 ### Added
