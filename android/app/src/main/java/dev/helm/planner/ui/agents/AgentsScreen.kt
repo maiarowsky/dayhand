@@ -132,12 +132,14 @@ fun AgentsScreen(state: AgentsUiState, actions: AgentsActions) {
         is AgentsPage.Approval -> {
             val request = (state.approvals as? Section.Loaded)?.value?.firstOrNull { it.id == page.id }
             SettingsPage(stringResource(R.string.agents_approval_title), actions::back, AgentsTags.APPROVAL_PAGE) {
+                MessageGroup(state.message)
                 if (request == null) ListNote(stringResource(R.string.agents_gone)) else ApprovalPage(request, state, actions)
             }
         }
         is AgentsPage.Proposal -> {
             val proposal = (state.proposals as? Section.Loaded)?.value?.firstOrNull { it.id == page.id }
             SettingsPage(stringResource(R.string.agents_proposal_title), actions::back, AgentsTags.PROPOSAL_PAGE) {
+                MessageGroup(state.message)
                 if (proposal == null) ListNote(stringResource(R.string.agents_gone)) else ProposalPage(proposal, state, actions)
             }
         }
@@ -149,7 +151,7 @@ fun AgentsScreen(state: AgentsUiState, actions: AgentsActions) {
 @Composable
 private fun MainPage(state: AgentsUiState, actions: AgentsActions) {
     SettingsPage(stringResource(R.string.agents_title), actions::back, AgentsTags.PAGE) {
-        state.message?.let { message -> ListGroup(null, rows = listOf { Message(messageText(message), messageIcon(message)) }) }
+        MessageGroup(state.message)
         PauseGroup(state, actions)
         ApprovalGroups(state, actions)
         ProposalGroup(state, actions)
@@ -443,6 +445,7 @@ private fun MergePage(proposalId: String, state: AgentsUiState, actions: AgentsA
             )
         },
     ) {
+        MessageGroup(state.message)
         if (shown.isEmpty()) {
             ListNote(stringResource(R.string.agents_merge_none))
         } else {
@@ -490,8 +493,19 @@ internal fun Status(text: String, loading: Boolean) {
 
 /** A status line in a group, read out when it appears. */
 @Composable
-private fun Message(text: String, icon: LineIcon) {
-    ListRow(text, AgentsTags.MESSAGE, modifier = Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }, icon = icon)
+internal fun MessageGroup(message: AgentsMessage?) {
+    if (message == null) return
+    ListGroup(
+        null,
+        rows = listOf {
+            ListRow(
+                messageText(message),
+                AgentsTags.MESSAGE,
+                modifier = Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+                icon = messageIcon(message),
+            )
+        },
+    )
 }
 
 @Composable

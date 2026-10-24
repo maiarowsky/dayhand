@@ -51,6 +51,7 @@ internal fun PolicyGroup(controls: Section<AgentControls>, actions: AgentsAction
 internal fun PolicyPage(page: AgentsPage.Policy, state: AgentsUiState, actions: AgentsActions) {
     val policy = (state.controls as? Section.Loaded)?.value?.policies?.firstOrNull { it.keyId == page.keyId && it.tool == page.tool }
     SettingsPage(stringResource(R.string.agents_policy_title), actions::back, AgentsTags.POLICY_PAGE) {
+        MessageGroup(state.message)
         if (policy == null) {
             ListNote(stringResource(R.string.agents_gone))
             return@SettingsPage

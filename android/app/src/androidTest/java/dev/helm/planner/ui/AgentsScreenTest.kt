@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -174,6 +176,48 @@ class AgentsScreenTest {
         compose.onNodeWithTag(AgentsTags.RULE + "deny").performClick()
         assertEquals("policy:k1:complete_task:deny", actions.calls.last())
         assertEquals(2, actions.calls.size)
+    }
+
+    @Test
+    fun aFailedPolicyShowsWordsAndKeepsTheCurrentRuleForRetry() {
+        val actions = Recorder()
+        var state by mutableStateOf(loaded.copy(page = AgentsPage.Policy("k1", "complete_task")))
+        compose.setContent { HelmTheme { AgentsScreen(state, actions) } }
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").performScrollTo().assertIsEnabled().performClick()
+
+        compose.runOnIdle { state = state.copy(busy = true) }
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").assertIsNotEnabled()
+        compose.onNodeWithTag(AgentsTags.STATUS).performScrollTo().assertIsDisplayed()
+
+        compose.runOnIdle { state = state.copy(busy = false, message = AgentsMessage.FAILED) }
+        compose.onNodeWithTag(AgentsTags.POLICY_PAGE).assertIsDisplayed()
+        compose.onNodeWithTag(AgentsTags.MESSAGE).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.agents_change_failed)).assertIsDisplayed()
+        compose.onNodeWithTag(AgentsTags.RULE + "ask").assertIsSelected()
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").performScrollTo().assertIsNotSelected().assertIsEnabled().performClick()
+        assertEquals(List(2) { "policy:k1:complete_task:deny" }, actions.calls)
+
+        compose.runOnIdle { state = state.copy(busy = true, message = null) }
+        compose.onNodeWithTag(AgentsTags.MESSAGE).assertDoesNotExist()
+        compose.onNodeWithTag(AgentsTags.RULE + "deny").assertIsNotEnabled()
+    }
+
+    @Test
+    fun failedChangesAreVisibleOnEveryAgentsPage() {
+        var state by mutableStateOf(loaded)
+        compose.setContent { HelmTheme { AgentsScreen(state, Recorder()) } }
+        val pages = listOf(
+            AgentsPage.Main,
+            AgentsPage.Approval("ap1"),
+            AgentsPage.Proposal("t1"),
+            AgentsPage.Merge("t1"),
+            AgentsPage.Policy("k1", "complete_task"),
+        )
+        pages.forEach { page ->
+            compose.runOnIdle { state = loaded.copy(page = page, message = AgentsMessage.FAILED) }
+            compose.onNodeWithTag(AgentsTags.MESSAGE).performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText(text(R.string.agents_change_failed)).assertIsDisplayed()
+        }
     }
 
     @Test
