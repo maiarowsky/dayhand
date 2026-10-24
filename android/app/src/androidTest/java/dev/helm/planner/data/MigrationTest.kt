@@ -85,6 +85,35 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun version3TasksGetNoCriteriaProofOrClaim() {
+        helper.createDatabase(DB, 3).apply {
+            execSQL(
+                "INSERT INTO tasks (localId, serverId, clientId, title, dueDate, status, isNow, createdAt, updatedAt, serverUpdatedAt, labels, links, checklist) " +
+                    "VALUES ('a', 's1', 'a', 'Ship the export', '2026-10-31', 'doing', 0, 1, 2, 2, '[]', '[]', '[{\"id\":\"c1\",\"title\":\"CSV\",\"done\":true}]')",
+            )
+            close()
+        }
+        helper.runMigrationsAndValidate(DB, 4, true).close()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.databaseBuilder(context, HelmDatabase::class.java, DB).build()
+        try {
+            runBlocking {
+                val task = db.tasks().byLocalId("a")!!
+                assertEquals("Ship the export", task.title)
+                assertEquals(1, task.checklist.size)
+                assertTrue(task.acceptance.isEmpty())
+                assertNull(task.proof)
+                assertNull(task.claimName)
+                assertNull(task.claimExpiresAt)
+                assertNull("the next snapshot must fill in the agent work", task.serverUpdatedAt)
+            }
+        } finally {
+            db.close()
+        }
+    }
+
     private companion object {
         const val DB = "migration-test.db"
     }

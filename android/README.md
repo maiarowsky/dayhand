@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.9.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.9.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - English and Polish, text that follows the system font size, touch targets of at least 48 dp
@@ -122,7 +122,10 @@ trash.
 
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
 optional time, repeat, reminders, a checklist, labels (which are also the projects: the backend has
-one list for both), links (http/https only; no files in version 1) and the note.
+one list for both), links (http/https only; no files in version 1) and the note. Since 0.9.1 it
+also shows, read-only, what an agent does with the task (backend 0.10.0, [agent-work.md](../docs/agent-work.md)):
+"agent: \<name\> works until \<time\>" while a claim lasts, the acceptance criteria with the met
+ones ticked, and the proof the task was completed with. The owner's own changes always go through.
 **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on the due
 date's day, the last day of the month, or an nth weekday ("the 2nd Tuesday", "the last Friday");
 the next date counted from the due date or from the day you complete it; ending never, on a day

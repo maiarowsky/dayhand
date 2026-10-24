@@ -1,8 +1,10 @@
 package dev.helm.planner.data.remote
 
+import dev.helm.planner.data.local.AcceptanceItem
 import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskProof
 import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.domain.ReminderRules
 import kotlinx.coroutines.flow.Flow
@@ -83,6 +85,10 @@ data class RemoteTask(
     val checklist: List<ChecklistItem> = emptyList(),
     /** Null: the default reminders from the settings. */
     val reminders: List<TaskReminder>? = null,
+    val acceptance: List<AcceptanceItem> = emptyList(),
+    val proof: TaskProof? = null,
+    val claimName: String? = null,
+    val claimExpiresAt: Long? = null,
 )
 
 /** One entry of a task's history (`getTask` in `backend/convex/lib/views.ts`); before/after as JSON objects. */

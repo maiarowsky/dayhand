@@ -15,6 +15,7 @@ internal object FieldJson {
     private val linkList: KSerializer<List<TaskLink>> = ListSerializer(TaskLink.serializer())
     private val checklistList: KSerializer<List<ChecklistItem>> = ListSerializer(ChecklistItem.serializer())
     private val reminderList: KSerializer<List<TaskReminder>> = ListSerializer(TaskReminder.serializer())
+    private val acceptanceList: KSerializer<List<AcceptanceItem>> = ListSerializer(AcceptanceItem.serializer())
 
     fun encodeLabels(labels: List<String>): String = json.encodeToString(labelList, labels)
 
@@ -31,6 +32,14 @@ internal object FieldJson {
     fun encodeReminders(reminders: List<TaskReminder>): String = json.encodeToString(reminderList, reminders)
 
     fun decodeReminders(value: String): List<TaskReminder>? = decode(value, reminderList)
+
+    fun encodeAcceptance(items: List<AcceptanceItem>): String = json.encodeToString(acceptanceList, items)
+
+    fun decodeAcceptance(value: String): List<AcceptanceItem> = decode(value, acceptanceList) ?: emptyList()
+
+    fun encodeProof(proof: TaskProof): String = json.encodeToString(TaskProof.serializer(), proof)
+
+    fun decodeProof(value: String): TaskProof? = decode(value, TaskProof.serializer())
 
     fun encodeRepeat(rule: RepeatRule): String = json.encodeToString(RepeatRule.serializer(), rule)
 

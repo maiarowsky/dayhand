@@ -370,4 +370,13 @@
         <item quantity="many">za %d dni</item>
         <item quantity="other">za %d dnia</item>
     </plurals>
+
+    <!-- Praca agenta (backend 0.10.0): na telefonie tylko do odczytu. -->
+    <string name="agent_works_until">agent: %1$s pracuje do %2$s</string>
+    <string name="detail_acceptance">Kryteria akceptacji</string>
+    <string name="acceptance_title_progress">%1$s · %2$d z %3$d spełnione</string>
+    <string name="detail_proof">Dowód wykonania</string>
+    <string name="proof_check_pass">zaliczone</string>
+    <string name="proof_check_fail">niezaliczone</string>
+    <string name="proof_empty">Brak szczegółów</string>
 </resources>

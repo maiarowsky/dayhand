@@ -12,15 +12,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * Version 2 adds repeat, labels, links and the trash to tasks, and the cached change history; version 3 the
- * checklist and the task's own reminders.
+ * checklist and the task's own reminders; version 4 the agent work: acceptance criteria, proof and the claim.
  */
 @Database(
     entities = [Task::class, OutboxOp::class, TaskEvent::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = HelmDatabase.Version2::class),
         AutoMigration(from = 2, to = 3, spec = HelmDatabase.Version3::class),
+        AutoMigration(from = 3, to = 4, spec = HelmDatabase.Version4::class),
     ],
 )
 @TypeConverters(Converters::class)
@@ -42,6 +43,13 @@ abstract class HelmDatabase : RoomDatabase() {
 
     /** As [Version2]: rows from version 2 have no checklist and no own reminders, so the next snapshot fills them in. */
     class Version3 : AutoMigrationSpec {
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            db.execSQL("UPDATE tasks SET serverUpdatedAt = NULL")
+        }
+    }
+
+    /** As [Version2]: rows from version 3 have no criteria, proof or claim, so the next snapshot fills them in. */
+    class Version4 : AutoMigrationSpec {
         override fun onPostMigrate(db: SupportSQLiteDatabase) {
             db.execSQL("UPDATE tasks SET serverUpdatedAt = NULL")
         }
@@ -85,6 +93,18 @@ class Converters {
 
     @TypeConverter
     fun remindersFromJson(value: String?): List<TaskReminder>? = value?.let(FieldJson::decodeReminders)
+
+    @TypeConverter
+    fun acceptanceToJson(items: List<AcceptanceItem>): String = FieldJson.encodeAcceptance(items)
+
+    @TypeConverter
+    fun acceptanceFromJson(value: String): List<AcceptanceItem> = FieldJson.decodeAcceptance(value)
+
+    @TypeConverter
+    fun proofToJson(proof: TaskProof?): String? = proof?.let(FieldJson::encodeProof)
+
+    @TypeConverter
+    fun proofFromJson(value: String?): TaskProof? = value?.let(FieldJson::decodeProof)
 
     @TypeConverter
     fun repeatToJson(rule: RepeatRule?): String? = rule?.let(FieldJson::encodeRepeat)

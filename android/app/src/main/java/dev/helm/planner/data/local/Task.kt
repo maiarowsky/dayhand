@@ -140,6 +140,24 @@ data class TaskReminder(val minutesBefore: Int? = null, val time: String? = null
 @Serializable
 data class TaskLink(val url: String, val title: String? = null)
 
+/** One acceptance criterion (backend 0.10.0): what done means for the task. Read-only on the phone. */
+@Serializable
+data class AcceptanceItem(val id: String, val text: String, val met: Boolean = false)
+
+/** One check behind a completion, e.g. a test run, and whether it passed. */
+@Serializable
+data class ProofCheck(val name: String, val result: String, val url: String? = null) {
+    val passed: Boolean get() = result == "pass"
+}
+
+/** What the agent (or person) gave `complete_task` to show the work is done. Read-only on the phone. */
+@Serializable
+data class TaskProof(
+    val summary: String? = null,
+    val links: List<TaskLink> = emptyList(),
+    val checks: List<ProofCheck> = emptyList(),
+)
+
 /**
  * A task as the screens see it. Room is the source of truth for the UI; the server copy
  * arrives through sync and local changes leave through the outbox.
@@ -180,6 +198,12 @@ data class Task(
     @ColumnInfo(defaultValue = "[]") val checklist: List<ChecklistItem> = emptyList(),
     /** This task's own reminders; null = the default reminders from the settings, empty = none. */
     val reminders: List<TaskReminder>? = null,
+    /** Agent work (backend 0.10.0), shown read-only and always taken from the server. */
+    @ColumnInfo(defaultValue = "[]") val acceptance: List<AcceptanceItem> = emptyList(),
+    val proof: TaskProof? = null,
+    /** Name of the API key or agent connection that claimed the task, and when the claim ends. */
+    val claimName: String? = null,
+    val claimExpiresAt: Long? = null,
 ) {
     val inTrash: Boolean get() = deletedAt != null
 

@@ -1,8 +1,10 @@
 package dev.helm.planner.data.remote
 
+import dev.helm.planner.data.local.AcceptanceItem
 import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.local.TaskLink
+import dev.helm.planner.data.local.TaskProof
 import dev.helm.planner.data.local.TaskReminder
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -73,6 +75,10 @@ object RemoteJson {
         deletedAt = o.long("deletedAt"),
         checklist = (o["checklist"] as? JsonArray).orEmpty().mapNotNull { decodeOrNull(ChecklistItem.serializer(), it) },
         reminders = (o["reminders"] as? JsonArray)?.mapNotNull(TaskReminder::parse),
+        acceptance = (o["acceptance"] as? JsonArray).orEmpty().mapNotNull { decodeOrNull(AcceptanceItem.serializer(), it) },
+        proof = o["proof"]?.let { decodeOrNull(TaskProof.serializer(), it) },
+        claimName = (o["claimedBy"] as? JsonObject)?.string("name"),
+        claimExpiresAt = o.long("claimExpiresAt"),
     )
 
     /** A task's change history from [QUERY_TASK], newest first. */

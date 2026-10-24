@@ -73,6 +73,10 @@ object SnapshotMerger {
             deletedAt = r.deletedAt,
             checklist = r.checklist,
             reminders = r.reminders,
+            acceptance = r.acceptance,
+            proof = r.proof,
+            claimName = r.claimName,
+            claimExpiresAt = r.claimExpiresAt,
         )
         if (row == null || keepLocal.isEmpty()) return task
         if (Field.TITLE in keepLocal) task = task.copy(title = row.title)

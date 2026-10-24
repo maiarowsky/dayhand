@@ -20,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
+import dev.helm.planner.data.local.AcceptanceItem
 import dev.helm.planner.data.local.ChecklistItem
+import dev.helm.planner.data.local.ProofCheck
+import dev.helm.planner.data.local.TaskProof
 import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.RepeatFrom
 import dev.helm.planner.data.local.RepeatRule
@@ -34,6 +37,7 @@ import dev.helm.planner.domain.FieldChange
 import dev.helm.planner.domain.HistoryEntry
 import dev.helm.planner.domain.HistoryField
 import dev.helm.planner.sync.HistoryState
+import dev.helm.planner.ui.task.AgentWorkTags
 import dev.helm.planner.ui.task.ChecklistTags
 import dev.helm.planner.ui.task.EditorTags
 import dev.helm.planner.ui.task.TaskDetailActions
@@ -99,6 +103,35 @@ class TaskDetailScreenTest {
         compose.onNodeWithContentDescription(text(R.string.remove_label, "Dayhand")).assertIsDisplayed()
         compose.onNodeWithText("Spec").assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().assertTextContains("Ask about VAT", substring = true)
+    }
+
+    @Test
+    fun showsWhoWorksOnTheTaskItsCriteriaAndItsProof() {
+        val inAnHour = System.currentTimeMillis() + 60 * 60_000
+        show(
+            task.copy(
+                claimName = "claude-code",
+                claimExpiresAt = inAnHour,
+                acceptance = listOf(AcceptanceItem("a1", "CSV opens", met = true), AcceptanceItem("a2", "Docs updated")),
+                proof = TaskProof(summary = "Export shipped", checks = listOf(ProofCheck("unit tests", "pass"), ProofCheck("lint", "fail"))),
+            ),
+        )
+        val until = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+            .format(java.time.Instant.ofEpochMilli(inAnHour).atZone(java.time.ZoneId.of("Europe/Warsaw")))
+        compose.onNodeWithTag(AgentWorkTags.CLAIM).assertTextContains(text(R.string.agent_works_until, "claude-code", until))
+        compose.onNodeWithTag(AgentWorkTags.criterion(0)).performScrollTo().assertTextContains("CSV opens", substring = true)
+        compose.onNodeWithTag(AgentWorkTags.criterion(1)).assertTextContains("Docs updated", substring = true)
+        compose.onNodeWithText(text(R.string.acceptance_title_progress, text(R.string.detail_acceptance), 1, 2), ignoreCase = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(AgentWorkTags.PROOF).performScrollTo()
+        compose.onNodeWithText("Export shipped").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("${text(R.string.proof_check_fail)}  lint").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun anExpiredClaimIsNotShown() {
+        show(task.copy(claimName = "claude-code", claimExpiresAt = System.currentTimeMillis() - 1_000))
+        compose.onNodeWithTag(AgentWorkTags.CLAIM).assertDoesNotExist()
+        compose.onNodeWithTag(AgentWorkTags.ACCEPTANCE).assertDoesNotExist()
     }
 
     @Test
