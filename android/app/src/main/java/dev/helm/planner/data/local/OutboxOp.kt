@@ -41,5 +41,7 @@ object Mutations {
     const val UPDATE = "app:update"
     const val SOFT_DELETE = "app:softDelete"
     const val RESTORE = "app:restore"
+    /** The owner takes a task over from an agent: its claim ends at once. */
+    const val RELEASE = "app:release"
     const val UPDATE_SETTINGS = "app:updateSettings"
 }

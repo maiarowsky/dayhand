@@ -110,6 +110,7 @@ private fun actionLabel(action: String): String = when (action) {
     "delete" -> stringResource(R.string.action_delete)
     "restore" -> stringResource(R.string.action_restore)
     "repeat" -> stringResource(R.string.action_repeat)
+    "release" -> stringResource(R.string.action_release)
     else -> action
 }
 

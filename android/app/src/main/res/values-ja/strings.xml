@@ -354,4 +354,19 @@
     <string name="proof_check_pass">成功</string>
     <string name="proof_check_fail">失敗</string>
     <string name="proof_empty">詳細はありません</string>
+    <string name="detail_agent">エージェント</string>
+    <string name="detail_blocked">ブロック中：%1$s</string>
+    <string name="detail_waiting_on">先に完了が必要なタスク</string>
+    <string name="detail_plan">計画</string>
+    <string name="dependency_done">%1$s（完了）</string>
+    <string name="dependency_in_trash">%1$s（ゴミ箱）</string>
+    <string name="dependency_missing">計画にもう存在しないタスク</string>
+    <string name="release_claim">担当を終了</string>
+    <string name="release_claim_title">%1$s の担当を終了しますか？</string>
+    <string name="release_claim_text">%1$s はこのタスクの担当ではなくなり、どのエージェントも再び担当できます。タスクのほかの内容は変わりません。</string>
+    <string name="action_release">担当を終了</string>
+    <string name="blocked_reason_and_waiting">%1$s。%2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="other">%d件のタスクを待機中</item>
+    </plurals>
 </resources>

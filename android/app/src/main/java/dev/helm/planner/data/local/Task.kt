@@ -204,6 +204,14 @@ data class Task(
     /** Name of the API key or agent connection that claimed the task, and when the claim ends. */
     val claimName: String? = null,
     val claimExpiresAt: Long? = null,
+    /** The task's number on the server ("#12"); null until the server has it. */
+    val ref: Long? = null,
+    /** How the work will be done, as free text (backend 0.10.0); read-only, taken from the server. */
+    val plan: String? = null,
+    /** Server ids of the tasks that must be done first; read-only, taken from the server. */
+    @ColumnInfo(defaultValue = "[]") val dependsOn: List<String> = emptyList(),
+    /** Why the task cannot go on; read-only, taken from the server. */
+    val blockedReason: String? = null,
 ) {
     val inTrash: Boolean get() = deletedAt != null
 

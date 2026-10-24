@@ -2,43 +2,83 @@ package dev.helm.planner.ui.task
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskProof
 import dev.helm.planner.domain.AgentWork
+import dev.helm.planner.domain.AgentWork.DependencyState
 import dev.helm.planner.ui.components.CardSection
+import dev.helm.planner.ui.components.HelmDialog
+import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
 object AgentWorkTags {
+    const val SECTION = "detail-agent"
     const val CLAIM = "detail-claim"
+    const val RELEASE = "detail-release"
+    const val RELEASE_CONFIRM = "detail-release-confirm"
+    const val BLOCKED = "detail-blocked"
+    const val WAITING_ON = "detail-waiting-on"
+    const val PLAN = "detail-plan"
     const val ACCEPTANCE = "detail-acceptance"
     const val PROOF = "detail-proof"
     fun criterion(index: Int) = "detail-acceptance-$index"
+    fun dependency(index: Int) = "detail-dependency-$index"
 }
 
 /**
- * What an agent does with the task (backend 0.10.0), read-only: "agent: <name> works until 14:30" while a claim
- * lasts, the acceptance criteria with the ones met ticked, and the proof the task was completed with. Nothing is
- * shown for a task without any of them.
+ * What an agent does with the task (backend 0.10.0). An "Agent" card holds "agent: <name> works until 14:30" while a
+ * claim lasts, with **End the claim** (after a confirmation) to take the task over, the blocked reason in red, the
+ * tasks it waits for ("#12 Send the invoice (done)") and the plan. Below it the acceptance criteria with the ones met
+ * ticked, and the proof the task was completed with. Nothing is shown for a task without any of them.
  */
 @Composable
-internal fun AgentWorkSection(task: Task, nowMs: Long, timezone: String) {
+internal fun AgentWorkSection(
+    task: Task,
+    dependencies: List<AgentWork.Dependency>,
+    nowMs: Long,
+    timezone: String,
+    editable: Boolean,
+    actions: TaskDetailActions,
+) {
     val claim = AgentWork.activeClaim(task, nowMs, timezone)
-    if (claim != null) {
-        Text(
-            stringResource(R.string.agent_works_until, claim.name, claim.until),
-            style = helmType.smallStrong,
-            color = palette.accent,
-            modifier = Modifier.padding(start = 4.dp, top = 8.dp).testTag(AgentWorkTags.CLAIM),
-        )
+    if (claim != null || task.blockedReason != null || dependencies.isNotEmpty() || task.plan != null) {
+        CardSection(stringResource(R.string.detail_agent), Modifier.testTag(AgentWorkTags.SECTION)) {
+            claim?.let { ClaimRow(task, it, editable, actions) }
+            task.blockedReason?.let { reason ->
+                Text(
+                    stringResource(R.string.detail_blocked, reason),
+                    style = helmType.bodyStrong,
+                    color = palette.danger,
+                    modifier = Modifier.testTag(AgentWorkTags.BLOCKED),
+                )
+            }
+            if (dependencies.isNotEmpty()) {
+                InfoRow(stringResource(R.string.detail_waiting_on), Modifier.testTag(AgentWorkTags.WAITING_ON)) {
+                    dependencies.forEachIndexed { index, dependency -> DependencyLine(dependency, Modifier.testTag(AgentWorkTags.dependency(index))) }
+                }
+            }
+            task.plan?.let { plan ->
+                InfoRow(stringResource(R.string.detail_plan), Modifier.testTag(AgentWorkTags.PLAN)) {
+                    Text(plan, style = helmType.body, color = palette.text)
+                }
+            }
+        }
     }
     if (task.acceptance.isNotEmpty()) {
         val (met, all) = AgentWork.criteriaMet(task)
@@ -57,6 +97,72 @@ internal fun AgentWorkSection(task: Task, nowMs: Long, timezone: String) {
         }
     }
     task.proof?.let { ProofCard(it) }
+}
+
+/** Who works on the task and until when, and the owner's way to take it over at once. */
+@Composable
+private fun ClaimRow(task: Task, claim: AgentWork.Claim, editable: Boolean, actions: TaskDetailActions) {
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    Text(
+        stringResource(R.string.agent_works_until, claim.name, claim.until),
+        style = helmType.smallStrong,
+        color = palette.accent,
+        modifier = Modifier.testTag(AgentWorkTags.CLAIM),
+    )
+    if (editable) {
+        SecondaryButton(
+            stringResource(R.string.release_claim),
+            onClick = { confirming = true },
+            color = palette.accent,
+            modifier = Modifier.testTag(AgentWorkTags.RELEASE),
+        )
+    }
+    if (confirming) {
+        HelmDialog(
+            title = stringResource(R.string.release_claim_title, claim.name),
+            onDismiss = { confirming = false },
+            confirm = stringResource(R.string.release_claim),
+            onConfirm = {
+                confirming = false
+                actions.release(task.localId)
+            },
+            dismiss = stringResource(R.string.cancel),
+            confirmTag = AgentWorkTags.RELEASE_CONFIRM,
+        ) {
+            Text(stringResource(R.string.release_claim_text, claim.name), style = helmType.body)
+        }
+    }
+}
+
+/** "✓  #12 Send the invoice (done)", "○  #14 Pay the VAT", or a task the phone no longer has. */
+@Composable
+private fun DependencyLine(dependency: AgentWork.Dependency, modifier: Modifier) {
+    val name = dependency.title?.let { title ->
+        dependency.ref?.let { stringResource(R.string.dependency_with_ref, it, title) } ?: title
+    }
+    val text = when (dependency.state) {
+        DependencyState.OPEN -> name.orEmpty()
+        DependencyState.DONE -> stringResource(R.string.dependency_done, name.orEmpty())
+        DependencyState.IN_TRASH -> stringResource(R.string.dependency_in_trash, name.orEmpty())
+        DependencyState.MISSING -> stringResource(R.string.dependency_missing)
+    }
+    val open = dependency.state == DependencyState.OPEN
+    val mark = stringResource(if (open) R.string.acceptance_unmet else R.string.acceptance_met)
+    Text(
+        "$mark  $text",
+        style = helmType.body,
+        color = if (open) palette.text else palette.textMuted,
+        modifier = modifier,
+    )
+}
+
+/** A muted label (a heading for screen readers) over its content. */
+@Composable
+private fun InfoRow(label: String, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = helmType.smallStrong, color = palette.textMuted, modifier = Modifier.semantics { heading() })
+        content()
+    }
 }
 
 @Composable

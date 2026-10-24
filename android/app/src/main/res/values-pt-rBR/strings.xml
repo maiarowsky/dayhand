@@ -395,4 +395,21 @@
     <string name="proof_check_pass">passou</string>
     <string name="proof_check_fail">falhou</string>
     <string name="proof_empty">Nenhum detalhe informado</string>
+    <string name="detail_agent">Agente</string>
+    <string name="detail_blocked">Bloqueada: %1$s</string>
+    <string name="detail_waiting_on">Aguarda</string>
+    <string name="detail_plan">Plano</string>
+    <string name="dependency_done">%1$s (concluída)</string>
+    <string name="dependency_in_trash">%1$s (na lixeira)</string>
+    <string name="dependency_missing">Uma tarefa que não está mais no plano</string>
+    <string name="release_claim">Encerrar a reserva</string>
+    <string name="release_claim_title">Encerrar a reserva de %1$s?</string>
+    <string name="release_claim_text">%1$s deixa de reservar esta tarefa, e qualquer agente pode reservá-la de novo. Nada mais muda na tarefa.</string>
+    <string name="action_release">Reserva encerrada</string>
+    <string name="blocked_reason_and_waiting">%1$s. %2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="one">Aguarda %d tarefa</item>
+        <item quantity="many">Aguarda %d tarefas</item>
+        <item quantity="other">Aguarda %d tarefas</item>
+    </plurals>
 </resources>

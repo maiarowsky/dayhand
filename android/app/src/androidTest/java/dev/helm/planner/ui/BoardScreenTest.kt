@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -18,11 +19,13 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.BoardColumns
 import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardTags
 import dev.helm.planner.ui.board.BoardUiState
+import dev.helm.planner.ui.common.BlockedTags
 import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.ConnectionStatus
@@ -62,8 +65,22 @@ class BoardScreenTest {
         done = emptyList(),
     )
 
-    private fun show(actions: BoardActions = Recorder(), connection: ConnectionStatus = ConnectionStatus.SYNCED, pending: Int = 0) {
-        compose.setContent { HelmTheme { BoardScreen(BoardUiState(columns, connection, pending), actions) } }
+    private fun show(
+        actions: BoardActions = Recorder(),
+        connection: ConnectionStatus = ConnectionStatus.SYNCED,
+        pending: Int = 0,
+        blocked: Map<String, AgentWork.Blocked> = emptyMap(),
+    ) {
+        compose.setContent { HelmTheme { BoardScreen(BoardUiState(columns, connection, pending, blocked = blocked), actions) } }
+    }
+
+    @Test
+    fun aBlockedCardHasAMarkThatSaysWhy() {
+        show(blocked = mapOf("a" to AgentWork.Blocked("the client has not answered", 0)))
+        compose.onNodeWithTag(BlockedTags.mark("a"), useUnmergedTree = true)
+            .assertIsDisplayed()
+            .assertContentDescriptionEquals(text(R.string.detail_blocked, "the client has not answered"))
+        compose.onNodeWithTag(BlockedTags.mark("b"), useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

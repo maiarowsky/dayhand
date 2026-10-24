@@ -260,6 +260,11 @@ class TaskRepository(
         if (task.deletedAt != null) task.copy(deletedAt = null) else task.copy(archivedAt = null)
     }
 
+    /** Ends an agent's claim on a task at once (backend `app:release`): the owner takes it over. */
+    suspend fun release(localId: String) = edit(localId, Mutations.RELEASE) { task, _ ->
+        task.copy(claimName = null, claimExpiresAt = null)
+    }
+
     /** Replaces the cached history of [serverId] with the server's copy. */
     suspend fun saveHistory(serverId: String, entries: List<RemoteHistoryEntry>) {
         db.events().replace(

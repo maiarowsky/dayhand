@@ -414,4 +414,22 @@
     <string name="proof_check_pass">zaliczone</string>
     <string name="proof_check_fail">niezaliczone</string>
     <string name="proof_empty">Brak szczegółów</string>
+    <string name="detail_agent">Agent</string>
+    <string name="detail_blocked">Zablokowane: %1$s</string>
+    <string name="detail_waiting_on">Czeka na</string>
+    <string name="detail_plan">Plan</string>
+    <string name="dependency_done">%1$s (zrobione)</string>
+    <string name="dependency_in_trash">%1$s (w koszu)</string>
+    <string name="dependency_missing">Zadanie, którego nie ma już w planie</string>
+    <string name="release_claim">Zakończ przejęcie</string>
+    <string name="release_claim_title">Zakończyć przejęcie przez %1$s?</string>
+    <string name="release_claim_text">%1$s przestaje trzymać to zadanie i każdy agent może je znowu przejąć. Nic więcej w zadaniu się nie zmienia.</string>
+    <string name="action_release">Przejęcie zakończone</string>
+    <string name="blocked_reason_and_waiting">%1$s. %2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="one">Czeka na %d zadanie</item>
+        <item quantity="few">Czeka na %d zadania</item>
+        <item quantity="many">Czeka na %d zadań</item>
+        <item quantity="other">Czeka na %d zadania</item>
+    </plurals>
 </resources>

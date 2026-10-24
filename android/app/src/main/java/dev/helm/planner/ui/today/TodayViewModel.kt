@@ -3,6 +3,7 @@ package dev.helm.planner.ui.today
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.helm.planner.data.TaskRepository
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.todaySections
 import dev.helm.planner.sample.SamplePlan
 import dev.helm.planner.settings.SettingsStore
@@ -37,6 +38,7 @@ class TodayViewModel(
                 pending,
                 sample = tasks.any { SamplePlan.isSample(it.localId) },
                 timezone = s.timezone,
+                blocked = AgentWork.blockedTasks(tasks),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 

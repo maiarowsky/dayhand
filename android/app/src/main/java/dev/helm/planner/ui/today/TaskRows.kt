@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.data.local.Task
+import dev.helm.planner.domain.AgentWork
+import dev.helm.planner.ui.common.BlockedMark
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.HeaderIconButton
@@ -49,10 +51,10 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 
-/** Overdue: done, to today, or (menu) another day and archive. */
+/** Overdue: done, to today, or (menu) another day and archive. [blocked] marks a task that cannot go on. */
 @Composable
-fun OverdueRow(task: Task, today: LocalDate, actions: TodayActions) {
-    TaskLine(task, actions, subtitle = overdueLabel(task, today)) {
+fun OverdueRow(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentWork.Blocked? = null) {
+    TaskLine(task, actions, subtitle = overdueLabel(task, today), blocked = blocked) {
         val todayText = stringResource(R.string.move_to_today_described, task.title)
         SecondaryButton(
             stringResource(R.string.move_to_today),
@@ -66,8 +68,8 @@ fun OverdueRow(task: Task, today: LocalDate, actions: TodayActions) {
 
 /** Today: done, or (menu) work on it now, another day, archive. */
 @Composable
-fun TodayRow(task: Task, today: LocalDate, actions: TodayActions) {
-    TaskLine(task, actions, subtitle = null) { TaskMenu(task, today, actions, offerNow = true) }
+fun TodayRow(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentWork.Blocked? = null) {
+    TaskLine(task, actions, subtitle = null, blocked = blocked) { TaskMenu(task, today, actions, offerNow = true) }
 }
 
 @Composable
@@ -96,7 +98,7 @@ fun DoneRow(task: Task, actions: TodayActions) {
 
 /** The single "now" task, with where the work stopped right under its title. */
 @Composable
-fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
+fun NowCard(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentWork.Blocked? = null) {
     var editing by rememberSaveable { mutableStateOf(false) }
     val completeText = stringResource(R.string.complete_task, task.title)
     val p = palette
@@ -111,7 +113,7 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
             TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
             Column(Modifier.weight(1f).padding(top = 10.dp)) {
                 SectionLabel(stringResource(R.string.section_now))
-                TaskTitle(task, emphasized = true, modifier = Modifier.openTask(task, actions))
+                TaskTitle(task, blocked, emphasized = true, modifier = Modifier.openTask(task, actions))
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
@@ -140,7 +142,7 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions) {
 }
 
 @Composable
-private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, trailing: @Composable () -> Unit) {
+private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, blocked: AgentWork.Blocked?, trailing: @Composable () -> Unit) {
     val completeText = stringResource(R.string.complete_task, task.title)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -156,7 +158,7 @@ private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, trail
                 .openTask(task, actions)
                 .padding(vertical = 8.dp),
         ) {
-            TaskTitle(task)
+            TaskTitle(task, blocked)
             if (subtitle != null) {
                 Text(subtitle, style = helmType.small, color = palette.danger)
             }
@@ -182,17 +184,20 @@ private fun TaskCheckbox(checked: Boolean, description: String, onToggle: () -> 
 @Composable
 private fun TaskTitle(
     task: Task,
+    blocked: AgentWork.Blocked?,
     color: Color = palette.text,
     emphasized: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val time = task.dueTime
-    Text(
-        text = if (time != null) "$time  ${task.title}" else task.title,
-        style = if (emphasized) helmType.title else helmType.body,
-        color = color,
-        modifier = modifier,
-    )
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        blocked?.let { BlockedMark(it, task.localId, Modifier.padding(end = 6.dp)) }
+        Text(
+            text = if (time != null) "$time  ${task.title}" else task.title,
+            style = if (emphasized) helmType.title else helmType.body,
+            color = color,
+        )
+    }
 }
 
 /** Tapping a task's text opens its details; at least 48 dp tall, announced as "open details". */

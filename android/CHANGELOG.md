@@ -16,6 +16,18 @@ called Helm until 0.9.0.
   time picked under "More options" wins over the phrase. Quick add on the board reads them too.
 - `WhenParserTest` runs every case of `linux/tests/cases/when.json`, the phrases shared with the
   CLI, macOS and Linux; `QuickAddPhraseTest` types a phrase and checks the row in Today.
+- Task details have an **Agent** card (backend 0.10.0): "agent: \<name\> works until \<time\>"
+  while a claim lasts, the blocked reason in red ("Blocked: the client has not answered"), the
+  tasks it waits for, each with its number and how far it is ("#12 Send the invoice (done)"), and
+  the plan, all read-only as an agent or `dayhand edit` set them.
+- **End the claim** under a live claim takes the task over from the agent after a confirmation:
+  the claim ends on the phone at once and `app:release` goes through the outbox, offline too. The
+  history calls it "Claim ended".
+- On Today and the board a task that cannot go on, with a blocked reason or a dependency not done
+  yet (as plan health counts it), has "⛔" before its title; screen readers hear why ("Blocked:
+  …", "Waiting for 2 tasks").
+- Room version 5 keeps the task's number, plan, dependencies and blocked reason (auto-migration 4
+  to 5, with `MigrationTest`; the next snapshot fills them in).
 
 ## 0.10.1 (2026-10-24)
 

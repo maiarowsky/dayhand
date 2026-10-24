@@ -390,4 +390,26 @@
     <string name="proof_check_pass">pass</string>
     <string name="proof_check_fail">fail</string>
     <string name="proof_empty">No details given</string>
+
+    <!-- Plan, dependencies, the blocked reason (read-only) and ending an agent's claim (0.11.0). -->
+    <string name="detail_agent">Agent</string>
+    <string name="detail_blocked">Blocked: %1$s</string>
+    <string name="detail_waiting_on">Waiting for</string>
+    <string name="detail_plan">Plan</string>
+    <!-- A dependency's number and title: "#12 Send the invoice". -->
+    <string name="dependency_with_ref" translatable="false">#%1$d %2$s</string>
+    <string name="dependency_done">%1$s (done)</string>
+    <string name="dependency_in_trash">%1$s (in the trash)</string>
+    <string name="dependency_missing">A task no longer in the plan</string>
+    <string name="release_claim">End the claim</string>
+    <string name="release_claim_title">End the claim of %1$s?</string>
+    <string name="release_claim_text">%1$s no longer holds this task, and any agent may claim it again. Nothing else about the task changes.</string>
+    <string name="action_release">Claim ended</string>
+    <!-- Before the title of a task that cannot go on, on Today and the board; screen readers hear the reason. -->
+    <string name="blocked_mark" translatable="false">⛔</string>
+    <string name="blocked_reason_and_waiting">%1$s. %2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="one">Waiting for %d task</item>
+        <item quantity="other">Waiting for %d tasks</item>
+    </plurals>
 </resources>

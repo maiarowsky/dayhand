@@ -138,6 +138,11 @@ one list for both), links (http/https only; no files in version 1) and the note.
 also shows, read-only, what an agent does with the task (backend 0.10.0, [agent-work.md](../docs/agent-work.md)):
 "agent: \<name\> works until \<time\>" while a claim lasts, the acceptance criteria with the met
 ones ticked, and the proof the task was completed with. The owner's own changes always go through.
+Since 0.11.0 the **Agent** card also has the blocked reason in red, the tasks it waits for
+("#12 Send the invoice (done)") and the plan, read-only, and **End the claim** under a live claim:
+after a confirmation the claim ends at once and `app:release` goes through the outbox. On Today
+and the board, "⛔" before a title marks a task with a blocked reason or a dependency not done
+yet; screen readers hear why.
 **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on the due
 date's day, the last day of the month, or an nth weekday ("the 2nd Tuesday", "the last Friday");
 the next date counted from the due date or from the day you complete it; ending never, on a day
@@ -463,7 +468,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # agents (answers, requests, proposals, the switch, the health card, new requests)
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync and the phone's zone,
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,
                                             # on this phone only (repeats made on the phone, sample tasks, restore, emptying),
                                             # Compose (Today, calendar, board, details, Settings, Settings → Calendar and Backup, Connect,
                                             # agent connections, Agents and the health card), encrypted pairing storage, and a real alarm + notification

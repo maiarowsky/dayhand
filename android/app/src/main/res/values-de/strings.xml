@@ -374,4 +374,20 @@
     <string name="proof_check_pass">bestanden</string>
     <string name="proof_check_fail">fehlgeschlagen</string>
     <string name="proof_empty">Keine Angaben</string>
+    <string name="detail_agent">Agent</string>
+    <string name="detail_blocked">Blockiert: %1$s</string>
+    <string name="detail_waiting_on">Wartet auf</string>
+    <string name="detail_plan">Plan</string>
+    <string name="dependency_done">%1$s (erledigt)</string>
+    <string name="dependency_in_trash">%1$s (im Papierkorb)</string>
+    <string name="dependency_missing">Eine Aufgabe, die nicht mehr im Plan ist</string>
+    <string name="release_claim">Reservierung beenden</string>
+    <string name="release_claim_title">Reservierung von %1$s beenden?</string>
+    <string name="release_claim_text">%1$s hält diese Aufgabe nicht mehr, und jeder Agent kann sie wieder reservieren. Sonst ändert sich nichts an der Aufgabe.</string>
+    <string name="action_release">Reservierung beendet</string>
+    <string name="blocked_reason_and_waiting">%1$s. %2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="one">Wartet auf %d Aufgabe</item>
+        <item quantity="other">Wartet auf %d Aufgaben</item>
+    </plurals>
 </resources>

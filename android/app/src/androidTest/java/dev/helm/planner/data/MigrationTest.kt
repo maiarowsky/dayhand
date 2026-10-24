@@ -114,6 +114,41 @@ class MigrationTest {
         }
     }
 
+    @Test
+    fun version4TasksKeepTheirClaimAndGetNoPlanOrDependencies() {
+        helper.createDatabase(DB, 4).apply {
+            execSQL(
+                "INSERT INTO tasks (localId, serverId, clientId, title, status, isNow, createdAt, updatedAt, serverUpdatedAt, labels, links, checklist, acceptance, claimName, claimExpiresAt) " +
+                    "VALUES ('a', 's1', 'a', 'Send the invoice', 'todo', 0, 1, 2, 2, '[]', '[]', '[]', '[{\"id\":\"a1\",\"text\":\"PDF sent\",\"met\":false}]', 'claude-code', 9)",
+            )
+            execSQL(
+                "INSERT INTO outbox (opId, mutation, argsJson, taskLocalId, clientId, createdAt, attempts) " +
+                    "VALUES ('o1', 'app:release', '{\"clientId\":\"c1\"}', 'a', 'c1', 3, 0)",
+            )
+            close()
+        }
+        helper.runMigrationsAndValidate(DB, 5, true).close()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.databaseBuilder(context, HelmDatabase::class.java, DB).build()
+        try {
+            runBlocking {
+                val task = db.tasks().byLocalId("a")!!
+                assertEquals("Send the invoice", task.title)
+                assertEquals(1, task.acceptance.size)
+                assertEquals("claude-code", task.claimName)
+                assertNull(task.ref)
+                assertNull(task.plan)
+                assertTrue(task.dependsOn.isEmpty())
+                assertNull(task.blockedReason)
+                assertNull("the next snapshot must fill in the plan and the dependencies", task.serverUpdatedAt)
+                assertEquals(listOf("app:release"), db.outbox().all().map { it.mutation })
+            }
+        } finally {
+            db.close()
+        }
+    }
+
     private companion object {
         const val DB = "migration-test.db"
     }

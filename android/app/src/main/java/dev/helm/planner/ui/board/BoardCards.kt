@@ -38,7 +38,9 @@ import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.HelmDates
+import dev.helm.planner.ui.common.BlockedMark
 import dev.helm.planner.ui.common.dueLabel
 import dev.helm.planner.ui.common.statusLabel
 import dev.helm.planner.ui.components.HeaderIconButton
@@ -52,7 +54,7 @@ import java.time.LocalDate
 
 /** A task on the board: tap for details, long-press and drag to another column, or move it from the menu. */
 @Composable
-fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
+fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState, blocked: AgentWork.Blocked? = null) {
     Card(
         onClick = { actions.openTask(task.localId) },
         colors = CardDefaults.cardColors(containerColor = palette.surface, contentColor = palette.text),
@@ -66,7 +68,7 @@ fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDr
             .testTag(BoardTags.card(task.localId)),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)) {
-            CardContent(task, today, Modifier.weight(1f))
+            CardContent(task, today, Modifier.weight(1f), blocked = blocked)
             MoveMenu(task, actions)
         }
     }
@@ -74,7 +76,7 @@ fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDr
 
 /** The single "now" task, highlighted, with where the work stopped (tap to edit). */
 @Composable
-fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState) {
+fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState, blocked: AgentWork.Blocked? = null) {
     var editing by rememberSaveable { mutableStateOf(false) }
     val p = palette
     Card(
@@ -92,7 +94,7 @@ fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: Boar
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp, end = 4.dp)) {
             Column(Modifier.weight(1f)) {
                 SectionLabel(stringResource(R.string.section_now))
-                CardContent(task, today, Modifier, emphasized = true)
+                CardContent(task, today, Modifier, emphasized = true, blocked = blocked)
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
@@ -120,17 +122,20 @@ fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: Boar
     }
 }
 
-/** Title (with the time), the due day (red when overdue) and the labels. */
+/** Title (with "⛔" before it when [blocked]), the due day (red when overdue) and the labels. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Boolean = false) {
+fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Boolean = false, blocked: AgentWork.Blocked? = null) {
     Column(modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            task.title,
-            style = if (emphasized) helmType.title else helmType.body,
-            textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
-            color = if (task.status == TaskStatus.DONE) palette.textMuted else palette.text,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            blocked?.let { BlockedMark(it, task.localId, Modifier.padding(end = 6.dp)) }
+            Text(
+                task.title,
+                style = if (emphasized) helmType.title else helmType.body,
+                textDecoration = if (task.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
+                color = if (task.status == TaskStatus.DONE) palette.textMuted else palette.text,
+            )
+        }
         dueLabel(task, today)?.let { due ->
             val overdue = HelmDates.isOverdue(task, today.toString())
             Text(

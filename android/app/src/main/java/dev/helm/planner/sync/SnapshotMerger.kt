@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
 /** Groups of task fields that one kind of change touches. */
-enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS }
+enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM }
 
 data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
 
@@ -77,6 +77,10 @@ object SnapshotMerger {
             proof = r.proof,
             claimName = r.claimName,
             claimExpiresAt = r.claimExpiresAt,
+            ref = r.ref,
+            plan = r.plan,
+            dependsOn = r.dependsOn,
+            blockedReason = r.blockedReason,
         )
         if (row == null || keepLocal.isEmpty()) return task
         if (Field.TITLE in keepLocal) task = task.copy(title = row.title)
@@ -92,6 +96,7 @@ object SnapshotMerger {
         if (Field.DELETED in keepLocal) task = task.copy(deletedAt = row.deletedAt)
         if (Field.CHECKLIST in keepLocal) task = task.copy(checklist = row.checklist)
         if (Field.REMINDERS in keepLocal) task = task.copy(reminders = row.reminders)
+        if (Field.CLAIM in keepLocal) task = task.copy(claimName = row.claimName, claimExpiresAt = row.claimExpiresAt)
         return task.copy(updatedAt = maxOf(row.updatedAt, r.updatedAt))
     }
 }
@@ -128,6 +133,7 @@ class DirtyFields private constructor(
             Mutations.SOFT_DELETE -> setOf(Field.DELETED, Field.NOW)
             // `restore` clears the trash, or the archive when the task is not in the trash.
             Mutations.RESTORE -> setOf(Field.DELETED, Field.ARCHIVED)
+            Mutations.RELEASE -> setOf(Field.CLAIM)
             Mutations.UPDATE -> updatedFields(op.argsJson)
             else -> Field.entries.toSet()
         }
