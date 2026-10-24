@@ -100,7 +100,7 @@ history), `dayhand rm 2` and `dayhand restore 2`. Every command and flag: [comma
 dayhand ui
 ```
 
-Today, the board, the week and the trash in the terminal, with keys like vim (`j`/`k`, `h`/`l`), `a` to
+Today, the board, the week, the trash and agents in the terminal, with keys like vim (`j`/`k`, `h`/`l`), `a` to
 add a task with a date phrase, `?` for every key and `q` to quit: [Terminal](terminal.md).
 
 ## 5. Connect your phone

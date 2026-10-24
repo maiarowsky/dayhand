@@ -33,10 +33,10 @@ tasks at once asks first (or needs `--yes` in a script). Every command and optio
 dayhand ui
 ```
 
-It opens full screen with four views: **Today** (overdue, the now task with its resume note, today, done
+It opens full screen with five views: **Today** (a coloured plan-health line, overdue, the now task with its resume note, today, done
 today), the **Board** (to do, in progress, done), the **Week** (Monday to Sunday as bars, the selected day
-in full below) and the **Trash**. `Enter` opens a task with its history, which names who made each change:
-`app`, `cli` or `agent: <name>`, so an agent's edits stand out.
+in full below) the **Trash** and **Agents**. `Enter` opens a task with its history, which names who made each change:
+`app`, `cli` or `agent: <name>`, so an agent's edits stand out; details also show who claimed the work, the acceptance criteria, plan, proof and what it waits on or is blocked by.
 
 The keys most people need:
 
@@ -44,7 +44,8 @@ The keys most people need:
 |---|---|
 | `j` `k` (or the arrows) | Next and previous task |
 | `h` `l` | Board column, week day |
-| `Tab`, `1` `2` `3` `4` | Next view; Today, Board, Week, Trash |
+| `Tab`, `1` `2` `3` `4` `5` | Next view; Today, Board, Week, Trash, Agents |
+| `p`, `A`, `X` | In Agents: pause or resume changes; accept or reject a proposal (`Enter` opens a request, a digit picks an option, `Enter` confirms) |
 | `a` | Add a task: `Pay rent fri 2pm #home` |
 | `Space` or `x` | Done or not done |
 | `s` | Start (doing) or stop (to do) |
