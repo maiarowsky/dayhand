@@ -1,28 +1,35 @@
 ---
-// Every platform with its real state today: what builds from source, what is coming, and iOS, which is not out yet.
-import { REPO_URL, repoFile } from "../../site";
+// Every platform with its real state today: the command line from npm or Homebrew, the apps from the source, and
+// iOS, which is not out yet.
+import { DOCS_PATH, repoFile } from "../../site";
 ---
 
 <section id="download" aria-labelledby="download-title">
   <h2 id="download-title">Download</h2>
   <p class="status">
     <span class="badge wip">Pre-release</span>
-    No release is published yet. Everything below builds from the source today; ready-made downloads are marked
+    The apps have no published release yet: they build from the source today, and ready-made downloads are marked
     Coming soon.
   </p>
 
   <ul class="cards downloads" role="list">
     <li class="card wide">
-      <h3>Command line and server</h3>
-      <p class="meta">macOS, Linux and Windows; Node.js 22.12 or newer and git</p>
+      <h3>Command line</h3>
+      <p class="meta">macOS, Linux and Windows; Node.js 22.12 or newer</p>
       <p>
-        <span class="badge ok">Works today</span> From the source. <code>npm link</code> puts <code>dayhand</code> and
-        <code>dh</code> on your PATH; <code>dayhand server start</code> then runs your server.
+        <span class="badge ok">npm and Homebrew</span> One command puts <code>dayhand</code> and <code>dh</code> (the
+        same command, shorter) on your PATH:
       </p>
-      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that build the command line"><code>git clone {REPO_URL}.git dayhand
-cd dayhand/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..</code></pre>
-      <p class="later"><span class="badge soon">Coming soon</span> npm</p>
-      <p class="later"><span class="badge soon">Coming soon</span> Homebrew</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line with npm"><code>npm i -g dayhand</code></pre>
+      <p>Or run it once without installing:</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that runs the command line without installing it"><code>npx dayhand</code></pre>
+      <p>With Homebrew, on macOS and Linux:</p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line with Homebrew"><code>brew install maiarowsky/tap/dayhand</code></pre>
+      <p class="later">
+        Running your own server with <code>dayhand server start</code> also needs a copy of the repository, because
+        the server code (<code>backend/</code>) is not in the npm package: <a href={repoFile("docs/deploy.md")}>the
+        deployment guide</a> shows how.
+      </p>
     </li>
     <li class="card">
       <h3>Android</h3>
@@ -56,5 +63,8 @@ open macos/dist/Dayhand.app</code></pre>
       <p class="later">It will use the same server and the same plan as the other apps.</p>
     </li>
   </ul>
-  <p class="note">Run the build commands for the apps from the folder you cloned for the command line.</p>
+  <p class="note">
+    The build commands for the apps run in a copy of the repository; <a href={`${DOCS_PATH}install/`}>the install
+    guide</a> shows how to get one and what each app needs.
+  </p>
 </section>

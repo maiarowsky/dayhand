@@ -14,9 +14,10 @@ import { repoFile } from "../../site";
     <li>
       <h3>Start a server on this computer</h3>
       <p>
-        On macOS or Linux, with the <code>dayhand</code> command from <a href="#download">Download</a>. The first run
-        downloads the Convex local backend once, signs <code>dayhand</code> in and prints a pairing code. Data and
-        keys stay in a private folder.
+        On macOS or Linux, with the <code>dayhand</code> command from <a href="#download">Download</a>, in a copy of
+        the repository: the server code (<code>backend/</code>) is not in the npm package. The first run downloads
+        the Convex local backend once, signs <code>dayhand</code> in and prints a pairing code. Data and keys stay in
+        a private folder.
       </p>
       <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that starts a server"><code>dayhand server start</code></pre>
     </li>
@@ -40,7 +41,7 @@ import { repoFile } from "../../site";
 
   <p class="note">
     No server at all? The Android app starts with an empty plan or sample data and keeps everything on the phone.
-    Android backups are off for Dayhand, so keep a backup file. Costs, backups, updates and Tailscale:
-    <a href={repoFile("docs/deploy.md")}>the deployment guide</a>.
+    Android backups are off for Dayhand, so keep a backup file. Getting the copy of the repository, costs, backups,
+    updates and Tailscale: <a href={repoFile("docs/deploy.md")}>the deployment guide</a>.
   </p>
 </section>
