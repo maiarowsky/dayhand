@@ -6,7 +6,7 @@ import type { ToolErrorCode } from "./toolResults";
 
 export type ProblemCode = ToolErrorCode | "insufficient_scope" | "method_not_allowed" | "unsupported_media_type" | "payload_too_large";
 
-export const PROBLEM_TYPE_BASE = "https://schemas.helm.invalid/problems/";
+export const PROBLEM_TYPE_BASE = "https://schemas.dayhand.invalid/problems/";
 
 const TITLES: Record<ProblemCode, string> = {
   invalid_argument: "Invalid argument",

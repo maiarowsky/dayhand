@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/today.schema.json",
+  "$id": "https://schemas.dayhand.invalid/today.schema.json",
   "title": "Today",
-  "description": "list_today (hlm, hlm today, hlm now without a task).",
+  "description": "list_today (dayhand, dayhand today, dayhand now without a task).",
   "type": "object",
   "required": [
     "date",

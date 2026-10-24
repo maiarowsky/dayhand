@@ -26,7 +26,7 @@ function loopbackParts(value: string): { host: string } | null {
   return { host: url.hostname };
 }
 
-/** Whether Helm sends codes to this URI at all: only the official Claude callbacks. */
+/** Whether Dayhand sends codes to this URI at all: only the official Claude callbacks. */
 export function redirectKind(uri: string): RedirectKind | null {
   if (uri === CLAUDE_APP_CALLBACK) return "app";
   return loopbackParts(uri) ? "loopback" : null;
@@ -34,7 +34,7 @@ export function redirectKind(uri: string): RedirectKind | null {
 
 /**
  * Whether a requested redirect URI matches one the client registered: exactly, or for loopback
- * URIs with the port ignored (RFC 8252 section 7.3). It must also be one Helm allows.
+ * URIs with the port ignored (RFC 8252 section 7.3). It must also be one Dayhand allows.
  */
 export function redirectMatches(requested: string, registered: string[]): boolean {
   const kind = redirectKind(requested);
@@ -106,8 +106,8 @@ function checkRedirectUris(value: unknown): string[] | string {
 }
 
 /**
- * A public client that uses the authorization code. Grant and response types Helm does not offer
- * are ignored, not refused: Claude's own metadata also lists the JWT bearer grant, which Helm
+ * A public client that uses the authorization code. Grant and response types Dayhand does not offer
+ * are ignored, not refused: Claude's own metadata also lists the JWT bearer grant, which Dayhand
  * simply never honours (the token endpoint knows only authorization_code and refresh_token).
  */
 function checkPublicClient(doc: Record<string, unknown>): string | null {

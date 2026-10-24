@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/webhook.schema.json",
+  "$id": "https://schemas.dayhand.invalid/webhook.schema.json",
   "title": "Webhook",
-  "description": "One webhook as GET /api/v1/webhooks lists it (hlm webhook list). Never its secret.",
+  "description": "One webhook as GET /api/v1/webhooks lists it (dayhand webhook list). Never its secret.",
   "type": "object",
   "required": [
     "id",
@@ -50,7 +50,7 @@
     },
     "enabled": {
       "type": "boolean",
-      "description": "false after it was turned off for failing; POST /webhooks/{id}/enable (hlm webhook enable) turns it on"
+      "description": "false after it was turned off for failing; POST /webhooks/{id}/enable (dayhand webhook enable) turns it on"
     },
     "disabledAt": {
       "type": [

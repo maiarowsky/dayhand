@@ -8,6 +8,7 @@ import type { Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
 import { appSubject } from "./lib/appToken";
 import { fail, identityOf, recordEvent } from "./lib/core";
+import { serverEnv } from "./lib/env";
 import { formatPairingCode, newPairingCode, parsePairingCode, sha256Hex, timingSafeEqual } from "./lib/secrets";
 import { identityFields as identityArgs } from "./lib/validators";
 
@@ -53,7 +54,7 @@ export const insertCode = internalMutation({
   args: { ...identityArgs, createdBy: v.string(), selector: v.string(), secretHash: v.string(), ttlMs: v.number() },
   handler: async (ctx, input) => {
     const { userId, createdBy, selector, secretHash, ttlMs } = input;
-    const issuer = process.env.HELM_JWT_ISSUER ?? "";
+    const issuer = serverEnv("JWT_ISSUER") ?? "";
     if (!appSubject(userId, issuer)) {
       fail("invalid_argument", `User ${userId} cannot sign in to the app: app users are "${issuer}|<subject>"`);
     }
@@ -187,7 +188,7 @@ export const useToken = internalMutation({
   },
 });
 
-/** Device metadata for `helm devices`; never the hash. */
+/** Device metadata for `dayhand devices`; never the hash. */
 export const list = internalQuery({
   args: identityArgs,
   handler: async (ctx, { userId }) => {

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/import-result.schema.json",
+  "$id": "https://schemas.dayhand.invalid/import-result.schema.json",
   "title": "Import result",
-  "description": "POST /api/v1/import (hlm import): what the import did, or with dryRun what it would do.",
+  "description": "POST /api/v1/import (dayhand import): what the import did, or with dryRun what it would do.",
   "type": "object",
   "required": [
     "format",
@@ -17,7 +17,7 @@
   "properties": {
     "format": {
       "enum": [
-        "helm-json",
+        "dayhand-json",
         "ics",
         "todoist-csv"
       ],

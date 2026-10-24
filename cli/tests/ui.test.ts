@@ -1,9 +1,9 @@
-// hlm ui driven by keys and clicks on a real pseudo-terminal, against the local
-// backend: every change is checked through hlm --json afterwards. node-pty ships
+// dayhand ui driven by keys and clicks on a real pseudo-terminal, against the local
+// backend: every change is checked through dayhand --json afterwards. node-pty ships
 // prebuilt binaries for macOS and Windows only; elsewhere these tests are skipped.
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
-import { createKey, helm, hlmJson, newUser, TEST_HOME } from "./helpers.js";
+import { createKey, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
 import { loadPty, uiSession, type UiSession } from "./screen.js";
 
 const pty = loadPty();
@@ -18,11 +18,11 @@ function open(key: string, args: string[] = [], size?: { columns: number; rows: 
     args,
     {
       PATH: process.env.PATH ?? "",
-      HLM_CONFIG_DIR: join(TEST_HOME, "ui-config"),
-      HLM_CACHE_DIR: join(TEST_HOME, "ui-cache"),
-      HLM_CREDENTIAL_STORE: "file",
-      HLM_URL: helm().siteUrl,
-      HLM_API_KEY: key,
+      DAYHAND_CONFIG_DIR: join(TEST_HOME, "ui-config"),
+      DAYHAND_CACHE_DIR: join(TEST_HOME, "ui-cache"),
+      DAYHAND_CREDENTIAL_STORE: "file",
+      DAYHAND_URL: helm().siteUrl,
+      DAYHAND_API_KEY: key,
       ...env,
     },
     size,
@@ -39,18 +39,18 @@ function locate(screen: string, text: string) {
   return { x: lines[y]!.indexOf(text), y };
 }
 
-const show = (key: string, ref: number) => hlmJson(key, ["show", String(ref)]);
+const show = (key: string, ref: number) => dayhandJson(key, ["show", String(ref)]);
 
-describe.skipIf(!pty)("hlm ui", () => {
+describe.skipIf(!pty)("dayhand ui", () => {
   test("opens Today full screen with the mouse on, and q gives the terminal back", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Pay rent", "--due", "yesterday", "-l", "home"]);
-    await hlmJson(key, ["add", "Review the plan", "--time", "09:00"]);
-    await hlmJson(key, ["add", "Draft the invoice", "--item", "hours", "--item", "rate"]);
-    await hlmJson(key, ["now", "3", "--note", "rate is in the email"]);
+    await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday", "-l", "home"]);
+    await dayhandJson(key, ["add", "Review the plan", "--time", "09:00"]);
+    await dayhandJson(key, ["add", "Draft the invoice", "--item", "hours", "--item", "rate"]);
+    await dayhandJson(key, ["now", "3", "--note", "rate is in the email"]);
     const s = open(key);
     const screen = await s.waitFor("NOW");
-    expect(screen).toMatch(/^ Helm +1 Today +2 Board +3 Week +4 Trash/);
+    expect(screen).toMatch(/^ Dayhand +1 Today +2 Board +3 Week +4 Trash/);
     expect(screen).toMatch(/NOW\n› #3 ◐ +today +Draft the invoice +0\/2/);
     expect(screen).toContain("next: rate is in the email");
     expect(screen).toMatch(/OVERDUE \(1\)\n {2}#1 ○ yesterday Pay rent +#home/);
@@ -93,8 +93,8 @@ describe.skipIf(!pty)("hlm ui", () => {
 
   test("the board: H/L move a task between columns and the cursor follows it", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Write the post"]);
-    await hlmJson(key, ["add", "Fix the bike", "--status", "doing"]);
+    await dayhandJson(key, ["add", "Write the post"]);
+    await dayhandJson(key, ["add", "Fix the bike", "--status", "doing"]);
     const s = open(key, ["--view", "board"]);
     await s.waitFor(/TODO \(1\) +│ DOING \(1\) +│ DONE \(0\)/);
     await s.press("L");
@@ -112,8 +112,8 @@ describe.skipIf(!pty)("hlm ui", () => {
 
   test("the week: ] the next week, h/l the day, L moves a task a day later; narrow terminals get bars", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Gym", "--due", "next mon", "--time", "07:30"]);
-    await hlmJson(key, ["add", "Dentist", "--due", "next tue"]);
+    await dayhandJson(key, ["add", "Gym", "--due", "next mon", "--time", "07:30"]);
+    await dayhandJson(key, ["add", "Dentist", "--due", "next tue"]);
     const s = open(key, ["--view", "week"], { columns: 120, rows: 30 });
     await s.waitFor("· today ·");
     await s.press("]", "h", "h", "h", "h", "h", "h");
@@ -121,7 +121,7 @@ describe.skipIf(!pty)("hlm ui", () => {
     await s.shot("week");
     await s.press("L");
     await s.waitFor(/Tue \d+ \w+ 2026 · 2 tasks\n {2}#2 ○ +Dentist\n› #1 ○ 07:30 Gym/);
-    expect((await show(key, 1)).task).toMatchObject({ dueDate: (await hlmJson(key, ["when", "next tue"])).date, dueTime: "07:30" });
+    expect((await show(key, 1)).task).toMatchObject({ dueDate: (await dayhandJson(key, ["when", "next tue"])).date, dueTime: "07:30" });
     s.resize(56, 20);
     await s.waitFor("█");
     await s.shot("week-narrow");
@@ -132,8 +132,8 @@ describe.skipIf(!pty)("hlm ui", () => {
   test("details name who changed what: cli, and agent: <key name>", async () => {
     const { key, userId } = await newUser();
     const agent = (await createKey(userId, "claude-code", "agent")).key;
-    await hlmJson(agent, ["add", "Draft the ACME invoice", "--note", "hours are in the timesheet"]);
-    await hlmJson(key, ["edit", "1", "--title", "Draft and send the ACME invoice"]);
+    await dayhandJson(agent, ["add", "Draft the ACME invoice", "--note", "hours are in the timesheet"]);
+    await dayhandJson(key, ["edit", "1", "--title", "Draft and send the ACME invoice"]);
     const s = open(key);
     await s.waitFor("Draft and send the ACME invoice");
     await s.press("enter");
@@ -150,7 +150,7 @@ describe.skipIf(!pty)("hlm ui", () => {
 
   test("the edit form saves title, due day and labels in one change", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Pay rent", "-l", "home"]);
+    await dayhandJson(key, ["add", "Pay rent", "-l", "home"]);
     const s = open(key);
     await s.waitFor("Pay rent");
     await s.press("e", "C-u", ..."Pay the rent", "tab", "C-u", ..."next mon 9am", "tab", ..." money");
@@ -165,7 +165,7 @@ describe.skipIf(!pty)("hlm ui", () => {
 
   test("d asks first, y moves the task to the trash, u restores it; r restores in the trash view", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Old idea"]);
+    await dayhandJson(key, ["add", "Old idea"]);
     const s = open(key);
     await s.waitFor("Old idea");
     await s.press("d");
@@ -174,7 +174,7 @@ describe.skipIf(!pty)("hlm ui", () => {
     await s.waitFor("Kept");
     await s.press("d", "y");
     await s.waitFor("Moved #1 Old idea to the trash · u undoes");
-    expect((await hlmJson(key, ["trash"])).result).toHaveLength(1);
+    expect((await dayhandJson(key, ["trash"])).result).toHaveLength(1);
     await s.press("u");
     await s.waitFor("Restored #1 Old idea");
     await s.press("d", "y");
@@ -184,7 +184,7 @@ describe.skipIf(!pty)("hlm ui", () => {
     await s.shot("trash");
     await s.press("r");
     await s.waitFor("Restored #1 Old idea");
-    expect((await hlmJson(key, ["trash"])).result).toHaveLength(0);
+    expect((await dayhandJson(key, ["trash"])).result).toHaveLength(0);
   });
 
   test("an agent's change shows up by itself at the next refresh", async () => {
@@ -192,13 +192,13 @@ describe.skipIf(!pty)("hlm ui", () => {
     const agent = (await createKey(userId, "claude-code", "agent")).key;
     const s = open(key, ["--interval", "10"]);
     await s.waitFor("nothing planned");
-    await hlmJson(agent, ["add", "Reply to the client"]);
+    await dayhandJson(agent, ["add", "Reply to the client"]);
     await s.waitFor("Reply to the client", 15_000);
   }, 30_000);
 
   test("without a server it says so, stays responsive, and q quits", async () => {
     const { key } = await newUser();
-    const s = open(key, [], undefined, { HLM_URL: "http://127.0.0.1:9" });
+    const s = open(key, [], undefined, { DAYHAND_URL: "http://127.0.0.1:9" });
     const screen = await s.waitFor("Cannot reach http://127.0.0.1:9");
     expect(screen).toContain("● offline");
     expect(screen).toContain("Retrying every 12 s; R retries now, q quits.");
@@ -211,8 +211,8 @@ describe.skipIf(!pty)("hlm ui", () => {
 
   test("the mouse selects a row (a second click opens it) and switches views; ? lists the keys", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "First"]);
-    await hlmJson(key, ["add", "Second"]);
+    await dayhandJson(key, ["add", "First"]);
+    await dayhandJson(key, ["add", "Second"]);
     const s = open(key);
     const screen = await s.waitFor(/› #1 ○ First/);
     const second = locate(screen, "Second");

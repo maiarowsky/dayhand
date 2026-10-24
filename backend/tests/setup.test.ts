@@ -14,9 +14,12 @@ import { generateSigningKey, jwksDataUri, privateJwkOf, publishesKey } from "../
 import {
   checkIssuer,
   configDir,
+  envName,
   deploymentUrls,
   envFileText,
   envPlan,
+  oldEnvNames,
+  resolveConfigDir,
   loadOrCreateSigningKey,
   loggedIn,
   nodeProblem,
@@ -31,14 +34,14 @@ import {
 } from "../scripts/setup-lib.mjs";
 
 const run = promisify(execFile);
-const TMP = mkdtempSync(join(process.env.HELM_TEST_TMPDIR ?? tmpdir(), "helm-setup-"));
+const TMP = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "helm-setup-"));
 afterAll(() => rmSync(TMP, { recursive: true, force: true }));
 const fresh = (name: string) => join(TMP, `${name}-${Math.random().toString(36).slice(2)}`);
 const mode = (file: string) => statSync(file).mode & 0o777;
 
 describe("options", () => {
-  test("defaults: the cloud setup of a project named helm", () => {
-    expect(parseOptions([])).toMatchObject({ local: false, project: "helm", port: 3210, sitePort: 3211, dryRun: false, json: false });
+  test("defaults: the cloud setup of a project named dayhand", () => {
+    expect(parseOptions([])).toMatchObject({ local: false, project: "dayhand", port: 3210, sitePort: 3211, dryRun: false, json: false });
   });
 
   test("checks every value and refuses mixtures that cannot work", () => {
@@ -84,13 +87,30 @@ describe("options", () => {
 });
 
 describe("the private folder", () => {
-  test("each system's config folder, or HELM_SERVER_CONFIG_DIR", () => {
-    expect(configDir({ HELM_SERVER_CONFIG_DIR: "/x" }, "linux", "/home/a")).toBe("/x");
-    expect(configDir({}, "darwin", "/Users/a")).toBe("/Users/a/Library/Application Support/helm-server");
-    expect(configDir({}, "linux", "/home/a")).toBe("/home/a/.config/helm-server");
-    expect(configDir({ XDG_CONFIG_HOME: "/xdg" }, "linux", "/home/a")).toBe("/xdg/helm-server");
-    expect(configDir({ XDG_CONFIG_HOME: "relative" }, "linux", "/home/a")).toBe("/home/a/.config/helm-server");
-    expect(configDir({ APPDATA: "C:\\Users\\a\\AppData\\Roaming" }, "win32", "C:\\Users\\a")).toBe("C:\\Users\\a\\AppData\\Roaming\\helm-server");
+  test("each system's config folder, or DAYHAND_SERVER_CONFIG_DIR", () => {
+    expect(configDir({ DAYHAND_SERVER_CONFIG_DIR: "/x" }, "linux", "/home/a")).toBe("/x");
+    expect(configDir({}, "darwin", "/Users/a")).toBe("/Users/a/Library/Application Support/dayhand-server");
+    expect(configDir({}, "linux", "/home/a")).toBe("/home/a/.config/dayhand-server");
+    expect(configDir({ XDG_CONFIG_HOME: "/xdg" }, "linux", "/home/a")).toBe("/xdg/dayhand-server");
+    expect(configDir({ XDG_CONFIG_HOME: "relative" }, "linux", "/home/a")).toBe("/home/a/.config/dayhand-server");
+    expect(configDir({ APPDATA: "C:\\Users\\a\\AppData\\Roaming" }, "win32", "C:\\Users\\a")).toBe("C:\\Users\\a\\AppData\\Roaming\\dayhand-server");
+  });
+
+  test("the names from before the rename still work, with a warning", () => {
+    const none = () => false;
+    expect(resolveConfigDir({ HELM_SERVER_CONFIG_DIR: "/old" }, "linux", "/home/a", none)).toEqual({
+      dir: "/old",
+      warning: "HELM_SERVER_CONFIG_DIR is deprecated; set DAYHAND_SERVER_CONFIG_DIR instead",
+    });
+    expect(resolveConfigDir({ DAYHAND_SERVER_CONFIG_DIR: "/new", HELM_SERVER_CONFIG_DIR: "/old" }, "linux", "/home/a", none)).toEqual({ dir: "/new" });
+    // A helm-server folder is used while there is no dayhand-server, so the keys and data in it stay in use.
+    const onlyOld = (dir: unknown) => dir === "/home/a/.config/helm-server";
+    expect(resolveConfigDir({}, "linux", "/home/a", onlyOld)).toEqual({
+      dir: "/home/a/.config/helm-server",
+      warning: "Using /home/a/.config/helm-server from before the rename; move it to /home/a/.config/dayhand-server to keep the new name",
+    });
+    const both = (dir: unknown) => String(dir).endsWith("-server");
+    expect(resolveConfigDir({}, "darwin", "/Users/a", both)).toEqual({ dir: "/Users/a/Library/Application Support/dayhand-server" });
   });
 
   test.skipIf(process.platform === "win32")("files are written whole and readable only by the owner, also over a wider file", () => {
@@ -123,7 +143,7 @@ describe("the private folder", () => {
 });
 
 describe("keys", () => {
-  test("HELM_JWKS publishes exactly the key with its kid and coordinates", async () => {
+  test("DAYHAND_JWKS publishes exactly the key with its kid and coordinates", async () => {
     const { privateJwk } = await generateSigningKey();
     const other = (await generateSigningKey()).privateJwk;
     expect(privateJwkOf({ privateJwk })).toBe(privateJwk);
@@ -141,14 +161,22 @@ describe("keys", () => {
     const ours = jwksDataUri(privateJwk);
     const theirs = jwksDataUri((await generateSigningKey()).privateJwk);
     const wanted = { issuer: "https://a.convex.site", privateJwk };
-    const all = ["HELM_JWT_ISSUER", "HELM_JWKS", "HELM_JWT_PRIVATE_JWK"];
+    const all = ["DAYHAND_JWT_ISSUER", "DAYHAND_JWKS", "DAYHAND_JWT_PRIVATE_JWK"];
     expect(envPlan({ names: [], issuer: null, jwks: null }, wanted)).toEqual({ issuer: "set", keys: "set" });
     expect(envPlan({ names: all, issuer: wanted.issuer, jwks: ours }, wanted)).toEqual({ issuer: "keep", keys: "keep" });
     expect(envPlan({ names: all, issuer: "https://helm.example", jwks: ours }, wanted)).toEqual({ issuer: "adopt", keys: "keep" });
     expect(envPlan({ names: all, issuer: wanted.issuer, jwks: theirs }, wanted).keys).toBe("differs");
-    expect(envPlan({ names: ["HELM_JWKS"], issuer: null, jwks: ours }, wanted)).toEqual({ issuer: "set", keys: "complete" });
-    expect(envPlan({ names: ["HELM_JWT_PRIVATE_JWK"], issuer: null, jwks: null }, wanted).keys).toBe("differs");
+    expect(envPlan({ names: ["DAYHAND_JWKS"], issuer: null, jwks: ours }, wanted)).toEqual({ issuer: "set", keys: "complete" });
+    expect(envPlan({ names: ["DAYHAND_JWT_PRIVATE_JWK"], issuer: null, jwks: null }, wanted).keys).toBe("differs");
     expect(envPlan({ names: ["HELM_JWKS"], issuer: null, jwks: theirs }, wanted).keys).toBe("differs");
+    // A deployment from before the rename: its HELM_* variables count, and are kept.
+    const old = ["HELM_JWT_ISSUER", "HELM_JWKS", "HELM_JWT_PRIVATE_JWK"];
+    expect(envPlan({ names: old, issuer: wanted.issuer, jwks: ours }, wanted)).toEqual({ issuer: "keep", keys: "keep" });
+    expect(envPlan({ names: ["HELM_JWT_ISSUER", "HELM_JWKS"], issuer: wanted.issuer, jwks: ours }, wanted)).toEqual({ issuer: "keep", keys: "complete" });
+    expect(envName(["HELM_JWKS", "DAYHAND_JWKS"], "JWKS")).toBe("DAYHAND_JWKS");
+    expect(envName(["HELM_JWKS"], "JWKS")).toBe("HELM_JWKS");
+    expect(envName([], "JWKS")).toBeNull();
+    expect(oldEnvNames(["HELM_JWT_ISSUER", "DAYHAND_JWKS", "HELM_JWKS", "HELM_JWT_PRIVATE_JWK"])).toEqual(["HELM_JWT_ISSUER", "HELM_JWT_PRIVATE_JWK"]);
   });
 });
 
@@ -179,7 +207,7 @@ describe("reading the Convex CLI", () => {
     expect(redact("key helm_abcdefgh and d=xyz", ["helm_abcdefgh", "xyz"])).toBe("key [hidden] and d=xyz");
     expect(envFileText({ CONVEX_DEPLOYMENT: "prod:happy-otter-123" })).toBe("CONVEX_DEPLOYMENT=prod:happy-otter-123\n");
     expect(() => envFileText({ A: "x\nB=y" })).toThrow(/one line/);
-    expect(pairingLink("https://a.convex.site", "E6M8-FE02-XSNT")).toBe("helm://pair?url=https%3A%2F%2Fa.convex.site&code=E6M8-FE02-XSNT");
+    expect(pairingLink("https://a.convex.site", "E6M8-FE02-XSNT")).toBe("dayhand://pair?url=https%3A%2F%2Fa.convex.site&code=E6M8-FE02-XSNT");
   });
 });
 
@@ -188,7 +216,7 @@ describe("--dry-run", () => {
   const blocker = fileURLToPath(new URL("./fixtures/no-network.mjs", import.meta.url));
   const dryRun = (configDirPath: string, args: string[]) =>
     run(process.execPath, ["--import", blocker, script, "--dry-run", "--json", ...args], {
-      env: { PATH: process.env.PATH ?? "", HOME: join(configDirPath, "home"), HELM_SERVER_CONFIG_DIR: configDirPath },
+      env: { PATH: process.env.PATH ?? "", HOME: join(configDirPath, "home"), DAYHAND_SERVER_CONFIG_DIR: configDirPath },
     });
 
   test("the cloud setup: every step, no network, no child process, nothing written", async () => {
@@ -203,7 +231,7 @@ describe("--dry-run", () => {
       'npx convex deployment create "my-team:<project>:production" --type prod --default',
       "--inline-query",
       "generate an ES256 app-signing key",
-      "HELM_JWT_ISSUER (https://<deployment>.convex.site, the server's address)",
+      "DAYHAND_JWT_ISSUER (https://<deployment>.convex.site, the server's address)",
       "npx convex deploy --yes --typecheck disable --codegen enable --env-file",
       "/api/v1/openapi.json",
       "apiKeys:create",
@@ -224,7 +252,7 @@ describe("--dry-run", () => {
     expect(text).toContain("use the deployment happy-otter-123");
     expect(text).not.toContain("project create");
     expect(text).toContain("reuse the app-signing key");
-    expect(text).toContain("HELM_JWT_ISSUER (https://helm.example)");
+    expect(text).toContain("DAYHAND_JWT_ISSUER (https://helm.example)");
     expect(text).toContain("keep the CLI key");
   });
 

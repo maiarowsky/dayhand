@@ -1,5 +1,5 @@
-// The stores in reading order and the store `hlm login` writes to.
-// HLM_CREDENTIAL_STORE=keychain|file pins one (file: headless machines and tests).
+// The stores in reading order and the store `dayhand login` writes to.
+// DAYHAND_CREDENTIAL_STORE=keychain|file pins one (file: headless machines and tests).
 import { usageError } from "../core/exit.js";
 import type { Env, Warning } from "../config/env.js";
 import type { Platform } from "../config/paths.js";
@@ -11,10 +11,10 @@ export type StoreChoice = "keychain" | "file";
 export const STORE_CHOICES: StoreChoice[] = ["keychain", "file"];
 
 export function storeChoice(env: Env): StoreChoice | undefined {
-  const raw = env.HLM_CREDENTIAL_STORE?.trim().toLowerCase();
+  const raw = env.DAYHAND_CREDENTIAL_STORE?.trim().toLowerCase();
   if (!raw) return undefined;
   if ((STORE_CHOICES as string[]).includes(raw)) return raw as StoreChoice;
-  throw usageError(`HLM_CREDENTIAL_STORE must be one of ${STORE_CHOICES.join(", ")}`, { valid: STORE_CHOICES });
+  throw usageError(`DAYHAND_CREDENTIAL_STORE must be one of ${STORE_CHOICES.join(", ")}`, { valid: STORE_CHOICES });
 }
 
 /** Key stores (not the environment) in the order they are read. */

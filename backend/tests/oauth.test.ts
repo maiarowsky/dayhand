@@ -164,10 +164,10 @@ describe("the flow with a Client ID Metadata Document", () => {
     expect(tokens.scope).toBe("tasks:write");
     const rpc = (method: string, params: Record<string, unknown>) => mcpRequest(tokens.access_token, { jsonrpc: "2.0", id: 3, method, params });
     expect((await callToolRaw(tokens.access_token, "list_today")).status).toBe(403);
-    expect((await rpc("resources/read", { uri: "helm://today" })).status).toBe(403);
+    expect((await rpc("resources/read", { uri: "dayhand://today" })).status).toBe(403);
     expect((await rpc("prompts/get", { name: (await (await rpc("prompts/list", {})).json()).result.prompts[0].name })).status).toBe(403);
     // The guide holds no user data.
-    expect((await rpc("resources/read", { uri: "helm://guide" })).status).toBe(200);
+    expect((await rpc("resources/read", { uri: "dayhand://guide" })).status).toBe(200);
     expect((await callToolRaw(tokens.access_token, "add_task", { title: "Written blind" })).status).toBe(200);
   });
 
@@ -507,7 +507,7 @@ describe("tokens at the protected resource", () => {
     expect((await listTools(await insertToken(grant.id, {}))).status).toBe(401);
   });
 
-  test("revoking a connection on the phone or with hlm stops its tokens at once", async () => {
+  test("revoking a connection on the phone or with dayhand stops its tokens at once", async () => {
     const first = await connect();
     const [connection] = await first.owner.connections();
     await first.owner.revoke(connection.id);

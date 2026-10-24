@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// `npm run setup`: your own Helm server in one command (docs/deploy.md).
+// `npm run setup`: your own Dayhand server in one command (docs/deploy.md).
 //   default  on your own free Convex account: log in in the browser, a new
 //            project with a production deployment (or --deployment), the
-//            app-signing key and the HELM_* variables, the functions
+//            app-signing key and the DAYHAND_* variables, the functions
 //            deployed and checked, a CLI key and a pairing code;
 //   --local  the same on this computer with the Convex local backend and no
 //            account; it runs until Ctrl+C, and the same command starts it again.
 // Run it again to update the server: the keys, the CLI key and the data are
 // kept, and nothing the deployment already has is replaced without asking.
-// `hlm server deploy` and `hlm server start` run this script and sign hlm in.
+// `dayhand server deploy` and `dayhand server start` run this script and sign dayhand in.
 // Only Node.js built-ins are imported up front: the script installs the
 // backend's dependencies itself when they are missing.
 import { spawn } from "node:child_process";
@@ -19,15 +19,17 @@ import { createInterface } from "node:readline/promises";
 import { BACKEND_DIR, newInstanceSecret, startLocalBackend } from "./local-backend-lib.mjs";
 import { checkMcp, checkOpenApi, checkSigning, commands, convex, hasConvexCli, parseRunOutput } from "./setup-convex.mjs";
 import {
-  configDir,
+  resolveConfigDir,
   deploymentUrls,
   envFileText,
+  envName,
   envPlan,
   FILES,
   LOCAL_ISSUER,
   ensurePrivateDir,
   loadOrCreateSigningKey,
   nodeProblem,
+  oldEnvNames,
   pairingLink,
   parseOptions,
   parseProjectSlug,
@@ -99,23 +101,29 @@ const target = (envFile) => ["--env-file", envFile];
 async function readEnv(where) {
   const { stdout } = await convex(commands.envNames(where));
   const names = stdout.split(/\r?\n/).map((line) => line.trim()).filter((line) => /^[A-Z_][A-Z0-9_]*$/.test(line));
-  const value = async (name) => (names.includes(name) ? (await convex(commands.envGet(where, name))).stdout.trim() : null);
-  return { names, issuer: await value("HELM_JWT_ISSUER"), jwks: await value("HELM_JWKS") };
+  const value = async (base) => {
+    const name = envName(names, base);
+    return name ? (await convex(commands.envGet(where, name))).stdout.trim() : null;
+  };
+  return { names, issuer: await value("JWT_ISSUER"), jwks: await value("JWKS") };
 }
 
 /** Sets a variable with its value on stdin, never on the command line. */
 const setEnv = (where, name, value, secrets = []) => convex(commands.envSet(where, name), { input: value, secrets });
 
-/** The signing key and HELM_* variables; returns the issuer in force and what was done with the keys. */
+/** The signing key and DAYHAND_* variables; returns the issuer in force and what was done with the keys. */
 async function configureEnv(where, dir, wantedIssuer) {
   const signing = await loadOrCreateSigningKey(dir);
   const secret = JSON.stringify(signing.privateJwk);
-  const plan = envPlan(await readEnv(where), { issuer: wantedIssuer, privateJwk: signing.privateJwk });
+  const current = await readEnv(where);
+  const old = oldEnvNames(current.names);
+  if (old.length) log(`This deployment still uses ${old.join(", ")} from before the rename; they keep working (docs/deploy.md#renamed-variables).`);
+  const plan = envPlan(current, { issuer: wantedIssuer, privateJwk: signing.privateJwk });
   let issuer = wantedIssuer;
-  if (plan.issuer === "set") await setEnv(where, "HELM_JWT_ISSUER", issuer);
+  if (plan.issuer === "set") await setEnv(where, "DAYHAND_JWT_ISSUER", issuer);
   if (plan.issuer === "adopt") {
     issuer = (await readEnv(where)).issuer;
-    log(`HELM_JWT_ISSUER is already ${issuer}; keeping it (it is part of the user id, so a new one would hide the data).`);
+    log(`The issuer is already ${issuer}; keeping it (it is part of the user id, so a new one would hide the data).`);
   }
   let keys = plan.keys;
   if (keys === "differs") {
@@ -126,9 +134,9 @@ async function configureEnv(where, dir, wantedIssuer) {
     keys = replace ? "replaced" : "kept";
     if (!replace) log("Keeping the deployment's key. If pairing then fails with 503, see docs/deploy.md.");
   }
-  if (keys === "set" || keys === "replaced") await setEnv(where, "HELM_JWKS", signing.jwksDataUri);
+  if (keys === "set" || keys === "replaced") await setEnv(where, "DAYHAND_JWKS", signing.jwksDataUri);
   if (keys === "set" || keys === "replaced" || keys === "complete") {
-    await setEnv(where, "HELM_JWT_PRIVATE_JWK", secret, [secret, signing.privateJwk.d]);
+    await setEnv(where, "DAYHAND_JWT_PRIVATE_JWK", secret, [secret, signing.privateJwk.d]);
   }
   return { issuer, issuerAction: plan.issuer, keys, signingKeyFile: signing.file };
 }
@@ -146,9 +154,9 @@ async function cliKey(where, dir, checkUrl, userId) {
       log("The saved CLI key no longer works; making a new one.");
     }
   }
-  const { stdout } = await convex(commands.run(where, "apiKeys:create", { userId, actor: "app", name: "hlm", kind: "cli" }));
+  const { stdout } = await convex(commands.run(where, "apiKeys:create", { userId, actor: "app", name: "dayhand", kind: "cli" }));
   const key = parseRunOutput(stdout, "apiKeys:create").key;
-  if (typeof key !== "string" || !key.startsWith("helm_")) throw new Error("apiKeys:create did not return a key");
+  if (typeof key !== "string" || !/^(dayhand|helm)_/.test(key)) throw new Error("apiKeys:create did not return a key");
   writePrivate(file, `${key}\n`);
   return { key, file, created: true };
 }
@@ -156,7 +164,7 @@ async function cliKey(where, dir, checkUrl, userId) {
 /** Everything after the deployment is known: variables, deploy, checks, the CLI key, a pairing code. */
 async function finish({ dir, envFile, wantedIssuer, siteUrl, checkUrl, convexUrl, mode, deployment, state }) {
   const where = target(envFile);
-  log("Setting the app-signing key and HELM_* variables…");
+  log("Setting the app-signing key and DAYHAND_* variables…");
   const env = await configureEnv(where, dir, wantedIssuer);
   const userId = `${env.issuer}|${SUBJECT}`;
   writeState(dir, { ...state, mode, deployment, url: siteUrl, convexUrl, issuer: env.issuer, userId, updatedAt: new Date().toISOString() });
@@ -225,7 +233,7 @@ async function setupCloud(options, dir) {
   ensurePrivateDir(dir);
   const state = readState(dir);
   if (state?.deployment && options.deployment && state.deployment !== options.deployment) {
-    throw new UsageError(`${dir} belongs to ${state.deployment}; set HELM_SERVER_CONFIG_DIR to another folder for a second server`);
+    throw new UsageError(`${dir} belongs to ${state.deployment}; set DAYHAND_SERVER_CONFIG_DIR to another folder for a second server`);
   }
   log("Logging in to Convex (a browser opens the first time)…");
   await convex(commands.login(), { interactive: true });
@@ -317,7 +325,9 @@ async function main() {
   if (options.help) return console.log(USAGE);
   const problem = nodeProblem();
   if (problem) throw new UsageError(problem);
-  const dir = serverDir(configDir(), options.local);
+  const root = resolveConfigDir();
+  if (root.warning) log(`Warning: ${root.warning}`);
+  const dir = serverDir(root.dir, options.local);
   if (options.dryRun) {
     const plan = dryRunPlan(options, dir, { state: readState(dir), dependencies: hasConvexCli() });
     if (options.json) console.log(JSON.stringify({ dryRun: true, mode: options.local ? "local" : "cloud", plan }));

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/tool-error.schema.json",
+  "$id": "https://schemas.dayhand.invalid/tool-error.schema.json",
   "title": "Tool error",
-  "description": "structuredContent of a failed MCP tool call (isError: true). hlm turns it into its own error on stderr (error.schema.json).",
+  "description": "structuredContent of a failed MCP tool call (isError: true). dayhand turns it into its own error on stderr (error.schema.json).",
   "type": "object",
   "required": [
     "error"

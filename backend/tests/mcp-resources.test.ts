@@ -1,4 +1,4 @@
-// Resources (helm://today, helm://tasks/{ref}, helm://guide) and the three prompts.
+// Resources (dayhand://today, dayhand://tasks/{ref}, dayhand://guide) and the three prompts.
 import { describe, expect, test } from "vitest";
 import { callTool, createKey, mcpClient, mcpPost, newUserId } from "./helpers";
 
@@ -9,38 +9,50 @@ describe("MCP resources", () => {
     const client = await mcpClient(await createKey(newUserId()));
     expect(client.getServerCapabilities()).toMatchObject({ tools: {}, resources: {}, prompts: {} });
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual(["helm://today", "helm://guide"]);
+    expect(resources.map((r) => r.uri)).toEqual(["dayhand://today", "dayhand://guide"]);
     const { resourceTemplates } = await client.listResourceTemplates();
-    expect(resourceTemplates).toEqual([expect.objectContaining({ uriTemplate: "helm://tasks/{ref}", mimeType: "application/json" })]);
+    expect(resourceTemplates).toEqual([expect.objectContaining({ uriTemplate: "dayhand://tasks/{ref}", mimeType: "application/json" })]);
     await client.close();
   });
 
-  test("helm://today is list_today and helm://tasks/{ref} is get_task", async () => {
+  test("dayhand://today is list_today and dayhand://tasks/{ref} is get_task", async () => {
     const client = await mcpClient(await createKey(newUserId()));
     await callTool(client, "add_task", { title: "Call the accountant", dueDate: "today" });
     await callTool(client, "set_now", { taskId: "#1", resumeNote: "find the invoice" });
 
-    const today = await client.readResource({ uri: "helm://today" });
-    expect(today.contents[0]).toMatchObject({ uri: "helm://today", mimeType: "application/json" });
+    const today = await client.readResource({ uri: "dayhand://today" });
+    expect(today.contents[0]).toMatchObject({ uri: "dayhand://today", mimeType: "application/json" });
     expect(JSON.parse(textOf(today.contents))).toEqual(await callTool(client, "list_today"));
 
-    const task = await client.readResource({ uri: "helm://tasks/1" });
+    const task = await client.readResource({ uri: "dayhand://tasks/1" });
     expect(JSON.parse(textOf(task.contents))).toEqual(await callTool(client, "get_task", { taskId: "#1" }));
     await client.close();
   });
 
-  test("helm://guide is Markdown for agents", async () => {
+  test("dayhand://guide is Markdown for agents", async () => {
     const client = await mcpClient(await createKey(newUserId()));
-    const guide = await client.readResource({ uri: "helm://guide" });
+    const guide = await client.readResource({ uri: "dayhand://guide" });
     expect(guide.contents[0]).toMatchObject({ mimeType: "text/markdown" });
-    expect(textOf(guide.contents)).toMatch(/^# Working with Helm/);
+    expect(textOf(guide.contents)).toMatch(/^# Working with Dayhand/);
     expect(textOf(guide.contents)).toContain("dryRun");
+    await client.close();
+  });
+
+  test("the helm:// addresses from before the rename still read the same resources", async () => {
+    const client = await mcpClient(await createKey(newUserId()));
+    await callTool(client, "add_task", { title: "Water the plants", dueDate: "today" });
+    const today = await client.readResource({ uri: "helm://today" });
+    expect(today.contents[0]).toMatchObject({ uri: "helm://today", mimeType: "application/json" });
+    expect(JSON.parse(textOf(today.contents))).toEqual(await callTool(client, "list_today"));
+    const task = await client.readResource({ uri: "helm://tasks/1" });
+    expect(JSON.parse(textOf(task.contents))).toEqual(await callTool(client, "get_task", { taskId: "#1" }));
+    expect(textOf((await client.readResource({ uri: "helm://guide" })).contents)).toMatch(/^# Working with Dayhand/);
     await client.close();
   });
 
   test("a missing resource is a JSON-RPC error, -32002 for 2025 clients", async () => {
     const key = await createKey(newUserId());
-    for (const uri of ["helm://tasks/404", "helm://nothing", "https://example.com/"]) {
+    for (const uri of ["dayhand://tasks/404", "dayhand://nothing", "https://example.com/"]) {
       const response = await (await mcpPost(key, { jsonrpc: "2.0", id: 1, method: "resources/read", params: { uri } })).json();
       expect(response, uri).toMatchObject({ id: 1, error: { code: -32002, message: "Resource not found", data: { uri } } });
     }
@@ -64,7 +76,7 @@ describe("MCP prompts", () => {
     const [instructions, today] = prompt.messages as any[];
     expect(instructions.content.text).toMatch(/plan today/);
     expect(instructions.content.text).toContain("My focus today: taxes");
-    expect(today.content).toMatchObject({ type: "resource", resource: { uri: "helm://today", mimeType: "application/json" } });
+    expect(today.content).toMatchObject({ type: "resource", resource: { uri: "dayhand://today", mimeType: "application/json" } });
     expect(JSON.parse(today.content.resource.text).today[0]).toMatchObject({ title: "Call the accountant" });
     await client.close();
   });

@@ -1,8 +1,8 @@
-// hlm server start end to end: the backend's setup script starts its own
-// local backend (not the test run's), deploys, makes the keys, signs hlm in;
-// then hlm adds a task, a phone pairs with the printed code and sees it, and
+// dayhand server start end to end: the backend's setup script starts its own
+// local backend (not the test run's), deploys, makes the keys, signs dayhand in;
+// then dayhand adds a task, a phone pairs with the printed code and sees it, and
 // a second start keeps keys, key and data. Nothing touches the real config:
-// HOME, HLM_CONFIG_DIR and HELM_SERVER_CONFIG_DIR are private folders.
+// HOME, DAYHAND_CONFIG_DIR and DAYHAND_SERVER_CONFIG_DIR are private folders.
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,8 +12,8 @@ import { afterAll, describe, expect, test } from "vitest";
 import { freePort } from "./globalSetup.js";
 import { schemaValidator } from "./helpers.js";
 
-const BIN = fileURLToPath(new URL("../dist/bin/hlm.js", import.meta.url));
-const HOME = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-server-"));
+const BIN = fileURLToPath(new URL("../dist/bin/dayhand.js", import.meta.url));
+const HOME = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-server-"));
 afterAll(() => rmSync(HOME, { recursive: true, force: true }));
 
 const env = {
@@ -22,16 +22,16 @@ const env = {
   USERPROFILE: HOME,
   APPDATA: HOME,
   LOCALAPPDATA: HOME,
-  HLM_CONFIG_DIR: join(HOME, "hlm"),
-  HLM_CACHE_DIR: join(HOME, "cache"),
-  HLM_CREDENTIAL_STORE: "file",
-  HELM_SERVER_CONFIG_DIR: join(HOME, "helm-server"),
+  DAYHAND_CONFIG_DIR: join(HOME, "dayhand"),
+  DAYHAND_CACHE_DIR: join(HOME, "cache"),
+  DAYHAND_CREDENTIAL_STORE: "file",
+  DAYHAND_SERVER_CONFIG_DIR: join(HOME, "helm-server"),
 };
 const validate = schemaValidator();
 
 type Started = { child: ChildProcess; result: any; stdout: () => string; stderr: () => string };
 
-/** Runs hlm server start --json and resolves with its result once the server is ready. */
+/** Runs dayhand server start --json and resolves with its result once the server is ready. */
 function start(ports: { port: number; sitePort: number }): Promise<Started> {
   const child = spawn(process.execPath, [BIN, "server", "start", "--port", String(ports.port), "--site-port", String(ports.sitePort), "--json", "--yes"], {
     env,
@@ -44,7 +44,7 @@ function start(ports: { port: number; sitePort: number }): Promise<Started> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(new Error(`hlm server start did not get ready:\n${stderr}`));
+      reject(new Error(`dayhand server start did not get ready:\n${stderr}`));
     }, 150_000);
     child.stdout!.on("data", (d) => {
       stdout += d;
@@ -55,7 +55,7 @@ function start(ports: { port: number; sitePort: number }): Promise<Started> {
     });
     child.on("close", (code) => {
       clearTimeout(timer);
-      reject(new Error(`hlm server start exited ${code}:\n${stderr}`));
+      reject(new Error(`dayhand server start exited ${code}:\n${stderr}`));
     });
   });
 }
@@ -67,8 +67,8 @@ function stop(child: ChildProcess): Promise<number | null> {
   });
 }
 
-/** hlm with the private config only: no HLM_URL, no HLM_API_KEY, so the stored profile and key are used. */
-function hlm(args: string[]): Promise<{ code: number | null; stdout: string; stderr: string }> {
+/** dayhand with the private config only: no DAYHAND_URL, no DAYHAND_API_KEY, so the stored profile and key are used. */
+function dayhand(args: string[]): Promise<{ code: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [BIN, ...args], { env, stdio: ["pipe", "pipe", "pipe"] });
     child.stdin!.end();
@@ -88,23 +88,23 @@ async function post(url: string, body: unknown) {
 
 const mode = (file: string) => statSync(file).mode & 0o777;
 
-describe("hlm server", () => {
+describe("dayhand server", () => {
   test("deploy --dry-run lists the steps, writes nothing and needs no account", async () => {
-    const run = await hlm(["server", "deploy", "--dry-run", "--json", "--team", "my-team"]);
+    const run = await dayhand(["server", "deploy", "--dry-run", "--json", "--team", "my-team"]);
     expect(run.code, run.stderr).toBe(0);
     const plan = JSON.parse(run.stdout);
     expect(validate("server-plan.schema.json", plan)).toEqual([]);
-    expect(plan.plan.join("\n")).toContain("npx convex project create helm --team my-team");
-    expect(existsSync(env.HELM_SERVER_CONFIG_DIR)).toBe(false);
+    expect(plan.plan.join("\n")).toContain("npx convex project create dayhand --team my-team");
+    expect(existsSync(env.DAYHAND_SERVER_CONFIG_DIR)).toBe(false);
   });
 
   test("without a terminal it refuses unless --yes", async () => {
-    const run = await hlm(["server", "start", "--port", "1", "--site-port", "2"]);
+    const run = await dayhand(["server", "start", "--port", "1", "--site-port", "2"]);
     expect(run.code).toBe(2);
     expect(run.stderr).toMatch(/pass --yes/);
   });
 
-  test("start: own server, hlm signed in, a phone pairs and sees hlm's task; a second start keeps everything", async () => {
+  test("start: own server, dayhand signed in, a phone pairs and sees dayhand's task; a second start keeps everything", async () => {
     const ports = { port: await freePort(), sitePort: await freePort() };
     const first = await start(ports);
     const { result } = first;
@@ -129,8 +129,8 @@ describe("hlm server", () => {
         expect(output).not.toContain(d);
       }
 
-      // hlm uses the stored profile and key.
-      const added = await hlm(["add", "Pay rent", "--due", "today", "--json"]);
+      // dayhand uses the stored profile and key.
+      const added = await dayhand(["add", "Pay rent", "--due", "today", "--json"]);
       expect(added.code, added.stderr).toBe(0);
       expect(JSON.parse(added.stdout)).toMatchObject({ ref: 1, title: "Pay rent" });
 
@@ -154,7 +154,7 @@ describe("hlm server", () => {
       expect(second.result).toMatchObject({ key: { created: false }, env: { issuer: "keep", keys: "keep" }, login: { config: "unchanged" } });
       expect(readFileSync(second.result.files.cliKey, "utf8").trim()).toBe(key);
       expect(readFileSync(second.result.files.signingKey, "utf8")).toBe(signingKey);
-      const list = await hlm(["list", "--json"]);
+      const list = await dayhand(["list", "--json"]);
       expect(JSON.parse(list.stdout).result.map((t: { title: string }) => t.title)).toEqual(["Pay rent"]);
       expect(second.result.pairing.code).not.toBe(result.pairing.code);
     } finally {

@@ -15,7 +15,7 @@ test("Markdown export groups the plan into readable sections", async () => {
   await user.mutation(internal.ops.softDelete, { taskId: trashed.id });
 
   const { content }: any = await user.query(internal.ops.exportPlan, { format: "markdown", at: utc("2026-10-22T10:00") });
-  expect(content).toContain("# Helm plan");
+  expect(content).toContain("# Dayhand plan");
   expect(content).toMatch(/## Now\n\n- \[ \] 2026-10-22 Focus task \(in progress\)\n  - Next step: continue at section 2/);
   expect(content).toMatch(/## Overdue\n\n- \[ \] 2026-10-20 Overdue call #phone/);
   // Timed tasks first, as on the Today screen.

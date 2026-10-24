@@ -29,6 +29,6 @@ backend/.local-backend/
 # Local agent tooling
 .claude/settings.local.json
 
-# hlm package copies of man/hlm.1 and LICENSE (made by npm pack)
+# dayhand package copies of man/dayhand.1, man/dh.1 and LICENSE (made by npm pack)
 cli/man/
 cli/LICENSE

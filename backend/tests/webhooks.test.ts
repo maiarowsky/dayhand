@@ -2,7 +2,7 @@
 // signatures, the same webhook-id on every retry, events from MCP and REST
 // changes, no event for a dry run, turning off after failing deliveries, the
 // delivery log, and the address rules (SSRF). The test deployment retries
-// after 0.3 s (HELM_WEBHOOK_RETRY_DELAYS), so a delivery has 4 attempts.
+// after 0.3 s (DAYHAND_WEBHOOK_RETRY_DELAYS), so a delivery has 4 attempts.
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { internal } from "../convex/_generated/api";
@@ -103,7 +103,7 @@ describe("webhook deliveries", () => {
       expect(verify(secret, message)).toBe(true);
       expect(message.headers["webhook-id"]).toMatch(/^msg_/);
       expect(message.headers["content-type"]).toBe("application/json");
-      expect(message.headers["user-agent"]).toMatch(/^Helm-Webhooks\//);
+      expect(message.headers["user-agent"]).toMatch(/^Dayhand-Webhooks\//);
     }
     const bodies = messages.map((m) => JSON.parse(m.body));
     const created = bodies.find((b) => b.type === "task.created");

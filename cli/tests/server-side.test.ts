@@ -1,37 +1,37 @@
-// What hlm leaves to a 0.4 backend (list filters and pages, dry-run checks)
+// What dayhand leaves to a 0.4 backend (list filters and pages, dry-run checks)
 // and how it still works with a 0.3 backend, played here by a small fake
 // that rejects the arguments 0.3 did not know.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { hlm, hlmJson, jsonError, newUser, schemaValidator } from "./helpers.js";
+import { dayhand, dayhandJson, jsonError, newUser, schemaValidator } from "./helpers.js";
 
 const validate = schemaValidator();
 
 describe("with a 0.4 backend", () => {
   test("--limit pages on the server and --cursor continues", async () => {
     const { key } = await newUser();
-    for (const title of ["One", "Two", "Three"]) await hlm(key, ["add", title, "--due", "today"]);
-    const first = await hlmJson(key, ["list", "--limit", "2"]);
+    for (const title of ["One", "Two", "Three"]) await dayhand(key, ["add", title, "--due", "today"]);
+    const first = await dayhandJson(key, ["list", "--limit", "2"]);
     expect(validate("task-list.schema.json", first)).toEqual([]);
     expect(first).toMatchObject({ total: 3, nextCursor: expect.any(String) });
     expect(first.result.map((t: { title: string }) => t.title)).toEqual(["One", "Two"]);
-    const rest = await hlmJson(key, ["list", "--limit", "2", "--cursor", first.nextCursor]);
+    const rest = await dayhandJson(key, ["list", "--limit", "2", "--cursor", first.nextCursor]);
     expect(rest).toMatchObject({ total: 3, nextCursor: null, result: [{ title: "Three" }] });
-    expect(jsonError(await hlm(key, ["list", "--cursor", "garbage", "--json"]))).toMatchObject({ code: "invalid_argument", exitCode: 2 });
-    expect((await hlm(key, ["list", "--limit", "0"])).code).toBe(2);
+    expect(jsonError(await dayhand(key, ["list", "--cursor", "garbage", "--json"]))).toMatchObject({ code: "invalid_argument", exitCode: 2 });
+    expect((await dayhand(key, ["list", "--limit", "0"])).code).toBe(2);
   });
 
   test("--dry-run gets the backend's preview, and a change the backend rejects fails the dry run", async () => {
     const { key } = await newUser();
-    const run = await hlmJson(key, ["add", "Pay", "rent", "--due", "tomorrow", "--dry-run", "--client-id", "c9"]);
+    const run = await dayhandJson(key, ["add", "Pay", "rent", "--due", "tomorrow", "--dry-run", "--client-id", "c9"]);
     expect(validate("dry-run.schema.json", run)).toEqual([]);
     expect(run.calls[0].result).toMatchObject({ title: "Pay rent", status: "todo", dryRun: true });
-    const human = await hlm(key, ["add", "Pay", "--dry-run"]);
+    const human = await dayhand(key, ["add", "Pay", "--dry-run"]);
     expect(human.stdout).toMatch(/^Dry run: nothing was changed\. Would call:\n {2}add_task \{.*\}\n {4}→ #1 Pay \(todo\)\n$/);
-    const tooLong = await hlm(key, ["add", "x".repeat(600), "--dry-run", "--json"]);
+    const tooLong = await dayhand(key, ["add", "x".repeat(600), "--dry-run", "--json"]);
     expect(jsonError(tooLong)).toMatchObject({ code: "invalid_argument", exitCode: 2, message: /title is longer/ });
-    expect((await hlmJson(key, ["list"])).result).toEqual([]);
+    expect((await dayhandJson(key, ["list"])).result).toEqual([]);
   });
 });
 
@@ -89,7 +89,7 @@ afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
 const fake = (args: string[], as: Mode = "old") => {
   mode = as;
   calls = [];
-  return hlm("helm_fake", args, { url });
+  return dayhand("helm_fake", args, { url });
 };
 
 describe("with a 0.3 backend", () => {

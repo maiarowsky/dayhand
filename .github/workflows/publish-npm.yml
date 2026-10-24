@@ -1,13 +1,13 @@
-# Publishes hlm to npm with trusted publishing (OIDC, no npm token) and
+# Publishes dayhand to npm with trusted publishing (OIDC, no npm token) and
 # provenance. Does nothing until the maintainer enables it (docs/release.md):
-# the repository variable HLM_PUBLISH_ENABLED must be "true", the job runs in
+# the repository variable DAYHAND_PUBLISH_ENABLED must be "true", the job runs in
 # the "npm" environment, and scripts/check-release.mjs refuses a private
 # package, a tag that does not match package.json, or a missing repository URL.
-name: Publish hlm to npm
+name: Publish dayhand to npm
 
 on:
   push:
-    tags: ["hlm-v*"]
+    tags: ["dayhand-v*"]
   # A tag made with the default GITHUB_TOKEN starts no workflow: run this by
   # hand on that tag (Run workflow, "Use workflow from": the tag).
   workflow_dispatch:
@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   publish:
-    if: vars.HLM_PUBLISH_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/hlm-v')
+    if: vars.DAYHAND_PUBLISH_ENABLED == 'true' && startsWith(github.ref, 'refs/tags/dayhand-v')
     runs-on: ubuntu-latest
     environment: npm
     permissions:

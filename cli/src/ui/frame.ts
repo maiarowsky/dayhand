@@ -22,7 +22,7 @@ const clock = (at: number, timezone?: string) => formatTimestamp(at, timezone).s
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 function tabBar(s: Snapshot): Screen {
-  const row: Row = [seg(" Helm ", { bold: true, color: "cyan" })];
+  const row: Row = [seg(" Dayhand ", { bold: true, color: "cyan" })];
   const hits: Hit[] = [];
   for (const [i, view] of VIEWS.entries()) {
     const label = ` ${i + 1} ${VIEW_LABELS[view]} `;
@@ -97,7 +97,7 @@ function content(s: Snapshot, height: number): Screen {
 
 function waiting(s: Snapshot): Row[] {
   if (s.conn.state === "offline" || s.conn.state === "rejected") {
-    return [[seg(`  ${s.conn.message}`, { color: "red", bold: true })], [], [seg(s.conn.state === "rejected" ? "  Run hlm login in another terminal, then press R." : `  Retrying every ${s.interval} s; R retries now, q quits.`, { dim: true })]];
+    return [[seg(`  ${s.conn.message}`, { color: "red", bold: true })], [], [seg(s.conn.state === "rejected" ? "  Run dayhand login in another terminal, then press R." : `  Retrying every ${s.interval} s; R retries now, q quits.`, { dim: true })]];
   }
   return [[seg("  Loading…", { dim: true })]];
 }

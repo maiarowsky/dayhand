@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/connection-revoke.schema.json",
+  "$id": "https://schemas.dayhand.invalid/connection-revoke.schema.json",
   "title": "Revoked connection",
-  "description": "POST /connections/revoke (hlm connection revoke).",
+  "description": "POST /connections/revoke (dayhand connection revoke).",
   "type": "object",
   "required": [
     "id",

@@ -9,7 +9,7 @@ import { resolveConnection } from "../config/resolve.js";
 import type { Io } from "../core/io.js";
 import { credentialStores } from "../credentials/index.js";
 import type { Task } from "../render/model.js";
-import { HelmClient } from "../transport/client.js";
+import { DayhandClient } from "../transport/client.js";
 
 export const CACHE_TTL_MS = 60_000;
 const FETCH_TIMEOUT_MS = 3_000;
@@ -26,7 +26,7 @@ export async function taskHints(io: Io, cacheDir: string, configDir: string, con
     const file = path.join(cacheDir, `tasks-${createHash("sha256").update(connection.url).digest("hex").slice(0, 16)}.json`);
     const cached = read(file);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS && Date.now() >= cached.fetchedAt) return cached;
-    const client = new HelmClient(connection, io.fetch, undefined, FETCH_TIMEOUT_MS);
+    const client = new DayhandClient(connection, io.fetch, undefined, FETCH_TIMEOUT_MS);
     const result = (await client.callTool("list_all", { includeDone: false })).structured as { result?: Task[] } | undefined;
     const tasks = result?.result ?? [];
     const hints: TaskHints = {

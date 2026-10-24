@@ -1,18 +1,18 @@
-// Where the API key comes from, in order: HLM_API_KEY (agents, CI), then the
-// key `hlm login` stored for the deployment URL in the OS keychain or, when
+// Where the API key comes from, in order: DAYHAND_API_KEY (agents, CI), then the
+// key `dayhand login` stored for the deployment URL in the OS keychain or, when
 // no keychain is available, in a 0600 file next to config.toml.
 import { readEnv, type Env, type Warning } from "../config/env.js";
 
 export type Credential = { key: string; source: string };
 
 export interface CredentialStore {
-  /** "environment", "keychain" or "file"; `hlm whoami` reports it. */
+  /** "environment", "keychain" or "file"; `dayhand whoami` reports it. */
   readonly name: string;
   /** The key for this deployment URL, or undefined when this store has none. */
   get(url: string): Promise<Credential | undefined>;
 }
 
-/** A store `hlm login` can write to. */
+/** A store `dayhand login` can write to. */
 export interface KeyStore extends CredentialStore {
   readonly name: "keychain" | "file";
   /** Where the key lives, for messages: "macOS Keychain", a file path, … */
@@ -34,9 +34,9 @@ export class EnvCredentialStore implements CredentialStore {
   ) {}
 
   async get(): Promise<Credential | undefined> {
-    const { value, warning } = readEnv(this.env, "HLM_API_KEY");
+    const { value, source, warning } = readEnv(this.env, "DAYHAND_API_KEY");
     if (warning) this.warn(warning);
-    return value ? { key: value, source: warning ? "HELM_API_KEY" : "HLM_API_KEY" } : undefined;
+    return value ? { key: value, source: source! } : undefined;
   }
 }
 

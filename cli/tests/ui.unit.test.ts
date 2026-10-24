@@ -1,4 +1,4 @@
-// hlm ui without a terminal: quick add, the budget, the line editor, keys,
+// dayhand ui without a terminal: quick add, the budget, the line editor, keys,
 // lists, the key reducer, and the controller with a fake API (offline,
 // limits, the cursor following its task). The screens are checked as text.
 import { describe, expect, test } from "vitest";
@@ -111,7 +111,7 @@ describe("line editor and keys", () => {
     expect(insert(l, "a\nb\u0007").text).toBe("Please Calla b");
   });
 
-  test("key names, typed chunks, and the key map in hlm help ui", () => {
+  test("key names, typed chunks, and the key map in dayhand help ui", () => {
     const none = { upArrow: false, downArrow: false, leftArrow: false, rightArrow: false, pageDown: false, pageUp: false, home: false, end: false, return: false, escape: false, ctrl: false, shift: false, tab: false, backspace: false, delete: false, meta: false, super: false, hyper: false, capsLock: false, numLock: false };
     expect(keyName("j", none)).toBe("j");
     expect(keyName("", { ...none, tab: true, shift: true })).toBe("S-tab");

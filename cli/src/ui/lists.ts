@@ -42,7 +42,7 @@ export function boardColumns(board: Board, filter = ""): Column[] {
   ];
 }
 
-/** The Monday of the week of `date` (weeks start on Monday, as Helm's repeat rules do). */
+/** The Monday of the week of `date` (weeks start on Monday, as Dayhand's repeat rules do). */
 export const weekStart = (date: string) => addDays(date, 1 - isoWeekday(date));
 
 /**

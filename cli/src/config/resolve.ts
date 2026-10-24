@@ -1,7 +1,7 @@
 // Connection settings in precedence order. URL: --url, then the profile named
-// by --profile, then HLM_URL (HELM_URL), then the profile from HLM_PROFILE or
-// default_profile, then the top-level url in config.toml. Key: HLM_API_KEY
-// (HELM_API_KEY), then the key stored by `hlm login` for that URL.
+// by --profile, then DAYHAND_URL (or its old names), then the profile from DAYHAND_PROFILE or
+// default_profile, then the top-level url in config.toml. Key: DAYHAND_API_KEY
+// (or its old names), then the key stored by `dayhand login` for that URL.
 // Secrets never come from flags or config.toml.
 import { CliError, usageError } from "../core/exit.js";
 import { findCredential, type CredentialStore } from "../credentials/store.js";
@@ -14,13 +14,13 @@ export { displayUrl, normalizeUrl };
 export type Target = { url: string; urlSource: string; profile?: string };
 export type Connection = Target & { key: string; keySource: string };
 
-/** The profile in use: --profile, HLM_PROFILE, then default_profile. */
+/** The profile in use: --profile, DAYHAND_PROFILE, then default_profile. */
 export function selectProfile(flags: { profile?: string }, env: Env, config: Config): { name?: string; fromFlag: boolean } {
-  const named = flags.profile ?? (env.HLM_PROFILE || undefined);
+  const named = flags.profile ?? (env.DAYHAND_PROFILE || undefined);
   const name = named ?? config.defaultProfile;
   if (name !== undefined && !config.profiles[name]) {
     const valid = Object.keys(config.profiles);
-    throw usageError(`Unknown profile${valid.length ? "" : `: ${config.file} defines none`}`, valid.length ? { valid } : { hint: "hlm help config" });
+    throw usageError(`Unknown profile${valid.length ? "" : `: ${config.file} defines none`}`, valid.length ? { valid } : { hint: "dayhand help config" });
   }
   return { name, fromFlag: flags.profile !== undefined };
 }
@@ -32,15 +32,15 @@ export function resolveTarget(flags: { url?: string; profile?: string }, env: En
 
   if (flags.url) return withProfile(normalizeUrl(flags.url), "--url");
   if (profileUrl && profile.fromFlag) return withProfile(profileUrl, `--profile ${profile.name}`);
-  const fromEnv = readEnv(env, "HLM_URL");
+  const fromEnv = readEnv(env, "DAYHAND_URL");
   if (fromEnv.value) {
     if (fromEnv.warning) warn(fromEnv.warning);
-    return withProfile(normalizeUrl(fromEnv.value), fromEnv.warning ? "HELM_URL" : "HLM_URL");
+    return withProfile(normalizeUrl(fromEnv.value), fromEnv.source!);
   }
   if (profileUrl) return withProfile(profileUrl, `profile ${profile.name}`);
   if (config.url) return withProfile(config.url, "config.toml");
-  throw usageError("No Helm URL: set HLM_URL, pass --url, or run hlm login --url <url> (e.g. https://<deployment>.convex.site)", {
-    hint: "hlm login --url <url>",
+  throw usageError("No Dayhand URL: set DAYHAND_URL, pass --url, or run dayhand login --url <url> (e.g. https://<deployment>.convex.site)", {
+    hint: "dayhand login --url <url>",
   });
 }
 
@@ -56,7 +56,7 @@ export async function resolveConnection(
   if (!credential) {
     const why = unavailable.length ? ` (${unavailable.join("; ")})` : "";
     throw new CliError("unauthenticated", `Not signed in to ${displayUrl(target.url)}${why}`, {
-      hint: "hlm login, or set HLM_API_KEY (an API key with kind cli)",
+      hint: "dayhand login, or set DAYHAND_API_KEY (an API key with kind cli)",
     });
   }
   return { ...target, key: credential.key, keySource: credential.source };

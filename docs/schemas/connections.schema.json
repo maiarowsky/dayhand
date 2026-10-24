@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/connections.schema.json",
+  "$id": "https://schemas.dayhand.invalid/connections.schema.json",
   "title": "Agent connections",
-  "description": "GET /connections (hlm connection list): OAuth connections approved on the phone, newest first.",
+  "description": "GET /connections (dayhand connection list): OAuth connections approved on the phone, newest first.",
   "type": "object",
   "required": [
     "connections"

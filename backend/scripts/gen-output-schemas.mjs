@@ -1,5 +1,5 @@
 // Writes convex/lib/outputSchemas.ts from docs/schemas, the one contract of
-// the results for MCP, the REST API and hlm: npm run schemas
+// the results for MCP, the REST API and dayhand: npm run schemas
 // Each schema becomes a definition named after its file (task.schema.json ->
 // "task") and its references point at those definitions ("#/$defs/task"),
 // so a tool's outputSchema is self-contained: clients never fetch a URL.

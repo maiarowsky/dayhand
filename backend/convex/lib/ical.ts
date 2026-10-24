@@ -9,14 +9,15 @@
 //   its due date is not itself a date of the rule (a weekly Mon/Thu task due
 //   on a Wednesday), RFC 5545 leaves the series undefined, so that first date
 //   is its own event and the series starts at the next date (lib/repeat.ts).
-//   A monthly rule on a 29th-31st (the last day of shorter months in Helm)
+//   A monthly rule on a 29th-31st (the last day of shorter months in Dayhand)
 //   needs BYMONTHDAY with BYSETPOS, which calendar apps do not all expand
 //   (ical.js ignores it), so its dates for LISTED_DAYS are single events.
 // - Reminders become VALARMs relative to the start: the task's own, else the
 //   default minutes from the settings (those need a time).
 // - UID is `<task id>@helm` (the rest of a split series `<task id>-next@helm`,
 //   a listed date `<task id>-<YYYYMMDD>@helm`) and DTSTAMP the task's last change, so an unchanged plan gives the same
-//   text.
+//   text. The UIDs keep "@helm" from before the rename to Dayhand: calendars that
+//   already show the feed would otherwise see every event as new.
 import type { Doc } from "../_generated/dataModel";
 import { addDays, dayOfMonth, localDate, weekday } from "./dates";
 import { monthDayIn, nthWeekdayIn, occurrences, step } from "./repeat";
@@ -28,7 +29,7 @@ export const EVENT_MINUTES = 30;
 export const DONE_DAYS = 90;
 export const LISTED_DAYS = 731;
 const LISTED_LIMIT = 100;
-const PRODID = "-//Helm//Helm planner//EN";
+const PRODID = "-//Dayhand//Dayhand planner//EN";
 const MAX_LINE_OCTETS = 75;
 
 export type CalendarOptions = {
@@ -106,7 +107,7 @@ export function startsSeries(rule: RepeatRule, date: string): boolean {
   if (rule.every === "month" && rule.weekdayOfMonth) {
     return nthWeekdayIn(monthStartOf(date), rule.weekdayOfMonth.nth, rule.weekdayOfMonth.weekday) === date;
   }
-  // 29 February: Helm goes on from 28 February, RFC 5545 only from leap days.
+  // 29 February: Dayhand goes on from 28 February, RFC 5545 only from leap days.
   if (rule.every === "year") return !date.endsWith("-02-29");
   return true;
 }
@@ -184,7 +185,7 @@ function eventLines(task: Doc<"tasks">, occurrence: Occurrence, options: Calenda
     ? [`DTSTART;VALUE=DATE:${basicDate(occurrence.date)}`, `DTEND;VALUE=DATE:${basicDate(addDays(occurrence.date, 1))}`]
     : [`DTSTART;TZID=${timezone}:${basicDate(occurrence.date)}T${time.replace(":", "")}00`, `DURATION:${duration(EVENT_MINUTES)}`];
   const summary = task.status === "done" ? `✓ ${task.title}` : task.title;
-  const description = [task.ref !== undefined ? `Helm #${task.ref}` : "Helm", task.note].filter(Boolean).join("\n\n");
+  const description = [task.ref !== undefined ? `Dayhand #${task.ref}` : "Dayhand", task.note].filter(Boolean).join("\n\n");
   return [
     "BEGIN:VEVENT",
     `UID:${occurrence.uid}`,
@@ -229,7 +230,7 @@ export function renderCalendar(tasks: Doc<"tasks">[], options: CalendarOptions):
     `PRODID:${PRODID}`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Helm",
+    "X-WR-CALNAME:Dayhand",
     `X-WR-TIMEZONE:${options.timezone}`,
     // How often a subscribed client should look again (RFC 7986 and the older Apple/Microsoft name).
     "REFRESH-INTERVAL;VALUE=DURATION:PT1H",

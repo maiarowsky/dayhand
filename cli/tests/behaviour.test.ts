@@ -1,86 +1,124 @@
 // Output formats, defaults, environment and the people-facing behaviour of
 // the commands, against the real local backend.
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { flatten } from "../src/registry/index.js";
-import { connectAgent, helm, hlm, hlmJson, newUser } from "./helpers.js";
+import { connectAgent, dayhand, dayhandJson, helm, newUser, TEST_HOME } from "./helpers.js";
 
 describe("output", () => {
-  test("hlm without a command shows Today", async () => {
+  test("dayhand without a command shows Today", async () => {
     const { key } = await newUser();
-    await hlm(key, ["add", "Call", "the", "bank", "--time", "18:00", "-l", "admin"]);
-    await hlm(key, ["now", "1", "--note", "have the account number"]);
-    const run = await hlm(key, []);
+    await dayhand(key, ["add", "Call", "the", "bank", "--time", "18:00", "-l", "admin"]);
+    await dayhand(key, ["now", "1", "--note", "have the account number"]);
+    const run = await dayhand(key, []);
     expect(run.code).toBe(0);
     expect(run.stdout).toMatch(/^Today, \w{3} \d{1,2} \w{3} \d{4} \(Europe\/London\)\n/);
     expect(run.stdout).toContain("NOW  #1 Call the bank\n     next: have the account number");
     // Batch 2: aligned columns; inside TODAY only the time is shown.
     expect(run.stdout).toMatch(/#1 +\[~\] +18:00 +Call the bank +#admin/);
-    expect(await hlmJson(key, [])).toEqual(await hlmJson(key, ["today"]));
+    expect(await dayhandJson(key, [])).toEqual(await dayhandJson(key, ["today"]));
   });
 
-  test("hlm prime prints Today and the agent rules as plain text; --json is list_today", async () => {
+  test("dayhand prime prints Today and the agent rules as plain text; --json is list_today", async () => {
     const { key } = await newUser("agent");
-    await hlm(key, ["add", "Write the report", "--time", "09:00"]);
-    await hlm(key, ["now", "1", "--note", "section 2 next"]);
-    const run = await hlm(key, ["prime"], { env: { FORCE_COLOR: "1" } });
+    await dayhand(key, ["add", "Write the report", "--time", "09:00"]);
+    await dayhand(key, ["now", "1", "--note", "section 2 next"]);
+    const run = await dayhand(key, ["prime"], { env: { FORCE_COLOR: "1" } });
     expect(run.code).toBe(0);
-    expect(run.stdout).toMatch(/^# Helm tasks \(hlm\)\n\nToday, /);
+    expect(run.stdout).toMatch(/^# Dayhand tasks \(dayhand\)\n\nToday, /);
     expect(run.stdout).toContain("NOW  #1 Write the report\n     next: section 2 next");
-    expect(run.stdout).toContain("## Using hlm\n- Pass --json");
+    expect(run.stdout).toContain("## Using dayhand\n- Pass --json");
     expect(run.stdout).not.toContain("\x1b[");
-    expect((await hlm(key, ["prime", "--plain"])).stdout).toBe(run.stdout);
-    expect(await hlmJson(key, ["prime"])).toEqual(await hlmJson(key, ["today"]));
+    expect((await dayhand(key, ["prime", "--plain"])).stdout).toBe(run.stdout);
+    expect(await dayhandJson(key, ["prime"])).toEqual(await dayhandJson(key, ["today"]));
   });
 
   test("--plain is tab-separated without headers; --fields picks columns and JSON fields", async () => {
     const { key } = await newUser();
-    await hlm(key, ["add", "Water plants", "--time", "18:00", "-l", "home", "-l", "garden"]);
-    await hlm(key, ["add", "Someday", "--no-due"]);
-    const plain = await hlm(key, ["list", "--plain"]);
+    await dayhand(key, ["add", "Water plants", "--time", "18:00", "-l", "home", "-l", "garden"]);
+    await dayhand(key, ["add", "Someday", "--no-due"]);
+    const plain = await dayhand(key, ["list", "--plain"]);
     // Server order: undated tasks first, then by day and time.
     expect(plain.stdout).toMatch(/^2\ttodo\t\t\tSomeday\t\n1\ttodo\t\d{4}-\d{2}-\d{2}\t18:00\tWater plants\thome,garden\n$/);
-    expect((await hlm(key, ["today", "--plain", "--fields", "ref,title"])).stdout).toBe("today\t1\tWater plants\n");
-    const json = await hlmJson(key, ["list", "--fields", "ref,title,dueDate"]);
+    expect((await dayhand(key, ["today", "--plain", "--fields", "ref,title"])).stdout).toBe("today\t1\tWater plants\n");
+    const json = await dayhandJson(key, ["list", "--fields", "ref,title,dueDate"]);
     expect(json.result).toEqual([
       { ref: 2, title: "Someday" },
       { ref: 1, title: "Water plants", dueDate: expect.any(String) },
     ]);
-    expect(await hlmJson(key, ["settings", "--fields", "timezone"])).toEqual({ timezone: "Europe/London" });
+    expect(await dayhandJson(key, ["settings", "--fields", "timezone"])).toEqual({ timezone: "Europe/London" });
   });
 
-  test("HLM_FORMAT sets the default format; flags win", async () => {
+  test("DAYHAND_FORMAT sets the default format; flags win", async () => {
     const { key } = await newUser();
-    await hlm(key, ["add", "A"]);
-    const json = await hlm(key, ["list"], { env: { HLM_FORMAT: "json" } });
+    await dayhand(key, ["add", "A"]);
+    const json = await dayhand(key, ["list"], { env: { DAYHAND_FORMAT: "json" } });
     expect(JSON.parse(json.stdout).result).toHaveLength(1);
-    expect((await hlm(key, ["list", "--plain"], { env: { HLM_FORMAT: "json" } })).stdout).toMatch(/^1\ttodo/);
-    expect((await hlm(key, ["list", "--json", "--plain"])).code).toBe(2);
+    expect((await dayhand(key, ["list", "--plain"], { env: { DAYHAND_FORMAT: "json" } })).stdout).toMatch(/^1\ttodo/);
+    expect((await dayhand(key, ["list", "--json", "--plain"])).code).toBe(2);
   });
 
   test("the old HELM_URL and HELM_API_KEY still work, with a deprecation warning", async () => {
     const { key } = await newUser();
     const env = { HELM_URL: helm().siteUrl, HELM_API_KEY: key };
-    const run = await hlm(undefined, ["add", "Old", "env"], { url: "", env });
+    const run = await dayhand(undefined, ["add", "Old", "env"], { url: "", env });
     expect(run.code).toBe(0);
-    expect(run.stderr).toContain("hlm: warning: HELM_URL is deprecated; set HLM_URL instead");
-    expect(run.stderr).toContain("hlm: warning: HELM_API_KEY is deprecated; set HLM_API_KEY instead");
-    const json = await hlm(undefined, ["list", "--json"], { url: "", env });
+    expect(run.stderr).toContain("dayhand: warning: HELM_URL is deprecated; set DAYHAND_URL instead");
+    expect(run.stderr).toContain("dayhand: warning: HELM_API_KEY is deprecated; set DAYHAND_API_KEY instead");
+    const json = await dayhand(undefined, ["list", "--json"], { url: "", env });
     expect(JSON.parse(json.stdout).result).toHaveLength(1);
     const warnings = json.stderr.trim().split("\n").map((l) => JSON.parse(l));
     expect(warnings).toEqual([
-      { warning: { code: "deprecated_env", message: "HELM_URL is deprecated; set HLM_URL instead" } },
-      { warning: { code: "deprecated_env", message: "HELM_API_KEY is deprecated; set HLM_API_KEY instead" } },
+      { warning: { code: "deprecated_env", message: "HELM_URL is deprecated; set DAYHAND_URL instead" } },
+      { warning: { code: "deprecated_env", message: "HELM_API_KEY is deprecated; set DAYHAND_API_KEY instead" } },
     ]);
     // The new name wins and no warning is printed.
-    expect((await hlm(key, ["list"], { env: { HELM_API_KEY: "helm_old" } })).stderr).toBe("");
+    expect((await dayhand(key, ["list"], { env: { HELM_API_KEY: "helm_old" } })).stderr).toBe("");
+  });
+
+  test("the HLM_* names of the hlm command still work, with a deprecation warning, and win over HELM_*", async () => {
+    const { key } = await newUser();
+    const env = { HLM_URL: helm().siteUrl, HLM_API_KEY: key, HELM_API_KEY: "helm_older", HLM_FORMAT: "json" };
+    const run = await dayhand(undefined, ["list"], { url: "", env });
+    expect(run.code).toBe(0);
+    expect(JSON.parse(run.stdout).result).toEqual([]);
+    expect(run.stderr.trim().split("\n").map((l) => JSON.parse(l).warning.message)).toEqual([
+      "HLM_URL is deprecated; set DAYHAND_URL instead",
+      "HLM_API_KEY is deprecated; set DAYHAND_API_KEY instead",
+      "HLM_FORMAT is deprecated; set DAYHAND_FORMAT instead",
+    ]);
+    const who = await dayhand(undefined, ["whoami", "--json"], { url: "", env });
+    expect(JSON.parse(who.stdout)).toMatchObject({ urlSource: "HLM_URL", keySource: "HLM_API_KEY" });
+  });
+
+  test("the config folder of the hlm command is used while there is no dayhand folder, with a warning", async () => {
+    const { key } = await newUser();
+    const home = mkdtempSync(join(TEST_HOME, "old-home-"));
+    const folder = (name: string) =>
+      process.platform === "darwin" ? join(home, "Library", "Application Support", name) : process.platform === "win32" ? join(home, name) : join(home, ".config", name);
+    mkdirSync(folder("hlm"), { recursive: true });
+    writeFileSync(join(folder("hlm"), "config.toml"), `url = "${helm().siteUrl}"\n`);
+    const env = { DAYHAND_CONFIG_DIR: "", HOME: home, USERPROFILE: home, APPDATA: home, XDG_CONFIG_HOME: "" };
+    const run = await dayhand(key, ["list"], { url: "", env });
+    expect(run.code).toBe(0);
+    expect(run.stderr).toContain(`dayhand: warning: ${folder("hlm")} is the folder of the old hlm command; move it to ${folder("dayhand")}`);
+    mkdirSync(folder("dayhand"));
+    // Once the dayhand folder exists, the old one is ignored: without its config.toml there is no URL.
+    expect((await dayhand(key, ["list"], { url: "", env })).code).toBe(2);
+  });
+
+  test("hlm, the old name of the command, still runs it, with a warning", async () => {
+    const { key } = await newUser();
+    const run = await dayhand(key, ["add", "From", "hlm"], { bin: "hlm" });
+    expect(run).toMatchObject({ code: 0, stderr: "dayhand: warning: hlm is now called dayhand (short: dh); the hlm command goes away in 1.0\n" });
+    expect((await dayhandJson(key, ["list"])).result.map((t: { title: string }) => t.title)).toEqual(["From hlm"]);
   });
 
   test("no output ever contains the API key", async () => {
     const { key } = await newUser();
-    const runs = await Promise.all([hlm(key, ["show", "5"]), hlm(key, ["list", "--bogus"]), hlm(key, ["version"]), hlm(key, ["pair", "--no-qr"])]);
+    const runs = await Promise.all([dayhand(key, ["show", "5"]), dayhand(key, ["list", "--bogus"]), dayhand(key, ["version"]), dayhand(key, ["pair", "--no-qr"])]);
     for (const run of runs) expect(run.stdout + run.stderr).not.toContain(key);
   });
 });
@@ -88,56 +126,56 @@ describe("output", () => {
 describe("commands", () => {
   test("history shows changes from a cli key as cli and from an agent key by name", async () => {
     const { userId, key } = await newUser("cli");
-    await hlm(key, ["add", "Report"]);
-    await hlm(key, ["done", "1"]);
+    await dayhand(key, ["add", "Report"]);
+    await dayhand(key, ["done", "1"]);
     const { createKey } = await import("./helpers.js");
     const agent = await createKey(userId, "claude-code", "agent");
-    await hlm(agent.key, ["reopen", "1"]);
-    const history = (await hlmJson(key, ["show", "1"])).history;
+    await dayhand(agent.key, ["reopen", "1"]);
+    const history = (await dayhandJson(key, ["show", "1"])).history;
     expect(history.map((h: { by: string; action: string }) => `${h.by} ${h.action}`)).toEqual([
       "cli create",
       "cli complete",
       "agent: claude-code setStatus",
     ]);
-    const shown = await hlm(key, ["show", "1"]);
+    const shown = await dayhand(key, ["show", "1"]);
     expect(shown.stdout).toMatch(/^#1 Report\nstatus +todo/);
     expect(shown.stdout).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}  cli  complete  .*status: "todo" → "done"/);
   });
 
   test("now is a task reference; note appends; edit adds and removes labels", async () => {
     const { key } = await newUser();
-    await hlm(key, ["add", "Draft", "-l", "home", "--note", "outline"]);
-    await hlm(key, ["now", "1"]);
-    await hlm(key, ["note", "now", "intro written"]);
-    expect((await hlm(key, ["note", "1"])).stdout).toBe("outline\nintro written\n");
-    const edited = await hlmJson(key, ["edit", "now", "--add-label", "work", "--rm-label", "home"]);
+    await dayhand(key, ["add", "Draft", "-l", "home", "--note", "outline"]);
+    await dayhand(key, ["now", "1"]);
+    await dayhand(key, ["note", "now", "intro written"]);
+    expect((await dayhand(key, ["note", "1"])).stdout).toBe("outline\nintro written\n");
+    const edited = await dayhandJson(key, ["edit", "now", "--add-label", "work", "--rm-label", "home"]);
     expect(edited.labels).toEqual(["work"]);
-    expect((await hlmJson(key, ["edit", "1", "--clear-note", "--clear-labels"])).note).toBeUndefined();
-    expect((await hlm(key, ["edit", "1"])).code).toBe(2);
-    const done = await hlm(key, ["done", "now"]);
+    expect((await dayhandJson(key, ["edit", "1", "--clear-note", "--clear-labels"])).note).toBeUndefined();
+    expect((await dayhand(key, ["edit", "1"])).code).toBe(2);
+    const done = await dayhand(key, ["done", "now"]);
     expect(done.stdout).toMatch(/^Done:\n  #1 +\[x\]/);
   });
 
-  test("several tasks: --yes from three on; without a terminal hlm never waits", async () => {
+  test("several tasks: --yes from three on; without a terminal dayhand never waits", async () => {
     const { key } = await newUser();
-    for (const title of ["A", "B", "C", "D"]) await hlm(key, ["add", title]);
-    expect((await hlm(key, ["rm", "1", "2"])).code).toBe(0);
-    const refused = await hlm(key, ["rm", "3", "4"], { input: "y\n" });
+    for (const title of ["A", "B", "C", "D"]) await dayhand(key, ["add", title]);
+    expect((await dayhand(key, ["rm", "1", "2"])).code).toBe(0);
+    const refused = await dayhand(key, ["rm", "3", "4"], { input: "y\n" });
     expect(refused.code).toBe(0);
-    for (const title of ["E", "F", "G"]) await hlm(key, ["add", title]);
-    const many = await hlm(key, ["archive", "5", "6", "7"], { input: "y\n" });
+    for (const title of ["E", "F", "G"]) await dayhand(key, ["add", title]);
+    const many = await dayhand(key, ["archive", "5", "6", "7"], { input: "y\n" });
     expect(many).toMatchObject({ code: 2, stdout: "" });
     expect(many.stderr).toMatch(/Refusing to archive 3 tasks without --yes/);
-    expect((await hlmJson(key, ["list"])).result).toHaveLength(3);
-    const yes = await hlmJson(key, ["archive", "5", "6", "7", "-y"]);
+    expect((await dayhandJson(key, ["list"])).result).toHaveLength(3);
+    const yes = await dayhandJson(key, ["archive", "5", "6", "7", "-y"]);
     expect(yes.results.map((t: { ref: number }) => t.ref)).toEqual([5, 6, 7]);
-    expect((await hlmJson(key, ["trash"])).result.map((t: { ref: number }) => t.ref).sort()).toEqual([1, 2, 3, 4]);
-    expect((await hlmJson(key, ["restore", "1", "2", "--yes"])).results).toHaveLength(2);
+    expect((await dayhandJson(key, ["trash"])).result.map((t: { ref: number }) => t.ref).sort()).toEqual([1, 2, 3, 4]);
+    expect((await dayhandJson(key, ["restore", "1", "2", "--yes"])).results).toHaveLength(2);
   });
 
   test("every command finishes without a terminal (no prompts)", async () => {
     const { key } = await newUser();
-    await hlm(key, ["add", "Task", "--note", "n"]);
+    await dayhand(key, ["add", "Task", "--note", "n"]);
     const runs = flatten()
       .filter(({ spec }) => spec.run)
       .map(({ path, spec }) => {
@@ -145,53 +183,53 @@ describe("commands", () => {
         return [...path.split(" "), ...args];
       });
     for (const args of runs) {
-      const run = await hlm(key, args); // the helper fails the test if a run waits for input
-      expect([0, 2, 4], `hlm ${args.join(" ")}: ${run.stderr}`).toContain(run.code);
+      const run = await dayhand(key, args); // the helper fails the test if a run waits for input
+      expect([0, 2, 4], `dayhand ${args.join(" ")}: ${run.stderr}`).toContain(run.code);
     }
   });
 
   test("settings set, tools, call from stdin, export to a file, version, pairing and devices", async () => {
     const { key } = await newUser();
-    const settings = await hlmJson(key, ["settings", "set", "timezone=Europe/Warsaw", "reminders=10"]);
+    const settings = await dayhandJson(key, ["settings", "set", "timezone=Europe/Warsaw", "reminders=10"]);
     expect(settings).toEqual({ timezone: "Europe/Warsaw", summaryTime: "05:00", defaultReminderMinutes: [10] });
-    expect((await hlm(key, ["settings"])).stdout).toMatch(/^timezone +Europe\/Warsaw$/m);
+    expect((await dayhand(key, ["settings"])).stdout).toMatch(/^timezone +Europe\/Warsaw$/m);
 
-    expect((await hlm(key, ["tools"])).stdout).toMatch(/^add_task +Add a task/);
-    expect((await hlm(key, ["tools", "set_now"])).stdout).toContain('"taskId"');
-    const unknown = await hlm(key, ["tools", "nope", "--json"]);
+    expect((await dayhand(key, ["tools"])).stdout).toMatch(/^add_task +Add a task/);
+    expect((await dayhand(key, ["tools", "set_now"])).stdout).toContain('"taskId"');
+    const unknown = await dayhand(key, ["tools", "nope", "--json"]);
     expect(unknown.code).toBe(2);
     expect(JSON.parse(unknown.stderr).error.valid).toContain("add_task");
 
-    const added = await hlm(key, ["call", "add_task", "-", "--json"], { input: '{"title":"From stdin","dueDate":"tomorrow"}' });
+    const added = await dayhand(key, ["call", "add_task", "-", "--json"], { input: '{"title":"From stdin","dueDate":"tomorrow"}' });
     expect(JSON.parse(added.stdout)).toMatchObject({ ref: 1, title: "From stdin" });
 
-    const dir = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-export-"));
+    const dir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-export-"));
     try {
       const file = join(dir, "plan.json");
-      expect(await hlmJson(key, ["export", "--format", "json", "-o", file])).toEqual({ written: file, format: "json" });
+      expect(await dayhandJson(key, ["export", "--format", "json", "-o", file])).toEqual({ written: file, format: "json" });
       expect(JSON.parse(readFileSync(file, "utf8")).content.tasks).toHaveLength(1);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
 
     const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-    expect((await hlm(key, ["version"])).stdout).toBe(`hlm ${version}\nserver helm ${(await hlmJson(key, ["version"])).server.version}\n`);
+    expect((await dayhand(key, ["version"])).stdout).toBe(`dayhand ${version}\nserver dayhand ${(await dayhandJson(key, ["version"])).server.version}\n`);
 
-    const pairing = await hlm(key, ["pair", "--no-qr"]);
-    expect(pairing.stdout).toMatch(/helm:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+&code=[0-9A-Z-]{14}/);
-    expect((await hlm(key, ["devices"])).stdout).toBe("(no paired devices)\n");
-    expect((await hlmJson(key, ["device", "list"])).devices).toEqual([]);
+    const pairing = await dayhand(key, ["pair", "--no-qr"]);
+    expect(pairing.stdout).toMatch(/dayhand:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+&code=[0-9A-Z-]{14}/);
+    expect((await dayhand(key, ["devices"])).stdout).toBe("(no paired devices)\n");
+    expect((await dayhandJson(key, ["device", "list"])).devices).toEqual([]);
   });
 
   test("agent connections: list, revoke, and the revoked token stops working", async () => {
     const { userId, key } = await newUser();
-    expect((await hlm(key, ["connections"])).stdout).toBe("(no agent connections)\n");
+    expect((await dayhand(key, ["connections"])).stdout).toBe("(no agent connections)\n");
     const tokens = await connectAgent(userId, "Claude");
-    const listed = await hlmJson(key, ["connection", "list"]);
+    const listed = await dayhandJson(key, ["connection", "list"]);
     expect(listed.connections).toHaveLength(1);
     const [connection] = listed.connections;
     expect(connection).toMatchObject({ clientName: "Claude", clientType: "dcr", clientHost: null, redirectHost: "claude.ai", scopes: ["tasks:read"], active: true });
-    const human = (await hlm(key, ["connections"])).stdout;
+    const human = (await dayhand(key, ["connections"])).stdout;
     expect(human).toContain(`Claude (registered itself, returns to claude.ai)  read only, connected `);
     expect(human).toContain(`never used (${connection.id})`);
 
@@ -202,14 +240,14 @@ describe("commands", () => {
         body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
       });
     expect((await mcp(tokens.access_token)).status).toBe(200);
-    // An OAuth token is not an API key: hlm cannot run on it.
-    expect((await hlm(tokens.access_token, ["connections"])).code).toBe(3);
+    // An OAuth token is not an API key: dayhand cannot run on it.
+    expect((await dayhand(tokens.access_token, ["connections"])).code).toBe(3);
 
-    const revoked = await hlm(key, ["connection", "revoke", connection.id]);
+    const revoked = await dayhand(key, ["connection", "revoke", connection.id]);
     expect(revoked.code).toBe(0);
     expect(revoked.stdout).toContain(`Revoked ${connection.id}`);
     expect((await mcp(tokens.access_token)).status).toBe(401);
-    expect((await hlm(key, ["connections", "--plain"])).stdout).toMatch(new RegExp(`^${connection.id}\tClaude\trevoked\ttasks:read\t`));
-    expect((await hlm(key, ["connection", "revoke", "nope"])).code).toBe(4);
+    expect((await dayhand(key, ["connections", "--plain"])).stdout).toMatch(new RegExp(`^${connection.id}\tClaude\trevoked\ttasks:read\t`));
+    expect((await dayhand(key, ["connection", "revoke", "nope"])).code).toBe(4);
   });
 });

@@ -2,7 +2,7 @@
 // every outcome into output plus an exit code. Never prompts without a TTY.
 import { Command, CommanderError, InvalidArgumentError, Option } from "commander";
 import { expandAlias } from "./config/aliases.js";
-import { envFormat, type Format } from "./config/env.js";
+import { envFormat, normalizeEnv, type Format, type Warning } from "./config/env.js";
 import { EXIT, toCliError, usageError } from "./core/exit.js";
 import { processIo, type Io } from "./core/io.js";
 import { Output } from "./core/output.js";
@@ -18,13 +18,19 @@ import { TOPICS } from "./topics.js";
 
 export { GLOBAL_OPTIONS };
 
-export async function main(argv: string[], io: Io = processIo()): Promise<number> {
+/** The old name of the command, still installed for a while (bin/hlm.ts). */
+export const OLD_COMMAND: Warning = { code: "deprecated_command", message: "hlm is now called dayhand (short: dh); the hlm command goes away in 1.0" };
+
+export async function main(argv: string[], given: Io = processIo(), warnings: Warning[] = []): Promise<number> {
+  const normalized = normalizeEnv(given.env);
+  const io: Io = { ...given, env: normalized.env };
   if (argv[0] === "__complete") {
     const { completeCommand } = await import("./completion/engine.js");
     return completeCommand(argv.slice(1), io);
   }
   const setup = loadSetup(io);
   const early = new Output(io, earlyFormat(argv, io));
+  for (const warning of [...warnings, ...normalized.warnings, ...(setup.paths.warning ? [setup.paths.warning] : [])]) early.warn(warning);
   let run: Promise<number> | undefined;
   const program = buildProgram(io, setup, (promise) => (run = promise));
   try {
@@ -48,7 +54,7 @@ export async function main(argv: string[], io: Io = processIo()): Promise<number
   }
 }
 
-/** `hlm` alone (or with only global options) shows Today. */
+/** `dayhand` alone (or with only global options) shows Today. */
 function withDefaultCommand(argv: string[]): string[] {
   if (argv.some((a) => a === "-h" || a === "--help" || a === "-V" || a === "--version")) return argv;
   for (let i = 0; i < argv.length; i++) {
@@ -69,8 +75,8 @@ function earlyFormat(argv: string[], io: Io): Format {
 }
 
 function buildProgram(io: Io, setup: Setup, started: (run: Promise<number>) => void): Command {
-  const program = new Command("hlm")
-    .description("Helm from the terminal: the same operations the app and the agent use")
+  const program = new Command("dayhand")
+    .description("Dayhand from the terminal: the same operations the app and the agent use")
     .version(CLI_VERSION, "-V, --version", "Print the CLI version")
     .helpOption("-h, --help", "Show help")
     .helpCommand(false)
@@ -82,7 +88,7 @@ function buildProgram(io: Io, setup: Setup, started: (run: Promise<number>) => v
   return program;
 }
 
-/** `hlm help [command…]` prints a command's help; `hlm help <topic>` a topic (dates, config, …). */
+/** `dayhand help [command…]` prints a command's help; `dayhand help <topic>` a topic (dates, config, …). */
 function helpCommand(program: Command, io: Io): Command {
   const topics = Object.keys(TOPICS);
   const command = new Command("help")

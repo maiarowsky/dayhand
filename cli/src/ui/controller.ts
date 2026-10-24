@@ -1,4 +1,4 @@
-// The running hlm ui without the terminal: it loads what the current view
+// The running dayhand ui without the terminal: it loads what the current view
 // needs, polls it, turns keys and clicks into state and server calls, and
 // keeps the last data on screen when the server cannot be reached, so the
 // screen never waits on the network. Ink only paints `frame()` (app.tsx).

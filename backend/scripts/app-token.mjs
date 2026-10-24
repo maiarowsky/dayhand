@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-// Issues an app token (ES256 JWT) for the Helm Android app, signed with a
+// Issues an app token (ES256 JWT) for the Dayhand Android app, signed with a
 // private key kept outside the repository. The token is printed to stdout
 // only, so it can be copied once and pasted into the app's Settings.
 //
 //   npm run app-token                        # local backend key, subject "me"
 //   npm run app-token -- --subject me --days 90
-//   npm run app-token -- --generate ~/helm-signing-key.json   # new key pair for your own deployment
+//   npm run app-token -- --generate ~/dayhand-signing-key.json   # new key pair for your own deployment
 //
 // The default key file is backend/.local-backend/app-signing-key.json, which
 // `npm run backend:start` creates (git-ignored). For another deployment set
-// HELM_SIGNING_KEY_FILE and HELM_JWT_ISSUER to that deployment's values.
+// DAYHAND_SIGNING_KEY_FILE and DAYHAND_JWT_ISSUER to that deployment's values.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -59,13 +59,13 @@ async function main() {
     const jwks = await generateKeyFile(values.generate);
     console.error(`Private key written to ${values.generate} (keep it outside the repository).`);
     console.error("Set these on your deployment:");
-    console.log(`HELM_JWKS=${jwks}`);
+    console.log(`DAYHAND_JWKS=${jwks}`);
     return;
   }
-  const issuer = process.env.HELM_JWT_ISSUER ?? DEFAULT_ISSUER;
-  const keyFile = process.env.HELM_SIGNING_KEY_FILE ?? DEFAULT_KEY_FILE;
+  const issuer = process.env.DAYHAND_JWT_ISSUER || process.env.HELM_JWT_ISSUER || DEFAULT_ISSUER;
+  const keyFile = process.env.DAYHAND_SIGNING_KEY_FILE || process.env.HELM_SIGNING_KEY_FILE || DEFAULT_KEY_FILE;
   const { token, userId } = await issueAppToken({ keyFile, issuer, subject: values.subject, days: Number(values.days) });
-  console.error(`App token for user ${userId}, valid ${values.days} days. Paste it into Helm > Settings.`);
+  console.error(`App token for user ${userId}, valid ${values.days} days. Paste it into Dayhand > Settings.`);
   console.error(`To let the agent and CLI see the same tasks, create the API key for the same user:`);
   console.error(`  npx convex run apiKeys:create '{"userId":"${userId}","actor":"app","name":"cli","kind":"cli"}'`);
   console.log(token);

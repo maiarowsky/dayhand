@@ -1,13 +1,10 @@
 {
-  "name": "helm-backend",
-  "version": "0.8.0",
+  "name": "dayhand-backend",
+  "version": "0.9.0",
   "private": true,
-  "description": "Helm backend: Convex data model, domain operations, MCP endpoint and CLI",
+  "description": "Dayhand backend: Convex data model, domain operations, MCP endpoint, REST API and webhooks",
   "license": "Apache-2.0",
   "type": "module",
-  "bin": {
-    "helm": "cli/helm.mjs"
-  },
   "engines": {
     "node": ">=20"
   },

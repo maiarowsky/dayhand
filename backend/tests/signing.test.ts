@@ -5,7 +5,7 @@ import { appSubject, signAppToken, signingConfig, SigningConfigError } from "../
 import { newDeviceToken, newPairingCode, parseDeviceToken, parsePairingCode, timingSafeEqual } from "../convex/lib/secrets";
 import { generateSigningKey } from "../scripts/jwt.mjs";
 
-const ENV = ["HELM_JWT_ISSUER", "HELM_JWT_PRIVATE_JWK", "HELM_JWKS"] as const;
+const ENV = ["DAYHAND_JWT_ISSUER", "DAYHAND_JWT_PRIVATE_JWK", "DAYHAND_JWKS", "HELM_JWT_ISSUER", "HELM_JWT_PRIVATE_JWK", "HELM_JWKS"] as const;
 const saved = Object.fromEntries(ENV.map((name) => [name, process.env[name]]));
 
 afterEach(() => {
@@ -15,11 +15,13 @@ afterEach(() => {
   }
 });
 
-async function configure() {
+/** The signing variables under DAYHAND_* names, or under the HELM_* names from before the rename. */
+async function configure(prefix = "DAYHAND_") {
   const signing = await generateSigningKey();
-  process.env.HELM_JWT_ISSUER = "https://helm.test";
-  process.env.HELM_JWT_PRIVATE_JWK = JSON.stringify(signing.privateJwk);
-  process.env.HELM_JWKS = signing.jwksDataUri;
+  for (const name of ENV) delete process.env[name];
+  process.env[`${prefix}JWT_ISSUER`] = "https://helm.test";
+  process.env[`${prefix}JWT_PRIVATE_JWK`] = JSON.stringify(signing.privateJwk);
+  process.env[`${prefix}JWKS`] = signing.jwksDataUri;
   return signing;
 }
 
@@ -42,16 +44,26 @@ describe("signing configuration", () => {
     expect(valid).toBe(true);
   });
 
-  test("a missing variable or a private key that does not match HELM_JWKS is a configuration error", async () => {
+  test("a deployment from before the rename signs with its HELM_* variables; DAYHAND_* wins when both are set", async () => {
+    const old = await configure("HELM_");
+    expect(signingConfig()).toEqual({ issuer: "https://helm.test", privateJwk: old.privateJwk });
+    const fresh = await generateSigningKey();
+    process.env.DAYHAND_JWT_ISSUER = "https://dayhand.test";
+    process.env.DAYHAND_JWT_PRIVATE_JWK = JSON.stringify(fresh.privateJwk);
+    process.env.DAYHAND_JWKS = fresh.jwksDataUri;
+    expect(signingConfig()).toEqual({ issuer: "https://dayhand.test", privateJwk: fresh.privateJwk });
+  });
+
+  test("a missing variable or a private key that does not match DAYHAND_JWKS is a configuration error", async () => {
     await configure();
     const other = await generateSigningKey();
-    process.env.HELM_JWT_PRIVATE_JWK = JSON.stringify({ ...other.privateJwk, kid: JSON.parse(process.env.HELM_JWT_PRIVATE_JWK!).kid });
+    process.env.DAYHAND_JWT_PRIVATE_JWK = JSON.stringify({ ...other.privateJwk, kid: JSON.parse(process.env.DAYHAND_JWT_PRIVATE_JWK!).kid });
     expect(() => signingConfig()).toThrow(SigningConfigError);
-    process.env.HELM_JWT_PRIVATE_JWK = JSON.stringify(other.privateJwk);
+    process.env.DAYHAND_JWT_PRIVATE_JWK = JSON.stringify(other.privateJwk);
     expect(() => signingConfig()).toThrow(/does not match/);
-    process.env.HELM_JWT_PRIVATE_JWK = "not json";
+    process.env.DAYHAND_JWT_PRIVATE_JWK = "not json";
     expect(() => signingConfig()).toThrow(/not JSON/);
-    delete process.env.HELM_JWT_PRIVATE_JWK;
+    delete process.env.DAYHAND_JWT_PRIVATE_JWK;
     expect(() => signingConfig()).toThrow(/must all be set/);
   });
 

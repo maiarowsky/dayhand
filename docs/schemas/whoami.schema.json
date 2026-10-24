@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/whoami.schema.json",
+  "$id": "https://schemas.dayhand.invalid/whoami.schema.json",
   "title": "Who am I",
-  "description": "hlm whoami: the connection hlm uses, checked against the server. Never contains the key.",
+  "description": "dayhand whoami: the connection dayhand uses, checked against the server. Never contains the key.",
   "type": "object",
   "required": [
     "url",
@@ -20,7 +20,7 @@
     },
     "urlSource": {
       "type": "string",
-      "description": "--url, --profile <name>, HLM_URL, HELM_URL, profile <name>, config.toml"
+      "description": "--url, --profile <name>, DAYHAND_URL (or its old name HLM_URL or HELM_URL), profile <name>, config.toml"
     },
     "profile": {
       "type": [
@@ -30,7 +30,7 @@
     },
     "keySource": {
       "type": "string",
-      "description": "HLM_API_KEY, HELM_API_KEY, keychain or file"
+      "description": "DAYHAND_API_KEY (or its old name HLM_API_KEY or HELM_API_KEY), keychain or file"
     },
     "configFile": {
       "type": "string"

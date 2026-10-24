@@ -1,5 +1,5 @@
-// Key names and the key map of hlm ui. The map is the single source of the
-// in-app help (?) and of `hlm help ui` / docs/cli.md. Keys follow vim and
+// Key names and the key map of dayhand ui. The map is the single source of the
+// in-app help (?) and of `dayhand help ui` / docs/cli.md. Keys follow vim and
 // lazygit: j/k and h/l move, Tab switches views, ? shows help, q quits.
 import type { Key } from "ink";
 
@@ -98,7 +98,7 @@ export const KEY_GROUPS: KeyGroup[] = [
   },
 ];
 
-/** The key map as plain text: `hlm help ui` and docs/cli.md. */
+/** The key map as plain text: `dayhand help ui` and docs/cli.md. */
 export function keysText(): string {
   const width = Math.max(...KEY_GROUPS.flatMap((g) => g.bindings.map((b) => b.keys.length))) + 2;
   return KEY_GROUPS.map((group) => [`${group.title}:`, ...group.bindings.map((b) => `  ${b.keys.padEnd(width)}${b.does}`)].join("\n")).join("\n\n");

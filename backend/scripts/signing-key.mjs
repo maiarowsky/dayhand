@@ -2,9 +2,9 @@
 // Prepares the app-signing key for a deployment (docs/deploy.md):
 //   new <file>      write a new ES256 key pair to <file> (mode 600)
 //   private <file>  print the private JWK, to pipe into
-//                   `npx convex env set HELM_JWT_PRIVATE_JWK`
-//   jwks <file>     print the public JWKS data URI for HELM_JWKS
-//   check <file>    read a HELM_JWKS value on stdin and check that it
+//                   `npx convex env set DAYHAND_JWT_PRIVATE_JWK`
+//   jwks <file>     print the public JWKS data URI for DAYHAND_JWKS
+//   check <file>    read a DAYHAND_JWKS value on stdin and check that it
 //                   publishes this key's public half under its kid
 // <file> holds a private JWK, or an object with a `privateJwk` field (the
 // format of `new` and of backend/.local-backend/app-signing-key.json).
@@ -28,9 +28,9 @@ async function readStdin() {
 }
 
 function checkPublished(dataUri, jwk) {
-  if (!/^data:application\/json;base64,/.test(dataUri)) throw new Error("stdin is not a HELM_JWKS data URI");
-  if (!publishesKey(dataUri, jwk)) throw new Error(`HELM_JWKS does not publish this key (kid ${jwk.kid})`);
-  console.log(`OK: HELM_JWKS publishes this key (kid ${jwk.kid})`);
+  if (!/^data:application\/json;base64,/.test(dataUri)) throw new Error("stdin is not a DAYHAND_JWKS data URI");
+  if (!publishesKey(dataUri, jwk)) throw new Error(`DAYHAND_JWKS does not publish this key (kid ${jwk.kid})`);
+  console.log(`OK: DAYHAND_JWKS publishes this key (kid ${jwk.kid})`);
 }
 
 async function main() {

@@ -15,7 +15,7 @@ import type { Args, CommandSpec, RunContext } from "./registry/types.js";
 import { colorEnabled, makeStyle } from "./render/style.js";
 import { renderDryRun, renderHuman, renderPlain, type View } from "./render/views.js";
 import type { Setup } from "./setup.js";
-import { HelmClient, type HeldCall } from "./transport/client.js";
+import { DayhandClient, type HeldCall } from "./transport/client.js";
 import { localAt } from "./when/calendar.js";
 import { dateError, parseWhen, WhenError } from "./when/parse.js";
 
@@ -41,7 +41,7 @@ export async function execute(io: Io, setup: Setup, spec: CommandSpec, name: str
   try {
     const format = resolveFormat(global, io);
     out = new Output(io, format);
-    if (held && spec.dryRun === false) throw usageError(`--dry-run is not supported by hlm ${name}`);
+    if (held && spec.dryRun === false) throw usageError(`--dry-run is not supported by dayhand ${name}`);
     const fields = parseFields(global.fields, spec.fields, name);
     if (global.clientId !== undefined && !CLIENT_ID.test(global.clientId)) {
       throw usageError("--client-id must be 1 to 120 printable characters without spaces");
@@ -74,7 +74,7 @@ type Chosen = { format: Format; out: Output; fields?: string[]; held?: HeldCall[
 function context(io: Io, setup: Setup, global: GlobalOpts, { format, out, fields, held }: Chosen, onClientId: (id: string) => void): RunContext {
   const flags = { url: global.url, profile: global.profile };
   const warn = out.warn.bind(out);
-  let client: Promise<HelmClient> | undefined;
+  let client: Promise<DayhandClient> | undefined;
   let zone: Promise<string> | undefined;
   let clientId: string | undefined;
   const ctx: RunContext = {
@@ -87,15 +87,15 @@ function context(io: Io, setup: Setup, global: GlobalOpts, { format, out, fields
     paths: setup.paths,
     yes: Boolean(global.yes),
     dryRun: Boolean(held),
-    interactive: Boolean(io.stdin.isTTY && io.stdout.isTTY) && global.input !== false && !envFlag(io.env, "HLM_NO_INPUT"),
+    interactive: Boolean(io.stdin.isTTY && io.stdout.isTTY) && global.input !== false && !envFlag(io.env, "DAYHAND_NO_INPUT"),
     config: () => setup.config(),
     target: () => resolveTarget(flags, io.env, setup.config(), warn),
     keyStores: () => keyStores(io.env, setup.paths.configDir, warn),
     client: () =>
       (client ??= resolveConnection(flags, io.env, setup.config(), warn, credentialStores(io.env, setup.paths.configDir, warn)).then(
-        (connection) => new HelmClient(connection, io.fetch, held),
+        (connection) => new DayhandClient(connection, io.fetch, held),
       )),
-    clientFor: (url, key) => new HelmClient({ url, key }, io.fetch),
+    clientFor: (url, key) => new DayhandClient({ url, key }, io.fetch),
     clientId: () => {
       if (clientId === undefined) onClientId((clientId = global.clientId ?? randomUUID()));
       return clientId;

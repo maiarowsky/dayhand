@@ -1,4 +1,4 @@
-// The Ink side of hlm ui: paints the controller's frame row by row, passes
+// The Ink side of dayhand ui: paints the controller's frame row by row, passes
 // keys, pastes, clicks and the terminal size to it, and lends it the terminal
 // for $EDITOR. Everything else lives in the controller.
 import { Box, Text, useApp, useInput, usePaste, useStdin, useWindowSize, type Key } from "ink";

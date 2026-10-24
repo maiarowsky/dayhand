@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/settings.schema.json",
+  "$id": "https://schemas.dayhand.invalid/settings.schema.json",
   "title": "Settings",
-  "description": "get_settings and update_settings (hlm settings, hlm settings set).",
+  "description": "get_settings and update_settings (dayhand settings, dayhand settings set).",
   "type": "object",
   "required": [
     "timezone",

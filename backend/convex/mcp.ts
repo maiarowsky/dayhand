@@ -15,7 +15,7 @@ import type { CallKind } from "./callLimits";
 import type { Identity } from "./lib/core";
 import { INSTRUCTIONS } from "./lib/guide";
 import { bearerToken } from "./lib/http";
-import { getPrompt, PromptArgumentError, PROMPTS, readResource, readsUserData, RESOURCE_TEMPLATES, RESOURCES } from "./lib/mcpContent";
+import { getPrompt, isGuide, PromptArgumentError, PROMPTS, readResource, readsUserData, RESOURCE_TEMPLATES, RESOURCES } from "./lib/mcpContent";
 import {
   CHALLENGE_SCOPES,
   publicUrl,
@@ -56,7 +56,7 @@ const CAPABILITIES = { tools: { listChanged: false }, resources: {}, prompts: { 
 /** The Bearer challenge: where OAuth clients find the authorization server (RFC 9728) and what to ask for. */
 function challenge(fields: Record<string, string>): string {
   const base = publicUrl();
-  const all = { realm: "helm", ...fields, ...(base ? { resource_metadata: resourceMetadataFor(base) } : {}) };
+  const all = { realm: "dayhand", ...fields, ...(base ? { resource_metadata: resourceMetadataFor(base) } : {}) };
   return "Bearer " + Object.entries(all).map(([key, value]) => `${key}="${value}"`).join(", ");
 }
 
@@ -244,7 +244,7 @@ async function readResourceCall(ctx: ActionCtx, owner: Caller, params: any, era:
     const code = era === "modern" ? RPC.invalidParams : RPC.legacyResourceNotFound;
     return { error: { code, message: "Resource not found", data: { uri } } };
   }
-  return { result: { contents: [contents] }, cache: uri === "helm://guide" ? PUBLIC_LIST : PRIVATE_LIVE };
+  return { result: { contents: [contents] }, cache: isGuide(uri) ? PUBLIC_LIST : PRIVATE_LIVE };
 }
 
 async function getPromptCall(ctx: ActionCtx, owner: Caller, params: any): Promise<Outcome> {

@@ -1,6 +1,6 @@
-// A sliding one-minute window of calls, so hlm ui stays under the server's
+// A sliding one-minute window of calls, so dayhand ui stays under the server's
 // per-key limits (120 reads and 60 changes a minute, docs/mcp.md#limits) with
-// room left for the user's other hlm commands and agents on the same key. A
+// room left for the user's other dayhand commands and agents on the same key. A
 // rate_limited answer from the server pauses the window until it allows again.
 
 export const WINDOW_MS = 60_000;

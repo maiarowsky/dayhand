@@ -1,5 +1,5 @@
 // MCP resources and prompts. Resources give an agent context without a tool
-// call (the Today screen, one task, how to work with Helm); prompts start the
+// call (the Today screen, one task, how to work with Dayhand); prompts start the
 // three routines of a day plan. Both read through the same domain queries as
 // the tools.
 import { internal } from "../_generated/api";
@@ -10,16 +10,16 @@ import { AGENT_GUIDE } from "./guide";
 
 export const RESOURCES = [
   {
-    uri: "helm://today",
+    uri: "dayhand://today",
     name: "today",
     title: "Today",
     description: "The Today screen as list_today returns it: overdue, today, done today and the now task.",
     mimeType: "application/json",
   },
   {
-    uri: "helm://guide",
+    uri: "dayhand://guide",
     name: "guide",
-    title: "How to work with Helm",
+    title: "How to work with Dayhand",
     description: "Rules and routines for an agent managing the user's plan: task numbers, the now task, retries, dry runs, limits.",
     mimeType: "text/markdown",
   },
@@ -27,27 +27,34 @@ export const RESOURCES = [
 
 export const RESOURCE_TEMPLATES = [
   {
-    uriTemplate: "helm://tasks/{ref}",
+    uriTemplate: "dayhand://tasks/{ref}",
     name: "task",
     title: "Task with history",
-    description: "One task by its number, e.g. helm://tasks/42, with its change history (as get_task).",
+    description: "One task by its number, e.g. dayhand://tasks/42, with its change history (as get_task).",
     mimeType: "application/json",
   },
 ];
 
 export type ResourceContents = { uri: string; mimeType: string; text: string };
 
+/** helm://… is what the resources were called before the rename to Dayhand; those addresses still work. */
+const canonicalUri = (uri: unknown): string => (typeof uri === "string" ? uri.replace(/^helm:\/\//, "dayhand://") : "");
+
+/** The guide: the same for everyone, so it needs no user data and may be cached. */
+export const isGuide = (uri: unknown) => canonicalUri(uri) === "dayhand://guide";
+
 /** Whether reading the resource looks at the user's data (and counts against the key's reads). */
-export const readsUserData = (uri: unknown) => uri !== "helm://guide";
+export const readsUserData = (uri: unknown) => !isGuide(uri);
 
 /** The resource's contents, or null when there is no such resource. */
 export async function readResource(ctx: ActionCtx, identity: Identity, uri: string): Promise<ResourceContents | null> {
-  if (uri === "helm://guide") return { uri, mimeType: "text/markdown", text: AGENT_GUIDE };
-  if (uri === "helm://today") {
+  const name = canonicalUri(uri);
+  if (name === "dayhand://guide") return { uri, mimeType: "text/markdown", text: AGENT_GUIDE };
+  if (name === "dayhand://today") {
     const today = await ctx.runQuery(internal.ops.listToday, { ...identity, at: Date.now() });
     return { uri, mimeType: "application/json", text: JSON.stringify(today, null, 2) };
   }
-  const task = /^helm:\/\/tasks\/(\d{1,15})$/.exec(uri);
+  const task = /^dayhand:\/\/tasks\/(\d{1,15})$/.exec(name);
   if (task) {
     const details = await ctx.runQuery(internal.ops.getTask, { ...identity, taskId: `#${Number(task[1])}`, at: Date.now() });
     return { uri, mimeType: "application/json", text: JSON.stringify(details, null, 2) };
@@ -97,13 +104,13 @@ export async function getPrompt(ctx: ActionCtx, identity: Identity, name: string
   if (unknown.length) throw new PromptArgumentError(`Unknown argument(s) for ${name}: ${unknown.join(", ")}`);
   const now = Date.now();
   if (name === "plan_day") {
-    const today = (await readResource(ctx, identity, "helm://today"))!;
+    const today = (await readResource(ctx, identity, "dayhand://today"))!;
     const focus = args.focus?.trim() ? `\n\nMy focus today: ${args.focus.trim()}` : "";
     return {
       description: prompt.description,
       messages: [
         text(
-          "Help me plan today in Helm. My Today screen is attached. First go through the overdue tasks: for each, ask whether to do it today (reschedule_task to today), move it to another day, or drop it (archive_task or delete_task). " +
+          "Help me plan today in Dayhand. My Today screen is attached. First go through the overdue tasks: for each, ask whether to do it today (reschedule_task to today), move it to another day, or drop it (archive_task or delete_task). " +
             "Then propose an order for today's tasks, timed ones at their time, and ask which one I start with; make it the now task with set_now and a short resume note. " +
             `${SAFE_CHANGES}${focus}`,
         ),
@@ -118,7 +125,7 @@ export async function getPrompt(ctx: ActionCtx, identity: Identity, name: string
       description: prompt.description,
       messages: [
         text(
-          `Run my weekly review in Helm (today is ${today}, ${timezone}).\n` +
+          `Run my weekly review in Dayhand (today is ${today}, ${timezone}).\n` +
             `1. Done: call board and read its done column for what I finished since ${addDays(today, -7)}; summarise it in a few lines.\n` +
             `2. Open loops: call list_all with overdue: true, then list_all with status ["doing"]; ask what to do with each.\n` +
             `3. Next week: call list_all with dueAfter "${addDays(today, -1)}" and dueBefore "${addDays(today, 8)}"; point out overloaded days and offer to move tasks.\n` +
@@ -133,7 +140,7 @@ export async function getPrompt(ctx: ActionCtx, identity: Identity, name: string
     description: prompt.description,
     messages: [
       text(
-        `Help me sort out my overdue tasks in Helm (today is ${today}). ` +
+        `Help me sort out my overdue tasks in Dayhand (today is ${today}). ` +
           "Go through them one at a time, oldest first. For each, suggest one of: do it today (reschedule_task to today), move it to a realistic day, mark it done (complete_task), archive it (archive_task) or delete it (delete_task, it stays 30 days in the trash). " +
           SAFE_CHANGES,
       ),

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/tools.schema.json",
+  "$id": "https://schemas.dayhand.invalid/tools.schema.json",
   "title": "Tools",
-  "description": "tools/list (hlm tools).",
+  "description": "tools/list (dayhand tools).",
   "type": "object",
   "required": [
     "tools"

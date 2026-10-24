@@ -1,15 +1,15 @@
-// The helm://guide resource and the server instructions: how an agent should
+// The dayhand://guide resource and the server instructions: how an agent should
 // work with the user's plan. Keep in step with docs/mcp.md.
 import { CALL_LIMITS } from "../callLimits";
 
 export const INSTRUCTIONS =
-  'Helm is the user\'s personal task list and day plan. Start with list_today (or read helm://today). Refer to a task by its id or its number as "#42". ' +
+  'Dayhand is the user\'s personal task list and day plan. Start with list_today (or read dayhand://today). Refer to a task by its id or its number as "#42". ' +
   "Find tasks with list_all (query, status, labels, dueBefore/dueAfter, overdue, limit/cursor) instead of reading the whole plan. " +
-  "Pass a clientId with changes you might retry, and dryRun: true to preview a change. Read helm://guide for the full rules.";
+  "Pass a clientId with changes you might retry, and dryRun: true to preview a change. Read dayhand://guide for the full rules.";
 
-export const AGENT_GUIDE = `# Working with Helm
+export const AGENT_GUIDE = `# Working with Dayhand
 
-Helm is one person's task list and day plan. You act for that person with
+Dayhand is one person's task list and day plan. You act for that person with
 their API key; every change you make is recorded in the task's history as
 \`agent: <key name>\`, next to the changes they make in the app.
 
@@ -28,12 +28,12 @@ their API key; every change you make is recorded in the task's history as
 
 ## Reading
 
-- Start with \`list_today\` (or the resource \`helm://today\`).
+- Start with \`list_today\` (or the resource \`dayhand://today\`).
 - Look tasks up with \`list_all\`: \`query\` searches titles, notes, resume
   notes and labels; \`status\`, \`labels\`, \`dueBefore\`, \`dueAfter\` and
   \`overdue\` narrow the list; \`limit\` and \`cursor\` page through it.
   Reading the whole plan to find one task wastes the user's context.
-- \`get_task\` (or \`helm://tasks/42\`) shows who changed what and when.
+- \`get_task\` (or \`dayhand://tasks/42\`) shows who changed what and when.
 
 ## Changing
 

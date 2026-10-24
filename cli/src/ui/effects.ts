@@ -1,5 +1,5 @@
 // The server calls behind the keys: each change is one or two MCP tool calls,
-// the same ones `hlm add`, `hlm done`, `hlm now`, … make, and returns the line
+// the same ones `dayhand add`, `dayhand done`, `dayhand now`, … make, and returns the line
 // the status bar shows and the task the cursor should land on.
 import { usageError } from "../core/exit.js";
 import { relativeDate } from "../render/format.js";
@@ -140,9 +140,9 @@ function parseDue(text: string, ctx: EffectContext): When {
   }
 }
 
-/** E: title on the first line, the note after a blank line, as `hlm edit` on a terminal. */
+/** E: title on the first line, the note after a blank line, as `dayhand edit` on a terminal. */
 async function editor(task: Task, ctx: EffectContext): Promise<Done> {
-  const text = await ctx.editText(`${task.title}\n\n${task.note ? `${task.note}\n` : ""}`, `hlm-task-${task.ref ?? "task"}.md`);
+  const text = await ctx.editText(`${task.title}\n\n${task.note ? `${task.note}\n` : ""}`, `dayhand-task-${task.ref ?? "task"}.md`);
   const [first = "", ...rest] = text.split(/\r?\n/);
   const title = first.trim();
   if (!title) throw usageError("The first line (the title) is empty; nothing was changed");

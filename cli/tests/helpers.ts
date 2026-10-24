@@ -11,7 +11,9 @@ import { afterAll, inject } from "vitest";
 
 export const helm = () => inject("helm");
 
-const BIN = fileURLToPath(new URL("../dist/bin/hlm.js", import.meta.url));
+const BIN = fileURLToPath(new URL("../dist/bin/dayhand.js", import.meta.url));
+/** The old name of the binary, still installed until 1.0. */
+const OLD_BIN = fileURLToPath(new URL("../dist/bin/hlm.js", import.meta.url));
 const SCHEMAS = new URL("../../docs/schemas/", import.meta.url);
 
 export type Run = { code: number; stdout: string; stderr: string };
@@ -20,12 +22,12 @@ export type Run = { code: number; stdout: string; stderr: string };
  * Config, cache and stored keys of the test runs live in a private folder, and
  * keys go to a file: tests never touch the real keychain or ~/.config.
  */
-export const TEST_HOME = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-home-"));
+export const TEST_HOME = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-home-"));
 afterAll(() => rmSync(TEST_HOME, { recursive: true, force: true }));
 const isolated = (dir = TEST_HOME) => ({
-  HLM_CONFIG_DIR: join(dir, "config"),
-  HLM_CACHE_DIR: join(dir, "cache"),
-  HLM_CREDENTIAL_STORE: "file",
+  DAYHAND_CONFIG_DIR: join(dir, "config"),
+  DAYHAND_CACHE_DIR: join(dir, "cache"),
+  DAYHAND_CREDENTIAL_STORE: "file",
   HOME: dir,
   USERPROFILE: dir,
   APPDATA: dir,
@@ -33,26 +35,26 @@ const isolated = (dir = TEST_HOME) => ({
 });
 
 /**
- * Runs the built `hlm` with only the given environment. stdin is a pipe (no
+ * Runs the built `dayhand` with only the given environment. stdin is a pipe (no
  * TTY), closed after `input`; a run that waits for input fails on the timeout.
  */
-export function hlm(key: string | undefined, args: string[], options: { env?: Record<string, string>; input?: string; url?: string } = {}): Promise<Run> {
+export function dayhand(key: string | undefined, args: string[], options: { env?: Record<string, string>; input?: string; url?: string; bin?: "hlm" } = {}): Promise<Run> {
   const env: Record<string, string> = {
     PATH: process.env.PATH ?? "",
     ...isolated(),
-    HLM_URL: options.url ?? helm().siteUrl,
-    ...(key ? { HLM_API_KEY: key } : {}),
+    DAYHAND_URL: options.url ?? helm().siteUrl,
+    ...(key ? { DAYHAND_API_KEY: key } : {}),
     ...options.env,
   };
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [BIN, ...args], { env, stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(process.execPath, [options.bin === "hlm" ? OLD_BIN : BIN, ...args], { env, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d));
     child.stderr.on("data", (d) => (stderr += d));
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
-      reject(new Error(`hlm ${args.join(" ")} did not finish (waiting for input?)`));
+      reject(new Error(`dayhand ${args.join(" ")} did not finish (waiting for input?)`));
     }, 20_000);
     child.on("error", reject);
     child.on("close", (code) => {
@@ -63,10 +65,10 @@ export function hlm(key: string | undefined, args: string[], options: { env?: Re
   });
 }
 
-/** Runs hlm with --json and parses stdout; fails the test on a non-zero exit. */
-export async function hlmJson<T = any>(key: string, args: string[]): Promise<T> {
-  const run = await hlm(key, [...args, "--json"]);
-  if (run.code !== 0) throw new Error(`hlm ${args.join(" ")} exited ${run.code}: ${run.stderr}`);
+/** Runs dayhand with --json and parses stdout; fails the test on a non-zero exit. */
+export async function dayhandJson<T = any>(key: string, args: string[]): Promise<T> {
+  const run = await dayhand(key, [...args, "--json"]);
+  if (run.code !== 0) throw new Error(`dayhand ${args.join(" ")} exited ${run.code}: ${run.stderr}`);
   return JSON.parse(run.stdout) as T;
 }
 
@@ -102,7 +104,7 @@ export async function newUser(kind: "cli" | "agent" = "cli") {
 }
 
 export async function mcpClient(key: string) {
-  const client = new Client({ name: "hlm-tests", version: "0.0.0" });
+  const client = new Client({ name: "dayhand-tests", version: "0.0.0" });
   const transport = new StreamableHTTPClientTransport(new URL(`${helm().siteUrl}/mcp`), {
     requestInit: { headers: { Authorization: `Bearer ${key}` } },
   });
@@ -125,7 +127,7 @@ export function schemaValidator() {
   return (files: string | string[], value: unknown): string[] => {
     const errors: string[] = [];
     for (const file of [files].flat()) {
-      const validate = ajv.getSchema(`https://schemas.helm.invalid/${file}`);
+      const validate = ajv.getSchema(`https://schemas.dayhand.invalid/${file}`);
       if (!validate) return [`no schema ${file}`];
       if (validate(value)) return [];
       errors.push(`${file}: ${ajv.errorsText(validate.errors)}`);

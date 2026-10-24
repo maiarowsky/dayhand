@@ -37,7 +37,7 @@ const JSON_TYPES = ["application/json", "application/merge-patch+json"];
 // Set by the server, never by the caller (as on /mcp), and the precondition comes from If-Match only.
 const RESERVED_FIELDS = ["userId", "actor", "keyId", "connectionId", "actorName", "ifMatch"];
 const PRIVATE = { "Cache-Control": "no-store" };
-const CHALLENGE = { "WWW-Authenticate": 'Bearer realm="helm"' };
+const CHALLENGE = { "WWW-Authenticate": 'Bearer realm="dayhand"' };
 
 export type RestCall = {
   owner: KeyOwner;
@@ -57,7 +57,7 @@ const json = (status: number, body: unknown, headers: Record<string, string> = {
 
 async function authenticate(ctx: ActionCtx, request: Request): Promise<KeyOwner | Response> {
   const presented = bearerToken(request);
-  if (!presented) return problem(401, "unauthenticated", "Send a personal API key: Authorization: Bearer helm_…", CHALLENGE);
+  if (!presented) return problem(401, "unauthenticated", "Send a personal API key: Authorization: Bearer dayhand_…", CHALLENGE);
   if (presented.startsWith("helmat_")) {
     return problem(401, "unauthenticated", "OAuth access tokens are only for /mcp; the REST API takes a personal API key", CHALLENGE);
   }

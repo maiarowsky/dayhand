@@ -42,10 +42,10 @@ type RpcResponse = { result?: any; error?: { code: number; message: string } };
 const unavailable = (message: string, cause?: unknown) =>
   new CliError("unavailable", message, { retryable: true }, { cause });
 
-/** Where to connect; the source fields are for `hlm whoami` (the key itself is never printed). */
+/** Where to connect; the source fields are for `dayhand whoami` (the key itself is never printed). */
 export type ClientConnection = { url: string; key: string } & Partial<Target> & { keySource?: string };
 
-export class HelmClient {
+export class DayhandClient {
   private nextId = 1;
 
   constructor(
@@ -88,7 +88,7 @@ export class HelmClient {
     }
     if (response.status === 401) {
       throw new CliError("unauthenticated", "The API key was rejected (wrong or revoked)", {
-        hint: "hlm login (or set HLM_API_KEY to a valid key)",
+        hint: "dayhand login (or set DAYHAND_API_KEY to a valid key)",
       });
     }
     if (response.status === 429) throw rateLimited(response.headers.get("Retry-After"));
@@ -120,7 +120,7 @@ export class HelmClient {
     const result = await this.rpc("initialize", {
       protocolVersion: PROTOCOL_VERSION,
       capabilities: {},
-      clientInfo: { name: "hlm", version: "cli" },
+      clientInfo: { name: "dayhand", version: "cli" },
     });
     return result.serverInfo as ServerInfo;
   }
@@ -190,10 +190,10 @@ function httpError(status: number, payload: any, where: string): CliError {
   if (code === "not_found") return new CliError("not_found", description ?? "Not found");
   if (status === 403) {
     return new CliError("unauthenticated", description ?? `${where} refused the request (HTTP 403)`, {
-      hint: "use a key with scope full (hlm key list shows each key's scope)",
+      hint: "use a key with scope full (dayhand key list shows each key's scope)",
     });
   }
-  if (status === 404) return new CliError("internal", `No Helm endpoint at ${where} (HTTP 404); check the URL (hlm whoami) and that the backend is 0.8.0 or later for /api/v1`);
+  if (status === 404) return new CliError("internal", `No Dayhand endpoint at ${where} (HTTP 404); check the URL (dayhand whoami) and that the backend is 0.8.0 or later for /api/v1`);
   if (status === 400 || status === 413 || status === 415 || status === 422) {
     return new CliError("invalid_argument", description ?? `${where} rejected the request (HTTP ${status})`);
   }

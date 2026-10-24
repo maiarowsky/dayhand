@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/complete.schema.json",
+  "$id": "https://schemas.dayhand.invalid/complete.schema.json",
   "title": "Completed task",
-  "description": "complete_task (hlm done): the task and, for a repeating task, its next occurrence.",
+  "description": "complete_task (dayhand done): the task and, for a repeating task, its next occurrence.",
   "type": "object",
   "required": [
     "task",

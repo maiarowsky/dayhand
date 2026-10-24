@@ -1,15 +1,18 @@
 {
-  "name": "hlm",
-  "version": "0.9.0",
+  "name": "dayhand",
+  "version": "0.10.0",
   "private": true,
-  "description": "hlm: the Helm command line client for people and agents",
+  "description": "dayhand: the Dayhand command line client for people and agents",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
+    "dayhand": "dist/bin/dayhand.js",
+    "dh": "dist/bin/dayhand.js",
     "hlm": "dist/bin/hlm.js"
   },
   "man": [
-    "./man/hlm.1"
+    "./man/dayhand.1",
+    "./man/dh.1"
   ],
   "files": [
     "dist",

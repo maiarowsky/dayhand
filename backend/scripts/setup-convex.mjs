@@ -120,7 +120,7 @@ export function checkSigning(siteUrl, { fetchImpl = fetch, ...timing } = {}) {
     if (response.status === 401) return true;
     if (response.status === 503) {
       const error = new Error(
-        "The server cannot sign app tokens (503 not_configured): HELM_JWT_PRIVATE_JWK is missing or does not match HELM_JWKS. " +
+        "The server cannot sign app tokens (503 not_configured): DAYHAND_JWT_PRIVATE_JWK is missing or does not match DAYHAND_JWKS. " +
           "See docs/deploy.md, “Moving an existing key from disk into the deployment”.",
       );
       error.final = true;
@@ -140,7 +140,7 @@ export function checkMcp(siteUrl, key, { fetchImpl = fetch, ...timing } = {}) {
         jsonrpc: "2.0",
         id: 1,
         method: "initialize",
-        params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "helm-setup", version: "1" } },
+        params: { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "dayhand-setup", version: "1" } },
       }),
       signal: AbortSignal.timeout(10_000),
     });
@@ -152,7 +152,7 @@ export function checkMcp(siteUrl, key, { fetchImpl = fetch, ...timing } = {}) {
     }
     const body = await response.json().catch(() => null);
     const info = body?.result?.serverInfo;
-    if (response.status !== 200 || info?.name !== "helm") throw new Error(`${siteUrl}/mcp answered HTTP ${response.status} without Helm's serverInfo`);
+    if (response.status !== 200 || info?.name !== "dayhand") throw new Error(`${siteUrl}/mcp answered HTTP ${response.status} without Dayhand's serverInfo`);
     return info;
   }, timing);
 }

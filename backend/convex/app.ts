@@ -1,4 +1,4 @@
-// Thin layer for the Helm app: the caller is the authenticated user and
+// Thin layer for the Dayhand app: the caller is the authenticated user and
 // the actor is "app". Every function delegates to the domain layer.
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";

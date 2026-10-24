@@ -1,4 +1,5 @@
-// Writes docs/cli.md, man/hlm.1 and docs/skills/hlm/SKILL.md from the built
+// Writes docs/cli.md, man/dayhand.1 (and man/dh.1, which points to it) and
+// docs/skills/dayhand/SKILL.md from the built
 // registry: npm run build && npm run docs
 import { mkdirSync, writeFileSync } from "node:fs";
 import { renderDocs } from "../dist/docs.js";
@@ -12,5 +13,6 @@ const write = (path, text) => {
 };
 
 write("../../docs/cli.md", renderDocs());
-write("../../man/hlm.1", renderMan());
-write("../../docs/skills/hlm/SKILL.md", renderSkill());
+write("../../man/dayhand.1", renderMan());
+write("../../man/dh.1", ".so man1/dayhand.1\n");
+write("../../docs/skills/dayhand/SKILL.md", renderSkill());

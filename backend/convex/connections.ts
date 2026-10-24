@@ -1,6 +1,6 @@
 // Agent connections (OAuth, docs/oauth.md) managed with a personal API key:
-//   GET  /connections         list connections   (hlm connection list)
-//   POST /connections/revoke  revoke one          (hlm connection revoke)
+//   GET  /connections         list connections   (dayhand connection list)
+//   POST /connections/revoke  revoke one          (dayhand connection revoke)
 // Like /devices, these accept only API keys: an OAuth token cannot manage connections.
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";

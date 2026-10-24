@@ -8,7 +8,7 @@ import type { Io } from "../core/io.js";
 import type { Output } from "../core/output.js";
 import type { KeyStore } from "../credentials/store.js";
 import type { View } from "../render/views.js";
-import type { HelmClient } from "../transport/client.js";
+import type { DayhandClient } from "../transport/client.js";
 import type { When } from "../when/parse.js";
 
 export type ArgSpec = { name: string; description: string; required?: boolean; variadic?: boolean };
@@ -34,7 +34,7 @@ export type RunContext = {
   yes: boolean;
   /** --dry-run: changes are recorded and printed instead of sent. */
   dryRun: boolean;
-  /** Prompts are allowed: stdin and stdout are terminals and --no-input / HLM_NO_INPUT are off. */
+  /** Prompts are allowed: stdin and stdout are terminals and --no-input / DAYHAND_NO_INPUT are off. */
   interactive: boolean;
   paths: Paths;
   /** --url and --profile as given. */
@@ -43,11 +43,11 @@ export type RunContext = {
   config(): Config;
   /** The deployment URL and where it came from, without needing a key. */
   target(): Target;
-  /** The stores `hlm login` writes to, in reading order. */
+  /** The stores `dayhand login` writes to, in reading order. */
   keyStores(): KeyStore[];
-  client(): Promise<HelmClient>;
-  /** A client for a key that is not stored yet (`hlm login` checks it first). */
-  clientFor(url: string, key: string): HelmClient;
+  client(): Promise<DayhandClient>;
+  /** A client for a key that is not stored yet (`dayhand login` checks it first). */
+  clientFor(url: string, key: string): DayhandClient;
   /** The operation id: --client-id, or one generated per run and reported on errors. */
   clientId(): string;
   /** The user's time zone from the server settings (one read, shared). */
@@ -62,7 +62,7 @@ export type RunContext = {
   edit(initial: string, fileName: string): string;
 };
 
-/** printed: the command already printed its result (hlm server start, before it waits). */
+/** printed: the command already printed its result (dayhand server start, before it waits). */
 export type Outcome = { value: unknown; view: View; printed?: boolean };
 
 export type Args = Record<string, string | string[] | undefined>;

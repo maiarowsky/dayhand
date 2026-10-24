@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/pairing.schema.json",
+  "$id": "https://schemas.dayhand.invalid/pairing.schema.json",
   "title": "Pairing code",
-  "description": "POST /devices/pairing-code plus the deep link (hlm pair).",
+  "description": "POST /devices/pairing-code plus the deep link (dayhand pair).",
   "type": "object",
   "required": [
     "code",
@@ -25,7 +25,7 @@
     },
     "link": {
       "type": "string",
-      "pattern": "^helm://pair\\?"
+      "pattern": "^dayhand://pair\\?"
     }
   }
 }

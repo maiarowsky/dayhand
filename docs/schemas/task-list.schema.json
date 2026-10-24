@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/task-list.schema.json",
+  "$id": "https://schemas.dayhand.invalid/task-list.schema.json",
   "title": "Task list",
-  "description": "list_all and list_trash (hlm list, hlm trash): the tasks as `result`. list_all also gives `total` (all matches) and `nextCursor` (the next page, or null on the last one).",
+  "description": "list_all and list_trash (dayhand list, dayhand trash): the tasks as `result`. list_all also gives `total` (all matches) and `nextCursor` (the next page, or null on the last one).",
   "type": "object",
   "required": [
     "result"

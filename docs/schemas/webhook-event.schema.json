@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/webhook-event.schema.json",
+  "$id": "https://schemas.dayhand.invalid/webhook-event.schema.json",
   "title": "Webhook message",
-  "description": "The JSON body Helm POSTs to a webhook (docs/webhooks.md). Fields may be added.",
+  "description": "The JSON body Dayhand POSTs to a webhook (docs/webhooks.md). Fields may be added.",
   "type": "object",
   "required": [
     "type",

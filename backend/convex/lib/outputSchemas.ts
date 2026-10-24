@@ -4,7 +4,7 @@
 export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   "api-key": {
     "title": "API key",
-    "description": "One personal API key as GET /api/v1/keys lists it (hlm key list). Never the key itself or its hash.",
+    "description": "One personal API key as GET /api/v1/keys lists it (dayhand key list). Never the key itself or its hash.",
     "type": "object",
     "required": [
       "id",
@@ -67,7 +67,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "api-key-created": {
     "title": "Created API key",
-    "description": "POST /api/v1/keys (hlm key create): the new key, shown only this once.",
+    "description": "POST /api/v1/keys (dayhand key create): the new key, shown only this once.",
     "type": "object",
     "required": [
       "id",
@@ -106,14 +106,14 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "key": {
         "type": "string",
-        "pattern": "^helm_",
+        "pattern": "^dayhand_",
         "description": "The API key; store it now, it cannot be shown again"
       }
     }
   },
   "api-key-list": {
     "title": "API keys",
-    "description": "GET /api/v1/keys (hlm key list): every API key of the user, revoked and expired ones included.",
+    "description": "GET /api/v1/keys (dayhand key list): every API key of the user, revoked and expired ones included.",
     "type": "object",
     "required": [
       "keys"
@@ -129,7 +129,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "api-key-revoke": {
     "title": "Revoked API key",
-    "description": "DELETE /api/v1/keys/{keyId} (hlm key revoke): the key and when it was revoked (the first time, when it already was).",
+    "description": "DELETE /api/v1/keys/{keyId} (dayhand key revoke): the key and when it was revoked (the first time, when it already was).",
     "type": "object",
     "required": [
       "id",
@@ -147,7 +147,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "board": {
     "title": "Board",
-    "description": "board (hlm board).",
+    "description": "board (dayhand board).",
     "type": "object",
     "required": [
       "todo",
@@ -177,7 +177,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "complete": {
     "title": "Completed task",
-    "description": "complete_task (hlm done): the task and, for a repeating task, its next occurrence.",
+    "description": "complete_task (dayhand done): the task and, for a repeating task, its next occurrence.",
     "type": "object",
     "required": [
       "task",
@@ -201,7 +201,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "export": {
     "title": "Export",
-    "description": "export_plan (hlm export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, hlm prints {written: <file>, format}.",
+    "description": "export_plan (dayhand export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, dayhand prints {written: <file>, format}.",
     "oneOf": [
       {
         "type": "object",
@@ -303,7 +303,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "import-result": {
     "title": "Import result",
-    "description": "POST /api/v1/import (hlm import): what the import did, or with dryRun what it would do.",
+    "description": "POST /api/v1/import (dayhand import): what the import did, or with dryRun what it would do.",
     "type": "object",
     "required": [
       "format",
@@ -318,7 +318,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
     "properties": {
       "format": {
         "enum": [
-          "helm-json",
+          "dayhand-json",
           "ics",
           "todoist-csv"
         ],
@@ -406,7 +406,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
     "properties": {
       "type": {
         "type": "string",
-        "description": "https://schemas.helm.invalid/problems/<code>: an identifier, not an address to fetch"
+        "description": "https://schemas.dayhand.invalid/problems/<code>: an identifier, not an address to fetch"
       },
       "title": {
         "type": "string"
@@ -432,7 +432,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "set-now": {
     "title": "Now task",
-    "description": "set_now (hlm now <ref>, hlm now --clear): the new now task, or {\"result\": null} after clearing.",
+    "description": "set_now (dayhand now <ref>, dayhand now --clear): the new now task, or {\"result\": null} after clearing.",
     "anyOf": [
       {
         "$ref": "#/$defs/task"
@@ -452,7 +452,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "settings": {
     "title": "Settings",
-    "description": "get_settings and update_settings (hlm settings, hlm settings set).",
+    "description": "get_settings and update_settings (dayhand settings, dayhand settings set).",
     "type": "object",
     "required": [
       "timezone",
@@ -716,7 +716,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "task-detail": {
     "title": "Task with history",
-    "description": "get_task (hlm show, hlm note <ref> without text).",
+    "description": "get_task (dayhand show, dayhand note <ref> without text).",
     "type": "object",
     "required": [
       "task",
@@ -781,7 +781,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "task-list": {
     "title": "Task list",
-    "description": "list_all and list_trash (hlm list, hlm trash): the tasks as `result`. list_all also gives `total` (all matches) and `nextCursor` (the next page, or null on the last one).",
+    "description": "list_all and list_trash (dayhand list, dayhand trash): the tasks as `result`. list_all also gives `total` (all matches) and `nextCursor` (the next page, or null on the last one).",
     "type": "object",
     "required": [
       "result"
@@ -809,7 +809,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "today": {
     "title": "Today",
-    "description": "list_today (hlm, hlm today, hlm now without a task).",
+    "description": "list_today (dayhand, dayhand today, dayhand now without a task).",
     "type": "object",
     "required": [
       "date",
@@ -859,7 +859,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "tool-error": {
     "title": "Tool error",
-    "description": "structuredContent of a failed MCP tool call (isError: true). hlm turns it into its own error on stderr (error.schema.json).",
+    "description": "structuredContent of a failed MCP tool call (isError: true). dayhand turns it into its own error on stderr (error.schema.json).",
     "type": "object",
     "required": [
       "error"
@@ -890,7 +890,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook": {
     "title": "Webhook",
-    "description": "One webhook as GET /api/v1/webhooks lists it (hlm webhook list). Never its secret.",
+    "description": "One webhook as GET /api/v1/webhooks lists it (dayhand webhook list). Never its secret.",
     "type": "object",
     "required": [
       "id",
@@ -938,7 +938,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       },
       "enabled": {
         "type": "boolean",
-        "description": "false after it was turned off for failing; POST /webhooks/{id}/enable (hlm webhook enable) turns it on"
+        "description": "false after it was turned off for failing; POST /webhooks/{id}/enable (dayhand webhook enable) turns it on"
       },
       "disabledAt": {
         "type": [
@@ -976,7 +976,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-created": {
     "title": "Added webhook",
-    "description": "POST /api/v1/webhooks (hlm webhook add): the webhook and its signing secret, shown only this once.",
+    "description": "POST /api/v1/webhooks (dayhand webhook add): the webhook and its signing secret, shown only this once.",
     "type": "object",
     "required": [
       "webhook",
@@ -995,7 +995,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-delete": {
     "title": "Removed webhook",
-    "description": "DELETE /api/v1/webhooks/{id} (hlm webhook rm).",
+    "description": "DELETE /api/v1/webhooks/{id} (dayhand webhook rm).",
     "type": "object",
     "required": [
       "id",
@@ -1012,7 +1012,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-delivery-list": {
     "title": "Webhook deliveries",
-    "description": "GET /api/v1/webhooks/{id}/deliveries (hlm webhook deliveries): the newest deliveries first, with every attempt.",
+    "description": "GET /api/v1/webhooks/{id}/deliveries (dayhand webhook deliveries): the newest deliveries first, with every attempt.",
     "type": "object",
     "required": [
       "deliveries"
@@ -1113,7 +1113,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-event": {
     "title": "Webhook message",
-    "description": "The JSON body Helm POSTs to a webhook (docs/webhooks.md). Fields may be added.",
+    "description": "The JSON body Dayhand POSTs to a webhook (docs/webhooks.md). Fields may be added.",
     "type": "object",
     "required": [
       "type",
@@ -1174,7 +1174,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-list": {
     "title": "Webhooks",
-    "description": "GET /api/v1/webhooks (hlm webhook list).",
+    "description": "GET /api/v1/webhooks (dayhand webhook list).",
     "type": "object",
     "required": [
       "webhooks"
@@ -1190,7 +1190,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-one": {
     "title": "Webhook",
-    "description": "GET /api/v1/webhooks/{id} and POST /api/v1/webhooks/{id}/enable (hlm webhook enable).",
+    "description": "GET /api/v1/webhooks/{id} and POST /api/v1/webhooks/{id}/enable (dayhand webhook enable).",
     "type": "object",
     "required": [
       "webhook"
@@ -1203,7 +1203,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "webhook-test": {
     "title": "Test message queued",
-    "description": "POST /api/v1/webhooks/{id}/test (hlm webhook test): the queued delivery and its webhook-id.",
+    "description": "POST /api/v1/webhooks/{id}/test (dayhand webhook test): the queued delivery and its webhook-id.",
     "type": "object",
     "required": [
       "deliveryId",

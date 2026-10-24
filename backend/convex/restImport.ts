@@ -5,7 +5,7 @@
 // skips what it already brought in. With ?dryRun=true nothing is stored.
 import type { FunctionReference } from "convex/server";
 import { internal } from "./_generated/api";
-import { IMPORT_FORMATS, ImportFormatError, detectFormat, readContext, readPlan, type ImportFormat } from "./lib/importFormats";
+import { DEPRECATED_FORMATS, IMPORT_FORMATS, ImportFormatError, KEY_NAME, detectFormat, readContext, readPlan, type ImportFormat } from "./lib/importFormats";
 import { IMPORT_BATCH, type ImportTask } from "./lib/importOps";
 import { RestInputError } from "./lib/restRoutes";
 import { sha256Hex } from "./lib/secrets";
@@ -22,7 +22,7 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
   const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format");
   if (extra.length) throw new RestInputError(`Unknown field ${extra.join(", ")}; send { "content": "<file>", "format": "auto" }`);
   if (typeof body.content !== "string" || body.content.trim() === "") throw new RestInputError("content must be the file's text");
-  const requested = body.format ?? "auto";
+  const requested: string = DEPRECATED_FORMATS[body.format as string] ?? body.format ?? "auto";
   if (requested !== "auto" && !IMPORT_FORMATS.includes(requested as ImportFormat)) {
     throw new RestInputError(`format must be auto, ${IMPORT_FORMATS.join(", ")}`);
   }
@@ -41,7 +41,7 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
   // Numbers from an export are kept only when they rise, so the lowest go first.
   const ordered = [...parsed.items].sort((a, b) => (a.ref ?? Infinity) - (b.ref ?? Infinity));
   const items: ImportTask[] = await Promise.all(
-    ordered.map(async ({ source, ...task }) => ({ ...task, key: (await sha256Hex(`${format}:${source}`)).slice(0, KEY_LENGTH) })),
+    ordered.map(async ({ source, ...task }) => ({ ...task, key: (await sha256Hex(`${KEY_NAME[format]}:${source}`)).slice(0, KEY_LENGTH) })),
   );
   const total: BatchOutcome = { created: [], skipped: [], failed: [] };
   for (let start = 0; start < items.length; start += IMPORT_BATCH) {

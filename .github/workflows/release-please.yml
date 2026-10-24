@@ -1,8 +1,8 @@
-# Opens and updates the release PR for hlm (cli/) from Conventional Commits;
-# merging it tags hlm-vX.Y.Z and writes cli/CHANGELOG.md. The backend and the
+# Opens and updates the release PR for dayhand (cli/) from Conventional Commits;
+# merging it tags dayhand-vX.Y.Z and writes cli/CHANGELOG.md. The backend and the
 # apps are not part of it: the CLI has its own version. Does nothing until the
-# repository variable HLM_RELEASE_ENABLED is "true" (docs/release.md).
-name: Release hlm
+# repository variable DAYHAND_RELEASE_ENABLED is "true" (docs/release.md).
+name: Release dayhand
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions: {}
 
 jobs:
   release-please:
-    if: vars.HLM_RELEASE_ENABLED == 'true'
+    if: vars.DAYHAND_RELEASE_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

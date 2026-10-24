@@ -12,7 +12,7 @@ export const REPEAT_OPTIONS: OptSpec[] = [
   { flags: "--month-day <day>", description: "Monthly repeat on day 1-31 (a shorter month: its last day) or last" },
   { flags: "--month-weekday <day>", description: 'Monthly repeat on a weekday: "2 tue", "last fri"' },
   { flags: "--from-completion", description: "Count the next date from the day the task is done, not its due date" },
-  { flags: "--until <date>", description: "Last date the repeat may fall on (hlm help dates)" },
+  { flags: "--until <date>", description: "Last date the repeat may fall on (dayhand help dates)" },
   { flags: "--count <n>", description: "How many times it repeats, this one included", kind: "int" },
   { flags: "--rrule <rule>", description: 'The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=-1FR"' },
 ];
@@ -85,7 +85,7 @@ export function itemIndexes(texts: string[], size: number): number[] {
 }
 
 /**
- * Applies `hlm checklist` options to the current items, in a fixed order:
+ * Applies `dayhand checklist` options to the current items, in a fixed order:
  * tick, untick, move, remove, then add. Ids of existing items are kept.
  */
 export function editChecklist(items: ChecklistItem[], opts: Opts): ChecklistItem[] {

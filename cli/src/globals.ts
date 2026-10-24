@@ -8,10 +8,10 @@ export const GLOBAL_OPTIONS: OptSpec[] = [
   { flags: "--fields <names>", description: "Comma-separated task (or settings) fields for JSON and columns" },
   { flags: "--client-id <id>", description: "Operation id for safe retries (default: generated, shown on errors)" },
   { flags: "-y, --yes", description: `Confirm changing many tasks at once` },
-  { flags: "--no-input", description: "Never prompt (also HLM_NO_INPUT=1); prompts need a terminal anyway" },
+  { flags: "--no-input", description: "Never prompt (also DAYHAND_NO_INPUT=1); prompts need a terminal anyway" },
   { flags: "--dry-run", description: "Show the changes a command would make (dates resolved), checked by the backend, and save nothing" },
-  { flags: "--url <url>", description: "Deployment HTTP actions URL (default: HLM_URL, then config.toml)" },
-  { flags: "--profile <name>", description: "Profile from config.toml (default: HLM_PROFILE, then default_profile)" },
+  { flags: "--url <url>", description: "Deployment HTTP actions URL (default: DAYHAND_URL, then config.toml)" },
+  { flags: "--profile <name>", description: "Profile from config.toml (default: DAYHAND_PROFILE, then default_profile)" },
   { flags: "--color <when>", description: "Colors in the human format", choices: ["auto", "always", "never"] },
   { flags: "--no-color", description: "Same as --color never (NO_COLOR=1 works too)" },
 ];

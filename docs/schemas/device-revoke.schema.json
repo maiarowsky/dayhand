@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/device-revoke.schema.json",
+  "$id": "https://schemas.dayhand.invalid/device-revoke.schema.json",
   "title": "Revoked device",
-  "description": "POST /devices/revoke (hlm device revoke).",
+  "description": "POST /devices/revoke (dayhand device revoke).",
   "type": "object",
   "required": [
     "id",

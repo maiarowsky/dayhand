@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/error.schema.json",
+  "$id": "https://schemas.dayhand.invalid/error.schema.json",
   "title": "Error",
   "description": "The one stderr line of a failed command with --json. stdout is empty.",
   "type": "object",

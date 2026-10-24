@@ -99,7 +99,7 @@ describe("tool catalog", () => {
     const client = await mcpClient(await createKey(newUserId()));
     const result = await client.callTool({ name: "export_plan", arguments: { format: "markdown" } });
     const text = (result.content as any)[0].text as string;
-    expect(text).toMatch(/^# Helm plan/);
+    expect(text).toMatch(/^# Dayhand plan/);
     expect(result.structuredContent).toEqual({ format: "markdown", content: text });
     await client.close();
   });

@@ -91,7 +91,7 @@ export const token = httpAction(async (ctx, request) => {
   );
 });
 
-// ---- Device management with a personal API key (helm pair / devices / revoke) ----
+// ---- Device management with a personal API key (dayhand pair / devices / revoke) ----
 // accountOwner, keyIdentity and unauthorized serve the calendar feed and
 // connection endpoints too (calendar.ts, connections.ts).
 
@@ -132,7 +132,7 @@ export const keyIdentity = (owner: KeyOwner) => ({
 });
 
 export const unauthorized = () =>
-  errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="helm"' });
+  errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="dayhand"' });
 
 /** Domain errors as 400/404 with their message; anything else is rethrown. */
 export function domainError(error: unknown) {

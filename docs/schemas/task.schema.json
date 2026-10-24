@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/task.schema.json",
+  "$id": "https://schemas.dayhand.invalid/task.schema.json",
   "title": "Task",
   "description": "A task as every tool returns it. Fields may be added; none are removed or retyped within a major version.",
   "type": "object",

@@ -27,7 +27,7 @@ export const feed = httpAction(async (ctx, request) => {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": 'inline; filename="helm.ics"',
+      "Content-Disposition": 'inline; filename="dayhand.ics"',
       // Calendar apps poll; a short private cache spares the deployment, and no shared cache keeps the plan.
       "Cache-Control": "private, max-age=300",
       "Referrer-Policy": "no-referrer",

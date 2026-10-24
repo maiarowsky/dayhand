@@ -1,4 +1,4 @@
-// `hlm __complete`: candidates from the registry and the cached task list. No backend.
+// `dayhand __complete`: candidates from the registry and the cached task list. No backend.
 import { describe, expect, test } from "vitest";
 import { complete, NO_FILES, NO_SPACE, type Sources } from "../src/completion/engine.js";
 import { completionScript, SHELLS } from "../src/completion/scripts.js";
@@ -86,6 +86,6 @@ describe("candidates", () => {
   });
 });
 
-test.each(SHELLS)("the %s script calls hlm __complete", (shell) => {
-  expect(completionScript(shell)).toContain("hlm __complete");
+test.each(SHELLS)("the %s script calls dayhand __complete", (shell) => {
+  expect(completionScript(shell)).toContain("dayhand __complete");
 });

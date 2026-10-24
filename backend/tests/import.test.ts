@@ -1,5 +1,5 @@
-// Import: the readers on sample files (Helm JSON, iCalendar, Todoist CSV), and
-// POST /api/v1/import against the local backend: a Helm export brought into an
+// Import: the readers on sample files (Dayhand JSON, iCalendar, Todoist CSV), and
+// POST /api/v1/import against the local backend: a Dayhand export brought into an
 // empty account gives the same plan, a repeated import skips everything, a dry
 // run stores nothing, and a task that fails its checks does not stop the rest.
 import { describe, expect, test } from "vitest";
@@ -65,7 +65,7 @@ const ICS = [
 
 describe("import readers", () => {
   test("formats are recognised from the content", () => {
-    expect(detectFormat('{"version":1,"tasks":[]}')).toBe("helm-json");
+    expect(detectFormat('{"version":1,"tasks":[]}')).toBe("dayhand-json");
     expect(detectFormat("﻿BEGIN:VCALENDAR\r\n")).toBe("ics");
     expect(detectFormat("TYPE,CONTENT,DESCRIPTION\n")).toBe("todoist-csv");
     expect(() => detectFormat("hello")).toThrow(/Unknown format/);
@@ -96,7 +96,7 @@ describe("import readers", () => {
     expect(warnings).toEqual([
       '"Someday": the date "when the moon is full" was not understood; it is kept in the note',
       "1 sub-task(s) became checklist items of their parent task",
-      "Todoist priorities are not imported (Helm has none)",
+      "Todoist priorities are not imported (Dayhand has none)",
     ]);
   });
 
@@ -119,6 +119,27 @@ describe("import readers", () => {
     ]);
     expect(warnings).toEqual(["1 cancelled entr(ies), changed occurrence(s) of a series or duplicate(s) were skipped"]);
   });
+
+  test("Dayhand's own calendar feed, also from before the rename: ✓ means done, the task number leaves the note", () => {
+    for (const name of ["Dayhand", "Helm"]) {
+      const feed = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        `PRODID:-//${name}//${name} planner//EN`,
+        "BEGIN:VEVENT",
+        "UID:abc@helm",
+        "SUMMARY:✓ Filed taxes",
+        `DESCRIPTION:${name} #12\\n\\nreceipts in the drawer`,
+        "DTSTART;VALUE=DATE:20261030",
+        "END:VEVENT",
+        "END:VCALENDAR",
+      ].join("\r\n");
+      const { items } = readPlan("ics", feed, CONTEXT);
+      expect(items.map(({ source, ...rest }) => rest), name).toEqual([
+        { title: "Filed taxes", note: "receipts in the drawer", dueDate: "2026-10-30", status: "done" },
+      ]);
+    }
+  });
 });
 
 async function account() {
@@ -132,7 +153,7 @@ const comparable = (task: Record<string, unknown>) => {
 };
 
 describe("POST /api/v1/import", () => {
-  test("a Helm JSON export rebuilds the plan in an empty account, numbers included; importing again skips everything", async () => {
+  test("a Dayhand JSON export rebuilds the plan in an empty account, numbers included; importing again skips everything", async () => {
     const source = await account();
     const add = (args: Record<string, unknown>) => source.user.mutation(internal.ops.add, args) as Promise<any>;
     await add({ title: "Report", dueDate: "2026-11-03", dueTime: "09:30", labels: ["work"], note: "draft", reminders: [{ minutesBefore: 15 }] });
@@ -150,13 +171,13 @@ describe("POST /api/v1/import", () => {
     const content = JSON.stringify(exported.content);
     const preview = await rest(target.key, "POST", "/import?dryRun=true", { body: { content } });
     expect(preview.status).toBe(200);
-    expect(preview.body).toMatchObject({ format: "helm-json", dryRun: true, total: before.length, created: before.length });
+    expect(preview.body).toMatchObject({ format: "dayhand-json", dryRun: true, total: before.length, created: before.length });
     expect((await rest(target.key, "GET", "/tasks?includeArchived=true")).body.total).toBe(0);
 
     const imported = await rest(target.key, "POST", "/import", { body: { content, format: "auto" } });
     expect(imported.status).toBe(200);
     expect(imported.body).toMatchObject({ dryRun: false, total: before.length, created: before.length, skipped: [], failed: [] });
-    expect(imported.body.warnings).toEqual(["1 task(s) in the trash were not imported", "Settings and history are not imported; set the time zone with hlm settings set if needed"]);
+    expect(imported.body.warnings).toEqual(["1 task(s) in the trash were not imported", "Settings and history are not imported; set the time zone with dayhand settings set if needed"]);
     const { conforms } = await openApiChecker();
     expect(conforms("POST", "/import", imported)).toEqual([]);
 
@@ -170,6 +191,10 @@ describe("POST /api/v1/import", () => {
     expect(again.body).toMatchObject({ created: 0, failed: [] });
     expect(again.body.skipped).toHaveLength(before.length);
     expect(again.body.skipped[0].reason).toBe("imported before");
+    // helm-json, the format's name before the rename, is the same format with the same import keys.
+    const legacy = await rest(target.key, "POST", "/import", { body: { content, format: "helm-json" } });
+    expect(legacy.body).toMatchObject({ format: "dayhand-json", created: 0, failed: [] });
+    expect(legacy.body.skipped).toHaveLength(before.length);
     // Into the account it came from: the tasks themselves are there.
     const home = await rest(source.key, "POST", "/import", { body: { content } });
     expect(home.body.created).toBe(0);

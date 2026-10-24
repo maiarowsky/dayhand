@@ -1,9 +1,9 @@
-// Your own Helm server: `hlm server deploy` puts it on your free Convex
-// account, `hlm server start` runs it on this computer. Both run the
+// Your own Dayhand server: `dayhand server deploy` puts it on your free Convex
+// account, `dayhand server start` runs it on this computer. Both run the
 // backend's setup script (backend/scripts/setup.mjs, also `npm run setup`)
-// from a copy of the Helm repository, because deploying needs the backend's
-// code and the Convex CLI that hlm does not carry, and then sign hlm in with
-// the CLI key the script made, like `hlm login --url`. The key is read from
+// from a copy of the Dayhand repository, because deploying needs the backend's
+// code and the Convex CLI that dayhand does not carry, and then sign dayhand in with
+// the CLI key the script made, like `dayhand login --url`. The key is read from
 // the script's private folder and never printed.
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -18,23 +18,24 @@ import { PROFILE, storeKey } from "./auth.js";
 import type { CommandSpec, Opts, Outcome, RunContext } from "./types.js";
 
 const SCRIPT = path.join("scripts", "setup.mjs");
+const BACKEND_NAMES = ["dayhand-backend", "helm-backend"];
 
-/** A Helm backend folder: its package.json names helm-backend and it has the setup script. */
+/** A Dayhand backend folder: its package.json names dayhand-backend (helm-backend before the rename) and it has the setup script. */
 function isBackend(dir: string): boolean {
   try {
-    return existsSync(path.join(dir, SCRIPT)) && JSON.parse(readFileSync(path.join(dir, "package.json"), "utf8")).name === "helm-backend";
+    return existsSync(path.join(dir, SCRIPT)) && BACKEND_NAMES.includes(JSON.parse(readFileSync(path.join(dir, "package.json"), "utf8")).name);
   } catch {
     return false;
   }
 }
 
 /**
- * backend/ of a Helm checkout: --backend, HELM_BACKEND_DIR, the one next to this hlm when it
+ * backend/ of a Dayhand checkout: --backend, DAYHAND_BACKEND_DIR, the one next to this dayhand when it
  * runs from the repository, else the current folder or one above it (or its backend/). The
  * script found is run, so a checkout of your own wins over whatever folder you stand in.
  */
 export function findBackend(given: string | undefined, env: Env, cwd: string, beside = fileURLToPath(new URL("../../../backend", import.meta.url))): string | null {
-  const explicit = given ?? env.HELM_BACKEND_DIR;
+  const explicit = given ?? env.DAYHAND_BACKEND_DIR;
   if (explicit) {
     const dir = path.resolve(cwd, explicit);
     return isBackend(dir) ? dir : null;
@@ -114,7 +115,7 @@ async function signIn(ctx: RunContext, result: Record<string, any>, local: boole
   const before = config.profiles[profile]?.url;
   const change = saveProfileUrl(config, profile, url);
   if (before && before !== url) {
-    ctx.out.warn({ code: "profile_in_use", message: `Profile ${profile} already points at ${before} and is unchanged; use hlm --profile <name> server …` });
+    ctx.out.warn({ code: "profile_in_use", message: `Profile ${profile} already points at ${before} and is unchanged; use dayhand --profile <name> server …` });
   }
   return { profile, store: used.name, location: used.location, config: change, timezone: settings.timezone ?? null };
 }
@@ -125,8 +126,8 @@ async function summary(result: Record<string, any>, login: { profile: string; lo
   const qr = await new Promise<string>((resolve) => qrcode.generate(pairing.link, { small: true }, resolve));
   const local = result.mode === "local";
   return [
-    `Helm is ready: ${url} (${server.name} ${server.version})`,
-    `hlm is signed in (profile ${login.profile}, key in ${login.location}); try: hlm add "First task" --due today`,
+    `Dayhand is ready: ${url} (${server.name} ${server.version})`,
+    `dayhand is signed in (profile ${login.profile}, key in ${login.location}); try: dayhand add "First task" --due today`,
     "",
     `Pair the phone (code valid until ${until}, once):`,
     qr,
@@ -136,27 +137,27 @@ async function summary(result: Record<string, any>, login: { profile: string; lo
     "",
     `Keys and settings stay in ${files.dir} (readable only by you).`,
     ...(local
-      ? [`Claude Code: an agent key (hlm key create claude --scope write) in the Authorization header of ${url}/mcp (docs/mcp.md).`, "The Claude apps need a public HTTPS server: hlm server deploy."]
+      ? [`Claude Code: an agent key (dayhand key create claude --scope write) in the Authorization header of ${url}/mcp (docs/mcp.md).`, "The Claude apps need a public HTTPS server: dayhand server deploy."]
       : [
           `Claude app: Settings → Connectors → Add custom connector, ${url}/mcp (docs/oauth.md).`,
-          `Claude Code: claude mcp add --transport http helm ${url}/mcp, then /mcp to sign in; approve on the phone.`,
+          `Claude Code: claude mcp add --transport http dayhand ${url}/mcp, then /mcp to sign in; approve on the phone.`,
         ]),
-    local ? "Stop with Ctrl+C; hlm server start again keeps the data." : "Update later: hlm server deploy again (keys and data are kept).",
+    local ? "Stop with Ctrl+C; dayhand server start again keeps the data." : "Update later: dayhand server deploy again (keys and data are kept).",
   ].join("\n");
 }
 
 async function setup(ctx: RunContext, opts: Opts, local: boolean): Promise<Outcome> {
   const name = local ? "start" : "deploy";
   if (!ctx.interactive && !ctx.yes && !ctx.dryRun) {
-    throw usageError(`hlm server ${name} can ask questions${local ? "" : " and log in to Convex in a browser"}; without a terminal pass --yes (every question gets its safe answer)`);
+    throw usageError(`dayhand server ${name} can ask questions${local ? "" : " and log in to Convex in a browser"}; without a terminal pass --yes (every question gets its safe answer)`);
   }
   const backend = findBackend(opts.backend as string | undefined, ctx.env, process.cwd());
   if (!backend) {
-    throw usageError("hlm server needs a copy of the Helm repository: it deploys the repository's backend/ folder", {
-      hint: "git clone https://github.com/maiarowsky/helm.git && cd helm && hlm server " + name + "   (or --backend <folder>)",
+    throw usageError("dayhand server needs a copy of the Dayhand repository: it deploys the repository's backend/ folder", {
+      hint: "git clone https://github.com/maiarowsky/helm.git && cd helm && dayhand server " + name + "   (or --backend <folder>)",
     });
   }
-  ctx.io.stderr.write(`Using the Helm backend in ${backend}\n`);
+  ctx.io.stderr.write(`Using the Dayhand backend in ${backend}\n`);
   const engine = await runEngine(backend, engineArgs(opts, local, ctx.dryRun), ctx.env);
   if (ctx.dryRun) {
     await engine.exited;
@@ -183,42 +184,42 @@ async function setup(ctx: RunContext, opts: Opts, local: boolean): Promise<Outco
   return { value, view: { kind: "text", text }, printed: true };
 }
 
-const BACKEND_OPTION = { flags: "--backend <folder>", description: "The Helm repository's backend/ folder (default: found from here)" };
+const BACKEND_OPTION = { flags: "--backend <folder>", description: "The Dayhand repository's backend/ folder (default: found from here)" };
 
 const server: CommandSpec = {
   name: "server",
-  summary: "Your own Helm server: on your free Convex account, or on this computer",
+  summary: "Your own Dayhand server: on your free Convex account, or on this computer",
   description:
-    "Runs backend/scripts/setup.mjs from a copy of the Helm repository (npm run setup does the same without hlm), " +
-    "then signs hlm in. Keys stay in a private folder (HELM_SERVER_CONFIG_DIR) and are never printed. See docs/deploy.md.",
+    "Runs backend/scripts/setup.mjs from a copy of the Dayhand repository (npm run setup does the same without dayhand), " +
+    "then signs dayhand in. Keys stay in a private folder (DAYHAND_SERVER_CONFIG_DIR) and are never printed. See docs/deploy.md.",
   tools: [],
   subcommands: [
     {
       name: "deploy",
       schema: ["server.schema.json", "server-plan.schema.json"],
-      summary: "Set up or update your server on your own Convex account, sign hlm in and make a pairing code",
+      summary: "Set up or update your server on your own Convex account, sign dayhand in and make a pairing code",
       description:
         "Logs in to Convex in the browser, creates a project with a production deployment (or uses --deployment), " +
-        "sets the app-signing key and HELM_* variables, deploys, checks /api/v1/openapi.json, /auth/token and /mcp, " +
+        "sets the app-signing key and DAYHAND_* variables, deploys, checks /api/v1/openapi.json, /auth/token and /mcp, " +
         "and makes a CLI key and a pairing code. Run it again to update: keys, the CLI key and the data are kept; " +
         "a different signing key is replaced only after a question, the issuer never. --dry-run shows the steps without network.",
       options: [
         { flags: "--team <slug>", description: "Convex team (default: your only team; asked when you have several)" },
-        { flags: "--project <name>", description: "Name of the new Convex project (default: helm)" },
+        { flags: "--project <name>", description: "Name of the new Convex project (default: dayhand)" },
         { flags: "--deployment <name>", description: "Use this existing production deployment instead of a new project" },
-        { flags: "--issuer <url>", description: "HELM_JWT_ISSUER for a new server (default: the server's address)" },
+        { flags: "--issuer <url>", description: "DAYHAND_JWT_ISSUER for a new server (default: the server's address)" },
         BACKEND_OPTION,
       ],
       tools: ["get_settings"],
-      examples: ["hlm server deploy", "hlm server deploy --team my-team --project helm", "hlm server deploy --dry-run"],
+      examples: ["dayhand server deploy", "dayhand server deploy --team my-team --project dayhand", "dayhand server deploy --dry-run"],
       run: (ctx, _args, opts) => setup(ctx, opts, false),
     },
     {
       name: "start",
       schema: ["server.schema.json", "server-plan.schema.json"],
-      summary: "Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign hlm in",
+      summary: "Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign dayhand in",
       description:
-        "macOS and Linux. Data and keys stay in HELM_SERVER_CONFIG_DIR/local, so the same command starts the server again. " +
+        "macOS and Linux. Data and keys stay in DAYHAND_SERVER_CONFIG_DIR/local, so the same command starts the server again. " +
         "A phone with a release build needs HTTPS: put the ports behind tailscale serve and pass --public-url (docs/deploy.md). " +
         "With --json the result is printed when the server is ready.",
       options: [
@@ -229,7 +230,7 @@ const server: CommandSpec = {
         BACKEND_OPTION,
       ],
       tools: ["get_settings"],
-      examples: ["hlm server start", "hlm server start --public-url https://laptop.tail1234.ts.net", "hlm server start --json --yes"],
+      examples: ["dayhand server start", "dayhand server start --public-url https://laptop.tail1234.ts.net", "dayhand server start --json --yes"],
       run: (ctx, _args, opts) => setup(ctx, opts, true),
     },
   ],

@@ -15,7 +15,7 @@ export async function resolveRef(ctx: RunContext, raw: string): Promise<string> 
   if (ref.toLowerCase() === "now") {
     const client = await ctx.client();
     const today = (await client.callTool("list_today")).structured as { now?: { id: string } | null };
-    if (!today.now) throw new CliError("not_found", "There is no now task", { hint: "hlm now <ref>" });
+    if (!today.now) throw new CliError("not_found", "There is no now task", { hint: "dayhand now <ref>" });
     return today.now.id;
   }
   return ref;

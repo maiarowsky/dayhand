@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/server.schema.json",
+  "$id": "https://schemas.dayhand.invalid/server.schema.json",
   "title": "Server",
-  "description": "hlm server deploy and hlm server start (and npm run setup -- --json, without login): the server that was set up, a pairing code and where its keys are. Never contains a key.",
+  "description": "dayhand server deploy and dayhand server start (and npm run setup -- --json, without login): the server that was set up, a pairing code and where its keys are. Never contains a key.",
   "type": "object",
   "required": [
     "mode",
@@ -29,7 +29,7 @@
     },
     "url": {
       "type": "string",
-      "description": "The server address (HTTP actions URL) for the app's Connect screen and hlm"
+      "description": "The server address (HTTP actions URL) for the app's Connect screen and dayhand"
     },
     "convexUrl": {
       "type": "string",
@@ -44,7 +44,7 @@
     },
     "issuer": {
       "type": "string",
-      "description": "HELM_JWT_ISSUER in force"
+      "description": "DAYHAND_JWT_ISSUER in force (HELM_JWT_ISSUER on a deployment from before the rename)"
     },
     "userId": {
       "type": "string",
@@ -60,7 +60,11 @@
       "properties": {
         "name": {
           "type": "string",
-          "const": "helm"
+          "enum": [
+            "dayhand",
+            "helm"
+          ],
+          "description": "serverInfo.name from /mcp; helm: a backend from before the rename"
         },
         "version": {
           "type": "string",
@@ -90,7 +94,7 @@
         },
         "link": {
           "type": "string",
-          "description": "helm://pair?url=…&code=… (docs/pairing.md)"
+          "description": "dayhand://pair?url=…&code=… (docs/pairing.md)"
         }
       }
     },
@@ -136,7 +140,7 @@
             "replaced",
             "kept"
           ],
-          "description": "What happened to HELM_JWKS and HELM_JWT_PRIVATE_JWK; kept: the deployment's different key was left as it was"
+          "description": "What happened to DAYHAND_JWKS and DAYHAND_JWT_PRIVATE_JWK; kept: the deployment's different key was left as it was"
         }
       }
     },
@@ -181,7 +185,7 @@
     },
     "login": {
       "type": "object",
-      "description": "hlm only: where the CLI key was stored, as hlm login reports it",
+      "description": "dayhand only: where the CLI key was stored, as dayhand login reports it",
       "required": [
         "profile",
         "store",

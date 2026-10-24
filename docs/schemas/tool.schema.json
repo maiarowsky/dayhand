@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/tool.schema.json",
+  "$id": "https://schemas.dayhand.invalid/tool.schema.json",
   "title": "Tool",
-  "description": "One MCP tool (hlm tools <name>): name, description and input JSON Schema.",
+  "description": "One MCP tool (dayhand tools <name>): name, description and input JSON Schema.",
   "type": "object",
   "required": [
     "name",

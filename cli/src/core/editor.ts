@@ -15,7 +15,7 @@ export function editorCommand(env: Env, platform: NodeJS.Platform = process.plat
 }
 
 export function editText(env: Env, initial: string, fileName: string, platform: NodeJS.Platform = process.platform): string {
-  const dir = mkdtempSync(path.join(tmpdir(), "hlm-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "dayhand-"));
   const file = path.join(dir, fileName);
   try {
     writeFileSync(file, initial, { mode: 0o600 });

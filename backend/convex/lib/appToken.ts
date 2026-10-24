@@ -1,7 +1,8 @@
 // Signs the app's ES256 JWT inside the deployment. The private key is the
-// deployment environment variable HELM_JWT_PRIVATE_JWK (a JWK with `kid`);
-// its public half must be the key with the same `kid` in HELM_JWKS, which
+// deployment environment variable DAYHAND_JWT_PRIVATE_JWK (a JWK with `kid`);
+// its public half must be the key with the same `kid` in DAYHAND_JWKS, which
 // auth.config.ts trusts. The private key is never returned to any client.
+import { serverEnv } from "./env";
 import { bytesToBase64url } from "./secrets";
 
 export const APP_TOKEN_TTL_SECONDS = 3600;
@@ -14,36 +15,36 @@ export class SigningConfigError extends Error {}
 
 function decodeJwks(dataUri: string): { keys: (JsonWebKey & { kid?: string })[] } {
   const match = /^data:application\/json;base64,(.+)$/.exec(dataUri);
-  if (!match) throw new SigningConfigError("HELM_JWKS is not a base64 JSON data URI");
+  if (!match) throw new SigningConfigError("DAYHAND_JWKS is not a base64 JSON data URI");
   return JSON.parse(atob(match[1]));
 }
 
 /** Reads and cross-checks the signing configuration; throws SigningConfigError when unusable. */
 export function signingConfig(): SigningConfig {
-  const issuer = process.env.HELM_JWT_ISSUER;
-  const rawKey = process.env.HELM_JWT_PRIVATE_JWK;
-  const jwks = process.env.HELM_JWKS;
+  const issuer = serverEnv("JWT_ISSUER");
+  const rawKey = serverEnv("JWT_PRIVATE_JWK");
+  const jwks = serverEnv("JWKS");
   if (!issuer || !rawKey || !jwks) {
-    throw new SigningConfigError("HELM_JWT_ISSUER, HELM_JWT_PRIVATE_JWK and HELM_JWKS must all be set");
+    throw new SigningConfigError("DAYHAND_JWT_ISSUER, DAYHAND_JWT_PRIVATE_JWK and DAYHAND_JWKS must all be set");
   }
   let privateJwk: JsonWebKey & { kid?: string };
   try {
     privateJwk = JSON.parse(rawKey);
   } catch {
-    throw new SigningConfigError("HELM_JWT_PRIVATE_JWK is not JSON");
+    throw new SigningConfigError("DAYHAND_JWT_PRIVATE_JWK is not JSON");
   }
   const { kty, crv, d, x, y, kid } = privateJwk;
   if (kty !== "EC" || crv !== "P-256" || !d || !x || !y || !kid) {
-    throw new SigningConfigError("HELM_JWT_PRIVATE_JWK must be a P-256 EC private JWK with a kid");
+    throw new SigningConfigError("DAYHAND_JWT_PRIVATE_JWK must be a P-256 EC private JWK with a kid");
   }
   const published = decodeJwks(jwks).keys.find((k) => k.kid === kid);
   if (!published || published.x !== x || published.y !== y) {
-    throw new SigningConfigError("HELM_JWT_PRIVATE_JWK does not match the key with its kid in HELM_JWKS");
+    throw new SigningConfigError("DAYHAND_JWT_PRIVATE_JWK does not match the key with its kid in DAYHAND_JWKS");
   }
   return { issuer, privateJwk: { ...privateJwk, kid } };
 }
 
-/** The JWT subject for a Helm user id `<issuer>|<subject>`; null for any other user id. */
+/** The JWT subject for a Dayhand user id `<issuer>|<subject>`; null for any other user id. */
 export function appSubject(userId: string, issuer: string): string | null {
   const prefix = `${issuer}|`;
   return userId.startsWith(prefix) && userId.length > prefix.length ? userId.slice(prefix.length) : null;

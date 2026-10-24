@@ -1,4 +1,4 @@
-// HTTP endpoints of Helm's OAuth 2.1 authorization server (protocol: docs/oauth.md).
+// HTTP endpoints of Dayhand's OAuth 2.1 authorization server (protocol: docs/oauth.md).
 //   GET  /.well-known/oauth-protected-resource[/mcp]  RFC 9728 metadata of /mcp
 //   GET  /.well-known/oauth-authorization-server      RFC 8414 metadata
 //   GET  /oauth/authorize            check the request, show the code to approve on the phone
@@ -65,7 +65,7 @@ export const protectedResourceMetadata = httpAction(async () => {
     authorization_servers: [base],
     scopes_supported: SCOPES,
     bearer_methods_supported: ["header"],
-    resource_name: "Helm",
+    resource_name: "Dayhand",
   });
 });
 

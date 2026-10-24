@@ -5,9 +5,10 @@
 //   (and tool, prompt or resource name) in HTTP headers.
 // A request is modern when its _meta claims a protocol version, as the
 // specification and the official SDK decide it.
+import { serverEnv } from "./env";
 import { json } from "./http";
 
-export const SERVER_INFO = { name: "helm", version: "0.8.0" };
+export const SERVER_INFO = { name: "dayhand", version: "0.9.0" };
 
 export const MODERN_VERSIONS = ["2026-07-28"];
 export const LEGACY_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
@@ -30,7 +31,7 @@ export const RPC = {
   unsupportedVersion: -32022,
   // Resource not found before 2026-07-28 (-32602 since).
   legacyResourceNotFound: -32002,
-  // Helm's own, outside the JSON-RPC reserved range: too many calls with the key.
+  // Dayhand's own, outside the JSON-RPC reserved range: too many calls with the key.
   rateLimited: 429,
 };
 
@@ -115,11 +116,11 @@ export function modernResult(result: Record<string, unknown>, cache?: CacheHint)
   return { resultType: "complete", ...result, ...cache, _meta: { ...meta, [META.serverInfo]: SERVER_INFO } };
 }
 
-/** Origins allowed to call the endpoint from a browser (HELM_MCP_ALLOWED_ORIGINS, comma-separated). */
+/** Origins allowed to call the endpoint from a browser (DAYHAND_MCP_ALLOWED_ORIGINS, comma-separated). */
 export function originAllowed(request: Request): boolean {
   const origin = request.headers.get("Origin");
   if (origin === null) return true;
-  const allowed = (process.env.HELM_MCP_ALLOWED_ORIGINS ?? "")
+  const allowed = (serverEnv("MCP_ALLOWED_ORIGINS") ?? "")
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean);

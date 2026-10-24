@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/dry-run.schema.json",
+  "$id": "https://schemas.dayhand.invalid/dry-run.schema.json",
   "title": "Dry run",
   "description": "Any changing command with --dry-run: the changes it would make, with dates resolved. Nothing was saved.",
   "type": "object",
@@ -51,7 +51,7 @@
                   "PATCH",
                   "DELETE"
                 ],
-                "description": "The HTTP method when it is not POST (hlm key revoke, hlm webhook rm)"
+                "description": "The HTTP method when it is not POST (dayhand key revoke, dayhand webhook rm)"
               }
             }
           }

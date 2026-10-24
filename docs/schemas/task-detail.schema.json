@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/task-detail.schema.json",
+  "$id": "https://schemas.dayhand.invalid/task-detail.schema.json",
   "title": "Task with history",
-  "description": "get_task (hlm show, hlm note <ref> without text).",
+  "description": "get_task (dayhand show, dayhand note <ref> without text).",
   "type": "object",
   "required": [
     "task",

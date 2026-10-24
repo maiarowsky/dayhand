@@ -8,7 +8,7 @@ const VALID: Record<FieldsKind, readonly string[]> = { task: TASK_FIELDS, settin
 
 export function parseFields(raw: string | undefined, kind: FieldsKind | undefined, command: string): string[] | undefined {
   if (raw === undefined) return undefined;
-  if (!kind) throw usageError(`--fields is not supported by hlm ${command}`);
+  if (!kind) throw usageError(`--fields is not supported by dayhand ${command}`);
   const fields = raw.split(",").map((f) => f.trim()).filter(Boolean);
   const unknown = fields.filter((f) => !VALID[kind].includes(f));
   if (fields.length === 0 || unknown.length) throw usageError("Unknown or missing field names in --fields", { valid: [...VALID[kind]] });

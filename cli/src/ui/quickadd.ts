@@ -1,4 +1,4 @@
-// Quick add in hlm ui: one line is a title, `#labels` and a date phrase at the
+// Quick add in dayhand ui: one line is a title, `#labels` and a date phrase at the
 // end or the start ("Call the accountant fri 2pm #home"), resolved with the same
 // grammar as --due (when/parse.ts). The longest phrase wins; at least one word
 // stays the title. A line in quotes is taken literally, "no date" adds no day.

@@ -139,7 +139,7 @@ function responses(route: Route): Json {
 }
 
 function operation(route: Route): Json {
-  const extras: Json = { "x-helm-scope": route.scope };
+  const extras: Json = { "x-dayhand-scope": route.scope };
   if (isToolRoute(route)) extras["x-mcp-tool"] = route.tool;
   const description = route.description ?? (isToolRoute(route) ? toolOf(route).description : undefined);
   const body = requestBody(route);
@@ -161,9 +161,9 @@ const problemOf = (description: string) => ({
 });
 
 const DESCRIPTION =
-  "Helm's REST API for integrations (Shortcuts, n8n, Home Assistant, scripts). Every route runs the same domain operation as the MCP tool named in x-mcp-tool, " +
-  "with the same results and error codes. Authenticate with a personal API key (Authorization: Bearer helm_…); x-helm-scope is the key scope a route needs. " +
-  "Guide: docs/api.md in the Helm repository.";
+  "Dayhand's REST API for integrations (Shortcuts, n8n, Home Assistant, scripts). Every route runs the same domain operation as the MCP tool named in x-mcp-tool, " +
+  "with the same results and error codes. Authenticate with a personal API key (Authorization: Bearer dayhand_…); x-dayhand-scope is the key scope a route needs. " +
+  "Guide: docs/api.md in the Dayhand repository.";
 
 /** The whole document; `base` is the deployment's public URL (servers), when known. */
 export function openApiDocument(base: string | null = publicUrl()): Json {
@@ -185,7 +185,7 @@ export function openApiDocument(base: string | null = publicUrl()): Json {
   return {
     openapi: "3.1.0",
     info: {
-      title: "Helm API",
+      title: "Dayhand API",
       version: SERVER_INFO.version,
       description: DESCRIPTION,
       license: { name: "Apache-2.0", identifier: "Apache-2.0" },
@@ -196,7 +196,7 @@ export function openApiDocument(base: string | null = publicUrl()): Json {
     paths,
     components: {
       securitySchemes: {
-        apiKey: { type: "http", scheme: "bearer", description: "A personal API key (helm_…) with the scope the route needs (read < write < full)." },
+        apiKey: { type: "http", scheme: "bearer", description: "A personal API key (dayhand_…) with the scope the route needs (read < write < full)." },
       },
       schemas: relocate(SCHEMA_DEFS),
       headers: {

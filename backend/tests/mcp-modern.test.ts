@@ -30,7 +30,7 @@ describe("MCP 2026-07-28 on the wire", () => {
       instructions: expect.stringContaining("list_today"),
       ttlMs: expect.any(Number),
       cacheScope: "public",
-      _meta: { [SERVER_INFO_KEY]: { name: "helm", version: expect.any(String) } },
+      _meta: { [SERVER_INFO_KEY]: { name: "dayhand", version: expect.any(String) } },
     });
   });
 
@@ -43,10 +43,10 @@ describe("MCP 2026-07-28 on the wire", () => {
     expect(added.body.result).toMatchObject({
       resultType: "complete",
       structuredContent: { title: "Modern", ref: 1 },
-      _meta: { [SERVER_INFO_KEY]: { name: "helm" } },
+      _meta: { [SERVER_INFO_KEY]: { name: "dayhand" } },
     });
     expect(added.body.result).not.toHaveProperty("ttlMs");
-    const today = await post(key, "resources/read", { uri: "helm://today" });
+    const today = await post(key, "resources/read", { uri: "dayhand://today" });
     expect(today.body.result).toMatchObject({ resultType: "complete", ttlMs: 0, cacheScope: "private" });
     for (const method of ["resources/list", "resources/templates/list", "prompts/list"]) {
       expect((await post(key, method)).body.result, method).toMatchObject({ resultType: "complete", cacheScope: "public" });
@@ -102,16 +102,16 @@ describe("MCP 2026-07-28 on the wire", () => {
       expect(status, method).toBe(404);
       expect(body.error.code, method).toBe(-32601);
     }
-    const missing = await post(key, "resources/read", { uri: "helm://tasks/404" });
+    const missing = await post(key, "resources/read", { uri: "dayhand://tasks/404" });
     expect(missing.status).toBe(200);
-    expect(missing.body.error).toMatchObject({ code: -32602, message: "Resource not found", data: { uri: "helm://tasks/404" } });
+    expect(missing.body.error).toMatchObject({ code: -32602, message: "Resource not found", data: { uri: "dayhand://tasks/404" } });
   });
 
   test("a 2025 client still gets the 2025 answers", async () => {
     const key = await createKey(newUserId());
     const initialize = { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "t", version: "0" } };
     const init = await (await mcpPost(key, { jsonrpc: "2.0", id: 1, method: "initialize", params: initialize })).json();
-    expect(init.result).toMatchObject({ protocolVersion: "2025-11-25", serverInfo: { name: "helm" } });
+    expect(init.result).toMatchObject({ protocolVersion: "2025-11-25", serverInfo: { name: "dayhand" } });
     expect(init.result).not.toHaveProperty("resultType");
     const future = await (await mcpPost(key, { jsonrpc: "2.0", id: 2, method: "initialize", params: { ...initialize, protocolVersion: MODERN } })).json();
     expect(future.result.protocolVersion).toBe("2025-11-25");
@@ -134,14 +134,14 @@ describe("the official v2 SDK client", () => {
     const { client, connect } = v2Client(key, { mode: { pin: MODERN } });
     await connect();
     expect(client.getProtocolEra()).toBe("modern");
-    expect(client.getServerVersion()).toMatchObject({ name: "helm" });
+    expect(client.getServerVersion()).toMatchObject({ name: "dayhand" });
     const { tools } = await client.listTools();
     expect(tools).toHaveLength(17);
     const added = await client.callTool({ name: "add_task", arguments: { title: "From the v2 client", dueDate: "today" } });
     expect(added.structuredContent).toMatchObject({ title: "From the v2 client" });
     const page = await client.callTool({ name: "list_all", arguments: { query: "v2", limit: 1 } });
     expect(page.structuredContent).toMatchObject({ total: 1, nextCursor: null });
-    const today = await client.readResource({ uri: "helm://today" });
+    const today = await client.readResource({ uri: "dayhand://today" });
     expect(JSON.parse((today.contents[0] as { text: string }).text).today[0]).toMatchObject({ title: "From the v2 client" });
     const prompt = await client.getPrompt({ name: "plan_day" });
     expect(prompt.messages.length).toBeGreaterThan(0);

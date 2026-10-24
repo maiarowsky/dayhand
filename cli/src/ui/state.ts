@@ -1,4 +1,4 @@
-// The state of hlm ui that keys change: the view, the cursor in each view,
+// The state of dayhand ui that keys change: the view, the cursor in each view,
 // what is open over it (help, details, a prompt, the edit form) and the filter.
 // Data from the server is not here: keys see it through `Lists`.
 import type { Task } from "../render/model.js";

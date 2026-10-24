@@ -1,6 +1,6 @@
 // Minimal ES256 JWT helpers for local development and tests: a key pair
-// whose public half goes into the deployment as a JWKS data URI (HELM_JWKS)
-// and whose private half is HELM_JWT_PRIVATE_JWK, and app tokens signed with
+// whose public half goes into the deployment as a JWKS data URI (DAYHAND_JWKS)
+// and whose private half is DAYHAND_JWT_PRIVATE_JWK, and app tokens signed with
 // the private half. Deployed, the backend itself signs tokens for paired
 // phones (convex/lib/appToken.ts).
 import { randomUUID, webcrypto } from "node:crypto";
@@ -29,7 +29,7 @@ export function privateJwkOf(content) {
 }
 
 /**
- * HELM_JWKS for a key: its public half as a JWKS data URI.
+ * DAYHAND_JWKS for a key: its public half as a JWKS data URI.
  * @param {JsonWebKey & { kid: string }} jwk
  */
 export function jwksDataUri({ kty, crv, x, y, kid }) {
@@ -38,7 +38,7 @@ export function jwksDataUri({ kty, crv, x, y, kid }) {
 }
 
 /**
- * Whether a HELM_JWKS value publishes this key's public half under its kid.
+ * Whether a DAYHAND_JWKS value publishes this key's public half under its kid.
  * @param {string} dataUri
  * @param {JsonWebKey & { kid: string }} jwk
  */

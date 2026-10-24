@@ -12,7 +12,7 @@ const REF = { name: "ref", description: "Task: #42 or 42 (its number), now, or i
 const REFS = { name: "refs", description: "Tasks: #42 or 42, now, or ids", required: true, variadic: true };
 
 const SCHEDULE_OPTIONS: OptSpec[] = [
-  { flags: "--due <when>", description: "Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (hlm help dates)" },
+  { flags: "--due <when>", description: "Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (dayhand help dates)" },
   { flags: "--time <HH:MM>", description: "Due time, 24h, in your time zone" },
   ...REPEAT_OPTIONS,
 ];
@@ -50,10 +50,10 @@ export const taskCommands: CommandSpec[] = [
   {
     name: "today",
     schema: "today.schema.json",
-    summary: "The Today screen: now task, overdue, today and done today (also plain `hlm`)",
+    summary: "The Today screen: now task, overdue, today and done today (also plain `dayhand`)",
     tools: ["list_today"],
     fields: "task",
-    examples: ["hlm", "hlm today --json", "hlm today --plain --fields ref,title"],
+    examples: ["dayhand", "dayhand today --json", "dayhand today --plain --fields ref,title"],
     run: async (ctx) => {
       const view = await tool<TodayView>(ctx, "list_today");
       return { value: view, view: { kind: "today", view } };
@@ -78,13 +78,13 @@ export const taskCommands: CommandSpec[] = [
     tools: ["add_task"],
     fields: "task",
     examples: [
-      'hlm add Call the accountant --due "fri 2pm" -l home',
-      'hlm add Pay rent --due "1 nov" --dry-run',
-      'hlm add "Review the plan" --time 09:00 --every week --on mon,thu',
-      'hlm add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 -1d"',
-      "hlm add Water plants --every day --interval 3 --from-completion",
-      "hlm add Pack --due fri --item passport --item charger",
-      "hlm add Buy a present --no-due --json",
+      'dayhand add Call the accountant --due "fri 2pm" -l home',
+      'dayhand add Pay rent --due "1 nov" --dry-run',
+      'dayhand add "Review the plan" --time 09:00 --every week --on mon,thu',
+      'dayhand add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 -1d"',
+      "dayhand add Water plants --every day --interval 3 --from-completion",
+      "dayhand add Pack --due fri --item passport --item charger",
+      "dayhand add Buy a present --no-due --json",
     ],
     run: async (ctx, args, opts) => {
       const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId() };
@@ -115,11 +115,11 @@ export const taskCommands: CommandSpec[] = [
     tools: ["list_all"],
     fields: "task",
     examples: [
-      "hlm list -l home --status todo,doing",
-      "hlm list --overdue",
-      'hlm list --due-before eow --search accountant --limit 20',
-      "hlm list --limit 50 --cursor <nextCursor> --json",
-      "hlm list --done --json --fields ref,title,status",
+      "dayhand list -l home --status todo,doing",
+      "dayhand list --overdue",
+      'dayhand list --due-before eow --search accountant --limit 20',
+      "dayhand list --limit 50 --cursor <nextCursor> --json",
+      "dayhand list --done --json --fields ref,title,status",
     ],
     run: async (ctx, _args, opts) => {
       const statuses = parseStatuses(opts.status);
@@ -137,7 +137,7 @@ export const taskCommands: CommandSpec[] = [
     options: [{ flags: "--done-limit <n>", description: "Maximum tasks in the done column (default 50)", kind: "int" }],
     tools: ["board"],
     fields: "task",
-    examples: ["hlm board", "hlm board --done-limit 5 --json"],
+    examples: ["dayhand board", "dayhand board --done-limit 5 --json"],
     run: async (ctx, _args, opts) => {
       const value = await tool<Board>(ctx, "board", opts.doneLimit === undefined ? {} : { doneLimit: opts.doneLimit });
       const section = (name: keyof Board) => ({ name, label: name.toUpperCase(), tasks: value[name], count: true, empty: "empty" });
@@ -151,7 +151,7 @@ export const taskCommands: CommandSpec[] = [
     args: [REF],
     tools: ["get_task"],
     fields: "task",
-    examples: ["hlm show 42", "hlm show now --json"],
+    examples: ["dayhand show 42", "dayhand show now --json"],
     run: async (ctx, args) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const [value, timezone] = await Promise.all([tool<Detail>(ctx, "get_task", { taskId }), userTimezone(ctx)]);
@@ -179,7 +179,7 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--clear-labels", description: "Remove all labels" },
       { flags: "--link <url>", description: 'Replace all links: "https://… Title" (repeatable)', kind: "list" },
       { flags: "--clear-links", description: "Remove all links" },
-      { flags: "--item <text>", description: "Replace the checklist (repeatable; hlm checklist edits single items)", kind: "list" },
+      { flags: "--item <text>", description: "Replace the checklist (repeatable; dayhand checklist edits single items)", kind: "list" },
       { flags: "--clear-checklist", description: "Remove the checklist" },
       ...REMINDER_OPTIONS,
       { flags: "--default-reminders", description: "Back to the default reminders from settings" },
@@ -187,19 +187,19 @@ export const taskCommands: CommandSpec[] = [
     tools: ["update_task"],
     fields: "task",
     examples: [
-      'hlm edit 42 --title "Call the bank" --due "tomorrow 10:00"',
-      "hlm edit 42 --add-label work --rm-label home",
-      "hlm edit 42 --every month --month-day last --until 2027-06-30",
-      'hlm edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"',
-      "hlm edit 42 --remind 15m --remind 1d",
-      "hlm edit 42 --clear-repeat",
-      "hlm edit 42",
+      'dayhand edit 42 --title "Call the bank" --due "tomorrow 10:00"',
+      "dayhand edit 42 --add-label work --rm-label home",
+      "dayhand edit 42 --every month --month-day last --until 2027-06-30",
+      'dayhand edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"',
+      "dayhand edit 42 --remind 15m --remind 1d",
+      "dayhand edit 42 --clear-repeat",
+      "dayhand edit 42",
     ],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const input = await editArgs(ctx, taskId, opts);
       if (Object.keys(input).length === 0 && ctx.interactive && ctx.format === "human") return editInEditor(ctx, taskId);
-      if (Object.keys(input).length === 0) throw usageError("Nothing to change: give at least one option", { hint: "hlm edit --help" });
+      if (Object.keys(input).length === 0) throw usageError("Nothing to change: give at least one option", { hint: "dayhand edit --help" });
       const task = await tool<Task>(ctx, "update_task", { taskId, ...input, clientId: ctx.clientId() });
       return { value: task, view: { kind: "task", verb: "Updated", task } };
     },
@@ -212,7 +212,7 @@ export const taskCommands: CommandSpec[] = [
     options: [{ flags: "--clear", description: "Remove the note" }],
     tools: ["get_task", "update_task"],
     fields: "task",
-    examples: ["hlm note 42", 'hlm note 42 "Account number is in the email"', "hlm note 42 --clear"],
+    examples: ["dayhand note 42", 'dayhand note 42 "Account number is in the email"', "dayhand note 42 --clear"],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const text = ((args.text as string[] | undefined) ?? []).join(" ").trim();
@@ -247,7 +247,7 @@ export const taskCommands: CommandSpec[] = [
     ],
     tools: ["get_task", "update_task"],
     fields: "task",
-    examples: ["hlm checklist 42", 'hlm checklist 42 --add "Book the hotel" --add "Pack"', "hlm checklist 42 --check 1,2", "hlm checklist 42 --move 3:1 --rm 4"],
+    examples: ["dayhand checklist 42", 'dayhand checklist 42 --add "Book the hotel" --add "Pack"', "dayhand checklist 42 --check 1,2", "dayhand checklist 42 --move 3:1 --rm 4"],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const detail = await tool<Detail>(ctx, "get_task", { taskId });
@@ -263,14 +263,14 @@ export const taskCommands: CommandSpec[] = [
     name: "move",
     schema: "task.schema.json",
     summary: "Move a task to another day, optionally with a time (none removes the date)",
-    args: [REF, { name: "date", description: "When: tomorrow, fri 14:00, next mon, 2026-10-23 … or none (hlm help dates)", required: true }],
+    args: [REF, { name: "date", description: "When: tomorrow, fri 14:00, next mon, 2026-10-23 … or none (dayhand help dates)", required: true }],
     options: [
       { flags: "--time <HH:MM>", description: "New due time" },
       { flags: "--clear-time", description: "Remove the due time" },
     ],
     tools: ["reschedule_task"],
     fields: "task",
-    examples: ["hlm move 42 tomorrow --time 08:00", 'hlm move 42 "next mon 9am"', "hlm move 42 none"],
+    examples: ["dayhand move 42 tomorrow --time 08:00", 'dayhand move 42 "next mon 9am"', "dayhand move 42 none"],
     run: async (ctx, args, opts) => {
       const taskId = await resolveRef(ctx, args.ref as string);
       const date = (args.date as string).trim();
@@ -291,7 +291,7 @@ export const taskCommands: CommandSpec[] = [
     args: [REFS],
     tools: ["complete_task"],
     fields: "task",
-    examples: ["hlm done 42", "hlm done 42 43 now", "hlm done 1 2 3 --yes --client-id 7f3c"],
+    examples: ["dayhand done 42", "dayhand done 42 43 now", "dayhand done 1 2 3 --yes --client-id 7f3c"],
     run: async (ctx, args) => {
       const results = await eachRef(ctx, args.refs as string[], "complete", (taskId, clientId) =>
         tool<TaskPair>(ctx, "complete_task", { taskId, clientId }),
@@ -302,17 +302,17 @@ export const taskCommands: CommandSpec[] = [
     },
   },
   perTask(
-    { name: "start", summary: "Set tasks to doing", verb: "start", done: "Started", examples: ["hlm start 42"] },
+    { name: "start", summary: "Set tasks to doing", verb: "start", done: "Started", examples: ["dayhand start 42"] },
     setStatus("doing"),
     ["set_status"],
   ),
   perTask(
-    { name: "stop", summary: "Set tasks back to todo (from doing)", verb: "stop", done: "Stopped", examples: ["hlm stop 42"] },
+    { name: "stop", summary: "Set tasks back to todo (from doing)", verb: "stop", done: "Stopped", examples: ["dayhand stop 42"] },
     setStatus("todo"),
     ["set_status"],
   ),
   perTask(
-    { name: "reopen", summary: "Set done tasks back to todo", verb: "reopen", done: "Reopened", examples: ["hlm reopen 42"] },
+    { name: "reopen", summary: "Set done tasks back to todo", verb: "reopen", done: "Reopened", examples: ["dayhand reopen 42"] },
     setStatus("todo"),
     ["set_status"],
   ),
@@ -327,7 +327,7 @@ export const taskCommands: CommandSpec[] = [
     ],
     tools: ["set_now", "list_today"],
     fields: "task",
-    examples: ["hlm now", 'hlm now 42 --note "have the account number"', "hlm now --clear"],
+    examples: ["dayhand now", 'dayhand now 42 --note "have the account number"', "dayhand now --clear"],
     run: async (ctx, args, opts) => {
       const ref = args.ref as string | undefined;
       if (opts.clear) {
@@ -336,7 +336,7 @@ export const taskCommands: CommandSpec[] = [
         return { value, view: { kind: "text", text: "Now task cleared" } };
       }
       if (!ref) {
-        if (opts.note !== undefined) throw usageError("--note needs a task: hlm now <ref> --note <text>");
+        if (opts.note !== undefined) throw usageError("--note needs a task: dayhand now <ref> --note <text>");
         const value = await tool<TodayView>(ctx, "list_today");
         return { value, view: value.now ? { kind: "task", verb: "Now", task: value.now } : { kind: "text", text: "(no now task)" } };
       }
@@ -347,17 +347,17 @@ export const taskCommands: CommandSpec[] = [
     },
   },
   perTask(
-    { name: "archive", summary: "Archive tasks: off Today and the board, kept in exports", verb: "archive", done: "Archived", examples: ["hlm archive 42"] },
+    { name: "archive", summary: "Archive tasks: off Today and the board, kept in exports", verb: "archive", done: "Archived", examples: ["dayhand archive 42"] },
     (ctx, taskId, clientId) => tool<Task>(ctx, "archive_task", { taskId, clientId }),
     ["archive_task"],
   ),
   perTask(
-    { name: "rm", aliases: ["delete"], summary: "Move tasks to the trash (purged after 30 days)", verb: "delete", done: "Moved to the trash", examples: ["hlm rm 42", "hlm rm 4 5 6 --yes"] },
+    { name: "rm", aliases: ["delete"], summary: "Move tasks to the trash (purged after 30 days)", verb: "delete", done: "Moved to the trash", examples: ["dayhand rm 42", "dayhand rm 4 5 6 --yes"] },
     (ctx, taskId, clientId) => tool<Task>(ctx, "delete_task", { taskId, clientId }),
     ["delete_task"],
   ),
   perTask(
-    { name: "restore", summary: "Restore tasks from the trash (or the archive)", verb: "restore", done: "Restored", examples: ["hlm restore 42"] },
+    { name: "restore", summary: "Restore tasks from the trash (or the archive)", verb: "restore", done: "Restored", examples: ["dayhand restore 42"] },
     (ctx, taskId, clientId) => tool<Task>(ctx, "restore_task", { taskId, clientId }),
     ["restore_task"],
   ),
@@ -367,7 +367,7 @@ export const taskCommands: CommandSpec[] = [
     summary: "Tasks in the trash, newest first",
     tools: ["list_trash"],
     fields: "task",
-    examples: ["hlm trash", "hlm trash --json"],
+    examples: ["dayhand trash", "dayhand trash --json"],
     run: async (ctx) => {
       const value = await tool<{ result: Task[] }>(ctx, "list_trash");
       return { value, view: { kind: "tasks", tasks: asList(value), empty: "trash is empty" } };
@@ -375,7 +375,7 @@ export const taskCommands: CommandSpec[] = [
   },
 ];
 
-/** "#42 Pack (1/2)" and the numbered items, as `hlm checklist` prints them. */
+/** "#42 Pack (1/2)" and the numbered items, as `dayhand checklist` prints them. */
 function checklistText(task: Task): string {
   const items = task.checklist ?? [];
   const ref = task.ref !== undefined ? `#${task.ref}` : task.id;
@@ -430,19 +430,19 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
 
 const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
-/** `hlm note <ref>` on a terminal: the note in the editor; an unchanged note sends nothing. */
+/** `dayhand note <ref>` on a terminal: the note in the editor; an unchanged note sends nothing. */
 async function editNote(ctx: RunContext, taskId: string, task: Task) {
   const before = task.note ?? "";
-  const after = ctx.edit(before ? `${before}\n` : "", `hlm-note-${task.ref ?? "task"}.md`).replace(/\s+$/, "");
+  const after = ctx.edit(before ? `${before}\n` : "", `dayhand-note-${task.ref ?? "task"}.md`).replace(/\s+$/, "");
   if (after === before) return { value: task, view: { kind: "text" as const, text: "Note unchanged" } };
   const updated = await tool<Task>(ctx, "update_task", { taskId, note: after === "" ? null : after, clientId: ctx.clientId() });
   return { value: updated, view: { kind: "task" as const, verb: "Note updated", task: updated } };
 }
 
-/** `hlm edit <ref>` on a terminal without options: first line the title, after a blank line the note. */
+/** `dayhand edit <ref>` on a terminal without options: first line the title, after a blank line the note. */
 async function editInEditor(ctx: RunContext, taskId: string) {
   const { task } = await tool<Detail>(ctx, "get_task", { taskId });
-  const text = ctx.edit(`${task.title}\n\n${task.note ? `${task.note}\n` : ""}`, `hlm-task-${task.ref ?? "task"}.md`);
+  const text = ctx.edit(`${task.title}\n\n${task.note ? `${task.note}\n` : ""}`, `dayhand-task-${task.ref ?? "task"}.md`);
   const [first = "", ...rest] = text.split(/\r?\n/);
   const title = first.trim();
   if (!title) throw usageError("The first line (the title) is empty; nothing was changed");

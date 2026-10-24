@@ -108,7 +108,7 @@ describe("phrases on Thursday 22 October 2026, 10:00 in London", () => {
   );
 
   test("the error does not repeat the phrase", () => {
-    expect(() => parseWhen("secret-ish words", THU)).toThrow(/^Not a date hlm understands; try e\.g\. tomorrow/);
+    expect(() => parseWhen("secret-ish words", THU)).toThrow(/^Not a date dayhand understands; try e\.g\. tomorrow/);
     expect(() => parseWhen("secret-ish words", THU)).not.toThrow(/secret/);
   });
 });

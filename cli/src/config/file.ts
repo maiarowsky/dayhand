@@ -1,5 +1,5 @@
 // config.toml: the deployment URL, named profiles, command aliases and the
-// color default. Never the API key (that is `hlm login`). Every problem is
+// color default. Never the API key (that is `dayhand login`). Every problem is
 // reported with the file and the key, and nothing in it is ever guessed.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -65,7 +65,7 @@ type Fail = (key: string, message: string) => CliError;
 
 function rejectSecrets(table: Record<string, unknown>, prefix: string, fail: Fail) {
   for (const [key, value] of Object.entries(table)) {
-    if (SECRET_KEYS.test(key)) throw fail(prefix + key, "API keys do not belong in config.toml; remove it and run hlm login");
+    if (SECRET_KEYS.test(key)) throw fail(prefix + key, "API keys do not belong in config.toml; remove it and run dayhand login");
     if (typeof value === "object" && value !== null && !Array.isArray(value)) {
       rejectSecrets(value as Record<string, unknown>, `${prefix}${key}.`, fail);
     }
@@ -129,11 +129,11 @@ function ui(value: unknown, fail: Fail): ColorMode | undefined {
 }
 
 function configError(file: string, key: string, message: string, cause?: unknown): CliError {
-  return new CliError("config", `${file}${key ? `: ${key}` : ""}: ${message}`, { hint: "hlm help config" }, { cause });
+  return new CliError("config", `${file}${key ? `: ${key}` : ""}: ${message}`, { hint: "dayhand help config" }, { cause });
 }
 
 /**
- * Records the URL `hlm login` used: creates config.toml with the profile, or
+ * Records the URL `dayhand login` used: creates config.toml with the profile, or
  * appends the profile when the file has none of that name. An existing
  * profile is never rewritten (that would lose the user's comments).
  */
@@ -143,7 +143,7 @@ export function saveProfileUrl(config: Config, profile: string, url: string): "c
   const section = `[profiles.${profile}]\nurl = ${JSON.stringify(url)}\n`;
   if (!config.exists) {
     mkdirSync(path.dirname(config.file), { recursive: true, mode: 0o700 });
-    writeFileSync(config.file, `# hlm settings; see hlm help config\ndefault_profile = ${JSON.stringify(profile)}\n\n${section}`, { mode: 0o600 });
+    writeFileSync(config.file, `# dayhand settings; see dayhand help config\ndefault_profile = ${JSON.stringify(profile)}\n\n${section}`, { mode: 0o600 });
     return "created";
   }
   appendFileSync(config.file, `\n${section}`);

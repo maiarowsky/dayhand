@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, test } from "vitest";
 import { expandAlias, splitWords } from "../src/config/aliases.js";
 import { emptyConfig, loadConfig, saveProfileUrl } from "../src/config/file.js";
+import { normalizeEnv, readEnv } from "../src/config/env.js";
 import { resolvePaths } from "../src/config/paths.js";
 import { resolveTarget } from "../src/config/resolve.js";
 import { CliError } from "../src/core/exit.js";
@@ -14,7 +15,7 @@ import { VALUE_OPTIONS } from "../src/globals.js";
 import { commandNames } from "../src/registry/index.js";
 import { colorEnabled } from "../src/render/style.js";
 
-const dir = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-config-"));
+const dir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-config-"));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 let fileCount = 0;
@@ -36,31 +37,67 @@ const failure = (text: string) => {
 describe("folders follow each system's convention", () => {
   test("Linux: XDG, with ~/.config and ~/.cache as defaults; relative XDG paths are ignored", () => {
     expect(resolvePaths({}, "linux", "/home/ann")).toEqual({
-      configDir: "/home/ann/.config/hlm",
-      cacheDir: "/home/ann/.cache/hlm",
-      configFile: "/home/ann/.config/hlm/config.toml",
+      configDir: "/home/ann/.config/dayhand",
+      cacheDir: "/home/ann/.cache/dayhand",
+      configFile: "/home/ann/.config/dayhand/config.toml",
     });
     const xdg = resolvePaths({ XDG_CONFIG_HOME: "/x/conf", XDG_CACHE_HOME: "/x/cache" }, "linux", "/home/ann");
-    expect([xdg.configDir, xdg.cacheDir]).toEqual(["/x/conf/hlm", "/x/cache/hlm"]);
-    expect(resolvePaths({ XDG_CONFIG_HOME: "relative" }, "linux", "/home/ann").configDir).toBe("/home/ann/.config/hlm");
+    expect([xdg.configDir, xdg.cacheDir]).toEqual(["/x/conf/dayhand", "/x/cache/dayhand"]);
+    expect(resolvePaths({ XDG_CONFIG_HOME: "relative" }, "linux", "/home/ann").configDir).toBe("/home/ann/.config/dayhand");
   });
 
   test("macOS: Application Support and Caches", () => {
     const paths = resolvePaths({}, "darwin", "/Users/ann");
-    expect(paths.configFile).toBe("/Users/ann/Library/Application Support/hlm/config.toml");
-    expect(paths.cacheDir).toBe("/Users/ann/Library/Caches/hlm");
+    expect(paths.configFile).toBe("/Users/ann/Library/Application Support/dayhand/config.toml");
+    expect(paths.cacheDir).toBe("/Users/ann/Library/Caches/dayhand");
   });
 
   test("Windows: APPDATA and LOCALAPPDATA, with backslashes", () => {
     const paths = resolvePaths({ APPDATA: "C:\\Users\\ann\\AppData\\Roaming", LOCALAPPDATA: "C:\\Users\\ann\\AppData\\Local" }, "win32", "C:\\Users\\ann");
-    expect(paths.configFile).toBe("C:\\Users\\ann\\AppData\\Roaming\\hlm\\config.toml");
-    expect(paths.cacheDir).toBe("C:\\Users\\ann\\AppData\\Local\\hlm\\Cache");
-    expect(resolvePaths({}, "win32", "C:\\Users\\ann").configDir).toBe("C:\\Users\\ann\\AppData\\Roaming\\hlm");
+    expect(paths.configFile).toBe("C:\\Users\\ann\\AppData\\Roaming\\dayhand\\config.toml");
+    expect(paths.cacheDir).toBe("C:\\Users\\ann\\AppData\\Local\\dayhand\\Cache");
+    expect(resolvePaths({}, "win32", "C:\\Users\\ann").configDir).toBe("C:\\Users\\ann\\AppData\\Roaming\\dayhand");
   });
 
-  test("HLM_CONFIG_DIR and HLM_CACHE_DIR win everywhere", () => {
-    const paths = resolvePaths({ HLM_CONFIG_DIR: "/c", HLM_CACHE_DIR: "/k" }, "darwin", "/Users/ann");
+  test("DAYHAND_CONFIG_DIR and DAYHAND_CACHE_DIR win everywhere", () => {
+    const paths = resolvePaths({ DAYHAND_CONFIG_DIR: "/c", DAYHAND_CACHE_DIR: "/k" }, "darwin", "/Users/ann");
     expect(paths).toEqual({ configDir: "/c", cacheDir: "/k", configFile: "/c/config.toml" });
+    expect(resolvePaths({ HLM_CONFIG_DIR: "/old", HLM_CACHE_DIR: "/oldk" }, "linux", "/home/ann")).toMatchObject({ configDir: "/old", cacheDir: "/oldk" });
+  });
+
+  test("the hlm folder of the old command is used while there is no dayhand folder, with a warning", () => {
+    const only = (...dirs: string[]) => (dir: string) => dirs.includes(dir);
+    expect(resolvePaths({}, "linux", "/home/ann", only("/home/ann/.config/hlm"))).toEqual({
+      configDir: "/home/ann/.config/hlm",
+      cacheDir: "/home/ann/.cache/dayhand",
+      configFile: "/home/ann/.config/hlm/config.toml",
+      warning: { code: "deprecated_config_dir", message: "/home/ann/.config/hlm is the folder of the old hlm command; move it to /home/ann/.config/dayhand" },
+    });
+    const mac = resolvePaths({}, "darwin", "/Users/ann", only("/Users/ann/Library/Application Support/hlm"));
+    expect(mac.configDir).toBe("/Users/ann/Library/Application Support/hlm");
+    const win = resolvePaths({ APPDATA: "C:\\A" }, "win32", "C:\\Users\\ann", only("C:\\A\\hlm"));
+    expect(win.configDir).toBe("C:\\A\\hlm");
+    // Both exist: the new one. An explicit folder is never replaced.
+    expect(resolvePaths({}, "linux", "/home/ann", only("/home/ann/.config/hlm", "/home/ann/.config/dayhand")).configDir).toBe("/home/ann/.config/dayhand");
+    expect(resolvePaths({ DAYHAND_CONFIG_DIR: "/c" }, "linux", "/home/ann", only("/home/ann/.config/hlm"))).toEqual({ configDir: "/c", cacheDir: "/home/ann/.cache/dayhand", configFile: "/c/config.toml" });
+  });
+});
+
+describe("old environment names", () => {
+  test("DAYHAND_* wins, then HLM_*, then HELM_*; each old name in use gives one warning", () => {
+    expect(readEnv({ DAYHAND_URL: "a", HLM_URL: "b", HELM_URL: "c" }, "DAYHAND_URL")).toEqual({ value: "a", source: "DAYHAND_URL" });
+    expect(readEnv({ HLM_URL: "b", HELM_URL: "c" }, "DAYHAND_URL")).toMatchObject({ value: "b", source: "HLM_URL" });
+    expect(readEnv({ HELM_URL: "c" }, "DAYHAND_URL")).toMatchObject({ value: "c", source: "HELM_URL" });
+    expect(readEnv({ DAYHAND_URL: "" }, "DAYHAND_URL")).toEqual({});
+    const { env, warnings } = normalizeEnv({ HLM_PROFILE: "work", HELM_BACKEND_DIR: "/b", HELM_SERVER_CONFIG_DIR: "/s", DAYHAND_FORMAT: "json", HLM_FORMAT: "plain" });
+    expect([env.DAYHAND_PROFILE, env.DAYHAND_BACKEND_DIR, env.DAYHAND_SERVER_CONFIG_DIR, env.DAYHAND_FORMAT]).toEqual(["work", "/b", "/s", "json"]);
+    expect(warnings.map((w) => w.message)).toEqual([
+      "HLM_PROFILE is deprecated; set DAYHAND_PROFILE instead",
+      "HELM_BACKEND_DIR is deprecated; set DAYHAND_BACKEND_DIR instead",
+      "HELM_SERVER_CONFIG_DIR is deprecated; set DAYHAND_SERVER_CONFIG_DIR instead",
+    ]);
+    // A normalized environment still names the variable a value came from.
+    expect(readEnv(env, "DAYHAND_PROFILE")).toEqual({ value: "work", source: "HLM_PROFILE" });
   });
 });
 
@@ -119,7 +156,7 @@ color = "never"
     expect(error.message).not.toContain("helm_secret");
   });
 
-  test("hlm login creates the file with a profile, appends a missing one, never rewrites", () => {
+  test("dayhand login creates the file with a profile, appends a missing one, never rewrites", () => {
     const file = join(dir, "login", "config.toml");
     expect(saveProfileUrl(emptyConfig(file), "default", "https://a.convex.site")).toBe("created");
     const created = loadConfig(file, commandNames());
@@ -131,7 +168,7 @@ color = "never"
   });
 });
 
-describe("URL precedence: --url, --profile, HLM_URL, HLM_PROFILE/default_profile, top-level url", () => {
+describe("URL precedence: --url, --profile, DAYHAND_URL, DAYHAND_PROFILE/default_profile, top-level url", () => {
   const config = load(`
 url = "https://top.convex.site"
 default_profile = "home"
@@ -146,10 +183,10 @@ url = "https://work.convex.site"
   };
 
   test("each level", () => {
-    expect(target({ url: "https://flag.convex.site", profile: "work" }, { HLM_URL: "https://env.convex.site" })).toBe("https://flag.convex.site --url");
-    expect(target({ profile: "work" }, { HLM_URL: "https://env.convex.site" })).toBe("https://work.convex.site --profile work");
-    expect(target({}, { HLM_URL: "https://env.convex.site", HLM_PROFILE: "work" })).toBe("https://env.convex.site HLM_URL");
-    expect(target({}, { HLM_PROFILE: "work" })).toBe("https://work.convex.site profile work");
+    expect(target({ url: "https://flag.convex.site", profile: "work" }, { DAYHAND_URL: "https://env.convex.site" })).toBe("https://flag.convex.site --url");
+    expect(target({ profile: "work" }, { DAYHAND_URL: "https://env.convex.site" })).toBe("https://work.convex.site --profile work");
+    expect(target({}, { DAYHAND_URL: "https://env.convex.site", DAYHAND_PROFILE: "work" })).toBe("https://env.convex.site DAYHAND_URL");
+    expect(target({}, { DAYHAND_PROFILE: "work" })).toBe("https://work.convex.site profile work");
     expect(target({})).toBe("https://home.convex.site profile home");
     const noProfiles = load('url = "https://top.convex.site"');
     expect(resolveTarget({}, {}, noProfiles, () => {}).url).toBe("https://top.convex.site");
@@ -158,14 +195,14 @@ url = "https://work.convex.site"
   test("an unknown profile lists the valid ones", () => {
     expect(() => target({ profile: "nope" })).toThrow(/Unknown profile/);
     try {
-      target({}, { HLM_PROFILE: "nope" });
+      target({}, { DAYHAND_PROFILE: "nope" });
     } catch (error) {
       expect((error as CliError).details.valid).toEqual(["home", "work"]);
     }
   });
 
-  test("no URL anywhere is a usage error that points at hlm login", () => {
-    expect(() => resolveTarget({}, {}, emptyConfig("x"), () => {})).toThrow(/No Helm URL/);
+  test("no URL anywhere is a usage error that points at dayhand login", () => {
+    expect(() => resolveTarget({}, {}, emptyConfig("x"), () => {})).toThrow(/No Dayhand URL/);
   });
 });
 

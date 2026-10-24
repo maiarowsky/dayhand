@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/webhook-list.schema.json",
+  "$id": "https://schemas.dayhand.invalid/webhook-list.schema.json",
   "title": "Webhooks",
-  "description": "GET /api/v1/webhooks (hlm webhook list).",
+  "description": "GET /api/v1/webhooks (dayhand webhook list).",
   "type": "object",
   "required": [
     "webhooks"

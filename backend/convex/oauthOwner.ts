@@ -19,7 +19,7 @@ const codeLimit = (userId: string): Limit => ({ bucket: `oauth:code|${userId}`, 
 export type ConnectionRequestView = {
   requestId: Id<"oauthRequests">;
   clientName: string;
-  /** cimd: Helm fetched the client's metadata from `clientHost`; dcr: the client registered itself. */
+  /** cimd: Dayhand fetched the client's metadata from `clientHost`; dcr: the client registered itself. */
   clientType: "cimd" | "dcr";
   clientHost: string | null;
   /** Where the authorization goes back to: claude.ai, or localhost for Claude Code. */

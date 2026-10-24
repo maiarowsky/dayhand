@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/logout.schema.json",
+  "$id": "https://schemas.dayhand.invalid/logout.schema.json",
   "title": "Logout",
-  "description": "hlm logout: the stores the key was removed from (empty when none had one).",
+  "description": "dayhand logout: the stores the key was removed from (empty when none had one).",
   "type": "object",
   "required": [
     "url",

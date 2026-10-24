@@ -1,11 +1,11 @@
-// The calls hlm ui makes, over the same HelmClient (MCP) as every hlm command.
+// The calls dayhand ui makes, over the same DayhandClient (MCP) as every dayhand command.
 // Reads and changes each go through a budget under the server's per-key
 // limits; a change carries one clientId through its retries, so a change the
 // server applied before the connection dropped is not applied twice.
 import { randomUUID } from "node:crypto";
 import { CliError } from "../core/exit.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
-import type { HelmClient } from "../transport/client.js";
+import type { DayhandClient } from "../transport/client.js";
 import { addDays } from "../when/calendar.js";
 import { Budget, CHANGES_PER_MINUTE, READS_PER_MINUTE } from "./budget.js";
 
@@ -40,7 +40,7 @@ export function retryAfterMs(error: CliError): number {
 }
 
 export function makeApi(
-  client: Pick<HelmClient, "callTool">,
+  client: Pick<DayhandClient, "callTool">,
   options: { reads?: Budget; changes?: Budget; sleep?: (ms: number) => Promise<void> } = {},
 ): Api {
   const reads = options.reads ?? new Budget(READS_PER_MINUTE);

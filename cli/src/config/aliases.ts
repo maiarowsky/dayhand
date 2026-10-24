@@ -1,5 +1,5 @@
 // Command aliases from config.toml: `[aliases] home = "list -l home --status todo,doing"`
-// makes `hlm home --json` run `hlm list -l home --status todo,doing --json`.
+// makes `dayhand home --json` run `dayhand list -l home --status todo,doing --json`.
 // One level only (an alias never expands into another alias), no shell involved.
 import { splitWords } from "../core/words.js";
 

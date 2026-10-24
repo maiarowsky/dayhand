@@ -10,7 +10,7 @@ import { parseArgs } from "node:util";
 import { generateSigningKey, jwksDataUri, privateJwkOf, publishesKey } from "./jwt.mjs";
 
 export const MIN_NODE_MAJOR = 22;
-export const DEFAULT_PROJECT = "helm";
+export const DEFAULT_PROJECT = "dayhand";
 /** Single-user deployments: the app user is <issuer>|owner (docs/deploy.md). */
 export const SUBJECT = "owner";
 export const LOCAL_ISSUER = "https://helm.local";
@@ -19,7 +19,20 @@ export const DEFAULT_SITE_PORT = 3211;
 /** --local --public-url: the Convex API is expected on the same host at this port (docs/deploy.md, Tailscale). */
 export const PUBLIC_API_PORT = 8443;
 /** The deployment's environment that `npm run setup` manages. */
-export const ENV_NAMES = ["HELM_JWT_ISSUER", "HELM_JWKS", "HELM_JWT_PRIVATE_JWK"];
+export const ENV_NAMES = ["DAYHAND_JWT_ISSUER", "DAYHAND_JWKS", "DAYHAND_JWT_PRIVATE_JWK"];
+
+/**
+ * The deployment's variable for DAYHAND_<base>: that name, else HELM_<base> of a deployment set up
+ * before the rename (the backend still reads it, docs/deploy.md#renamed-variables), else null.
+ */
+export function envName(names, base) {
+  if (names.includes(`DAYHAND_${base}`)) return `DAYHAND_${base}`;
+  return names.includes(`HELM_${base}`) ? `HELM_${base}` : null;
+}
+
+/** The old HELM_* names a deployment still relies on. */
+export const oldEnvNames = (names) =>
+  ENV_NAMES.map((name) => envName(names, name.slice("DAYHAND_".length))).filter((name) => name?.startsWith("HELM_"));
 
 export const FILES = {
   state: "server.json",
@@ -34,7 +47,7 @@ export class UsageError extends Error {}
 
 export const USAGE = `Usage: npm run setup [-- options]
 
-Sets up your own Helm server on your own free Convex account, or with --local
+Sets up your own Dayhand server on your own free Convex account, or with --local
 on this computer without an account. Run it again to update the server; it
 keeps its keys and data.
 
@@ -43,7 +56,7 @@ Options:
   --team <slug>         Convex team (default: your only team; asked when you have several)
   --project <name>      Name of the new Convex project (default: ${DEFAULT_PROJECT})
   --deployment <name>   Use this existing production deployment instead of a new project
-  --issuer <url>        HELM_JWT_ISSUER for a new server (default: the server's address)
+  --issuer <url>        DAYHAND_JWT_ISSUER for a new server (default: the server's address)
   --port <n>            --local: Convex API port (default: ${DEFAULT_PORT})
   --site-port <n>       --local: HTTP actions port (default: ${DEFAULT_SITE_PORT})
   --public-url <url>    --local: the HTTPS address phones use (e.g. tailscale serve);
@@ -53,9 +66,10 @@ Options:
   --json                Print the result as JSON on stdout (progress goes to stderr)
   -h, --help            Show this help
 
-Secrets go only to a private folder (mode 600): HELM_SERVER_CONFIG_DIR, or
-~/Library/Application Support/helm-server (macOS), $XDG_CONFIG_HOME/helm-server
-or ~/.config/helm-server (Linux), %APPDATA%\\helm-server (Windows).`;
+Secrets go only to a private folder (mode 600): DAYHAND_SERVER_CONFIG_DIR, or
+~/Library/Application Support/dayhand-server (macOS), $XDG_CONFIG_HOME/dayhand-server
+or ~/.config/dayhand-server (Linux), %APPDATA%\\dayhand-server (Windows). A
+helm-server folder from before the rename is used where there is no dayhand-server.`;
 
 const TEAM = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const PROJECT = /^[A-Za-z0-9][A-Za-z0-9 _-]{0,63}$/;
@@ -145,29 +159,46 @@ function httpsOrigin(value, flag) {
     throw new UsageError(`${flag} ${value}: not a URL`);
   }
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) {
-    throw new UsageError(`${flag} ${value}: use an https URL without path, e.g. https://helm.example`);
+    throw new UsageError(`${flag} ${value}: use an https URL without path, e.g. https://dayhand.example`);
   }
   return url.origin;
 }
 
-/** HELM_JWT_ISSUER: an https origin. It becomes part of every user id. */
+/** DAYHAND_JWT_ISSUER: an https origin. It becomes part of every user id. */
 export const checkIssuer = (value) => httpsOrigin(value, "--issuer");
 
-/** Node.js new enough for hlm too (22.12+); returns an error message or null. */
+/** Node.js new enough for dayhand too (22.12+); returns an error message or null. */
 export function nodeProblem(version = process.versions.node) {
   const major = Number(version.split(".")[0]);
   return major >= MIN_NODE_MAJOR ? null : `Node.js ${MIN_NODE_MAJOR} or newer is needed (this is ${version}); see https://nodejs.org`;
 }
 
-/** Where the server's private files live, following each system's convention (like hlm's own folder). */
-export function configDir(env = process.env, platform = process.platform, home = homedir()) {
-  if (env.HELM_SERVER_CONFIG_DIR) return env.HELM_SERVER_CONFIG_DIR;
+/**
+ * Where the server's private files live, following each system's convention (like dayhand's own
+ * folder), with a warning when that is a name from before the rename: HELM_SERVER_CONFIG_DIR, or a
+ * helm-server folder that exists while dayhand-server does not (its keys and data stay in use).
+ */
+export function resolveConfigDir(env = process.env, platform = process.platform, home = homedir(), exists = existsSync) {
+  if (env.DAYHAND_SERVER_CONFIG_DIR) return { dir: env.DAYHAND_SERVER_CONFIG_DIR };
+  if (env.HELM_SERVER_CONFIG_DIR) {
+    return { dir: env.HELM_SERVER_CONFIG_DIR, warning: "HELM_SERVER_CONFIG_DIR is deprecated; set DAYHAND_SERVER_CONFIG_DIR instead" };
+  }
   const join = platform === "win32" ? path.win32.join : path.posix.join;
-  if (platform === "win32") return join(env.APPDATA || join(home, "AppData", "Roaming"), "helm-server");
-  if (platform === "darwin") return join(home, "Library", "Application Support", "helm-server");
-  const xdg = env.XDG_CONFIG_HOME && path.posix.isAbsolute(env.XDG_CONFIG_HOME) ? env.XDG_CONFIG_HOME : join(home, ".config");
-  return join(xdg, "helm-server");
+  const parent =
+    platform === "win32"
+      ? env.APPDATA || join(home, "AppData", "Roaming")
+      : platform === "darwin"
+        ? join(home, "Library", "Application Support")
+        : env.XDG_CONFIG_HOME && path.posix.isAbsolute(env.XDG_CONFIG_HOME)
+          ? env.XDG_CONFIG_HOME
+          : join(home, ".config");
+  const dir = join(parent, "dayhand-server");
+  const old = join(parent, "helm-server");
+  if (!exists(dir) && exists(old)) return { dir: old, warning: `Using ${old} from before the rename; move it to ${dir} to keep the new name` };
+  return { dir };
 }
+
+export const configDir = (...args) => resolveConfigDir(...args).dir;
 
 /** The folder of one server: `cloud` for the Convex account, `local` for --local. */
 export const serverDir = (root, local) => path.join(root, local ? "local" : "cloud");
@@ -221,19 +252,19 @@ export async function loadOrCreateSigningKey(dir, { create = true } = {}) {
 
 /**
  * What to change in the deployment, given what it has (`names` set, the public values of
- * HELM_JWT_ISSUER and HELM_JWKS) and the local key.
+ * DAYHAND_JWT_ISSUER and DAYHAND_JWKS, or of their old HELM_* names) and the local key.
  * issuer: "set" when unset, "keep" when equal, "adopt" when it differs: the issuer is never
  * replaced, it is part of every user id and a new one would hide the user's data.
- * keys (HELM_JWKS and HELM_JWT_PRIVATE_JWK, a pair): "set" both when neither is set, "keep"
- * when HELM_JWKS publishes the local key and the private key is set, "complete" when only
+ * keys (DAYHAND_JWKS and DAYHAND_JWT_PRIVATE_JWK, a pair): "set" both when neither is set, "keep"
+ * when DAYHAND_JWKS publishes the local key and the private key is set, "complete" when only
  * the private key is missing, "differs" when the deployment has another key (replaced only
- * when the user says so).
+ * when the user says so). What is set always goes under the DAYHAND_* name, which wins.
  */
 export function envPlan(current, wanted) {
-  const has = (name) => current.names.includes(name);
-  const issuer = !has("HELM_JWT_ISSUER") ? "set" : current.issuer === wanted.issuer ? "keep" : "adopt";
-  const jwksSet = has("HELM_JWKS");
-  const privateSet = has("HELM_JWT_PRIVATE_JWK");
+  const has = (base) => envName(current.names, base) !== null;
+  const issuer = !has("JWT_ISSUER") ? "set" : current.issuer === wanted.issuer ? "keep" : "adopt";
+  const jwksSet = has("JWKS");
+  const privateSet = has("JWT_PRIVATE_JWK");
   const ours = jwksSet && publishesKey(current.jwks ?? "", wanted.privateJwk);
   const keys = !jwksSet && !privateSet ? "set" : ours ? (privateSet ? "keep" : "complete") : "differs";
   return { issuer, keys };
@@ -282,7 +313,7 @@ export function deploymentUrls(value) {
 }
 
 /** The deep link the phone app reads (docs/pairing.md). */
-export const pairingLink = (siteUrl, code) => `helm://pair?url=${encodeURIComponent(siteUrl)}&code=${code}`;
+export const pairingLink = (siteUrl, code) => `dayhand://pair?url=${encodeURIComponent(siteUrl)}&code=${code}`;
 
 /** CONVEX_DEPLOYMENT and friends for the Convex CLI (`--env-file`), one variable per line. */
 export function envFileText(vars) {

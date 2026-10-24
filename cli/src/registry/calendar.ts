@@ -1,19 +1,19 @@
 // The read-only calendar feed (docs/calendar.md): its secret address for
 // Google and Apple Calendar, a new address, turning it off, and a one-time
 // .ics file. The address is a password to read the plan, so it is printed
-// only by these commands and never stored by hlm.
+// only by these commands and never stored by dayhand.
 import { writeFile } from "node:fs/promises";
 import { usageError } from "../core/exit.js";
 import type { CommandSpec, Outcome, RunContext } from "./types.js";
 
 type Feed = { url: string; webcalUrl: string; googleCalendarUrl: string; createdAt: number };
 
-const OFF_TEXT = "The calendar feed is off. Turn it on with: hlm calendar on";
+const OFF_TEXT = "The calendar feed is off. Turn it on with: dayhand calendar on";
 
 function feedOutcome(feed: Feed | null | undefined, lead: string): Outcome {
   if (!feed) return { value: { feed: null }, view: { kind: "text", text: OFF_TEXT } };
   const text = [
-    `${lead} Anyone with this address can read your dated tasks; hlm calendar rotate replaces it.`,
+    `${lead} Anyone with this address can read your dated tasks; dayhand calendar rotate replaces it.`,
     `  ${feed.url}`,
     "",
     "Apple Calendar (iPhone, Mac): open the webcal address, or File → New Calendar Subscription:",
@@ -38,26 +38,26 @@ async function confirmBreak(ctx: RunContext, what: string): Promise<void> {
   if (!(await ctx.confirm(question))) throw usageError("Cancelled; nothing was changed");
 }
 
-const FILE_OPTION = { flags: "-o, --output <file>", description: "Write to a file instead of stdout (e.g. helm.ics)" };
+const FILE_OPTION = { flags: "-o, --output <file>", description: "Write to a file instead of stdout (e.g. dayhand.ics)" };
 
 export const calendarCommands: CommandSpec[] = [
   {
     name: "calendar",
     schema: "calendar-feed.schema.json",
-    summary: "Your tasks in Google or Apple Calendar: the secret address of the read-only feed (same as hlm calendar url)",
+    summary: "Your tasks in Google or Apple Calendar: the secret address of the read-only feed (same as dayhand calendar url)",
     description:
       "Dated tasks become calendar events (with a time) or all-day events, repeating ones with their rule, reminders as alerts. " +
-      "The address works without a key, so treat it like a password. Needs backend 0.7.0 or later (hlm version).",
+      "The address works without a key, so treat it like a password. Needs backend 0.7.0 or later (dayhand version).",
     tools: ["/calendar/feed"],
-    examples: ["hlm calendar", "hlm calendar on", "hlm calendar rotate --yes", "hlm calendar export -o helm.ics"],
+    examples: ["dayhand calendar", "dayhand calendar on", "dayhand calendar rotate --yes", "dayhand calendar export -o dayhand.ics"],
     run: show,
     subcommands: [
-      { name: "url", schema: "calendar-feed.schema.json", summary: "Show the feed's addresses (null when it is off)", tools: ["/calendar/feed"], examples: ["hlm calendar url --json"], run: show },
+      { name: "url", schema: "calendar-feed.schema.json", summary: "Show the feed's addresses (null when it is off)", tools: ["/calendar/feed"], examples: ["dayhand calendar url --json"], run: show },
       {
         name: "on", schema: "calendar-feed.schema.json",
         summary: "Turn the feed on (keeps an existing address) and show it",
         tools: ["/calendar/feed"],
-        examples: ["hlm calendar on"],
+        examples: ["dayhand calendar on"],
         run: async (ctx) => {
           const { feed } = await (await ctx.client()).request("POST", "/calendar/feed");
           return feedOutcome(feed, "Calendar feed is on.");
@@ -67,7 +67,7 @@ export const calendarCommands: CommandSpec[] = [
         name: "rotate", schema: "calendar-feed.schema.json",
         summary: "A new secret address; the old one stops working at once",
         tools: ["/calendar/feed/rotate"],
-        examples: ["hlm calendar rotate --yes"],
+        examples: ["dayhand calendar rotate --yes"],
         run: async (ctx) => {
           await confirmBreak(ctx, "This replaces the address.");
           const { feed } = await (await ctx.client()).request("POST", "/calendar/feed/rotate");
@@ -78,7 +78,7 @@ export const calendarCommands: CommandSpec[] = [
         name: "off", schema: "calendar-revoke.schema.json",
         summary: "Turn the feed off; its address stops working",
         tools: ["/calendar/feed/revoke"],
-        examples: ["hlm calendar off --yes"],
+        examples: ["dayhand calendar off --yes"],
         run: async (ctx) => {
           await confirmBreak(ctx, "This turns the feed off.");
           const value = await (await ctx.client()).request("POST", "/calendar/feed/revoke");
@@ -91,7 +91,7 @@ export const calendarCommands: CommandSpec[] = [
         summary: "The plan as a one-time .ics file to import (does not need the feed)",
         options: [FILE_OPTION],
         tools: ["export_plan"],
-        examples: ["hlm calendar export -o helm.ics", "hlm calendar export > helm.ics"],
+        examples: ["dayhand calendar export -o dayhand.ics", "dayhand calendar export > dayhand.ics"],
         run: async (ctx, _args, opts) => {
           const result = await (await ctx.client()).callTool("export_plan", { format: "ics" });
           const value = result.structured ?? { format: "ics", content: result.text };

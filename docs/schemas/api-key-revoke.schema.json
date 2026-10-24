@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/api-key-revoke.schema.json",
+  "$id": "https://schemas.dayhand.invalid/api-key-revoke.schema.json",
   "title": "Revoked API key",
-  "description": "DELETE /api/v1/keys/{keyId} (hlm key revoke): the key and when it was revoked (the first time, when it already was).",
+  "description": "DELETE /api/v1/keys/{keyId} (dayhand key revoke): the key and when it was revoked (the first time, when it already was).",
   "type": "object",
   "required": ["id", "revokedAt"],
   "properties": {

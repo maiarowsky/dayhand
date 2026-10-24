@@ -50,12 +50,12 @@ describe("call limits per key", () => {
     }
     const tool = await (await mcpPost(key, toolCall(500, "list_today", {}))).json();
     expect(tool.result.structuredContent.error).toMatchObject({ code: "rate_limited", message: /Too many reads/ });
-    const resource = await mcpPost(key, { jsonrpc: "2.0", id: 501, method: "resources/read", params: { uri: "helm://today" } });
+    const resource = await mcpPost(key, { jsonrpc: "2.0", id: 501, method: "resources/read", params: { uri: "dayhand://today" } });
     expect(resource.status).toBe(429);
     expect(resource.headers.get("retry-after")).toMatch(/^\d+$/);
     expect(await resource.json()).toMatchObject({ id: 501, error: { code: 429, message: /Too many reads/, data: { retryAfterMs: expect.any(Number) } } });
     // Static lists and the guide are not counted.
-    const guide = await mcpPost(key, { jsonrpc: "2.0", id: 502, method: "resources/read", params: { uri: "helm://guide" } });
+    const guide = await mcpPost(key, { jsonrpc: "2.0", id: 502, method: "resources/read", params: { uri: "dayhand://guide" } });
     expect(guide.status).toBe(200);
     const tools = await mcpPost(key, { jsonrpc: "2.0", id: 503, method: "tools/list" });
     expect(tools.status).toBe(200);

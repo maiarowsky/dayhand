@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/when.schema.json",
+  "$id": "https://schemas.dayhand.invalid/when.schema.json",
   "title": "When",
-  "description": "hlm when: a date phrase resolved in a time zone.",
+  "description": "dayhand when: a date phrase resolved in a time zone.",
   "type": "object",
   "required": [
     "date",

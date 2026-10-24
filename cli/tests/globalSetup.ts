@@ -23,16 +23,16 @@ export function freePort(): Promise<number> {
 }
 
 export default async function setup(project: TestProject) {
-  if (!existsSync(new URL("../dist/bin/hlm.js", import.meta.url))) throw new Error("Build first: npm run build");
+  if (!existsSync(new URL("../dist/bin/dayhand.js", import.meta.url))) throw new Error("Build first: npm run build");
   if (!existsSync(new URL("../../backend/node_modules/.bin/convex", import.meta.url))) {
     throw new Error("Install the backend first: (cd backend && npm ci --ignore-scripts)");
   }
-  const workDir = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-test-"));
+  const workDir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-test-"));
   const backend = await startLocalBackend({
     dataDir: join(workDir, "data"),
     port: await freePort(),
     sitePort: await freePort(),
-    instanceName: "hlm-test",
+    instanceName: "dayhand-test",
     instanceSecret: newInstanceSecret(),
   });
   try {
@@ -42,9 +42,9 @@ export default async function setup(project: TestProject) {
       adminKey: backend.adminKey,
       home: join(workDir, "home"),
       envVars: {
-        HELM_JWT_ISSUER: ISSUER,
-        HELM_JWKS: signing.jwksDataUri,
-        HELM_JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
+        DAYHAND_JWT_ISSUER: ISSUER,
+        DAYHAND_JWKS: signing.jwksDataUri,
+        DAYHAND_JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
       },
     });
     project.provide("helm", { url: backend.url, siteUrl: backend.siteUrl, adminKey: backend.adminKey, issuer: ISSUER });

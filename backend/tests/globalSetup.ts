@@ -17,7 +17,7 @@ export const CLAUDE_CALLBACK = "https://claude.ai/api/mcp/auth_callback";
 
 /**
  * Serves Client ID Metadata Documents for the OAuth tests, as Anthropic serves Claude's. The
- * deployment accepts this origin only because the test sets HELM_OAUTH_CIMD_ORIGINS.
+ * deployment accepts this origin only because the test sets DAYHAND_OAUTH_CIMD_ORIGINS.
  */
 async function startCimdServer(port: number): Promise<Server> {
   const origin = `http://127.0.0.1:${port}`;
@@ -106,8 +106,17 @@ function freePort(): Promise<number> {
   });
 }
 
+/**
+ * The deployment's variables under their DAYHAND_* names, or with DAYHAND_TEST_OLD_ENV=1 under the
+ * HELM_* names of a deployment from before the rename, so the whole suite can check that those still work.
+ */
+function deploymentEnv(values: Record<string, string>): Record<string, string> {
+  const prefix = process.env.DAYHAND_TEST_OLD_ENV === "1" ? "HELM_" : "DAYHAND_";
+  return Object.fromEntries(Object.entries(values).map(([name, value]) => [prefix + name, value]));
+}
+
 export default async function setup(project: TestProject) {
-  const workDir = mkdtempSync(join(process.env.HELM_TEST_TMPDIR ?? tmpdir(), "helm-test-"));
+  const workDir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "helm-test-"));
   const cimdPort = await freePort();
   const cimd = await startCimdServer(cimdPort);
   const cimdOrigin = `http://127.0.0.1:${cimdPort}`;
@@ -127,14 +136,14 @@ export default async function setup(project: TestProject) {
       url: backend.url,
       adminKey: backend.adminKey,
       home: join(workDir, "home"),
-      envVars: {
-        HELM_JWT_ISSUER: ISSUER,
-        HELM_JWKS: signing.jwksDataUri,
-        HELM_JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
-        HELM_OAUTH_CIMD_ORIGINS: `https://claude.ai,${cimdOrigin}`,
-        HELM_WEBHOOK_ALLOWED_ORIGINS: webhookOrigin,
-        HELM_WEBHOOK_RETRY_DELAYS: "0.3,0.3,0.3",
-      },
+      envVars: deploymentEnv({
+        JWT_ISSUER: ISSUER,
+        JWKS: signing.jwksDataUri,
+        JWT_PRIVATE_JWK: JSON.stringify(signing.privateJwk),
+        OAUTH_CIMD_ORIGINS: `https://claude.ai,${cimdOrigin}`,
+        WEBHOOK_ALLOWED_ORIGINS: webhookOrigin,
+        WEBHOOK_RETRY_DELAYS: "0.3,0.3,0.3",
+      }),
     });
     project.provide("helm", {
       url: backend.url,
@@ -170,7 +179,7 @@ declare module "vitest" {
       privateJwk: JsonWebKey & { kid: string };
       /** Origin of the local Client ID Metadata Document server. */
       cimdOrigin: string;
-      /** Origin of the local webhook receiver (exempt from the HTTPS rule by HELM_WEBHOOK_ALLOWED_ORIGINS). */
+      /** Origin of the local webhook receiver (exempt from the HTTPS rule by DAYHAND_WEBHOOK_ALLOWED_ORIGINS). */
       webhookOrigin: string;
     };
   }

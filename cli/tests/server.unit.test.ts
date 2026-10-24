@@ -1,14 +1,14 @@
-// Which backend folder hlm server runs the setup script from. No backend.
+// Which backend folder dayhand server runs the setup script from. No backend.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, test } from "vitest";
 import { findBackend } from "../src/registry/server.js";
 
-const ROOT = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-find-"));
+const ROOT = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-find-"));
 afterAll(() => rmSync(ROOT, { recursive: true, force: true }));
 
-function backend(dir: string, name = "helm-backend") {
+function backend(dir: string, name = "dayhand-backend") {
   mkdirSync(join(dir, "scripts"), { recursive: true });
   writeFileSync(join(dir, "scripts", "setup.mjs"), "");
   writeFileSync(join(dir, "package.json"), JSON.stringify({ name }));
@@ -23,20 +23,23 @@ describe("findBackend", () => {
   const nowhere = join(ROOT, "nowhere");
   mkdirSync(nowhere);
 
-  test("--backend or HELM_BACKEND_DIR, and only a real Helm backend", () => {
+  test("--backend or DAYHAND_BACKEND_DIR, and only a real Dayhand backend", () => {
     expect(findBackend(clone, {}, nowhere, own)).toBe(clone);
-    expect(findBackend(undefined, { HELM_BACKEND_DIR: clone }, nowhere, own)).toBe(clone);
+    expect(findBackend(undefined, { DAYHAND_BACKEND_DIR: clone }, nowhere, own)).toBe(clone);
     expect(findBackend(nowhere, {}, nowhere, own)).toBeNull();
     const other = backend(join(ROOT, "other"), "something-else");
     expect(findBackend(other, {}, nowhere, own)).toBeNull();
+    // A checkout from before the rename names its backend helm-backend.
+    const older = backend(join(ROOT, "older"), "helm-backend");
+    expect(findBackend(older, {}, nowhere, own)).toBe(older);
   });
 
-  test("the checkout hlm runs from wins over the current folder", () => {
+  test("the checkout dayhand runs from wins over the current folder", () => {
     expect(findBackend(undefined, {}, nested, own)).toBe(own);
   });
 
   test("without one, the current folder or one above it", () => {
-    const missing = join(ROOT, "no-such-hlm", "backend");
+    const missing = join(ROOT, "no-such-dayhand", "backend");
     expect(findBackend(undefined, {}, nested, missing)).toBe(clone);
     expect(findBackend(undefined, {}, clone, missing)).toBe(clone);
     expect(findBackend(undefined, {}, nowhere, missing)).toBeNull();

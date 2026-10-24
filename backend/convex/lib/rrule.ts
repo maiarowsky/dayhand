@@ -1,11 +1,11 @@
 // Repeat rules as RFC 5545 RRULE values, for export (calendars, iCal) and for
-// rules given as text. Helm reads and writes this subset: FREQ (DAILY,
+// rules given as text. Dayhand reads and writes this subset: FREQ (DAILY,
 // WEEKLY, MONTHLY, YEARLY), INTERVAL, BYDAY, BYMONTHDAY, BYSETPOS, UNTIL,
 // COUNT and WKST. Anything else is refused with a message naming the part.
 //
 // Differences from RFC 5545, all documented in docs/mcp.md:
 // - `from: "completion"` has no RRULE form; the RRULE describes the dates only.
-// - A month without the day (31 in April) falls on its last day in Helm; RFC
+// - A month without the day (31 in April) falls on its last day in Dayhand; RFC
 //   5545 skips that month. toRRule writes such days as
 //   BYMONTHDAY=28,29,30,31;BYSETPOS=-1, which means the same in both.
 // - A yearly rule from 29 February falls on 28 February in other years.
@@ -26,7 +26,7 @@ const fail = (message: string): never => {
 /**
  * The rule as an RRULE value (without the `RRULE:` prefix), e.g.
  * `FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,TH`. With `dueDate`, a plain monthly rule
- * from a 29-31 is written as the clamped day it means in Helm.
+ * from a 29-31 is written as the clamped day it means in Dayhand.
  */
 export function toRRule(rule: RepeatRule, dueDate?: string): string {
   const parts = [`FREQ=${FREQ[rule.every]}`];
@@ -96,14 +96,14 @@ function parts(text: string): Map<string, string> {
 const SUPPORTED = new Set(["FREQ", "INTERVAL", "BYDAY", "BYMONTHDAY", "BYSETPOS", "UNTIL", "COUNT", "WKST"]);
 
 /**
- * Reads an RRULE value (with or without the `RRULE:` prefix) as a Helm rule.
+ * Reads an RRULE value (with or without the `RRULE:` prefix) as a Dayhand rule.
  * `timezone` turns a UTC UNTIL into the user's local date. Throws RRuleError
  * with a readable message for anything outside the subset.
  */
 export function parseRRule(text: string, timezone = "Europe/London"): RepeatRule {
   const p = parts(text);
   for (const name of p.keys()) {
-    if (!SUPPORTED.has(name)) fail(`${name} is not supported; Helm reads FREQ, INTERVAL, BYDAY, BYMONTHDAY, BYSETPOS, UNTIL and COUNT`);
+    if (!SUPPORTED.has(name)) fail(`${name} is not supported; Dayhand reads FREQ, INTERVAL, BYDAY, BYMONTHDAY, BYSETPOS, UNTIL and COUNT`);
   }
   const freq = p.get("FREQ") ?? fail("FREQ is missing");
   const every = (Object.keys(FREQ) as RepeatRule["every"][]).find((unit) => FREQ[unit] === freq);
@@ -145,7 +145,7 @@ export function parseRRule(text: string, timezone = "Europe/London"): RepeatRule
   if (p.has("COUNT")) rule.count = integer("COUNT", p.get("COUNT")!, 1, MAX_COUNT);
 
   const wkst = p.get("WKST");
-  // Helm's weeks start on Monday; another start changes only multi-day rules every 2+ weeks.
+  // Dayhand's weeks start on Monday; another start changes only multi-day rules every 2+ weeks.
   if (wkst !== undefined && wkst !== "MO" && rule.every === "week" && rule.interval > 1 && (rule.weekdays?.length ?? 0) > 1) {
     fail("WKST other than MO is not supported for a rule every 2 or more weeks on several days");
   }
@@ -156,7 +156,7 @@ export function parseRRule(text: string, timezone = "Europe/London"): RepeatRule
   return rule;
 }
 
-/** BYMONTHDAY as Helm's monthDay: one day, or 28..d with BYSETPOS=-1 (day d, or the last day when shorter). */
+/** BYMONTHDAY as Dayhand's monthDay: one day, or 28..d with BYSETPOS=-1 (day d, or the last day when shorter). */
 function monthDayOf(days: number[], setPos: number | undefined): number {
   if (setPos === undefined) {
     if (days.length !== 1) fail("BYMONTHDAY must be one day, or 28,29,30,31 with BYSETPOS=-1");

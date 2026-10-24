@@ -1,6 +1,6 @@
-// hlm ui on a real pseudo-terminal (node-pty), its output fed to a headless
+// dayhand ui on a real pseudo-terminal (node-pty), its output fed to a headless
 // xterm so tests read the screen as a person sees it, alternate screen
-// included. HLM_UI_SCREENS=<dir> also saves each named screen there as text.
+// included. DAYHAND_UI_SCREENS=<dir> also saves each named screen there as text.
 import { chmodSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import xterm from "@xterm/headless";
 
 type Pty = typeof import("node-pty");
-const BIN = fileURLToPath(new URL("../dist/bin/hlm.js", import.meta.url));
+const BIN = fileURLToPath(new URL("../dist/bin/dayhand.js", import.meta.url));
 
 export function loadPty(): Pty | undefined {
   try {
@@ -48,7 +48,7 @@ export type UiSession = {
   /** A left click at a cell (from 0), press and release. */
   click(x: number, y: number): Promise<void>;
   resize(columns: number, rows: number): void;
-  /** Saves the screen as <name>.txt in HLM_UI_SCREENS (when set). */
+  /** Saves the screen as <name>.txt in DAYHAND_UI_SCREENS (when set). */
   shot(name: string): Promise<string>;
   raw(): string;
   exit: Promise<number>;
@@ -100,7 +100,7 @@ export function uiSession(pty: Pty, args: string[], env: Record<string, string>,
     shot: async (name) => {
       await pause(150);
       const text = await screen();
-      const dir = process.env.HLM_UI_SCREENS;
+      const dir = process.env.DAYHAND_UI_SCREENS;
       if (dir) {
         mkdirSync(dir, { recursive: true });
         writeFileSync(join(dir, `${name}.txt`), `${text.replace(/\s+$/gm, "")}\n`);

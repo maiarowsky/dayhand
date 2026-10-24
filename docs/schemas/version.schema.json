@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/version.schema.json",
+  "$id": "https://schemas.dayhand.invalid/version.schema.json",
   "title": "Version",
-  "description": "hlm version: CLI and server versions.",
+  "description": "dayhand version: CLI and server versions.",
   "type": "object",
   "required": [
     "cli",

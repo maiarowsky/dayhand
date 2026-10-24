@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/webhook-delivery-list.schema.json",
+  "$id": "https://schemas.dayhand.invalid/webhook-delivery-list.schema.json",
   "title": "Webhook deliveries",
-  "description": "GET /api/v1/webhooks/{id}/deliveries (hlm webhook deliveries): the newest deliveries first, with every attempt.",
+  "description": "GET /api/v1/webhooks/{id}/deliveries (dayhand webhook deliveries): the newest deliveries first, with every attempt.",
   "type": "object",
   "required": [
     "deliveries"

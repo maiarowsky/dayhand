@@ -26,7 +26,7 @@ const revokeDevice = async (ctx: RunContext, deviceId: string): Promise<Outcome>
   return { value, view: { kind: "text", text } };
 };
 
-const DEVICE_ID = { name: "deviceId", description: "Device id from hlm device list", required: true };
+const DEVICE_ID = { name: "deviceId", description: "Device id from dayhand device list", required: true };
 
 const listConnections = async (ctx: RunContext): Promise<Outcome> => {
   const [value, timezone] = await Promise.all([(await ctx.client()).request("GET", "/connections"), userTimezone(ctx)]);
@@ -39,7 +39,7 @@ const revokeConnection = async (ctx: RunContext, connectionId: string): Promise<
   return { value, view: { kind: "text", text } };
 };
 
-const CONNECTION_ID = { name: "connectionId", description: "Connection id from hlm connection list", required: true };
+const CONNECTION_ID = { name: "connectionId", description: "Connection id from dayhand connection list", required: true };
 
 export const systemCommands: CommandSpec[] = [
   {
@@ -47,17 +47,17 @@ export const systemCommands: CommandSpec[] = [
     summary: "Show settings (time zone, morning summary time, default reminders)",
     tools: ["get_settings"],
     fields: "settings",
-    examples: ["hlm settings", "hlm settings --json"],
+    examples: ["dayhand settings", "dayhand settings --json"],
     run: showSettings,
     subcommands: [
-      { name: "get", schema: "settings.schema.json", summary: "Show settings", tools: ["get_settings"], fields: "settings", examples: ["hlm settings get --fields timezone"], run: showSettings },
+      { name: "get", schema: "settings.schema.json", summary: "Show settings", tools: ["get_settings"], fields: "settings", examples: ["dayhand settings get --fields timezone"], run: showSettings },
       {
         name: "set", schema: "settings.schema.json",
         summary: "Change settings: timezone, summaryTime (summary-time), defaultReminderMinutes (reminders)",
         args: [{ name: "pairs", description: "key=value pairs", required: true, variadic: true }],
         tools: ["update_settings"],
         fields: "settings",
-        examples: ["hlm settings set timezone=Europe/London summary-time=05:00", "hlm settings set reminders=0,15"],
+        examples: ["dayhand settings set timezone=Europe/London summary-time=05:00", "dayhand settings set reminders=0,15"],
         run: async (ctx, args) => {
           const input = { ...parseSettings(args.pairs as string[]), clientId: ctx.clientId() };
           const value = await tool(ctx, "update_settings", input);
@@ -74,7 +74,7 @@ export const systemCommands: CommandSpec[] = [
       { flags: "-o, --output <file>", description: "Write to a file instead of stdout" },
     ],
     tools: ["export_plan"],
-    examples: ["hlm export > plan.md", "hlm export --format json -o helm.json", "hlm export --format ics -o helm.ics", "hlm export --json"],
+    examples: ["dayhand export > plan.md", "dayhand export --format json -o dayhand.json", "dayhand export --format ics -o dayhand.ics", "dayhand export --json"],
     run: async (ctx, _args, opts) => {
       const format = opts.format === undefined ? (ctx.format === "json" ? "json" : "markdown") : opts.format === "md" ? "markdown" : (opts.format as string);
       const result = await (await ctx.client()).callTool("export_plan", { format });
@@ -95,7 +95,7 @@ export const systemCommands: CommandSpec[] = [
     summary: "MCP tools and their input schemas (introspection)",
     args: [{ name: "name", description: "One tool, to print its schema" }],
     tools: ["tools/list"],
-    examples: ["hlm tools", "hlm tools update_task --json"],
+    examples: ["dayhand tools", "dayhand tools update_task --json"],
     run: async (ctx, args) => {
       const tools = await (await ctx.client()).listTools();
       const name = args.name as string | undefined;
@@ -116,11 +116,11 @@ export const systemCommands: CommandSpec[] = [
     description:
       "Prints the tool's structuredContent (or, for a Markdown export, its text). Errors and exit codes are the same as for the other commands.",
     args: [
-      { name: "tool", description: "Tool name (see hlm tools)", required: true },
+      { name: "tool", description: "Tool name (see dayhand tools)", required: true },
       { name: "json", description: "Arguments as a JSON object, or - to read them from stdin (default {})" },
     ],
     tools: ["*"],
-    examples: [`hlm call get_task '{"taskId":"#42"}'`, `echo '{"format":"json"}' | hlm call export_plan -`],
+    examples: [`dayhand call get_task '{"taskId":"#42"}'`, `echo '{"format":"json"}' | dayhand call export_plan -`],
     run: async (ctx, args) => {
       const raw = args.json === "-" ? await readStdin(ctx.io.stdin) : ((args.json as string | undefined) ?? "{}");
       let input: unknown;
@@ -147,13 +147,13 @@ export const systemCommands: CommandSpec[] = [
     name: "version", schema: "version.schema.json",
     summary: "CLI and server versions, and whether they are compatible",
     tools: ["initialize"],
-    examples: ["hlm version --json", "hlm --version"],
+    examples: ["dayhand version --json", "dayhand --version"],
     run: async (ctx) => {
       const server = await (await ctx.client()).initialize();
       const compatible = isCompatible(server.version);
       const value = { cli: CLI_VERSION, server, minServerVersion: MIN_SERVER_VERSION, compatible };
-      const warning = compatible ? "" : `\nwarning: hlm ${CLI_VERSION} expects backend ${MIN_SERVER_VERSION} or a later version with the same major number`;
-      return { value, view: { kind: "text", text: `hlm ${CLI_VERSION}\nserver ${server.name} ${server.version}${warning}` } };
+      const warning = compatible ? "" : `\nwarning: dayhand ${CLI_VERSION} expects backend ${MIN_SERVER_VERSION} or a later version with the same major number`;
+      return { value, view: { kind: "text", text: `dayhand ${CLI_VERSION}\nserver ${server.name} ${server.version}${warning}` } };
     },
   },
   {
@@ -161,11 +161,11 @@ export const systemCommands: CommandSpec[] = [
     summary: "One-time code (10 minutes) that signs the phone app in as you",
     options: [{ flags: "--no-qr", description: "Do not draw the QR code" }],
     tools: ["/devices/pairing-code"],
-    examples: ["hlm pair", "hlm pair --json"],
+    examples: ["dayhand pair", "dayhand pair --json"],
     run: async (ctx, _args, opts) => {
       const client = await ctx.client();
       const created = await client.request("POST", "/devices/pairing-code");
-      const link = `helm://pair?url=${encodeURIComponent(client.baseUrl)}&code=${created.code}`;
+      const link = `dayhand://pair?url=${encodeURIComponent(client.baseUrl)}&code=${created.code}`;
       let text = `Pairing code (single use, valid 10 minutes):\n  ${created.code}\n\nOn the phone, scan the QR code or open:\n  ${link}`;
       if (opts.qr !== false && ctx.format === "human") {
         text += "\n" + (await new Promise<string>((resolve) => qrcode.generate(link, { small: true }, resolve)));
@@ -176,53 +176,53 @@ export const systemCommands: CommandSpec[] = [
   {
     name: "device",
     schema: "devices.schema.json",
-    summary: "Paired phones (same as hlm device list); revoke one with hlm device revoke",
+    summary: "Paired phones (same as dayhand device list); revoke one with dayhand device revoke",
     tools: ["/devices"],
-    examples: ["hlm device", "hlm device revoke <deviceId>"],
+    examples: ["dayhand device", "dayhand device revoke <deviceId>"],
     run: listDevices,
     subcommands: [
-      { name: "list", schema: "devices.schema.json", aliases: ["ls"], summary: "Paired phones", tools: ["/devices"], examples: ["hlm device list"], run: listDevices },
+      { name: "list", schema: "devices.schema.json", aliases: ["ls"], summary: "Paired phones", tools: ["/devices"], examples: ["dayhand device list"], run: listDevices },
       {
         name: "revoke", schema: "device-revoke.schema.json",
         summary: "Sign a phone out: it gets no new app tokens",
         args: [DEVICE_ID],
         tools: ["/devices/revoke"],
-        examples: ["hlm device revoke <deviceId>"],
+        examples: ["dayhand device revoke <deviceId>"],
         run: (ctx, args) => revokeDevice(ctx, args.deviceId as string),
       },
     ],
   },
-  { name: "devices", schema: "devices.schema.json", summary: "Same as hlm device list", tools: ["/devices"], examples: ["hlm devices"], run: listDevices },
+  { name: "devices", schema: "devices.schema.json", summary: "Same as dayhand device list", tools: ["/devices"], examples: ["dayhand devices"], run: listDevices },
   {
     name: "connection",
     schema: "connections.schema.json",
-    summary: "Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with hlm connection revoke",
+    summary: "Agent connections approved on the phone (OAuth, e.g. the Claude app); revoke one with dayhand connection revoke",
     description:
-      "An app such as Claude connects through OAuth: its sign-in page shows a code, and you approve it in the Helm app (Settings → Agent connections). " +
-      "API keys are not connections; see hlm whoami. Needs backend 0.6.0 or later (hlm version).",
+      "An app such as Claude connects through OAuth: its sign-in page shows a code, and you approve it in the Dayhand app (Settings → Agent connections). " +
+      "API keys are not connections; see dayhand whoami. Needs backend 0.6.0 or later (dayhand version).",
     tools: ["/connections"],
-    examples: ["hlm connection", "hlm connection revoke <connectionId>"],
+    examples: ["dayhand connection", "dayhand connection revoke <connectionId>"],
     run: listConnections,
     subcommands: [
-      { name: "list", schema: "connections.schema.json", aliases: ["ls"], summary: "Agent connections", tools: ["/connections"], examples: ["hlm connection list --json"], run: listConnections },
+      { name: "list", schema: "connections.schema.json", aliases: ["ls"], summary: "Agent connections", tools: ["/connections"], examples: ["dayhand connection list --json"], run: listConnections },
       {
         name: "revoke", schema: "connection-revoke.schema.json",
         summary: "Disconnect an agent: its tokens stop working at once",
         args: [CONNECTION_ID],
         tools: ["/connections/revoke"],
-        examples: ["hlm connection revoke <connectionId>"],
+        examples: ["dayhand connection revoke <connectionId>"],
         run: (ctx, args) => revokeConnection(ctx, args.connectionId as string),
       },
     ],
   },
-  { name: "connections", schema: "connections.schema.json", summary: "Same as hlm connection list", tools: ["/connections"], examples: ["hlm connections"], run: listConnections },
+  { name: "connections", schema: "connections.schema.json", summary: "Same as dayhand connection list", tools: ["/connections"], examples: ["dayhand connections"], run: listConnections },
   {
     name: "revoke",
     schema: "device-revoke.schema.json",
-    summary: "Same as hlm device revoke",
+    summary: "Same as dayhand device revoke",
     args: [DEVICE_ID],
     tools: ["/devices/revoke"],
-    examples: ["hlm revoke <deviceId>"],
+    examples: ["dayhand revoke <deviceId>"],
     run: (ctx, args) => revokeDevice(ctx, args.deviceId as string),
   },
 ];

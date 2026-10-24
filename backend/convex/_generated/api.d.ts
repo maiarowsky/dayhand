@@ -22,6 +22,7 @@ import type * as lib_args from "../lib/args.js";
 import type * as lib_cimd from "../lib/cimd.js";
 import type * as lib_core from "../lib/core.js";
 import type * as lib_dates from "../lib/dates.js";
+import type * as lib_env from "../lib/env.js";
 import type * as lib_exportPlan from "../lib/exportPlan.js";
 import type * as lib_findTasks from "../lib/findTasks.js";
 import type * as lib_guide from "../lib/guide.js";
@@ -86,6 +87,7 @@ declare const fullApi: ApiFromModules<{
   "lib/cimd": typeof lib_cimd;
   "lib/core": typeof lib_core;
   "lib/dates": typeof lib_dates;
+  "lib/env": typeof lib_env;
   "lib/exportPlan": typeof lib_exportPlan;
   "lib/findTasks": typeof lib_findTasks;
   "lib/guide": typeof lib_guide;

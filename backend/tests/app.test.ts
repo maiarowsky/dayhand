@@ -26,7 +26,7 @@ describe("app layer", () => {
   test("app and agent share one task list; history tells who changed what", async () => {
     const { client: app } = await appClient();
     const created = await app.action(api.app.createApiKey, { name: "claude" });
-    expect(created.key).toMatch(/^helm_[A-Za-z0-9_-]{43}$/);
+    expect(created.key).toMatch(/^dayhand_[A-Za-z0-9_-]{43}$/);
     const agent = await mcpClient(created.key);
 
     const task = await app.mutation(api.app.add, { title: "Plan the week", dueDate: "today" });

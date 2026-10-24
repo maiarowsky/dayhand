@@ -1,13 +1,13 @@
-// `hlm help <topic>`: longer explanations that do not belong to one command.
+// `dayhand help <topic>`: longer explanations that do not belong to one command.
 // docs/cli.md includes the same texts.
 import { keysText } from "./ui/keys.js";
 import { WHEN_EXAMPLES } from "./when/parse.js";
 
-const dates = `Dates (--due, hlm move, hlm list --due-before/--due-after, hlm when)
+const dates = `Dates (--due, dayhand move, dayhand list --due-before/--due-after, dayhand when)
 
 Dates are English phrases resolved in your time zone from the server settings
-(hlm settings), not the computer's. The same phrase at the same moment always
-gives the same day. Try one with: hlm when "<phrase>", or add --dry-run to a command.
+(dayhand settings), not the computer's. The same phrase at the same moment always
+gives the same day. Try one with: dayhand when "<phrase>", or add --dry-run to a command.
 
   Days        today (tod), tomorrow (tmr), yesterday, day after tomorrow
   Weekdays    fri, friday, on mon: the first such day after today
@@ -35,10 +35,10 @@ Examples: ${WHEN_EXAMPLES.join(", ")}
 const config = `Configuration (config.toml)
 
 The file lives in:
-  Linux     $XDG_CONFIG_HOME/hlm/config.toml (~/.config/hlm/config.toml)
-  macOS     ~/Library/Application Support/hlm/config.toml
-  Windows   %APPDATA%\\hlm\\config.toml
-or in $HLM_CONFIG_DIR. hlm whoami prints the one in use. hlm login creates it.
+  Linux     $XDG_CONFIG_HOME/dayhand/config.toml (~/.config/dayhand/config.toml)
+  macOS     ~/Library/Application Support/dayhand/config.toml
+  Windows   %APPDATA%\\dayhand\\config.toml
+or in $DAYHAND_CONFIG_DIR. dayhand whoami prints the one in use. dayhand login creates it.
 
   url = "https://<deployment>.convex.site"     # used when no profile is chosen
   default_profile = "personal"
@@ -50,63 +50,63 @@ or in $HLM_CONFIG_DIR. hlm whoami prints the one in use. hlm login creates it.
   url = "https://<other>.convex.site"
 
   [aliases]
-  home = "list -l home --status todo,doing"    # hlm home --json
+  home = "list -l home --status todo,doing"    # dayhand home --json
   week = "list --due-before eow"
 
   [ui]
   color = "auto"                               # auto, always or never
 
-Precedence. URL: --url, the profile named by --profile, HLM_URL, the profile from
-HLM_PROFILE or default_profile, then the top-level url. Key: HLM_API_KEY, then the
-key hlm login stored for that URL. Colors: --color/--no-color, [ui] color,
+Precedence. URL: --url, the profile named by --profile, DAYHAND_URL, the profile from
+DAYHAND_PROFILE or default_profile, then the top-level url. Key: DAYHAND_API_KEY, then the
+key dayhand login stored for that URL. Colors: --color/--no-color, [ui] color,
 NO_COLOR/FORCE_COLOR, then whether the output is a terminal.
 
-The API key never goes into this file: hlm refuses keys named api_key, key,
+The API key never goes into this file: dayhand refuses keys named api_key, key,
 token, secret or password. An unknown key or a wrong value is an error that names
 the file and the key (exit 2). Aliases cannot hide a built-in command.
 `;
 
-const login = `Signing in (hlm login, hlm logout, hlm whoami)
+const login = `Signing in (dayhand login, dayhand logout, dayhand whoami)
 
-  hlm login --url https://<deployment>.convex.site   # paste the key at the hidden prompt
-  hlm login --with-key < key.txt                     # or pipe it (scripts)
-  hlm whoami                                         # URL, profile, where the key came from
-  hlm logout
+  dayhand login --url https://<deployment>.convex.site   # paste the key at the hidden prompt
+  dayhand login --with-key < key.txt                     # or pipe it (scripts)
+  dayhand whoami                                         # URL, profile, where the key came from
+  dayhand logout
 
 Create the key in the app (Settings → API keys, kind cli) or with
-npx convex run apiKeys:create. hlm login checks it against the server, then stores
+npx convex run apiKeys:create. dayhand login checks it against the server, then stores
 it for that URL in the OS keychain: macOS Keychain, Windows Credential Manager or
 the Secret Service on Linux (GNOME Keyring, KWallet, KeePassXC). Without one (a
 server, Omarchy without a keyring daemon) it says so and keeps the key in
 credentials.json next to config.toml, readable only by you (mode 0600).
-HLM_CREDENTIAL_STORE=file or --store file chooses the file on purpose.
+DAYHAND_CREDENTIAL_STORE=file or --store file chooses the file on purpose.
 
-HLM_API_KEY, when set, wins over the stored key: give agents and CI their own key
+DAYHAND_API_KEY, when set, wins over the stored key: give agents and CI their own key
 (kind agent) that way. The keychain keeps the key out of dotfiles, backups and shell
 history; it does not hide it from programs running as you.
 `;
 
-const completion = `Shell completion (hlm completion <shell>)
+const completion = `Shell completion (dayhand completion <shell>)
 
-  bash         echo 'source <(hlm completion bash)' >> ~/.bashrc
-  zsh          hlm completion zsh > "\${fpath[1]}/_hlm"     (or source <(hlm completion zsh) after compinit)
-  fish         hlm completion fish > ~/.config/fish/completions/hlm.fish
-  PowerShell   hlm completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
+  bash         echo 'source <(dayhand completion bash)' >> ~/.bashrc
+  zsh          dayhand completion zsh > "\${fpath[1]}/_dayhand"     (or source <(dayhand completion zsh) after compinit)
+  fish         dayhand completion fish | tee ~/.config/fish/completions/{dayhand,dh}.fish >/dev/null
+  PowerShell   dayhand completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
 numbers with their titles, labels, profiles and date words. Task numbers and
 labels come from one list_all call, cached for 60 seconds in the cache folder
-(~/.cache/hlm, ~/Library/Caches/hlm or %LOCALAPPDATA%\\hlm\\Cache). Completion
+(~/.cache/dayhand, ~/Library/Caches/dayhand or %LOCALAPPDATA%\\dayhand\\Cache). Completion
 never prompts and prints nothing when it cannot reach the server.
 `;
 
-const ui = `The terminal app (hlm ui)
+const ui = `The terminal app (dayhand ui)
 
-hlm ui opens Helm full screen in the terminal: Today (overdue, the now task with
+dayhand ui opens Dayhand full screen in the terminal: Today (overdue, the now task with
 its resume note, today, done today), the board, the week (Monday to Sunday as
 bars, the selected day in full below) and the trash. Enter opens a task with its
 history, which names who made each change: app, cli or agent: <name>. It uses
-the key from hlm login and the same MCP tools as the other commands, refreshes
+the key from dayhand login and the same MCP tools as the other commands, refreshes
 what is on screen every 12 seconds (--interval) within the key's limits, and
 keeps the last data on screen with a red status line when the server cannot be
 reached. Colours are the terminal's 16 ANSI colours, so its theme applies.

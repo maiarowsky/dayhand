@@ -1,7 +1,7 @@
 // The fallback key store: credentials.json next to config.toml, readable only
 // by the user (mode 0600 on macOS and Linux; on Windows the folder under
 // %APPDATA% is already private to the user). Used when no keychain is
-// available, or when HLM_CREDENTIAL_STORE=file asks for it.
+// available, or when DAYHAND_CREDENTIAL_STORE=file asks for it.
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Warning } from "../config/env.js";
@@ -49,11 +49,11 @@ export class FileStore implements KeyStore {
     try {
       data = JSON.parse(readFileSync(this.location, "utf8"));
     } catch {
-      throw new StoreUnavailable(`${this.location} is not valid JSON; delete it and run hlm login`);
+      throw new StoreUnavailable(`${this.location} is not valid JSON; delete it and run dayhand login`);
     }
     const keys = (data as Partial<Contents>)?.keys;
     if (typeof keys !== "object" || keys === null || Object.values(keys).some((k) => typeof k !== "string")) {
-      throw new StoreUnavailable(`${this.location} has an unexpected shape; delete it and run hlm login`);
+      throw new StoreUnavailable(`${this.location} has an unexpected shape; delete it and run dayhand login`);
     }
     return { keys: keys as Record<string, string> };
   }

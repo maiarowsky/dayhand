@@ -40,7 +40,7 @@ describe("MCP over Streamable HTTP", () => {
   test("initialize, list tools with schemas, and run a task through its life", async () => {
     const userId = newUserId();
     const client = await mcpClient(await createKey(userId));
-    expect(client.getServerVersion()).toMatchObject({ name: "helm" });
+    expect(client.getServerVersion()).toMatchObject({ name: "dayhand" });
 
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(EXPECTED_TOOLS);
@@ -119,7 +119,7 @@ describe("MCP over Streamable HTTP", () => {
   test("serverInfo.version is the backend package version", async () => {
     const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
     const client = await mcpClient(await createKey(newUserId()));
-    expect(client.getServerVersion()).toEqual({ name: "helm", version: pkg.version });
+    expect(client.getServerVersion()).toEqual({ name: "dayhand", version: pkg.version });
     expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/);
     await client.close();
   });

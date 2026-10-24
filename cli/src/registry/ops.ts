@@ -21,7 +21,7 @@ export async function userTimezone(ctx: RunContext): Promise<string | undefined>
 export async function confirmBulk(ctx: RunContext, count: number, verb: string): Promise<void> {
   if (count < BULK_THRESHOLD || ctx.yes) return;
   if (!ctx.interactive) {
-    throw usageError(`Refusing to ${verb} ${count} tasks without --yes`, { hint: `hlm ${verb} <ref>... --yes` });
+    throw usageError(`Refusing to ${verb} ${count} tasks without --yes`, { hint: `dayhand ${verb} <ref>... --yes` });
   }
   if (!(await ctx.confirm(`${capitalize(verb)} ${count} tasks?`))) throw usageError("Cancelled; nothing was changed");
 }

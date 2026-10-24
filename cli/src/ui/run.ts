@@ -1,4 +1,4 @@
-// Starts hlm ui on the terminal: Ink in the alternate screen (the shell's
+// Starts dayhand ui on the terminal: Ink in the alternate screen (the shell's
 // scrollback comes back on quit), SGR mouse reports for clicks and the wheel,
 // and the terminal restored on every way out (q, C-c, a crash, a signal).
 import { writeSync } from "node:fs";

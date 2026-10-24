@@ -1,9 +1,9 @@
-// The agent contract: every MCP tool is reachable, `--json` and `hlm call`
+// The agent contract: every MCP tool is reachable, `--json` and `dayhand call`
 // print exactly what the official MCP SDK client gets as structuredContent,
 // and every --json output follows docs/schemas.
 import { describe, expect, test } from "vitest";
 import { flatten } from "../src/registry/index.js";
-import { connectAgent, hlm, hlmJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
+import { connectAgent, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
 
 const validate = schemaValidator();
 const specOf = (path: string) => flatten().find((c) => c.path === path)!.spec;
@@ -54,39 +54,39 @@ const CASES: Case[] = [
 describe("agent contract", () => {
   test("every one of the 17 MCP tools is reachable by a command", async () => {
     const { key } = await newUser();
-    const tools: string[] = (await hlmJson(key, ["tools"])).tools.map((t: { name: string }) => t.name);
+    const tools: string[] = (await dayhandJson(key, ["tools"])).tools.map((t: { name: string }) => t.name);
     expect(tools).toHaveLength(17);
     const covered = new Set(flatten().flatMap((c) => c.spec.tools));
     expect(tools.filter((t) => !covered.has(t))).toEqual([]);
     expect(new Set(CASES.map((c) => c.tool))).toEqual(new Set(tools));
   });
 
-  test("--json and hlm call print the MCP SDK client's structuredContent, valid against docs/schemas", async () => {
+  test("--json and dayhand call print the MCP SDK client's structuredContent, valid against docs/schemas", async () => {
     const { key } = await newUser();
     const sdk = await mcpClient(key);
     for (const c of CASES) {
-      const viaCommand = await hlmJson(key, c.command);
-      const viaCall = await hlmJson(key, ["call", c.tool, JSON.stringify(c.args)]);
+      const viaCommand = await dayhandJson(key, c.command);
+      const viaCall = await dayhandJson(key, ["call", c.tool, JSON.stringify(c.args)]);
       const viaSdk = await sdkCall(sdk, c.tool, c.args);
       expect(viaSdk.isError, `${c.tool} via SDK`).toBe(false);
-      expect(stable(c.tool, viaCommand), `hlm ${c.command.join(" ")}`).toEqual(stable(c.tool, viaSdk.structured));
-      expect(stable(c.tool, viaCall), `hlm call ${c.tool}`).toEqual(stable(c.tool, viaSdk.structured));
-      expect(validate(specOf(c.path).schema!, viaCommand), `schema of hlm ${c.path}`).toEqual([]);
+      expect(stable(c.tool, viaCommand), `dayhand ${c.command.join(" ")}`).toEqual(stable(c.tool, viaSdk.structured));
+      expect(stable(c.tool, viaCall), `dayhand call ${c.tool}`).toEqual(stable(c.tool, viaSdk.structured));
+      expect(validate(specOf(c.path).schema!, viaCommand), `schema of dayhand ${c.path}`).toEqual([]);
     }
     await sdk.close();
   });
 
   test("a Markdown export prints the SDK's text, and its JSON form follows the schema", async () => {
     const { key } = await newUser();
-    await hlm(key, ["add", "Plan", "the", "week"]);
+    await dayhand(key, ["add", "Plan", "the", "week"]);
     const sdk = await mcpClient(key);
     const viaSdk = await sdkCall(sdk, "export_plan", { format: "markdown" });
     // The export states when it was made; that line differs between calls.
     const when = (text: string) => text.replace(/^Exported \S+/m, "Exported <at>").trimEnd();
     const text = when((viaSdk.content as { text: string }[])[0]!.text);
-    expect(when((await hlm(key, ["export"])).stdout)).toBe(text);
-    expect(when((await hlm(key, ["call", "export_plan", '{"format":"markdown"}'])).stdout)).toBe(text);
-    const json = await hlmJson(key, ["export", "--format", "md"]);
+    expect(when((await dayhand(key, ["export"])).stdout)).toBe(text);
+    expect(when((await dayhand(key, ["call", "export_plan", '{"format":"markdown"}'])).stdout)).toBe(text);
+    const json = await dayhandJson(key, ["export", "--format", "md"]);
     expect({ ...json, content: when(json.content) }).toEqual({ format: "markdown", content: text });
     expect(validate("export.schema.json", json)).toEqual([]);
     await sdk.close();
@@ -94,22 +94,22 @@ describe("agent contract", () => {
 
   test("other outputs follow their schemas: several tasks, tools, version, devices, connections", async () => {
     const { userId, key } = await newUser();
-    for (const title of ["A", "B", "C"]) await hlm(key, ["add", title]);
-    expect(validate("results.schema.json", await hlmJson(key, ["done", "1", "2", "3", "--yes"]))).toEqual([]);
-    expect(validate("results.schema.json", await hlmJson(key, ["rm", "1", "2", "3", "--yes"]))).toEqual([]);
-    expect(validate(specOf("tools").schema!, await hlmJson(key, ["tools", "add_task"]))).toEqual([]);
-    const version = await hlmJson(key, ["version"]);
+    for (const title of ["A", "B", "C"]) await dayhand(key, ["add", title]);
+    expect(validate("results.schema.json", await dayhandJson(key, ["done", "1", "2", "3", "--yes"]))).toEqual([]);
+    expect(validate("results.schema.json", await dayhandJson(key, ["rm", "1", "2", "3", "--yes"]))).toEqual([]);
+    expect(validate(specOf("tools").schema!, await dayhandJson(key, ["tools", "add_task"]))).toEqual([]);
+    const version = await dayhandJson(key, ["version"]);
     expect(validate(specOf("version").schema!, version)).toEqual([]);
     expect(version.compatible).toBe(true);
-    const pairing = await hlmJson(key, ["pair"]);
+    const pairing = await dayhandJson(key, ["pair"]);
     expect(validate(specOf("pair").schema!, pairing)).toEqual([]);
-    const devices = await hlmJson(key, ["device", "list"]);
+    const devices = await dayhandJson(key, ["device", "list"]);
     expect(validate(specOf("device list").schema!, devices)).toEqual([]);
     await connectAgent(userId);
-    const connections = await hlmJson(key, ["connection", "list"]);
+    const connections = await dayhandJson(key, ["connection", "list"]);
     expect(connections.connections).toHaveLength(1);
     expect(validate(specOf("connection list").schema!, connections)).toEqual([]);
-    const revoked = await hlmJson(key, ["connection", "revoke", connections.connections[0].id]);
+    const revoked = await dayhandJson(key, ["connection", "revoke", connections.connections[0].id]);
     expect(validate(specOf("connection revoke").schema!, revoked)).toEqual([]);
   });
 });

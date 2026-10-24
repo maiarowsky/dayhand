@@ -1,4 +1,4 @@
-// Renders man/hlm.1 (roff) from the registry (npm run docs); a test checks the
+// Renders man/dayhand.1 (roff) from the registry (npm run docs); a test checks the
 // committed file is current. No version or date in it, so a release bump does
 // not make it stale.
 import { ENVIRONMENT, EXIT_CODES } from "./help.js";
@@ -25,20 +25,22 @@ export function renderMan(): string {
   const commands = flatten().filter(({ spec }) => spec.run);
   const lines = [
     ".\\\" Generated from cli/src/registry by `npm run docs` in cli/. Do not edit by hand.",
-    '.TH HLM 1 "" "hlm" "User Commands"',
+    '.TH DAYHAND 1 "" "dayhand" "User Commands"',
     ".SH NAME",
-    "hlm \\- the Helm command line client for people and agents",
+    "dayhand \\- the Dayhand command line client for people and agents",
     ".SH SYNOPSIS",
-    ".B hlm",
+    ".B dayhand",
     "[\\fIcommand\\fR] [\\fIarguments\\fR] [\\fIoptions\\fR]",
     ".SH DESCRIPTION",
-    roff("hlm reads and changes a Helm task list. Every command is one or more calls of the MCP tools the agent uses on the same /mcp endpoint; hlm call reaches any tool directly. Without a command, hlm shows Today."),
+    roff("dayhand reads and changes a Dayhand task list. Every command is one or more calls of the MCP tools the agent uses on the same /mcp endpoint; dayhand call reaches any tool directly. Without a command, dayhand shows Today."),
+    ".PP",
+    roff("dh is a shorter name for the same command. On Debian and Ubuntu, debhelper has a dh command of its own; type dayhand there. hlm, the old name, still works until 1.0 and warns on every run."),
     ".PP",
     roff("Task references: #42 or 42 (the task number), now (the now task) or the task id."),
     ".SH COMMANDS",
   ];
   for (const { path, spec } of commands) {
-    lines.push(".TP", `.B hlm ${roff(path)}${spec.args?.length ? ` ${roff(args(spec))}` : ""}`, roff(spec.summary));
+    lines.push(".TP", `.B dayhand ${roff(path)}${spec.args?.length ? ` ${roff(args(spec))}` : ""}`, roff(spec.summary));
     if (spec.aliases?.length) lines.push(".br", roff(`Aliases: ${spec.aliases.join(", ")}.`));
     if (spec.description) lines.push(".br", roff(spec.description));
     if (spec.options?.length) lines.push(".RS", ...spec.options.flatMap(option), ".RE");
@@ -52,31 +54,31 @@ export function renderMan(): string {
     "Print the CLI version.",
     ".TP",
     ".B \\-h, \\-\\-help",
-    roff("Help for hlm or for a command; hlm help <topic> for a topic."),
+    roff("Help for dayhand or for a command; dayhand help <topic> for a topic."),
     ".SH JSON OUTPUT",
-    roff("--json (or HLM_FORMAT=json) prints the MCP tool's structuredContent exactly as an MCP client receives it. Fields may be added in a minor version; they are never removed or retyped within a major version. Errors go to standard error as one line: {\"error\":{\"code\",\"message\",\"exitCode\",\"retryable\",\"clientId\",...}}; standard output then stays empty. --plain prints tab-separated rows without headers."),
+    roff("--json (or DAYHAND_FORMAT=json) prints the MCP tool's structuredContent exactly as an MCP client receives it. Fields may be added in a minor version; they are never removed or retyped within a major version. Errors go to standard error as one line: {\"error\":{\"code\",\"message\",\"exitCode\",\"retryable\",\"clientId\",...}}; standard output then stays empty. --plain prints tab-separated rows without headers."),
     ".SH EXIT STATUS",
     ...EXIT_CODES.flatMap(([code, meaning]) => [".TP", `.B ${code}`, roff(meaning)]),
     ".SH ENVIRONMENT",
     ...ENVIRONMENT.flatMap(([name, meaning]) => [".TP", `.B ${roff(name)}`, roff(meaning)]),
   );
   for (const [name, text] of Object.entries(TOPICS)) {
-    lines.push(`.SH ${name.toUpperCase()}`, roff(`hlm help ${name}`), ".PP", ...block(text));
+    lines.push(`.SH ${name.toUpperCase()}`, roff(`dayhand help ${name}`), ".PP", ...block(text));
   }
   lines.push(
     ".SH EXAMPLES",
     ...block(
       [
-        "hlm login --url https://<deployment>.convex.site",
-        'hlm add Call the accountant --due "fri 2pm" -l home',
-        "hlm list --due-before eow --json",
-        "hlm done 42",
-        "hlm pair",
-        "source <(hlm completion bash)",
+        "dayhand login --url https://<deployment>.convex.site",
+        'dayhand add Call the accountant --due "fri 2pm" -l home',
+        "dayhand list --due-before eow --json",
+        "dayhand done 42",
+        "dayhand pair",
+        "source <(dayhand completion bash)",
       ].join("\n"),
     ),
     ".SH SEE ALSO",
-    roff("docs/cli.md and docs/schemas/ in the Helm repository; hlm help dates | config | login | completion."),
+    roff("docs/cli.md and docs/schemas/ in the Dayhand repository; dayhand help dates | config | login | completion."),
     "",
   );
   return lines.join("\n");

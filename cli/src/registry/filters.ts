@@ -1,6 +1,6 @@
-// `hlm list` filters. The backend applies them (list_all's query, status,
+// `dayhand list` filters. The backend applies them (list_all's query, status,
 // dueBefore/dueAfter, overdue, limit and cursor, backend 0.4.0); against an
-// older backend hlm falls back to filtering the full list_all result itself.
+// older backend dayhand falls back to filtering the full list_all result itself.
 // The JSON keeps list_all's shape ({"result": [...]}, plus total and
 // nextCursor from a 0.4 backend).
 import { CliError, usageError } from "../core/exit.js";
@@ -87,7 +87,7 @@ function localFilter(filters: Filters, opts: Opts): (tasks: Task[]) => Task[] {
   };
 }
 
-/** `hlm list`: list_all narrowed by the filter options. */
+/** `dayhand list`: list_all narrowed by the filter options. */
 export async function listTasks(ctx: RunContext, base: Record<string, unknown>, opts: Opts): Promise<TaskList> {
   if (!hasFilters(opts)) return tool<TaskList>(ctx, "list_all", base);
   const filters = await readFilters(ctx, opts);
@@ -97,7 +97,7 @@ export async function listTasks(ctx: RunContext, base: Record<string, unknown>, 
     return await serverList(ctx, server, filters, cursor);
   } catch (error) {
     if (!oldBackend(error)) throw error;
-    if (cursor !== undefined) throw usageError("--cursor needs backend 0.4.0 or later (hlm version)");
+    if (cursor !== undefined) throw usageError("--cursor needs backend 0.4.0 or later (dayhand version)");
     const listed = await tool<TaskList>(ctx, "list_all", base);
     return { ...listed, result: localFilter(filters, opts)(listed.result ?? []) };
   }

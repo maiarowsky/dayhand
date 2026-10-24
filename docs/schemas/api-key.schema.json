@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/api-key.schema.json",
+  "$id": "https://schemas.dayhand.invalid/api-key.schema.json",
   "title": "API key",
-  "description": "One personal API key as GET /api/v1/keys lists it (hlm key list). Never the key itself or its hash.",
+  "description": "One personal API key as GET /api/v1/keys lists it (dayhand key list). Never the key itself or its hash.",
   "type": "object",
   "required": ["id", "name", "kind", "scope", "createdAt", "expiresAt", "revokedAt", "createdWith"],
   "properties": {

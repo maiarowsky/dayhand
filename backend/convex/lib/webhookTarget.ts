@@ -2,9 +2,11 @@
 // hosts only, so the deployment cannot be pointed at its own network (SSRF).
 // Checked when the webhook is added and again before every delivery. Pure.
 //
-// HELM_WEBHOOK_ALLOWED_ORIGINS (comma-separated origins) exempts those exact
+// DAYHAND_WEBHOOK_ALLOWED_ORIGINS (comma-separated origins) exempts those exact
 // origins from the rules, e.g. a local receiver in tests or on a self-hosted
 // deployment; production leaves it unset.
+
+import { serverEnv } from "./env";
 
 const MAX_URL = 2048;
 
@@ -12,7 +14,7 @@ const MAX_URL = 2048;
 const PRIVATE_SUFFIXES = [".localhost", ".local", ".internal", ".home.arpa", ".lan", ".intranet", ".corp"];
 
 export function allowedOrigins(): string[] {
-  return (process.env.HELM_WEBHOOK_ALLOWED_ORIGINS ?? "")
+  return (serverEnv("WEBHOOK_ALLOWED_ORIGINS") ?? "")
     .split(",")
     .map((origin) => origin.trim().replace(/\/+$/, ""))
     .filter((origin) => origin !== "");

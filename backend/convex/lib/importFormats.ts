@@ -1,4 +1,4 @@
-// Reading other plans into Helm (docs/api.md#import): Helm's own JSON export,
+// Reading other plans into Dayhand (docs/api.md#import): Dayhand's own JSON export,
 // iCalendar (VTODO and VEVENT) and Todoist's CSV export. Each reader turns a
 // file into tasks as add_task would take them, plus warnings for what it could
 // not carry over. Only the reading is here; every task is then checked and
@@ -8,13 +8,17 @@ import { EXPORT_VERSION } from "./exportPlan";
 import { zonedInstant } from "./vtimezone";
 import type { ChecklistInput, Link, Reminder, RepeatInput } from "./validators";
 
-export const IMPORT_FORMATS = ["helm-json", "ics", "todoist-csv"] as const;
+export const IMPORT_FORMATS = ["dayhand-json", "ics", "todoist-csv"] as const;
 export type ImportFormat = (typeof IMPORT_FORMATS)[number];
+/** The name of dayhand-json before the rename, still accepted. */
+export const DEPRECATED_FORMATS: Record<string, ImportFormat> = { "helm-json": "dayhand-json" };
+/** The name a format had when import keys were first made: a file imported again keeps its keys. */
+export const KEY_NAME: Record<ImportFormat, string> = { "dayhand-json": "helm-json", ics: "ics", "todoist-csv": "todoist-csv" };
 
 /** One task to import. `source` identifies it within the file, so importing the file again skips it. */
 export type ImportItem = {
   source: string;
-  /** The task's id in the Helm export it comes from, if any: a task still here is skipped. */
+  /** The task's id in the Dayhand export it comes from, if any: a task still here is skipped. */
   originalId?: string;
   ref?: number;
   title: string;
@@ -40,36 +44,36 @@ export class ImportFormatError extends Error {}
 /** The format of a file: by its start, as the file name may be missing or wrong. */
 export function detectFormat(content: string): ImportFormat {
   const start = content.replace(/^﻿/, "").trimStart();
-  if (start.startsWith("{")) return "helm-json";
+  if (start.startsWith("{")) return "dayhand-json";
   if (/^BEGIN:VCALENDAR/i.test(start)) return "ics";
   if (/^"?TYPE"?\s*,/i.test(start)) return "todoist-csv";
-  throw new ImportFormatError("Unknown format: expected Helm's JSON export, an iCalendar (.ics) file or a Todoist CSV export");
+  throw new ImportFormatError("Unknown format: expected Dayhand's JSON export, an iCalendar (.ics) file or a Todoist CSV export");
 }
 
 export function readPlan(format: ImportFormat, content: string, context: ReadContext): Parsed {
   const text = content.replace(/^﻿/, "");
-  if (format === "helm-json") return readHelmJson(text);
+  if (format === "dayhand-json") return readDayhandJson(text);
   if (format === "ics") return readIcs(text, context);
   return readTodoistCsv(text, context);
 }
 
-// ---- Helm's JSON export ----
+// ---- Dayhand's JSON export ----
 
 const str = (value: unknown) => (typeof value === "string" ? value : undefined);
 const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : undefined);
 const arr = <T>(value: unknown) => (Array.isArray(value) ? (value as T[]) : undefined);
 
-function readHelmJson(text: string): Parsed {
+function readDayhandJson(text: string): Parsed {
   let value: any;
   try {
     value = JSON.parse(text);
   } catch {
     throw new ImportFormatError("The file is not valid JSON");
   }
-  // hlm export --format json gives the content; export_plan's result wraps it as { format, content }.
+  // dayhand export --format json gives the content; export_plan's result wraps it as { format, content }.
   const plan = value?.format === "json" && value.content ? value.content : value;
   if (plan?.version !== EXPORT_VERSION || !Array.isArray(plan.tasks)) {
-    throw new ImportFormatError(`Not a Helm JSON export of version ${EXPORT_VERSION} (expected { "version": ${EXPORT_VERSION}, "tasks": [...] })`);
+    throw new ImportFormatError(`Not a Dayhand JSON export of version ${EXPORT_VERSION} (expected { "version": ${EXPORT_VERSION}, "tasks": [...] })`);
   }
   const warnings: string[] = [];
   const items: ImportItem[] = [];
@@ -100,7 +104,7 @@ function readHelmJson(text: string): Parsed {
     });
   }
   if (trashed) warnings.push(`${trashed} task(s) in the trash were not imported`);
-  if (plan.settings) warnings.push("Settings and history are not imported; set the time zone with hlm settings set if needed");
+  if (plan.settings) warnings.push("Settings and history are not imported; set the time zone with dayhand settings set if needed");
   return { items, warnings };
 }
 
@@ -212,7 +216,7 @@ function readIcs(text: string, context: ReadContext): Parsed {
   const seen = new Set<string>();
   let skipped = 0;
   for (const calendar of calendars) {
-    const fromHelm = /helm/i.test(prop(calendar, "PRODID")?.value ?? "");
+    const fromDayhand = /dayhand|helm/i.test(prop(calendar, "PRODID")?.value ?? "");
     for (const [index, c] of calendar.children.entries()) {
       if (c.name !== "VTODO" && c.name !== "VEVENT") continue;
       const uid = prop(c, "UID")?.value;
@@ -232,10 +236,10 @@ function readIcs(text: string, context: ReadContext): Parsed {
       }
       let status: ImportItem["status"] = state === "COMPLETED" ? "done" : state === "IN-PROCESS" ? "doing" : "todo";
       let note = prop(c, "DESCRIPTION") ? unescapeText(prop(c, "DESCRIPTION")!.value) : undefined;
-      if (fromHelm) {
-        // Helm's own calendar marks done tasks with ✓ and starts the description with the task number.
+      if (fromDayhand) {
+        // Dayhand's own calendar marks done tasks with ✓ and starts the description with the task number.
         if (title.startsWith("✓ ")) [title, status] = [title.slice(2), "done"];
-        note = note?.replace(/^Helm(?: #\d+)?(?:\n\n)?/, "") || undefined;
+        note = note?.replace(/^(?:Dayhand|Helm)(?: #\d+)?(?:\n\n)?/, "") || undefined;
       }
       const whenProp = c.name === "VTODO" ? (prop(c, "DUE") ?? prop(c, "DTSTART")) : prop(c, "DTSTART");
       const when = whenProp ? readWhen(whenProp, context, warnings) : null;
@@ -417,7 +421,7 @@ function readTodoistCsv(text: string, context: ReadContext): Parsed {
     parent = { item, indent };
   }
   if (subtasks) warnings.push(`${subtasks} sub-task(s) became checklist items of their parent task`);
-  if (col("PRIORITY") >= 0) warnings.push("Todoist priorities are not imported (Helm has none)");
+  if (col("PRIORITY") >= 0) warnings.push("Todoist priorities are not imported (Dayhand has none)");
   return { items, warnings };
 }
 

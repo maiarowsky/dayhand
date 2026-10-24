@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/server-plan.schema.json",
+  "$id": "https://schemas.dayhand.invalid/server-plan.schema.json",
   "title": "Server plan",
-  "description": "hlm server deploy|start --dry-run (and npm run setup -- --dry-run --json): the steps a run would take. Nothing was changed and nothing went over the network.",
+  "description": "dayhand server deploy|start --dry-run (and npm run setup -- --dry-run --json): the steps a run would take. Nothing was changed and nothing went over the network.",
   "type": "object",
   "required": [
     "dryRun",

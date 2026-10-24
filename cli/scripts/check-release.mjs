@@ -17,7 +17,7 @@ const older = (version, min) => {
 export function releaseProblems(pkg, tag, npmVersion) {
   const problems = [];
   if (pkg.private) problems.push('package.json has "private": true (remove it on the maintainer\'s word: docs/release.md)');
-  if (tag !== `hlm-v${pkg.version}`) problems.push(`tag ${tag} does not match the package version (expected hlm-v${pkg.version})`);
+  if (tag !== `dayhand-v${pkg.version}`) problems.push(`tag ${tag} does not match the package version (expected dayhand-v${pkg.version})`);
   const repo = typeof pkg.repository === "string" ? pkg.repository : pkg.repository?.url;
   if (!repo || repo.includes("<")) problems.push("package.json needs repository.url of the public GitHub repository (provenance checks it)");
   if (npmVersion && older(npmVersion, MIN_NPM)) problems.push(`npm ${npmVersion} cannot use trusted publishing; ${MIN_NPM.join(".")} or newer is needed`);

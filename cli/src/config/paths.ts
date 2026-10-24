@@ -1,35 +1,55 @@
-// Where hlm keeps its files, following each system's convention:
-//   Linux and others  $XDG_CONFIG_HOME/hlm (~/.config/hlm), cache $XDG_CACHE_HOME/hlm (~/.cache/hlm)
-//   macOS             ~/Library/Application Support/hlm, cache ~/Library/Caches/hlm
-//   Windows           %APPDATA%\hlm, cache %LOCALAPPDATA%\hlm\Cache
-// HLM_CONFIG_DIR and HLM_CACHE_DIR override both (tests, portable setups).
+// Where dayhand keeps its files, following each system's convention:
+//   Linux and others  $XDG_CONFIG_HOME/dayhand (~/.config/dayhand), cache $XDG_CACHE_HOME/dayhand (~/.cache/dayhand)
+//   macOS             ~/Library/Application Support/dayhand, cache ~/Library/Caches/dayhand
+//   Windows           %APPDATA%\dayhand, cache %LOCALAPPDATA%\dayhand\Cache
+// DAYHAND_CONFIG_DIR and DAYHAND_CACHE_DIR override both (tests, portable setups).
+// The config folder of the hlm command (the same places, named hlm) is used
+// while there is no dayhand folder, with a warning that says how to move it.
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import type { Env } from "./env.js";
+import { readEnv, type Env, type Warning } from "./env.js";
 
 export type Platform = NodeJS.Platform;
 
-export type Paths = { configDir: string; cacheDir: string; configFile: string };
+export type Paths = { configDir: string; cacheDir: string; configFile: string; warning?: Warning };
 
-export function resolvePaths(env: Env, platform: Platform = process.platform, home: string = homedir()): Paths {
+const NAME = "dayhand";
+const OLD_NAME = "hlm";
+
+export function resolvePaths(
+  env: Env,
+  platform: Platform = process.platform,
+  home: string = homedir(),
+  exists: (dir: string) => boolean = existsSync,
+): Paths {
   const join = platform === "win32" ? path.win32.join : path.posix.join;
-  const configDir = env.HLM_CONFIG_DIR || defaultConfigDir(env, platform, home, join);
-  const cacheDir = env.HLM_CACHE_DIR || defaultCacheDir(env, platform, home, join);
-  return { configDir, cacheDir, configFile: join(configDir, "config.toml") };
+  const cacheDir = readEnv(env, "DAYHAND_CACHE_DIR").value || defaultCacheDir(env, platform, home, join);
+  const explicit = readEnv(env, "DAYHAND_CONFIG_DIR").value;
+  let configDir = explicit || defaultConfigDir(env, platform, home, join, NAME);
+  let warning: Warning | undefined;
+  if (!explicit && !exists(configDir)) {
+    const old = defaultConfigDir(env, platform, home, join, OLD_NAME);
+    if (exists(old)) {
+      warning = { code: "deprecated_config_dir", message: `${old} is the folder of the old hlm command; move it to ${configDir}` };
+      configDir = old;
+    }
+  }
+  return { configDir, cacheDir, configFile: join(configDir, "config.toml"), ...(warning ? { warning } : {}) };
 }
 
 type Join = (...parts: string[]) => string;
 
-function defaultConfigDir(env: Env, platform: Platform, home: string, join: Join): string {
-  if (platform === "win32") return join(env.APPDATA || join(home, "AppData", "Roaming"), "hlm");
-  if (platform === "darwin") return join(home, "Library", "Application Support", "hlm");
-  return join(absolute(env.XDG_CONFIG_HOME) ?? join(home, ".config"), "hlm");
+function defaultConfigDir(env: Env, platform: Platform, home: string, join: Join, name: string): string {
+  if (platform === "win32") return join(env.APPDATA || join(home, "AppData", "Roaming"), name);
+  if (platform === "darwin") return join(home, "Library", "Application Support", name);
+  return join(absolute(env.XDG_CONFIG_HOME) ?? join(home, ".config"), name);
 }
 
 function defaultCacheDir(env: Env, platform: Platform, home: string, join: Join): string {
-  if (platform === "win32") return join(env.LOCALAPPDATA || join(home, "AppData", "Local"), "hlm", "Cache");
-  if (platform === "darwin") return join(home, "Library", "Caches", "hlm");
-  return join(absolute(env.XDG_CACHE_HOME) ?? join(home, ".cache"), "hlm");
+  if (platform === "win32") return join(env.LOCALAPPDATA || join(home, "AppData", "Local"), NAME, "Cache");
+  if (platform === "darwin") return join(home, "Library", "Caches", NAME);
+  return join(absolute(env.XDG_CACHE_HOME) ?? join(home, ".cache"), NAME);
 }
 
 /** The XDG spec ignores relative paths. */

@@ -16,7 +16,7 @@ async function owner(scope?: "read" | "write" | "full") {
 const expectProblem = (answer: { status: number; headers: Headers; body: any }, status: number, code: string) => {
   expect(answer.status).toBe(status);
   expect(answer.headers.get("content-type")).toBe("application/problem+json");
-  expect(answer.body).toMatchObject({ type: `https://schemas.helm.invalid/problems/${code}`, status, code, title: expect.any(String), detail: expect.any(String) });
+  expect(answer.body).toMatchObject({ type: `https://schemas.dayhand.invalid/problems/${code}`, status, code, title: expect.any(String), detail: expect.any(String) });
 };
 
 describe("REST API: who may call", () => {
@@ -24,7 +24,7 @@ describe("REST API: who may call", () => {
     expectProblem(await rest(null, "GET", "/today"), 401, "unauthenticated");
     const wrong = await rest("helm_nope", "GET", "/today");
     expectProblem(wrong, 401, "unauthenticated");
-    expect(wrong.headers.get("www-authenticate")).toBe('Bearer realm="helm"');
+    expect(wrong.headers.get("www-authenticate")).toBe('Bearer realm="dayhand"');
     const oauth = await rest("helmat_abc.def", "GET", "/today");
     expectProblem(oauth, 401, "unauthenticated");
     expect(oauth.body.detail).toMatch(/only for \/mcp/);
@@ -179,7 +179,7 @@ describe("REST API: API keys", () => {
     const { key } = await owner();
     const created = await rest(key, "POST", "/keys", { body: { name: "n8n" } });
     expect(created.status).toBe(201);
-    expect(created.body).toMatchObject({ name: "n8n", kind: "agent", scope: "read", expiresAt: null, key: expect.stringMatching(/^helm_/) });
+    expect(created.body).toMatchObject({ name: "n8n", kind: "agent", scope: "read", expiresAt: null, key: expect.stringMatching(/^dayhand_/) });
     const child = created.body.key as string;
     expect((await rest(child, "GET", "/today")).status).toBe(200);
     expectProblem(await rest(child, "POST", "/tasks", { body: { title: "x" } }), 403, "insufficient_scope");

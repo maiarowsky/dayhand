@@ -6,11 +6,11 @@
   "packages": {
     "cli": {
       "release-type": "node",
-      "component": "hlm",
-      "package-name": "hlm",
+      "component": "dayhand",
+      "package-name": "dayhand",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        { "type": "generic", "path": "/packaging/homebrew/hlm.rb" }
+        { "type": "generic", "path": "/packaging/homebrew/dayhand.rb" }
       ]
     }
   }

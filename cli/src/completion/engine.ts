@@ -1,4 +1,4 @@
-// `hlm __complete <words…>`: the candidates for the last word, from the same
+// `dayhand __complete <words…>`: the candidates for the last word, from the same
 // registry that builds the commands, so completion cannot drift from them.
 // Prints "value<TAB>description" lines and ":<directive>"; never fails.
 import { expandAlias } from "../config/aliases.js";

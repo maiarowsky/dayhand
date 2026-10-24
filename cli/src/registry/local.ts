@@ -42,7 +42,7 @@ const when: CommandSpec = {
     { flags: "--now <moment>", description: "Resolve as if it were this moment (ISO 8601) instead of now" },
   ],
   tools: ["get_settings"],
-  examples: ['hlm when "fri 14:00"', "hlm when next mon --json", 'hlm when "in 2 hours" --timezone America/New_York'],
+  examples: ['dayhand when "fri 14:00"', "dayhand when next mon --json", 'dayhand when "in 2 hours" --timezone America/New_York'],
   run: async (ctx, args, opts) => {
     const timezone = await previewZone(ctx, opts);
     const now = referenceTime(opts);
@@ -72,10 +72,10 @@ const when: CommandSpec = {
 const completion: CommandSpec = {
   name: "completion",
   schema: "completion.schema.json",
-  summary: "Print the shell completion script for bash, zsh, fish or powershell (hlm help completion)",
+  summary: "Print the shell completion script for bash, zsh, fish or powershell (dayhand help completion)",
   args: [{ name: "shell", description: SHELLS.join(", "), required: true }],
   tools: [],
-  examples: ["source <(hlm completion bash)", 'hlm completion zsh > "${fpath[1]}/_hlm"', "hlm completion powershell | Out-String | Invoke-Expression"],
+  examples: ["source <(dayhand completion bash)", 'dayhand completion zsh > "${fpath[1]}/_dayhand"', "dayhand completion powershell | Out-String | Invoke-Expression"],
   run: async (_ctx, args) => {
     const shell = String(args.shell).toLowerCase();
     if (!(SHELLS as readonly string[]).includes(shell)) throw usageError("Unknown shell", { valid: [...SHELLS] });

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/login.schema.json",
+  "$id": "https://schemas.dayhand.invalid/login.schema.json",
   "title": "Login",
-  "description": "hlm login: where the checked key was stored. Never contains the key.",
+  "description": "dayhand login: where the checked key was stored. Never contains the key.",
   "type": "object",
   "required": [
     "url",

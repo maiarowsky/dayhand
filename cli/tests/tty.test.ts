@@ -8,10 +8,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, test } from "vitest";
-import { helm, hlmJson, newUser, TEST_HOME } from "./helpers.js";
+import { helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
 
 type Pty = typeof import("node-pty");
-const BIN = fileURLToPath(new URL("../dist/bin/hlm.js", import.meta.url));
+const BIN = fileURLToPath(new URL("../dist/bin/dayhand.js", import.meta.url));
 
 function loadPty(): Pty | undefined {
   try {
@@ -28,7 +28,7 @@ function loadPty(): Pty | undefined {
 }
 
 const pty = loadPty();
-const work = mkdtempSync(join(process.env.HLM_TEST_TMPDIR ?? tmpdir(), "hlm-tty-"));
+const work = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-tty-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 
 type Session = { output: () => string; waitFor: (text: string | RegExp) => Promise<void>; write: (data: string) => void; exit: Promise<number> };
@@ -37,7 +37,7 @@ function session(args: string[], env: Record<string, string>, cols = 100): Sessi
   const term = pty!.spawn(process.execPath, [BIN, ...args], {
     cols,
     rows: 30,
-    env: { PATH: process.env.PATH ?? "", HLM_CONFIG_DIR: join(TEST_HOME, "tty-config"), HLM_CACHE_DIR: join(TEST_HOME, "tty-cache"), HLM_CREDENTIAL_STORE: "file", HLM_URL: helm().siteUrl, TERM: "xterm-256color", NO_COLOR: "1", ...env },
+    env: { PATH: process.env.PATH ?? "", DAYHAND_CONFIG_DIR: join(TEST_HOME, "tty-config"), DAYHAND_CACHE_DIR: join(TEST_HOME, "tty-cache"), DAYHAND_CREDENTIAL_STORE: "file", DAYHAND_URL: helm().siteUrl, TERM: "xterm-256color", NO_COLOR: "1", ...env },
   });
   let output = "";
   term.onData((data) => (output += data));
@@ -62,16 +62,16 @@ function editor(name: string, body: string): string {
 describe.skipIf(!pty)("on a terminal", () => {
   test("changing three tasks asks first; y confirms", async () => {
     const { key } = await newUser();
-    for (const t of ["A", "B", "C"]) await hlmJson(key, ["add", t]);
-    const s = session(["rm", "1", "2", "3"], { HLM_API_KEY: key });
+    for (const t of ["A", "B", "C"]) await dayhandJson(key, ["add", t]);
+    const s = session(["rm", "1", "2", "3"], { DAYHAND_API_KEY: key });
     await s.waitFor("Delete 3 tasks? [y/N] ");
     s.write("y\r");
     expect(await s.exit).toBe(0);
     expect(s.output()).toContain("Moved to the trash:");
-    expect((await hlmJson(key, ["trash"])).result).toHaveLength(3);
+    expect((await dayhandJson(key, ["trash"])).result).toHaveLength(3);
   });
 
-  test("hlm login reads the key at a hidden prompt and never echoes it; Ctrl-C exits with 130", async () => {
+  test("dayhand login reads the key at a hidden prompt and never echoes it; Ctrl-C exits with 130", async () => {
     const { key } = await newUser();
     const s = session(["login", "--url", helm().siteUrl], {});
     await s.waitFor("API key (input hidden): ");
@@ -90,31 +90,31 @@ describe.skipIf(!pty)("on a terminal", () => {
     expect(interrupted.output()).toContain("Interrupted; nothing was changed");
   });
 
-  test("hlm note <ref> and hlm edit <ref> open $EDITOR; an unchanged file sends nothing", async () => {
+  test("dayhand note <ref> and dayhand edit <ref> open $EDITOR; an unchanged file sends nothing", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Draft", "--note", "outline"]);
+    await dayhandJson(key, ["add", "Draft", "--note", "outline"]);
     const append = editor("append", 'writeFileSync(file, text.trimEnd() + "\\nintro written\\n");');
-    const note = session(["note", "1"], { HLM_API_KEY: key, EDITOR: append });
+    const note = session(["note", "1"], { DAYHAND_API_KEY: key, EDITOR: append });
     expect(await note.exit).toBe(0);
     expect(note.output()).toContain("Note updated:");
-    expect((await hlmJson(key, ["show", "1"])).task.note).toBe("outline\nintro written");
+    expect((await dayhandJson(key, ["show", "1"])).task.note).toBe("outline\nintro written");
 
     const retitle = editor("retitle", 'writeFileSync(file, text.replace(/^Draft/, "Final draft"));');
-    const edit = session(["edit", "1"], { HLM_API_KEY: key, VISUAL: retitle, EDITOR: "false" });
+    const edit = session(["edit", "1"], { DAYHAND_API_KEY: key, VISUAL: retitle, EDITOR: "false" });
     expect(await edit.exit).toBe(0);
-    expect((await hlmJson(key, ["show", "1"])).task).toMatchObject({ title: "Final draft", note: "outline\nintro written" });
+    expect((await dayhandJson(key, ["show", "1"])).task).toMatchObject({ title: "Final draft", note: "outline\nintro written" });
 
-    const untouched = session(["note", "1"], { HLM_API_KEY: key, EDITOR: editor("noop", "") });
+    const untouched = session(["note", "1"], { DAYHAND_API_KEY: key, EDITOR: editor("noop", "") });
     expect(await untouched.exit).toBe(0);
     expect(untouched.output()).toContain("Note unchanged");
-    expect((await hlmJson(key, ["show", "1"])).history).toHaveLength(3);
+    expect((await dayhandJson(key, ["show", "1"])).history).toHaveLength(3);
   });
 
   test("the board shows its columns side by side on a wide terminal", async () => {
     const { key } = await newUser();
-    await hlmJson(key, ["add", "Write the report"]);
-    await hlmJson(key, ["add", "Call", "--status", "doing"]);
-    const s = session(["board"], { HLM_API_KEY: key }, 120);
+    await dayhandJson(key, ["add", "Write the report"]);
+    await dayhandJson(key, ["add", "Call", "--status", "doing"]);
+    const s = session(["board"], { DAYHAND_API_KEY: key }, 120);
     expect(await s.exit).toBe(0);
     expect(s.output()).toMatch(/TODO \(1\) +DOING \(1\) +DONE \(0\)/);
     expect(s.output()).toMatch(/#1 Write the report +#2 Call +\(empty\)/);

@@ -1,25 +1,20 @@
-// Phone pairing against the local backend: helm pair -> POST /auth/pair ->
-// POST /auth/token -> the app layer through the Convex client with that JWT.
-import { execFile } from "node:child_process";
+// Phone pairing against the local backend: POST /devices/pairing-code (what
+// `dayhand pair` calls) -> POST /auth/pair -> POST /auth/token -> the app layer
+// through the Convex client with that JWT.
 import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import { ConvexHttpClient } from "convex/browser";
 import { afterEach, describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { admin, callTool, createKey, helm, mcpClient } from "./helpers";
 
-const CLI = fileURLToPath(new URL("../cli/helm.mjs", import.meta.url));
-const exec = promisify(execFile);
-
-async function helmCli(key: string, ...args: string[]) {
-  const env = { PATH: process.env.PATH, HELM_URL: helm().siteUrl, HELM_API_KEY: key };
-  try {
-    const { stdout, stderr } = await exec(process.execPath, [CLI, ...args], { env });
-    return { code: 0, stdout, stderr };
-  } catch (error: any) {
-    return { code: error.code as number, stdout: error.stdout as string, stderr: error.stderr as string };
-  }
+/** The device management endpoints with a personal API key, as `dayhand pair`, `devices` and `revoke` use them. */
+async function devices(key: string, method: "GET" | "POST", path: string, body?: unknown) {
+  const response = await fetch(`${helm().siteUrl}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${key}`, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  return { status: response.status, body: await response.json() };
 }
 
 async function post(path: string, body: unknown) {
@@ -39,9 +34,9 @@ async function owner() {
 }
 
 async function pairingCode(key: string): Promise<string> {
-  const result = await helmCli(key, "pair", "--json");
-  expect(result.code).toBe(0);
-  return JSON.parse(result.stdout).code;
+  const result = await devices(key, "POST", "/devices/pairing-code");
+  expect(result.status).toBe(201);
+  return result.body.code;
 }
 
 const INVALID = { error: "invalid_grant", error_description: "The code or token is not valid" };
@@ -51,13 +46,12 @@ afterEach(async () => {
 });
 
 describe("phone pairing", () => {
-  test("helm pair -> /auth/pair -> /auth/token -> app queries as the owner", async () => {
+  test("pairing code -> /auth/pair -> /auth/token -> app queries as the owner", async () => {
     const { subject, userId, key } = await owner();
-    const pairing = await helmCli(key, "pair");
-    expect(pairing.code).toBe(0);
-    const code = /^\s+([0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4})$/m.exec(pairing.stdout)![1];
-    expect(pairing.stdout).toContain(`helm://pair?url=${encodeURIComponent(helm().siteUrl)}&code=${code}`);
-    expect(pairing.stdout).toMatch(/[▀▄█]/); // the QR code
+    const pairing = await devices(key, "POST", "/devices/pairing-code");
+    expect(pairing).toMatchObject({ status: 201, body: { expiresIn: 600 } });
+    const code: string = pairing.body.code;
+    expect(code).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/);
 
     const paired = await post("/auth/pair", { code: code.toLowerCase(), deviceName: "Pixel 9" });
     expect(paired.status).toBe(200);
@@ -88,11 +82,11 @@ describe("phone pairing", () => {
     const details = await admin().query(internal.ops.getTask, { userId, actor: "app", taskId: added.id });
     expect(details.history[0].actor).toBe("app");
 
-    const devices = JSON.parse((await helmCli(key, "devices", "--json")).stdout).devices;
-    expect(devices).toEqual([
+    const listed = (await devices(key, "GET", "/devices")).body.devices;
+    expect(listed).toEqual([
       expect.objectContaining({ id: paired.body.deviceId, name: "Pixel 9", pairedBy: 'API key "cli"', revokedAt: null }),
     ]);
-    expect(devices[0].lastUsedAt).toBeGreaterThan(0);
+    expect(listed[0].lastUsedAt).toBeGreaterThan(0);
   });
 
   test("a code works once; used, expired, unknown and malformed codes get the same answer", async () => {
@@ -152,15 +146,19 @@ describe("phone pairing", () => {
     const paired = (await post("/auth/pair", { code: await pairingCode(key), deviceName: "Old phone" })).body;
     expect((await post("/auth/token", { deviceToken: paired.deviceToken })).status).toBe(200);
 
-    const revoked = await helmCli(key, "revoke", paired.deviceId);
-    expect(revoked.code).toBe(0);
-    expect(revoked.stdout).toContain(`Revoked ${paired.deviceId}`);
+    const revoked = await devices(key, "POST", "/devices/revoke", { deviceId: paired.deviceId });
+    expect(revoked.status).toBe(200);
     expect(await post("/auth/token", { deviceToken: paired.deviceToken })).toMatchObject({ status: 401, body: INVALID });
-    expect((await helmCli(key, "devices")).stdout).toMatch(/Old phone .*revoked \d{4}-/);
+    expect((await devices(key, "GET", "/devices")).body.devices).toEqual([
+      expect.objectContaining({ id: paired.deviceId, name: "Old phone", revokedAt: expect.any(Number) }),
+    ]);
 
     const stranger = await owner();
-    expect(await helmCli(stranger.key, "revoke", paired.deviceId)).toMatchObject({ code: 1 });
-    expect((await helmCli(stranger.key, "revoke", "nope")).stderr).toMatch(/not found/);
+    expect((await devices(stranger.key, "POST", "/devices/revoke", { deviceId: paired.deviceId })).status).toBe(404);
+    expect(await devices(stranger.key, "POST", "/devices/revoke", { deviceId: "nope" })).toMatchObject({
+      status: 404,
+      body: { error_description: expect.stringMatching(/not found/) },
+    });
   });
 
   test("wrong, malformed and missing device tokens are rejected alike", async () => {
@@ -182,8 +180,7 @@ describe("phone pairing", () => {
     expect(noKey.status).toBe(401);
 
     const agentOnly = await createKey(`elsewhere|${randomUUID()}`);
-    const refused = await helmCli(agentOnly, "pair");
-    expect(refused.code).toBe(1);
-    expect(refused.stderr).toMatch(/cannot sign in to the app/);
+    const refused = await devices(agentOnly, "POST", "/devices/pairing-code");
+    expect(refused).toMatchObject({ status: 400, body: { error_description: expect.stringMatching(/cannot sign in to the app/) } });
   });
 });

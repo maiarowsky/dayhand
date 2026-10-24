@@ -41,7 +41,7 @@ export function dryRunPlan(options, dir, { state, dependencies }) {
       : `generate an ES256 app-signing key into ${keyFile} (mode 600)`,
   );
   steps.push(
-    `set HELM_JWT_ISSUER (${issuer}), HELM_JWKS and HELM_JWT_PRIVATE_JWK where the deployment has none, ` +
+    `set DAYHAND_JWT_ISSUER (${issuer}), DAYHAND_JWKS and DAYHAND_JWT_PRIVATE_JWK where the deployment has none, ` +
       `values on stdin (${npx(commands.envSet(where, "<name>"))}); a different key is replaced only after a question, the issuer never`,
   );
   steps.push(`deploy the backend: ${npx(commands.deploy(envFile))}`);
@@ -49,7 +49,7 @@ export function dryRunPlan(options, dir, { state, dependencies }) {
   steps.push(
     existsSync(cliKeyFile)
       ? `keep the CLI key in ${cliKeyFile} while the server accepts it`
-      : `create a CLI key into ${cliKeyFile} (mode 600): ${npx(commands.run(where, "apiKeys:create", { userId, actor: "app", name: "hlm", kind: "cli" }))}`,
+      : `create a CLI key into ${cliKeyFile} (mode 600): ${npx(commands.run(where, "apiKeys:create", { userId, actor: "app", name: "dayhand", kind: "cli" }))}`,
   );
   steps.push(`make a pairing code for the phone: ${npx(commands.run(where, "devices:createPairingCode", { userId, actor: "app" }))}`);
   if (options.local) steps.push("keep running until Ctrl+C");
@@ -73,7 +73,7 @@ export async function humanSummary(result) {
   const local = result.mode === "local";
   const lines = [
     "",
-    `Helm is ready: ${url} (${server.name} ${server.version})`,
+    `Dayhand is ready: ${url} (${server.name} ${server.version})`,
     "",
     `Pair the phone (code valid until ${time(pairing.expiresAt)}, once):`,
     await qrCode(pairing.link),
@@ -82,24 +82,24 @@ export async function humanSummary(result) {
     `  Or open         ${pairing.link}`,
     "",
     `Kept only on this computer, readable only by you (${files.dir}):`,
-    `  ${FILES.cliKey.padEnd(17)} API key for hlm, kind cli (${key.created ? "new" : "kept"})`,
+    `  ${FILES.cliKey.padEnd(17)} API key for dayhand, kind cli (${key.created ? "new" : "kept"})`,
     `  ${FILES.signingKey.padEnd(17)} copy of the key that signs the app's tokens (a password manager is a good home)`,
     `  ${FILES.state.padEnd(17)} address and settings, no secrets`,
     "",
     "Next:",
-    `  hlm      hlm login --url ${url} --with-key < "${files.cliKey}"`,
-    "           (no hlm yet: cd cli && npm ci --ignore-scripts && npm run build && npm link)",
+    `  dayhand      dayhand login --url ${url} --with-key < "${files.cliKey}"`,
+    "           (no dayhand yet: cd cli && npm ci --ignore-scripts && npm run build && npm link)",
     ...(local
       ? [
-          `  Claude   Claude Code: an agent key (hlm key create claude --scope write) as the`,
+          `  Claude   Claude Code: an agent key (dayhand key create claude --scope write) as the`,
           `           Authorization header of ${url}/mcp (docs/mcp.md); the Claude apps need the cloud setup`,
         ]
       : [
           `  Claude   Claude app: Settings → Connectors → Add custom connector, ${url}/mcp (docs/oauth.md)`,
-          `           Claude Code: claude mcp add --transport http helm ${url}/mcp, then /mcp to sign in`,
+          `           Claude Code: claude mcp add --transport http dayhand ${url}/mcp, then /mcp to sign in`,
           "           Either way you approve the connection on the paired phone.",
         ]),
-    `  Update   run the same command again; another phone: hlm pair`,
+    `  Update   run the same command again; another phone: dayhand pair`,
   ];
   if (local && !url.startsWith("https://")) {
     lines.push("", "  A release build of the app needs HTTPS: see “Phone and computer” in docs/deploy.md (Tailscale).");

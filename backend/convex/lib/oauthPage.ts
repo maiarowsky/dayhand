@@ -1,5 +1,5 @@
 // The two HTML pages of the authorization endpoint: "approve on your phone"
-// (with the code to type there) and an error page. Helm has no web app, so
+// (with the code to type there) and an error page. Dayhand has no web app, so
 // these are plain HTML from an HTTP action: no external resources, a strict
 // Content-Security-Policy, one inline script with a nonce, every value escaped.
 import { randomBase64url } from "./secrets";
@@ -8,10 +8,10 @@ export type Lang = "en" | "pl";
 
 const TEXT = {
   en: {
-    title: "Connect to Helm",
-    asks: (client: string) => `${client} asks for access to your Helm plan.`,
+    title: "Connect to Dayhand",
+    asks: (client: string) => `${client} asks for access to your Dayhand plan.`,
     steps: [
-      "Open the Helm app on your paired phone.",
+      "Open the Dayhand app on your paired phone.",
       "Go to Settings → Agent connections → Approve a connection.",
       "Type this code and choose what to allow:",
     ],
@@ -22,13 +22,13 @@ const TEXT = {
     waiting: "Waiting for your phone…",
     notYet: "Not approved yet. Approve on your phone, then continue.",
     continue: "Continue",
-    errorTitle: "Cannot connect to Helm",
+    errorTitle: "Cannot connect to Dayhand",
   },
   pl: {
-    title: "Połącz z Helmem",
-    asks: (client: string) => `${client} prosi o dostęp do Twojego planu w Helmie.`,
+    title: "Połącz z Dayhand",
+    asks: (client: string) => `${client} prosi o dostęp do Twojego planu w aplikacji Dayhand.`,
     steps: [
-      "Otwórz aplikację Helm na sparowanym telefonie.",
+      "Otwórz aplikację Dayhand na sparowanym telefonie.",
       "Wejdź w Ustawienia → Połączenia agentów → Zatwierdź połączenie.",
       "Wpisz ten kod i wybierz, na co pozwalasz:",
     ],
@@ -39,7 +39,7 @@ const TEXT = {
     waiting: "Czekam na telefon…",
     notYet: "Jeszcze nie zatwierdzono. Zatwierdź na telefonie, potem kontynuuj.",
     continue: "Kontynuuj",
-    errorTitle: "Nie można połączyć z Helmem",
+    errorTitle: "Nie można połączyć z Dayhand",
   },
 };
 

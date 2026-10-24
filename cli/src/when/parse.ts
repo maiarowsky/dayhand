@@ -1,4 +1,4 @@
-// Dates in plain English for --due, move, list filters and `hlm when`. A
+// Dates in plain English for --due, move, list filters and `dayhand when`. A
 // small deterministic grammar (no NLP): the same phrase at the same moment in
 // the same time zone always gives the same day. English only in v1.
 import { CliError } from "../core/exit.js";
@@ -30,7 +30,7 @@ export class WhenError extends Error {}
 
 /** A phrase that is not understood is a bad argument, like a bad date the server rejects (exit 2). */
 export const dateError = (error: WhenError) =>
-  new CliError("invalid_argument", error.message, { valid: WHEN_EXAMPLES, hint: "hlm help dates" });
+  new CliError("invalid_argument", error.message, { valid: WHEN_EXAMPLES, hint: "dayhand help dates" });
 
 /** Forms shown in help and in the error for a phrase that is not understood. */
 export const WHEN_EXAMPLES = [
@@ -113,7 +113,7 @@ export function parseWhen(text: string, context: WhenContext): When {
 }
 
 function notUnderstood(): WhenError {
-  return new WhenError(`Not a date hlm understands; try e.g. ${["tomorrow", "fri 14:00", "next mon", "in 3 days", "23 oct", "2026-10-23"].join(", ")}`);
+  return new WhenError(`Not a date dayhand understands; try e.g. ${["tomorrow", "fri 14:00", "next mon", "in 3 days", "23 oct", "2026-10-23"].join(", ")}`);
 }
 
 /** A wall-clock time that does not exist (clocks going forward) moves forward by the gap. */
@@ -312,7 +312,7 @@ function timePart(tokens: string[], start: number): Match<string> {
   return { value: makeTime(hour, minute), next };
 }
 
-/** For the day column and `hlm when`: "today", "tomorrow", "in 3 days", "2 days ago". */
+/** For the day column and `dayhand when`: "today", "tomorrow", "in 3 days", "2 days ago". */
 export function relativeDay(date: string, today: string): string {
   const days = Math.round((Date.parse(date) - Date.parse(today)) / 86_400_000);
   if (days === 0) return "today";

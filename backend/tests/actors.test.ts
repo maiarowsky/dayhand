@@ -35,7 +35,7 @@ describe("actor by API key", () => {
   test("keys are agent keys unless created as cli; the kind is listed and recorded", async () => {
     const { client: app, userId } = await appClient();
     const made: any = await app.action(api.app.createApiKey, { name: "terminal", kind: "cli" });
-    expect(made).toMatchObject({ name: "terminal", kind: "cli", key: expect.stringMatching(/^helm_/) });
+    expect(made).toMatchObject({ name: "terminal", kind: "cli", key: expect.stringMatching(/^dayhand_/) });
     await createKey(userId, "bot");
     const keys: any[] = await app.query(api.app.listApiKeys, {});
     expect(keys.map((k) => [k.name, k.kind])).toEqual([

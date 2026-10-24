@@ -13,7 +13,8 @@ import { fail, identityOf, recordEvent } from "./lib/core";
 import { randomBase64url, sha256Hex } from "./lib/secrets";
 import { identityFields as identityArgs, keyKindValidator, keyScopeValidator, type KeyKind, type KeyScope } from "./lib/validators";
 
-const KEY_PREFIX = "helm_";
+// New keys start with dayhand_; keys from before the rename keep helm_ and still work (they are found by their hash).
+const KEY_PREFIX = "dayhand_";
 const MAX_NAME = 100;
 const DEFAULT_KIND: KeyKind = "agent";
 const DEFAULT_SCOPE: KeyScope = "full";

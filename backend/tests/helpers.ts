@@ -56,7 +56,7 @@ export async function createKey(userId: string, name = "test", kind?: "cli" | "a
 
 /** Writes rows straight into a table with `convex import`, as data from an older version would be. */
 export async function importRows(table: string, rows: Record<string, unknown>[]) {
-  const dir = mkdtempSync(join(process.env.HELM_TEST_TMPDIR ?? tmpdir(), "helm-import-"));
+  const dir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "helm-import-"));
   try {
     const file = join(dir, `${table}.jsonl`);
     writeFileSync(file, rows.map((row) => JSON.stringify(row)).join("\n") + "\n");

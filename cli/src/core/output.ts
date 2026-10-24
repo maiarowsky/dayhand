@@ -23,7 +23,7 @@ export class Output {
 
   warn(warning: Warning): void {
     if (this.format === "json") this.io.stderr.write(JSON.stringify({ warning }) + "\n");
-    else this.io.stderr.write(`hlm: warning: ${warning.message}\n`);
+    else this.io.stderr.write(`dayhand: warning: ${warning.message}\n`);
   }
 
   error(error: CliError): void {
@@ -33,7 +33,7 @@ export class Output {
       this.io.stderr.write(JSON.stringify({ error: body }) + "\n");
       return;
     }
-    const lines = [`hlm: ${error.message}${ref ? ` (task ${ref})` : ""}`];
+    const lines = [`dayhand: ${error.message}${ref ? ` (task ${ref})` : ""}`];
     if (valid?.length) lines.push(`Valid: ${valid.join(", ")}`);
     if (retryable && clientId) lines.push(`It may have been applied. Retry safely with: --client-id ${clientId}`);
     if (hint) lines.push(`Try: ${hint}`);

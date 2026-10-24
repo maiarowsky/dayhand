@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/export.schema.json",
+  "$id": "https://schemas.dayhand.invalid/export.schema.json",
   "title": "Export",
-  "description": "export_plan (hlm export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, hlm prints {written: <file>, format}.",
+  "description": "export_plan (dayhand export --json): {format: markdown, content: <text>}, {format: json, content: <copy>} or {format: ics, content: <iCalendar text>}. With -o, dayhand prints {written: <file>, format}.",
   "oneOf": [
     {
       "type": "object",

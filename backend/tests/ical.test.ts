@@ -1,6 +1,6 @@
 // The plan as iCalendar (no backend): the text format, VTIMEZONE, alarms, and
 // every repeat rule expanded by an independent parser (ical.js) to exactly
-// the dates Helm's own lib/repeat.ts gives.
+// the dates Dayhand's own lib/repeat.ts gives.
 import ICAL from "ical.js";
 import { describe, expect, test } from "vitest";
 import type { Doc, Id } from "../convex/_generated/dataModel";
@@ -157,7 +157,7 @@ describe("events", () => {
     const text = renderCalendar([t], LONDON);
     const vevent = events(parse(text))[0];
     expect(vevent.getFirstPropertyValue("summary")).toBe("Call Ann, re: plan; 2\\3");
-    expect(vevent.getFirstPropertyValue("description")).toBe(`Helm #${t.ref}\n\nline one\nline two`);
+    expect(vevent.getFirstPropertyValue("description")).toBe(`Dayhand #${t.ref}\n\nline one\nline two`);
     expect(text).toContain("CATEGORIES:phone,a\\,b\r\n");
     expect(text).toContain("TRANSP:TRANSPARENT\r\n");
   });
@@ -202,9 +202,9 @@ describe("alarms", () => {
   });
 });
 
-describe("repeating tasks expand to Helm's own dates", () => {
+describe("repeating tasks expand to Dayhand's own dates", () => {
   const HORIZON = "2029-12-31";
-  /** Helm's dates up to the horizon; a series written as its dates goes LISTED_DAYS ahead. */
+  /** Dayhand's dates up to the horizon; a series written as its dates goes LISTED_DAYS ahead. */
   const helmDates = (rule: RepeatRule, dueDate: string) => {
     const listed = addDays(dueDate, LISTED_DAYS);
     const to = listsDates(rule, dueDate) && listed < HORIZON ? listed : HORIZON;

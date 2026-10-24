@@ -7,10 +7,10 @@ export function normalizeUrl(raw: string): string {
   try {
     url = new URL(raw);
   } catch {
-    throw usageError("The Helm URL is not a valid URL (expected e.g. https://<deployment>.convex.site)");
+    throw usageError("The Dayhand URL is not a valid URL (expected e.g. https://<deployment>.convex.site)");
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") {
-    throw usageError("The Helm URL must start with https:// or http://");
+    throw usageError("The Dayhand URL must start with https:// or http://");
   }
   return raw.replace(/\/+$/, "").replace(/\/mcp$/, "");
 }
@@ -21,6 +21,6 @@ export function displayUrl(url: string): string {
     const parsed = new URL(url);
     return `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/$/, "")}`;
   } catch {
-    return "the Helm URL";
+    return "the Dayhand URL";
   }
 }

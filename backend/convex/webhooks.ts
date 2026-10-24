@@ -10,6 +10,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { fail, identityOf, recordEvent } from "./lib/core";
+import { serverEnv } from "./lib/env";
 import { SERVER_INFO } from "./lib/mcpProtocol";
 import { identityFields as identityArgs } from "./lib/validators";
 import { queueDelivery, WEBHOOK_EVENTS, webhookArgs, type WebhookEvent } from "./lib/webhookEvents";
@@ -29,12 +30,12 @@ const DEFAULT_LIST = 50;
 /**
  * Delays before the second, third, … attempt, in seconds: the schedule Standard Webhooks
  * suggests (5 s, 5 min, 30 min, 2 h, 5 h, 10 h, 10 h: eight attempts in about 27 hours).
- * HELM_WEBHOOK_RETRY_DELAYS (comma-separated seconds) replaces it, e.g. in tests.
+ * DAYHAND_WEBHOOK_RETRY_DELAYS (comma-separated seconds) replaces it, e.g. in tests.
  */
 export const RETRY_DELAYS_S = [5, 300, 1800, 7200, 18000, 36000, 36000];
 
 function retryDelaysMs(): number[] {
-  const configured = process.env.HELM_WEBHOOK_RETRY_DELAYS;
+  const configured = serverEnv("WEBHOOK_RETRY_DELAYS");
   const seconds = configured ? configured.split(",").map(Number).filter((n) => Number.isFinite(n) && n >= 0) : RETRY_DELAYS_S;
   return seconds.map((s) => Math.round(s * 1000));
 }
@@ -237,7 +238,7 @@ export const deliver = internalAction({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": `Helm-Webhooks/${SERVER_INFO.version}`,
+          "User-Agent": `Dayhand-Webhooks/${SERVER_INFO.version}`,
           "webhook-id": work.eventId,
           "webhook-timestamp": String(timestamp),
           "webhook-signature": await signWebhook(work.secret, work.eventId, timestamp, work.payload),

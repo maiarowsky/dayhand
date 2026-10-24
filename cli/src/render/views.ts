@@ -235,7 +235,7 @@ function describeChange(before: Record<string, unknown> | null, after: Record<st
 
 const connectionState = (c: Connection) => (c.revokedAt ? "revoked" : c.active ? "active" : "expired");
 
-/** Where a connection comes from: the host Helm fetched its metadata from, or that it registered itself. */
+/** Where a connection comes from: the host Dayhand fetched its metadata from, or that it registered itself. */
 const connectionOrigin = (c: Connection) => (c.clientHost ? `from ${c.clientHost}` : `registered itself, returns to ${c.redirectHost}`);
 
 function renderConnections(connections: Connection[], timezone?: string): string {

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.helm.invalid/devices.schema.json",
+  "$id": "https://schemas.dayhand.invalid/devices.schema.json",
   "title": "Devices",
-  "description": "GET /devices (hlm device list).",
+  "description": "GET /devices (dayhand device list).",
   "type": "object",
   "required": [
     "devices"

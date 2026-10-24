@@ -54,7 +54,7 @@ export function renderMarkdown(tasks: Doc<"tasks">[], timezone: string, at: numb
   const active = live.filter((t) => t.archivedAt === undefined);
   const open = active.filter((t) => t.status !== "done");
   return [
-    `# Helm plan`,
+    `# Dayhand plan`,
     "",
     `Exported ${new Date(at).toISOString()} (today is ${today}, ${timezone}).`,
     "",

@@ -140,13 +140,13 @@ export const HANDLER_ROUTES: HandlerRoute[] = [
     dryRun: true, maxBodyBytes: 2 * 1024 * 1024,
     body: {
       content: v.string(),
-      format: v.optional(v.union(v.literal("auto"), v.literal("helm-json"), v.literal("ics"), v.literal("todoist-csv"))),
+      format: v.optional(v.union(v.literal("auto"), v.literal("dayhand-json"), v.literal("helm-json"), v.literal("ics"), v.literal("todoist-csv"))),
     },
     docs: {
-      content: "The file's text: Helm's JSON export, an iCalendar file (VTODO, VEVENT) or a Todoist CSV export.",
-      format: "auto (default: recognised from the content), helm-json, ics or todoist-csv.",
+      content: "The file's text: Dayhand's JSON export, an iCalendar file (VTODO, VEVENT) or a Todoist CSV export.",
+      format: "auto (default: recognised from the content), dayhand-json (also its old name helm-json), ics or todoist-csv.",
     },
-    summary: "Import a plan from Helm JSON, iCalendar or Todoist CSV",
+    summary: "Import a plan from Dayhand JSON, iCalendar or Todoist CSV",
     description:
       "Each task is checked like add_task; one that fails is listed in failed and the others are imported. Importing the same file again skips what it brought before. " +
       "dryRun=true shows what would happen without storing anything.",

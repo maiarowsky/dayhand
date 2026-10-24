@@ -1,6 +1,6 @@
 // Integrations over the REST API (docs/api.md, backend 0.8.0): API keys with a
 // scope and an expiry for other tools, webhooks (docs/webhooks.md), and
-// importing a plan from Helm JSON, iCalendar or Todoist CSV. Each command is
+// importing a plan from Dayhand JSON, iCalendar or Todoist CSV. Each command is
 // one /api/v1 request with the stored key, which must have scope full.
 import { readFile } from "node:fs/promises";
 import { usageError } from "../core/exit.js";
@@ -9,7 +9,7 @@ import { formatTimestamp } from "../render/format.js";
 import type { CommandSpec, Outcome, RunContext } from "./types.js";
 
 const API = "/api/v1";
-const NEEDS = "Needs backend 0.8.0 or later and a key with scope full (hlm version, hlm key list).";
+const NEEDS = "Needs backend 0.8.0 or later and a key with scope full (dayhand version, dayhand key list).";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type Key = { id: string; name: string; kind: string; scope: string; createdAt: number; expiresAt: number | null; revokedAt: number | null; createdWith: string | null };
@@ -67,20 +67,20 @@ const listKeys = async (ctx: RunContext): Promise<Outcome> => {
   return { value, view: { kind: "text", text } };
 };
 
-const KEY_ID = { name: "keyId", description: "Key id from hlm key list", required: true };
+const KEY_ID = { name: "keyId", description: "Key id from dayhand key list", required: true };
 
 const keyCommand: CommandSpec = {
   name: "key",
   schema: "api-key-list.schema.json",
-  summary: "API keys for integrations: list, create with a scope and an expiry, revoke (same as hlm key list)",
+  summary: "API keys for integrations: list, create with a scope and an expiry, revoke (same as dayhand key list)",
   description:
     "A key made here reads (scope read) or also changes tasks and settings (scope write), never more; it expires no later than the key that makes it " +
     `and stops working when that key is revoked. ${NEEDS}`,
   tools: ["/api/v1/keys"],
-  examples: ["hlm key list", "hlm key create n8n --scope read --expires 90d", "hlm key revoke <keyId> --yes"],
+  examples: ["dayhand key list", "dayhand key create n8n --scope read --expires 90d", "dayhand key revoke <keyId> --yes"],
   run: listKeys,
   subcommands: [
-    { name: "list", schema: "api-key-list.schema.json", summary: "Every API key with its kind, scope and expiry (never the key itself)", tools: ["/api/v1/keys"], examples: ["hlm key list --json"], run: listKeys },
+    { name: "list", schema: "api-key-list.schema.json", summary: "Every API key with its kind, scope and expiry (never the key itself)", tools: ["/api/v1/keys"], examples: ["dayhand key list --json"], run: listKeys },
     {
       name: "create",
       schema: "api-key-created.schema.json",
@@ -92,7 +92,7 @@ const keyCommand: CommandSpec = {
         { flags: "--expires <when>", description: "90d (default), 12w, 1y, a date YYYY-MM-DD or never" },
       ],
       tools: ["/api/v1/keys"],
-      examples: ["hlm key create n8n", "hlm key create shortcuts --scope write --expires 1y", "hlm key create backup --expires never --json"],
+      examples: ["dayhand key create n8n", "dayhand key create shortcuts --scope write --expires 1y", "dayhand key create backup --expires never --json"],
       run: async (ctx, args, opts) => {
         const expiresAt = parseExpiry((opts.expires as string | undefined) ?? "90d");
         const body = {
@@ -116,7 +116,7 @@ const keyCommand: CommandSpec = {
       summary: "Revoke a key; the keys it created stop working too",
       args: [KEY_ID],
       tools: ["/api/v1/keys"],
-      examples: ["hlm key revoke <keyId> --yes"],
+      examples: ["dayhand key revoke <keyId> --yes"],
       run: async (ctx, args) => {
         await confirm(ctx, "Revoke this key? Whatever uses it stops working.", "revoking a key");
         const value = await api(ctx, "DELETE", `/keys/${encodeURIComponent(args.keyId as string)}`);
@@ -142,7 +142,7 @@ const listWebhooks = async (ctx: RunContext): Promise<Outcome> => {
   return { value, view: { kind: "text", text: hooks.length ? hooks.map(webhookLine).join("\n") : "No webhooks." } };
 };
 
-const WEBHOOK_ID = { name: "webhookId", description: "Webhook id from hlm webhook list", required: true };
+const WEBHOOK_ID = { name: "webhookId", description: "Webhook id from dayhand webhook list", required: true };
 const EVENTS = ["task.created", "task.updated", "task.completed", "task.deleted", "task.restored", "now.changed"];
 const hookPath = (args: Record<string, unknown>, rest = "") => `/webhooks/${encodeURIComponent(args.webhookId as string)}${rest}`;
 
@@ -154,13 +154,13 @@ function deliveryLine(delivery: Delivery): string {
 const webhookCommand: CommandSpec = {
   name: "webhook",
   schema: "webhook-list.schema.json",
-  summary: "Webhooks: HTTPS addresses that get a signed message for every task change (same as hlm webhook list)",
+  summary: "Webhooks: HTTPS addresses that get a signed message for every task change (same as dayhand webhook list)",
   description: `Messages follow Standard Webhooks (webhook-id, webhook-timestamp, webhook-signature); see docs/webhooks.md. ${NEEDS}`,
   tools: ["/api/v1/webhooks"],
-  examples: ["hlm webhook list", "hlm webhook add https://n8n.example.com/webhook/helm --event task.completed", "hlm webhook deliveries <webhookId>"],
+  examples: ["dayhand webhook list", "dayhand webhook add https://n8n.example.com/webhook/dayhand --event task.completed", "dayhand webhook deliveries <webhookId>"],
   run: listWebhooks,
   subcommands: [
-    { name: "list", schema: "webhook-list.schema.json", summary: "Every webhook, whether it is on, and why it was turned off", tools: ["/api/v1/webhooks"], examples: ["hlm webhook list --json"], run: listWebhooks },
+    { name: "list", schema: "webhook-list.schema.json", summary: "Every webhook, whether it is on, and why it was turned off", tools: ["/api/v1/webhooks"], examples: ["dayhand webhook list --json"], run: listWebhooks },
     {
       name: "add",
       schema: "webhook-created.schema.json",
@@ -171,7 +171,7 @@ const webhookCommand: CommandSpec = {
         { flags: "-d, --description <text>", description: "What it is for" },
       ],
       tools: ["/api/v1/webhooks"],
-      examples: ["hlm webhook add https://hooks.example.com/helm", "hlm webhook add https://n8n.example.com/webhook/x -e task.completed -e task.created -d n8n"],
+      examples: ["dayhand webhook add https://hooks.example.com/dayhand", "dayhand webhook add https://n8n.example.com/webhook/x -e task.completed -e task.created -d n8n"],
       run: async (ctx, args, opts) => {
         const events = opts.event as string[] | undefined;
         const body = { url: args.url, ...(events?.length ? { events } : {}), ...(opts.description ? { description: opts.description } : {}) };
@@ -187,7 +187,7 @@ const webhookCommand: CommandSpec = {
       summary: "Remove a webhook and its delivery log",
       args: [WEBHOOK_ID],
       tools: ["/api/v1/webhooks"],
-      examples: ["hlm webhook rm <webhookId> --yes"],
+      examples: ["dayhand webhook rm <webhookId> --yes"],
       run: async (ctx, args) => {
         await confirm(ctx, "Remove this webhook? Its receiver gets no more messages.", "removing a webhook");
         const value = await api(ctx, "DELETE", hookPath(args));
@@ -200,10 +200,10 @@ const webhookCommand: CommandSpec = {
       summary: "Send a webhook.test message now (also to a webhook that is off)",
       args: [WEBHOOK_ID],
       tools: ["/api/v1/webhooks"],
-      examples: ["hlm webhook test <webhookId>", "hlm webhook deliveries <webhookId>"],
+      examples: ["dayhand webhook test <webhookId>", "dayhand webhook deliveries <webhookId>"],
       run: async (ctx, args) => {
         const value = await api(ctx, "POST", hookPath(args, "/test"));
-        return { value, view: { kind: "text", text: `Queued ${value.eventId}; hlm webhook deliveries ${args.webhookId} shows how it went` } };
+        return { value, view: { kind: "text", text: `Queued ${value.eventId}; dayhand webhook deliveries ${args.webhookId} shows how it went` } };
       },
     },
     {
@@ -212,7 +212,7 @@ const webhookCommand: CommandSpec = {
       summary: "Turn a webhook back on after it was turned off for failing",
       args: [WEBHOOK_ID],
       tools: ["/api/v1/webhooks"],
-      examples: ["hlm webhook enable <webhookId>"],
+      examples: ["dayhand webhook enable <webhookId>"],
       run: async (ctx, args) => {
         const value = await api(ctx, "POST", hookPath(args, "/enable"));
         return { value, view: { kind: "text", text: ctx.dryRun ? "" : webhookLine(value.webhook) } };
@@ -225,7 +225,7 @@ const webhookCommand: CommandSpec = {
       args: [WEBHOOK_ID],
       options: [{ flags: "-n, --limit <n>", description: "How many (1 to 200, default 50)", kind: "int" }],
       tools: ["/api/v1/webhooks"],
-      examples: ["hlm webhook deliveries <webhookId>", "hlm webhook deliveries <webhookId> -n 5 --json"],
+      examples: ["dayhand webhook deliveries <webhookId>", "dayhand webhook deliveries <webhookId> -n 5 --json"],
       run: async (ctx, args, opts) => {
         const query = opts.limit !== undefined ? `?limit=${opts.limit}` : "";
         const value = await api(ctx, "GET", hookPath(args, `/deliveries${query}`));
@@ -238,19 +238,20 @@ const webhookCommand: CommandSpec = {
 
 // ---- Import ----
 
-const FORMATS = ["auto", "helm-json", "ics", "todoist-csv"];
+// helm-json is the old name of dayhand-json; the server still takes it.
+const FORMATS = ["auto", "dayhand-json", "helm-json", "ics", "todoist-csv"];
 
 const importCommand: CommandSpec = {
   name: "import",
   schema: "import-result.schema.json",
-  summary: "Import tasks from Helm's JSON export, an iCalendar file or a Todoist CSV export",
+  summary: "Import tasks from Dayhand's JSON export, an iCalendar file or a Todoist CSV export",
   description:
-    "Each task is checked like hlm add; one that fails is listed and the rest are imported. Importing the same file again imports nothing twice. " +
+    "Each task is checked like dayhand add; one that fails is listed and the rest are imported. Importing the same file again imports nothing twice. " +
     `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
   args: [{ name: "file", description: "The file, or - for stdin", required: true }],
-  options: [{ flags: "--format <format>", description: "auto (default), helm-json, ics or todoist-csv", choices: FORMATS }],
+  options: [{ flags: "--format <format>", description: "auto (default), dayhand-json, ics or todoist-csv", choices: FORMATS }],
   tools: ["/api/v1/import"],
-  examples: ["hlm export --format json -o helm.json && hlm import helm.json --dry-run", "hlm import todoist.csv", "hlm import calendar.ics --format ics --json"],
+  examples: ["dayhand export --format json -o dayhand.json && dayhand import dayhand.json --dry-run", "dayhand import todoist.csv", "dayhand import calendar.ics --format ics --json"],
   run: async (ctx, args, opts) => {
     const file = args.file as string;
     const content = file === "-" ? await readStdin(ctx.io.stdin) : await readFile(file, "utf8").catch(() => {
