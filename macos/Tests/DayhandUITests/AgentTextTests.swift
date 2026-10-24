@@ -1,3 +1,4 @@
+import Combine
 import DayhandCore
 import DayhandLocalization
 import Foundation
@@ -40,6 +41,28 @@ struct AgentTextTests {
         #expect(run("en") { AgentSectionText.claim(task, now: now, today: today, timezone: zone) } == "Agent claude works on it")
         task.claimedBy = nil
         #expect(AgentSectionText.claim(task, now: now, today: today, timezone: zone) == nil)
+    }
+
+    @Test func aClockRecomputePublishesEvenWhenTheOfflinePlanIsUnchanged() throws {
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        defaults.register(defaults: [AppModel.Keys.useOffline: true, AppModel.Keys.language: "en"])
+        let model = AppModel(AppEnvironment(
+            database: try AppDatabase.inMemory(), credentials: MemoryCredentialStore(),
+            notifications: false, defaults: defaults
+        ))
+        model.recompute()
+        let sections = model.sections
+        let trash = model.trash
+        var invalidations = 0
+        let observation = model.objectWillChange.sink { invalidations += 1 }
+        defer { observation.cancel() }
+
+        model.recompute()
+
+        #expect(invalidations > 0)
+        #expect(model.sections == sections)
+        #expect(model.trash == trash)
+        #expect(model.credential == nil && model.status == .notConnected)
     }
 
     @Test func aDependencyShowsItsNumberAndWhetherItIsDone() {

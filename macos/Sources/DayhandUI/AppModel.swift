@@ -144,6 +144,7 @@ final class AppModel: ObservableObject {
 
     /// The Today sections now; called on every change and every 30 seconds, so the screen moves on at midnight.
     func recompute() {
+        objectWillChange.send()
         let next = todaySections(tasks, nowMs: Clock.nowMs(), timezone: settings.timezone)
         if next != sections { sections = next }
         let deleted = tasks.filter(\.inTrash).sorted { ($0.deletedAt ?? 0) > ($1.deletedAt ?? 0) }
