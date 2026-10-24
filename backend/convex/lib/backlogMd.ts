@@ -57,6 +57,10 @@ export function placeOf(path: string): Place {
 
 // ---- Statuses ----
 
+const NEGATED_STATUS = /\b(?:not|no|never|non|un[- ]?(?:done|complete(?:d)?|finished|resolved|started|closed|shipped|reviewed|tested|blocked)|in[- ]?(?:complete(?:d)?|active))\b|n['’]t\b/i;
+const DONE_STATUS = /\b(?:done|complete(?:d)?|closed|finished|resolved|shipped)\b/i;
+const DOING_STATUS = /\b(?:progress|doing|review|active|wip|started|testing|blocked)\b/i;
+
 /** The statuses of a project's config.yml, first to last; the defaults when it has none. */
 export function statusesOf(config: string): string[] {
   const statuses = parseFrontmatter(config.replace(/\r\n?/g, "\n")).statuses;
@@ -74,8 +78,9 @@ export function statusFor(status: string | undefined, statuses: string[]): { sta
   if (index === 0) return { status: "todo", guessed: false };
   if (index === statuses.length - 1) return { status: "done", guessed: false };
   if (index > 0) return { status: "doing", guessed: false };
-  if (/done|complete|closed|finished|resolved|shipped/i.test(status)) return { status: "done", guessed: true };
-  if (/progress|doing|review|active|wip|started|testing|blocked/i.test(status)) return { status: "doing", guessed: true };
+  if (NEGATED_STATUS.test(status)) return { status: "todo", guessed: true };
+  if (DONE_STATUS.test(status)) return { status: "done", guessed: true };
+  if (DOING_STATUS.test(status)) return { status: "doing", guessed: true };
   return { status: "todo", guessed: true };
 }
 

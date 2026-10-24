@@ -28,11 +28,14 @@ The same through MCP is `import_backlog` (a change, so it takes `dryRun`, obeys 
 and tool policies, and counts against the limit of changes) and `export_backlog` (a read); through
 the REST API, `POST /api/v1/import/backlog` and `GET /api/v1/export/backlog`
 ([api.md](api.md)). An agent reads files from wherever it works and sends their text; Dayhand never
-reads a disk itself. Selecting a subdirectory keeps paths relative to the backlog root and includes
-that project's config, found in its ancestors; without a config, the task-folder layout supplies
-the root, so nested and archived subsets keep their classification. Classification belongs to the
-top-level folder under that root: `tasks/docs/` still holds tasks, while `docs/tasks/` still holds
-documents; nested reserved names do not change the enclosing folder's meaning.
+reads a disk itself. A selected directory holding `config.yml` or `backlog.config.yml` is the root.
+Otherwise, the CLI walks up only while directory names are reserved: `tasks`, `completed`, `drafts`,
+`docs`, `decisions`, `milestones` or `archive`. The first non-reserved directory is the root; the
+CLI reads only its config and never searches above it. A non-reserved selected subdirectory is
+therefore its own root, not a subset inferred from higher ancestors. Classification belongs to the
+top-level folder under the root: selecting `backlog/tasks/docs` keeps it under `tasks/docs/`, and
+selecting `backlog/archive/tasks` keeps it under `archive/tasks/`. Select the enclosing reserved
+folder to retain this context when task files are grouped in other, non-reserved subdirectories.
 
 ## The file format
 
@@ -84,7 +87,7 @@ project's statuses in order, `["To Do", "In Progress", "Done"]` unless set.
 |---|---|
 | `id` | the task's `source`: `{ kind: "backlog-md", ref: "TASK-12" }`, normalized to uppercase for case-insensitive identity; a file without an id is skipped with a reason |
 | `title` | `title` |
-| `status` | the nearest status: the project's first status is `todo`, its last is `done`, any between is `doing`. A status the project does not list is read by its words (`done`, `closed`, … → `done`; `progress`, `review`, … → `doing`; else `todo`) with a warning |
+| `status` | the nearest status: the project's first status is `todo`, its last is `done`, any between is `doing`. A status the project does not list is read by affirmative whole words (`done`, `completed`, `closed`, … → `done`; `progress`, `review`, … → `doing`). Embedded words and negated labels such as `Incomplete`, `Unfinished` or `Not Started` stay `todo`; all unrecognized labels carry a warning |
 | `labels` | `labels` |
 | `dependencies` | `dependsOn`: the tasks the same import made, or an earlier one (by source). A dependency found in neither is left out with a warning |
 | `references` | web addresses become `links` (up to 20); the rest go to the end of the note under "References:" |

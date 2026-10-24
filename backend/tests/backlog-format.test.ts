@@ -187,6 +187,21 @@ describe("statuses and dates", () => {
     expect(statusesOf("project_name: x\n")).toEqual(["To Do", "In Progress", "Done"]);
   });
 
+  test.each(["Incomplete", "Unfinished", "Unresolved", "Undone", "Unstarted", "Inactive", "Uncompleted", "Not Started", "Not Done", "Not Completed", "Not Active", "Not in progress", "No progress", "Never shipped", "non-active", "un-finished", "in-complete", "isn't resolved", "isn’t started", "Incomplete - closed", "Unfinished review"])("unrecognized negated status %s stays todo", (status) => {
+    expect(statusFor(status, ["To Do", "In Progress", "Done"])).toEqual({ status: "todo", guessed: true });
+  });
+
+  test.each(["restarted", "overactive", "reviewer", "testingground", "preclosed", "shippedness", "completeable", "inprogress"])("embedded status word in %s is not an affirmative status", (status) => {
+    expect(statusFor(status, ["To Do", "In Progress", "Done"])).toEqual({ status: "todo", guessed: true });
+  });
+
+  test.each([
+    ["Done (verified)", "done"], ["Complete", "done"], ["Completed", "done"], ["Closed", "done"], ["Finished", "done"], ["Resolved", "done"], ["Shipped", "done"],
+    ["In Progress (agent)", "doing"], ["Under Review", "doing"], ["Active", "doing"], ["Doing", "doing"], ["WIP", "doing"], ["Started", "doing"], ["Testing", "doing"], ["Blocked", "doing"],
+  ])("affirmative whole words in %s map to %s", (status, expected) => {
+    expect(statusFor(status, ["To Do", "In Progress", "Done"])).toEqual({ status: expected, guessed: true });
+  });
+
   test("dates with a zone, and local dates in the user's time zone", () => {
     expect(readDate("2026-10-20T08:00:00Z", "Europe/Warsaw")).toBe(Date.parse("2026-10-20T08:00:00Z"));
     expect(readDate("2026-10-20 10:00", "Europe/Warsaw")).toBe(Date.parse("2026-10-20T08:00:00Z"));

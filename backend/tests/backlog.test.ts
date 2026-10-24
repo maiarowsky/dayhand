@@ -143,6 +143,34 @@ describe("import_backlog", () => {
     expect(await allTasks(client)).toHaveLength(6);
   });
 
+  test("negated or embedded status labels never complete work or require completion proof", async () => {
+    const client = await mcpClient(await createKey(newUserId(), "status-reader", "agent"));
+    const labels = ["Incomplete", "Unfinished", "Unresolved", "Not Started", "Not Done", "Not Completed", "Not in progress", "non-active", "isn't resolved", "Unfinished review", "restarted"];
+    const files = labels.flatMap((status, index) => [false, true].map((criteria) => file(
+      `tasks/task-${index}-${criteria}.md`,
+      `id: TASK-${index * 2 + (criteria ? 1 : 0)}\ntitle: ${status} ${criteria}\nstatus: ${status}`,
+      `${criteria ? "## Acceptance Criteria\n- [ ] Still pending\n\n" : ""}## Final Summary\n\nCheckpoint only.\n`,
+    )));
+    const result = await callTool(client, "import_backlog", { files });
+    expect(result).toMatchObject({ created: files.length, failed: [] });
+    expect(result.warnings).toHaveLength(files.length);
+    for (const task of result.tasks) {
+      expect(task).toMatchObject({ status: "todo", note: "## Final Summary\n\nCheckpoint only." });
+      expect(task).not.toHaveProperty("completedAt");
+      expect(task).not.toHaveProperty("proof");
+      if (task.acceptance) expect(task.acceptance).toMatchObject([{ text: "Still pending", met: false }]);
+    }
+    for (const warning of result.warnings) expect(warning.message).toContain("read as todo");
+    const positive = await callTool(client, "import_backlog", { files: [
+      file("tasks/finished.md", "id: TASK-100\ntitle: Actually finished\nstatus: Completed", "## Acceptance Criteria\n- [x] Ready\n\n## Final Summary\n\nVerified.\n"),
+      file("tasks/review.md", "id: TASK-101\ntitle: Under review\nstatus: Under Review", "## Acceptance Criteria\n- [ ] Pending\n\n## Final Summary\n\nCheckpoint only.\n"),
+    ] });
+    expect(positive).toMatchObject({ created: 2, failed: [] });
+    expect(byTitle(positive.tasks, "Actually finished")).toMatchObject({ status: "done", completedAt: expect.any(Number), proof: { summary: "Verified." } });
+    expect(byTitle(positive.tasks, "Under review")).toMatchObject({ status: "doing", note: "## Final Summary\n\nCheckpoint only." });
+    expect(byTitle(positive.tasks, "Under review")).not.toHaveProperty("completedAt");
+  });
+
   test("dependencies sent in an earlier call are found by their source; a cycle is reported", async () => {
     const { client } = await owner();
     await callTool(client, "import_backlog", { files: [file("tasks/task-1.md", "id: Task-1\ntitle: First")] });

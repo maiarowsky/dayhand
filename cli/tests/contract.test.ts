@@ -209,9 +209,10 @@ describe("agent contract", () => {
       { branch: "milestones", reason: "a milestone, not a task" },
     ];
     for (const [index, item] of cases.entries()) {
-      const selected = join(root, item.branch, "nested", "part");
-      mkdirSync(selected, { recursive: true });
-      writeFileSync(join(selected, "task.md"), `---\nid: TASK-${index}\ntitle: Case ${index}\nstatus: ${item.branch === "drafts" ? "Queue" : "Middle"}\n---\n`);
+      const selected = join(root, item.branch);
+      const nested = join(selected, "nested", "part");
+      mkdirSync(nested, { recursive: true });
+      writeFileSync(join(nested, "task.md"), `---\nid: TASK-${index}\ntitle: Case ${index}\nstatus: ${item.branch === "drafts" ? "Queue" : "Middle"}\n---\n`);
       const preview = await dayhandJson(key, ["backlog", "import", selected, "--dry-run"]);
       const imported = await dayhandJson(key, ["backlog", "import", selected]);
       for (const report of [preview, imported]) {
@@ -225,7 +226,7 @@ describe("agent contract", () => {
         }
       }
     }
-    const noConfig = join(mkdtempSync(join(TEST_HOME, "layout-")), "backlog", "archive", "tasks", "nested", "part");
+    const noConfig = join(mkdtempSync(join(TEST_HOME, "layout-")), "backlog", "archive", "tasks");
     mkdirSync(noConfig, { recursive: true });
     writeFileSync(join(noConfig, "task.md"), "---\nid: TASK-99\ntitle: Configless archive\n---\n");
     expect(await dayhandJson(key, ["backlog", "import", noConfig])).toMatchObject({ created: 1, tasks: [{ archivedAt: expect.any(Number) }] });
@@ -249,19 +250,42 @@ describe("agent contract", () => {
       { folder: "milestones/tasks", reason: "a milestone, not a task" },
     ];
     for (const [index, item] of cases.entries()) {
-      const selected = join(root, item.folder, "part");
+      const selected = join(root, item.folder);
       mkdirSync(selected, { recursive: true });
       const status = item.folder.startsWith("drafts/") ? configured ? "Queue" : "To Do" : configured ? "Middle" : "In Progress";
       writeFileSync(join(selected, "task.md"), `---\nid: TASK-${index}\ntitle: Nested ${index}\nstatus: ${status}\n---\n`);
       for (const flags of [["--dry-run"], []]) {
         const report = await dayhandJson(key, ["backlog", "import", selected, ...flags]);
         expect(report.files).toBe(configured ? 2 : 1);
-        if (item.reason) expect(report).toMatchObject({ created: 0, skipped: [{ path: `${item.folder}/part/task.md`, reason: item.reason }] });
+        if (item.reason) expect(report).toMatchObject({ created: 0, skipped: [{ path: `${item.folder}/task.md`, reason: item.reason }] });
         else {
           expect(report).toMatchObject({ created: 1, failed: [], warnings: [], tasks: [item.expected] });
           if (!item.folder.startsWith("drafts/")) expect(report.tasks[0]).not.toHaveProperty("proposedAt");
           if (!item.folder.startsWith("archive/tasks/")) expect(report.tasks[0]).not.toHaveProperty("archivedAt");
         }
+      }
+    }
+  });
+
+  test("backlog roots stop below unrelated docs or tasks ancestors", async () => {
+    const { key } = await newUser();
+    const base = mkdtempSync(join(TEST_HOME, "bounded-root-"));
+    writeFileSync(join(base, "config.yml"), "statuses: [Outside, Finished]\n");
+    const cases = [
+      { folder: "docs/backlog/tasks", expected: { status: "todo" } },
+      { folder: "tasks/backlog/drafts", expected: { status: "todo", proposedAt: expect.any(Number) } },
+      { folder: "backlog/archive/tasks", expected: { status: "todo", archivedAt: expect.any(Number) } },
+      { folder: "backlog/tasks/docs", expected: { status: "todo" } },
+    ];
+    for (const [index, item] of cases.entries()) {
+      const selected = join(base, item.folder);
+      mkdirSync(selected, { recursive: true });
+      writeFileSync(join(selected, "task.md"), `---\nid: TASK-${index}\ntitle: Bounded ${index}\n---\n`);
+      for (const flags of [["--dry-run"], []]) {
+        const report = await dayhandJson(key, ["backlog", "import", selected, ...flags]);
+        expect(report).toMatchObject({ files: 1, created: 1, failed: [], skipped: [], warnings: [], tasks: [item.expected] });
+        if (!item.folder.endsWith("/drafts")) expect(report.tasks[0]).not.toHaveProperty("proposedAt");
+        if (!item.folder.includes("/archive/tasks")) expect(report.tasks[0]).not.toHaveProperty("archivedAt");
       }
     }
   });

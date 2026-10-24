@@ -40,7 +40,7 @@ describe("import calls", () => {
     expect(dependenciesFirst(files).map((file) => file.path)).toEqual(["z.md", "a.md"]);
   });
 
-  test.each(["config.yml", "backlog.config.yml", undefined])("selected subdirectories keep backlog paths and project config (%s)", async (configName) => inFolder(async (base) => {
+  test.each(["config.yml", "backlog.config.yml", undefined])("reserved selections keep backlog paths and non-reserved selections stay local (%s)", async (configName) => inFolder(async (base) => {
     const root = join(base, "project", "backlog");
     const branches = ["tasks", "drafts", "completed", "archive/tasks", "archive/drafts", "docs", "decisions", "milestones"];
     const fixtures = branches.map((branch, index) => task(`${branch}/nested/part/task-${index}.md`, `id: TASK-${index}\ntitle: T${index}\nstatus: Review`));
@@ -52,16 +52,13 @@ describe("import calls", () => {
     const config = { path: configName!, content: "statuses: [Queue, Review, Shipped]\n" };
     if (configName) await writeFile(join(root, configName), config.content);
     for (const [index, branch] of branches.entries()) {
-      for (const subset of [branch, `${branch}/nested/part`]) {
-        const files = await readFolder(join(root, subset));
-        expect(files).toHaveLength(configName ? 2 : 1);
-        expect(files).toContainEqual(fixtures[index]);
-        if (configName) expect(files).toContainEqual(config);
-      }
+      const files = await readFolder(join(root, branch));
+      expect(files).toHaveLength(configName ? 2 : 1);
+      expect(files).toContainEqual(fixtures[index]);
+      if (configName) expect(files).toContainEqual(config);
     }
     const subset = await readFolder(join(root, "subsets", "sprint", "part"));
-    expect(subset).toHaveLength(configName ? 2 : 1);
-    expect(subset).toContainEqual(loose);
+    expect(subset).toEqual([{ path: "loose.md", content: loose.content }]);
     const archived = await readFolder(join(root, "archive"));
     expect(archived.filter((file) => file.path.endsWith(".md"))).toEqual(fixtures.slice(3, 5).sort((a, b) => a.path.localeCompare(b.path)));
     const all = await readFolder(root);
@@ -71,7 +68,7 @@ describe("import calls", () => {
   test.each(["config.yml", "backlog.config.yml", undefined])("nested reserved names do not move the backlog root (%s)", async (configName) => inFolder(async (base) => {
     const root = join(base, "project", "backlog");
     const branches = ["tasks", "drafts", "completed", "archive/tasks", "archive/drafts", "docs", "decisions", "milestones"];
-    const fixtures = branches.flatMap((outer, i) => branches.map((inner, j) => task(`${outer}/${inner}/subset-${i}-${j}/task.md`, `id: TASK-${i * branches.length + j}\ntitle: Nested`)));
+    const fixtures = branches.flatMap((outer, i) => branches.map((inner, j) => task(`${outer}/${inner}/task-${i}-${j}.md`, `id: TASK-${i * branches.length + j}\ntitle: Nested`)));
     for (const file of fixtures) {
       await mkdir(dirname(join(root, file.path)), { recursive: true });
       await writeFile(join(root, file.path), file.content);
@@ -83,6 +80,38 @@ describe("import calls", () => {
       expect(files).toContainEqual(file);
       if (configName) expect(files).toContainEqual({ path: configName, content: "statuses: [Queue, Middle, Shipped]\n" });
     }
+  }));
+
+  test.each(["config.yml", "backlog.config.yml", undefined])("root discovery stops before unrelated reserved ancestors (%s)", async (configName) => inFolder(async (base) => {
+    await writeFile(join(base, "config.yml"), "statuses: [Outside, Done]\n");
+    const cases = [
+      { selected: "docs/backlog/tasks", root: "docs/backlog", path: "tasks/task.md" },
+      { selected: "tasks/backlog/drafts", root: "tasks/backlog", path: "drafts/task.md" },
+      { selected: "backlog/archive/tasks", root: "backlog", path: "archive/tasks/task.md" },
+      { selected: "backlog/tasks/docs", root: "backlog", path: "tasks/docs/task.md" },
+    ];
+    for (const [index, item] of cases.entries()) {
+      const selected = join(base, item.selected);
+      await mkdir(selected, { recursive: true });
+      const file = task(item.path, `id: TASK-${index}\ntitle: Case ${index}`);
+      await writeFile(join(selected, "task.md"), file.content);
+      if (configName) await writeFile(join(base, item.root, configName), "statuses: [Queue, Middle, Shipped]\n");
+      const files = await readFolder(selected);
+      expect(files).toHaveLength(configName ? 2 : 1);
+      expect(files).toContainEqual(file);
+      if (configName) expect(files).toContainEqual({ path: configName, content: "statuses: [Queue, Middle, Shipped]\n" });
+    }
+  }));
+
+  test.each(["config.yml", "backlog.config.yml"])("a config in the selected reserved directory makes it the root (%s)", async (configName) => inFolder(async (base) => {
+    const selected = join(base, "docs", "backlog", "tasks");
+    await mkdir(selected, { recursive: true });
+    await writeFile(join(base, "docs", "backlog", "config.yml"), "statuses: [Outside, Done]\n");
+    await writeFile(join(selected, configName), "statuses: [Local, Finished]\n");
+    const file = task("task.md", "id: TASK-1\ntitle: Local task");
+    await writeFile(join(selected, file.path), file.content);
+    expect(await readFolder(selected)).toEqual(expect.arrayContaining([file, { path: configName, content: "statuses: [Local, Finished]\n" }]));
+    expect(await readFolder(selected)).toHaveLength(2);
   }));
 
   test.each([false, true])("over-limit folders fail before any request (dryRun=%s)", async (dryRun) => inFolder(async (root) => {

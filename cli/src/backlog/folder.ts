@@ -17,8 +17,7 @@ export const FILE_CHARS = 100_000;
 
 const CONFIG = /^(backlog\.)?config\.yml$/i;
 const CONFIG_NAMES = ["config.yml", "backlog.config.yml"];
-const LAYOUT_DIRS = new Set(["tasks", "drafts", "completed", "archive"]);
-const BACKLOG_DIRS = new Set([...LAYOUT_DIRS, "docs", "decisions", "milestones"]);
+const BACKLOG_DIRS = new Set(["tasks", "drafts", "completed", "archive", "docs", "decisions", "milestones"]);
 const SKIP_DIRS = new Set([".git", "node_modules"]);
 
 async function walk(dir: string): Promise<string[]> {
@@ -32,23 +31,19 @@ async function walk(dir: string): Promise<string[]> {
   return found;
 }
 
-async function backlogRoot(selected: string): Promise<{ root: string; config?: string }> {
-  let current = selected;
-  let layout: string | undefined;
-  while (true) {
-    for (const name of CONFIG_NAMES) {
-      const config = join(current, name);
-      if ((await stat(config))?.isFile()) return { root: current, config };
-    }
-    const parent = dirname(current);
-    if (parent === current || await stat(join(current, ".git"))) return { root: layout ?? selected };
-    if (BACKLOG_DIRS.has(basename(current).toLowerCase())) {
-      layout = basename(parent).toLowerCase() === "archive" ? dirname(parent) : parent;
-    } else if ((await readdir(current, { withFileTypes: true })).some((entry) => entry.isDirectory() && LAYOUT_DIRS.has(entry.name.toLowerCase()))) {
-      layout = current;
-    }
-    current = parent;
+async function configAt(dir: string): Promise<string | undefined> {
+  for (const name of CONFIG_NAMES) {
+    const config = join(dir, name);
+    if ((await stat(config))?.isFile()) return config;
   }
+}
+
+async function backlogRoot(selected: string): Promise<{ root: string; config?: string }> {
+  const config = await configAt(selected);
+  if (config) return { root: selected, config };
+  let root = selected;
+  while (BACKLOG_DIRS.has(basename(root).toLowerCase())) root = dirname(root);
+  return { root, config: root === selected ? undefined : await configAt(root) };
 }
 
 export async function readFolder(dir: string): Promise<BacklogFile[]> {
