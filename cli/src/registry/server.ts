@@ -154,7 +154,7 @@ async function setup(ctx: RunContext, opts: Opts, local: boolean): Promise<Outco
   const backend = findBackend(opts.backend as string | undefined, ctx.env, process.cwd());
   if (!backend) {
     throw usageError("dayhand server needs a copy of the Dayhand repository: it deploys the repository's backend/ folder", {
-      hint: "git clone https://github.com/maiarowsky/helm.git && cd helm && dayhand server " + name + "   (or --backend <folder>)",
+      hint: "git clone https://github.com/maiarowsky/dayhand.git && cd dayhand && dayhand server " + name + "   (or --backend <folder>)",
     });
   }
   ctx.io.stderr.write(`Using the Dayhand backend in ${backend}\n`);

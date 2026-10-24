@@ -1,53 +1,75 @@
 # Install
 
-No Dayhand release is published yet: there is no package on npm or Homebrew, no APK on GitHub
-Releases and no signed Mac download. Everything below builds from the source today, and each
-section says what is coming. A piece marked *coming soon* has no command on this page, because none
-works yet.
+| Piece | Runs on | Install |
+|---|---|---|
+| [Command line](#command-line-dayhand) (`dayhand`, `dh`, `dayhand ui`) | macOS, Linux, Windows; Node.js 22.12+ | `npm i -g dayhand` or `brew install maiarowsky/tap/dayhand` |
+| [Your own server](#your-own-server) | macOS and Linux (on this computer), or your Convex account | `dayhand server start` or `dayhand server deploy` |
+| [Android](#android) | Android 8.0 or newer | build it yourself; coming soon: signed APK on GitHub Releases, Google Play |
+| [macOS](#macos) | macOS 13 or newer; built with Xcode 26 | from source; coming soon: signed, notarized download |
+| [Linux](#linux-and-omarchy) | Qt 6 desktops; a package for Arch Linux and Omarchy | from source |
 
-| Piece | Runs on | Today | Coming soon |
-|---|---|---|---|
-| [Command line](#command-line-dayhand) (`dayhand`, `dh`, `dayhand ui`) | macOS, Linux, Windows; Node.js 22.12+ | from source | npm, Homebrew |
-| [Your own server](#your-own-server) | macOS and Linux (on this computer), or your Convex account | `dayhand server start` or `dayhand server deploy` | |
-| [Android](#android) | Android 8.0 or newer | build it yourself | signed APK on GitHub Releases, Google Play |
-| [macOS](#macos) | macOS 13 or newer; built with Xcode 26 | from source | signed, notarized download |
-| [Linux](#linux-and-omarchy) | Qt 6 desktops; a package for Arch Linux and Omarchy | from source | |
+> **npm and Homebrew: available after the first release.** Nothing is on npm or Homebrew yet; until then, build the command line [from source](#from-source).
 
 The iPhone and iPad app is in development and has nothing to install yet. There is no Windows desktop
 app; on Windows the command line works with a server on your own Convex account.
 
 ## Command line: dayhand
 
-You need [Node.js](https://nodejs.org) 22.12 or newer and git, on macOS, Linux or Windows.
+You need [Node.js](https://nodejs.org) 22.12 or newer, on macOS, Linux or Windows. Install it with npm:
 
 ```sh
-git clone https://github.com/maiarowsky/dayhand.git dayhand
-cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+npm i -g dayhand
 ```
 
-- `npm link` puts `dayhand` and `dh` (the same command, shorter) on your PATH. Where that needs
-  administrator rights, run `node cli/dist/bin/dayhand.js` from the checkout instead.
-  `npm unlink -g dayhand` removes the link.
-- On Debian and Ubuntu, debhelper has a `dh` command of its own; type `dayhand` there.
-- `--ignore-scripts` keeps the install scripts of dependencies from running. The packages come from
-  the lockfile.
-- **Update**: `git pull`, then `cd cli && npm ci --ignore-scripts && npm run build`. `dayhand version`
-  shows the CLI and server versions and whether they work together.
-- **Shell completion** for bash, zsh, fish and PowerShell: `dayhand help completion`.
-- **Manual pages**: `man/dayhand.1` and `man/dh.1` in the checkout (`man ./man/dayhand.1`). A
-  package installed from npm will carry them, so that `man dayhand` works.
+or with Homebrew on macOS and Linux (Homebrew brings Node.js along):
+
+```sh
+brew install maiarowsky/tap/dayhand
+```
+
+or try it without installing: `npx dayhand --help`.
+
+- `dayhand` and `dh` (the same command, shorter) are then on your PATH. On Debian and Ubuntu,
+  debhelper has a `dh` command of its own; type `dayhand` there.
+- **Update**: `npm i -g dayhand@latest` or `brew upgrade dayhand`. `dayhand version` shows the CLI and
+  server versions and whether they work together.
+- **Remove**: `npm rm -g dayhand` or `brew uninstall dayhand`.
+- **Shell completion** for bash, zsh, fish and PowerShell: `dayhand help completion` (Homebrew sets up
+  bash, zsh and fish by itself).
+- **Manual pages**: `man dayhand` and `man dh`.
 
 Next, sign `dayhand` in to a server. `dayhand server start` and `dayhand server deploy` do it by
 themselves; for a server that already runs, `dayhand login --url https://<deployment>.convex.site`
 asks for a key ([command reference](cli.md#dayhand-login)).
 
-**Coming soon:** the `dayhand` package on npm and a Homebrew tap. The publishing workflow and the
-formula are prepared in the repository, but nothing is published.
+### From source
+
+For contributors, and the way to get `dayhand` before the first release. You also need git:
+
+```sh
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand && (cd cli && npm ci --ignore-scripts && npm run build && npm link)
+```
+
+- `npm link` puts this checkout's `dayhand` and `dh` on your PATH; `npm unlink -g dayhand` removes the
+  link. Where that needs administrator rights, run `node cli/dist/bin/dayhand.js` from the checkout
+  instead.
+- `--ignore-scripts` keeps the install scripts of dependencies from running. The packages come from
+  the lockfile.
+- **Update**: `git pull`, then `cd cli && npm ci --ignore-scripts && npm run build`.
+- **Manual pages** from the checkout: `man ./man/dayhand.1`.
 
 ## Your own server
 
 The server is the `backend/` folder of the repository, deployed to [Convex](https://www.convex.dev).
-The command line sets it up; there is nothing else to install:
+The command line sets it up from a copy of the repository, with nothing to build:
+
+```sh
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand
+```
+
+Then, in that folder:
 
 - **On this computer** (macOS or Linux, x64 or arm64): `dayhand server start` downloads the Convex
   local backend once and runs your server until Ctrl+C. No account needed.

@@ -26,30 +26,37 @@ TODAY
 
 ## Install
 
-| Where | How | Status |
-|---|---|---|
-| Android 8.0+ | signed APK from GitHub Releases | prepared: the release build is signed and ready, no release is published yet |
-| npm | `npx dayhand` | prepared: the publish workflow is ready, nothing is published yet ([docs/release.md](docs/release.md)) |
-| Homebrew | a tap with `dayhand` | prepared: the formula template is in `packaging/homebrew/` |
-| From source | below | works today on macOS and Linux (the CLI also on Windows) |
+`dayhand`, the command line (short name `dh`), needs [Node.js](https://nodejs.org) 22.12 or newer:
 
-From source you need Node.js 22.12 or newer, git and, for the agent example, `jq`:
+| Where | Command |
+|---|---|
+| macOS, Linux, Windows | `npm i -g dayhand` |
+| macOS, Linux with Homebrew | `brew install maiarowsky/tap/dayhand` |
+| Try it without installing | `npx dayhand --help` |
+| Android 8.0+ | build it yourself ([On the phone](#on-the-phone)); a signed APK on GitHub Releases is prepared, no release is published yet |
+| Dayhand for macOS | build it from a checkout ([On the Mac](#on-the-mac)) |
+| Dayhand for Linux | build it from a checkout ([On Linux](#on-linux)) |
+
+> **npm and Homebrew: available after the first release.** Nothing is published yet; until then, build `dayhand` from a checkout ([Development](#development)).
 
 ```sh
-git clone https://github.com/maiarowsky/dayhand.git dayhand
-cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+npm i -g dayhand
 ```
 
-`npm link` puts `dayhand` (and its short name `dh`) on your PATH; `npm unlink -g dayhand` removes it.
+`npm rm -g dayhand` removes it. Every way to install, with updates and shell completion:
+[docs/install.md](docs/install.md).
 
 ## Quick start
 
 Start your own server on this computer (macOS or Linux). On Windows, use the
 [Convex account setup](docs/deploy.md#run-your-own-server-in-5-minutes) instead.
+The server is deployed from the repository's `backend/` folder, so get a copy first (nothing to build).
 No account is needed for the local server: the first run downloads the Convex local backend once,
 deploys Dayhand to it, signs `dayhand` in and prints a pairing QR code for the phone.
 
 ```sh
+git clone https://github.com/maiarowsky/dayhand.git
+cd dayhand
 dayhand server start
 ```
 
@@ -68,8 +75,9 @@ are English phrases in your time zone (`fri 2pm`, `in 3 days`, `2026-11-02`), al
 
 ## Your agent
 
-Give each agent its own key. Its changes are signed `agent: <name>` in the history and the
-activity log, and you can revoke the key at any time (`dayhand key revoke`):
+The examples below use `jq` to read JSON responses. Give each agent its own key. Its changes are
+signed `agent: <name>` in the history and the activity log, and you can revoke the key at any time
+(`dayhand key revoke`):
 
 ```sh
 AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
@@ -234,6 +242,13 @@ macos/     Dayhand for macOS (Swift, SwiftUI)
 linux/     Dayhand for Linux (Qt 6, QML); see docs/linux.md
 docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing, deployment
 site/      dayhand.dev: the landing page and the docs from docs/, an Astro site built into site/dist; check it with scripts/check-site.sh --build
+```
+
+To run `dayhand` from this checkout instead of the npm package (also the way to get it before the
+first release), build it and link it onto your PATH; `npm unlink -g dayhand` removes the link:
+
+```sh
+(cd cli && npm ci --ignore-scripts && npm run build && npm link)
 ```
 
 The tests start their own throwaway backend:

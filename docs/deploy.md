@@ -13,14 +13,16 @@ You need Node.js 22.12 or newer and git, on macOS, Linux or Windows. The Convex 
 (or signed in to) in your browser during the setup.
 
 ```sh
+npm i -g dayhand
 git clone https://github.com/maiarowsky/dayhand.git
-cd dayhand/cli && npm ci --ignore-scripts && npm run build && npm link && cd ..
+cd dayhand
 dayhand server deploy
 ```
 
-Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` (it then prints the
-`dayhand login` command to use later). `npm link` puts `dayhand` on the PATH; where it needs
-administrator rights, run `node cli/dist/bin/dayhand.js server deploy` instead.
+`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
+first release, from source: [Install](install.md)); the copy of the repository holds the server it
+deploys. Without `dayhand`, the same setup is `cd dayhand/backend && npm run setup` (it then prints the
+`dayhand login` command to use later).
 
 `dayhand server deploy` (which runs `backend/scripts/setup.mjs`):
 

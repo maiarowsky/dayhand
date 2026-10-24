@@ -53,5 +53,5 @@ Corrections from native speakers are welcome.
 
 ## Releases
 
-The CLI is released on its own with release-please, and nothing is published yet. How a release will
-work, for maintainers: [release.md](release.md).
+The CLI is released on its own with release-please, to npm as `dayhand` and to the Homebrew tap
+`maiarowsky/tap`; nothing is published yet. How a release works, for maintainers: [release.md](release.md).
