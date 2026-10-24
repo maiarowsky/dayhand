@@ -17,10 +17,13 @@ Every change is signed with who made it: `app` (you in an app), `cli` (you with 
 alone:
 
 ```sh
-dayhand key create claude --scope write --json     # prints the key once, in "key"
+AGENT_KEY=$(dayhand key create claude --scope write --json | jq -er .key)
 dayhand key list
 dayhand key revoke <keyId>
 ```
+
+Dayhand returns the key only this once; save the captured `$AGENT_KEY` in a password manager so you
+can set it again in a later shell. The examples use `jq` to read JSON responses.
 
 | Scope | The key may |
 |---|---|

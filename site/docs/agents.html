@@ -120,9 +120,11 @@ approval you give is a record the agent is expected to respect, not a lock on it
 <p>Every change is signed with who made it: <code>app</code> (you in an app), <code>cli</code> (you with <code>dayhand</code>) or
 <code>agent: &lt;name&gt;</code>. An agent gets a key of its own, so its changes show its name and you can revoke it
 alone:</p>
-<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand key create claude --scope write --json     # prints the key once, in &quot;key&quot;
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>AGENT_KEY=$(dayhand key create claude --scope write --json | jq -er .key)
 dayhand key list
 dayhand key revoke &lt;keyId&gt;</code></pre>
+<p>Dayhand returns the key only this once; save the captured <code>$AGENT_KEY</code> in a password manager so you
+can set it again in a later shell. The examples use <code>jq</code> to read JSON responses.</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Give each agent its own key"><table>
 <thead><tr><th scope="col">Scope</th><th scope="col">The key may</th></tr></thead>
 <tbody>
