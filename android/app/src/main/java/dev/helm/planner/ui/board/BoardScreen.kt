@@ -121,7 +121,6 @@ fun BoardScreen(
     }
     if (adding) {
         QuickAddSheet(
-            today = today,
             timezone = state.timezone,
             onDismiss = { adding = false },
             onSave = { title, day, time, note ->

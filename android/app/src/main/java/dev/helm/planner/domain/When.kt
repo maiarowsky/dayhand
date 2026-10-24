@@ -71,7 +71,7 @@ object WhenParser {
     fun parse(text: String, now: Long, timezone: String): When {
         val tokens = text.lowercase(Locale.ROOT).replace(",", " ").trim().split(SPACES).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) throw notUnderstood()
-        val zone = zoneOf(timezone)
+        val zone = HelmDates.zone(timezone)
         val local = localAt(now, zone)
         val ref = Ref(now, zone, local.toLocalDate(), local.toLocalTime())
 
@@ -95,13 +95,6 @@ object WhenParser {
         if (after != null && after.next == tokens.size) return settle(after.value, time.value, zone)
         throw notUnderstood()
     }
-
-    private fun zoneOf(timezone: String): ZoneId =
-        try {
-            ZoneId.of(timezone)
-        } catch (_: DateTimeException) {
-            HelmDates.zone(null)
-        }
 
     /** The wall clock in [zone] at an instant, seconds dropped. */
     private fun localAt(epochMs: Long, zone: ZoneId): LocalDateTime =

@@ -94,7 +94,6 @@ fun TodayScreen(
     }
     if (adding) {
         QuickAddSheet(
-            today = date,
             timezone = state.timezone,
             now = now,
             onDismiss = { adding = false },

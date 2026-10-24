@@ -4,12 +4,16 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -86,7 +90,7 @@ class QuickAddPhraseTest {
     }
 
     private fun save() {
-        compose.onNodeWithTag(QuickAddTags.SAVE).performClick()
+        compose.onNodeWithTag(QuickAddTags.SAVE).performScrollTo().performClick()
         compose.waitForIdle()
     }
 
@@ -99,6 +103,16 @@ class QuickAddPhraseTest {
         compose.onNodeWithTag(QuickAddTags.WHEN)
             .assertTextEquals(text(R.string.quick_add_from_phrase, label("2026-10-22", "14:00"), "2pm"))
         compose.runOnIdle { now = Instant.parse("2026-10-22T13:01:00Z").toEpochMilli() }
+    }
+
+    private fun typeBeforeMidnight(line: String) {
+        now = Instant.parse("2026-10-22T22:59:00Z").toEpochMilli()
+        showToday()
+        type(line)
+    }
+
+    private fun crossMidnight() {
+        compose.runOnIdle { now = Instant.parse("2026-10-22T23:01:00Z").toEpochMilli() }
     }
 
     /** "Friday 23 Oct, 14:00" as the sheet writes it in the device's language. */
@@ -174,6 +188,92 @@ class QuickAddPhraseTest {
 
         compose.onNodeWithText("Read chapter fri").assertIsDisplayed()
         assertEquals(listOf("Read chapter fri", "2026-10-22", null), saved().let { listOf(it.title, it.dueDate, it.dueTime) })
+    }
+
+    @Test
+    fun keepInTitleUsesTheCurrentDayAfterMidnight() {
+        typeBeforeMidnight("Call 2pm")
+        crossMidnight()
+        compose.onNodeWithTag(QuickAddTags.KEEP).performClick()
+        compose.onNodeWithTag(QuickAddTags.WHEN).assertTextEquals(text(R.string.quick_add_no_phrase))
+        save()
+
+        compose.onNodeWithText("Call 2pm").assertIsDisplayed()
+        assertEquals(listOf("Call 2pm", "2026-10-23", null), saved().let { listOf(it.title, it.dueDate, it.dueTime) })
+    }
+
+    @Test
+    fun withoutAPhraseDoneUsesTheCurrentDayAfterMidnight() {
+        typeBeforeMidnight("Order a present")
+        crossMidnight()
+        compose.onNodeWithTag(QuickAddTags.WHEN).assertTextEquals(text(R.string.quick_add_no_phrase))
+        compose.onNodeWithTag(QuickAddTags.TITLE).performImeAction()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Order a present").assertIsDisplayed()
+        assertEquals(listOf("Order a present", "2026-10-23", null), saved().let { listOf(it.title, it.dueDate, it.dueTime) })
+    }
+
+    @Test
+    fun theDefaultDayAndPickerFollowMidnight() {
+        typeBeforeMidnight("Order a present")
+        compose.onNodeWithText(text(R.string.quick_add_more)).performClick()
+        crossMidnight()
+        compose.mainClock.advanceTimeBy(60_000)
+
+        compose.onNode(hasText(text(R.string.quick_add_today)) and hasClickAction()).assertIsSelected()
+        compose.onNodeWithText(text(R.string.move_to_day)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.ok)).performClick()
+        compose.onNodeWithTag(QuickAddTags.WHEN)
+            .assertTextEquals(text(R.string.quick_add_from_options, label("2026-10-23", null)))
+        save()
+
+        assertEquals("2026-10-23", saved().dueDate)
+    }
+
+    @Test
+    fun anExplicitDayAndTimeStayFixedAfterMidnight() {
+        typeBeforeMidnight("Call fri 2pm")
+        compose.onNodeWithText(text(R.string.quick_add_more)).performClick()
+        compose.onNode(hasText(text(R.string.quick_add_today)) and hasClickAction()).performScrollTo().performClick()
+        compose.onNode(hasText(text(R.string.quick_add_time)) and hasClickAction()).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.ok)).performClick()
+        crossMidnight()
+        compose.mainClock.advanceTimeBy(60_000)
+        compose.onNodeWithTag(QuickAddTags.WHEN)
+            .assertTextEquals(text(R.string.quick_add_from_options, label("2026-10-22", "09:00")))
+        save()
+
+        assertEquals(listOf("Call fri 2pm", "2026-10-22", "09:00"), saved().let { listOf(it.title, it.dueDate, it.dueTime) })
+    }
+
+    @Test
+    fun aTimeOnlyChoiceKeepsTheUnpickedDayCurrentAfterMidnight() {
+        typeBeforeMidnight("Call fri 2pm")
+        compose.onNodeWithText(text(R.string.quick_add_more)).performClick()
+        compose.onNode(hasText(text(R.string.quick_add_time)) and hasClickAction()).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.ok)).performClick()
+        crossMidnight()
+        compose.mainClock.advanceTimeBy(60_000)
+        compose.onNodeWithTag(QuickAddTags.WHEN)
+            .assertTextEquals(text(R.string.quick_add_from_options, label("2026-10-23", "09:00")))
+        save()
+
+        assertEquals(listOf("Call fri 2pm", "2026-10-23", "09:00"), saved().let { listOf(it.title, it.dueDate, it.dueTime) })
+    }
+
+    @Test
+    fun clearingTimeKeepsTheUnpickedDayCurrentAfterMidnight() {
+        typeBeforeMidnight("Call 2pm")
+        compose.onNodeWithText(text(R.string.quick_add_more)).performClick()
+        compose.onNodeWithText(text(R.string.quick_add_no_time)).performScrollTo().performClick()
+        crossMidnight()
+        compose.mainClock.advanceTimeBy(60_000)
+        compose.onNodeWithTag(QuickAddTags.WHEN)
+            .assertTextEquals(text(R.string.quick_add_from_options, label("2026-10-23", null)))
+        save()
+
+        assertEquals(listOf("Call 2pm", "2026-10-23", null), saved().let { listOf(it.title, it.dueDate, it.dueTime) })
     }
 
     @Test

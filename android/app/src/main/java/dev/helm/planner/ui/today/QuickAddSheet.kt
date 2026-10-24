@@ -40,6 +40,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
+import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.QuickAdd
 import dev.helm.planner.domain.QuickAddInput
 import dev.helm.planner.ui.common.appLocale
@@ -76,7 +77,6 @@ object QuickAddTags {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAddSheet(
-    today: LocalDate,
     timezone: String,
     onDismiss: () -> Unit,
     onSave: (title: String, dueDate: String, dueTime: String?, note: String?) -> Unit,
@@ -84,7 +84,7 @@ fun QuickAddSheet(
 ) {
     var title by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
-    var day by rememberSaveable { mutableStateOf(today.toString()) }
+    var day by rememberSaveable { mutableStateOf<String?>(null) }
     var time by rememberSaveable { mutableStateOf<String?>(null) }
     // A day or time picked under "More options" wins over a phrase in the title.
     var picked by rememberSaveable { mutableStateOf(false) }
@@ -97,17 +97,20 @@ fun QuickAddSheet(
     val canSave = title.isNotBlank()
     var referenceTime by remember(now) { mutableLongStateOf(now()) }
     LaunchedEffect(now) { minuteTicks(now).collect { referenceTime = it } }
+    val today = LocalDate.parse(HelmDates.localDate(referenceTime, timezone))
+    val selectedDay = day ?: today.toString()
     val input = QuickAdd.parse(title, referenceTime, timezone).takeIf { it.`when` != null && !picked }
     val read = input?.takeIf { !keep }
     val save = {
-        referenceTime = now()
-        val submitted = QuickAdd.parse(title, referenceTime, timezone).takeIf { !keep && !picked }
+        val submittedAt = now()
+        referenceTime = submittedAt
+        val submitted = QuickAdd.parse(title, submittedAt, timezone).takeIf { !keep && !picked }
         val trimmedNote = note.trim().ifEmpty { null }
         val due = submitted?.`when`
         when {
             !canSave -> Unit
             submitted != null && due != null -> onSave(submitted.title, due.date, due.time, trimmedNote)
-            else -> onSave(title.trim(), day, time, trimmedNote)
+            else -> onSave(title.trim(), day ?: HelmDates.localDate(submittedAt, timezone), time, trimmedNote)
         }
     }
 
@@ -148,7 +151,7 @@ fun QuickAddSheet(
                     .testTag(QuickAddTags.TITLE),
             )
             if (canSave) {
-                WhenLine(today, read, picked, day, time)
+                WhenLine(today, read, picked, selectedDay, time)
                 if (input != null) {
                     SwitchRow(
                         stringResource(R.string.quick_add_keep_in_title),
@@ -179,7 +182,7 @@ fun QuickAddSheet(
             if (expanded) {
                 MoreOptions(
                     today = today,
-                    day = day,
+                    day = selectedDay,
                     time = time,
                     note = note,
                     onDay = {
@@ -199,7 +202,7 @@ fun QuickAddSheet(
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
     if (pickingDay) {
-        DayPickerDialog(LocalDate.parse(day), onDismiss = { pickingDay = false }) {
+        DayPickerDialog(LocalDate.parse(selectedDay), onDismiss = { pickingDay = false }) {
             day = it.toString()
             picked = true
             pickingDay = false
