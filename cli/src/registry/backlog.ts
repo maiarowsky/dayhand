@@ -2,7 +2,7 @@
 // (Markdown task files with a YAML header, docs/backlog-md.md) in and out. The
 // server reads and writes the format (import_backlog, export_backlog); these
 // commands move the files between the folder and the server.
-import { dependenciesFirst, FILE_CHARS, IMPORT_BYTES, IMPORT_FILES, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
+import { FILE_CHARS, IMPORT_BYTES, IMPORT_FILES, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
 import { CliError, usageError } from "../core/exit.js";
 import { tool } from "./ops.js";
 import type { CommandSpec, RunContext } from "./types.js";
@@ -51,7 +51,7 @@ const importCommand: CommandSpec = {
   schema: "backlog-import.schema.json",
   summary: "Import a Backlog.md folder: each task file becomes a task; files imported before are skipped",
   description:
-    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call, the tasks others depend on first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
+    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
     "A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
     "Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. " +
@@ -70,7 +70,7 @@ const importCommand: CommandSpec = {
     }
     const tooLong = files.find((file) => file.content.length > FILE_CHARS);
     if (tooLong) throw usageError(`${tooLong.path} is longer than ${FILE_CHARS} characters; shorten the file before importing`);
-    const value = await importFiles(ctx, dependenciesFirst(files));
+    const value = await importFiles(ctx, files);
     return { value, view: { kind: "text", text: importText(value) } };
   },
 };

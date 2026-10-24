@@ -4,7 +4,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { dependenciesFirst, readFolder } from "../src/backlog/folder.js";
+import { readFolder } from "../src/backlog/folder.js";
 import { flatten } from "../src/registry/index.js";
 import { admin, connectAgent, createKey, dayhand, dayhandJson, jsonError, mcpClient, newUser, schemaValidator, sdkCall, TEST_HOME } from "./helpers.js";
 
@@ -162,7 +162,7 @@ describe("agent contract", () => {
     expect(imported.tasks.map((t: any) => [t.title, t.status])).toEqual([["Buy a printer", "todo"], ["Print labels", "doing"]]);
     expect(imported.tasks[1].dependsOn).toEqual([imported.tasks[0].id]);
     // Again, the command and the SDK with the files the command sends: everything was imported before.
-    const files = dependenciesFirst(await readFolder(dir));
+    const files = await readFolder(dir);
     const again = await dayhandJson(key, ["backlog", "import", dir]);
     const viaSdk = await sdkCall(sdk, "import_backlog", { files });
     expect(viaSdk.isError).toBe(false);
@@ -323,7 +323,7 @@ describe("agent contract", () => {
     expect(refused.code).toBe(7);
     const { approvalId } = jsonError(refused);
     expect(typeof approvalId).toBe("string");
-    expect(JSON.parse((await dayhandJson(key, ["approval", approvalId])).arguments)).toEqual({ files: dependenciesFirst(await readFolder(dir)) });
+    expect(JSON.parse((await dayhandJson(key, ["approval", approvalId])).arguments)).toEqual({ files: await readFolder(dir) });
     expect((await dayhandJson(key, ["list"])).total).toBe(0);
     await dayhandJson(key, ["approvals", "decide", approvalId, "allow"]);
     const imported = await dayhandJson(agent.key, ["backlog", "import", dir, "--approval", approvalId]);

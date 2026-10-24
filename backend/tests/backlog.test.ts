@@ -108,6 +108,44 @@ describe("import_backlog", () => {
     expect(await allTasks(client)).toHaveLength(6);
   });
 
+  test.each(["config.yml", "backlog.config.yml"])("relative dot segments preserve every import classification and %s", async (configName) => {
+    const source = await owner();
+    const target = await owner();
+    const cases = [
+      { path: ".//./tasks//./docs/task.md", expected: { status: "doing" } },
+      { path: ".\\drafts\\.\\task.md", expected: { status: "todo", proposedAt: expect.any(Number) } },
+      { path: "./completed/./tasks//task.md", expected: { status: "done", completedAt: expect.any(Number) } },
+      { path: ".//archive/./tasks//task.md", expected: { status: "doing", archivedAt: expect.any(Number) } },
+      { path: ".\\archive\\.\\drafts\\tasks\\task.md", reason: "an archived draft, not a task" },
+      { path: "././docs//tasks/task.md", reason: "a document, not a task" },
+      { path: ".//decisions/./tasks/task.md", reason: "a decision record, not a task" },
+      { path: ".\\milestones\\.\\tasks\\task.md", reason: "a milestone, not a task" },
+    ];
+    const configPath = configName === "config.yml" ? ".//./config.yml" : ".\\backlog.config.yml";
+    const files = [
+      { path: configPath, content: "statuses: [Queue, Middle, Shipped]\n" },
+      ...cases.map((item, index) => file(item.path, `id: TASK-${index}\ntitle: Entry ${index}\nstatus: ${index === 1 ? "Queue" : "Middle"}`)),
+    ];
+    const imported = await callTool(source.client, "import_backlog", { files });
+    const preview = await rest(target.key, "POST", "/import/backlog?dryRun=true", { body: { files } });
+    expect(preview.status).toBe(200);
+    for (const report of [imported, preview.body]) {
+      expect(report).toMatchObject({ created: 4, failed: [], warnings: [] });
+      for (const [index, item] of cases.entries()) {
+        if (item.reason) expect(report.skipped).toContainEqual(expect.objectContaining({ path: item.path, reason: item.reason }));
+        else {
+          const task = byTitle(report.tasks, `Entry ${index}`);
+          expect(task).toMatchObject(item.expected);
+          if (index !== 1) expect(task).not.toHaveProperty("proposedAt");
+          if (index !== 2) expect(task).not.toHaveProperty("completedAt");
+          if (index !== 3) expect(task).not.toHaveProperty("archivedAt");
+        }
+      }
+    }
+    expect(await allTasks(source.client)).toHaveLength(4);
+    expect(await allTasks(target.client)).toEqual([]);
+  });
+
   test("top-level folders control import state despite nested reserved names", async () => {
     const { client } = await owner();
     const cases = [

@@ -12,8 +12,8 @@ Needs backend 0.12.0 for the new parts; everything else works with older servers
   (Markdown task files with a YAML header) becomes tasks with `import_backlog`: statuses map to
   the nearest of todo, doing and done, criteria, plan, dependencies and the final summary carry
   over, drafts become proposals, and a folder imported again brings only new files. The files go
-  in one call per invocation, the tasks others depend on first: at most 200 files and 200 KiB of
-  file JSON, otherwise import by subdirectories. Files without an id are skipped. `--dry-run`
+  in one call per invocation; only the backend orders dependencies first: at most 200 files and
+  200 KiB of file JSON, otherwise import by subdirectories. Files without an id are skipped. `--dry-run`
   shows the report without storing anything; `--json` prints it
   ([backlog-import](../docs/schemas/backlog-import.schema.json)). Under an `ask` policy, an approval
   binds exactly that call and is consumed once, just like other approval-gated tools.

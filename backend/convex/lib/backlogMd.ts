@@ -47,7 +47,7 @@ const DIRS: Record<string, Place> = { tasks: "task", drafts: "draft", completed:
 
 /** The place of a path relative to the backlog folder ("tasks/task-1 - x.md", "archive/tasks/…"). */
 export function placeOf(path: string): Place {
-  const parts = path.replace(/\\/g, "/").toLowerCase().split("/").filter(Boolean);
+  const parts = path.replace(/\\/g, "/").toLowerCase().split("/").filter((part) => part !== "" && part !== ".");
   const name = parts[parts.length - 1] ?? "";
   const dirs = parts.slice(0, -1);
   if (dirs.length === 0 && (name === "config.yml" || name === "backlog.config.yml")) return "config";

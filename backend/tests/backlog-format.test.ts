@@ -169,6 +169,13 @@ describe("enclosing backlog folders", () => {
     }
   });
 
+  test.each([...places, ["config.yml", "config"] as const, ["backlog.config.yml", "config"] as const, ["task.md", "task"] as const])("dot and empty segments do not change %s classification", (folder, expected) => {
+    const path = folder.endsWith(".yml") || folder.endsWith(".md") ? folder : `${folder}/tasks/task.md`;
+    const dotted = `.//./${path.split("/").join("//./")}`;
+    expect(placeOf(dotted)).toBe(expected);
+    expect(placeOf(dotted.replace(/\//g, "\\").toUpperCase())).toBe(expected);
+  });
+
   test("a reserved name below an unrecognized top-level folder does not reclassify it", () => {
     for (const [inner] of places) expect(placeOf(`subsets/${inner}/task.md`)).toBe("task");
   });

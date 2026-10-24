@@ -36,6 +36,8 @@ therefore its own root, not a subset inferred from higher ancestors. Classificat
 top-level folder under the root: selecting `backlog/tasks/docs` keeps it under `tasks/docs/`, and
 selecting `backlog/archive/tasks` keeps it under `archive/tasks/`. Select the enclosing reserved
 folder to retain this context when task files are grouped in other, non-reserved subdirectories.
+Relative file paths ignore `.` and empty segments before classification, so `./drafts/task.md`
+and `drafts/task.md` have the same proposal state.
 
 ## The file format
 
@@ -116,7 +118,8 @@ Decisions:
 - **One call per invocation, dependencies first.** `dayhand backlog import` sends one call,
   including its config: at most 200 files, 200 KiB of file JSON (leaving room within the server's
   256 KiB request limit), and 100,000 characters per file. A larger folder fails before anything
-  is sent; import it by subdirectories. Within the call, tasks are created after their prerequisites.
+  is sent; import it by subdirectories. The CLI forwards collected files unchanged; within the call,
+  only the backend orders task creation after prerequisites.
   If importing subdirectories separately, import prerequisites first; a dry run cannot see tasks
   that a different dry run would have made. More than 50 resolved dependencies fails the task
   instead of losing edges.
