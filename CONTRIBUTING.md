@@ -55,9 +55,9 @@ npm run test:unit                         # pure tests only, under a second
 
 - A command is an entry in the registry (`cli/src/registry/`): help, completion,
   `docs/cli.md`, `man/dayhand.1` and `docs/skills/dayhand/SKILL.md` are all generated from it. After
-  changing a command, run `npm run build && npm run docs` in `cli/`, then rebuild the
-  [published documentation](#the-site-and-the-documentation) and commit the regenerated files;
-  checks fail while they are stale.
+  changing a command, run `npm run build && npm run docs` in `cli/` and commit the regenerated files;
+  a test fails while they are stale. The [published documentation](#the-site-and-the-documentation)
+  is built from them when the site is built.
 - **`--json` is a contract for agents and scripts.** A change to what a command prints with
   `--json`, to its error JSON or to an exit code needs the contract tests in the same PR:
   `cli/tests/contract.test.ts` (output equals the MCP tool's `structuredContent` and passes its
@@ -69,11 +69,13 @@ npm run test:unit                         # pure tests only, under a second
 - The CLI is released on its own (`dayhand-vX.Y.Z` tags, release-please); do not bump
   `cli/package.json` by hand in a feature PR.
 
-## The website
+## The site and the documentation
 
-`site/` is dayhand.dev: an Astro project that builds a static site into `site/dist/`, with nothing
-loaded from other servers. How it is built, the screenshots and the CSS rules it follows:
-[site/STYLE.md](site/STYLE.md).
+`site/` is dayhand.dev: an Astro project that builds the landing page and the documentation into a
+static site in `site/dist/`, with nothing loaded from other servers. The documentation pages are the
+Markdown in `docs/`, rendered at build time, so nothing generated is committed. How it is built, the
+screenshots and the CSS rules it follows: [site/STYLE.md](site/STYLE.md); how to write the docs:
+[docs/contributing.md](docs/contributing.md).
 
 ```sh
 (cd site && npm ci --ignore-scripts && npm run dev)   # http://localhost:4321

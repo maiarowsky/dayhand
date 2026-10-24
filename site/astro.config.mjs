@@ -13,6 +13,9 @@ export default defineConfig({
     inlineStylesheets: "never",
   },
   vite: { build: { assetsInlineLimit: 0 } },
+  // The documentation pages come from docs/*.md; their code stays plain, since highlighting would put a
+  // style attribute on every token.
+  markdown: { syntaxHighlight: false },
   image: {
     service: { entrypoint: "astro/assets/services/sharp", config: { webp: { effort: 6 } } },
   },

@@ -1,0 +1,93 @@
+---
+// A documentation page: the side navigation with search, the page with its title and contents, and the
+// previous and next pages. On narrow screens the navigation is a menu that starts folded, so the page
+// does not move when the script runs; beside the page it is always open.
+import type { MarkdownHeading } from "astro";
+import Page from "./Page.astro";
+import { PAGES, SECTIONS, docsPath } from "../docs/pages.ts";
+import { repoFile } from "../site";
+
+interface Props {
+  /** The page's place in PAGES. */
+  index: number;
+  title: string;
+  description: string;
+  headings: MarkdownHeading[];
+}
+
+// Pages with this many sections or more get a list of them under the title.
+const TOC_MIN_SECTIONS = 4;
+
+const { index, title, description, headings } = Astro.props;
+const page = PAGES[index];
+const previous = PAGES[index - 1];
+const next = PAGES[index + 1];
+const sections = headings.filter((heading) => heading.depth === 2);
+---
+
+<Page title={`${title} · Dayhand docs`} description={description}>
+  <div class="docs">
+    <aside class="docs-side">
+      <details class="docs-menu">
+        <summary>All pages and search</summary>
+        <search class="docs-search">
+          <label for="docs-search-input">Search the docs</label>
+          <input id="docs-search-input" type="search" autocomplete="off" spellcheck="false" />
+          <p id="docs-search-status" class="docs-search-status" role="status"></p>
+          <ol id="docs-search-results" class="docs-search-results" role="list"></ol>
+        </search>
+        <nav aria-label="Documentation">
+          {
+            SECTIONS.map((section, n) => (
+              <>
+                <p class="docs-nav-title" id={`docs-nav-${n}`}>{section.title}</p>
+                <ul aria-labelledby={`docs-nav-${n}`} role="list">
+                  {section.pages.map((item) => (
+                    <li>
+                      <a href={docsPath(item.src)} aria-current={item.src === page.src ? "page" : undefined}>
+                        {item.nav}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ))
+          }
+        </nav>
+      </details>
+    </aside>
+
+    <article class="docs-article">
+      <p class="docs-crumb">{page.section}</p>
+      <h1>{title}</h1>
+      {
+        sections.length >= TOC_MIN_SECTIONS && (
+          <nav class="docs-toc" aria-label="On this page">
+            <p>On this page</p>
+            <ul role="list">
+              {sections.map((heading) => (
+                <li>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
+      <div class="prose">
+        <slot />
+      </div>
+      <nav class="docs-pager" aria-label="Previous and next page">
+        {previous ? <a href={docsPath(previous.src)} rel="prev"><span>Previous</span> {previous.nav}</a> : <span />}
+        {next ? <a href={docsPath(next.src)} rel="next"><span>Next</span> {next.nav}</a> : <span />}
+      </nav>
+      <p class="docs-source">
+        This page is <a href={repoFile(`docs/${page.src}`)}><code>docs/{page.src}</code></a> in the repository, where
+        you can suggest a change.
+      </p>
+    </article>
+  </div>
+  <script>
+    import "../scripts/docs-search.ts";
+  </script>
+</Page>

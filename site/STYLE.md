@@ -1,8 +1,9 @@
 # dayhand.dev: how the site is built
 
 `site/` is an [Astro](https://astro.build) project that builds dayhand.dev into `site/dist/` as plain
-static files: HTML, one stylesheet, one small script and images, with no server code, no framework on the
-page and nothing loaded from other servers. The site is in English; its text is written for this project.
+static files: the home page and the documentation (from `docs/*.md`) as HTML, one stylesheet, two small
+scripts and images, with no server code, no framework on the page and nothing loaded from other servers. The
+site is in English; its text is written for this project.
 
 Astro is the only dependency, pinned in `package-lock.json`. Install from the lockfile with install scripts
 off, and run Astro through the npm scripts, which start it with its telemetry off (`scripts/astro.mjs`):
@@ -19,12 +20,19 @@ npm run preview   # serves dist/ as it will be published
 |---|---|
 | `astro.config.mjs` | static output into `dist/`, a folder per page with a trailing slash, no inline styles or scripts, images through sharp |
 | `src/pages/index.astro` | the home page; each section is a component in `src/components/home/` |
+| `src/pages/docs/[...slug].astro` | one documentation page for each file `src/docs/pages.ts` lists |
+| `src/pages/docs/search-index.json.ts` | the search index of the documentation, written at build time |
 | `src/pages/404.astro` | the page the host serves for an address that does not exist |
 | `src/pages/sitemap.xml.ts` | `sitemap.xml`, written at build time |
 | `src/layouts/Page.astro` | the head with its metadata, the header and the footer of every page |
+| `src/layouts/Docs.astro` | a documentation page: side navigation with search, contents, previous and next |
+| `src/content.config.ts` | the `docs` collection: the listed `docs/*.md` files, read as GitHub shows them |
+| `src/docs/pages.ts` | which `docs/*.md` files are pages, in which group and order, and their addresses |
+| `src/docs/html.ts` | turns the HTML Astro renders from a doc into a page (below) |
 | `src/components/Screenshot.astro` | one app screenshot, light and dark, as WebP at the widths a place needs |
 | `src/styles/site.css` | every style, with the tokens on `:root` |
 | `src/scripts/copy-buttons.ts` | adds a Copy button to code blocks; the page works without it |
+| `src/scripts/docs-search.ts` | keeps the docs menu open beside the page and runs the search; the docs work without it |
 | `src/site.ts` | the addresses the pages link to |
 | `src/assets/screens/` | the app screenshots the build resizes |
 | `public/` | files copied as they are: `favicon.svg` (a copy of `design/icon/dayhand-icon.svg`), `robots.txt`, and `apple-touch-icon.png` and `og-image.png`, rendered by `scripts/render-site-images.sh` from the icon and `og-image.svg` |
@@ -34,8 +42,32 @@ Check the build with `scripts/check-site.sh` before every change is merged (`--b
 first). It reads `site/dist/`: HTML structure, image attributes, internal links and fragments, that pages
 link with a trailing slash, that nothing a page loads comes from another server, the metadata of every page
 (description; canonical address, Open Graph tags and a sitemap entry, or `noindex`), the 404 page, the
-image weight of a page, `sitemap.xml` and `robots.txt`. Its CSS/JS scans are static lint rules for URL
-literals and the CSS patterns ruled out below; they do not run code or watch network requests.
+image weight of a page, the documentation search index, `sitemap.xml` and `robots.txt`. Its CSS/JS scans
+are static lint rules for URL literals and the CSS patterns ruled out below; they do not run code or watch
+network requests.
+
+## Documentation pages (`docs/`)
+
+The documentation pages are the `docs/*.md` files that `src/docs/pages.ts` lists: `docs/README.md` is
+`/docs/` and any other file is `/docs/<name>/`. Astro renders them with its built-in Markdown, without code
+highlighting (it would put a `style` attribute on every token), and `src/docs/html.ts` finishes each page:
+
+- raw HTML that is not a known element is shown as text, because the docs write placeholders such as
+  `<deployment>` in plain text;
+- the `#` title and the first paragraph become the page title and description;
+- a link to a listed doc goes to its page, a link to any other file in the repository goes to GitHub, a
+  link to a file that does not exist stops the build, and a bare `https://…` in a sentence stays text;
+- tables and code blocks scroll on their own and take keyboard focus, and shell blocks get a Copy button.
+
+The search index (`/docs/search-index.json`) has one entry per section: the text before the first `##`
+heading, then each `##` section. `src/scripts/docs-search.ts` fetches it the first time someone uses the
+search box. On narrow screens the side navigation is a menu that starts folded, and beside the page it is
+always open, so nothing moves when the script runs. Without JavaScript the menu is a plain `<details>` and
+the search box is hidden (`@media (scripting: none)`).
+
+To add a page, write `docs/<name>.md` with a `#` title and a first paragraph that says what the page is
+for, add it to `SECTIONS` in `src/docs/pages.ts`, then build and run `scripts/check-site.sh`, which checks
+every link and fragment between the pages.
 
 ## Deploying
 
@@ -95,14 +127,16 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **One focus ring** with `:focus-visible` in the accent colour (the code colour on the dark code
   background), never `outline: none`; a skip link is the first element on the page.
 - **Hover only where hover exists** (`hover: hover` and `pointer: fine`), press feedback with
-  `scale: 0.97`, and hit areas of at least 44 px for buttons and navigation links (a positioned
-  `::after` on the small ones).
+  `scale: 0.97`, and hit areas of at least 44 px for buttons and the header and footer links (a positioned
+  `::after` on the small ones); the stacked links of the docs navigation are 36 px tall, above the 24 px
+  that WCAG 2.5.8 asks for.
 - **Opt-in motion.** Movement only inside `prefers-reduced-motion: no-preference`; colour fades stay
   outside. Transitions name their properties (never `transition: all`), use an ease-out token and stay
   under 300 ms.
 - **`overflow: clip` instead of `hidden`** on the terminal frames, and `tabular-nums` only on the step
   numbers.
-- **Native elements before scripts.** The FAQ is `<details>`; JavaScript only adds Copy buttons.
+- **Native elements before scripts.** The FAQ and the docs menu are `<details>`, the search box is
+  `<search>`; JavaScript only adds Copy buttons, keeps the docs menu open beside the page and searches.
 - **Never disable zoom**, never `user-select: none` on text you read (only on the `$` prompt of the
   terminal samples), never truncate text.
 
@@ -112,10 +146,11 @@ scroll-driven animation, `text-box` and `@property`.
 ## Accessibility
 
 - Text, links and badges reach WCAG AA contrast in both themes: worked out from the colour tokens in
-  October 2026, the lowest pair is 6.1:1. Lighthouse scored accessibility 100 for the home page on a
-  desktop in the light theme and on a phone in the dark one.
+  October 2026, the lowest pair is 6.1:1. Lighthouse scored accessibility, best practices and SEO 100 for
+  the home page and the `cli` and `deploy` docs, on a desktop and on a phone, with no layout shift.
 - Landmarks: `header`, `nav` (named "Main" and "Footer"), `main`, `footer`; each section is labelled by its
-  heading, and headings go in order (one `h1`).
+  heading, and headings go in order (one `h1`). Docs pages add the "Documentation" navigation, an "On
+  this page" list for pages with four or more sections, and "Previous and next page".
 - Every screenshot has alt text that says what the screen shows; decorative images have `alt=""`. Code
   blocks and rows that scroll sideways are focusable and named.
 - The Copy button announces the result through a `role="status"` element.

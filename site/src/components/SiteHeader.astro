@@ -2,6 +2,7 @@
 // The bar at the top of every page: the name, which leads home, and the main links.
 import { DOCS_PATH, REPO_URL } from "../site";
 
+const here = Astro.url.pathname;
 const links = [
   { href: "/#screens", label: "Screens" },
   { href: "/#agents", label: "Agents" },
@@ -19,7 +20,15 @@ const links = [
   </a>
   <nav aria-label="Main">
     <ul>
-      {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+      {
+        links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={link.href === DOCS_PATH && here.startsWith(DOCS_PATH) ? "page" : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
     </ul>
   </nav>
 </header>

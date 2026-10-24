@@ -147,18 +147,18 @@ h3 { font-size: var(--step-1); }
   justify-self: start;
 }
 .brand img { inline-size: 1.6em; block-size: 1.6em; border-radius: 0.4em; flex: none; }
-nav ul {
+:is(.site-header, .site-footer) nav ul {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs) var(--space-s);
   padding: 0;
   list-style: none;
 }
-nav a { position: relative; color: var(--text); text-decoration: none; font-size: var(--step--1); font-weight: 500; }
+.site-header nav a, .site-footer nav a { position: relative; color: var(--text); text-decoration: none; font-size: var(--step--1); font-weight: 500; }
 /* A larger hit area than the text. */
-nav a::after { content: ""; position: absolute; inset: -0.75rem -0.3rem; }
+:is(.site-header, .site-footer) nav a::after { content: ""; position: absolute; inset: -0.75rem -0.3rem; }
 @media (hover: hover) and (pointer: fine) {
-  nav a:hover { color: var(--accent); }
+  :is(.site-header, .site-footer) nav a:hover { color: var(--accent); }
 }
 
 /* Hero */
@@ -468,6 +468,141 @@ pre.code {
 .brand-line { display: flex; align-items: center; gap: 0.5em; }
 .brand-line img { inline-size: 1.4em; block-size: 1.4em; border-radius: 0.3em; flex: none; }
 .site-footer nav a { color: var(--accent); text-decoration: underline; }
+
+/* Documentation: the side navigation with search, then the page. The menu folds on narrow screens. */
+.site-header nav a[aria-current="page"] { color: var(--accent); }
+.docs {
+  display: grid;
+  gap: var(--space-m) var(--space-l);
+  inline-size: min(100% - 2 * var(--gutter), var(--content));
+  margin-inline: auto;
+  padding-block: var(--space-m) var(--space-xl);
+}
+@media (width >= 60rem) {
+  .docs { grid-template-columns: 16rem minmax(0, 1fr); align-items: start; }
+  .docs-side {
+    position: sticky;
+    inset-block-start: var(--space-s);
+    max-block-size: calc(100svh - 2 * var(--space-s));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+.docs-menu > summary {
+  padding: 0.6rem var(--space-s);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-inner);
+  background: var(--surface);
+  font-weight: 700;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.docs-menu[open] > summary { margin-block-end: var(--space-xs); }
+/* Beside the page the menu shows before the script opens it, where the browser can style its content. */
+@media (width >= 60rem) {
+  @supports selector(::details-content) {
+    .docs-menu > summary { display: none; }
+    .docs-menu::details-content { display: block; content-visibility: visible; }
+  }
+}
+.docs-nav-title {
+  margin-block: var(--space-s) var(--space-2xs);
+  color: var(--muted);
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+.docs-side ul { display: grid; margin: 0; padding: 0; list-style: none; }
+.docs-side nav a {
+  display: flex;
+  align-items: center;
+  min-block-size: 2.25rem;
+  padding-inline: 0.6rem;
+  border-radius: var(--radius-inner);
+  color: var(--text);
+  font-size: var(--step--1);
+  text-decoration: none;
+}
+.docs-side nav a[aria-current="page"] { background: var(--surface); color: var(--accent); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) {
+  .docs-side nav a:hover { color: var(--accent); }
+}
+.docs-search { display: grid; gap: var(--space-2xs); margin-block-end: var(--space-xs); }
+/* The search needs the script; the box is in the page from the start so nothing moves when it runs. */
+@media (scripting: none) {
+  .docs-search { display: none; }
+}
+.docs-search label { font-size: var(--step--1); font-weight: 600; }
+.docs-search input {
+  min-block-size: 2.75rem;
+  padding-inline: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-inner);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+.docs-search-status { color: var(--muted); font-size: var(--step--1); }
+.docs-search-status:empty { display: none; }
+.docs-search-results { display: grid; gap: var(--space-xs); margin: 0; padding: 0; list-style: none; }
+.docs-search-results a { font-size: var(--step--1); font-weight: 600; }
+.docs-search-results p { color: var(--muted); font-size: var(--step--1); }
+
+.docs-article { min-inline-size: 0; max-inline-size: 48rem; }
+.docs-crumb { color: var(--muted); font-size: var(--step--1); font-weight: 600; }
+.docs-article h1 { margin-block: var(--space-2xs) var(--space-m); font-size: var(--step-3); letter-spacing: -0.01em; }
+.docs-toc {
+  margin-block-end: var(--space-m);
+  padding: var(--space-s) var(--space-m);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.docs-toc p { font-size: var(--step--1); font-weight: 700; }
+.docs-toc ul { margin: var(--space-2xs) 0 0; padding: 0; list-style: none; columns: 2 14rem; column-gap: var(--space-m); }
+.docs-toc li { padding-block: 0.15rem; font-size: var(--step--1); break-inside: avoid; }
+
+.prose { line-height: 1.65; }
+.prose > * + * { margin-block-start: var(--space-s); }
+.prose h2 { margin-block-start: var(--space-l); font-size: var(--step-2); }
+.prose h3 { margin-block-start: var(--space-m); font-size: var(--step-1); }
+.prose h4 { margin-block-start: var(--space-m); font-size: var(--step-0); }
+.prose :is(h2, h3, h4) { scroll-margin-block-start: var(--space-s); }
+.prose :is(ul, ol) { padding-inline-start: 1.4em; }
+.prose li + li, .prose li > :is(ul, ol, p) { margin-block-start: 0.3em; }
+/* Long commands and addresses in running text wrap instead of pushing the page sideways. */
+.prose :not(pre) > code { white-space: normal; overflow-wrap: anywhere; }
+.prose blockquote { margin-inline: 0; padding-inline-start: var(--space-s); border-inline-start: 3px solid var(--border); color: var(--muted); }
+.prose hr { margin-block: var(--space-l); border: 0; border-block-start: 1px solid var(--border); }
+.prose pre {
+  padding: var(--space-xs) var(--space-s);
+  border-radius: var(--radius-inner);
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-size: var(--step--1);
+  line-height: 1.5;
+  overflow-x: auto;
+}
+.prose .code-wrap pre { padding-block-start: 2.4rem; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-inner); }
+.prose table { inline-size: 100%; border-collapse: collapse; font-size: var(--step--1); }
+.prose :is(th, td) { padding: 0.45rem 0.7rem; border-block-end: 1px solid var(--border); text-align: start; vertical-align: top; }
+.prose thead th { background: var(--surface); }
+.prose tbody tr:last-child td { border-block-end: 0; }
+/* A table scrolls on its own, so code in a cell keeps its words whole and widens the column instead. */
+.prose :is(th, td) code { overflow-wrap: normal; }
+
+.docs-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-s);
+  margin-block-start: var(--space-xl);
+  padding-block-start: var(--space-m);
+  border-block-start: 1px solid var(--border);
+}
+.docs-pager a { display: grid; gap: 0.1rem; max-inline-size: 48%; font-weight: 600; text-decoration: none; }
+.docs-pager a[rel="next"] { margin-inline-start: auto; text-align: end; }
+.docs-pager a span { color: var(--muted); font-size: var(--step--1); font-weight: 400; }
+.docs-source { margin-block-start: var(--space-m); color: var(--muted); font-size: var(--step--1); }
 
 .visually-hidden {
   position: absolute;

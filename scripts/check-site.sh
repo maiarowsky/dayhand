@@ -9,6 +9,7 @@
 # - metadata: every page has a description; a page for search engines has a canonical address of its own,
 #   Open Graph tags and a place in sitemap.xml, and any other page says noindex; 404.html and robots.txt exist;
 # - images: what one page loads at the widest srcset candidates, for one colour scheme, stays within a budget;
+# - the documentation search index: every entry points at a page and a section that exist;
 # - static CSS/JS lint: CSS url() paths, no @import, outline: none or transition: all, and no server URL
 #   literals in scripts. These pattern scans do not observe browser network behaviour.
 #
@@ -32,7 +33,7 @@ esac
 [ -d "$DIST" ] || { echo "check-site: no build in $DIST; run scripts/check-site.sh --build" >&2; exit 2; }
 
 exec python3 -I - "$DIST" <<'PY'
-import os, re, sys
+import json, os, re, sys
 from html.parser import HTMLParser
 from urllib.parse import urlsplit, unquote
 from xml.etree import ElementTree
@@ -306,6 +307,27 @@ if not_found not in pages:
     problems.append("404.html is missing (the host serves it for unknown addresses)")
 elif "noindex" not in pages[not_found][0].meta.get("robots", "").lower():
     problem(not_found, 1, "the 404 page should say noindex")
+
+search_index = os.path.join(DIST, "docs", "search-index.json")
+if os.path.isdir(os.path.join(DIST, "docs")):
+    try:
+        with open(search_index, encoding="utf-8") as f:
+            entries = json.load(f)
+    except (OSError, ValueError) as error:
+        problems.append(f"docs/search-index.json cannot be read: {error}")
+        entries = []
+    if not isinstance(entries, list) or not entries:
+        problems.append("docs/search-index.json lists no sections")
+        entries = []
+    for n, entry in enumerate(entries, 1):
+        if not isinstance(entry, dict) or not all(isinstance(entry.get(k), str) for k in ("t", "p", "u", "x")):
+            problem(search_index, n, "an entry needs the strings t, p, u and x")
+            continue
+        target = local_target(search_index, entry["u"]) if entry["u"].startswith("/") else None
+        if target is None or target[0] not in pages:
+            problem(search_index, n, f"{entry['u']} is not a page of this site")
+        elif target[1] and target[1] not in pages[target[0]][0].ids:
+            problem(search_index, n, f'{entry["u"]}: no id "{target[1]}"')
 
 sitemap = os.path.join(DIST, "sitemap.xml")
 robots = os.path.join(DIST, "robots.txt")

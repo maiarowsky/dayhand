@@ -1,13 +1,20 @@
-// The documentation at dayhand.dev/docs: which docs/*.md files become pages, in which order and group.
-// A page's file name in site/docs/ is its source name with .html (README.md becomes index.html).
-// Links between these files become links between the pages; links to any other file in the repository
-// go to that file on GitHub.
+// The documentation at dayhand.dev/docs/: which docs/*.md files become pages, in which group and order, and
+// the address of each. docs/README.md is /docs/; any other page is /docs/<file name without .md>/. Links to
+// a docs/*.md file that is not listed here, or to any other file in the repository, go to GitHub.
 
-export const REPOSITORY = "https://github.com/maiarowsky/dayhand";
-export const BRANCH = "main";
-export const ORIGIN = "https://dayhand.dev";
+export interface DocsPage {
+  /** The file in docs/, such as `deploy.md`. */
+  src: string;
+  /** The name in the side navigation. */
+  nav: string;
+}
 
-export const SECTIONS = [
+export interface DocsSection {
+  title: string;
+  pages: DocsPage[];
+}
+
+export const SECTIONS: DocsSection[] = [
   {
     title: "Get started",
     pages: [
@@ -62,4 +69,19 @@ export const SECTIONS = [
   },
 ];
 
-export const pageFile = (src) => (src === "README.md" ? "index.html" : src.replace(/\.md$/, ".html"));
+/** Every page in reading order, with the title of its group. */
+export const PAGES = SECTIONS.flatMap((section) => section.pages.map((page) => ({ ...page, section: section.title })));
+
+/** The slug of a page: empty for docs/README.md, otherwise the file name without .md. */
+export const docsSlug = (src: string): string => (src === "README.md" ? "" : src.replace(/\.md$/, ""));
+
+/** The address of a page on the site, always with a trailing slash. */
+export const docsPath = (src: string): string => {
+  const slug = docsSlug(src);
+  return slug ? `/docs/${slug}/` : "/docs/";
+};
+
+const LISTED = new Set(PAGES.map((page) => page.src));
+
+/** Whether docs/<src> is a page of the site, rather than a file shown on GitHub. */
+export const isDocsPage = (src: string): boolean => LISTED.has(src);
