@@ -19,7 +19,7 @@
       "properties": {
         "code": {
           "type": "string",
-          "description": "usage, config, invalid_argument, not_found, unauthenticated, precondition_failed, conflict, rate_limited, unavailable, interrupted, internal (values may be added)"
+          "description": "usage, config, invalid_argument, not_found, unauthenticated, precondition_failed, conflict, agents_paused, forbidden, approval_required, rate_limited, unavailable, interrupted, internal (values may be added)"
         },
         "message": {
           "type": "string"
@@ -33,6 +33,7 @@
             4,
             5,
             6,
+            7,
             130
           ]
         },
@@ -57,6 +58,10 @@
         },
         "hint": {
           "type": "string"
+        },
+        "approvalId": {
+          "type": "string",
+          "description": "Only with approval_required: the approval request to wait for (dayhand approval <id>)"
         }
       }
     }

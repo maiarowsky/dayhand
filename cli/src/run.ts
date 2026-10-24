@@ -24,6 +24,7 @@ export type GlobalOpts = {
   plain?: boolean;
   fields?: string;
   clientId?: string;
+  approval?: string;
   yes?: boolean;
   input?: boolean;
   dryRun?: boolean;
@@ -93,7 +94,7 @@ function context(io: Io, setup: Setup, global: GlobalOpts, { format, out, fields
     keyStores: () => keyStores(io.env, setup.paths.configDir, warn),
     client: () =>
       (client ??= resolveConnection(flags, io.env, setup.config(), warn, credentialStores(io.env, setup.paths.configDir, warn)).then(
-        (connection) => new DayhandClient(connection, io.fetch, held),
+        (connection) => new DayhandClient(connection, io.fetch, held, undefined, global.approval),
       )),
     clientFor: (url, key) => new DayhandClient({ url, key }, io.fetch),
     clientId: () => {

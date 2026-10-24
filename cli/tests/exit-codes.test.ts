@@ -110,6 +110,27 @@ describe("exit codes", () => {
     expectFailure(await dayhand(key, ["renew", "1", "--json"]), 6, "precondition_failed");
   });
 
+  test("7: the owner's controls: agents paused, a policy deny, an approval to wait for", async () => {
+    const { userId, key: owner } = await newUser();
+    const created = await createKey(userId, "worker", "agent");
+    const agent = created.key;
+    await dayhand(owner, ["add", "Shared"]);
+    expect((await dayhand(owner, ["agents", "pause", "--reason", "lunch"])).code).toBe(0);
+    const paused = expectFailure(await dayhand(agent, ["done", "1", "--json"]), 7, "agents_paused");
+    expect(paused.message).toContain("lunch");
+    expect((await dayhand(agent, ["today"])).code).toBe(0);
+    expect((await dayhand(owner, ["agents", "resume"])).code).toBe(0);
+    expectFailure(await dayhand(agent, ["agents", "pause", "--json"]), 7, "forbidden");
+
+    expect((await dayhand(owner, ["policy", "set", created.id, "complete_task", "ask"])).code).toBe(0);
+    const held = expectFailure(await dayhand(agent, ["done", "1", "--json"]), 7, "approval_required");
+    expect(held.approvalId).toEqual(expect.any(String));
+    expect(held.hint).toContain(`--approval ${held.approvalId}`);
+    expect((await dayhand(owner, ["approvals", "decide", held.approvalId, "allow"])).code).toBe(0);
+    expect((await dayhand(agent, ["done", "1", "--approval", held.approvalId])).code).toBe(0);
+    expect((await dayhandJson(owner, ["show", "1"])).task.status).toBe("done");
+  });
+
   test("5: backend unreachable, 5xx, or 429 (rate_limited), with a clientId to retry", async () => {
     const { key } = await newUser();
     const closed = `http://127.0.0.1:${await freePort()}`;

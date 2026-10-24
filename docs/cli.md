@@ -38,6 +38,20 @@ Without a command, `dayhand` shows Today.
 | `dayhand renew <ref> [options]` | `renew_claim` | [task](schemas/task.schema.json) | Extend your claim of a task by --minutes from now (default 120) |
 | `dayhand release <ref> [options]` | `release_task` | [task](schemas/task.schema.json) | End your claim of a task, optionally leaving a checkpoint as its resume note |
 | `dayhand criteria <ref> [options]` | `get_task`, `update_task` | [task-detail](schemas/task-detail.schema.json), [task](schemas/task.schema.json) | Print a task's acceptance criteria, or mark them met, unmet, remove and add them |
+| `dayhand ask <action...> [options]` | `request_approval` | [approval](schemas/approval.schema.json) | Ask the owner to decide before you do something; they answer on the phone |
+| `dayhand approval <id> [options]` | `get_approval` | [approval](schemas/approval.schema.json) | One approval request and, once decided, the owner's choice |
+| `dayhand approvals [options]` | `list_approvals` | [approval-list](schemas/approval-list.schema.json) | Approval requests, newest first |
+| `dayhand approvals decide <id> <option> [options]` | `decide_approval` | [approval](schemas/approval.schema.json) | Pick an option of a pending approval request |
+| `dayhand agents` | `get_agent_controls` | [agent-controls](schemas/agent-controls.schema.json) | Whether agents are paused, and the tool policies of agent keys |
+| `dayhand agents pause [options]` | `pause_agents` | [agent-controls](schemas/agent-controls.schema.json) | Pause every agent: they can read, their changes are refused until you resume them |
+| `dayhand agents resume` | `pause_agents` | [agent-controls](schemas/agent-controls.schema.json) | Let agents change the plan again |
+| `dayhand policy` | `get_agent_controls` | [agent-controls](schemas/agent-controls.schema.json) | Tool policies of agent keys: allow, ask (the owner approves each call) or deny |
+| `dayhand policy set <key> <tool> <rule>` | `set_tool_policy` | [agent-controls](schemas/agent-controls.schema.json) | Set one agent key's rule for a tool that changes the plan, or "*" for every such tool |
+| `dayhand proposals` | `list_all` | [task-list](schemas/task-list.schema.json) | The proposal inbox: tasks agents and integrations proposed, waiting for you |
+| `dayhand proposals accept <ref>` | `accept_proposal` | [task](schemas/task.schema.json) | Accept a proposal: it joins the plan as it is |
+| `dayhand proposals merge <ref> [options]` | `merge_proposal` | [merge](schemas/merge.schema.json) | Merge a proposal into a task already in the plan; the proposal goes to the trash |
+| `dayhand proposals reject <ref> [options]` | `reject_proposal` | [task](schemas/task.schema.json) | Reject a proposal: it goes to the trash (restorable for 30 days) |
+| `dayhand health` | `plan_health` | [plan-health](schemas/plan-health.schema.json) | What needs a look: overdue, blocked, stale claims, approvals, proposals, done without proof |
 | `dayhand settings` | `get_settings` | [settings](schemas/settings.schema.json) | Show settings (time zone, morning summary time, default reminders) |
 | `dayhand settings get` | `get_settings` | [settings](schemas/settings.schema.json) | Show settings |
 | `dayhand settings set <pairs...>` | `update_settings` | [settings](schemas/settings.schema.json) | Change settings: timezone, summaryTime (summary-time), defaultReminderMinutes (reminders) |
@@ -91,6 +105,7 @@ Without a command, `dayhand` shows Today.
 | `--plain` | Tab-separated text without headers (for scripts) |
 | `--fields <names>` | Comma-separated task (or settings) fields for JSON and columns |
 | `--client-id <id>` | Operation id for safe retries (default: generated, shown on errors) |
+| `--approval <id>` | Run a change the owner's policy held back, with the approval request they allowed (exit 7 names it) |
 | `-y, --yes` | Confirm changing many tasks at once |
 | `--no-input` | Never prompt (also DAYHAND_NO_INPUT=1); prompts need a terminal anyway |
 | `--dry-run` | Show the changes a command would make (dates resolved), checked by the backend, and save nothing |
@@ -140,10 +155,12 @@ On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options ope
 | 4 | Not found: no such task (#n), device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
 | 6 | Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed) |
+| 7 | Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>) |
 | 130 | Interrupted (Ctrl-C) |
 
 Backend error codes map to exit codes: `invalid_argument` → 2, `unauthenticated` → 3,
-`not_found` → 4, `rate_limited` → 5, `conflict` and `precondition_failed` → 6, `internal` and unknown codes → 1.
+`not_found` → 4, `rate_limited` → 5, `conflict` and `precondition_failed` → 6, `agents_paused`, `forbidden` and
+`approval_required` → 7, `internal` and unknown codes → 1.
 
 ## Retries
 
@@ -406,6 +423,10 @@ dayhand add <title...> [options]
 | `--plan <text>` | How the work will be done |
 | `--depends-on <ref>` | A task that must be done first (repeatable) |
 | `--blocked <reason>` | Why the task cannot go on; a blocked task is not ready |
+| `--propose` | A proposal: it waits in the owner's inbox, out of Today, until accepted |
+| `--source <source>` | Where it comes from, "<kind>:<ref>" optionally followed by a URL; one source makes one task |
+| `--requested-by <who>` | Who asked for it |
+| `--return-to <webhookId>` | A webhook that hears, with the proof, when the task closes (dayhand webhook list) |
 
 ```sh
 dayhand add Call the accountant --due "fri 2pm" -l home
@@ -416,6 +437,7 @@ dayhand add Water plants --every day --interval 3 --from-completion
 dayhand add Pack --due fri --item passport --item charger
 dayhand add Buy a present --no-due --json
 dayhand add "Ship the export" --no-due --accept "CSV opens in a spreadsheet" --plan "write, then test" --depends-on 41
+dayhand add "Checkout times out" --propose --source "sentry:CHECKOUT-42 https://sentry.example.com/issues/42"
 ```
 
 ### dayhand list
@@ -866,6 +888,266 @@ dayhand criteria <ref> [options]
 dayhand criteria 42
 dayhand criteria 42 --add "Tests pass" --add "Docs updated"
 dayhand criteria 42 --met 1,2
+```
+
+### dayhand ask
+
+Ask the owner to decide before you do something; they answer on the phone
+
+Give 2 to 4 --option, each "label: consequence". Read the answer with dayhand approval <id> (--wait to wait for it). Dayhand records the decision; acting on it is up to you. Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand ask <action...> [options]
+```
+
+- `action`: What you want to do, as one short sentence
+
+| Option | Meaning |
+|---|---|
+| `--option <text>` | A choice, "label: what happens then" (repeatable, 2 to 4) |
+| `--detail <text>` | Why, and what the owner needs to know |
+| `--task <ref>` | The task it is about |
+| `--reversible` | What you want to do can be undone (default: it cannot) |
+| `--expires <span>` | How long the owner has: minutes, 30m, 2h, 1d (default 1d, at most 7d) |
+
+```sh
+dayhand ask Deploy 2.4 to production --option "Deploy now: live in 10 minutes" --option "Wait: nothing changes until Monday" --expires 2h
+dayhand ask Delete old backups --task 42 --option Yes --option No --json
+```
+
+### dayhand approval
+
+One approval request and, once decided, the owner's choice
+
+--wait <seconds> checks every 5 s until the request is decided or expired, or the time is up. Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand approval <id> [options]
+```
+
+- `id`: Id of the approval request
+
+| Option | Meaning |
+|---|---|
+| `--wait <seconds>` | Wait up to this many seconds for a decision |
+
+```sh
+dayhand approval <id>
+dayhand approval <id> --wait 600 --json
+```
+
+### dayhand approvals
+
+Approval requests, newest first
+
+Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand approvals [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--status <status>` | Only pending, decided or expired requests (pending, decided, expired) |
+| `--task <ref>` | Only requests about this task |
+| `--limit <n>` | At most this many, 1 to 200 (default 50) |
+
+```sh
+dayhand approvals --status pending
+dayhand approvals --task 42 --json
+```
+
+### dayhand approvals decide
+
+Pick an option of a pending approval request
+
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand approvals decide <id> <option> [options]
+```
+
+- `id`: Id of the approval request
+- `option`: Id of the chosen option (o1, allow, …)
+
+| Option | Meaning |
+|---|---|
+| `--note <text>` | A word for the agent with the decision |
+
+```sh
+dayhand approvals decide <id> o2 --note "after the weekend"
+dayhand approvals decide <id> allow
+```
+
+### dayhand agents
+
+Whether agents are paused, and the tool policies of agent keys
+
+Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand agents
+```
+
+```sh
+dayhand agents
+dayhand agents pause --reason holiday
+dayhand agents resume
+```
+
+### dayhand agents pause
+
+Pause every agent: they can read, their changes are refused until you resume them
+
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand agents pause [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--reason <text>` | Why; agents see it in the error |
+
+```sh
+dayhand agents pause
+dayhand agents pause --reason "going on holiday"
+```
+
+### dayhand agents resume
+
+Let agents change the plan again
+
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand agents resume
+```
+
+```sh
+dayhand agents resume
+```
+
+### dayhand policy
+
+Tool policies of agent keys: allow, ask (the owner approves each call) or deny
+
+Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand policy
+```
+
+```sh
+dayhand policy
+dayhand policy set <keyId> delete_task deny
+dayhand policy set <keyId> "*" ask
+```
+
+### dayhand policy set
+
+Set one agent key's rule for a tool that changes the plan, or "*" for every such tool
+
+The key's id comes from dayhand key list. allow removes the rule (unless "*" says otherwise). Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand policy set <key> <tool> <rule>
+```
+
+- `key`: Id of an agent API key
+- `tool`: A tool that changes the plan (dayhand tools), or "*"
+- `rule`: allow, ask or deny
+
+```sh
+dayhand policy set <keyId> complete_task ask
+```
+
+### dayhand proposals
+
+The proposal inbox: tasks agents and integrations proposed, waiting for you
+
+Accept, merge or reject them with the subcommands; proposals stay out of Today, list and the board until accepted. Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand proposals
+```
+
+```sh
+dayhand proposals
+dayhand proposals accept 42
+dayhand proposals merge 43 --into 12
+dayhand proposals reject 44 --reason "not now"
+```
+
+### dayhand proposals accept
+
+Accept a proposal: it joins the plan as it is
+
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand proposals accept <ref>
+```
+
+- `ref`: The proposal: #42 or 42
+
+```sh
+dayhand proposals accept 42
+```
+
+### dayhand proposals merge
+
+Merge a proposal into a task already in the plan; the proposal goes to the trash
+
+The task gets the proposal's note, links, labels, source and return webhooks. Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand proposals merge <ref> [options]
+```
+
+- `ref`: The proposal: #42 or 42
+
+| Option | Meaning |
+|---|---|
+| `--into <ref>` | The task to merge it into (required) |
+
+```sh
+dayhand proposals merge 43 --into 12
+```
+
+### dayhand proposals reject
+
+Reject a proposal: it goes to the trash (restorable for 30 days)
+
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+
+```
+dayhand proposals reject <ref> [options]
+```
+
+- `ref`: The proposal: #42 or 42
+
+| Option | Meaning |
+|---|---|
+| `--reason <text>` | Why; the return webhook gets it |
+
+```sh
+dayhand proposals reject 44 --reason "not this quarter"
+```
+
+### dayhand health
+
+What needs a look: overdue, blocked, stale claims, approvals, proposals, done without proof
+
+Each section counts every task and lists the first 20. Needs backend 0.11.0 or later (dayhand version).
+
+```
+dayhand health
+```
+
+```sh
+dayhand health
+dayhand health --json
 ```
 
 ### dayhand settings

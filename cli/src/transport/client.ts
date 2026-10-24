@@ -35,7 +35,20 @@ export type HeldCall =
   | { endpoint: string; body: unknown; method?: "PATCH" | "DELETE" };
 
 /** Tools that only read; every other tool (including unknown ones) counts as a change. */
-export const READ_ONLY_TOOLS = new Set(["list_today", "list_all", "board", "get_task", "list_trash", "get_settings", "export_plan", "list_events"]);
+export const READ_ONLY_TOOLS = new Set([
+  "list_today",
+  "list_all",
+  "board",
+  "get_task",
+  "list_trash",
+  "get_settings",
+  "export_plan",
+  "list_events",
+  "get_approval",
+  "list_approvals",
+  "get_agent_controls",
+  "plan_health",
+]);
 
 type RpcResponse = { result?: any; error?: { code: number; message: string } };
 
@@ -54,6 +67,8 @@ export class DayhandClient {
     /** Set by --dry-run: changes are appended here and not sent. */
     private readonly held?: HeldCall[],
     private readonly timeoutMs = TIMEOUT_MS,
+    /** Set by --approval: every change carries the approval request the owner allowed (backend 0.11.0). */
+    private readonly approvalId?: string,
   ) {}
 
   /** The deployment HTTP actions URL (no trailing slash). */
@@ -131,8 +146,10 @@ export class DayhandClient {
 
   /** Calls a tool; a tool error (`isError`) is thrown with its backend code. */
   async callTool(name: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
-    if (this.held && !READ_ONLY_TOOLS.has(name)) return this.preview(name, args, this.held);
-    return this.send(name, args);
+    const change = !READ_ONLY_TOOLS.has(name);
+    const input = change && this.approvalId !== undefined ? { ...args, approvalId: this.approvalId } : args;
+    if (this.held && change) return this.preview(name, input, this.held);
+    return this.send(name, input);
   }
 
   private async send(name: string, args: Record<string, unknown>): Promise<ToolResult> {
@@ -141,9 +158,12 @@ export class DayhandClient {
     const text = content.find((c: { type?: string }) => c.type === "text")?.text ?? "";
     const structured = result.structuredContent as Record<string, unknown> | undefined;
     if (result.isError) {
-      const error = (structured?.error ?? {}) as { code?: unknown; message?: unknown; retryAfterMs?: unknown };
+      const error = (structured?.error ?? {}) as { code?: unknown; message?: unknown; retryAfterMs?: unknown; approvalId?: unknown };
       const message = typeof error.message === "string" ? error.message : text;
       if (error.code === "rate_limited") throw rateLimited(retryAfterSeconds(error.retryAfterMs), message);
+      if (typeof error.approvalId === "string") {
+        throw new CliError(toErrorCode(error.code), message, { approvalId: error.approvalId, hint: `dayhand approval ${error.approvalId}, then run the command again with --approval ${error.approvalId}` });
+      }
       throw new CliError(toErrorCode(error.code), message);
     }
     return { structured, text, content };

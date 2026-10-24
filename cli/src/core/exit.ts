@@ -10,6 +10,8 @@ export const EXIT = {
   unavailable: 5,
   /** The task's state refuses the change for now: another agent's claim, unmet acceptance criteria. */
   refused: 6,
+  /** The owner's controls refuse it (backend 0.11.0): agents paused, a tool policy, an approval to wait for. */
+  denied: 7,
   interrupted: 130,
 } as const;
 
@@ -26,6 +28,9 @@ export type ErrorCode =
   | "unauthenticated"
   | "precondition_failed"
   | "conflict"
+  | "agents_paused"
+  | "forbidden"
+  | "approval_required"
   | "rate_limited"
   | "unavailable"
   | "interrupted"
@@ -40,6 +45,10 @@ const EXIT_BY_CODE: Record<ErrorCode, number> = {
   // Nothing was applied; the message says what the task needs first (backend 0.10.0).
   precondition_failed: EXIT.refused,
   conflict: EXIT.refused,
+  // The owner said no, for now or for good; nothing was applied (backend 0.11.0).
+  agents_paused: EXIT.denied,
+  forbidden: EXIT.denied,
+  approval_required: EXIT.denied,
   // Too many calls with the key: nothing was applied; wait, then run it again.
   rate_limited: EXIT.unavailable,
   unavailable: EXIT.unavailable,
@@ -62,6 +71,8 @@ export type ErrorDetails = {
   valid?: string[];
   /** The task reference that failed in a command acting on several tasks. */
   ref?: string;
+  /** approval_required: the approval request to wait for (dayhand approval <id>). */
+  approvalId?: string;
 };
 
 export class CliError extends Error {

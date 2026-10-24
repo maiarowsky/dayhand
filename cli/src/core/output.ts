@@ -27,9 +27,9 @@ export class Output {
   }
 
   error(error: CliError): void {
-    const { retryable = false, clientId, hint, valid, ref } = error.details;
+    const { retryable = false, clientId, hint, valid, ref, approvalId } = error.details;
     if (this.format === "json") {
-      const body = { code: error.code, message: error.message, exitCode: error.exitCode, retryable, clientId, ref, valid, hint };
+      const body = { code: error.code, message: error.message, exitCode: error.exitCode, retryable, clientId, ref, valid, hint, approvalId };
       this.io.stderr.write(JSON.stringify({ error: body }) + "\n");
       return;
     }

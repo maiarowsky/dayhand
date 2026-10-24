@@ -3,19 +3,24 @@
 // and every --json output follows docs/schemas.
 import { describe, expect, test } from "vitest";
 import { flatten } from "../src/registry/index.js";
-import { admin, connectAgent, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
+import { admin, connectAgent, createKey, dayhand, dayhandJson, mcpClient, newUser, schemaValidator, sdkCall } from "./helpers.js";
 
 const validate = schemaValidator();
 const specOf = (path: string) => flatten().find((c) => c.path === path)!.spec;
 
 /** export_plan's exportedAt is the time of the call; everything else must match exactly. */
 const stable = (tool: string, value: any) => {
+  // plan_health states the time it was made.
+  if (tool === "plan_health") return { ...value, at: "<at>" };
   if (tool !== "export_plan") return value;
   const { exportedAt, ...content } = value.content;
   return { ...value, content };
 };
 
 type Case = { command: string[]; path: string; tool: string; args: Record<string, unknown> };
+
+/** Tools whose arguments name a request or a key made during the test: their own test below. */
+const BY_ID = ["get_approval", "decide_approval", "set_tool_policy"];
 
 // One user's day, in order. Changes carry a clientId, so the SDK call with the
 // same arguments is a replay that must return the same result.
@@ -54,6 +59,21 @@ const CASES: Case[] = [
   { path: "release", command: ["release", "6", "--note", "half way", "--client-id", "c-release"], tool: "release_task", args: { taskId: "#6", note: "half way", clientId: "c-release" } },
   { path: "log", command: ["log", "--task", "6", "--limit", "3"], tool: "list_events", args: { taskId: "#6", limit: 3 } },
   { path: "done", command: ["done", "6", "--summary", "Shipped", "--check", "tests=pass https://ci.example/1", "--client-id", "c-done-2"], tool: "complete_task", args: { taskId: "#6", proof: { summary: "Shipped", checks: [{ name: "tests", result: "pass", url: "https://ci.example/1" }] }, clientId: "c-done-2" } },
+  // Backend 0.11.0: approval requests, the owner's controls, proposals and plan health (a cli key is the owner).
+  { path: "ask", command: ["ask", "Send", "the", "report", "--option", "Send: it goes out today", "--option", "Hold", "--task", "3", "--expires", "2h", "--client-id", "c-ask"], tool: "request_approval", args: { action: "Send the report", options: [{ label: "Send", consequence: "it goes out today" }, { label: "Hold" }], reversible: false, taskId: "#3", expiresInMinutes: 120, clientId: "c-ask" } },
+  { path: "approvals", command: ["approvals", "--status", "pending"], tool: "list_approvals", args: { status: "pending" } },
+  { path: "agents pause", command: ["agents", "pause", "--reason", "quiet hours"], tool: "pause_agents", args: { paused: true, reason: "quiet hours" } },
+  { path: "agents", command: ["agents"], tool: "get_agent_controls", args: {} },
+  { path: "agents resume", command: ["agents", "resume"], tool: "pause_agents", args: { paused: false } },
+  { path: "policy", command: ["policy"], tool: "get_agent_controls", args: {} },
+  { path: "add", command: ["add", "Proposed", "fix", "--no-due", "--propose", "--source", "email:m-1", "--requested-by", "Ann", "--client-id", "c-prop-1"], tool: "add_task", args: { title: "Proposed fix", proposal: true, source: { kind: "email", ref: "m-1" }, requestedBy: "Ann", clientId: "c-prop-1" } },
+  { path: "add", command: ["add", "Proposed", "merge", "--no-due", "--propose", "--client-id", "c-prop-2"], tool: "add_task", args: { title: "Proposed merge", proposal: true, clientId: "c-prop-2" } },
+  { path: "add", command: ["add", "Proposed", "no", "--no-due", "--propose", "--client-id", "c-prop-3"], tool: "add_task", args: { title: "Proposed no", proposal: true, clientId: "c-prop-3" } },
+  { path: "proposals", command: ["proposals"], tool: "list_all", args: { proposed: true, limit: 200 } },
+  { path: "proposals accept", command: ["proposals", "accept", "7", "--client-id", "c-accept"], tool: "accept_proposal", args: { taskId: "#7", clientId: "c-accept" } },
+  { path: "proposals merge", command: ["proposals", "merge", "8", "--into", "6", "--client-id", "c-merge"], tool: "merge_proposal", args: { taskId: "#8", intoTaskId: "#6", clientId: "c-merge" } },
+  { path: "proposals reject", command: ["proposals", "reject", "9", "--reason", "not now", "--client-id", "c-reject"], tool: "reject_proposal", args: { taskId: "#9", reason: "not now", clientId: "c-reject" } },
+  { path: "health", command: ["health"], tool: "plan_health", args: {} },
   { path: "archive", command: ["archive", "1", "--client-id", "c-archive"], tool: "archive_task", args: { taskId: "#1", clientId: "c-archive" } },
   { path: "restore", command: ["restore", "1", "--client-id", "c-restore"], tool: "restore_task", args: { taskId: "#1", clientId: "c-restore" } },
   { path: "rm", command: ["rm", "1", "--client-id", "c-rm"], tool: "delete_task", args: { taskId: "#1", clientId: "c-rm" } },
@@ -62,13 +82,35 @@ const CASES: Case[] = [
 ];
 
 describe("agent contract", () => {
-  test("every one of the 21 MCP tools is reachable by a command", async () => {
+  test("every one of the 32 MCP tools is reachable by a command", async () => {
     const { key } = await newUser();
     const tools: string[] = (await dayhandJson(key, ["tools"])).tools.map((t: { name: string }) => t.name);
-    expect(tools).toHaveLength(21);
+    expect(tools).toHaveLength(32);
     const covered = new Set(flatten().flatMap((c) => c.spec.tools));
     expect(tools.filter((t) => !covered.has(t))).toEqual([]);
-    expect(new Set(CASES.map((c) => c.tool))).toEqual(new Set(tools));
+    expect(new Set([...CASES.map((c) => c.tool), ...BY_ID])).toEqual(new Set(tools));
+  });
+
+  test("commands on a request or a key by its id print what the SDK client gets", async () => {
+    const { userId, key } = await newUser();
+    const sdk = await mcpClient(key);
+    const asked = await dayhandJson(key, ["ask", "Rotate", "the", "keys", "--option", "Yes", "--option", "No"]);
+    const cases: Case[] = [
+      { path: "approval", command: ["approval", asked.id], tool: "get_approval", args: { approvalId: asked.id } },
+      { path: "approvals decide", command: ["approvals", "decide", asked.id, "o2", "--note", "next week"], tool: "decide_approval", args: { approvalId: asked.id, optionId: "o2", note: "next week" } },
+      { path: "approval", command: ["approval", asked.id, "--wait", "1"], tool: "get_approval", args: { approvalId: asked.id } },
+    ];
+    const agentKeyId = (await createKey(userId, "worker", "agent")).id;
+    cases.push({ path: "policy set", command: ["policy", "set", agentKeyId, "delete_task", "deny"], tool: "set_tool_policy", args: { apiKeyId: agentKeyId, toolName: "delete_task", rule: "deny" } });
+    for (const c of cases) {
+      const viaCommand = await dayhandJson(key, c.command);
+      const viaSdk = await sdkCall(sdk, c.tool, c.args);
+      expect(viaSdk.isError, `${c.tool} via SDK`).toBe(false);
+      expect(viaCommand, `dayhand ${c.command.join(" ")}`).toEqual(viaSdk.structured);
+      expect(validate(specOf(c.path).schema!, viaCommand), `schema of dayhand ${c.path}`).toEqual([]);
+    }
+    expect(validate(specOf("ask").schema!, asked)).toEqual([]);
+    await sdk.close();
   });
 
   test("--json and dayhand call print the MCP SDK client's structuredContent, valid against docs/schemas", async () => {

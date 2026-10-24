@@ -7,6 +7,7 @@ export const GLOBAL_OPTIONS: OptSpec[] = [
   { flags: "--plain", description: "Tab-separated text without headers (for scripts)" },
   { flags: "--fields <names>", description: "Comma-separated task (or settings) fields for JSON and columns" },
   { flags: "--client-id <id>", description: "Operation id for safe retries (default: generated, shown on errors)" },
+  { flags: "--approval <id>", description: "Run a change the owner's policy held back, with the approval request they allowed (exit 7 names it)" },
   { flags: "-y, --yes", description: `Confirm changing many tasks at once` },
   { flags: "--no-input", description: "Never prompt (also DAYHAND_NO_INPUT=1); prompts need a terminal anyway" },
   { flags: "--dry-run", description: "Show the changes a command would make (dates resolved), checked by the backend, and save nothing" },
@@ -15,4 +16,4 @@ export const GLOBAL_OPTIONS: OptSpec[] = [
   { flags: "--color <when>", description: "Colors in the human format", choices: ["auto", "always", "never"] },
   { flags: "--no-color", description: "Same as --color never (NO_COLOR=1 works too)" },
 ];
-export const VALUE_OPTIONS = new Set(["--fields", "--client-id", "--url", "--profile", "--color"]);
+export const VALUE_OPTIONS = new Set(["--fields", "--client-id", "--approval", "--url", "--profile", "--color"]);

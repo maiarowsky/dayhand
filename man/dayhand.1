@@ -91,6 +91,18 @@ A task that must be done first (repeatable)
 .TP
 .B \-\-blocked <reason>
 Why the task cannot go on; a blocked task is not ready
+.TP
+.B \-\-propose
+A proposal: it waits in the owner's inbox, out of Today, until accepted
+.TP
+.B \-\-source <source>
+Where it comes from, "<kind>:<ref>" optionally followed by a URL; one source makes one task
+.TP
+.B \-\-requested\-by <who>
+Who asked for it
+.TP
+.B \-\-return\-to <webhookId>
+A webhook that hears, with the proof, when the task closes (dayhand webhook list)
 .RE
 .TP
 .B dayhand list
@@ -424,6 +436,129 @@ Remove criteria (repeatable)
 Remove all criteria
 .RE
 .TP
+.B dayhand ask <action...>
+Ask the owner to decide before you do something; they answer on the phone
+.br
+Give 2 to 4 \-\-option, each "label: consequence". Read the answer with dayhand approval <id> (\-\-wait to wait for it). Dayhand records the decision; acting on it is up to you. Needs backend 0.11.0 or later (dayhand version).
+.RS
+.TP
+.B \-\-option <text>
+A choice, "label: what happens then" (repeatable, 2 to 4)
+.TP
+.B \-\-detail <text>
+Why, and what the owner needs to know
+.TP
+.B \-\-task <ref>
+The task it is about
+.TP
+.B \-\-reversible
+What you want to do can be undone (default: it cannot)
+.TP
+.B \-\-expires <span>
+How long the owner has: minutes, 30m, 2h, 1d (default 1d, at most 7d)
+.RE
+.TP
+.B dayhand approval <id>
+One approval request and, once decided, the owner's choice
+.br
+\-\-wait <seconds> checks every 5 s until the request is decided or expired, or the time is up. Needs backend 0.11.0 or later (dayhand version).
+.RS
+.TP
+.B \-\-wait <seconds>
+Wait up to this many seconds for a decision
+.RE
+.TP
+.B dayhand approvals
+Approval requests, newest first
+.br
+Needs backend 0.11.0 or later (dayhand version).
+.RS
+.TP
+.B \-\-status <status>
+Only pending, decided or expired requests (pending, decided, expired)
+.TP
+.B \-\-task <ref>
+Only requests about this task
+.TP
+.B \-\-limit <n>
+At most this many, 1 to 200 (default 50)
+.RE
+.TP
+.B dayhand approvals decide <id> <option>
+Pick an option of a pending approval request
+.br
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.RS
+.TP
+.B \-\-note <text>
+A word for the agent with the decision
+.RE
+.TP
+.B dayhand agents
+Whether agents are paused, and the tool policies of agent keys
+.br
+Needs backend 0.11.0 or later (dayhand version).
+.TP
+.B dayhand agents pause
+Pause every agent: they can read, their changes are refused until you resume them
+.br
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.RS
+.TP
+.B \-\-reason <text>
+Why; agents see it in the error
+.RE
+.TP
+.B dayhand agents resume
+Let agents change the plan again
+.br
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.TP
+.B dayhand policy
+Tool policies of agent keys: allow, ask (the owner approves each call) or deny
+.br
+Needs backend 0.11.0 or later (dayhand version).
+.TP
+.B dayhand policy set <key> <tool> <rule>
+Set one agent key's rule for a tool that changes the plan, or "*" for every such tool
+.br
+The key's id comes from dayhand key list. allow removes the rule (unless "*" says otherwise). Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.TP
+.B dayhand proposals
+The proposal inbox: tasks agents and integrations proposed, waiting for you
+.br
+Accept, merge or reject them with the subcommands; proposals stay out of Today, list and the board until accepted. Needs backend 0.11.0 or later (dayhand version).
+.TP
+.B dayhand proposals accept <ref>
+Accept a proposal: it joins the plan as it is
+.br
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.TP
+.B dayhand proposals merge <ref>
+Merge a proposal into a task already in the plan; the proposal goes to the trash
+.br
+The task gets the proposal's note, links, labels, source and return webhooks. Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.RS
+.TP
+.B \-\-into <ref>
+The task to merge it into (required)
+.RE
+.TP
+.B dayhand proposals reject <ref>
+Reject a proposal: it goes to the trash (restorable for 30 days)
+.br
+Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+.RS
+.TP
+.B \-\-reason <text>
+Why; the return webhook gets it
+.RE
+.TP
+.B dayhand health
+What needs a look: overdue, blocked, stale claims, approvals, proposals, done without proof
+.br
+Each section counts every task and lists the first 20. Needs backend 0.11.0 or later (dayhand version).
+.TP
 .B dayhand settings
 Show settings (time zone, morning summary time, default reminders)
 .TP
@@ -704,6 +839,9 @@ Comma\-separated task (or settings) fields for JSON and columns
 .B \-\-client\-id <id>
 Operation id for safe retries (default: generated, shown on errors)
 .TP
+.B \-\-approval <id>
+Run a change the owner's policy held back, with the approval request they allowed (exit 7 names it)
+.TP
 .B \-y, \-\-yes
 Confirm changing many tasks at once
 .TP
@@ -754,6 +892,9 @@ Server unavailable (network, timeout, HTTP 5xx): the change may have been applie
 .TP
 .B 6
 Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed)
+.TP
+.B 7
+Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with \-\-approval <approvalId>)
 .TP
 .B 130
 Interrupted (Ctrl\-C)

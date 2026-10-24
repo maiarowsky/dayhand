@@ -5,6 +5,7 @@ import { applyDue } from "./dates.js";
 import { FILTER_OPTIONS, hasFilters, listTasks, parseStatuses } from "./filters.js";
 import { eachRef, oneOrMany, tool, userTimezone } from "./ops.js";
 import { checklistOf, editChecklist, REMINDER_OPTIONS, remindersInput, REPEAT_OPTIONS, repeatInput } from "./model.js";
+import { PROPOSAL_OPTIONS, proposalArgs } from "./owner.js";
 import { parseLink, resolveRef } from "./parse.js";
 import type { CommandSpec, OptSpec, Opts, RunContext } from "./types.js";
 import { criteriaOf, PROOF_OPTIONS, proofInput } from "./work.js";
@@ -93,6 +94,7 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--item <text>", description: "Checklist item (repeatable, in order)", kind: "list" },
       ...REMINDER_OPTIONS,
       ...WORK_OPTIONS,
+      ...PROPOSAL_OPTIONS,
     ],
     tools: ["add_task"],
     fields: "task",
@@ -105,6 +107,7 @@ export const taskCommands: CommandSpec[] = [
       "dayhand add Pack --due fri --item passport --item charger",
       "dayhand add Buy a present --no-due --json",
       'dayhand add "Ship the export" --no-due --accept "CSV opens in a spreadsheet" --plan "write, then test" --depends-on 41',
+      'dayhand add "Checkout times out" --propose --source "sentry:CHECKOUT-42 https://sentry.example.com/issues/42"',
     ],
     run: async (ctx, args, opts) => {
       const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId() };
@@ -118,6 +121,7 @@ export const taskCommands: CommandSpec[] = [
       const reminders = remindersInput(opts);
       if (reminders) input.reminders = reminders;
       await workArgs(ctx, opts, input);
+      proposalArgs(opts, input);
       const task = await tool<Task>(ctx, "add_task", input);
       return { value: task, view: { kind: "task", verb: "Added", task } };
     },
