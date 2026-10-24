@@ -84,7 +84,7 @@ sealed interface AgentsPage {
     data class Policy(val keyId: String, val tool: String) : AgentsPage
 }
 
-/** What happened to the owner's last change, shown on the list. */
+/** What happened to the owner's last change, shown on the list or the retained policy page. */
 enum class AgentsMessage {
     DECIDED, DECIDE_REFUSED, ACCEPTED, MERGED, REJECTED, PROPOSAL_GONE, PAUSE_FAILED, POLICY_SET, POLICY_KEY_GONE, POLICY_REFUSED, FAILED,
 }

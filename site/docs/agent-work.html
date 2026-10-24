@@ -105,6 +105,9 @@
       <li><a href="#6-pausing-agents-and-tool-policies">6. Pausing agents and tool policies</a></li>
       <li><a href="#7-the-proposal-inbox">7. The proposal inbox</a></li>
       <li><a href="#8-the-plan-health-report">8. The plan health report</a></li>
+      <li><a href="#the-third-problem-starting-well-and-plans-kept-elsewhere">The third problem: starting well, and plans kept elsewhere</a></li>
+      <li><a href="#9-phase-guides-and-the-agent-brief">9. Phase guides and the agent brief</a></li>
+      <li><a href="#10-backlogmd-import-and-export">10. Backlog.md import and export</a></li>
       <li><a href="#what-an-agent-does">What an agent does</a></li>
       <li><a href="#not-in-this-release">Not in this release</a></li>
       </ul>
@@ -114,7 +117,9 @@ work on the plan next to the person who owns it: an activity log, acceptance cri
 of completion, dependencies with a blocked reason, and time-boxed claims. Backend 0.11.0 (CLI
 0.12.0, Android 0.10.0) adds four that keep the owner in charge of those agents: approval
 requests decided on the phone, a switch that pauses every agent with a policy per tool, an inbox
-for proposed work, and a plan health report. This page explains the problem each one solves, the
+for proposed work, and a plan health report. Backend 0.12.0 (CLI 0.14.0) adds guides for each
+phase of a task, an agent brief for the start of a session, and Backlog.md import and export.
+This page explains the problem each one solves, the
 decisions behind it and the public designs it follows. The tool
 reference is in <a href="mcp.html">mcp.md</a>, the REST routes in <a href="api.html">api.md</a> and the commands in
 <a href="cli.html">cli.md</a>.</p>
@@ -196,10 +201,10 @@ needs&quot; for <code>If-Match</code> (RFC 9110 <a href="https://www.rfc-editor.
 <li><strong>A repeating task's next occurrence</strong> keeps the criteria (unticked) and the plan, but not the
 proof.</li>
 </ul>
-<p>Public counterpart: <a href="https://github.com/MrLesk/Backlog.md">Backlog.md</a> (MIT), a Markdown task
+<p>Public counterpart: <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">Backlog.md</a>, a Markdown task
 board for people and AI agents, gives its tasks acceptance criteria and an implementation plan in
-the same spirit. Dayhand takes the idea, not the format or code: its criteria are structured
-fields behind its own tools.</p>
+the same spirit. Dayhand's criteria are structured fields behind its own tools; file-format
+interchange is a separate <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">import/export operation</a>.</p>
 <h2 id="3-dependencies-and-a-blocked-reason">3. Dependencies and a blocked reason</h2>
 <p><code>dependsOn</code> lists the tasks (ids, or numbers as <code>&quot;#42&quot;</code>) that must be done first; <code>blockedReason</code>
 says why a task cannot go on. <code>list_all</code> takes <code>ready: true</code>: tasks that are <strong>not done, not
@@ -215,6 +220,8 @@ any more. Restoring it makes it count again. Ready is worked out when asked, nev
 <li><strong>Ready does not look at claims.</strong> An agent picking work calls <code>list_all</code> with <code>ready: true</code> and
 then <code>claim_task</code>; a <code>conflict</code> tells it to take the next one.</li>
 </ul>
+<p>For the Android 0.11.0 display of plans, dependencies and blocked reasons, including the limits
+of the phone's dependency lookup, see <a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#screens">Android screens</a>.</p>
 <p>Public counterpart: Backlog.md's <code>dependencies</code> field, a list of task ids a task waits for. A plan
 moved between the two keeps the same meaning: wait until those tasks are done.</p>
 <h2 id="4-time-boxed-claims">4. Time-boxed claims</h2>
@@ -227,8 +234,8 @@ the work stopped, the next step). Completing the task ends the claim too. After 
 anyone may claim the task again, without waiting for the holder.</p>
 <p><strong>The owner wins.</strong> The person's own changes from the app and the CLI always go through, claim or
 not, and the app can take a task over at once (<code>app.release</code>, the same operation with the owner as
-the actor). The phone shows &quot;agent: &lt;name&gt; works until &lt;time&gt;&quot; in the task's details while a
-claim lasts.</p>
+the actor). The phone's claim display and confirmation flow are described in
+<a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#screens">Android screens</a>.</p>
 <p>Decisions:</p>
 <ul>
 <li><strong>A lease, not a lock.</strong> A lock held by a crashed agent blocks the task until someone notices.
@@ -317,10 +324,10 @@ tell the user. Switching it off lets them change things again. The owner's own c
 app and from <code>cli</code> keys, are never refused.</p>
 <p>Each <strong>agent key</strong> can also have a <strong>policy</strong>: for a tool that changes the plan, or for <code>&quot;*&quot;</code>
 (every such tool without its own rule), <code>allow</code> (the default), <code>ask</code> or <code>deny</code>
-(<code>dayhand policy set &lt;key&gt; &lt;tool&gt; &lt;rule&gt;</code>, <code>set_tool_policy</code>). <code>deny</code> refuses the call with
-<code>forbidden</code>. <code>ask</code> refuses it with <code>approval_required</code> and the id of an approval request Dayhand
-made for exactly that call; once the owner picks &quot;Allow once&quot;, the agent repeats the call with
-<code>approvalId</code> and it runs, once. Reading tools have no policy.</p>
+(<code>dayhand policy set &lt;key&gt; &lt;tool&gt; &lt;rule&gt;</code>, <code>set_tool_policy</code>; <a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#screens">phone controls</a>).
+<code>deny</code> refuses the call with <code>forbidden</code>. <code>ask</code> refuses it with <code>approval_required</code> and the id of
+an approval request Dayhand made for exactly that call; once the owner picks &quot;Allow once&quot;, the
+agent repeats the call with <code>approvalId</code> and it runs, once. Reading tools have no policy.</p>
 <p>Decisions:</p>
 <ul>
 <li><strong>Checked where the change happens.</strong> The pause and the policies are checked inside the same
@@ -416,9 +423,70 @@ owner, most urgent first, and to ask before changing anything.</li>
 <li><strong>&quot;Done without proof&quot;</strong> counts tasks completed today with no summary, link or check. It is a
 prompt to look, not an error: people complete tasks without proof all the time.</li>
 </ul>
+<h2 id="the-third-problem-starting-well-and-plans-kept-elsewhere">The third problem: starting well, and plans kept elsewhere</h2>
+<p>With eight features an agent has a lot to remember, and two more gaps show:</p>
+<ol start="9">
+<li><strong>Where to begin.</strong> An agent that starts a session reads Today, then its claims, then the
+approvals it asked for, then works out what to do next: several calls before any work. And
+the rules for one task are spread over one long guide.</li>
+<li><strong>Plans in files.</strong> Many people who work with coding agents keep tasks as Markdown files in
+the repository, in the format of <a href="https://github.com/MrLesk/Backlog.md">Backlog.md</a>. Moving
+such a plan into Dayhand, or out of it, should not mean retyping it.</li>
+</ol>
+<h2 id="9-phase-guides-and-the-agent-brief">9. Phase guides and the agent brief</h2>
+<p>Three MCP resources split the work on one task into phases, each a short page that names the
+tools to use:</p>
+<ul>
+<li><code>dayhand://workflow/intake</code>: before work. Is the task already there (search, <code>source</code>)? Asked for,
+or a proposal? Acceptance criteria that can be checked, a plan written just before starting,
+dependencies and a blocked reason, a dry run before many changes.</li>
+<li><code>dayhand://workflow/execution</code>: during work. Choose ready work, <code>claim_task</code> and <code>renew_claim</code>,
+tick criteria as they become true, <code>request_approval</code> before a risky step, a checkpoint when
+stopping, what each refusal means.</li>
+<li><code>dayhand://workflow/finalization</code>: at the end. Check the criteria again, <code>complete_task</code> with
+proof (a failed check recorded as failed), the owner's yes before a last step that needs it, or
+hand the task back with a note.</li>
+</ul>
+<p><code>agent_brief</code> (<code>dayhand prime --json</code>, <code>GET /api/v1/brief</code>) is the start of a session in one
+read: every field of <code>list_today</code>, then whether agents are paused and the caller's own tool
+policies, the claims in force and those that ran out (each marked <code>mine</code> when the caller holds
+it), the approval requests waiting and the owner's decisions on the caller's requests in the last
+day, the first tasks ready to work on, and <code>nextSteps</code>: sentences, most pressing first, such as
+&quot;You hold #12 … until 14:30: renew_claim while you work …&quot;. <code>dayhand prime</code> prints the same as
+text before the rules of the road.</p>
+<p>Decisions:</p>
+<ul>
+<li><strong>Phases, not one longer guide.</strong> <code>dayhand://guide</code> stays the reference; the phase guides are
+what an agent rereads at the point it needs them. They are static text, the same for every
+user, so they need no user data, count against no limit and may be cached publicly.</li>
+<li><strong>The brief is list_today with more fields.</strong> <code>dayhand prime --json</code> printed <code>list_today</code>
+before; it now prints a superset, so a script that read it keeps working (fields may be
+added, <a href="mcp.html#versions">mcp.md</a>). Against a backend before 0.12.0, <code>dayhand prime</code> falls back
+to <code>list_today</code>.</li>
+<li><strong>From the caller's side.</strong> The same plan reads differently for two agents: each sees its own
+claims and requests as <code>mine</code>, and ready work leaves out tasks another agent holds. The owner's
+decisions are listed only to the agent that asked.</li>
+<li><strong>Next steps are sentences, not commands.</strong> They name tools and resources but do not act; an
+agent still decides. While agents are paused there is one step: stop changing things.</li>
+</ul>
+<p>Public counterparts: Backlog.md also offers its agent instructions as MCP resources, split into a
+workflow overview and guides for creating, executing and finalizing a task; Dayhand's guides cover
+the same three phases with Dayhand's own tools and texts. MCP
+<a href="https://modelcontextprotocol.io/specification/2025-06-18/server/resources">resources</a> are the
+way to give a client context without a tool call.</p>
+<h2 id="10-backlogmd-import-and-export">10. Backlog.md import and export</h2>
+<p><code>import_backlog</code> (<code>dayhand backlog import &lt;dir&gt;</code>) reads Backlog.md task files into ordinary
+Dayhand tasks; <code>export_backlog</code> (<code>dayhand backlog export &lt;dir&gt;</code>) writes the plan as task files.
+Import uses the <a href="#7-the-proposal-inbox">source identity</a> shared by integrations, not a second
+synchronization mechanism. Its report explains what was created, skipped or refused, and a dry
+run previews that report without storing anything.</p>
+<p>See <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">Backlog.md import and export</a> for the field mappings, source normalization,
+call limits, approval handling, export safety and overflow warnings, and the format's license and
+attribution.</p>
 <h2 id="what-an-agent-does">What an agent does</h2>
 <ol>
-<li>Back from a pause: <code>list_events</code> with the <code>nextCursor</code> it kept; <code>plan_health</code> for the overview.</li>
+<li>Start of a session: <code>agent_brief</code> (<code>dayhand prime</code>); back from a pause: <code>list_events</code> with the
+<code>nextCursor</code> it kept; <code>plan_health</code> for the whole plan.</li>
 <li>Pick work: <code>list_all</code> with <code>ready: true</code>.</li>
 <li><code>claim_task</code>; on <code>conflict</code>, pick another task.</li>
 <li>Write <code>acceptance</code> and <code>plan</code> if the task has none; <code>renew_claim</code> while working.</li>
@@ -429,11 +497,13 @@ prompt to look, not an error: people complete tasks without proof all the time.<
 <li><code>agents_paused</code>: stop changing things and wait. <code>forbidden</code>: do not retry.
 <code>approval_required</code>: wait for that request, then repeat the call with <code>approvalId</code>.</li>
 </ol>
-<p>The same steps are in the <code>dayhand://guide</code> resource and in <code>dayhand prime</code> for agents.</p>
+<p>The same steps are in the <code>dayhand://guide</code> resource, one phase at a time in
+<code>dayhand://workflow/intake</code>, <code>/execution</code> and <code>/finalization</code>, and in <code>dayhand prime</code> for agents.</p>
 <h2 id="not-in-this-release">Not in this release</h2>
-<p>Phase guides as MCP resources and Backlog.md import or export are planned separately. The phone
-does not edit tool policies yet (it shows them; <code>dayhand policy</code> sets them), and it notifies about
-approval requests at most every 15 minutes while the app is closed.</p>
+<p>Backlog.md import and export are copies, not sync: a change made on one side afterwards stays
+there, and importing a changed file again does not update its task. For the phone's tool-policy
+controls and their limits, see <a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#screens">Android screens</a>. The phone notifies
+about approval requests at most every 15 minutes while the app is closed.</p>
       </article>
       <nav class="docs-pager" aria-label="Previous and next page"><a href="agents.html" rel="prev"><span>Previous</span> Agents and you</a><a href="mcp.html" rel="next"><span>Next</span> MCP endpoint</a></nav>
     </main>

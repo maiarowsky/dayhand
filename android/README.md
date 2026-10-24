@@ -231,10 +231,14 @@ in its preview and on the other screens. Top to bottom:
    policies**, one row per rule ("Key claude: complete_task → Ask"). A rule opens on its own page
    with **Allow**, **Ask** and **Deny**, each with what it does for that key and tool; tapping
    another one sends it to the server at once (`app:setToolPolicy`, not through the outbox, so it
-   needs a connection), the list says "Rule saved" and `dayhand policy` shows the new rule. A
-   refusal is said in words: a key revoked meanwhile ("this agent key was revoked or removed") or
-   a rule the server does not take. New rules for other keys or tools are added in the terminal
-   with `dayhand policy set`. A request opens on its own page in
+   needs a connection). After a successful save, the list says "Rule saved" and `dayhand policy`
+   reflects the change. **Allow** is the default and removes the row unless it overrides a
+   non-Allow `*` rule for that key. A final refusal returns to the list and says why: a key revoked
+   meanwhile ("this agent key was revoked or removed") or a rule the server does not take. If the
+   phone is signed out, offline, times out or no longer has a server configured, the policy page
+   stays open with "No connection to the server. Try again." and the last displayed rule still
+   selected; tap the desired rule again to retry. New rules for other keys or tools are added in
+   the terminal with `dayhand policy set`. A request opens on its own page in
    the style of a connection's approval: what the agent wants to do and why, a row per option with
    its consequence, and a confirmation with an optional word for the agent. A proposal is
    **accepted** (it becomes a task of the plan), **merged** into an open task found by its title

@@ -228,7 +228,8 @@ dayhand policy</code></pre>
 <li><code>ask</code> refuses the call with <code>approval_required</code> and the id of an approval request Dayhand made for
 exactly that call (an hour to decide). Once you choose <strong>Allow once</strong>, the agent repeats the call with
 the approval (<code>--approval &lt;id&gt;</code> in <code>dayhand</code>, <code>approvalId</code> over MCP) and it runs, once.</li>
-<li>The key's id comes from <code>dayhand key list</code>. The phone shows the policies but does not change them yet.</li>
+<li>The key's id comes from <code>dayhand key list</code>. For the phone's policy controls, see
+<a href="https://github.com/maiarowsky/dayhand/blob/main/android/README.md#screens">Android screens</a>.</li>
 <li>Policies apply to API keys. An OAuth connection, such as the Claude app, follows the pause and its
 scopes (read, or read and change), but has no per-tool rules: give an agent that needs them a key.</li>
 </ul>
@@ -277,7 +278,6 @@ wait for that request, then repeat the call with it.</li>
 dependencies follow the same ideas as <a href="https://github.com/MrLesk/Backlog.md">Backlog.md</a>, a Markdown
 task board for people and agents, so a plan can later move between the two.</li>
 <li>Phase guides as MCP resources.</li>
-<li>Changing tool policies on the phone.</li>
 </ul>
       </article>
       <nav class="docs-pager" aria-label="Previous and next page"><a href="cli.html" rel="prev"><span>Previous</span> Command reference</a><a href="agent-work.html" rel="next"><span>Next</span> How agent work is designed</a></nav>

@@ -186,7 +186,7 @@ asks for <code>tasks:read</code> only; unknown scopes are refused (<code>invalid
 ignored. The phone may grant a non-empty part of what was asked, never more. <code>tools/list</code>
 shows only the tools the token's scopes allow; calling another tool gets
 <code>403</code> with <code>WWW-Authenticate: Bearer error=&quot;insufficient_scope&quot;, scope=&quot;…&quot;</code>. Reading the
-user's data through <code>resources/read</code> (all but <code>dayhand://guide</code>) and <code>prompts/get</code> needs
+user's data through <code>resources/read</code> (all but <code>dayhand://guide</code> and <code>dayhand://workflow/…</code>) and <code>prompts/get</code> needs
 <code>tasks:read</code> the same way.</li>
 <li><strong>Resource indicators</strong> (<a href="https://www.rfc-editor.org/rfc/rfc8707">RFC 8707</a>): <code>resource</code>, when
 sent to <code>/oauth/authorize</code> or <code>/oauth/token</code>, must be <code>&lt;issuer&gt;/mcp</code>; every token is bound to

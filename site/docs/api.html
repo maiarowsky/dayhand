@@ -157,6 +157,9 @@ for an agent key, <code>cli</code> for a CLI key.</p>
 <tr><td><code>POST /agents/pause</code></td><td><code>pause_agents</code> (<code>{ &quot;paused&quot;: true, &quot;reason&quot;: &quot;…&quot; }</code>; the owner)</td><td>write</td></tr>
 <tr><td><code>POST /agents/policies</code></td><td><code>set_tool_policy</code> (<code>{ &quot;apiKeyId&quot;: &quot;…&quot;, &quot;toolName&quot;: &quot;delete_task&quot;, &quot;rule&quot;: &quot;deny&quot; }</code>; the owner)</td><td>write</td></tr>
 <tr><td><code>GET /health</code></td><td><code>plan_health</code> (query parameter <code>at</code>)</td><td>read</td></tr>
+<tr><td><code>GET /brief</code></td><td><code>agent_brief</code> (query parameter <code>at</code>): Today plus claims, approvals, ready tasks and next steps</td><td>read</td></tr>
+<tr><td><code>POST /import/backlog</code></td><td><code>import_backlog</code> (<code>{ &quot;files&quot;: [{ &quot;path&quot;: &quot;tasks/task-1 - x.md&quot;, &quot;content&quot;: &quot;…&quot; }] }</code>; <code>?dryRun=true</code> stores nothing; <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">backlog-md.md</a>)</td><td>write</td></tr>
+<tr><td><code>GET /export/backlog</code></td><td><code>export_backlog</code> (query parameters <code>prefix</code>, <code>includeArchived</code>)</td><td>read</td></tr>
 <tr><td><code>GET /events</code></td><td><code>list_events</code> (query parameters <code>since</code>, <code>by</code>, <code>taskId</code>, <code>limit</code>): the activity log (<a href="agent-work.html">agent-work.md</a>)</td><td>read</td></tr>
 <tr><td><code>GET /today</code></td><td><code>list_today</code></td><td>read</td></tr>
 <tr><td><code>GET /board</code></td><td><code>board</code></td><td>read</td></tr>

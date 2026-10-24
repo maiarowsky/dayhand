@@ -193,12 +193,14 @@ Without a command, <code>dayhand</code> shows Today.</p>
 <tr><td><code>dayhand webhook enable &lt;webhookId&gt;</code></td><td><code>/api/v1/webhooks</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/webhook-one.schema.json">webhook-one</a></td><td>Turn a webhook back on after it was turned off for failing</td></tr>
 <tr><td><code>dayhand webhook deliveries &lt;webhookId&gt; [options]</code></td><td><code>/api/v1/webhooks</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/webhook-delivery-list.schema.json">webhook-delivery-list</a></td><td>The delivery log: newest first, each attempt's HTTP status or error</td></tr>
 <tr><td><code>dayhand import &lt;file&gt; [options]</code></td><td><code>/api/v1/import</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/import-result.schema.json">import-result</a></td><td>Import tasks from Dayhand's JSON export, an iCalendar file or a Todoist CSV export</td></tr>
+<tr><td><code>dayhand backlog import &lt;dir&gt;</code></td><td><code>import_backlog</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/backlog-import.schema.json">backlog-import</a></td><td>Import a Backlog.md folder: each task file becomes a task; files imported before are skipped</td></tr>
+<tr><td><code>dayhand backlog export [dir] [options]</code></td><td><code>export_backlog</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/backlog-written.schema.json">backlog-written</a>, <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/backlog-export.schema.json">backlog-export</a></td><td>Write the plan as Backlog.md task files into a folder (without one, --json prints the files)</td></tr>
 <tr><td><code>dayhand login [options]</code></td><td><code>get_settings</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/login.schema.json">login</a></td><td>Store an API key for the deployment in the OS keychain (or a private file)</td></tr>
 <tr><td><code>dayhand logout</code></td><td>-</td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/logout.schema.json">logout</a></td><td>Remove the stored API key for the deployment (keychain and file)</td></tr>
 <tr><td><code>dayhand whoami</code></td><td><code>initialize</code>, <code>get_settings</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/whoami.schema.json">whoami</a></td><td>Which deployment, profile, key source and config file dayhand uses, checked against the server</td></tr>
 <tr><td><code>dayhand server deploy [options]</code></td><td><code>get_settings</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/server.schema.json">server</a>, <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/server-plan.schema.json">server-plan</a></td><td>Set up or update your server on your own Convex account, sign dayhand in and make a pairing code</td></tr>
 <tr><td><code>dayhand server start [options]</code></td><td><code>get_settings</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/server.schema.json">server</a>, <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/server-plan.schema.json">server-plan</a></td><td>Run your server on this computer (Convex local backend, no account) until Ctrl+C, sign dayhand in</td></tr>
-<tr><td><code>dayhand prime</code></td><td><code>list_today</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/today.schema.json">today</a></td><td>Context for an AI agent: Today and how to use dayhand (for a SessionStart hook)</td></tr>
+<tr><td><code>dayhand prime</code></td><td><code>agent_brief</code>, <code>list_today</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/agent-brief.schema.json">agent-brief</a>, <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/today.schema.json">today</a></td><td>Context for an AI agent: Today, its claims, approvals, ready work, next steps and how to use dayhand (for a SessionStart hook)</td></tr>
 <tr><td><code>dayhand when &lt;phrase...&gt; [options]</code></td><td><code>get_settings</code></td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/when.schema.json">when</a></td><td>Show the day (and time) a date phrase means in your time zone, without changing anything</td></tr>
 <tr><td><code>dayhand completion &lt;shell&gt;</code></td><td>-</td><td><a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/completion.schema.json">completion</a></td><td>Print the shell completion script for bash, zsh, fish or powershell (dayhand help completion)</td></tr>
 <tr><td><code>dayhand ui [options]</code></td><td><code>list_today</code>, <code>board</code>, <code>list_all</code>, <code>list_trash</code>, <code>get_task</code>, <code>get_settings</code>, <code>add_task</code>, <code>update_task</code>, <code>set_status</code>, <code>set_now</code>, <code>complete_task</code>, <code>reschedule_task</code>, <code>delete_task</code>, <code>restore_task</code></td><td>-</td><td>Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)</td></tr>
@@ -1242,6 +1244,34 @@ dayhand webhook deliveries &lt;webhookId&gt; -n 5 --json</code></pre>
 <pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand export --format json -o dayhand.json &amp;&amp; dayhand import dayhand.json --dry-run
 dayhand import todoist.csv
 dayhand import calendar.ics --format ics --json</code></pre>
+<h3 id="dayhand-backlog-import">dayhand backlog import</h3>
+<p>Import a Backlog.md folder: each task file becomes a task; files imported before are skipped</p>
+<p>Reads the Markdown files below &lt;dir&gt; (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: &lt;id&gt;}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. --dry-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.</p>
+<pre class="code" tabindex="0" aria-label="Example"><code>dayhand backlog import &lt;dir&gt;</code></pre>
+<ul>
+<li><code>dir</code>: The backlog folder (backlog/, or one of its folders such as backlog/tasks)</li>
+</ul>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand backlog import backlog --dry-run
+dayhand backlog import backlog --json
+dayhand backlog import backlog/completed</code></pre>
+<h3 id="dayhand-backlog-export">dayhand backlog export</h3>
+<p>Write the plan as Backlog.md task files into a folder (without one, --json prints the files)</p>
+<p>One file per task in tasks/ (proposals in drafts/; with --archived, archived tasks in archive/tasks/ and archived proposals in archive/drafts/), and a config.yml with the statuses To Do, In Progress and Done. Tasks imported from Backlog.md keep their ids; the others get &lt;PREFIX&gt;-&lt;number&gt;. The destination must be missing or empty unless --force explicitly confirms writing into an existing folder and replacing exported files, including config.yml. Symlink destinations, task directories and files are refused. Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks or config.yml whose exported text exceeds Dayhand import limits, including the 100,000-character file limit; text is not truncated. Needs backend 0.12.0 or later.</p>
+<pre class="code" tabindex="0" aria-label="Example"><code>dayhand backlog export [dir] [options]</code></pre>
+<ul>
+<li><code>dir</code>: The folder to write into (made if missing), e.g. backlog</li>
+</ul>
+<div class="table-wrap" tabindex="0" role="region" aria-label="dayhand backlog export"><table>
+<thead><tr><th scope="col">Option</th><th scope="col">Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>--prefix &lt;prefix&gt;</code></td><td>ID prefix of tasks that did not come from Backlog.md (default task: TASK-12)</td></tr>
+<tr><td><code>--archived</code></td><td>Also write archived tasks to archive/tasks/ and archived proposals to archive/drafts/</td></tr>
+<tr><td><code>--force</code></td><td>Confirm writing into a non-empty folder and replacing exported files, config.yml too</td></tr>
+</tbody>
+</table></div>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand backlog export backlog
+dayhand backlog export backlog --prefix shop --archived
+dayhand backlog export --json</code></pre>
 <h3 id="dayhand-login">dayhand login</h3>
 <p>Store an API key for the deployment in the OS keychain (or a private file)</p>
 <p>dayhand server deploy and dayhand server start sign in by themselves. For another computer, create a key with kind cli where dayhand is signed in (<code>dayhand key create laptop --kind cli --scope write</code>) or with <code>npx convex run apiKeys:create</code>. The key is checked against the server first; DAYHAND_API_KEY, when set, still wins over the stored key.</p>
@@ -1301,8 +1331,8 @@ dayhand server deploy --dry-run</code></pre>
 dayhand server start --public-url https://laptop.tail1234.ts.net
 dayhand server start --json --yes</code></pre>
 <h3 id="dayhand-prime">dayhand prime</h3>
-<p>Context for an AI agent: Today and how to use dayhand (for a SessionStart hook)</p>
-<p>Prints plain text without colors in every format except --json, which prints list_today like dayhand today --json. In a Claude Code hook: {&quot;hooks&quot;:{&quot;SessionStart&quot;:[{&quot;hooks&quot;:[{&quot;type&quot;:&quot;command&quot;,&quot;command&quot;:&quot;dayhand prime&quot;}]}]}}.</p>
+<p>Context for an AI agent: Today, its claims, approvals, ready work, next steps and how to use dayhand (for a SessionStart hook)</p>
+<p>Prints plain text without colors in every format except --json, which prints agent_brief: list_today's fields plus claims, approvals, ready tasks and nextSteps (a backend before 0.12.0 gives list_today alone). In a Claude Code hook: {&quot;hooks&quot;:{&quot;SessionStart&quot;:[{&quot;hooks&quot;:[{&quot;type&quot;:&quot;command&quot;,&quot;command&quot;:&quot;dayhand prime&quot;}]}]}}.</p>
 <pre class="code" tabindex="0" aria-label="Example"><code>dayhand prime</code></pre>
 <pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand prime
 dayhand prime --json</code></pre>

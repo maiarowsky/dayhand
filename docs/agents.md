@@ -158,7 +158,8 @@ dayhand policy
 - `ask` refuses the call with `approval_required` and the id of an approval request Dayhand made for
   exactly that call (an hour to decide). Once you choose **Allow once**, the agent repeats the call with
   the approval (`--approval <id>` in `dayhand`, `approvalId` over MCP) and it runs, once.
-- The key's id comes from `dayhand key list`. The phone shows the policies but does not change them yet.
+- The key's id comes from `dayhand key list`. For the phone's policy controls, see
+  [Android screens](../android/README.md#screens).
 - Policies apply to API keys. An OAuth connection, such as the Claude app, follows the pause and its
   scopes (read, or read and change), but has no per-tool rules: give an agent that needs them a key.
 
@@ -218,4 +219,3 @@ The same steps are in the `dayhand://guide` resource, in `dayhand prime` and in 
   dependencies follow the same ideas as [Backlog.md](https://github.com/MrLesk/Backlog.md), a Markdown
   task board for people and agents, so a plan can later move between the two.
 - Phase guides as MCP resources.
-- Changing tool policies on the phone.

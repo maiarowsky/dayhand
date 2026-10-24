@@ -131,8 +131,9 @@ applied twice. Pass <code>dryRun: true</code> to check a change without saving i
 and time-boxed claims; agents can ask the owner first, the owner can pause them or set a policy
 per tool, agents propose work into an inbox, and a health report shows what needs a look
 (<a href="agent-work.html">agent-work.md</a>).</li>
-<li>The server identifies itself as <code>{ &quot;name&quot;: &quot;dayhand&quot;, &quot;version&quot;: &quot;0.11.0&quot; }</code> (<code>serverInfo</code> of
-<code>initialize</code>, <code>_meta</code> of 2026-07-28 results); see <a href="#versions">Versions</a>.</li>
+<li>The server's name and backend release version appear in <code>serverInfo</code> of <code>initialize</code> and
+<code>_meta</code> of 2026-07-28 results. The <a href="https://github.com/maiarowsky/dayhand/blob/main/backend/convex/lib/mcpProtocol.ts">server identity</a> is the
+source of truth; see <a href="#versions">Versions</a> for release history.</li>
 </ul>
 <h2 id="tools">Tools</h2>
 <p>The input schemas are generated from the same validators the operations enforce; the output
@@ -181,6 +182,9 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 <tr><td><code>accept_proposal</code></td><td>Accept proposal</td><td>O</td><td><code>task</code></td><td>A proposal joins the plan (<a href="#proposals">below</a>)</td></tr>
 <tr><td><code>merge_proposal</code></td><td>Merge proposal</td><td>O</td><td><code>merge</code></td><td>Fold a proposal into a task already in the plan (<code>intoTaskId</code>)</td></tr>
 <tr><td><code>reject_proposal</code></td><td>Reject proposal</td><td>O, D</td><td><code>task</code></td><td>Move a proposal to the trash, optionally with a <code>reason</code></td></tr>
+<tr><td><code>agent_brief</code></td><td>Agent brief</td><td>R</td><td><code>agent-brief</code></td><td>Start of a session: <code>list_today</code> plus claims, approvals, ready tasks and <code>nextSteps</code> (<a href="#agent-brief-agent_brief">below</a>)</td></tr>
+<tr><td><code>import_backlog</code></td><td>Import Backlog.md tasks</td><td></td><td><code>backlog-import</code></td><td>Backlog.md task files (<code>files: [{path, content}]</code>) as tasks, a file imported before skipped (<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">backlog-md.md</a>)</td></tr>
+<tr><td><code>export_backlog</code></td><td>Export as Backlog.md</td><td>R</td><td><code>backlog-export</code></td><td>The plan as Backlog.md task files and a <code>config.yml</code> (<code>prefix</code>, <code>includeArchived</code>)</td></tr>
 <tr><td><code>plan_health</code></td><td>Plan health</td><td>R</td><td><code>plan-health</code></td><td>What needs a look, in one read (<a href="#plan-health-plan_health">below</a>)</td></tr>
 </tbody>
 </table></div>
@@ -313,6 +317,23 @@ pending request, and <code>pendingApprovals</code> in all), <code>completedToday
 <code>withProof</code>, <code>withoutProof</code>): each <code>{ count, tasks }</code> with the first 20 tasks; <code>proposals.count</code>;
 and <code>oldestOpen</code>, the open task created longest ago with <code>ageDays</code>
 (<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/plan-health.schema.json">schema</a>). Proposals and archived tasks are not counted as open.</p>
+<h3 id="agent-brief-agent_brief">Agent brief (<code>agent_brief</code>)</h3>
+<p><code>agent_brief</code> (also <code>GET /api/v1/brief</code>, <code>dayhand prime --json</code>) is what an agent reads first in a
+session, as of <code>at</code> and from its own side (since 0.12.0): every field of <code>list_today</code>, then
+<code>caller</code> (<code>type</code>, <code>name</code>), <code>agentsPaused</code> and <code>pausedReason</code>, <code>policies</code> (the owner's rules for the
+caller's own key other than <code>allow</code>), <code>claims.active</code> and <code>claims.expired</code> (each claim with
+<code>claimedBy</code>, <code>claimExpiresAt</code> and <code>mine</code>), <code>approvals.pending</code> (every request waiting, <code>mine</code> when the
+caller asked) and <code>approvals.decided</code> (the caller's requests decided in the last 24 hours, with the
+<code>decision</code>), <code>ready</code> (tasks ready to work on that no other agent holds, soonest due first), each
+<code>{ count, items }</code> with the first 10; and <code>nextSteps</code>, sentences most pressing first that name the
+tools and the <a href="#resources">phase guides</a> to use (<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/agent-brief.schema.json">schema</a>). While
+agents are paused, <code>nextSteps</code> says only that.</p>
+<h3 id="backlogmd-import_backlog-export_backlog">Backlog.md (<code>import_backlog</code>, <code>export_backlog</code>)</h3>
+<p><code>import_backlog</code> takes <code>files: [{ path, content }]</code>, with paths relative to the backlog folder;
+<code>export_backlog</code> returns the files and configuration to write. The result contracts are
+<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/backlog-import.schema.json">backlog-import</a> and
+<a href="https://github.com/maiarowsky/dayhand/blob/main/docs/schemas/backlog-export.schema.json">backlog-export</a>. See <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">backlog-md.md</a> for field
+mappings, source identity, limits, approvals and safe folder handling.</p>
 <h3 id="dry-runs">Dry runs</h3>
 <p>Every changing tool takes <code>dryRun: true</code>. The change runs with every check, then Dayhand rolls it
 back: nothing is saved and nothing enters the history. The result is what the real call would
@@ -327,10 +348,13 @@ the <a href="#limits">limits</a>.</p>
 <tr><td><code>dayhand://activity</code></td><td><code>application/json</code></td><td><code>list_events</code> without <code>since</code>: the newest changes and the cursor to follow from</td></tr>
 <tr><td><code>dayhand://activity{?since}</code> (template)</td><td><code>application/json</code></td><td><code>list_events</code> with <code>since</code>, e.g. <code>dayhand://activity?since=c1793011200000123</code></td></tr>
 <tr><td><code>dayhand://guide</code></td><td><code>text/markdown</code></td><td>How an agent should work with Dayhand: numbers, the now task, retries, dry runs, limits</td></tr>
+<tr><td><code>dayhand://workflow/intake</code></td><td><code>text/markdown</code></td><td>Phase 1 of a task: find or add it, proposal or not, acceptance criteria, plan, dependencies (since 0.12.0)</td></tr>
+<tr><td><code>dayhand://workflow/execution</code></td><td><code>text/markdown</code></td><td>Phase 2: choose ready work, claim it, tick criteria, ask before risky steps, stop with a checkpoint</td></tr>
+<tr><td><code>dayhand://workflow/finalization</code></td><td><code>text/markdown</code></td><td>Phase 3: check the criteria, complete with proof, ask the owner for the last step, or hand back</td></tr>
 <tr><td><code>dayhand://tasks/{ref}</code> (template)</td><td><code>application/json</code></td><td><code>get_task</code> of task <code>#ref</code>, e.g. <code>dayhand://tasks/42</code></td></tr>
 </tbody>
 </table></div>
-<p><code>resources/list</code> returns the first three, <code>resources/templates/list</code> the two templates. The <code>helm://</code>
+<p><code>resources/list</code> returns the six without a template, <code>resources/templates/list</code> the two templates. The <code>helm://</code>
 URIs of the same resources, from before the rename, can still be read. Reading a
 resource that does not exist (also a task number that does not) is a JSON-RPC error with
 <code>data: { &quot;uri&quot; }</code>: <code>-32602</code> on 2026-07-28, <code>-32002</code> on 2025 revisions.</p>
@@ -351,7 +375,7 @@ larger changes with <code>dryRun</code>. An unknown prompt or argument is a JSON
 (<code>convex/callLimits.ts</code>). The minute
 starts with the first call; reads and changes are counted apart. Reads are tool calls of
 read-only tools, <code>resources/read</code> of <code>dayhand://today</code>, <code>dayhand://activity…</code> and <code>dayhand://tasks/…</code>, and <code>prompts/get</code>;
-listing tools, resources and prompts, <code>server/discover</code> and <code>dayhand://guide</code> are not counted.</p>
+listing tools, resources and prompts, <code>server/discover</code>, <code>dayhand://guide</code> and the <code>dayhand://workflow/…</code> guides are not counted.</p>
 <p>A call over the limit is refused before it runs, so nothing is applied:</p>
 <ul>
 <li>a tool call returns the tool error <code>rate_limited</code> with <code>retryAfterMs</code>, HTTP 200 and a
@@ -524,6 +548,7 @@ works with any 0.x from 0.3 on.</p>
 <div class="table-wrap" tabindex="0" role="region" aria-label="Versions"><table>
 <thead><tr><th scope="col">Version</th><th scope="col">Changes</th></tr></thead>
 <tbody>
+<tr><td>0.12.0</td><td>Phase guides and Backlog.md (<a href="agent-work.html#9-phase-guides-and-the-agent-brief">agent-work.md</a>, <a href="https://github.com/maiarowsky/dayhand/blob/main/docs/backlog-md.md">backlog-md.md</a>): resources <code>dayhand://workflow/intake</code>, <code>dayhand://workflow/execution</code> and <code>dayhand://workflow/finalization</code>; <code>agent_brief</code>; <code>import_backlog</code> and <code>export_backlog</code> (source kind <code>backlog-md</code>)</td></tr>
 <tr><td>0.11.0</td><td>Agents and the owner (<a href="agent-work.html">agent-work.md</a>): <code>request_approval</code>, <code>get_approval</code>, <code>list_approvals</code>, <code>decide_approval</code>; <code>get_agent_controls</code>, <code>pause_agents</code>, <code>set_tool_policy</code>, and <code>approvalId</code> on every change an agent makes; proposals (<code>add_task</code> takes <code>proposal</code>, <code>source</code>, <code>requestedBy</code>, <code>returnTo</code>; task fields <code>proposedAt</code>, <code>source</code>, <code>requestedBy</code>, <code>returnTo</code>, <code>mergedInto</code>; <code>list_all</code> takes <code>proposed</code>; <code>accept_proposal</code>, <code>merge_proposal</code>, <code>reject_proposal</code>); <code>plan_health</code> and the prompt <code>plan_health</code>; error codes <code>agents_paused</code>, <code>forbidden</code>, <code>approval_required</code> (with <code>approvalId</code>); webhook events <code>approval.decided</code> and <code>task.returned</code>; the owner's tools (O) are left out of an agent's <code>tools/list</code></td></tr>
 <tr><td>0.10.0</td><td>Agent work (<a href="agent-work.html">agent-work.md</a>): <code>list_events</code> and the resource <code>dayhand://activity</code> (the activity log); task fields <code>acceptance</code>, <code>plan</code>, <code>proof</code>, <code>dependsOn</code>, <code>blockedReason</code>, <code>claimedBy</code>, <code>claimExpiresAt</code>; <code>complete_task</code> takes <code>proof</code>; <code>list_all</code> takes <code>ready</code>; <code>claim_task</code>, <code>renew_claim</code>, <code>release_task</code>; error code <code>conflict</code>, and <code>precondition_failed</code> outside <code>If-Match</code> too</td></tr>
 <tr><td>0.9.0</td><td>The rename to Dayhand: <code>serverInfo.name</code> <code>dayhand</code>; resources <code>dayhand://today</code>, <code>dayhand://guide</code> and <code>dayhand://tasks/{ref}</code> (the <code>helm://</code> URIs are still read); new API keys start with <code>dayhand_</code> (<code>helm_</code> keys keep working); import format <code>dayhand-json</code> (<code>helm-json</code> still accepted); <code>WWW-Authenticate</code> realm <code>dayhand</code>; <code>x-dayhand-scope</code> in the OpenAPI document; problem types under <code>https://schemas.dayhand.invalid/</code>; deployment variables <code>DAYHAND_*</code> (<code>HELM_*</code> still read, <a href="deploy.html#renamed-variables">deploy.md</a>)</td></tr>

@@ -29,9 +29,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Settings → Agents: the switch that pauses every agent, approval requests, the proposal inbox and the tool
- * policies, changed one rule at a time. Nothing is cached: everything is read when the page opens and after every
- * change. [api] is null while the phone is not connected to a server; [tasks] are the plan on the phone, the tasks a
- * proposal can merge into.
+ * policies, changed one rule at a time. Nothing is persisted: sections are read on entry and after a decision
+ * succeeds or is finally refused. Failed sends keep the current state for retry. [api] is null while the phone
+ * is not connected to a server; [tasks] are the plan on the phone, the tasks a proposal can merge into.
  */
 class AgentsViewModel(
     private val api: suspend () -> AgentControlApi?,
@@ -95,7 +95,7 @@ class AgentsViewModel(
         refused = { if (it.code == "not_found") AgentsMessage.POLICY_KEY_GONE else AgentsMessage.POLICY_REFUSED },
     )
 
-    /** Sends one decision; after it the list is read again and the page returns to the list with what happened. */
+    /** Success or a final refusal reloads the list; a failed send keeps the page open for retry. */
     private fun change(
         run: suspend (AgentControlApi) -> Change,
         done: AgentsMessage,
