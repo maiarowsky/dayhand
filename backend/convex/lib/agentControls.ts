@@ -135,7 +135,9 @@ export async function setToolPolicy(ctx: MutationCtx, identity: Identity, input:
   const keepAllow = input.rule === "allow" && tool !== ANY_TOOL && (await ruleOf(ctx, keyId, ANY_TOOL)) !== "allow";
   if (input.rule === "allow" && !keepAllow) {
     if (existing) await ctx.db.delete(existing._id);
-  } else if (existing) await ctx.db.patch(existing._id, { rule: input.rule, updatedAt: Date.now() });
+  } else if (existing) {
+    if (existing.rule !== input.rule) await ctx.db.patch(existing._id, { rule: input.rule, updatedAt: Date.now() });
+  }
   else await ctx.db.insert("toolPolicies", { userId: identity.userId, keyId, tool, rule: input.rule, updatedAt: Date.now() });
   if (before !== input.rule) {
     await recordEvent(ctx, identity, { action: "policy.set", before: { rule: before }, after: { keyId, keyName: key.name, tool, rule: input.rule } });

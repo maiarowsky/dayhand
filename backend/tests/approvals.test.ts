@@ -197,6 +197,8 @@ describe("tool policies", () => {
     const planner = keys.find((k) => k.name === "planner");
     const controls = (await app.mutation(api.app.setToolPolicy, { apiKeyId: planner.id, toolName: "delete_task", rule: "deny" })) as any;
     expect(controls.policies).toEqual([expect.objectContaining({ keyName: "planner", tool: "delete_task", rule: "deny" })]);
+    // Setting the same rule again changes nothing, so a retry gets the same answer.
+    expect(await app.mutation(api.app.setToolPolicy, { apiKeyId: planner.id, toolName: "delete_task", rule: "deny" })).toEqual(controls);
 
     const task = await callTool(agent, "add_task", { title: "Old draft" });
     expect(await toolError(agent, "delete_task", { taskId: `#${task.ref}` })).toMatchObject({ code: "forbidden" });

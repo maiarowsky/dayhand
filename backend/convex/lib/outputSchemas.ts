@@ -785,7 +785,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "merge": {
     "title": "Merged proposal",
-    "description": "merge_proposal (dayhand proposals merge): the task the proposal was merged into, and the proposal, now in the trash (null when the call was a retry) (since 0.11.0).",
+    "description": "merge_proposal (dayhand proposals merge): the task the proposal was merged into, and the proposal, now in the trash (null only if it has been purged since) (since 0.11.0).",
     "type": "object",
     "required": [
       "task",

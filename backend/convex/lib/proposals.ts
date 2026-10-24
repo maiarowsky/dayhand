@@ -122,7 +122,16 @@ const union = <T>(a: T[], b: T[], key: (item: T) => string) => [...new Map([...a
 export async function mergeProposal(ctx: MutationCtx, identity: Identity, input: Args<"mergeProposal">) {
   ownerOnly(identity, "merge proposals");
   const replayed = await replay(ctx, identity.userId, input.clientId);
-  if (replayed) return { task: toTask(replayed), merged: null };
+  if (replayed) {
+    // A retry: the same answer as the first time, the target and the merged proposal.
+    const events = await ctx.db
+      .query("taskEvents")
+      .withIndex("by_user_clientId", (q) => q.eq("userId", identity.userId).eq("clientId", input.clientId))
+      .collect();
+    const mergedId = events.find((e) => e.action === "merge")?.taskId;
+    const merged = mergedId ? await ctx.db.get(mergedId) : null;
+    return { task: toTask(replayed), merged: merged ? toTask(merged) : null };
+  }
   const from = proposal(await loadTask(ctx, identity.userId, input.taskId));
   const into = await loadTask(ctx, identity.userId, input.intoTaskId);
   if (into._id === from._id) fail("invalid_argument", "A proposal cannot be merged into itself");
