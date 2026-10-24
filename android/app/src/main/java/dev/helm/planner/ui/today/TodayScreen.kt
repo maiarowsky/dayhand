@@ -152,12 +152,12 @@ private fun TodayItems(
             item {
                 SectionHeader(stringResource(R.string.section_overdue, sections.overdue.size), Modifier.testTag(TodayTags.OVERDUE), p.danger)
             }
-            items(sections.overdue, key = { it.localId }) { OverdueRow(it, today, actions) }
+            items(sections.overdue, key = { it.localId }) { OverdueRow(it, today, actions, state.blocked[it.localId]) }
         }
-        sections.now?.let { now -> item(key = "now:${now.localId}") { NowCard(now, today, actions) } }
+        sections.now?.let { now -> item(key = "now:${now.localId}") { NowCard(now, today, actions, state.blocked[now.localId]) } }
         if (sections.today.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.section_today), Modifier.testTag(TodayTags.TODAY)) }
-            items(sections.today, key = { it.localId }) { TodayRow(it, today, actions) }
+            items(sections.today, key = { it.localId }) { TodayRow(it, today, actions, state.blocked[it.localId]) }
         }
         if (sections.done.isNotEmpty()) {
             item { DoneHeader(sections.done.size, doneExpanded) { doneExpanded = !doneExpanded } }

@@ -8,6 +8,7 @@ import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.historyEntry
 import dev.helm.planner.settings.SettingsStore
@@ -48,20 +49,28 @@ class TaskDetailViewModel(
 
     private val pending = selected.flatMapLatest { id -> id?.let(repository::pendingChangesFor) ?: flowOf(0) }
 
-    private val knownLabels = repository.tasks.map { tasks -> tasks.flatMap { it.labels }.distinct().sortedBy { it.lowercase() } }
+    /** Every label in use, and the tasks by server id (to name the tasks this one waits for). */
+    private val others = repository.tasks.map { tasks ->
+        Others(tasks.flatMap { it.labels }.distinct().sortedBy { it.lowercase() }, tasks.filter { it.serverId != null }.associateBy { it.serverId!! })
+    }
 
     private val today = combine(settings.settings, minuteTicks(clock)) { s, now -> Today(s.timezone, HelmDates.localDate(now, s.timezone), s.reminderMinutes) }
 
     val state: StateFlow<TaskDetailUiState?> =
-        combine(task, history, combine(historyState, pending, ::Pair), knownLabels, today) { task, history, (historyState, pending), labels, day ->
+        combine(task, history, combine(historyState, pending, ::Pair), others, today) { task, history, (historyState, pending), others, day ->
             if (task == null) {
                 TaskDetailUiState.Missing(selected.value.orEmpty())
             } else {
-                TaskDetailUiState.Ready(task, day.date, day.zone, history, historyState, pending, labels, day.reminders)
+                TaskDetailUiState.Ready(
+                    task, day.date, day.zone, history, historyState, pending, others.labels, day.reminders,
+                    dependencies = AgentWork.dependencies(task, others.byServerId),
+                )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
     private data class Today(val zone: String, val date: String, val reminders: List<Int>)
+
+    private data class Others(val labels: List<String>, val byServerId: Map<String, Task>)
 
     init {
         // Fetch the server's history when the task is opened and whenever a newer server copy arrives.
@@ -96,6 +105,7 @@ class TaskDetailViewModel(
     override fun saveResumeNote(localId: String, note: String) = launch { repository.setResumeNote(localId, note) }
     override fun moveToTrash(localId: String) = launch { repository.moveToTrash(localId) }
     override fun restore(localId: String) = launch { repository.restore(localId) }
+    override fun release(localId: String) = launch { repository.release(localId) }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -19,7 +20,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.TodaySections
+import dev.helm.planner.ui.common.BlockedTags
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.ConnectionStatus
 import dev.helm.planner.ui.today.QuickAddTags
@@ -64,6 +67,26 @@ class TodayScreenTest {
 
     private fun show(state: TodayUiState, actions: TodayActions = Recorder()) {
         compose.setContent { HelmTheme { TodayScreen(state, actions, now = { now }) } }
+    }
+
+    @Test
+    fun aBlockedTaskHasAMarkThatSaysWhy() {
+        val blocked = mapOf(
+            "a" to AgentWork.Blocked("the client has not answered", 0),
+            "n" to AgentWork.Blocked(null, 2),
+            "b" to AgentWork.Blocked("why", 1),
+        )
+        val sections = sections(overdue = listOf(task("a", "2026-10-21")), now = task("n", "2026-10-22") { copy(isNow = true) }, today = listOf(task("b", "2026-10-22"), task("c", "2026-10-22")))
+        show(TodayUiState(sections, ConnectionStatus.SYNCED, 0, blocked = blocked))
+        compose.onNodeWithTag(BlockedTags.mark("a"), useUnmergedTree = true)
+            .assertContentDescriptionEquals(text(R.string.detail_blocked, "the client has not answered"))
+        compose.onNodeWithTag(BlockedTags.mark("n"), useUnmergedTree = true)
+            .assertContentDescriptionEquals(context.resources.getQuantityString(R.plurals.blocked_waiting_on, 2, 2))
+        compose.onNodeWithTag(BlockedTags.mark("b"), useUnmergedTree = true).assertContentDescriptionEquals(
+            text(R.string.blocked_reason_and_waiting, text(R.string.detail_blocked, "why"), context.resources.getQuantityString(R.plurals.blocked_waiting_on, 1, 1)),
+        )
+        compose.onNodeWithTag(BlockedTags.mark("c"), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Task c").assertIsDisplayed()
     }
 
     @Test

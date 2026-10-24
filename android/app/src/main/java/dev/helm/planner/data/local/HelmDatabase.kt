@@ -12,16 +12,18 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * Version 2 adds repeat, labels, links and the trash to tasks, and the cached change history; version 3 the
- * checklist and the task's own reminders; version 4 the agent work: acceptance criteria, proof and the claim.
+ * checklist and the task's own reminders; version 4 the agent work: acceptance criteria, proof and the claim; version 5
+ * the task's number, its plan, its dependencies and the blocked reason.
  */
 @Database(
     entities = [Task::class, OutboxOp::class, TaskEvent::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = HelmDatabase.Version2::class),
         AutoMigration(from = 2, to = 3, spec = HelmDatabase.Version3::class),
         AutoMigration(from = 3, to = 4, spec = HelmDatabase.Version4::class),
+        AutoMigration(from = 4, to = 5, spec = HelmDatabase.Version5::class),
     ],
 )
 @TypeConverters(Converters::class)
@@ -50,6 +52,13 @@ abstract class HelmDatabase : RoomDatabase() {
 
     /** As [Version2]: rows from version 3 have no criteria, proof or claim, so the next snapshot fills them in. */
     class Version4 : AutoMigrationSpec {
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            db.execSQL("UPDATE tasks SET serverUpdatedAt = NULL")
+        }
+    }
+
+    /** As [Version2]: rows from version 4 have no number, plan, dependencies or blocked reason, so the next snapshot fills them in. */
+    class Version5 : AutoMigrationSpec {
         override fun onPostMigrate(db: SupportSQLiteDatabase) {
             db.execSQL("UPDATE tasks SET serverUpdatedAt = NULL")
         }

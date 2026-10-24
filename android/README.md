@@ -135,9 +135,17 @@ trash.
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
 optional time, repeat, reminders, a checklist, labels (which are also the projects: the backend has
 one list for both), links (http/https only; no files in version 1) and the note. Since 0.9.1 it
-also shows, read-only, what an agent does with the task (backend 0.10.0, [agent-work.md](../docs/agent-work.md)):
-"agent: \<name\> works until \<time\>" while a claim lasts, the acceptance criteria with the met
-ones ticked, and the proof the task was completed with. The owner's own changes always go through.
+also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
+completed with, read-only (backend 0.10.0, [agent-work.md](../docs/agent-work.md)). The owner's own
+changes always go through. Since 0.11.0 the **Agent** card shows "agent: \<name\> works until
+\<time\>" while a claim lasts, the blocked reason in red, the tasks it waits for ("#12 Send the
+invoice (done)") and the plan. These fields are read-only except for **End the claim** under a
+live claim: after a confirmation the claim ends on the phone at once and `app:release` goes
+through the outbox. On Today and the board, "⛔" before a title marks an unfinished task with a
+blocked reason or a known open dependency; screen readers hear why. Dependencies in the trash
+do not hold it back. Dependencies absent from the phone appear as "A task not on this phone"
+without a completed mark and do not add a blocked mark: they may be proposals or purged tasks,
+so the phone's marks can differ from the server's plan health report.
 **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on the due
 date's day, the last day of the month, or an nth weekday ("the 2nd Tuesday", "the last Friday");
 the next date counted from the due date or from the day you complete it; ending never, on a day
@@ -307,8 +315,9 @@ Convex subscription (app:listAll, app:listTrash, app:getSettings) ──> Snapsh
   Changes still in the outbox are counted under it; they join the history once sent.
 - **Conflicts: last write wins per field, by `updatedAt`.** A field changed by a change still in
   the outbox keeps its local value (that change will reach the server last). Every other field
-  takes the server value, but only from a server copy newer than the one merged before, so a
-  late snapshot never undoes a newer state.
+  normally takes a server copy only when it is newer than the one merged before. Version
+  invalidation can force reconciliation even at the same version; the merge rules are in
+  `sync/SnapshotMerger.kt`.
 - **Today and overdue** are computed on the phone by `HelmDates` and `todaySections`, the same
   rules as `backend/convex/lib/dates.ts`, in the phone's time zone on this phone only and in the
   server's when connected (default `Europe/London`, as on the backend). The screen moves on at
@@ -352,9 +361,10 @@ and server copy of another phone would be hard to reason about.
 The **backup file** (`backup/PlanBackup.kt`) is Dayhand's JSON export format, version 1, as
 `app:exportPlan` and `dayhand export --format json` write it (`docs/schemas/export.schema.json`):
 `version`, `exportedAt`, `settings`, `tasks` (with the server id where the server knows a task,
-else the phone's) and an empty `events` (the phone has no history and no task numbers, so `ref`
-is left out). Sample tasks are not in it. A server reads it (`dayhand import`, `POST /api/v1/import`,
-format `dayhand-json`), and so does **Restore from a file**: every task the backend's rules accept
+else the phone's) and an empty `events`. Task numbers (`ref`), cached change history and agent-work
+fields (including the plan, dependencies and blocked reason) are not included. Sample tasks are
+not in it. A server reads it (`dayhand import`, `POST /api/v1/import`, format `dayhand-json`), and
+so does **Restore from a file**: every task the backend's rules accept
 is added as a new task and queued like one added on the phone (a done task without its rule, so
 a server does not repeat it again; archived tasks archived); one whose id is already on the
 phone is skipped, so the same file restores once; tasks in the trash and tasks that fail a check
@@ -463,7 +473,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # agents (answers, requests, proposals, the switch, the health card, new requests)
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
-./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migration, outbox across restarts, settings sync and the phone's zone,
+./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,
                                             # on this phone only (repeats made on the phone, sample tasks, restore, emptying),
                                             # Compose (Today, calendar, board, details, Settings, Settings → Calendar and Backup, Connect,
                                             # agent connections, Agents and the health card), encrypted pairing storage, and a real alarm + notification
@@ -501,6 +511,12 @@ label, a time and a link; offline it goes to the trash and the change reaches th
 app was killed; it is restored from the Trash screen, and an agent edit shows in its history as
 the agent's. Every step is checked on the server through MCP, with an agent key of the same user
 in `DAYHAND_AGENT_KEY` (`npx convex run apiKeys:create '{"userId":"https://helm.local|me","actor":"app","name":"agent","kind":"agent"}'`).
+
+`scripts/e2e-agent-work.py` (same arguments and keys) checks the agent work in the details:
+`dayhand` adds a task that waits for two others (`--depends-on`), with `--blocked` and `--plan`,
+and completes one of them, and the agent claims it through MCP; the phone shows "⛔" on Today and
+the board, and in the details the claim, the blocked reason, "#n … (done)" and the plan; **End the
+claim** is confirmed on the phone and `dayhand show` then has no claim.
 
 `scripts/e2e-connections.py` (same arguments, plus `--site-url` for the HTTP actions URL as the
 computer sees it) plays the Claude app over HTTP: it registers, opens the authorization page and

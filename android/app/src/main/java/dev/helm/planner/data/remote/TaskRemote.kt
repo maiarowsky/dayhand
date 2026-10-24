@@ -89,6 +89,11 @@ data class RemoteTask(
     val proof: TaskProof? = null,
     val claimName: String? = null,
     val claimExpiresAt: Long? = null,
+    val ref: Long? = null,
+    val plan: String? = null,
+    /** Server ids of the tasks this one waits for. */
+    val dependsOn: List<String> = emptyList(),
+    val blockedReason: String? = null,
 )
 
 /** One entry of a task's history (`getTask` in `backend/convex/lib/views.ts`); before/after as JSON objects. */

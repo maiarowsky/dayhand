@@ -124,7 +124,7 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
     if (task.inTrash || task.archivedAt != null) RestoreBanner(task, today, state.timezone, actions)
     TitleSection(task, editable, actions)
     StatusSection(task, editable, actions)
-    AgentWorkSection(task, System.currentTimeMillis(), state.timezone)
+    AgentWorkSection(task, state.dependencies, System.currentTimeMillis(), state.timezone, editable, actions)
     CardSection(stringResource(R.string.detail_due)) {
         DueSection(task, today, editable, actions)
         RepeatSection(task, today, editable, actions)

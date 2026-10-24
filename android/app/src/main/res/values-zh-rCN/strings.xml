@@ -354,4 +354,19 @@
     <string name="proof_check_pass">通过</string>
     <string name="proof_check_fail">未通过</string>
     <string name="proof_empty">未提供详情</string>
+    <string name="detail_agent">智能体</string>
+    <string name="detail_blocked">受阻：%1$s</string>
+    <string name="detail_waiting_on">等待完成</string>
+    <string name="detail_plan">计划</string>
+    <string name="dependency_done">%1$s（已完成）</string>
+    <string name="dependency_in_trash">%1$s（在回收站中）</string>
+    <string name="dependency_missing">不在此手机上的任务</string>
+    <string name="release_claim">结束认领</string>
+    <string name="release_claim_title">结束 %1$s 的认领？</string>
+    <string name="release_claim_text">%1$s 不再持有此任务，任何智能体都可以重新认领。任务的其他内容不变。</string>
+    <string name="action_release">认领已结束</string>
+    <string name="blocked_reason_and_waiting">%1$s。%2$s</string>
+    <plurals name="blocked_waiting_on">
+        <item quantity="other">等待 %d 项任务</item>
+    </plurals>
 </resources>

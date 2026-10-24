@@ -120,6 +120,9 @@ Decisions:
 - **Ready does not look at claims.** An agent picking work calls `list_all` with `ready: true` and
   then `claim_task`; a `conflict` tells it to take the next one.
 
+For the Android 0.11.0 display of plans, dependencies and blocked reasons, including the limits
+of the phone's dependency lookup, see [Android screens](../android/README.md#screens).
+
 Public counterpart: Backlog.md's `dependencies` field, a list of task ids a task waits for. A plan
 moved between the two keeps the same meaning: wait until those tasks are done.
 
@@ -135,8 +138,8 @@ anyone may claim the task again, without waiting for the holder.
 
 **The owner wins.** The person's own changes from the app and the CLI always go through, claim or
 not, and the app can take a task over at once (`app.release`, the same operation with the owner as
-the actor). The phone shows "agent: \<name\> works until \<time\>" in the task's details while a
-claim lasts.
+the actor). The phone's claim display and confirmation flow are described in
+[Android screens](../android/README.md#screens).
 
 Decisions:
 

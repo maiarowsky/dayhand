@@ -1,5 +1,6 @@
 package dev.helm.planner.ui.today
 
+import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.TodaySections
 import dev.helm.planner.settings.AppSettings
@@ -35,6 +36,8 @@ data class TodayUiState(
     val sample: Boolean = false,
     /** The zone quick add reads a date phrase in: the server's, or the phone's on this phone only. */
     val timezone: String = HelmDates.DEFAULT_TIMEZONE,
+    /** Tasks that cannot go on (a blocked reason or a dependency not done), by local id. */
+    val blocked: Map<String, AgentWork.Blocked> = emptyMap(),
 )
 
 /** What the user can do on Today; every call changes Room first and queues the server change. */
