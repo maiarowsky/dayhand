@@ -57,7 +57,7 @@ public enum ScreenSnapshots {
     static func renderAll(to folder: URL) async throws {
         let model = AppModel.shared
         try await seed(model)
-        try await Task.sleep(for: .milliseconds(800))
+        try await Task.sleep(nanoseconds: 800_000_000)
         model.recompute()
         model.selection = model.sections.today.first { $0.title == "Call the accountant" }?.localId
 
@@ -177,7 +177,7 @@ public enum ScreenSnapshots {
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.contentView = hosting
         hosting.layoutSubtreeIfNeeded()
-        try await Task.sleep(for: .milliseconds(600))
+        try await Task.sleep(nanoseconds: 600_000_000)
         hosting.layoutSubtreeIfNeeded()
         hosting.display()
         guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw SnapshotError.noBitmap }

@@ -4,6 +4,20 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.2.2 (2026-10-24)
+
+### Fixed
+
+- A release build connected to a server no longer quits about 15 seconds after it starts. When the sync loop's
+  wait between two polls ended, the app aborted (`swift_task_dealloc`: "freed pointer was not the last
+  allocation"), so it closed again shortly after every start. The wait and the snapshot tool's pauses now sleep
+  with `Task.sleep(nanoseconds:)`, as planning the notifications already does.
+
+### Added
+
+- `scripts/check-sync-loop.sh` runs the release app against a server that never answers and fails when the app
+  ends before the time is up or the sync loop did not turn. `SignalTests` runs the wait many times.
+
 ## 0.2.1 (2026-10-24)
 
 ### Fixed
