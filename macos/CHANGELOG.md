@@ -14,8 +14,7 @@ latest one below).
 - **Trash** with **Restore** in the task sidebar, and per-task **History** in the details.
   Usage and offline behavior: [README.md](README.md).
 
-- A **plan health card** above Today: one sentence from `app:planHealth` in red, orange or green, with
-  **Review** listing the waiting approval requests and proposals read-only. The last report stays offline.
+- A **plan health card** above Today, with **Review** listing the waiting approval requests and proposals read-only.
 - An **Agent** section in the task details, read-only: the claim and until when, acceptance criteria with ticks,
   the plan, the proof of completion, the tasks it waits for and why it is blocked.
 - Settings → General → **Notifications** edits the morning summary time and the default reminders; the change goes

@@ -17,7 +17,7 @@ This version is the basic one (MVP):
 - **Task details** with editing: title, status, "working on it now" and the resume note, the day and time
   (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
   Links are shown. A task in the trash is read-only until **Restore**.
-- **Agent** in the details, read-only as on the phone, when an agent or `dayhand` set any of it: who holds the
+- **Agent** in the details, read-only, when an agent or `dayhand` set any of it: who holds the
   task's claim and until when (or that the claim ran out), **Blocked:** with the reason in red, the acceptance
   criteria with ticks and how many are met, the plan, **Waiting for** with the tasks it depends on ("#12 Send the
   invoice (done)"; a task the Mac does not have is said so) and the proof of completion (summary, checks that
@@ -83,10 +83,8 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                      app:updateSettings sets keep their local value) ──> the database
 rounds: every 15 s, and at once after a local change
 
-plan health: PlanHealthSync reads app:planHealth when a server connects, a second after the tasks change,
-  on Sync Now, and on a synced poll once the last read is a minute old; the report is kept in the database
-  (meta table) and a failed read keeps the last one. Review reads app:listApprovals and app:listProposals
-  when it opens and keeps nothing.
+plan health: PlanHealthSync reads app:planHealth ──> meta table
+Review: AgentInbox reads app:listApprovals + app:listProposals
 
 history loads only when details open, the connection changes from offline/signed out/connecting to synced,
 or Sync Now is requested:
@@ -94,6 +92,9 @@ or Sync Now is requested:
   no answer or no server: the cached copy stays, marked as such
   ordinary polls (even with a newer task version): no history request or cancellation; no retry loop
 ```
+
+Plan health refresh and retention rules and Review's limits:
+[docs/macos.md](../docs/macos.md#agent-work-and-settings-on-the-mac).
 
 The code is a Swift package with these application and library targets (test targets are described below):
 
@@ -120,8 +121,9 @@ into an app JWT for an hour, kept in memory only and fetched again five minutes 
 changes stay. Network errors and `503` keep the token and retry. **Disconnect** forgets the sign-in on the Mac and
 names `dayhand revoke <deviceId>` for the server.
 
-**Live updates** come from polling every 15 seconds while the app runs (three queries, well under the server's
-limits; the plan health report adds at most one more a minute). The official Swift client (`convex-swift`) ships its core as a binary Rust framework, so it is not used:
+**Live updates** come from polling every 15 seconds while the app runs (three snapshot queries, well under the
+server's limits). Plan health reads are separate, as described above. The official Swift client (`convex-swift`)
+ships its core as a binary Rust framework, so it is not used:
 the app needs only the Convex HTTP API, as the Android app's `HttpTaskRemote` does.
 
 **Reminders.** Android keeps two alarms and works out what to show when one fires. macOS delivers notifications
@@ -204,12 +206,14 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   Permanent rejection of a parent add, rule-clear or completion drops its unsent generated descendants, while
   retryable failures retain them and unrelated additions still sync. `AgentWorkTests.swift` reads the agent fields
   from a snapshot (numbers as doubles), keeps them from the server even with a local change waiting, migrates a
-  database of the earlier 0.3.0 schema (migrations v1 and v2) to v3 without losing a task and stores every field,
-  shows agent work set elsewhere offline, reads the plan health report and the card's order, tone and Review as
+  database of the earlier 0.3.0 schema (migrations v1 and v2) to v3 without losing a task and hydrates its agent
+  fields from an unchanged server snapshot, shows agent work set elsewhere offline, reads the plan health report
+  and the card's order, tone and Review as
   on the phone, keeps the last report offline and forgets it, and lists the waiting approval requests and proposals.
   `SettingsSyncTests.swift` checks that a settings change shows at once and queues one `app:updateSettings`,
   that values the backend refuses queue nothing, that a snapshot taken while the change waits keeps its fields
-  and the others follow the server, that an offline change is sent later, and that a refused one is repaired.
+  and the others follow the server, that Sync Now waits for a running poll before sending changes, that an offline
+  change is sent later, and that a refused one is repaired.
   The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date

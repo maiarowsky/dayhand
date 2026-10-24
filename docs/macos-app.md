@@ -27,8 +27,8 @@ task's details are on the right.
   time) and done today, folded. One click ticks a task off. The context menu makes a task the one you
   work on now, moves it to today or tomorrow, archives it or moves it to the trash.
 - **Task details**: title, status, "working on it now" with the resume note, the day and time (a date
-  phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Repeat,
-  reminders and links are shown but edited elsewhere for now (the phone, `dayhand edit`).
+  phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Links are shown.
+  For repeat and reminder editors and read-only agent work, see [Mac app features](../macos/README.md).
 - **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`,
   or an agent by name) and when, each field from its old value to the new one. It comes from the
   server; offline, the last copy stays.
@@ -55,7 +55,8 @@ Reminders and the morning summary are macOS notifications, worked out on the Mac
 plan with the same rules as the phone, in the time zone of the server's settings (this Mac's until a
 server has sent them). Overdue tasks never ring. The summary is quiet and waits in Notification Center.
 A reminder's **Done** completes the task. Dayhand asks for permission when the first reminder is
-planned, or from Settings.
+planned, or from Settings. Editing the summary time and default reminders:
+[Mac notification settings](../macos/README.md).
 
 ## Language
 
@@ -72,8 +73,7 @@ building again.
 ## How it stays in sync
 
 Every change goes into the Mac's database and an outbox at once, so the window never waits for the
-network. The app sends the outbox in order and reads the plan back every 15 seconds, and at once after
-a change of yours. Changes made elsewhere therefore appear within about 15 seconds.
+network. Task sync and plan-health refresh rules: [Mac sync behavior](../macos/README.md#how-it-works).
 
 | What | Where |
 |---|---|
@@ -87,7 +87,4 @@ in a language without changing Settings.
 
 ## Not on the Mac yet
 
-The board, the calendar, editors for repeats, reminders and links, the morning summary time and default
-reminders, export, the calendar address, and the agent pages (approving agent connections and approval
-requests, pausing agents, proposals) are on the phone and in `dayhand`, not in the Mac app yet. Quick
-add reads English date phrases only.
+The remaining features are listed in [What is left for parity](macos.md#what-is-left-for-parity-with-the-android-app).

@@ -4,7 +4,7 @@ import GRDB
 /**
  * The local SQLite database (GRDB): the tasks as the screens see them, the outbox of changes waiting for the server,
  * the cached change history of each task and a small key-value table for the server settings and the last plan
- * health report. The screens read only from here, never from the network.
+ * health report. Cached state backs the task screens offline; Review's request lists are not cached here.
  */
 public final class AppDatabase: Sendable {
     public let writer: DatabaseQueue
@@ -93,6 +93,7 @@ public final class AppDatabase: Sendable {
                 t.add(column: "claimedBy", .text)
                 t.add(column: "claimExpiresAt", .integer)
             }
+            // Hydrate the new fields on the first snapshot even if the server's task version has not changed.
             try db.execute(sql: "UPDATE task SET serverUpdatedAt = NULL")
         }
         return migrator

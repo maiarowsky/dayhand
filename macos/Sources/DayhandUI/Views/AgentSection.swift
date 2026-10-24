@@ -3,7 +3,7 @@ import DayhandLocalization
 import SwiftUI
 
 /**
- * The details' Agent section, read-only as on the phone: who holds the task's claim and until when, the acceptance
+ * The details' read-only Agent section: who holds the task's claim and until when, the acceptance
  * criteria with ticks, the plan, the proof of completion, the tasks it waits for and why it is blocked. Agents and
  * `dayhand` set these; the snapshot brings them and the database keeps them offline.
  */

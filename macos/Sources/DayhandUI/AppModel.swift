@@ -6,8 +6,8 @@ import os
 import SwiftUI
 
 /**
- * The app's state on the main thread: the tasks from the local database (the only source the screens read), the
- * Today sections computed from them, the server connection and the user's actions. Every action goes through
+ * The app's state on the main thread: the tasks from the local database, the Today sections computed from them,
+ * the server connection and the user's actions. Every action goes through
  * `TaskRepository`, which changes the row and queues the server mutation together, so nothing waits for the network.
  */
 @MainActor
@@ -142,7 +142,7 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// The Today sections now; called on every change and every 30 seconds, so the screen moves on at midnight.
+    /// Called on changes and every 30 seconds; publish even equal sections for midnight labels and cached claim expiry.
     func recompute() {
         objectWillChange.send()
         let next = todaySections(tasks, nowMs: Clock.nowMs(), timezone: settings.timezone)
