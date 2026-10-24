@@ -46,7 +46,7 @@
         <summary>All pages</summary>
         <p class="docs-nav-title" id="docs-nav-0">Get started</p>
         <ul aria-labelledby="docs-nav-0">
-          <li><a href="index.html">Overview</a></li>
+          <li><a href="index.html" aria-current="page">Overview</a></li>
           <li><a href="getting-started.html">Quick start</a></li>
           <li><a href="install.html">Install</a></li>
         </ul>
@@ -124,12 +124,13 @@ and a note. One task can be the <em>now</em> task, with a note of where you stop
 overdue, the now task, today and what you finished today; the board has three columns (to do, in
 progress, done); deleted tasks wait 30 days in the trash. Every task has a number (<code>#42</code>) that is
 never given to another task.</li>
-<li><strong>The apps.</strong> <a href="android.html">Android</a>, <a href="macos-app.html">macOS</a>, <a href="linux.html">Linux</a> and the
-<a href="terminal.html">terminal</a>. Each keeps the plan on the device, so it works without a network, and
-sends changes to the server in order when it can.</li>
+<li><strong>The apps.</strong> <a href="android.html">Android</a>, <a href="macos-app.html">macOS</a> and <a href="linux.html">Linux</a> each keep the plan
+on the device, work offline and queue changes to send to the server in order when it can be reached.
+The command line (<code>dayhand</code>) and <a href="terminal.html">terminal UI</a> (<code>dayhand ui</code>) need the server; they do
+not keep an offline plan or queue changes.</li>
 <li><strong>The server.</strong> There is no hosted Dayhand service. You run the backend yourself: on your
 computer with one command, or on your own free Convex account (<a href="deploy.html">your own server</a>). The
-apps also work with no server at all.</li>
+Android, macOS and Linux apps also work with no server at all.</li>
 <li><strong>The agents.</strong> Any MCP client, or any agent that runs shell commands, works on the same plan
 with its own key. Its changes are signed <code>agent: &lt;name&gt;</code>. Tasks can carry acceptance criteria and
 a plan, agents claim tasks for a while and finish them with proof (<a href="agents.html">agents</a>).</li>

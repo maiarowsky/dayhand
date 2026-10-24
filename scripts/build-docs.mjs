@@ -57,7 +57,7 @@ function linkResolver(page, problems, crossRefs) {
 function navHtml(current) {
   const groups = SECTIONS.map((section, n) => {
     const items = section.pages.map((page) => {
-      const here = page === current ? ' aria-current="page"' : "";
+      const here = page.src === current.src ? ' aria-current="page"' : "";
       return `          <li><a href="${pageFile(page.src)}"${here}>${escapeHtml(page.nav)}</a></li>`;
     });
     return [

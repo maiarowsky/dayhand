@@ -129,26 +129,36 @@
     }
   }
 
+  function search() {
+    return loadIndex().then(
+      () => show(input.value),
+      () => {
+        results.replaceChildren();
+        status.textContent = "Search is not available here; use the menu";
+      },
+    );
+  }
+
   let timer = 0;
   input.addEventListener("input", () => {
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      loadIndex().then(
-        () => show(input.value),
-        () => {
-          status.textContent = "Search is not available here; use the menu";
-        },
-      );
-    }, 120);
+    results.replaceChildren();
+    status.textContent = "";
+    timer = setTimeout(search, 120);
   });
   input.addEventListener("focus", () => {
     loadIndex().catch(() => {});
   });
-  input.addEventListener("keydown", (event) => {
+  input.addEventListener("keydown", async (event) => {
     if (event.key === "Escape") {
+      clearTimeout(timer);
       input.value = "";
       show("");
     } else if (event.key === "Enter") {
+      clearTimeout(timer);
+      const query = input.value;
+      await search();
+      if (input.value !== query) return;
       const first = results.querySelector("a");
       if (first) first.click();
     }

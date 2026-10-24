@@ -5,9 +5,10 @@ tasks from the command line, the plan full screen in the terminal, the phone con
 agent working on the plan with a key of its own. It takes about ten minutes, most of it the first
 download.
 
-You need macOS or Linux, [Node.js](https://nodejs.org) 22.12 or newer and git. On Windows, follow the
-same steps but start the server with `dayhand server deploy` instead (step 2): the server that runs on
-your computer is for macOS and Linux only.
+You need [Node.js](https://nodejs.org) 22.12 or newer and git. On macOS and Linux, steps 2–6 use the
+same local server and plan. On Windows, use `dayhand server deploy` in step 2 and keep that Convex
+server for the whole walkthrough; the local server is for macOS and Linux only. The shell examples
+use a POSIX shell (for example, Git Bash on Windows).
 
 ## 1. Build the command line
 
@@ -33,10 +34,30 @@ pairing code for the phone. Data and keys stay in a private folder on this compu
 needed. The server listens on `127.0.0.1` only and runs until you press Ctrl+C. The same command starts
 it again later, with its data.
 
-Leave it running and open a second terminal in the same folder for the next steps.
+Leave it running and open a second terminal in the same folder for the next steps. In that second
+terminal, select the local server explicitly:
 
-To see every step first without changing anything, run `dayhand server start --dry-run`. Running the
-server on your own Convex account instead, which gives it a public HTTPS address: [Your own server](deploy.md).
+```sh
+export DAYHAND_URL=http://127.0.0.1:3211
+```
+
+**On Windows**, run this instead of `dayhand server start` (you can also choose this from the start
+on macOS or Linux):
+
+```sh
+dayhand server deploy
+export DAYHAND_URL=https://<deployment>.convex.site
+```
+
+Setup opens your browser to sign in to your own Convex account, creates the server and signs
+`dayhand` in. Replace `<deployment>` with the name in the HTTPS address it prints. The command
+finishes; there is no local server process to leave running. Use this URL throughout the next steps.
+
+`DAYHAND_URL` selects the server in this terminal even if an existing profile points elsewhere;
+`dayhand whoami` checks the URL and sign-in. Set it again in any new terminal you use for this plan.
+
+To see every setup step first without changing anything, add `--dry-run` to `server start` (or
+`server deploy` on Windows). More about either backend: [Your own server](deploy.md).
 
 ## 3. Plan your day
 
@@ -82,15 +103,47 @@ this computer and your agents, connect it to your server. No APK is published ye
 build the app yourself ([Install](install.md#android)).
 
 A phone cannot reach a server that listens on `127.0.0.1`, and release builds of the app talk to their
-server over HTTPS only. Pick one:
+server over HTTPS only.
 
-- **Keep the server on this computer** and give it an HTTPS address inside your own
-  [Tailscale](https://tailscale.com) network: `tailscale serve`, then
-  `dayhand server start --public-url https://<machine>.<tailnet>.ts.net`
-  ([the steps](deploy.md#phone-and-computer-tailscale)). The phone syncs while the computer is on.
-- **Move the server to your own free Convex account** with `dayhand server deploy`. It gets a public
-  HTTPS address that the phone reaches from anywhere, and the Claude apps can connect to it too
-  ([the steps](deploy.md#run-your-own-server-in-5-minutes)).
+**For the local server from step 2**, keep the same server and plan. First stop the running server
+with **Ctrl+C** in its terminal. Follow the [Tailscale steps](deploy.md#phone-and-computer-tailscale)
+to give both server ports HTTPS addresses inside your own [Tailscale](https://tailscale.com) network,
+then restart it in that terminal:
+
+```sh
+dayhand server start --public-url https://<machine>.<tailnet>.ts.net
+```
+
+This reuses the same local data and keys; it does not create a new plan. In the second terminal,
+select the HTTPS address for pairing and all the remaining commands:
+
+```sh
+export DAYHAND_URL=https://<machine>.<tailnet>.ts.net
+dayhand whoami
+```
+
+The phone syncs while the computer is on and in the tailnet. **If you started on Convex in step 2**
+(including on Windows), skip Tailscale and keep your `https://<deployment>.convex.site` URL: it is
+already reachable from the phone.
+
+**Optional: switch from local to Convex.** A new Convex deployment is a separate server with its own
+empty plan, not a move of the local database. You can simply start there in step 2 instead. To carry
+your local tasks over now, export while `DAYHAND_URL` still points at the local server, then deploy,
+select the new address and import:
+
+```sh
+dayhand export --format json -o dayhand.json
+dayhand server deploy
+export DAYHAND_URL=https://<deployment>.convex.site
+dayhand whoami
+dayhand import dayhand.json
+```
+
+Replace `<deployment>` with the name setup prints. Deploy stores a key for that address but does not
+overwrite an existing profile; setting `DAYHAND_URL` above is what points `dayhand` at the new server
+for the import, pairing and agent setup below. The local plan is unchanged; no automatic migration
+occurs. The exported file contains private plan data, so keep it out of shared folders. More:
+[Convex setup](deploy.md#run-your-own-server-in-5-minutes).
 
 Then, in the app: **Settings → Server → Connect to my server** (or **Connect to my server** on the first
 start), and scan the QR code that this prints, or type the address and the code:
@@ -114,11 +167,16 @@ dayhand log --by agent
 ```
 
 The key is printed once; keep it where the agent reads it. `jq` extracts it from the JSON here. The
-agent can use `dayhand` with that key, or the MCP endpoint of your server. For Claude Code:
+agent can use `dayhand` with that key, or the MCP endpoint of the same selected server. For Claude Code
+in this terminal:
 
 ```sh
-claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header "Authorization: Bearer $AGENT_KEY"
+claude mcp add --transport http dayhand "$DAYHAND_URL/mcp" --header "Authorization: Bearer $AGENT_KEY"
 ```
+
+The MCP address is `http://127.0.0.1:3211/mcp` before Tailscale, or
+`https://<machine>.<tailnet>.ts.net/mcp` after it. On a Convex server (including the Windows route),
+it is `https://<deployment>.convex.site/mcp`.
 
 Then ask it what is on your list today. Acceptance criteria, claims, approvals on the phone, the switch
 that pauses every agent and the rest: [Agents and you](agents.md).

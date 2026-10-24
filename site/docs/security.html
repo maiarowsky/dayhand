@@ -80,7 +80,7 @@
         </ul>
         <p class="docs-nav-title" id="docs-nav-5">Security and help</p>
         <ul aria-labelledby="docs-nav-5">
-          <li><a href="security.html">Security and privacy</a></li>
+          <li><a href="security.html" aria-current="page">Security and privacy</a></li>
           <li><a href="oauth-threat-model.html">OAuth threat model</a></li>
           <li><a href="faq.html">FAQ and troubleshooting</a></li>
           <li><a href="contributing.html">Contributing</a></li>
@@ -117,10 +117,15 @@ problem. The detailed threat models are linked at the end.</p>
 <tr><td>The Android app</td><td>its copy of the plan and the waiting changes; the sign-in, encrypted with a key in the Android Keystore</td><td>the phone; Android's cloud backup and device transfer are off for Dayhand</td></tr>
 <tr><td>Dayhand for macOS</td><td>its copy of the plan in <code>~/Library/Application Support/Dayhand</code>; the sign-in in the login Keychain</td><td>your Mac user</td></tr>
 <tr><td>Dayhand for Linux</td><td>its copy in <code>~/.local/share/dayhand</code>; the sign-in in the Secret Service keyring</td><td>your Linux user</td></tr>
-<tr><td><code>dayhand</code></td><td>no copy of the plan; its key in the system keychain, or a file only you can read</td><td>your user on that computer</td></tr>
+<tr><td><code>dayhand</code> and <code>dayhand ui</code></td><td>no offline plan or outbox; shell completion caches task numbers, titles and labels; the key is in the system keychain, or a file only you can read</td><td>your user on that computer</td></tr>
 <tr><td>Backups and exports</td><td>whatever you export: <code>dayhand export</code>, the phone's backup file, <code>npx convex export</code></td><td>wherever you keep them</td></tr>
 </tbody>
 </table></div>
+<p>Shell completion writes <code>tasks-&lt;hash&gt;.json</code> in the CLI cache folder: <code>~/.cache/dayhand</code> (or
+<code>$XDG_CACHE_HOME/dayhand</code>) on Linux, <code>~/Library/Caches/dayhand</code> on macOS, or
+<code>%LOCALAPPDATA%\dayhand\Cache</code> on Windows; <code>DAYHAND_CACHE_DIR</code> overrides it. The folder is created
+with mode 700 and files with mode 600 where POSIX permissions apply. The 60-second lifetime controls
+freshness, not deletion: cached titles and labels remain on disk until you remove the cache files.</p>
 <p>The local server (<code>dayhand server start</code>) keeps its data and keys in a private folder (mode 700, files
 600) and listens on <code>127.0.0.1</code> only. A server on your Convex account runs on Convex's infrastructure, in
 your account; Convex can technically reach it, as any host can reach what it hosts.</p>

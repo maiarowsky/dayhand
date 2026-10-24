@@ -71,7 +71,7 @@
         </ul>
         <p class="docs-nav-title" id="docs-nav-4">Server and integrations</p>
         <ul aria-labelledby="docs-nav-4">
-          <li><a href="deploy.html">Your own server</a></li>
+          <li><a href="deploy.html" aria-current="page">Your own server</a></li>
           <li><a href="pairing.html">Phone pairing</a></li>
           <li><a href="api.html">REST API</a></li>
           <li><a href="webhooks.html">Webhooks</a></li>
@@ -140,6 +140,13 @@ server's address, <code>https://&lt;deployment&gt;.convex.site</code>), <code>DA
 <li>creates a CLI key (kind <code>cli</code>) and signs <code>dayhand</code> in with it (OS keychain, or a private file),
 and makes a pairing code for the phone, valid for 10 minutes.</li>
 </ol>
+<p>If you already used another server, setup stores the new server's key but does not overwrite an
+existing profile. Select the printed address explicitly for subsequent commands, for example in a
+POSIX shell:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>export DAYHAND_URL=https://&lt;deployment&gt;.convex.site
+dayhand whoami</code></pre>
+<p>Replace <code>&lt;deployment&gt;</code> with the name setup prints. Set this again in a new terminal, or pass
+<code>--url https://&lt;deployment&gt;.convex.site</code> to each command, including <code>pair</code> and key creation.</p>
 <p>At the end it prints the server address, the pairing code with a QR code, and the next steps:</p>
 <ul>
 <li><strong>Phone</strong>: open Dayhand, type the server address on the Connect screen and the code (or scan
@@ -235,11 +242,14 @@ admin console turn on MagicDNS and HTTPS certificates. The computer's name is th
 (the app's sync) on port 8443, inside the tailnet only:</p>
 <pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>tailscale serve --bg --https=443 http://127.0.0.1:3211
 tailscale serve --bg --https=8443 http://127.0.0.1:3210</code></pre></li>
-<li><p>Start the server with that address, so it gives the phone the HTTPS addresses instead of
-127.0.0.1:</p>
+<li><p>If the server is already running, stop it with Ctrl+C first. Start it again with that address,
+keeping the same data and keys, so it gives the phone the HTTPS addresses instead of 127.0.0.1:</p>
 <pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>dayhand server start --public-url https://&lt;machine&gt;.&lt;tailnet&gt;.ts.net</code></pre>
 <p>(<code>--public-api-url</code> when the Convex API is not on port 8443.) Then pair the phone with the
-printed address and code.</p></li>
+printed address and code. In a second terminal, select that address for later CLI commands
+(POSIX shell), since an existing profile can still point at 127.0.0.1:</p>
+<pre class="code" tabindex="0" aria-label="Shell commands" data-copy><code>export DAYHAND_URL=https://&lt;machine&gt;.&lt;tailnet&gt;.ts.net
+dayhand whoami</code></pre></li>
 </ol>
 <p><code>tailscale serve status</code> shows what is published; <code>tailscale serve reset</code> stops it. The phone
 syncs only while the computer is on and in the tailnet. This setup has not been tested by the

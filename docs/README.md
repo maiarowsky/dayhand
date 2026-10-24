@@ -29,12 +29,13 @@ CLI 0.13.0, the Android app 0.11.0, Dayhand for macOS 0.3.0 and Dayhand for Linu
   overdue, the now task, today and what you finished today; the board has three columns (to do, in
   progress, done); deleted tasks wait 30 days in the trash. Every task has a number (`#42`) that is
   never given to another task.
-- **The apps.** [Android](android.md), [macOS](macos-app.md), [Linux](linux.md) and the
-  [terminal](terminal.md). Each keeps the plan on the device, so it works without a network, and
-  sends changes to the server in order when it can.
+- **The apps.** [Android](android.md), [macOS](macos-app.md) and [Linux](linux.md) each keep the plan
+  on the device, work offline and queue changes to send to the server in order when it can be reached.
+  The command line (`dayhand`) and [terminal UI](terminal.md) (`dayhand ui`) need the server; they do
+  not keep an offline plan or queue changes.
 - **The server.** There is no hosted Dayhand service. You run the backend yourself: on your
   computer with one command, or on your own free Convex account ([your own server](deploy.md)). The
-  apps also work with no server at all.
+  Android, macOS and Linux apps also work with no server at all.
 - **The agents.** Any MCP client, or any agent that runs shell commands, works on the same plan
   with its own key. Its changes are signed `agent: <name>`. Tasks can carry acceptance criteria and
   a plan, agents claim tasks for a while and finish them with proof ([agents](agents.md)).
