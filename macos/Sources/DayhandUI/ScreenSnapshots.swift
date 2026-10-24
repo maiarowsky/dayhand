@@ -66,6 +66,8 @@ public enum ScreenSnapshots {
             let suffix = dark ? "-dark" : ""
             try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 1040, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
         }
+        let layoutProblems = try await WindowLayoutCheck.run(MainWindow().environmentObject(model).environmentObject(updater))
+        if !layoutProblems.isEmpty { throw SnapshotError.layout(layoutProblems) }
         try await render(TodayView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("today-list.png"))
         for dark in [false, true] {
             try await render(
@@ -185,5 +187,9 @@ public enum ScreenSnapshots {
         window.close()
     }
 
-    enum SnapshotError: Error { case noBitmap }
+    enum SnapshotError: Error {
+        case noBitmap
+        /// The main window's layout is wrong (WindowLayoutCheck).
+        case layout([String])
+    }
 }

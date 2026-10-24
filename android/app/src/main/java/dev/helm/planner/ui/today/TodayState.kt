@@ -1,5 +1,6 @@
 package dev.helm.planner.ui.today
 
+import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.TodaySections
 import dev.helm.planner.settings.AppSettings
 import dev.helm.planner.sync.FeedState
@@ -32,6 +33,8 @@ data class TodayUiState(
     val pendingChanges: Int,
     /** The sample plan is on the phone: a line says so, with a button that removes it. */
     val sample: Boolean = false,
+    /** The zone quick add reads a date phrase in: the server's, or the phone's on this phone only. */
+    val timezone: String = HelmDates.DEFAULT_TIMEZONE,
 )
 
 /** What the user can do on Today; every call changes Room first and queues the server change. */

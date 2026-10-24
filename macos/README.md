@@ -165,7 +165,9 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   menu bar, quick add, Connect, Settings, Settings → Updates and every state of the update window from synthetic
   data into PNG files, off screen (the sidebar's translucent background does not
   draw off screen, so the Today list is also drawn on its own). `swift run DayhandSnapshots <folder> pl` draws them
-  in another language, and the tool fails when a text on them is missing from the string catalog.
+  in another language, and the tool fails when a text on them is missing from the string catalog. It also lays out
+  the main window in a real window with its title bar (wide, narrowest, sidebar closed, light and dark) and fails when
+  the content is taller than the window or quick add sits under the title bar and its window buttons.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the
   language's rules, the compiled `.lproj` folders are up to date with the catalog, every `tr("…")` in the sources

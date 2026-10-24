@@ -32,7 +32,7 @@ class BoardViewModel(
             connectionStatus(settings.settings, network.online, liveSync.state),
             repository.pendingChanges,
         ) { tasks, s, now, c, pending ->
-            BoardUiState(boardColumns(tasks, now, s.timezone), c, pending)
+            BoardUiState(boardColumns(tasks, now, s.timezone), c, pending, timezone = s.timezone)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
     override fun move(localId: String, status: TaskStatus) = launch { repository.moveTo(localId, status) }

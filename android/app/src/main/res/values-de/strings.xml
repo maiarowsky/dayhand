@@ -41,6 +41,12 @@
     <string name="quick_add_no_time">Keine Uhrzeit</string>
     <string name="quick_add_note">Notiz</string>
     <string name="quick_add_save">Hinzufügen</string>
+    <string name="quick_add_example">z. B. Steuerberater anrufen fri 2pm</string>
+    <string name="quick_add_from_phrase">%1$s · aus „%2$s“</string>
+    <string name="quick_add_no_phrase">Kein Datum im Text: heute</string>
+    <string name="quick_add_from_options">Aus „Mehr Optionen“: %1$s</string>
+    <string name="quick_add_keep_in_title">Im Titel lassen</string>
+    <string name="quick_add_keep_in_title_hint">Die Wörter in den Titel übernehmen, statt sie als Datum zu lesen</string>
 
     <plurals name="status_offline">
         <item quantity="one">Offline. Änderungen sind gespeichert und werden gesendet, sobald das Netz wieder da ist (%1$d ausstehend).</item>
