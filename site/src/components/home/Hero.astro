@@ -1,0 +1,51 @@
+---
+// The first screen: what Dayhand is, that it is free, the two ways in, and the apps themselves.
+import Screenshot from "../Screenshot.astro";
+import { DOCS_PATH } from "../../site";
+import macLight from "../../assets/screens/mac-today-light.webp";
+import macDark from "../../assets/screens/mac-today-dark.webp";
+import phoneLight from "../../assets/screens/android-today-light.webp";
+import phoneDark from "../../assets/screens/android-today-dark.webp";
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-text">
+    <a class="pill" href="#open-source">Free and open source <span>Apache-2.0</span></a>
+    <h1 id="hero-title">A day plan for one-person businesses and the AI agents that work for them.</h1>
+    <p class="lead">
+      Tasks, a calendar and reminders on your phone, your Mac and your Linux desktop, offline first. Your agents plan
+      and finish work over MCP or the command line and ask you before a risky step, on a server you run yourself.
+    </p>
+    <div class="actions">
+      <a class="button primary" href="#download">Download</a>
+      <a class="button" href={DOCS_PATH}>Read the docs</a>
+    </div>
+    <ul class="reassure" role="list">
+      <li>Free, with no paid plan</li>
+      <li>No account with us</li>
+      <li>Your data stays with you</li>
+    </ul>
+  </div>
+
+  <figure class="showcase">
+    <Screenshot
+      class="window"
+      light={macLight}
+      dark={macDark}
+      widths={[700, 1080, 1600, 2160]}
+      sizes="(min-width: 72rem) 58rem, (min-width: 40rem) 82vw, calc(100vw - 2rem)"
+      eager
+      alt="Dayhand for macOS. On the left, Today: one overdue task, Send the October invoices; the task being worked on now, Write the proposal for the bakery website; and seven tasks for today. On the right, the details of Write the case study for the logo project: in progress, due today, labelled marketing, with two of three checklist items done."
+    />
+    <Screenshot
+      class="phone"
+      light={phoneLight}
+      dark={phoneDark}
+      widths={[300, 600, 900]}
+      sizes="(min-width: 72rem) 18rem, (min-width: 40rem) 25vw, 50vw"
+      eager
+      alt="Dayhand for Android showing the same Today: a card that sums up the plan, with one overdue task, one approval request, one blocked task and one proposal, then the overdue invoices, the task being worked on now and the tasks for today with their times."
+    />
+    <figcaption class="showcase-caption">Dayhand for macOS and Android, with the same made-up plan.</figcaption>
+  </figure>
+</section>

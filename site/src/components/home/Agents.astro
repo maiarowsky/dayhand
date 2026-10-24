@@ -1,0 +1,177 @@
+---
+// How agents work on the plan: criteria and a plan first, then claim, ask and prove, with the person in charge.
+import Screenshot from "../Screenshot.astro";
+import claimLight from "../../assets/screens/android-claim-light.webp";
+import claimDark from "../../assets/screens/android-claim-dark.webp";
+import approvalLight from "../../assets/screens/android-approval-light.webp";
+import approvalDark from "../../assets/screens/android-approval-dark.webp";
+import proofLight from "../../assets/screens/android-proof-light.webp";
+import proofDark from "../../assets/screens/android-proof-dark.webp";
+import agentsLight from "../../assets/screens/android-agents-light.webp";
+import agentsDark from "../../assets/screens/android-agents-dark.webp";
+import notification from "../../assets/screens/android-notification-light.webp";
+import historyLight from "../../assets/screens/mac-history-light.webp";
+import historyDark from "../../assets/screens/mac-history-dark.webp";
+
+const phoneWidths = [300, 600, 900];
+---
+
+<section id="agents" aria-labelledby="agents-title">
+  <h2 id="agents-title">Built for agents, with you in charge</h2>
+  <p class="section-lead">
+    Any MCP client, or any agent that can run a command, works on the same plan you do. Here is one made-up day of
+    that work.
+  </p>
+
+  <div class="row">
+    <div class="row-text">
+      <h3>Say what done means</h3>
+      <p>
+        Give a task acceptance criteria, a plan and a note before the work starts. The agent reads them over MCP or
+        with <code>dayhand show</code>, ticks each criterion as it meets it and leaves the note where it stopped.
+      </p>
+    </div>
+    <figure class="terminal wrap">
+      <div class="terminal-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+      <pre tabindex="0" aria-label="The dayhand show command printing one task"><code><span class="prompt">$</span> dayhand show 12
+<span class="out">#12 Publish the October newsletter
+status   todo
+due      2026-10-24 17:00 (today)
+labels   marketing
+claimed  claude until 2026-10-24 19:01
+id       m97akk9x3n5fd3j4fbdva7jf818gxt1v
+acceptance:
+  1. [x] Every link opens
+  2. [x] The unsubscribe link works
+  3. [ ] You approved the final text
+plan:
+  Draft it from this month's notes, check every link, then ask before sending
+note:
+  The draft is in newsletter-october.md.</span></code></pre>
+      <figcaption>One task as <code>dayhand show</code> prints it; the change history that follows is cut here.</figcaption>
+    </figure>
+  </div>
+
+  <ol class="strip story" role="list" aria-label="Claim, ask and prove, on Android; scrolls sideways" tabindex="0">
+    <li>
+      <figure class="shot">
+        <Screenshot
+          class="phone"
+          light={claimLight}
+          dark={claimDark}
+          widths={phoneWidths}
+          sizes="(min-width: 60rem) 17rem, 72vw"
+          alt="The task Update the pricing page on Android, in progress, with the line agent: claude works until 19:01, and its acceptance criteria, one of two met."
+        />
+        <figcaption>
+          <strong>Claim.</strong> claude holds this task until 19:01, so no other agent can change it. When the time
+          runs out, anyone may take it; your own changes always go through.
+        </figcaption>
+      </figure>
+    </li>
+    <li>
+      <figure class="shot">
+        <Screenshot
+          class="phone"
+          light={approvalLight}
+          dark={approvalDark}
+          widths={phoneWidths}
+          sizes="(min-width: 60rem) 17rem, 72vw"
+          alt="An approval request on Android: claude asks to send the October newsletter to the mailing list, which cannot be undone, with a deadline and two answers, Send now and Keep it as a draft."
+        />
+        <figcaption>
+          <strong>Ask.</strong> Before a step that cannot be undone, the agent asks and waits. You pick an answer;
+          with none by the deadline, the request expires and the agent is told.
+        </figcaption>
+      </figure>
+    </li>
+    <li>
+      <figure class="shot">
+        <Screenshot
+          class="phone"
+          light={proofLight}
+          dark={proofDark}
+          widths={phoneWidths}
+          sizes="(min-width: 60rem) 17rem, 72vw"
+          alt="The finished task Export the Q3 sales report on Android, with both acceptance criteria met and the proof of completion: three CSV files are in reports/q3 and the totals match the bank statement, with two passed checks."
+        />
+        <figcaption>
+          <strong>Prove.</strong> A task with criteria is done only when they are met and the agent says what it did,
+          with named checks such as <code>totals=pass</code>.
+        </figcaption>
+      </figure>
+    </li>
+  </ol>
+
+  <div class="row">
+    <div class="row-text">
+      <h3>You set the rules</h3>
+      <p>
+        One switch pauses every agent. A policy for each agent key allows, asks for or denies each tool, and work an
+        agent proposes waits in an inbox until you accept, merge or reject it. A health card above Today shows what
+        needs a look.
+      </p>
+      <p>
+        The phone checks for new approval requests about every 15 minutes and shows them as a notification. Dayhand
+        uses no push service, so nothing sits between your server and your phone.
+      </p>
+    </div>
+    <div class="row-media stack">
+      <Screenshot
+        class="notice"
+        light={notification}
+        widths={[500, 996]}
+        sizes="(min-width: 30rem) 22rem, calc(100vw - 2rem)"
+        alt="An Android notification from Dayhand: claude asks for your approval, Send the October newsletter to the mailing list."
+      />
+      <Screenshot
+        class="phone"
+        light={agentsLight}
+        dark={agentsDark}
+        widths={phoneWidths}
+        sizes="17rem"
+        alt="The Agents screen on Android: the Pause agents switch, one request waiting for you, one proposal from claude, and tool policies that deny delete_task to bookkeeper and claude and ask before claude completes a task."
+      />
+    </div>
+  </div>
+
+  <div class="row wide">
+    <div class="row-text">
+      <h3>See who did what</h3>
+      <p>
+        Every person and every agent key signs its changes, so an agent's edits stand out in the task history and the
+        activity log, and <code>dayhand log --by agent</code> lists them in the terminal. Revoke a key and that agent
+        is out.
+      </p>
+    </div>
+    <Screenshot
+      class="window"
+      light={historyLight}
+      dark={historyDark}
+      widths={[700, 1080, 1600, 2160]}
+      sizes="(min-width: 72rem) 70rem, calc(100vw - 2rem)"
+      alt="Dayhand for macOS with the history of Write the case study for the logo project, newest first: the agent claude moved it to in progress, added a note, ticked two checklist items and claimed it, after you created it from the command line."
+    />
+  </div>
+
+  <div class="connect">
+    <h3>Connect an agent</h3>
+    <p>
+      The server speaks MCP at <code>/mcp</code>. Any MCP client connects with the address and an
+      <code>Authorization: Bearer</code> header; for Claude Code it is one command. The Claude apps connect as a custom
+      connector with OAuth, and you approve each connection on your phone.
+    </p>
+    <p>
+      Agents that run shell commands use <code>dayhand</code>. With <code>--json</code> it prints exactly what the MCP
+      tools return, and a ready Agent Skill teaches an agent the commands.
+    </p>
+    <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that connect Claude Code"><code>AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
+claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp \
+  --header "Authorization: Bearer $AGENT_KEY"</code></pre>
+  </div>
+
+  <p class="note">
+    Dayhand records your decisions and the agents' work in the plan. It cannot stop what an agent does outside
+    Dayhand.
+  </p>
+</section>

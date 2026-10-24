@@ -69,21 +69,29 @@ npm run test:unit                         # pure tests only, under a second
 - The CLI is released on its own (`dayhand-vX.Y.Z` tags, release-please); do not bump
   `cli/package.json` by hand in a feature PR.
 
-## The site and the documentation
+## The website
 
-`site/` is dayhand.dev: plain HTML and CSS that open from the file system, with nothing loaded from
-other servers. Its documentation pages (`site/docs/`) are built from `docs/*.md`; edit the Markdown,
-then rebuild and commit both. How it is built and the CSS rules it follows: [site/STYLE.md](site/STYLE.md);
-how to write the docs: [docs/contributing.md](docs/contributing.md).
+`site/` is dayhand.dev: an Astro project that builds a static site into `site/dist/`, with nothing
+loaded from other servers. How it is built, the screenshots and the CSS rules it follows:
+[site/STYLE.md](site/STYLE.md).
 
 ```sh
-node scripts/build-docs.mjs     # after changing docs/*.md (Node, standard library only)
-scripts/check-site.sh           # fixed site/: HTML, metadata, links, CSS/JS lint, docs up to date (needs python3 and node)
+(cd site && npm ci --ignore-scripts && npm run dev)   # http://localhost:4321
+scripts/check-site.sh --build   # build site/, then check dist/: HTML, metadata, links, weight (needs python3)
 scripts/render-site-images.sh   # after changing og-image.svg or the icon (needs Chrome)
 ```
 
 Write only what is true today: a package or a download without a published release is "Coming soon",
-with no command or link for it.
+with no command or link for it. Screenshots show made-up demo data only.
+
+Maintainers deploy after a merge to `main`, from `site/`, with Wrangler logged in to the account that
+owns dayhand.dev:
+
+```sh
+npm run build && wrangler deploy
+```
+
+`site/wrangler.toml` holds no account id and no secrets; the account comes from `wrangler login`.
 
 ## Secrets
 

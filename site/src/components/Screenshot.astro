@@ -1,0 +1,38 @@
+---
+// One app screenshot: a light file and, when there is one, a dark file that the reader's colour scheme picks.
+// astro:assets resizes both into WebP at the given widths; width and height keep the layout from moving.
+import type { ImageMetadata } from "astro";
+import { getImage } from "astro:assets";
+
+interface Props {
+  light: ImageMetadata;
+  dark?: ImageMetadata;
+  alt: string;
+  widths: number[];
+  sizes: string;
+  /** For the first screen: loaded at once, with high priority. */
+  eager?: boolean;
+  class?: string;
+}
+
+const { light, dark, alt, widths, sizes, eager = false, class: className } = Astro.props;
+// The widest file doubles as the plain src, so no full-size copy is made just for it.
+const options = { width: Math.max(...widths), widths, format: "webp" } as const;
+const lightImage = await getImage({ src: light, ...options });
+const darkImage = dark ? await getImage({ src: dark, ...options }) : undefined;
+---
+
+<picture class={className}>
+  {darkImage && <source media="(prefers-color-scheme: dark)" type="image/webp" srcset={darkImage.srcSet.attribute} sizes={sizes} />}
+  <img
+    src={lightImage.src}
+    srcset={lightImage.srcSet.attribute}
+    sizes={sizes}
+    width={lightImage.attributes.width}
+    height={lightImage.attributes.height}
+    alt={alt}
+    loading={eager ? "eager" : "lazy"}
+    decoding="async"
+    fetchpriority={eager ? "high" : undefined}
+  />
+</picture>

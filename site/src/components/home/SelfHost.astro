@@ -1,0 +1,46 @@
+---
+// Where the plan lives: a server you start with one command, your own Convex account, or the phone alone.
+import { repoFile } from "../../site";
+---
+
+<section id="self-hosting" aria-labelledby="self-hosting-title">
+  <h2 id="self-hosting-title">Your plan, on your own server</h2>
+  <p class="section-lead">
+    There is no Dayhand cloud and no server address built into the apps. You run the server, with one command, or
+    skip it: the apps also work on their own.
+  </p>
+
+  <ol class="steps" role="list">
+    <li>
+      <h3>Start a server on this computer</h3>
+      <p>
+        On macOS or Linux, with the <code>dayhand</code> command from <a href="#download">Download</a>. The first run
+        downloads the Convex local backend once, signs <code>dayhand</code> in and prints a pairing code. Data and
+        keys stay in a private folder.
+      </p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that starts a server"><code>dayhand server start</code></pre>
+    </li>
+    <li>
+      <h3>Connect your phone</h3>
+      <p>
+        In the app, choose Settings, Server, Connect to my server, and scan the code. Release builds connect only over
+        HTTPS, so a server on your computer needs <code>tailscale serve</code> in front of it.
+      </p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that prints a pairing code"><code>dayhand pair</code></pre>
+    </li>
+    <li>
+      <h3>Or use your own Convex account</h3>
+      <p>
+        This deploys to your free Convex account and gives a public HTTPS address, which the Claude apps and a phone
+        away from home need. It works from Windows too, and the Free plan costs nothing.
+      </p>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that deploys a server"><code>dayhand server deploy</code></pre>
+    </li>
+  </ol>
+
+  <p class="note">
+    No server at all? The Android app starts with an empty plan or sample data and keeps everything on the phone.
+    Android backups are off for Dayhand, so keep a backup file. Costs, backups, updates and Tailscale:
+    <a href={repoFile("docs/deploy.md")}>the deployment guide</a>.
+  </p>
+</section>
