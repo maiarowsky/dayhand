@@ -111,7 +111,7 @@ final class AppModel: ObservableObject {
         planTask?.cancel()
         let tasks = tasks, settings = settings
         planTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(500))
+            try? await Task.sleep(nanoseconds: 500_000_000)
             guard !Task.isCancelled else { return }
             await notifications.apply(ReminderPlanner.plan(tasks, settings: settings, now: Clock.nowMs()))
         }
