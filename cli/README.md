@@ -20,7 +20,7 @@ dayhand login --url https://<deployment>.convex.site    # locally: http://127.0.
 dayhand                             # Today
 dayhand add Call the accountant --due "fri 2pm" -l home
 dayhand list --due-before eow --search accountant
-dayhand ui                          # full screen: Today, board, week, trash (? lists the keys)
+dayhand ui                          # full screen: Today, board, week, trash, agents (? lists the keys)
 source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help completion
 ```
 
@@ -34,7 +34,7 @@ Dates are English phrases resolved in your time zone (`dayhand help dates`, `day
 
 `dayhand ui` is the same client full screen, written with [Ink](https://github.com/vadimdemedes/ink)
 (React for the terminal; Ink and React load only for this command). It shows Today, the board,
-the week and the trash, polls what is on screen every 12 s (`--interval`) within the key's
+the week, the trash and agent controls, polls what is on screen every 12 s (`--interval`) within the key's
 limits, keeps the last data with a red status line when the server cannot be reached, and
 shows who made each change in a task's history. Keys follow vim and lazygit; `dayhand help ui`
 lists them, and [docs/omarchy.md](../docs/omarchy.md) turns it into an Omarchy app. Its screens

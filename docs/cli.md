@@ -341,7 +341,7 @@ Move:
 
 Views:
   Tab S-Tab           Next / previous view
-  1 2 3 4             Today, Board, Week, Trash
+  1 2 3 4 5           Today, Board, Week, Trash, Agents
   /                   Filter: title, #label, note, #42
   R                   Refresh now (also every 12 s)
   ?                   This help
@@ -370,6 +370,14 @@ Typing:
   Tab S-Tab           Next / previous field (edit)
   ← → C-a C-e         Move the cursor; start / end
   C-u C-k C-w         Delete to start / to end / a word
+
+Agents:
+  p                   Agents: pause / resume changes
+  Enter               Agents: open request options or proposal details
+  1 2 3 4             Request: choose an option (not yet saved)
+  Enter Esc           Request: confirm the chosen option / go back
+  A                   Accept the selected proposal into the plan
+  X                   Reject the selected proposal with a required reason
 
 The layout and keys owe a lot to Backlog.md (github.com/MrLesk/Backlog.md, MIT)
 and lazygit; no code is taken from either.

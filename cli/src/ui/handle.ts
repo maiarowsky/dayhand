@@ -6,7 +6,7 @@ import type { Task } from "../render/model.js";
 import { addDays, isoWeekday } from "../when/calendar.js";
 import { editLine, line } from "./line.js";
 import { weekStart } from "./lists.js";
-import { clamp, moveColumn, moveRow, selectedTask, VIEWS, type EditField, type EditKey, type Lists, type Mode, type UiState } from "./state.js";
+import { clamp, moveColumn, moveRow, selectedAgent, selectedTask, VIEWS, type EditField, type EditKey, type Lists, type Mode, type UiState } from "./state.js";
 
 export type Effect =
   | { kind: "quit" }
@@ -23,6 +23,10 @@ export type Effect =
   | { kind: "edit"; task: Task; changes: Partial<Record<EditKey, string>> }
   | { kind: "editor"; task: Task }
   | { kind: "undo"; taskId: string }
+  | { kind: "pause"; paused: boolean }
+  | { kind: "decide"; approvalId: string; optionId: string; label: string }
+  | { kind: "accept"; task: Task }
+  | { kind: "reject"; task: Task; reason: string }
   | { kind: "flash"; text: string };
 
 export type Result = { state: UiState; effect?: Effect };
@@ -41,6 +45,8 @@ export function handleKey(state: UiState, name: string, lists: Lists): Result {
       return confirm(state, state.mode, name);
     case "edit":
       return edit(state, state.mode, name, lists);
+    case "approval":
+      return approval(state, state.mode, name, lists.page);
     case "normal":
       return normal(state, name, lists);
   }
@@ -60,7 +66,17 @@ function normal(state: UiState, name: string, lists: Lists): Result {
   if (moved) return moved;
   const task = selectedTask(state, lists);
   const inTrash = Boolean(task?.deletedAt);
-  const act = (make: (task: Task) => Result): Result => (!task ? flash(state, t("flash.noTask")) : inTrash ? flash(state, t("flash.inTrash")) : make(task));
+  if (state.view === "agents" && name === "p") return lists.paused === undefined ? flash(state, t("conn.notYet")) : { state, effect: { kind: "pause", paused: !lists.paused } };
+  if (task?.proposedAt && !inTrash && (name === "A" || name === "X")) {
+    if (name === "A") return { state: { ...state, detail: undefined }, effect: { kind: "accept", task } };
+    return { state: { ...state, mode: { kind: "prompt", prompt: "reject", line: line(), taskId: task.id } } };
+  }
+  if (state.view === "agents" && !state.detail) {
+    const item = selectedAgent(state, lists);
+    if (name === "enter" && item?.kind === "approval") return { state: { ...state, mode: { kind: "approval", approval: item.approval, scroll: 0 } } };
+    if (name !== "enter") return { state };
+  }
+  const act = (make: (task: Task) => Result): Result => (!task ? flash(state, t("flash.noTask")) : inTrash ? flash(state, t("flash.inTrash")) : task.proposedAt ? flash(state, t("flash.proposal")) : make(task));
   switch (name) {
     case "a":
       return { state: { ...state, mode: { kind: "prompt", prompt: "add", line: line(), date: addDate(state, lists), ...(boardDoing(state) ? { status: "doing" as const } : {}) } } };
@@ -126,6 +142,7 @@ function navigation(state: UiState, name: string, lists: Lists): Result | undefi
     case "2":
     case "3":
     case "4":
+    case "5":
       return view(Number(name) - 1);
     case "R":
     case "C-r":
@@ -185,12 +202,34 @@ function prompt(state: UiState, mode: Extract<Mode, { kind: "prompt" }>, name: s
         return task && text ? { state: closed, effect: { kind: "move", task, text } } : { state: closed };
       case "note":
         return task ? { state: closed, effect: { kind: "now", task, note: text } } : { state: closed };
+      case "reject":
+        if (!text) return { state };
+        return task ? { state: { ...closed, detail: undefined }, effect: { kind: "reject", task, reason: text } } : { state: closed };
     }
   }
   const edited = editLine(mode.line, name);
   if (!edited) return { state };
   const next = { ...state, mode: { ...mode, line: edited } };
   return { state: mode.prompt === "filter" ? { ...next, filter: edited.text } : next };
+}
+
+/** A digit selects a captured option; only a separate Enter records the decision. */
+function approval(state: UiState, mode: Extract<Mode, { kind: "approval" }>, name: string, page: number): Result {
+  if (name === "esc") return { state: { ...state, mode: mode.optionId ? { ...mode, optionId: undefined } : NORMAL } };
+  if (name === "q") return { state: { ...state, mode: NORMAL } };
+  if (name === "enter" && mode.optionId) {
+    const option = mode.approval.options.find((o) => o.id === mode.optionId);
+    return option ? { state: { ...state, mode: NORMAL }, effect: { kind: "decide", approvalId: mode.approval.id, optionId: option.id, label: option.label } } : { state };
+  }
+  if (!mode.optionId && /^[1-4]$/.test(name)) {
+    const option = mode.approval.options[Number(name) - 1];
+    return option ? { state: { ...state, mode: { ...mode, optionId: option.id, scroll: 0 } } } : { state };
+  }
+  const moves: Record<string, number> = { j: 1, down: 1, k: -1, up: -1, g: -Infinity, home: -Infinity, G: Infinity, end: Infinity, "C-d": Math.max(1, Math.floor(page / 2)), pgdn: Math.max(1, Math.floor(page / 2)), "C-u": -Math.max(1, Math.floor(page / 2)), pgup: -Math.max(1, Math.floor(page / 2)) };
+  if (!(name in moves)) return { state };
+  const delta = moves[name]!;
+  const scroll = Number.isFinite(delta) ? Math.max(0, mode.scroll + delta) : delta > 0 ? Number.MAX_SAFE_INTEGER : 0;
+  return { state: { ...state, mode: { ...mode, scroll } } };
 }
 
 function confirm(state: UiState, mode: Extract<Mode, { kind: "confirm" }>, name: string): Result {
@@ -240,6 +279,6 @@ export function editFields(task: Task): EditField[] {
 
 /** The task a prompt or form was opened for: still selected, or open in details. */
 function findTask(lists: Lists, id: string, state: UiState): Task | undefined {
-  const all = [lists.detail, ...lists.today, ...lists.board.flat(), ...lists.week.flat(), ...lists.trash];
+  const all = [lists.detail, ...lists.today, ...lists.board.flat(), ...lists.week.flat(), ...lists.trash, ...lists.agents.flatMap((item) => item.kind === "proposal" ? [item.task] : [])];
   return all.find((t) => t?.id === id) ?? (selectedTask(state, lists)?.id === id ? selectedTask(state, lists) : undefined);
 }

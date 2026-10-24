@@ -6,7 +6,8 @@ import { t, type Key } from "../../i18n/index.js";
 import { formatTimestamp } from "../../render/format.js";
 import type { Detail, HistoryEntry } from "../../render/model.js";
 import { ICONS, refText } from "../rows.js";
-import { cut, padTo, seg, toHeight, type Color, type Row } from "../text.js";
+import type { WorkTask } from "../agents.js";
+import { cut, padTo, seg, toHeight, widthOf, type Color, type Row } from "../text.js";
 import type { Screen } from "./screen.js";
 
 const ACTIONS = ["create", "update", "complete", "repeat", "setStatus", "setNow", "archive", "delete", "restore"];
@@ -39,14 +40,38 @@ export function describeChange(entry: HistoryEntry, timezone?: string): string {
 const LABEL_WIDTH = 10;
 
 /** A field's label, padded so the values line up (wider when a language's labels are). */
-const labelSeg = (label: string) => seg(padTo(label, LABEL_WIDTH), { dim: true });
+const labelSeg = (label: string) => seg(padTo(label, Math.max(LABEL_WIDTH, widthOf(label) + 2)), { dim: true });
 
 function field(label: string, text: string | undefined, style: Parameters<typeof seg>[1] = {}): Row[] {
   return text ? [[labelSeg(label), seg(text, style)]] : [];
 }
 
+/** Agent-work fields, wrapped so plans, criteria and proof are readable in narrow terminals. */
+function workRows(task: WorkTask, timezone: string | undefined, width: number, now: number): Row[] {
+  const rows: Row[] = [];
+  const add = (key: Key, values: string[], color?: Color) => {
+    const label = t(key);
+    const indent = Math.min(Math.max(LABEL_WIDTH, widthOf(label) + 2), Math.floor(width / 2));
+    const lines = (values.length ? values : [t("detail.none")]).flatMap((text) => wrap(text, width - indent));
+    rows.push(...lines.map((text, i) => [seg(padTo(i === 0 ? label : "", indent), { dim: true }), seg(text, { color })]));
+  };
+  const claim = task.claimedBy ? [task.claimedBy.name, task.claimExpiresAt ? t("detail.claimUntil", { time: formatTimestamp(task.claimExpiresAt, timezone) }) : "", task.claimExpiresAt && task.claimExpiresAt <= now ? t("detail.claimExpired") : ""].filter(Boolean).join(" · ") : "";
+  add("detail.claimedBy", claim ? [claim] : [], "magenta");
+  add("detail.criteria", (task.acceptance ?? []).map((item) => `${item.met ? "[x]" : "[ ]"} ${item.text}`));
+  add("detail.plan", task.plan ? [task.plan] : []);
+  const proof = task.proof;
+  add("detail.proof", proof ? [
+    ...(proof.summary ? [proof.summary] : []),
+    ...(proof.links ?? []).map((link) => link.title ? `${link.title} <${link.url}>` : link.url),
+    ...(proof.checks ?? []).map((check) => `${t(check.result === "pass" ? "proof.pass" : "proof.fail")}: ${check.name}${check.url ? ` <${check.url}>` : ""}`),
+  ] : []);
+  add("detail.dependsOn", task.dependsOn ?? []);
+  add("detail.blocked", task.blockedReason ? [task.blockedReason] : [], task.blockedReason ? "red" : undefined);
+  return rows;
+}
+
 /** All rows of the details, before scrolling. */
-export function detailRows(detail: Detail, today: string, timezone: string | undefined, width: number): Row[] {
+export function detailRows(detail: Detail, today: string, timezone: string | undefined, width: number, now = Date.now()): Row[] {
   const { task, history } = detail;
   const due = [task.dueDate, task.dueTime].filter(Boolean).join(" ");
   const relative = task.dueDate ? relativeDay(task.dueDate, today) : undefined;
@@ -73,6 +98,7 @@ export function detailRows(detail: Detail, today: string, timezone: string | und
     rows.push(...task.checklist.map((item, i) => [seg(`  ${i + 1}. `), seg(item.done ? "[x] " : "[ ] ", { color: item.done ? "green" : undefined }), seg(item.title, { dim: item.done })]));
   }
   if (task.note) rows.push([], [seg(t("detail.note"), { bold: true })], ...wrap(task.note, width - 2).map((l) => [seg(`  ${l}`)]));
+  rows.push([], ...workRows(task as WorkTask, timezone, width, now));
   rows.push([], [seg(t("detail.history", { count: history.length }), { bold: true })]);
   const byWidth = Math.min(28, Math.max(3, ...history.map((h) => h.by.length)));
   for (const entry of [...history].reverse()) {
@@ -93,10 +119,20 @@ export function wrap(text: string, width: number): string[] {
     const out: string[] = [];
     let current = "";
     for (const word of paragraph.split(" ")) {
-      if (current && (current + " " + word).length > width) {
+      if (current && widthOf(current + " " + word) > width) {
         out.push(current);
         current = word;
       } else current = current ? `${current} ${word}` : word;
+      // IDs, URLs and CJK paragraphs need wrapping even without spaces.
+      while (widthOf(current) > Math.max(1, width)) {
+        let part = "";
+        for (const char of current) {
+          if (part && widthOf(part + char) > Math.max(1, width)) break;
+          part += char;
+        }
+        out.push(part);
+        current = current.slice(part.length);
+      }
     }
     out.push(current);
     return out;
@@ -104,9 +140,9 @@ export function wrap(text: string, width: number): string[] {
 }
 
 /** The details scrolled to `scroll` (clamped so the last row stays at the bottom). */
-export function detailScreen(detail: Detail | undefined, scroll: number, today: string, timezone: string | undefined, width: number, height: number): Screen & { scroll: number } {
+export function detailScreen(detail: Detail | undefined, scroll: number, today: string, timezone: string | undefined, width: number, height: number, now = Date.now()): Screen & { scroll: number } {
   if (!detail) return { rows: toHeight([[seg(`  ${t("detail.loading")}`, { dim: true })]], height), hits: [], scroll: 0 };
-  const rows = detailRows(detail, today, timezone, width);
+  const rows = detailRows(detail, today, timezone, width, now);
   const top = Math.max(0, Math.min(scroll, rows.length - height));
   return { rows: toHeight(rows.slice(top, top + height), height), hits: [], scroll: top };
 }

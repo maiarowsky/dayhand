@@ -7,6 +7,7 @@ import { setLanguage, tIn } from "../src/i18n/index.js";
 import type { Board, Detail, Task, TodayView } from "../src/render/model.js";
 import { makeApi, retryAfterMs, Throttled, type Api } from "../src/ui/api.js";
 import { Budget } from "../src/ui/budget.js";
+import type { Agents, Approval, Health, WorkTask } from "../src/ui/agents.js";
 import { Controller } from "../src/ui/controller.js";
 import { handleKey } from "../src/ui/handle.js";
 import { chunkKeys, KEY_GROUPS, keyName, keysText } from "../src/ui/keys.js";
@@ -14,6 +15,7 @@ import { editLine, insert, line } from "../src/ui/line.js";
 import { todaySections, weekDays, weekStart } from "../src/ui/lists.js";
 import { derive } from "../src/ui/model.js";
 import { parseMove, parseQuickAdd } from "../src/ui/quickadd.js";
+import { detailRows } from "../src/ui/screens/detail.js";
 import { initialState, type Lists, type UiState } from "../src/ui/state.js";
 import { cut, fitRow, rowWidth, rowsText, seg, windowStart } from "../src/ui/text.js";
 import { TOPICS } from "../src/topics.js";
@@ -28,6 +30,25 @@ function task(title: string, fields: Partial<Task> = {}): Task {
   const ref = fields.ref ?? nextRef++;
   return { id: `t${ref}`, ref, title, status: "todo", isNow: false, labels: [], links: [], createdAt: ref, updatedAt: ref, ...fields };
 }
+
+function health(fields: Partial<Health> = {}): Health {
+  const empty = () => ({ count: 0, tasks: [] });
+  return {
+    agentsPaused: false, overdue: empty(), dueToday: empty(), inProgress: empty(), expiredClaims: empty(), blocked: empty(),
+    awaitingApproval: { ...empty(), pendingApprovals: 0 }, proposals: { count: 0 },
+    completedToday: { ...empty(), withProof: 0, withoutProof: 0 }, oldestOpen: null, ...fields,
+  };
+}
+
+function approval(fields: Partial<Approval> = {}): Approval {
+  return {
+    id: "request-1", ref: 42, taskTitle: "Release the demo", action: "Deploy the demo", detail: "The checks passed",
+    options: [{ id: "ship", label: "Deploy now", consequence: "The demo becomes public" }, { id: "later", label: "Wait", consequence: "Nothing changes" }],
+    reversible: false, status: "pending", expiresAt: NOW + 86_400_000, requestedBy: { type: "agent", name: "demo-agent" }, source: "agent", tool: null, decision: null, ...fields,
+  };
+}
+
+const emptyAgents = (): Agents => ({ controls: { paused: false, pausedAt: null, reason: null, policies: [] }, approvals: [], proposals: [] });
 
 describe("quick add", () => {
   test("a date phrase at the end, #labels anywhere", () => {
@@ -96,6 +117,33 @@ describe("budget", () => {
   });
 });
 
+test("agent reads and changes use existing MCP schemas, budgets and proposal pagination", async () => {
+  const calls: { name: string; args: Record<string, unknown> }[] = [];
+  const request = approval();
+  const proposed = task("Demo proposal", { proposedAt: NOW });
+  const report = health({ proposals: { count: 1 } });
+  const client = {
+    callTool: async (name: string, args: Record<string, unknown> = {}) => {
+      calls.push({ name, args });
+      const value = name === "plan_health" ? report : name === "get_agent_controls" ? emptyAgents().controls
+        : name === "list_approvals" ? { approvals: [request] }
+        : name === "list_all" ? (args.cursor ? { result: [proposed], nextCursor: null } : { result: [], nextCursor: "page2" }) : {};
+      return { structured: value as unknown as Record<string, unknown>, text: "", content: [] };
+    },
+  };
+  const api = makeApi(client);
+  expect(await api.health()).toEqual(report);
+  expect(await api.agents()).toEqual({ controls: emptyAgents().controls, approvals: [request], proposals: [proposed] });
+  expect(calls).toContainEqual({ name: "list_approvals", args: { status: "pending", limit: 200 } });
+  expect(calls).toContainEqual({ name: "list_all", args: { proposed: true, limit: 200, cursor: "page2" } });
+  await api.change("pause_agents", { paused: true });
+  await api.change("decide_approval", { approvalId: request.id, optionId: "later" });
+  await api.change("accept_proposal", { taskId: proposed.id });
+  expect(calls).toContainEqual({ name: "pause_agents", args: { paused: true } });
+  expect(calls).toContainEqual({ name: "decide_approval", args: { approvalId: request.id, optionId: "later" } });
+  expect(calls.at(-1)).toEqual({ name: "accept_proposal", args: { taskId: proposed.id, clientId: expect.any(String) } });
+});
+
 describe("line editor and keys", () => {
   test("typing, cursor moves, deleting words and ends", () => {
     let l = line("Call mom");
@@ -161,7 +209,7 @@ describe("lists", () => {
 });
 
 function lists(over: Partial<Lists> = {}): Lists {
-  return { today: [], board: [[], [], []], week: [[], [], [], [], [], [], []], weekDates: Array.from({ length: 7 }, (_, i) => `2026-10-${19 + i}`), trash: [], date: TODAY, page: 20, ...over };
+  return { today: [], board: [[], [], []], week: [[], [], [], [], [], [], []], weekDates: Array.from({ length: 7 }, (_, i) => `2026-10-${19 + i}`), trash: [], agents: [], date: TODAY, page: 20, ...over };
 }
 
 describe("keys → state and effects", () => {
@@ -171,12 +219,13 @@ describe("keys → state and effects", () => {
   const base = initialState("today", "2026-10-19");
   const press = (state: UiState, keys: string[], l: Lists) => keys.reduce((r, k) => handleKey(r.state, k, l), { state } as ReturnType<typeof handleKey>);
 
-  test("j/k, G and g move; Tab and 1–4 switch views; q quits", () => {
+  test("j/k, G and g move; Tab and 1–5 switch views; q quits", () => {
     const l = lists({ today: [a, b, c] });
     expect(press(base, ["j", "j", "j"], l).state.cursor.today).toBe(2);
     expect(press(base, ["G", "k"], l).state.cursor.today).toBe(1);
     expect(press(base, ["tab"], l).state.view).toBe("board");
-    expect(press(base, ["S-tab"], l).state.view).toBe("trash");
+    expect(press(base, ["S-tab"], l).state.view).toBe("agents");
+    expect(press(base, ["5"], l)).toMatchObject({ state: { view: "agents" }, effect: { kind: "refresh" } });
     expect(press(base, ["3"], l)).toMatchObject({ state: { view: "week" }, effect: { kind: "refresh" } });
     expect(handleKey(base, "q", l).effect).toEqual({ kind: "quit" });
   });
@@ -241,9 +290,167 @@ describe("keys → state and effects", () => {
   });
 });
 
+describe("agent screens and decisions", () => {
+  const view: TodayView = { date: TODAY, timezone: ZONE.timezone, now: null, overdue: [], today: [], doneToday: [] };
+
+  test("Today puts one coloured health line above the task sections and keeps mouse targets aligned", async () => {
+    const planned = task("A planned task");
+    const { api, state } = fakeApi({ ...view, today: [planned] });
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    for (const [report, colour, text] of [
+      [health(), "green", "Due today: 0 · In progress: 0 · Done today: 0"],
+      [health({ proposals: { count: 2 } }), "yellow", "Proposals in the inbox: 2"],
+      [health({ overdue: { count: 1, tasks: [] } }), "red", "Overdue: 1"],
+      [health({ blocked: { count: 1, tasks: [] } }), "red", "Blocked: 1"],
+      [health({ expiredClaims: { count: 1, tasks: [] } }), "red", "Claims run out: 1"],
+      [health({ agentsPaused: true }), "yellow", "Agents are paused"],
+      [health({ awaitingApproval: { count: 0, tasks: [], pendingApprovals: 1 } }), "yellow", "Approval requests pending: 1"],
+      [health({ completedToday: { count: 1, tasks: [], withProof: 0, withoutProof: 1 } }), "yellow", "Done without proof: 1"],
+    ] as const) {
+      state.health = report;
+      await ui.refresh();
+      const row = ui.frame().rows[2]!;
+      expect(rowsText([row])).toContain(text);
+      expect(row[0]?.color).toBe(colour);
+      expect(rowsText(ui.frame().rows).indexOf(text)).toBeLessThan(rowsText(ui.frame().rows).indexOf("TODAY (1)"));
+    }
+    const target = ui.frame().hits.find((h) => h.target.kind === "task")!;
+    expect(rowsText([ui.frame().rows[target.y]!])).toContain("A planned task");
+    ui.mouse({ button: 0, x: target.x0, y: target.y, release: false });
+    await ui.idle();
+    expect(ui.snapshot().ui.detail?.taskId).toBe(planned.id);
+    ui.stop();
+  });
+
+  test("approval digits do not save, Esc backs out, and polling cannot retarget a captured choice", async () => {
+    const request = approval();
+    const { api, state } = fakeApi(view);
+    state.agents = { ...emptyAgents(), approvals: [request] };
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    await ui.refresh();
+    ui.key("5");
+    await ui.idle();
+    const screen = rowsText(ui.frame().rows);
+    for (const heading of ["5 Agents", "PAUSE", "APPROVAL REQUESTS (1)", "PROPOSALS (0)"]) expect(screen).toContain(heading);
+    ui.key("enter");
+    expect(rowsText(ui.frame().rows)).toContain("1. Deploy now");
+    expect(rowsText(ui.frame().rows)).toContain("The demo becomes public");
+    ui.key("enter");
+    ui.key("4"); // There is no fourth option.
+    expect(ui.snapshot().ui.mode).not.toHaveProperty("optionId");
+    ui.key("1");
+    expect(rowsText(ui.frame().rows)).toContain("Record this decision?");
+    expect(state.changes).toHaveLength(0);
+    ui.key("esc");
+    expect(ui.snapshot().ui.mode).toMatchObject({ kind: "approval", optionId: undefined });
+    ui.key("esc");
+    expect(ui.snapshot().ui.mode.kind).toBe("normal");
+    ui.key("enter");
+    // Another request arrives while this one is open, with different option IDs.
+    state.agents = { ...state.agents, approvals: [approval({ id: "request-2", options: [{ id: "wrong", label: "Another choice", consequence: null }] })] };
+    await ui.refresh();
+    ui.key("2");
+    expect(ui.snapshot().ui.view).toBe("agents");
+    expect(state.changes).toHaveLength(0);
+    expect(rowsText(ui.frame().rows)).toContain("2. Wait");
+    ui.key("enter");
+    await ui.idle();
+    expect(state.changes).toEqual([{ tool: "decide_approval", args: { approvalId: request.id, optionId: "later" } }]);
+    expect(rowsText(ui.frame().rows)).toContain("Decision recorded: Wait");
+    ui.stop();
+  });
+
+  test("the confirmation shows the selected option before a long request detail and scrolls both ways", async () => {
+    const { api, state } = fakeApi(view);
+    state.agents.approvals = [approval({ detail: "More context\n".repeat(40) })];
+    const ui = new Controller({ api, view: "agents", now: () => NOW, columns: 50, rows: 16 });
+    await ui.refresh();
+    ui.key("enter");
+    ui.key("G");
+    expect(rowsText(ui.frame().rows)).toContain("2. Wait");
+    ui.key("2");
+    expect(rowsText(ui.frame().rows)).toContain("2. Wait");
+    ui.key("G");
+    const atBottom = ui.snapshot().ui.mode;
+    ui.key("k");
+    const above = ui.snapshot().ui.mode;
+    expect(atBottom.kind === "approval" && above.kind === "approval" && above.scroll === atBottom.scroll - 1).toBe(true);
+    ui.key("esc");
+    ui.key("esc");
+    expect(state.changes).toHaveLength(0);
+    ui.stop();
+  });
+
+  test.each([false, true])("A accepts a proposal from the list or details (details=%s) and it joins Today", async (detail) => {
+    const proposed = task("Proposed demo task", { proposedAt: NOW });
+    const { api, state } = fakeApi(view);
+    state.agents.proposals = [proposed];
+    const ui = new Controller({ api, view: "agents", now: () => NOW, columns: 100, rows: 24 });
+    await ui.refresh();
+    if (detail) {
+      ui.key("enter");
+      await ui.idle();
+      expect(ui.snapshot().ui.detail?.taskId).toBe(proposed.id);
+    }
+    ui.key("A");
+    await ui.idle();
+    expect(state.changes).toEqual([{ tool: "accept_proposal", args: { taskId: proposed.id } }]);
+    expect(rowsText(ui.frame().rows)).toContain(`Accepted #${proposed.ref} Proposed demo task`);
+    expect(rowsText(ui.frame().rows)).toContain("PROPOSALS (0)");
+    expect(ui.snapshot().ui.detail).toBeUndefined();
+    ui.key("1");
+    await ui.idle();
+    expect(ui.selected()).toMatchObject({ id: proposed.id, title: proposed.title });
+    expect(ui.selected()?.proposedAt).toBeUndefined();
+    ui.stop();
+  });
+
+  test("p toggles pause and X requires a reason, supports cancel, and rejects only the selected proposal", async () => {
+    const proposed = task("Not this quarter", { proposedAt: NOW });
+    const { api, state } = fakeApi(view);
+    state.agents.proposals = [proposed];
+    const ui = new Controller({ api, view: "agents", now: () => NOW, columns: 100, rows: 24 });
+    await ui.refresh();
+    ui.key("p");
+    await ui.idle();
+    expect(rowsText(ui.frame().rows)).toContain("Agents are paused · p resumes");
+    ui.key("p");
+    await ui.idle();
+    expect(rowsText(ui.frame().rows)).toContain("Agents can make changes · p pauses");
+    ui.key("X");
+    ui.key("enter");
+    expect(rowsText(ui.frame().rows)).toContain("A reason is required");
+    expect(state.changes.map((c) => c.tool)).toEqual(["pause_agents", "pause_agents"]);
+    ui.key("esc");
+    ui.key("X");
+    ui.paste("Not in scope");
+    ui.key("enter");
+    await ui.idle();
+    expect(state.changes).toEqual([
+      { tool: "pause_agents", args: { paused: true } }, { tool: "pause_agents", args: { paused: false } },
+      { tool: "reject_proposal", args: { taskId: proposed.id, reason: "Not in scope" } },
+    ]);
+    expect(rowsText(ui.frame().rows)).toContain("PROPOSALS (0)");
+    ui.stop();
+  });
+
+  test("details include claims, met and unmet criteria, a wrapped plan, proof, dependencies and blocking", () => {
+    const work = task("Work item", {
+      claimedBy: { name: "demo-agent" }, claimExpiresAt: NOW - 1,
+      acceptance: [{ id: "one", text: "Portable build", met: true }, { id: "two", text: "Ship the demo", met: false }],
+      plan: "First build\nThen test the demo", dependsOn: ["task-to-finish"], blockedReason: "Waiting for the test rig",
+      proof: { summary: "Build verified", links: [{ url: "https://example.com/proof", title: "Build log" }], checks: [{ name: "unit tests", result: "pass" }, { name: "live demo", result: "fail" }] },
+    }) as WorkTask;
+    const rows = detailRows({ task: work, history: [] }, TODAY, ZONE.timezone, 100, NOW);
+    const text = rowsText(rows);
+    for (const value of ["claimed by", "demo-agent", "claim expired", "criteria", "[x] Portable build", "[ ] Ship the demo", "plan", "First build", "Then test the demo", "proof", "Build log <https://example.com/proof>", "pass: unit tests", "fail: live demo", "waits for", "task-to-finish", "blocked", "Waiting for the test rig"]) expect(text).toContain(value);
+    for (const row of detailRows({ task: { ...work, plan: "日本語の作業計画".repeat(20) }, history: [] }, TODAY, ZONE.timezone, 40, NOW)) expect(rowWidth(row)).toBeLessThanOrEqual(40);
+  });
+});
+
 /** A fake server: a Today view, a board and a week; changes recorded; `down` makes every call fail. */
 function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
-  const state = { down: false, changes: [] as { tool: string; args: Record<string, unknown> }[], view: today };
+  const state = { down: false, changes: [] as { tool: string; args: Record<string, unknown> }[], view: today, health: health(), agents: emptyAgents() };
   const check = () => {
     if (state.down) throw new CliError("unavailable", "Cannot reach http://127.0.0.1:9 (ECONNREFUSED)", { retryable: true });
   };
@@ -251,13 +458,25 @@ function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
   const api: Api = {
     settings: async () => (check(), { timezone: "Europe/London" }),
     today: async () => (check(), state.view),
+    health: async () => (check(), state.health),
+    agents: async () => (check(), state.agents),
     board: async () => (check(), board),
     week: async () => (check(), [...today.today, ...today.overdue]),
     trash: async () => (check(), []),
-    task: async (id) => (check(), { task: [...today.today, ...today.overdue].find((t) => t.id === id)!, history: [{ at: NOW, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "update", before: { title: "Old" }, after: { title: "New" } }] } as Detail),
+    task: async (id) => (check(), { task: [...today.today, ...today.overdue, ...state.agents.proposals].find((t) => t.id === id)!, history: [{ at: NOW, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "update", before: { title: "Old" }, after: { title: "New" } }] } as Detail),
     change: async <T>(tool: string, args: Record<string, unknown>) => {
       check();
       state.changes.push({ tool, args });
+      if (tool === "pause_agents") state.agents = { ...state.agents, controls: { ...state.agents.controls, paused: Boolean(args.paused) } };
+      if (tool === "decide_approval") state.agents = { ...state.agents, approvals: state.agents.approvals.filter((a) => a.id !== args.approvalId) };
+      if (tool === "accept_proposal" || tool === "reject_proposal") {
+        const proposal = state.agents.proposals.find((t) => t.id === args.taskId)!;
+        state.agents = { ...state.agents, proposals: state.agents.proposals.filter((t) => t.id !== args.taskId) };
+        const accepted = { ...proposal };
+        delete accepted.proposedAt;
+        if (tool === "accept_proposal") state.view = { ...state.view, today: [...state.view.today, accepted] };
+        return accepted as T;
+      }
       return { task: today.today[0], next: null, ...today.today[0] } as T;
     },
     ...extra,
@@ -335,7 +554,7 @@ describe("controller", () => {
   test("every view renders at 100×24 and at 50×16 (the week as bars without titles)", async () => {
     const { api } = fakeApi(view);
     const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
-    for (const [key, marker] of [["2", "TODO (1)"], ["3", "Fri 23"], ["4", "the trash is empty"], ["?", "Keys"]] as const) {
+    for (const [key, marker] of [["2", "TODO (1)"], ["3", "Fri 23"], ["4", "the trash is empty"], ["5", "APPROVAL REQUESTS (0)"], ["?", "Keys"]] as const) {
       ui.key(key);
       await ui.refresh();
       expect(rowsText(ui.frame().rows), key).toContain(marker);
@@ -362,7 +581,7 @@ describe("controller", () => {
       expect(polish).toMatch(/ZALEGŁE \(1\)\n› #\d+ ○ wczoraj Pay rent +#home/);
       expect(polish).toContain("? pomoc");
       setLanguage("ja");
-      for (const key of ["2", "3", "4", "?"]) {
+      for (const key of ["2", "3", "4", "5", "?"]) {
         ui.key(key);
         await ui.refresh();
         for (const row of ui.frame().rows) expect(rowWidth(row), key).toBeLessThanOrEqual(80);

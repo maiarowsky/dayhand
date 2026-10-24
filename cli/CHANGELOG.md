@@ -4,9 +4,20 @@ Versions before 0.13.0 are described in the commit history (`git log -- cli`).
 
 ## 0.14.0 (2026-10-24)
 
-Needs backend 0.12.0 for the new parts; everything else works with older servers as before.
+Needs backend 0.12.0 for Backlog.md and the new agent brief; other features work with older servers as before.
 
 ### Added
+
+- **Plan health above Today**: a single red, yellow or green line summarizes overdue and
+  blocked tasks, expired claims, pending approvals, proposals and completions without proof,
+  using the same counts as `dayhand health`.
+- **Agents view (`5`)**: `p` pauses or resumes agents; Enter opens an approval request,
+  `1`–`4` chooses an option and a separate Enter confirms it.
+  `A` accepts a proposal into the plan; `X` rejects it with a required reason.
+- Task details show who claimed the work, acceptance criteria (`[x]` / `[ ]`), the plan,
+  proof, dependencies and the blocked reason.
+  All new screen text and key help is available in the same eight languages.
+- `dayhand help ui` and the in-app help (`?`) include the agent keys.
 
 - **`dayhand backlog import <dir>`**: a [Backlog.md](https://github.com/MrLesk/Backlog.md) folder
   (Markdown task files with a YAML header) becomes tasks with `import_backlog`: statuses map to
@@ -34,6 +45,11 @@ Needs backend 0.12.0 for the new parts; everything else works with older servers
   `list_today` as before.
 - The agent rules and the generated skill mention `dayhand prime --json` and the phase guides
   `dayhand://workflow/intake`, `/execution` and `/finalization`.
+
+### Unchanged
+
+- The terminal UI additions leave JSON output, field names, error codes and MCP contracts unchanged.
+  The new screens use the existing backend tools (backend 0.11.0 or later).
 
 ## 0.13.0 (2026-10-24)
 

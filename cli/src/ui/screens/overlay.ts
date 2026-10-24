@@ -32,7 +32,7 @@ export function helpRows(width: number): Row[] {
   const intro: Row[] = [[seg(t("help.title"), { bold: true }), seg(t("help.closes"), { dim: true })], []];
   if (width < 96) return [...intro, ...all.flat()];
   const left = [...all[0]!, ...all[1]!, ...all[4]!];
-  const right = [...all[2]!, ...all[3]!];
+  const right = [...all[2]!, ...all[3]!, ...all[5]!];
   const half = Math.floor((width - 3) / 2);
   return [...intro, ...columns([{ rows: left, width: half }, { rows: right, width: half }], Math.max(left.length, right.length), [seg(" │ ", { dim: true })])];
 }

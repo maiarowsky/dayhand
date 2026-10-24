@@ -49,6 +49,21 @@ describe("catalogs", () => {
     for (const language of LANGUAGES) expect(tIn(language, "conn.login")).toContain("dayhand login");
   });
 
+  test.each([
+    ["en", "Agents", "Decision recorded: Deploy now", "Blocked: 3"],
+    ["pl", "Agenci", "Zapisano decyzję: Deploy now", "Zablokowane: 3"],
+    ["de", "Agenten", "Entscheidung gespeichert: Deploy now", "Blockiert: 3"],
+    ["es", "Agentes", "Decisión guardada: Deploy now", "Bloqueadas: 3"],
+    ["fr", "Agents", "Décision enregistrée : Deploy now", "Bloquées : 3"],
+    ["pt-BR", "Agentes", "Decisão salva: Deploy now", "Bloqueadas: 3"],
+    ["ja", "エージェント", "判断を保存しました：Deploy now", "ブロック中：3"],
+    ["zh-Hans", "代理", "已保存决定：Deploy now", "已阻塞：3"],
+  ] as const)("%s localizes agent views, decisions and health while preserving the chosen label", (language, view, decision, health) => {
+    expect(tIn(language, "view.agents")).toBe(view);
+    expect(tIn(language, "done.decided", { label: "Deploy now" })).toBe(decision);
+    expect(tIn(language, "health.blocked", { count: 3 })).toBe(health);
+  });
+
   test("plurals follow each language's rules", () => {
     expect([1, 2, 5, 22, 25].map((count) => tIn("pl", "week.tasks", { count }))).toEqual([" · 1 zadanie", " · 2 zadania", " · 5 zadań", " · 22 zadania", " · 25 zadań"]);
     expect([1, 2].map((count) => tIn("de", "remind.days", { count }))).toEqual(["1 Tag vorher", "2 Tage vorher"]);
