@@ -4,18 +4,17 @@
 #   in order, unique ids, alt text and a size on every <img>, no inline scripts or on* handlers;
 # - links: every #fragment, relative path and https://dayhand.dev/ address (canonical, og:image, sitemap)
 #   points at a file and an id that exist;
-# - nothing from other servers: no external src, stylesheet, icon, CSS url() or @import, and no
-#   address of another server in the scripts (links to other sites with <a href> are fine);
-# - CSS: none of the patterns site/STYLE.md rules out (outline: none, transition: all).
+# - resource references: HTML attributes must be local (plain <a href> links may be external);
+# - static CSS/JS lint: CSS url() paths, no @import, outline: none or transition: all, and no
+#   server URL literals in scripts. These pattern scans do not observe browser network behaviour.
 #
-#   scripts/check-site.sh            # checks site/
-#   scripts/check-site.sh <folder>   # checks another copy, e.g. a build output
+#   scripts/check-site.sh            # always checks this checkout's site/
 #
 # Needs python3 (standard library only). Exit code 0 when everything passes, 1 with a list of problems.
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-SITE=${1:-"$ROOT/site"}
+SITE="$ROOT/site"
 [ -d "$SITE" ] || { echo "check-site: no folder $SITE" >&2; exit 2; }
 command -v python3 >/dev/null || { echo "check-site: python3 is needed" >&2; exit 2; }
 
@@ -23,9 +22,11 @@ exec python3 -I - "$SITE" <<'PY'
 import os, re, sys
 from html.parser import HTMLParser
 from urllib.parse import urlsplit, unquote
+from xml.etree import ElementTree
 
 SITE = os.path.abspath(sys.argv[1])
 ORIGIN = "https://dayhand.dev"
+SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 EXTERNAL = re.compile(r"^(?:[a-z][a-z0-9+.-]*:)?//", re.I)
 problems = []
@@ -179,7 +180,7 @@ for path, (page, text) in pages.items():
         if target is None:
             # Other sites: only plain links may point there; anything the page would load must be local.
             if tag != "a":
-                problem(path, line, f"<{tag} {attr}> loads {value} from another server")
+                problem(path, line, f"<{tag} {attr}> references another server: {value}")
             continue
         if value.startswith(ORIGIN) and tag == "link" and "canonical" not in rel:
             problem(path, line, f"<link {attr}> should be relative, not {value}")
@@ -198,9 +199,14 @@ for path, (page, text) in pages.items():
                 problem(path, line, f'{value}: no id "{fragment}"')
 
     if os.path.basename(path) == "index.html" and os.path.dirname(path) == SITE:
-        if f'<link rel="canonical" href="{ORIGIN}/">' not in text:
-            problem(path, 1, f'no <link rel="canonical" href="{ORIGIN}/">')
-        if 'property="og:image"' not in text:
+        canonicals = [
+            value for _, _, value, tag, attrs in page.refs
+            if tag == "link" and "canonical" in (attrs.get("rel") or "").lower().split()
+        ]
+        if canonicals != [f"{ORIGIN}/"]:
+            problem(path, 1, f"needs exactly one canonical link to {ORIGIN}/")
+        if not any(tag == "meta" and attrs.get("property") == "og:image"
+                   for _, _, _, tag, attrs in page.refs):
             problem(path, 1, "no og:image")
 
 for dirpath, _, files in os.walk(SITE):
@@ -213,40 +219,52 @@ for dirpath, _, files in os.walk(SITE):
                 for m in re.finditer(r"url\(\s*['\"]?([^'\")]+)", line):
                     target = local_target(path, m.group(1))
                     if target is None and not m.group(1).startswith("data:"):
-                        problem(path, n, f"url({m.group(1)}) loads from another server")
+                        problem(path, n, f"CSS lint: external URL literal url({m.group(1)})")
                     elif target and not os.path.isfile(target[0]):
-                        problem(path, n, f"url({m.group(1)}) points at a missing file")
+                        problem(path, n, f"CSS lint: url({m.group(1)}) points at a missing file")
                 if re.search(r"@import", line):
-                    problem(path, n, "@import (one stylesheet, no imports)")
+                    problem(path, n, "CSS lint: @import (one stylesheet, no imports)")
                 if re.search(r"outline\s*:\s*(none|0)\b", line):
-                    problem(path, n, "outline: none hides the focus ring")
+                    problem(path, n, "CSS lint: outline: none")
                 if re.search(r"transition\s*:\s*all\b", line):
-                    problem(path, n, "transition: all")
+                    problem(path, n, "CSS lint: transition: all")
         elif name.endswith(".js"):
             with open(path, encoding="utf-8") as f:
                 for n, line in enumerate(f, 1):
                     if re.search(r"(?:https?:)?//[a-z0-9.-]+\.[a-z]{2,}", line, re.I):
-                        problem(path, n, "an address of another server in a script")
+                        problem(path, n, "JS lint: server URL literal in a script")
 
 sitemap = os.path.join(SITE, "sitemap.xml")
 robots = os.path.join(SITE, "robots.txt")
 if not os.path.isfile(sitemap):
     problems.append("sitemap.xml is missing")
 else:
-    with open(sitemap, encoding="utf-8") as f:
-        locs = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", f.read())
-    if not locs:
-        problems.append("sitemap.xml lists no <loc>")
-    for loc in locs:
-        target = local_target(sitemap, loc) if loc.startswith(ORIGIN + "/") else None
-        if target is None or not os.path.isfile(target[0]):
-            problems.append(f"sitemap.xml: {loc} is not a page of this site")
+    try:
+        root = ElementTree.parse(sitemap).getroot()
+    except ElementTree.ParseError as error:
+        problem(sitemap, error.position[0], "invalid XML")
+    else:
+        if root.tag != f"{SITEMAP_NS}urlset":
+            problem(sitemap, 1, "needs a sitemap urlset root")
+        locs = root.findall(f"{SITEMAP_NS}url/{SITEMAP_NS}loc")
+        if not locs:
+            problem(sitemap, 1, "lists no page locations")
+        for element in locs:
+            loc = (element.text or "").strip()
+            target = local_target(sitemap, loc) if loc.startswith(ORIGIN + "/") else None
+            if target is None or target[0] not in pages:
+                problem(sitemap, 1, f"{loc} is not a page of this site")
 if not os.path.isfile(robots):
     problems.append("robots.txt is missing")
 else:
     with open(robots, encoding="utf-8") as f:
-        if f"Sitemap: {ORIGIN}/sitemap.xml" not in f.read():
-            problems.append(f"robots.txt does not name {ORIGIN}/sitemap.xml")
+        sitemaps = []
+        for line in f:
+            name, separator, value = line.partition("#")[0].partition(":")
+            if separator and name.strip().lower() == "sitemap":
+                sitemaps.append(value.strip())
+    if f"{ORIGIN}/sitemap.xml" not in sitemaps:
+        problems.append(f"robots.txt does not name {ORIGIN}/sitemap.xml")
 
 if problems:
     print(f"check-site: {len(problems)} problem(s) in {SITE}")

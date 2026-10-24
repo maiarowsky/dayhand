@@ -78,10 +78,10 @@ Tasks can carry acceptance criteria and a plan. An agent claims a task so other 
 alone, and a task with criteria is done only when they are met and the agent says what it did:
 
 ```sh
-dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals"
-DAYHAND_API_KEY=$AGENT_KEY dayhand claim 3 --minutes 30
-DAYHAND_API_KEY=$AGENT_KEY dayhand criteria 3 --met all
-DAYHAND_API_KEY=$AGENT_KEY dayhand done 3 --summary "3 PDFs sent" --check totals=pass
+TASK_ID=$(dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals" --json | jq -er .id)
+DAYHAND_API_KEY=$AGENT_KEY dayhand claim "$TASK_ID" --minutes 30
+DAYHAND_API_KEY=$AGENT_KEY dayhand criteria "$TASK_ID" --met all
+DAYHAND_API_KEY=$AGENT_KEY dayhand done "$TASK_ID" --summary "3 PDFs sent" --check totals=pass
 ```
 
 For agents, `--json` prints exactly what the MCP tools return ([schemas](docs/schemas)), exit

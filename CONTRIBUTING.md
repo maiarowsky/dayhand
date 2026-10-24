@@ -74,7 +74,7 @@ npm run test:unit                         # pure tests only, under a second
 loaded from other servers. How it is built and the CSS rules it follows: [site/STYLE.md](site/STYLE.md).
 
 ```sh
-scripts/check-site.sh           # HTML, internal links, no external resources (needs python3)
+scripts/check-site.sh           # fixed site/: HTML, metadata, links, CSS/JS lint (needs python3)
 scripts/render-site-images.sh   # after changing og-image.svg or the icon (needs Chrome)
 ```
 

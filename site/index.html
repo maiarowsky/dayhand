@@ -115,8 +115,8 @@ TODAY
         </li>
         <li class="card">
           <h3>Your own server</h3>
-          <p>No shared cloud. One command starts a server on your computer or deploys one to your own Convex
-            account, and the apps also work with no server at all.</p>
+          <p>No shared cloud. One command starts a server on macOS or Linux, or deploys one to your own Convex
+            account on any supported platform. The apps also work with no server at all.</p>
         </li>
       </ul>
     </section>
@@ -179,12 +179,12 @@ TODAY
         <pre tabindex="0" aria-label="Commands for one agent task" data-copy><code>AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
 claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp --header "Authorization: Bearer $AGENT_KEY"
 
-dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals"
-DAYHAND_API_KEY=$AGENT_KEY dayhand claim 3 --minutes 30
-DAYHAND_API_KEY=$AGENT_KEY dayhand criteria 3 --met all
-DAYHAND_API_KEY=$AGENT_KEY dayhand done 3 --summary "3 PDFs sent" --check totals=pass
+TASK_ID=$(dayhand add "Send the Q4 invoices" --due "today 17:00" --accept "One PDF per client" --plan "Export, then check the totals" --json | jq -er .id)
+DAYHAND_API_KEY=$AGENT_KEY dayhand claim "$TASK_ID" --minutes 30
+DAYHAND_API_KEY=$AGENT_KEY dayhand criteria "$TASK_ID" --met all
+DAYHAND_API_KEY=$AGENT_KEY dayhand done "$TASK_ID" --summary "3 PDFs sent" --check totals=pass
 dayhand log --by agent</code></pre>
-        <figcaption>The commands from the README, which a script runs against a real local server.</figcaption>
+        <figcaption>For a local server on macOS or Linux, with jq and Claude Code installed.</figcaption>
       </figure>
       <p class="note">Dayhand records your decisions and the agents' work in the plan. It cannot stop what an agent
         does outside Dayhand.</p>
@@ -204,10 +204,13 @@ dayhand log --by agent</code></pre>
 cd dayhand/cli &amp;&amp; npm ci --ignore-scripts &amp;&amp; npm run build &amp;&amp; npm link &amp;&amp; cd ..</code></pre>
         </li>
         <li>
-          <h3>Start your server</h3>
+          <h3>Start a local server (macOS and Linux only)</h3>
           <p>The first run downloads the Convex local backend once, signs <code>dayhand</code> in and prints a
             pairing code for the phone.</p>
           <pre tabindex="0" class="code" data-copy><code>dayhand server start</code></pre>
+          <p>On Windows, use <code>dayhand server deploy</code> instead to set up a server on your own Convex
+            account. It also signs <code>dayhand</code> in and prints a pairing code; see the
+            <a href="https://github.com/maiarowsky/helm/blob/main/docs/deploy.md">deployment guide</a>.</p>
         </li>
         <li>
           <h3>Plan your day</h3>
@@ -260,7 +263,7 @@ open macos/dist/Dayhand.app</code></pre>
         address.</p>
       <ul class="cards" role="list">
         <li class="card">
-          <h3>On this computer</h3>
+          <h3>On this computer (macOS and Linux only)</h3>
           <p><code>dayhand server start</code> runs a server on your machine. Data and keys stay in a private folder.
             A phone reaches it over HTTPS through <code>tailscale serve</code>.</p>
         </li>
@@ -289,8 +292,8 @@ open macos/dist/Dayhand.app</code></pre>
           href="https://github.com/maiarowsky/helm/blob/main/CONTRIBUTING.md">how to contribute</a>). Security problems
           go privately, never in an issue (<a href="https://github.com/maiarowsky/helm/blob/main/SECURITY.md">security
           policy</a>).</p>
-        <p>The Convex local backend that <code>dayhand server start</code> downloads is source-available under
-          FSL-1.1-Apache-2.0, at a pinned version with a verified checksum.</p>
+        <p>The Convex local backend that <code>dayhand server start</code> downloads on macOS and Linux is
+          source-available under FSL-1.1-Apache-2.0, at a pinned version with a verified checksum.</p>
       </div>
     </section>
 
@@ -330,8 +333,8 @@ open macos/dist/Dayhand.app</code></pre>
         </details>
         <details>
           <summary>Is there an app for iPhone or Windows?</summary>
-          <p>Not yet. The iPhone app is not started. On Windows, the <code>dayhand</code> command line runs; there is
-            no desktop app.</p>
+          <p>Not yet. The iPhone app is not started. On Windows, the <code>dayhand</code> command line works with a
+            server on your own Convex account via <code>dayhand server deploy</code>; there is no desktop app.</p>
         </details>
         <details>
           <summary>Why is the repository called helm?</summary>

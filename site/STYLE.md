@@ -15,9 +15,11 @@ works as it will online. The page is in English; its text is written for this pr
 | `assets/today-macos.png` | a copy of `docs/assets/today-macos.png`, the macOS app on sample data |
 | `robots.txt`, `sitemap.xml` | for search engines, with the address `https://dayhand.dev` |
 
-Check it with `scripts/check-site.sh` before every change is merged: it fails on unclosed elements,
-duplicate ids, images without alt text or size, dead internal links and fragments, anything loaded from
-another server, and the CSS patterns ruled out below.
+Check it with `scripts/check-site.sh` before every change is merged. It always checks this checkout's
+`site/` folder: HTML structure, image attributes, internal links and fragments, parsed canonical and
+Open Graph metadata, sitemap XML and robots directives. CSS/JS pattern scans are static lint rules for
+resource URL literals and the CSS patterns ruled out below; they do not execute code or observe browser
+network requests.
 
 ## Rules from good-css.com that this page follows
 
@@ -75,5 +77,6 @@ scroll-driven animation, `text-box` and `@property`.
 
 ## Privacy
 
-No cookies, no analytics, no fonts or scripts from other servers. `scripts/check-site.sh` fails if
-anything the page loads comes from another address.
+No cookies, no analytics, no fonts or scripts from other servers. `scripts/check-site.sh` checks HTML
+resource references and lints CSS/JS source patterns; it does not prove runtime network behaviour.
+Verify requests separately in a browser's Network panel.
