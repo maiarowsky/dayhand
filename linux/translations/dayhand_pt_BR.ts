@@ -183,6 +183,96 @@
         <translation>(%1 não existe nesse dia)</translation>
     </message>
     <message>
+        <source>Does not repeat</source>
+        <translation>Não se repete</translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n day(s)</source>
+        <translation>
+            <numerusform>A cada %n dia</numerusform>
+            <numerusform>A cada %n dias</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n week(s)</source>
+        <translation>
+            <numerusform>A cada %n semana</numerusform>
+            <numerusform>A cada %n semanas</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n month(s)</source>
+        <translation>
+            <numerusform>A cada %n mês</numerusform>
+            <numerusform>A cada %n meses</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n year(s)</source>
+        <translation>
+            <numerusform>A cada %n ano</numerusform>
+            <numerusform>A cada %n anos</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Last day of the month</source>
+        <translation>Último dia do mês</translation>
+    </message>
+    <message>
+        <source>Day of month: %1</source>
+        <translation>Dia do mês: %1</translation>
+    </message>
+    <message>
+        <source>Weekday of month: %1, %2</source>
+        <translation>Dia da semana no mês: %1, %2</translation>
+    </message>
+    <message>
+        <source>From completion</source>
+        <translation>A partir da conclusão</translation>
+    </message>
+    <message>
+        <source>From due date</source>
+        <translation>A partir do vencimento</translation>
+    </message>
+    <message>
+        <source>Until %1</source>
+        <translation>Até %1</translation>
+    </message>
+    <message>
+        <source>Occurrences left: %1</source>
+        <translation>Ocorrências restantes: %1</translation>
+    </message>
+    <message>
+        <source>Next: %1</source>
+        <translation>Próxima: %1</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Nenhum</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) before</source>
+        <translation>
+            <numerusform>%n minuto antes</numerusform>
+            <numerusform>%n minutos antes</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1, %n day(s) before</source>
+        <translation>
+            <numerusform>%1, %n dia antes</numerusform>
+            <numerusform>%1, %n dias antes</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 on the due day</source>
+        <translation>%1 no dia do vencimento</translation>
+    </message>
+    <message>
+        <source>Default: %1</source>
+        <translation>Padrão: %1</translation>
+    </message>
+    <message>
         <source>Not connected to a server; tasks stay on this computer.</source>
         <translation>Sem conexão com um servidor; as tarefas ficam neste computador.</translation>
     </message>
@@ -352,6 +442,160 @@
     </message>
 </context>
 <context>
+    <name>TaskDetails</name>
+    <message>
+        <source>Back</source>
+        <translation>Voltar</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Fechar</translation>
+    </message>
+    <message>
+        <source>Task details</source>
+        <translation>Detalhes da tarefa</translation>
+    </message>
+    <message>
+        <source>In Trash — restore to edit.</source>
+        <translation>Na lixeira — restaure para editar.</translation>
+    </message>
+    <message>
+        <source>Archived</source>
+        <translation>Arquivada</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>Título</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message>
+        <source>To do</source>
+        <translation>A fazer</translation>
+    </message>
+    <message>
+        <source>In progress</source>
+        <translation>Em andamento</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Concluída</translation>
+    </message>
+    <message>
+        <source>Working on it now</source>
+        <translation>Estou trabalhando nisso agora</translation>
+    </message>
+    <message>
+        <source>Where I stopped</source>
+        <translation>Onde parei</translation>
+    </message>
+    <message>
+        <source>Due</source>
+        <translation>Vencimento</translation>
+    </message>
+    <message>
+        <source>Date phrase</source>
+        <translation>Expressão de data</translation>
+    </message>
+    <message>
+        <source>e.g. tomorrow 9am</source>
+        <translation>ex.: tomorrow 9am</translation>
+    </message>
+    <message>
+        <source>I understand: %1</source>
+        <translation>Entendi: %1</translation>
+    </message>
+    <message>
+        <source>Set date</source>
+        <translation>Definir data</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Hoje</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>Sem dia</translation>
+    </message>
+    <message>
+        <source>Remove time</source>
+        <translation>Remover horário</translation>
+    </message>
+    <message>
+        <source>Labels (comma-separated)</source>
+        <translation>Etiquetas (separadas por vírgulas)</translation>
+    </message>
+    <message>
+        <source>Checklist</source>
+        <translation>Lista de verificação</translation>
+    </message>
+    <message>
+        <source>Checklist item</source>
+        <translation>Item da lista</translation>
+    </message>
+    <message>
+        <source>Remove item</source>
+        <translation>Remover item</translation>
+    </message>
+    <message>
+        <source>Add item</source>
+        <translation>Adicionar item</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Nota</translation>
+    </message>
+    <message>
+        <source>Save note</source>
+        <translation>Salvar nota</translation>
+    </message>
+    <message>
+        <source>Repeat</source>
+        <translation>Repetição</translation>
+    </message>
+    <message>
+        <source>Reminders</source>
+        <translation>Lembretes</translation>
+    </message>
+    <message>
+        <source>Links</source>
+        <translation>Links</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Nenhum</translation>
+    </message>
+    <message>
+        <source>Archive</source>
+        <translation>Arquivar</translation>
+    </message>
+    <message>
+        <source>Move to Trash</source>
+        <translation>Mover para a lixeira</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Restaurar</translation>
+    </message>
+</context>
+<context>
+    <name>TaskRepository</name>
+    <message>
+        <source>The note is too long.</source>
+        <translation>A nota é longa demais.</translation>
+    </message>
+    <message>
+        <source>Use up to 20 labels, at most 50 characters each.</source>
+        <translation>Use até 20 etiquetas, com no máximo 50 caracteres cada.</translation>
+    </message>
+    <message>
+        <source>Use up to 100 checklist items, at most 500 characters each.</source>
+        <translation>Use até 100 itens, com no máximo 500 caracteres cada.</translation>
+    </message>
+</context>
+<context>
     <name>TaskRow</name>
     <message>
         <source>Mark as not done</source>
@@ -456,12 +700,28 @@
         <translation>Não foi possível ler o chaveiro (%1), então o Dayhand inicia sem servidor.</translation>
     </message>
     <message>
+        <source>No day</source>
+        <translation>Sem dia</translation>
+    </message>
+    <message>
         <source>Reading tasks failed: %1</source>
         <translation>Falha ao ler as tarefas: %1</translation>
     </message>
     <message>
         <source>Today</source>
         <translation>Hoje</translation>
+    </message>
+    <message>
+        <source>Enter a title (up to 500 characters).</source>
+        <translation>Digite um título (até 500 caracteres).</translation>
+    </message>
+    <message>
+        <source>Use up to 2000 characters for where you stopped.</source>
+        <translation>Descreva onde parou em até 2000 caracteres.</translation>
+    </message>
+    <message>
+        <source>Date not understood. Try: tomorrow 9am, fri, 2026-10-30.</source>
+        <translation>Data não compreendida. Tente: tomorrow 9am, fri, 2026-10-30.</translation>
     </message>
     <message>
         <source>The change could not be saved: %1</source>

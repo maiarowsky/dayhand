@@ -31,6 +31,7 @@ qt_add_qml_module(dayhand_app
         qml/SectionHeader.qml
         qml/SettingsDialog.qml
         qml/StatusLine.qml
+        qml/TaskDetails.qml
         qml/TaskRow.qml
         qml/TodayList.qml
 )

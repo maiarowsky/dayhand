@@ -22,6 +22,11 @@ Rectangle {
 
     HoverHandler { id: hover }
 
+    MouseArea {
+        anchors.fill: parent
+        onClicked: app.openDetails(root.task.id)
+    }
+
     TapHandler {
         acceptedButtons: Qt.RightButton
         onTapped: taskMenu.popup()
@@ -62,29 +67,42 @@ Rectangle {
             }
         }
 
-        ColumnLayout {
+        AbstractButton {
+            id: titleButton
+            objectName: "taskDetailsTarget"
             Layout.fillWidth: true
-            spacing: 1
-
-            Label {
-                Layout.fillWidth: true
-                text: root.task.title !== undefined ? root.task.title : ""
-                wrapMode: Text.Wrap
-                maximumLineCount: 2
-                elide: Text.ElideRight
-                font.strikeout: root.isDone
-                font.bold: root.nowRow
-                color: root.isDone ? sys.placeholderText : sys.windowText
+            implicitHeight: titleColumn.implicitHeight
+            Accessible.name: root.task.title || ""
+            onClicked: app.openDetails(root.task.id)
+            background: Rectangle {
+                color: "transparent"
+                border.width: titleButton.visualFocus ? 1 : 0
+                border.color: sys.highlight
             }
-            Label {
-                Layout.fillWidth: true
-                visible: text !== ""
-                text: root.nowRow
-                      ? (root.task.resumeNote ? qsTr("Where I stopped: %1").arg(root.task.resumeNote) : qsTr("Working on it now"))
-                      : (root.task.detail !== undefined ? root.task.detail : "")
-                font.pixelSize: 12
-                elide: Text.ElideRight
-                color: root.isOverdue ? app.overdueColor : sys.placeholderText
+            contentItem: ColumnLayout {
+                id: titleColumn
+                spacing: 1
+
+                Label {
+                    Layout.fillWidth: true
+                    text: root.task.title !== undefined ? root.task.title : ""
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                    font.strikeout: root.isDone
+                    font.bold: root.nowRow
+                    color: root.isDone ? sys.placeholderText : sys.windowText
+                }
+                Label {
+                    Layout.fillWidth: true
+                    visible: text !== ""
+                    text: root.nowRow
+                          ? (root.task.resumeNote ? qsTr("Where I stopped: %1").arg(root.task.resumeNote) : qsTr("Working on it now"))
+                          : (root.task.detail !== undefined ? root.task.detail : "")
+                    font.pixelSize: 12
+                    elide: Text.ElideRight
+                    color: root.isOverdue ? app.overdueColor : sys.placeholderText
+                }
             }
         }
 

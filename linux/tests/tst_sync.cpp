@@ -6,6 +6,9 @@
 #include "SyncEngine.h"
 #include "SyncWorker.h"
 #include "TaskRepository.h"
+#include "TaskRules.h"
+
+#include <QJsonArray>
 #include "TestSupport.h"
 
 #include <QSignalSpy>
@@ -178,6 +181,109 @@ private slots:
         QCOMPARE(clientIds.size(), ops.size());
     }
 
+    void detailEditsWaitInTheOutboxAndReachTheFakeServer()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"Synthetic task"_s, u"2026-10-22"_s);
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        w.server.offline = true;
+        TaskRepository &repo = w.local.repo;
+        repo.rename(id, u"Synthetic edited task"_s);
+        repo.setLabels(id, {u" work "_s, u"linux"_s, u"work"_s, QString()});
+        repo.setChecklist(id, {{u"stable-1"_s, u" Build "_s, false}});
+        repo.setChecklist(id, {{u"stable-1"_s, u"Verify build"_s, true}, {u"stable-2"_s, u"Ship"_s, false}});
+        repo.setChecklist(id, {{u"stable-1"_s, u"Verify build"_s, true}});
+        repo.setNote(id, u"A note saved explicitly\nwith a second line"_s);
+        repo.setStatus(id, TaskStatus::Doing);
+        repo.setNow(id);
+        repo.setResumeNote(id, u"Next: verify package"_s);
+        repo.setDue(id, u"2026-10-24"_s, u"09:00"_s);
+        repo.setDue(id, u"2026-10-24"_s, std::nullopt);
+        repo.setDue(id, std::nullopt, std::nullopt);
+        const QStringList expected{Mutations::update, Mutations::update, Mutations::update, Mutations::update,
+                                   Mutations::update, Mutations::update, Mutations::setStatus, Mutations::setNow,
+                                   Mutations::update, Mutations::update, Mutations::update, Mutations::update};
+        QCOMPARE(mutations(repo.pendingOps()), expected);
+        const TaskItem edited = *repo.task(id);
+        QCOMPARE(edited.title, u"Synthetic edited task"_s);
+        QCOMPARE(edited.labels, (QStringList{u"work"_s, u"linux"_s}));
+        QCOMPARE(edited.checklist, (QList<ChecklistItem>{{u"stable-1"_s, u"Verify build"_s, true}}));
+        QVERIFY(edited.isNow);
+        QCOMPARE(edited.status, TaskStatus::Doing);
+        QVERIFY(!edited.dueDate);
+        QVERIFY(!edited.dueTime);
+        const auto pending = repo.pendingOps();
+        QCOMPARE(json::decode(pending[1].argsJson)[u"labels"], QJsonValue(QJsonArray{u"work"_s, u"linux"_s}));
+        QCOMPARE(json::decode(pending[4].argsJson)[u"checklist"][0][u"id"].toString(), u"stable-1"_s);
+        QVERIFY(json::decode(pending.last().argsJson)[u"dueDate"].isNull());
+        QVERIFY(json::decode(pending.last().argsJson)[u"dueTime"].isNull());
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Offline);
+        QCOMPARE(repo.pendingCount(), expected.size());
+        QCOMPARE(w.server.taskTitled(u"Synthetic task"_s)->value(u"title"), QJsonValue(u"Synthetic task"_s));
+        w.server.offline = false;
+        // A failed send still reads a snapshot; dirty detail fields must survive it.
+        w.local.clock += 1000;
+        w.server.editElsewhere(id, {{u"title"_s, u"Remote old title"_s}, {u"updatedAt"_s, w.local.clock}});
+        w.server.failNextMutation = true;
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Offline);
+        QCOMPARE(repo.task(id)->title, edited.title);
+        QCOMPARE(repo.task(id)->labels, edited.labels);
+        QCOMPARE(repo.task(id)->checklist, edited.checklist);
+        QCOMPARE(repo.task(id)->note, edited.note);
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QCOMPARE(repo.pendingCount(), 0);
+        QCOMPARE(w.server.mutationsSent().last(expected.size()), expected);
+        const auto onServer = w.server.taskTitled(edited.title);
+        QVERIFY(onServer);
+        QCOMPARE((*onServer)[u"labels"], QJsonValue(QJsonArray{u"work"_s, u"linux"_s}));
+        QCOMPARE((*onServer)[u"checklist"], QJsonValue(QJsonArray{edited.checklist.first().wire()}));
+        QCOMPARE((*onServer)[u"note"].toString(), *edited.note);
+        QCOMPARE((*onServer)[u"resumeNote"].toString(), *edited.resumeNote);
+        QCOMPARE((*onServer)[u"status"].toString(), u"doing"_s);
+        QVERIFY((*onServer)[u"isNow"].toBool());
+        QVERIFY(!onServer->contains(u"dueDate"));
+        QVERIFY(!onServer->contains(u"dueTime"));
+        QCOMPARE(repo.task(id)->labels, edited.labels);
+        QCOMPARE(repo.task(id)->checklist, edited.checklist);
+
+        repo.setStatus(id, TaskStatus::Done);
+        QCOMPARE(repo.pendingOps().last().mutation, Mutations::complete);
+        QVERIFY(!repo.task(id)->isNow);
+        QVERIFY(repo.task(id)->completedAt);
+        repo.setStatus(id, TaskStatus::Todo);
+        QVERIFY(!repo.task(id)->completedAt);
+        repo.setNote(id, QString());
+        repo.setLabels(id, {});
+        repo.setChecklist(id, {});
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        const auto cleared = w.server.taskTitled(edited.title);
+        QVERIFY(cleared);
+        QVERIFY(!cleared->contains(u"note"));
+        QVERIFY((*cleared)[u"labels"].toArray().isEmpty());
+        QVERIFY((*cleared)[u"checklist"].toArray().isEmpty());
+        QCOMPARE((*cleared)[u"status"].toString(), u"todo"_s);
+    }
+
+    void invalidDetailEditsNeverEnterTheOutbox()
+    {
+        Local l;
+        const TaskItem task = l.repo.add(u"Synthetic"_s, std::nullopt, std::nullopt);
+        QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setNote(task.localId, QString(TaskRules::maxNote + 1, u'x')));
+        QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setLabels(task.localId, {QString(TaskRules::maxLabel + 1, u'x')}));
+        QStringList labels;
+        for (int n = 0; n <= TaskRules::maxLabels; ++n)
+            labels.append(QString::number(n));
+        QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setLabels(task.localId, labels));
+        QVERIFY_THROWS_EXCEPTION(InvalidChange,
+                                l.repo.setChecklist(task.localId, {{u"same"_s, u"A"_s, false}, {u"same"_s, u"B"_s, false}}));
+        QList<ChecklistItem> items;
+        for (int n = 0; n <= TaskRules::maxChecklist; ++n)
+            items.append({QString::number(n), u"Item"_s, false});
+        QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setChecklist(task.localId, items));
+        QCOMPARE(l.repo.pendingCount(), 1);
+        QCOMPARE(l.repo.task(task.localId), task);
+    }
+
     void oneNowTaskAtATime()
     {
         Local l;
@@ -202,7 +308,21 @@ private slots:
         const TaskItem t = l.repo.add(u"T"_s, std::nullopt, std::nullopt);
         l.repo.moveToTrash(t.localId);
         l.repo.rename(t.localId, u"Ignored"_s);
+        l.repo.setNote(t.localId, u"Ignored"_s);
+        l.repo.setLabels(t.localId, {u"ignored"_s});
+        l.repo.setChecklist(t.localId, {{u"item"_s, u"Ignored"_s, false}});
+        l.repo.setStatus(t.localId, TaskStatus::Doing);
+        l.repo.setNow(t.localId);
+        l.repo.setDue(t.localId, u"2026-10-25"_s, u"09:00"_s);
+        l.repo.setResumeNote(t.localId, u"Ignored"_s);
         QCOMPARE(l.repo.task(t.localId)->title, u"T"_s);
+        QVERIFY(!l.repo.task(t.localId)->note);
+        QVERIFY(l.repo.task(t.localId)->labels.isEmpty());
+        QVERIFY(l.repo.task(t.localId)->checklist.isEmpty());
+        QCOMPARE(l.repo.task(t.localId)->status, TaskStatus::Todo);
+        QVERIFY(!l.repo.task(t.localId)->isNow);
+        QVERIFY(!l.repo.task(t.localId)->dueDate);
+        QVERIFY(!l.repo.task(t.localId)->resumeNote);
         l.repo.restore(t.localId);
         QVERIFY(!l.repo.task(t.localId)->deletedAt);
         QCOMPARE(mutations(l.repo.pendingOps()), (QStringList{Mutations::add, Mutations::softDelete, Mutations::restore}));

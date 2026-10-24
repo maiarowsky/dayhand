@@ -122,6 +122,51 @@ QVariantList AppModel::rows(const QList<TaskItem> &tasks, bool overdue) const
     return out;
 }
 
+QVariantMap AppModel::selectedTask() const
+{
+    for (const TaskItem &task : allTasks) {
+        if (task.localId != selectedId)
+            continue;
+        QVariantMap detail = row(task, false);
+        QVariantList checklist;
+        for (const ChecklistItem &item : task.checklist)
+            checklist.append(QVariantMap{{u"id"_s, item.id}, {u"title"_s, item.title}, {u"done"_s, item.done}});
+        QVariantList links;
+        for (const TaskLink &link : task.links)
+            links.append(QVariantMap{{u"url"_s, link.url}, {u"title"_s, link.title.value_or(link.url)}});
+        detail.insert(u"status"_s, statusWire(task.status));
+        detail.insert(u"note"_s, task.note.value_or(QString()));
+        detail.insert(u"dueDate"_s, task.dueDate.value_or(QString()));
+        detail.insert(u"dueTime"_s, task.dueTime.value_or(QString()));
+        detail.insert(u"due"_s, Formatting::due(task, sections.date).value_or(tr("No day")));
+        detail.insert(u"labels"_s, task.labels.join(u", "_s));
+        detail.insert(u"checklist"_s, checklist);
+        detail.insert(u"repeat"_s, Formatting::repeat(task, sections.date));
+        detail.insert(u"reminders"_s, Formatting::reminders(task, reminderSettings));
+        detail.insert(u"links"_s, links);
+        detail.insert(u"inTrash"_s, task.inTrash());
+        detail.insert(u"archived"_s, task.archivedAt.has_value());
+        return detail;
+    }
+    return {};
+}
+
+void AppModel::openDetails(const QString &id)
+{
+    if (id == selectedId)
+        return;
+    selectedId = id;
+    emit selectedTaskChanged();
+}
+
+void AppModel::closeDetails()
+{
+    if (selectedId.isEmpty())
+        return;
+    selectedId.clear();
+    emit selectedTaskChanged();
+}
+
 QVariantMap AppModel::row(const TaskItem &task, bool overdue) const
 {
     return {{u"id"_s, task.localId},
@@ -136,6 +181,7 @@ QVariantMap AppModel::row(const TaskItem &task, bool overdue) const
 void AppModel::reload()
 {
     try {
+        const QVariantMap previousDetail = selectedTask();
         QList<TaskItem> tasks = repository->allTasks();
         const ReminderSettings settings = repository->settings();
         const qint64 waiting = repository->pendingCount();
@@ -153,6 +199,8 @@ void AppModel::reload()
         }
         if (tasksMoved)
             emit tasksChanged();
+        if (previousDetail != selectedTask())
+            emit selectedTaskChanged();
     } catch (const StoreError &error) {
         showAlert(tr("Reading tasks failed: %1").arg(QString::fromStdString(error.what())));
     }
@@ -226,16 +274,143 @@ void AppModel::moveToTrash(const QString &id)
     run([&id](TaskRepository &repo) { repo.moveToTrash(id); });
 }
 
-void AppModel::run(const std::function<void(TaskRepository &)> &action)
+bool AppModel::rename(const QString &id, const QString &title)
 {
+    if (!TaskRules::title(title)) {
+        showAlert(tr("Enter a title (up to 500 characters)."));
+        return false;
+    }
+    return run([&](TaskRepository &repo) { repo.rename(id, title); });
+}
+
+void AppModel::setStatus(const QString &id, const QString &status)
+{
+    if (status != u"todo" && status != u"doing" && status != u"done")
+        return;
+    run([&](TaskRepository &repo) { repo.setStatus(id, statusFromWire(status)); });
+}
+
+void AppModel::setResumeNote(const QString &id, const QString &note)
+{
+    if (note.trimmed().size() > TaskRules::maxResumeNote) {
+        showAlert(tr("Use up to 2000 characters for where you stopped."));
+        return;
+    }
+    run([&](TaskRepository &repo) { repo.setResumeNote(id, note); });
+}
+
+bool AppModel::saveNote(const QString &id, const QString &note)
+{
+    return run([&](TaskRepository &repo) { repo.setNote(id, note); });
+}
+
+bool AppModel::setLabels(const QString &id, const QString &commaSeparated)
+{
+    return run([&](TaskRepository &repo) { repo.setLabels(id, commaSeparated.split(u',')); });
+}
+
+bool AppModel::addChecklistItem(const QString &id, const QString &title)
+{
+    if (!TaskRules::title(title))
+        return false;
+    return run([&](TaskRepository &repo) {
+        if (const auto task = repo.task(id)) {
+            QList<ChecklistItem> items = task->checklist;
+            items.append({QUuid::createUuid().toString(QUuid::WithoutBraces), title, false});
+            repo.setChecklist(id, items);
+        }
+    });
+}
+
+void AppModel::renameChecklistItem(const QString &id, const QString &itemId, const QString &title)
+{
+    if (!TaskRules::title(title)) {
+        showAlert(tr("Enter a title (up to 500 characters)."));
+        return;
+    }
+    run([&](TaskRepository &repo) {
+        if (const auto task = repo.task(id)) {
+            QList<ChecklistItem> items = task->checklist;
+            for (ChecklistItem &item : items)
+                if (item.id == itemId)
+                    item.title = title;
+            repo.setChecklist(id, items);
+        }
+    });
+}
+
+void AppModel::toggleChecklistItem(const QString &id, const QString &itemId)
+{
+    run([&](TaskRepository &repo) {
+        if (const auto task = repo.task(id)) {
+            QList<ChecklistItem> items = task->checklist;
+            for (ChecklistItem &item : items)
+                if (item.id == itemId)
+                    item.done = !item.done;
+            repo.setChecklist(id, items);
+        }
+    });
+}
+
+void AppModel::removeChecklistItem(const QString &id, const QString &itemId)
+{
+    run([&](TaskRepository &repo) {
+        if (const auto task = repo.task(id)) {
+            QList<ChecklistItem> items = task->checklist;
+            items.removeIf([&](const ChecklistItem &item) { return item.id == itemId; });
+            repo.setChecklist(id, items);
+        }
+    });
+}
+
+QVariantMap AppModel::previewDue(const QString &phrase) const
+{
+    const WhenResult result = WhenParser::parse(phrase, clock(), reminderSettings.timezone);
+    return {{u"valid"_s, result.ok()},
+            {u"text"_s, result.when ? Formatting::when(*result.when, sections.date)
+                                   : tr("Date not understood. Try: tomorrow 9am, fri, 2026-10-30.")}};
+}
+
+bool AppModel::setDuePhrase(const QString &id, const QString &phrase)
+{
+    const WhenResult result = WhenParser::parse(phrase, clock(), reminderSettings.timezone);
+    if (!result.when)
+        return false;
+    return run([&](TaskRepository &repo) { repo.setDue(id, result.when->date, result.when->time); });
+}
+
+void AppModel::clearDue(const QString &id)
+{
+    run([&](TaskRepository &repo) { repo.setDue(id, std::nullopt, std::nullopt); });
+}
+
+void AppModel::removeDueTime(const QString &id)
+{
+    run([&](TaskRepository &repo) {
+        if (const auto task = repo.task(id))
+            repo.setDue(id, task->dueDate, std::nullopt);
+    });
+}
+
+void AppModel::restore(const QString &id)
+{
+    run([&](TaskRepository &repo) { repo.restore(id); });
+}
+
+bool AppModel::run(const std::function<void(TaskRepository &)> &action)
+{
+    bool saved = false;
     try {
         action(*repository);
+        saved = true;
     } catch (const InvalidChange &error) {
-        showAlert(upperFirst(QString::fromStdString(error.what())) + u'.');
+        QString message = upperFirst(QString::fromStdString(error.what()));
+        showAlert(message.endsWith(u'.') ? message : message + u'.');
     } catch (const StoreError &error) {
         showAlert(tr("The change could not be saved: %1").arg(QString::fromStdString(error.what())));
     }
     reload();
+    return saved;
 }
 
 void AppModel::connectServer(const QString &address, const QString &code)
@@ -319,6 +494,7 @@ void AppModel::setLanguage(const QString &code)
     // The texts made here (dates, the status line) are read again in the new language.
     emit sectionsChanged();
     emit statusChanged();
+    emit selectedTaskChanged();
 }
 
 void AppModel::syncNow()

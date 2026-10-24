@@ -181,6 +181,90 @@
         <translation>（この日は %1 が存在しません）</translation>
     </message>
     <message>
+        <source>Does not repeat</source>
+        <translation>繰り返しなし</translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n day(s)</source>
+        <translation>
+            <numerusform>%n日ごと</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n week(s)</source>
+        <translation>
+            <numerusform>%n週間ごと</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n month(s)</source>
+        <translation>
+            <numerusform>%nか月ごと</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n year(s)</source>
+        <translation>
+            <numerusform>%n年ごと</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Last day of the month</source>
+        <translation>月の最終日</translation>
+    </message>
+    <message>
+        <source>Day of month: %1</source>
+        <translation>日付：%1日</translation>
+    </message>
+    <message>
+        <source>Weekday of month: %1, %2</source>
+        <translation>月内の曜日：%1、%2</translation>
+    </message>
+    <message>
+        <source>From completion</source>
+        <translation>完了日から</translation>
+    </message>
+    <message>
+        <source>From due date</source>
+        <translation>期限日から</translation>
+    </message>
+    <message>
+        <source>Until %1</source>
+        <translation>%1まで</translation>
+    </message>
+    <message>
+        <source>Occurrences left: %1</source>
+        <translation>残りの回数：%1</translation>
+    </message>
+    <message>
+        <source>Next: %1</source>
+        <translation>次回：%1</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>なし</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) before</source>
+        <translation>
+            <numerusform>%n分前</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1, %n day(s) before</source>
+        <translation>
+            <numerusform>%n日前の%1</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 on the due day</source>
+        <translation>期限日の%1</translation>
+    </message>
+    <message>
+        <source>Default: %1</source>
+        <translation>既定：%1</translation>
+    </message>
+    <message>
         <source>Not connected to a server; tasks stay on this computer.</source>
         <translation>サーバーに接続していません。タスクはこのコンピューターに保存されます。</translation>
     </message>
@@ -346,6 +430,160 @@
     </message>
 </context>
 <context>
+    <name>TaskDetails</name>
+    <message>
+        <source>Back</source>
+        <translation>戻る</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>Task details</source>
+        <translation>タスクの詳細</translation>
+    </message>
+    <message>
+        <source>In Trash — restore to edit.</source>
+        <translation>ゴミ箱内です。編集するには復元してください。</translation>
+    </message>
+    <message>
+        <source>Archived</source>
+        <translation>アーカイブ済み</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>タイトル</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>状態</translation>
+    </message>
+    <message>
+        <source>To do</source>
+        <translation>未着手</translation>
+    </message>
+    <message>
+        <source>In progress</source>
+        <translation>進行中</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>完了</translation>
+    </message>
+    <message>
+        <source>Working on it now</source>
+        <translation>今取り組んでいます</translation>
+    </message>
+    <message>
+        <source>Where I stopped</source>
+        <translation>中断したところ</translation>
+    </message>
+    <message>
+        <source>Due</source>
+        <translation>期限</translation>
+    </message>
+    <message>
+        <source>Date phrase</source>
+        <translation>日付の表現</translation>
+    </message>
+    <message>
+        <source>e.g. tomorrow 9am</source>
+        <translation>例：tomorrow 9am</translation>
+    </message>
+    <message>
+        <source>I understand: %1</source>
+        <translation>解釈：%1</translation>
+    </message>
+    <message>
+        <source>Set date</source>
+        <translation>日付を設定</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>今日</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>日付なし</translation>
+    </message>
+    <message>
+        <source>Remove time</source>
+        <translation>時刻を削除</translation>
+    </message>
+    <message>
+        <source>Labels (comma-separated)</source>
+        <translation>ラベル（カンマ区切り）</translation>
+    </message>
+    <message>
+        <source>Checklist</source>
+        <translation>チェックリスト</translation>
+    </message>
+    <message>
+        <source>Checklist item</source>
+        <translation>チェック項目</translation>
+    </message>
+    <message>
+        <source>Remove item</source>
+        <translation>項目を削除</translation>
+    </message>
+    <message>
+        <source>Add item</source>
+        <translation>項目を追加</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>メモ</translation>
+    </message>
+    <message>
+        <source>Save note</source>
+        <translation>メモを保存</translation>
+    </message>
+    <message>
+        <source>Repeat</source>
+        <translation>繰り返し</translation>
+    </message>
+    <message>
+        <source>Reminders</source>
+        <translation>リマインダー</translation>
+    </message>
+    <message>
+        <source>Links</source>
+        <translation>リンク</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>なし</translation>
+    </message>
+    <message>
+        <source>Archive</source>
+        <translation>アーカイブ</translation>
+    </message>
+    <message>
+        <source>Move to Trash</source>
+        <translation>ゴミ箱に移動</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>復元</translation>
+    </message>
+</context>
+<context>
+    <name>TaskRepository</name>
+    <message>
+        <source>The note is too long.</source>
+        <translation>メモが長すぎます。</translation>
+    </message>
+    <message>
+        <source>Use up to 20 labels, at most 50 characters each.</source>
+        <translation>ラベルは20個まで、各50文字以内にしてください。</translation>
+    </message>
+    <message>
+        <source>Use up to 100 checklist items, at most 500 characters each.</source>
+        <translation>チェック項目は100個まで、各500文字以内にしてください。</translation>
+    </message>
+</context>
+<context>
     <name>TaskRow</name>
     <message>
         <source>Mark as not done</source>
@@ -450,12 +688,28 @@
         <translation>キーリングを読み取れなかったため（%1）、Dayhand はサーバーなしで起動します。</translation>
     </message>
     <message>
+        <source>No day</source>
+        <translation>日付なし</translation>
+    </message>
+    <message>
         <source>Reading tasks failed: %1</source>
         <translation>タスクを読み込めませんでした: %1</translation>
     </message>
     <message>
         <source>Today</source>
         <translation>今日</translation>
+    </message>
+    <message>
+        <source>Enter a title (up to 500 characters).</source>
+        <translation>タイトルを入力してください（500文字以内）。</translation>
+    </message>
+    <message>
+        <source>Use up to 2000 characters for where you stopped.</source>
+        <translation>中断したところは2000文字以内で入力してください。</translation>
+    </message>
+    <message>
+        <source>Date not understood. Try: tomorrow 9am, fri, 2026-10-30.</source>
+        <translation>日付を解釈できません。例：tomorrow 9am、fri、2026-10-30。</translation>
     </message>
     <message>
         <source>The change could not be saved: %1</source>

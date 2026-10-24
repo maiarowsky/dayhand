@@ -7,6 +7,8 @@ ApplicationWindow {
     id: window
 
     required property bool startHidden
+    readonly property bool wide: width >= 800
+    readonly property bool detailsOpen: app.selectedTask.id !== undefined
 
     function showMain() {
         window.show()
@@ -49,6 +51,7 @@ ApplicationWindow {
     }
 
     header: ColumnLayout {
+        visible: window.wide || !window.detailsOpen
         spacing: 0
 
         RowLayout {
@@ -127,9 +130,31 @@ ApplicationWindow {
         }
     }
 
-    TodayList {
+    RowLayout {
         anchors.fill: parent
-        onAddClicked: inlineQuickAdd.focusField()
+        spacing: 0
+
+        TodayList {
+            objectName: "todayList"
+            visible: window.wide || !window.detailsOpen
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            onAddClicked: inlineQuickAdd.focusField()
+        }
+        Rectangle {
+            visible: window.wide && window.detailsOpen
+            Layout.fillHeight: true
+            implicitWidth: 1
+            color: sys.mid
+            opacity: 0.4
+        }
+        TaskDetails {
+            visible: window.detailsOpen
+            narrow: !window.wide
+            Layout.fillWidth: !window.wide
+            Layout.preferredWidth: window.wide ? Math.min(480, window.width / 2) : window.width
+            Layout.fillHeight: true
+        }
     }
 
     QuickAddWindow {

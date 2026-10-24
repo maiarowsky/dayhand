@@ -1,6 +1,9 @@
 #include "Formatting.h"
 
 #include "CivilDate.h"
+#include "Recurrence.h"
+
+#include <QLocale>
 
 #include <QCoreApplication>
 #include <QStringList>
@@ -86,6 +89,72 @@ QString when(const When &when, const QString &today)
         text += u' ' + Texts::tr("(%1 does not exist that day)", "a clock time skipped by a daylight saving change")
                            .arg(*when.shiftedFrom);
     return text;
+}
+
+QString repeat(const TaskItem &task, const QString &today)
+{
+    if (!task.repeat)
+        return Texts::tr("Does not repeat");
+    const RepeatRule &rule = *task.repeat;
+    QStringList parts;
+    switch (rule.every) {
+    case RepeatEvery::Day:
+        parts.append(Texts::tr("Every %n day(s)", nullptr, rule.interval));
+        break;
+    case RepeatEvery::Week:
+        parts.append(Texts::tr("Every %n week(s)", nullptr, rule.interval));
+        break;
+    case RepeatEvery::Month:
+        parts.append(Texts::tr("Every %n month(s)", nullptr, rule.interval));
+        break;
+    case RepeatEvery::Year:
+        parts.append(Texts::tr("Every %n year(s)", nullptr, rule.interval));
+        break;
+    }
+    if (rule.weekdays) {
+        QStringList days;
+        for (int weekday : *rule.weekdays)
+            days.append(QLocale().dayName(weekday, QLocale::ShortFormat));
+        parts.append(days.join(u", "_s));
+    }
+    if (rule.monthDay)
+        parts.append(*rule.monthDay == -1 ? Texts::tr("Last day of the month")
+                                         : Texts::tr("Day of month: %1").arg(*rule.monthDay));
+    if (rule.weekdayOfMonth)
+        parts.append(Texts::tr("Weekday of month: %1, %2")
+                         .arg(rule.weekdayOfMonth->nth)
+                         .arg(QLocale().dayName(rule.weekdayOfMonth->weekday)));
+    parts.append(rule.fromCompletion() ? Texts::tr("From completion") : Texts::tr("From due date"));
+    if (rule.until)
+        parts.append(Texts::tr("Until %1").arg(day(*rule.until, today)));
+    if (rule.count)
+        parts.append(Texts::tr("Occurrences left: %1").arg(*rule.count));
+    if (const auto next = Recurrence::advance(rule, task.dueDate, today))
+        parts.append(Texts::tr("Next: %1").arg(day(next->dueDate, today)));
+    return parts.join(u" · "_s);
+}
+
+QString reminders(const TaskItem &task, const ReminderSettings &settings)
+{
+    QList<TaskReminder> reminders;
+    if (task.reminders) {
+        reminders = *task.reminders;
+    } else {
+        for (int minutes : settings.reminderMinutes)
+            reminders.append(TaskReminder::before(minutes));
+    }
+    if (reminders.isEmpty())
+        return Texts::tr("None");
+    QStringList parts;
+    for (const TaskReminder &reminder : reminders) {
+        if (reminder.minutesBefore)
+            parts.append(Texts::tr("%n minute(s) before", nullptr, *reminder.minutesBefore));
+        else if (reminder.time)
+            parts.append(reminder.daysBefore ? Texts::tr("%1, %n day(s) before", nullptr, *reminder.daysBefore).arg(*reminder.time)
+                                              : Texts::tr("%1 on the due day").arg(*reminder.time));
+    }
+    const QString text = parts.join(u" · "_s);
+    return task.reminders ? text : Texts::tr("Default: %1").arg(text);
 }
 
 QString detailLine(const TaskItem &task, const QString &today, bool overdue)

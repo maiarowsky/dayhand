@@ -183,6 +183,96 @@
         <translation>(%1 gibt es an diesem Tag nicht)</translation>
     </message>
     <message>
+        <source>Does not repeat</source>
+        <translation>Keine Wiederholung</translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n day(s)</source>
+        <translation>
+            <numerusform>Intervall: %n Tag</numerusform>
+            <numerusform>Alle %n Tage</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n week(s)</source>
+        <translation>
+            <numerusform>Intervall: %n Woche</numerusform>
+            <numerusform>Alle %n Wochen</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n month(s)</source>
+        <translation>
+            <numerusform>Intervall: %n Monat</numerusform>
+            <numerusform>Alle %n Monate</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>Every %n year(s)</source>
+        <translation>
+            <numerusform>Intervall: %n Jahr</numerusform>
+            <numerusform>Alle %n Jahre</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Last day of the month</source>
+        <translation>Letzter Tag des Monats</translation>
+    </message>
+    <message>
+        <source>Day of month: %1</source>
+        <translation>Tag des Monats: %1</translation>
+    </message>
+    <message>
+        <source>Weekday of month: %1, %2</source>
+        <translation>Wochentag im Monat: %1, %2</translation>
+    </message>
+    <message>
+        <source>From completion</source>
+        <translation>Ab Abschluss</translation>
+    </message>
+    <message>
+        <source>From due date</source>
+        <translation>Ab Fälligkeit</translation>
+    </message>
+    <message>
+        <source>Until %1</source>
+        <translation>Bis %1</translation>
+    </message>
+    <message>
+        <source>Occurrences left: %1</source>
+        <translation>Verbleibende Termine: %1</translation>
+    </message>
+    <message>
+        <source>Next: %1</source>
+        <translation>Nächster Termin: %1</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Keine</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n minute(s) before</source>
+        <translation>
+            <numerusform>%n Minute vorher</numerusform>
+            <numerusform>%n Minuten vorher</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%1, %n day(s) before</source>
+        <translation>
+            <numerusform>%1, %n Tag vorher</numerusform>
+            <numerusform>%1, %n Tage vorher</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 on the due day</source>
+        <translation>%1 am Fälligkeitstag</translation>
+    </message>
+    <message>
+        <source>Default: %1</source>
+        <translation>Standard: %1</translation>
+    </message>
+    <message>
         <source>Not connected to a server; tasks stay on this computer.</source>
         <translation>Nicht mit einem Server verbunden; die Aufgaben bleiben auf diesem Computer.</translation>
     </message>
@@ -352,6 +442,160 @@
     </message>
 </context>
 <context>
+    <name>TaskDetails</name>
+    <message>
+        <source>Back</source>
+        <translation>Zurück</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Schließen</translation>
+    </message>
+    <message>
+        <source>Task details</source>
+        <translation>Aufgabendetails</translation>
+    </message>
+    <message>
+        <source>In Trash — restore to edit.</source>
+        <translation>Im Papierkorb — zum Bearbeiten wiederherstellen.</translation>
+    </message>
+    <message>
+        <source>Archived</source>
+        <translation>Archiviert</translation>
+    </message>
+    <message>
+        <source>Title</source>
+        <translation>Titel</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message>
+        <source>To do</source>
+        <translation>Zu erledigen</translation>
+    </message>
+    <message>
+        <source>In progress</source>
+        <translation>In Bearbeitung</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Erledigt</translation>
+    </message>
+    <message>
+        <source>Working on it now</source>
+        <translation>Ich arbeite jetzt daran</translation>
+    </message>
+    <message>
+        <source>Where I stopped</source>
+        <translation>Wo ich aufgehört habe</translation>
+    </message>
+    <message>
+        <source>Due</source>
+        <translation>Fällig</translation>
+    </message>
+    <message>
+        <source>Date phrase</source>
+        <translation>Datumsangabe</translation>
+    </message>
+    <message>
+        <source>e.g. tomorrow 9am</source>
+        <translation>z. B. tomorrow 9am</translation>
+    </message>
+    <message>
+        <source>I understand: %1</source>
+        <translation>Verstanden: %1</translation>
+    </message>
+    <message>
+        <source>Set date</source>
+        <translation>Datum setzen</translation>
+    </message>
+    <message>
+        <source>Today</source>
+        <translation>Heute</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>Kein Tag</translation>
+    </message>
+    <message>
+        <source>Remove time</source>
+        <translation>Uhrzeit entfernen</translation>
+    </message>
+    <message>
+        <source>Labels (comma-separated)</source>
+        <translation>Etiketten (kommagetrennt)</translation>
+    </message>
+    <message>
+        <source>Checklist</source>
+        <translation>Checkliste</translation>
+    </message>
+    <message>
+        <source>Checklist item</source>
+        <translation>Checklisteneintrag</translation>
+    </message>
+    <message>
+        <source>Remove item</source>
+        <translation>Eintrag entfernen</translation>
+    </message>
+    <message>
+        <source>Add item</source>
+        <translation>Eintrag hinzufügen</translation>
+    </message>
+    <message>
+        <source>Note</source>
+        <translation>Notiz</translation>
+    </message>
+    <message>
+        <source>Save note</source>
+        <translation>Notiz speichern</translation>
+    </message>
+    <message>
+        <source>Repeat</source>
+        <translation>Wiederholung</translation>
+    </message>
+    <message>
+        <source>Reminders</source>
+        <translation>Erinnerungen</translation>
+    </message>
+    <message>
+        <source>Links</source>
+        <translation>Links</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>Keine</translation>
+    </message>
+    <message>
+        <source>Archive</source>
+        <translation>Archivieren</translation>
+    </message>
+    <message>
+        <source>Move to Trash</source>
+        <translation>In den Papierkorb</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>Wiederherstellen</translation>
+    </message>
+</context>
+<context>
+    <name>TaskRepository</name>
+    <message>
+        <source>The note is too long.</source>
+        <translation>Die Notiz ist zu lang.</translation>
+    </message>
+    <message>
+        <source>Use up to 20 labels, at most 50 characters each.</source>
+        <translation>Verwenden Sie bis zu 20 Etiketten mit jeweils höchstens 50 Zeichen.</translation>
+    </message>
+    <message>
+        <source>Use up to 100 checklist items, at most 500 characters each.</source>
+        <translation>Verwenden Sie bis zu 100 Checklisteneinträge mit jeweils höchstens 500 Zeichen.</translation>
+    </message>
+</context>
+<context>
     <name>TaskRow</name>
     <message>
         <source>Mark as not done</source>
@@ -456,12 +700,28 @@
         <translation>Der Schlüsselbund konnte nicht gelesen werden (%1), daher startet Dayhand ohne Server.</translation>
     </message>
     <message>
+        <source>No day</source>
+        <translation>Kein Tag</translation>
+    </message>
+    <message>
         <source>Reading tasks failed: %1</source>
         <translation>Aufgaben konnten nicht gelesen werden: %1</translation>
     </message>
     <message>
         <source>Today</source>
         <translation>Heute</translation>
+    </message>
+    <message>
+        <source>Enter a title (up to 500 characters).</source>
+        <translation>Geben Sie einen Titel ein (bis zu 500 Zeichen).</translation>
+    </message>
+    <message>
+        <source>Use up to 2000 characters for where you stopped.</source>
+        <translation>Beschreiben Sie den letzten Stand mit höchstens 2000 Zeichen.</translation>
+    </message>
+    <message>
+        <source>Date not understood. Try: tomorrow 9am, fri, 2026-10-30.</source>
+        <translation>Datum nicht verstanden. Versuchen Sie: tomorrow 9am, fri, 2026-10-30.</translation>
     </message>
     <message>
         <source>The change could not be saved: %1</source>
