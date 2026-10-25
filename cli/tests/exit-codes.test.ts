@@ -110,6 +110,31 @@ describe("exit codes", () => {
     expectFailure(await dayhand(key, ["renew", "1", "--json"]), 6, "precondition_failed");
   });
 
+  test("project failures keep the public error codes and deletion explains --move-tasks-to", async () => {
+    const { key, userId } = await newUser();
+    await dayhandJson(key, ["project", "add", "Home"]);
+    await dayhandJson(key, ["add", "In project", "-p", "Home"]);
+    await dayhandJson(key, ["rm", "1"]);
+    const required = expectFailure(await dayhand(key, ["project", "rm", "Home", "--json"]), 6, "precondition_failed");
+    expect(required.message).toContain('Project "Home" has 1 task (1 in the trash)');
+    expect(required.hint).toContain("--move-tasks-to");
+    const human = await dayhand(key, ["project", "rm", "Home"]);
+    expect(human.code).toBe(6);
+    expect(human.stderr).toContain("--move-tasks-to");
+    expectFailure(await dayhand(key, ["project", "add", "HOME", "--json"]), 2, "invalid_argument");
+    expectFailure(await dayhand(key, ["project", "add", "none", "--json"]), 2, "invalid_argument");
+    expectFailure(await dayhand(key, ["project", "add", "X".repeat(51), "--json"]), 2, "invalid_argument");
+    expectFailure(await dayhand(key, ["project", "edit", "Missing", "--note", "x", "--json"]), 4, "not_found");
+    expectFailure(await dayhand(key, ["edit", "1", "-p", "Home", "--clear-project", "--json"]), 2, "usage");
+    const agent = await createKey(userId, "project-agent", "agent");
+    expectFailure(await dayhand(agent.key, ["project", "rm", "Home", "--move-tasks-to", "none", "--json"]), 7, "forbidden");
+    const deleted = await dayhandJson(key, ["project", "rm", "Home", "--move-tasks-to", "none"]);
+    expect(validate("project-delete.schema.json", deleted)).toEqual([]);
+    expect(deleted.moved).toHaveLength(1);
+    await dayhandJson(key, ["restore", "1"]);
+    expect((await dayhandJson(key, ["show", "1"])).task).not.toHaveProperty("projectId");
+  });
+
   test("7: the owner's controls: agents paused, a policy deny, an approval to wait for", async () => {
     const { userId, key: owner } = await newUser();
     const created = await createKey(userId, "worker", "agent");

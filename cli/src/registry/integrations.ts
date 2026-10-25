@@ -5,6 +5,7 @@
 import { readFile } from "node:fs/promises";
 import { usageError } from "../core/exit.js";
 import { readStdin } from "../core/io.js";
+import { requireProjects } from "../projects.js";
 import { formatTimestamp } from "../render/format.js";
 import type { CommandSpec, Outcome, RunContext } from "./types.js";
 
@@ -249,7 +250,10 @@ const importCommand: CommandSpec = {
     "Each task is checked like dayhand add; one that fails is listed and the rest are imported. Importing the same file again imports nothing twice. " +
     `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
   args: [{ name: "file", description: "The file, or - for stdin", required: true }],
-  options: [{ flags: "--format <format>", description: "auto (default), dayhand-json, ics or todoist-csv", choices: FORMATS }],
+  options: [
+    { flags: "--format <format>", description: "auto (default), dayhand-json, ics or todoist-csv", choices: FORMATS },
+    { flags: "--project <name>", description: "Destination for tasks without a project in the file; must exist (backend 0.13.0)" },
+  ],
   tools: ["/api/v1/import"],
   examples: ["dayhand export --format json -o dayhand.json && dayhand import dayhand.json --dry-run", "dayhand import todoist.csv", "dayhand import calendar.ics --format ics --json"],
   run: async (ctx, args, opts) => {
@@ -257,7 +261,8 @@ const importCommand: CommandSpec = {
     const content = file === "-" ? await readStdin(ctx.io.stdin) : await readFile(file, "utf8").catch(() => {
       throw usageError(`Cannot read ${file}`);
     });
-    const body = { content, format: (opts.format as string | undefined) ?? "auto" };
+    if (opts.project !== undefined) await requireProjects(ctx);
+    const body = { content, format: (opts.format as string | undefined) ?? "auto", ...(opts.project === undefined ? {} : { projectId: opts.project }) };
     const value = await api(ctx, "POST", `/import${ctx.dryRun ? "?dryRun=true" : ""}`, body);
     const lines = [
       `${value.dryRun ? "Dry run: nothing was stored. Would import" : "Imported"} ${value.created} of ${value.total} task(s) (${value.format}).`,

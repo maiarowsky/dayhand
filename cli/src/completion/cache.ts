@@ -9,15 +9,16 @@ import { resolveConnection } from "../config/resolve.js";
 import type { Io } from "../core/io.js";
 import { credentialStores } from "../credentials/index.js";
 import type { Task } from "../render/model.js";
+import { readProjects } from "../projects.js";
 import { DayhandClient } from "../transport/client.js";
 
 export const CACHE_TTL_MS = 60_000;
 const FETCH_TIMEOUT_MS = 3_000;
 
-export type TaskHints = { tasks: { ref: number; title: string }[]; labels: string[] };
+export type TaskHints = { tasks: { ref: number; title: string }[]; labels: string[]; projects?: { name: string; archived: boolean }[] };
 type Cached = TaskHints & { fetchedAt: number };
 
-const EMPTY: TaskHints = { tasks: [], labels: [] };
+const EMPTY: TaskHints = { tasks: [], labels: [], projects: [] };
 
 export async function taskHints(io: Io, cacheDir: string, configDir: string, config: Config, flags: { url?: string; profile?: string }): Promise<TaskHints> {
   try {
@@ -27,11 +28,12 @@ export async function taskHints(io: Io, cacheDir: string, configDir: string, con
     const cached = read(file);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS && Date.now() >= cached.fetchedAt) return cached;
     const client = new DayhandClient(connection, io.fetch, undefined, FETCH_TIMEOUT_MS);
-    const result = (await client.callTool("list_all", { includeDone: false })).structured as { result?: Task[] } | undefined;
-    const tasks = result?.result ?? [];
+    const [listed, projects] = await Promise.all([client.callTool("list_all", { includeDone: false }), readProjects(client)]);
+    const tasks = (listed.structured as { result?: Task[] } | undefined)?.result ?? [];
     const hints: TaskHints = {
       tasks: tasks.filter((t) => t.ref !== undefined).map((t) => ({ ref: t.ref!, title: t.title })),
       labels: [...new Set(tasks.flatMap((t) => t.labels))].sort(),
+      projects: projects.map(({ name, archived }) => ({ name, archived })),
     };
     write(file, { ...hints, fetchedAt: Date.now() });
     return hints;
@@ -43,7 +45,7 @@ export async function taskHints(io: Io, cacheDir: string, configDir: string, con
 function read(file: string): Cached | undefined {
   try {
     const data = JSON.parse(readFileSync(file, "utf8")) as Cached;
-    return Array.isArray(data.tasks) && Array.isArray(data.labels) && typeof data.fetchedAt === "number" ? data : undefined;
+    return Array.isArray(data.tasks) && Array.isArray(data.labels) && Array.isArray(data.projects) && typeof data.fetchedAt === "number" ? data : undefined;
   } catch {
     return undefined;
   }

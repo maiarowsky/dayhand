@@ -31,7 +31,7 @@ const pty = loadPty();
 const work = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-tty-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 
-type Session = { output: () => string; waitFor: (text: string | RegExp) => Promise<void>; write: (data: string) => void; exit: Promise<number> };
+type Session = { output: () => string; waitFor: (text: string | RegExp) => Promise<void>; write: (data: string) => void; exit: Promise<number>; kill(): void };
 
 function session(args: string[], env: Record<string, string>, cols = 100): Session {
   const term = pty!.spawn(process.execPath, [BIN, ...args], {
@@ -49,7 +49,7 @@ function session(args: string[], env: Record<string, string>, cols = 100): Sessi
       await new Promise((r) => setTimeout(r, 25));
     }
   };
-  return { output: () => output, waitFor, write: (data) => term.write(data), exit };
+  return { output: () => output, waitFor, write: (data) => term.write(data), exit, kill: () => term.kill() };
 }
 
 /** An "editor" that runs as node: rewrites the file it is given. */
@@ -69,6 +69,19 @@ describe.skipIf(!pty)("on a terminal", () => {
     expect(await s.exit).toBe(0);
     expect(s.output()).toContain("Moved to the trash:");
     expect((await dayhandJson(key, ["trash"])).result).toHaveLength(3);
+  });
+
+  test("global --no-input after project assign refuses without prompting on a real terminal", async () => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["project", "add", "Home"]);
+    for (const title of ["A", "B"]) await dayhandJson(key, ["add", title]);
+    const s = session(["project", "assign", "Home", "1", "2", "--no-input"], { DAYHAND_API_KEY: key });
+    try {
+      await s.waitFor("without --yes");
+      expect(await s.exit).toBe(2);
+      expect(s.output()).not.toContain("[y/N]");
+      expect((await dayhandJson(key, ["list", "-p", "none"])).total).toBe(2);
+    } finally { s.kill(); }
   });
 
   test("dayhand login reads the key at a hidden prompt and never echoes it; Ctrl-C exits with 130", async () => {

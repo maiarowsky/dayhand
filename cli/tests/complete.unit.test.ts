@@ -9,7 +9,7 @@ const sources: Sources = {
   profiles: ["personal", "work"],
   hints: async () => {
     hintCalls++;
-    return { tasks: [{ ref: 4, title: "Call the bank" }, { ref: 42, title: "Write the report" }], labels: ["home", "work"] };
+    return { tasks: [{ ref: 4, title: "Call the bank" }, { ref: 42, title: "Write the report" }], labels: ["home", "work"], projects: [{ name: "Home", archived: false }, { name: "Strona piekarni", archived: false }, { name: "Old", archived: true }] };
   },
 };
 const values = async (...words: string[]) => (await complete(words, sources)).candidates.map((c) => c.value);
@@ -58,8 +58,23 @@ describe("candidates", () => {
     const keys = await complete(["settings", "set", "s"], sources);
     expect(keys).toEqual({ candidates: [{ value: "summary-time=" }], directive: NO_FILES | NO_SPACE });
     expect(await values("completion", "")).toEqual([...SHELLS]);
-    expect(await values("call", "list_")).toEqual(["list_all", "list_approvals", "list_events", "list_today", "list_trash"]);
+    expect(await values("call", "list_")).toEqual(["list_all", "list_approvals", "list_events", "list_projects", "list_today", "list_trash"]);
     expect(await values("move", "4", "n")).toEqual(["next", "none"]);
+  });
+
+  test("projects: commands, references, destinations, colors and labels", async () => {
+    expect(await values("project", "")).toEqual(["list", "add", "edit", "archive", "unarchive", "rm", "assign"]);
+    expect(await values("project", "add", "")).toEqual([]);
+    expect(await values("project", "edit", "")).toEqual(["Home", "Strona piekarni", "Old"]);
+    expect(await values("project", "assign", "")).toEqual(["Home", "Strona piekarni", "none"]);
+    expect(await values("project", "assign", "Home", "4")).toEqual(["4", "42"]);
+    expect(await values("add", "x", "-p", "")).toEqual(["Home", "Strona piekarni", "none"]);
+    expect(await values("project", "edit", "Home", "--before", "S")).toEqual(["Strona piekarni"]);
+    expect(await values("project", "rm", "Home", "--move-tasks-to", "n")).toEqual(["none"]);
+    expect(await values("project", "add", "Home", "--color", "a")).toEqual(["amber"]);
+    expect(await values("project", "add", "--col")).toEqual(["--color"]);
+    expect(await values("project", "add", "Home", "--from-label", "h")).toEqual(["home"]);
+    expect(await values("list", "--fields", "project")).toEqual(["project", "projectId"]);
   });
 
   test("an alias completes like what it stands for", async () => {

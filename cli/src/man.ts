@@ -57,6 +57,8 @@ export function renderMan(): string {
     roff("Help for dayhand or for a command; dayhand help <topic> for a topic."),
     ".SH JSON OUTPUT",
     roff("--json (or DAYHAND_FORMAT=json) prints the MCP tool's structuredContent exactly as an MCP client receives it. Fields may be added in a minor version; they are never removed or retyped within a major version. Errors go to standard error as one line: {\"error\":{\"code\",\"message\",\"exitCode\",\"retryable\",\"clientId\",...}}; standard output then stays empty. --plain prints tab-separated rows without headers."),
+    ".PP",
+    roff("Task --plain columns remain ref, status, dueDate, dueTime, title, labels. --fields project,projectId selects the resolved project name and id. Human output shows +Project before #labels; resolving names costs one list_projects read, also with --fields project."),
     ".SH EXIT STATUS",
     ...EXIT_CODES.flatMap(([code, meaning]) => [".TP", `.B ${code}`, roff(meaning)]),
     ".SH ENVIRONMENT",

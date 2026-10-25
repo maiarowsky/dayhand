@@ -69,6 +69,12 @@ dayhand add "Send the report" --due "next fri 9am" --dry-run --json
 # Retry after exit 5 without creating a duplicate
 dayhand add "Book the dentist" --client-id dentist-2026-10-22 --json
 
+# Projects are distinct from labels; names or ids work as references
+dayhand project list --json
+dayhand add "Write the menu" -p "Strona piekarni" --json
+dayhand list -p none --json
+dayhand project assign Home 41 42 --yes --json
+
 # Anything else the tools can do
 dayhand tools update_task --json
 dayhand call update_task '{"taskId":"#42","note":null}'
@@ -117,6 +123,14 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `dayhand rm <refs...>` | Move tasks to the trash (purged after 30 days) |
 | `dayhand restore <refs...>` | Restore tasks from the trash (or the archive) |
 | `dayhand trash` | Tasks in the trash, newest first |
+| `dayhand project` | Projects and their task counts (same as project list) |
+| `dayhand project list` | Projects in menu order with open and overdue counts |
+| `dayhand project add <name...>` | Create a project, optionally moving tasks from a label |
+| `dayhand project edit <project>` | Change project metadata or menu order |
+| `dayhand project archive <projects...>` | Archive projects; their tasks stay where they are |
+| `dayhand project unarchive <projects...>` | Restore archived projects |
+| `dayhand project rm <project>` | Delete a project (owner only); move all its tasks explicitly |
+| `dayhand project assign <project> <refs...>` | Move tasks to a project (none clears it); several tasks require --yes or confirmation |
 | `dayhand log` | The activity log: task changes after a cursor or a time, oldest first (who changed what) |
 | `dayhand claim <ref>` | Claim a task for a while (default 120 minutes) so other agents leave it alone |
 | `dayhand renew <ref>` | Extend your claim of a task by --minutes from now (default 120) |

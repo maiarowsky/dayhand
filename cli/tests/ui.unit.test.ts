@@ -457,6 +457,7 @@ function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
   const board: Board = { todo: today.today, doing: today.now ? [today.now] : [], done: today.doneToday };
   const api: Api = {
     settings: async () => (check(), { timezone: "Europe/London" }),
+    projects: async () => (check(), []),
     today: async () => (check(), state.view),
     health: async () => (check(), state.health),
     agents: async () => (check(), state.agents),

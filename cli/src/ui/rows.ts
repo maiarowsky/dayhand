@@ -1,6 +1,7 @@
 // One task as a row: cursor mark, number, status icon, due day, title, then
 // labels and markers on the right. The parts that do not fit are dropped from
 // the right first, so the title keeps its room on narrow terminals.
+import { projectToken } from "../projects.js";
 import { relativeDay } from "../i18n/dates.js";
 import type { Task } from "../render/model.js";
 import { addDays } from "../when/calendar.js";
@@ -40,7 +41,7 @@ export function dueColor(task: Task, today: string): Color | undefined {
 
 /** Labels and markers: #labels, ↻ for a repeat, checklist progress. */
 export function markers(task: Task): Seg[] {
-  const parts: Seg[] = task.labels.map((l) => seg(`#${l}`, { color: "magenta" }));
+  const parts: Seg[] = [...(task.project ? [seg(`+${projectToken(task.project)}`, { color: "cyan" })] : []), ...task.labels.map((l) => seg(`#${l}`, { color: "magenta" }))];
   if (task.repeat || task.rrule) parts.push(seg("↻", { color: "cyan" }));
   if (task.checklist?.length) parts.push(seg(`${task.checklist.filter((i) => i.done).length}/${task.checklist.length}`, { dim: true }));
   return parts.flatMap((p, i) => (i ? [seg(" "), p] : [p]));

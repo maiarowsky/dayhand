@@ -76,12 +76,13 @@ function earlyFormat(argv: string[], io: Io): Format {
 
 function buildProgram(io: Io, setup: Setup, started: (run: Promise<number>) => void): Command {
   const program = new Command("dayhand")
+    .enablePositionalOptions()
     .description("Dayhand from the terminal: the same operations the app and the agent use")
     .version(CLI_VERSION, "-V, --version", "Print the CLI version")
     .helpOption("-h, --help", "Show help")
     .helpCommand(false)
     .addHelpText("after", ROOT_HELP);
-  for (const spec of GLOBAL_OPTIONS) program.addOption(toOption(spec));
+  addGlobals(program, false);
   configure(program, io, []);
   for (const spec of COMMANDS) program.addCommand(toCommand(spec, io, setup, started, []));
   program.addCommand(helpCommand(program, io));
@@ -107,6 +108,7 @@ function helpCommand(program: Command, io: Io): Command {
       }
       target.outputHelp();
     });
+  addGlobals(command);
   configure(command, io, []);
   return command;
 }
@@ -130,8 +132,14 @@ function configure(command: Command, io: Io, specOptions: OptSpec[]) {
 
 const longFlag = (flags: string) => flags.split(/[ ,]+/).find((f) => f.startsWith("--")) ?? flags;
 
-function toOption(spec: OptSpec): Option {
-  const option = new Option(spec.flags, spec.description);
+/** Keep terminal color separate from project --color, including --no-color. */
+class OutputColorOption extends Option {
+  override attributeName(): string { return "outputColor"; }
+}
+
+function toOption(spec: OptSpec, global = false): Option {
+  const ColorOption = global && /--(?:no-)?color\b/.test(spec.flags) ? OutputColorOption : Option;
+  const option = new ColorOption(spec.flags, spec.description);
   if (spec.choices) option.choices(spec.choices);
   if (spec.kind === "list") option.argParser((value: string, previous: string[] | undefined) => [...(previous ?? []), value]);
   if (spec.kind === "int") {
@@ -146,14 +154,35 @@ function toOption(spec: OptSpec): Option {
   return option;
 }
 
+function addGlobals(command: Command, hidden = true): void {
+  for (const spec of GLOBAL_OPTIONS) {
+    const option = toOption(spec, true);
+    if (!command.options.some((local) => local.long === option.long)) command.addOption(option.hideHelp(hidden));
+  }
+}
+
+/** Only explicit flags override ancestors: default input=true must not
+ * overwrite a later --no-input. The deepest explicit flag wins. */
+function globalOptions(command: Command): GlobalOpts {
+  const entries = GLOBAL_OPTIONS.map((spec) => toOption(spec, true).attributeName())
+    .filter((key) => command.getOptionValueSource(key) === "cli")
+    .map((key) => [key === "outputColor" ? "color" : key, command.getOptionValue(key)]);
+  return { ...(command.parent ? globalOptions(command.parent) : {}), ...Object.fromEntries(entries) };
+}
+
 function toCommand(spec: CommandSpec, io: Io, setup: Setup, started: (run: Promise<number>) => void, parents: string[]): Command {
   const path = [...parents, spec.name];
-  const command = new Command(spec.name).description(spec.summary).aliases(spec.aliases ?? []);
+  const command = new Command(spec.name).enablePositionalOptions().description(spec.summary).aliases(spec.aliases ?? []);
   for (const arg of spec.args ?? []) {
     const name = `${arg.name}${arg.variadic ? "..." : ""}`;
     command.argument(arg.required ? `<${name}>` : `[${name}]`, arg.description);
   }
   for (const option of spec.options ?? []) command.addOption(toOption(option));
+  // Parse globals at the command where they occur, rather than letting a parent
+  // consume a same-named local flag before dispatch (project add --color amber).
+  addGlobals(command);
+  command.version(CLI_VERSION, "-V, --version", "Print the CLI version");
+  command.options.find((option) => option.long === "--version")!.hideHelp();
   command.addHelpText("after", commandHelp(spec));
   configure(command, io, spec.options ?? []);
   for (const sub of spec.subcommands ?? []) command.addCommand(toCommand(sub, io, setup, started, path));
@@ -168,7 +197,7 @@ function toCommand(spec: CommandSpec, io: Io, setup: Setup, started: (run: Promi
         const key = self.options.find((o) => o.flags === option.flags)!.attributeName();
         if (option.kind === "list" && opts[key] === undefined) opts[key] = [];
       }
-      started(execute(io, setup, spec, path.join(" "), args, opts, self.optsWithGlobals<GlobalOpts>()));
+      started(execute(io, setup, spec, path.join(" "), args, opts, globalOptions(self)));
     });
   }
   return command;

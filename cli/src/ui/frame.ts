@@ -9,6 +9,7 @@ import { whenText } from "./effects.js";
 import { derive, contentHeight, type Snapshot } from "./model.js";
 import { healthRow } from "./health.js";
 import { agentsScreen, approvalRows, approvalScreen } from "./screens/agents.js";
+import { projectToken } from "../projects.js";
 import { parseMove, parseQuickAdd } from "./quickadd.js";
 import { boardScreen } from "./screens/board.js";
 import { detailRows, detailScreen } from "./screens/detail.js";
@@ -140,9 +141,9 @@ function promptPreview(mode: Extract<Mode, { kind: "prompt" }>, s: Snapshot): Ro
     return target === undefined ? [seg(text ? t("prompt.notADate") : "tomorrow, fri 14:00, none…", { dim: !text, color: text ? "red" : undefined })] : [seg(`→ ${whenText(target, s.today)}`, { color: "green" })];
   }
   if (!text) return [seg(t("prompt.addExample"), { dim: true })];
-  const parsed = parseQuickAdd(text, context);
+  const parsed = parseQuickAdd(text, context, s.data.projects);
   const due = parsed.due === undefined ? { date: mode.date ?? s.today } : parsed.due;
-  const labels = parsed.labels.map((l) => `#${l}`).join(" ");
+  const labels = [parsed.project ? `+${projectToken(parsed.project)}` : "", ...parsed.labels.map((l) => `#${l}`), ...(parsed.unknownProjects ?? []).map((token) => `? ${token}`)].filter(Boolean).join(" ");
   return [seg(`→ ${whenText(due, s.today)}${labels ? ` ${labels}` : ""}${mode.status ? t("prompt.doing") : ""}`, { color: parsed.title ? "green" : "red" })];
 }
 

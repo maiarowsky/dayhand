@@ -2,6 +2,7 @@
 // board's columns, the week's days and the trash, narrowed by the `/` filter.
 // The cursor moves over these lists, so the screens and the keys share them.
 import { t } from "../i18n/index.js";
+import { projectKey, projectToken } from "../projects.js";
 import type { Board, Task, TodayView } from "../render/model.js";
 import { addDays, isoWeekday } from "../when/calendar.js";
 
@@ -11,7 +12,11 @@ export type Day = { date: string; isToday: boolean; tasks: Task[] };
 
 /** Title, labels, notes or the number contain the text, in any case. */
 export function matches(task: Task, filter: string): boolean {
-  const needle = filter.trim().toLowerCase();
+  const tokens = filter.trim().split(/\s+/);
+  const projects = tokens.filter((token) => token.startsWith("+"));
+  const projectMatches = projects.every((token) => projectKey(token) === "+none" ? !task.projectId : task.project !== undefined && projectKey(projectToken(task.project)).includes(projectKey(token.slice(1))));
+  if (!projectMatches) return false;
+  const needle = tokens.filter((token) => !token.startsWith("+")).join(" ").toLowerCase();
   if (!needle) return true;
   const haystack = [task.title, task.note ?? "", task.resumeNote ?? "", ...task.labels.map((l) => `#${l}`), task.ref === undefined ? "" : `#${task.ref}`];
   return haystack.some((text) => text.toLowerCase().includes(needle));

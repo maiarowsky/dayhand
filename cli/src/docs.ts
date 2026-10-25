@@ -17,7 +17,7 @@ const schemaLinks = (spec: CommandSpec) =>
 
 const escape = (text: string) => text.replace(/\|/g, "\\|");
 const optionRows = (options: OptSpec[]) =>
-  options.map((o) => `| \`${o.flags}\` | ${escape(o.description)}${o.choices ? ` (${o.choices.join(", ")})` : ""} |`);
+  options.map((o) => `| \`${escape(o.flags)}\` | ${escape(o.description)}${o.choices ? ` (${o.choices.join(", ")})` : ""} |`);
 
 export function renderDocs(): string {
   const commands = flatten().filter(({ spec }) => spec.run);
@@ -63,7 +63,8 @@ export function renderDocs(): string {
     "  ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{\"warning\":{…}}` lines.",
     "- `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`",
     "  (or the `--fields`); views with sections (Today, board) start each row with the section name.",
-    "- `dayhand list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)",
+    "- `--fields project,projectId` selects the resolved project name and id. Names require one list_projects read; default JSON is unchanged.",
+    "- `dayhand list` filters (`--project`, `--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)",
     "  run on the backend and keep list_all's shape: `{\"result\": [...], \"total\", \"nextCursor\"}`. With `--limit`, pass",
     "  `nextCursor` as `--cursor` for the next page. A backend older than 0.4.0 has no `total` and `nextCursor`;",
     "  dayhand then filters its full list itself.",
@@ -78,6 +79,7 @@ export function renderDocs(): string {
     "`Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,",
     "`[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without",
     "colors or cutting. `dayhand board` shows its columns side by side on terminals 90 columns or wider.",
+    "Projects appear as `+Strona-piekarni` after the title, before `#labels`. Names are resolved with one list_projects read per command.",
     "On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options open `$VISUAL`/`$EDITOR`.",
     "",
     "## Exit codes",
@@ -100,6 +102,7 @@ export function renderDocs(): string {
     "",
     `Changing ${3} or more tasks at once needs \`--yes\`. On a terminal dayhand asks instead; without a`,
     "terminal (or with `--no-input` / `DAYHAND_NO_INPUT=1`) it never waits for input and exits with 2.",
+    "`project assign` requires confirmation already for two tasks.",
     "",
     "## Environment",
     "",

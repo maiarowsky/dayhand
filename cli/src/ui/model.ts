@@ -1,5 +1,6 @@
 // What the controller knows besides the key state: the server's data per view,
 // the connection, the last message, and what the screens list from them.
+import type { Project } from "../projects.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import { agentItems, type Agents, type Health } from "./agents.js";
 import { addDays } from "../when/calendar.js";
@@ -7,6 +8,7 @@ import { boardColumns, matches, todaySections, todayTasks, weekDays, type Column
 import type { Lists, UiState } from "./state.js";
 
 export type Data = {
+  projects?: Project[];
   today?: TodayView;
   health?: Health;
   agents?: Agents;

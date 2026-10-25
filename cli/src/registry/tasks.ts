@@ -1,5 +1,6 @@
 // Task commands: verbs at the top level, one MCP tool each (see docs/cli.md).
 import { usageError } from "../core/exit.js";
+import { requireProjects } from "../projects.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import { applyDue } from "./dates.js";
 import { FILTER_OPTIONS, hasFilters, listTasks, parseStatuses } from "./filters.js";
@@ -9,6 +10,7 @@ import { PROPOSAL_OPTIONS, proposalArgs } from "./owner.js";
 import { parseLink, resolveRef } from "./parse.js";
 import type { CommandSpec, OptSpec, Opts, RunContext } from "./types.js";
 import { criteriaOf, PROOF_OPTIONS, proofInput } from "./work.js";
+import { PROJECT_OPTION } from "./projects.js";
 
 const REF = { name: "ref", description: "Task: #42 or 42 (its number), now, or its id", required: true };
 const REFS = { name: "refs", description: "Tasks: #42 or 42, now, or ids", required: true, variadic: true };
@@ -71,10 +73,11 @@ export const taskCommands: CommandSpec[] = [
     schema: "today.schema.json",
     summary: "The Today screen: now task, overdue, today and done today (also plain `dayhand`)",
     tools: ["list_today"],
+    options: [PROJECT_OPTION],
     fields: "task",
     examples: ["dayhand", "dayhand today --json", "dayhand today --plain --fields ref,title"],
-    run: async (ctx) => {
-      const view = await tool<TodayView>(ctx, "list_today");
+    run: async (ctx, _args, opts) => {
+      const view = await tool<TodayView>(ctx, "list_today", await projectArgs(ctx, opts));
       return { value: view, view: { kind: "today", view } };
     },
   },
@@ -85,6 +88,7 @@ export const taskCommands: CommandSpec[] = [
     args: [{ name: "title", description: "Task title", required: true, variadic: true }],
     options: [
       ...SCHEDULE_OPTIONS,
+      PROJECT_OPTION,
       { flags: "--no-due", description: "No due day: the task shows only in list and board" },
       { flags: "-l, --label <label>", description: "Label (repeatable)", kind: "list" },
       { flags: "--note <text>", description: "Note" },
@@ -100,6 +104,7 @@ export const taskCommands: CommandSpec[] = [
     fields: "task",
     examples: [
       'dayhand add Call the accountant --due "fri 2pm" -l home',
+      'dayhand add "Zdjęcia do galerii" --due fri -p "strona piekarni"',
       'dayhand add Pay rent --due "1 nov" --dry-run',
       'dayhand add "Review the plan" --time 09:00 --every week --on mon,thu',
       'dayhand add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 -1d"',
@@ -110,7 +115,7 @@ export const taskCommands: CommandSpec[] = [
       'dayhand add "Checkout times out" --propose --source "sentry:CHECKOUT-42 https://sentry.example.com/issues/42"',
     ],
     run: async (ctx, args, opts) => {
-      const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId() };
+      const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId(), ...await projectArgs(ctx, opts) };
       copy(opts, input, { time: "dueTime", note: "note", status: "status", resumeNote: "resumeNote" });
       if (opts.due !== false) await applyDue(ctx, input, (opts.due as string | undefined) ?? "today", opts);
       if ((opts.label as string[]).length) input.labels = opts.label;
@@ -133,6 +138,7 @@ export const taskCommands: CommandSpec[] = [
     summary: "Open tasks, oldest due first (with --done also done ones); filters narrow the list",
     options: [
       { flags: "-l, --label <label>", description: "Only tasks with this label (repeatable: all must match)", kind: "list" },
+      PROJECT_OPTION,
       { flags: "--done", description: "Include done tasks" },
       { flags: "--archived", description: "Include archived tasks" },
       ...FILTER_OPTIONS,
@@ -146,11 +152,12 @@ export const taskCommands: CommandSpec[] = [
       "dayhand list --limit 50 --cursor <nextCursor> --json",
       "dayhand list --done --json --fields ref,title,status",
       "dayhand list --ready --json",
+      "dayhand list -p none --json",
     ],
     run: async (ctx, _args, opts) => {
       const statuses = parseStatuses(opts.status);
       const includeDone = Boolean(opts.done) || Boolean(statuses?.includes("done"));
-      const input: Record<string, unknown> = { includeDone, includeArchived: Boolean(opts.archived) };
+      const input: Record<string, unknown> = { includeDone, includeArchived: Boolean(opts.archived), ...await projectArgs(ctx, opts) };
       if ((opts.label as string[]).length) input.labels = opts.label;
       const value = await listTasks(ctx, input, opts);
       return { value, view: { kind: "tasks", tasks: asList(value), empty: hasFilters(opts) ? "no tasks match" : undefined } };
@@ -160,12 +167,12 @@ export const taskCommands: CommandSpec[] = [
     name: "board",
     schema: "board.schema.json",
     summary: "Kanban board: todo, doing and done columns",
-    options: [{ flags: "--done-limit <n>", description: "Maximum tasks in the done column (default 50)", kind: "int" }],
+    options: [PROJECT_OPTION, { flags: "--done-limit <n>", description: "Maximum tasks in the done column (default 50)", kind: "int" }],
     tools: ["board"],
     fields: "task",
     examples: ["dayhand board", "dayhand board --done-limit 5 --json"],
     run: async (ctx, _args, opts) => {
-      const value = await tool<Board>(ctx, "board", opts.doneLimit === undefined ? {} : { doneLimit: opts.doneLimit });
+      const value = await tool<Board>(ctx, "board", { ...await projectArgs(ctx, opts), ...(opts.doneLimit === undefined ? {} : { doneLimit: opts.doneLimit }) });
       const section = (name: keyof Board) => ({ name, label: name.toUpperCase(), tasks: value[name], count: true, empty: "empty" });
       return { value, view: { kind: "sections", columns: true, sections: [section("todo"), section("doing"), section("done")] } };
     },
@@ -191,6 +198,8 @@ export const taskCommands: CommandSpec[] = [
     args: [REF],
     options: [
       { flags: "--title <text>", description: "New title" },
+      PROJECT_OPTION,
+      { flags: "--clear-project", description: "Remove the project" },
       { flags: "--note <text>", description: "Replace the note" },
       { flags: "--clear-note", description: "Remove the note" },
       ...SCHEDULE_OPTIONS,
@@ -435,12 +444,13 @@ function copy(opts: Opts, input: Record<string, unknown>, names: Record<string, 
 }
 
 async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Record<string, unknown>> {
-  const input: Record<string, unknown> = {};
+  const input: Record<string, unknown> = { ...await projectArgs(ctx, opts) };
   copy(opts, input, { title: "title", note: "note", time: "dueTime", resumeNote: "resumeNote" });
   if (opts.due !== undefined) await applyDue(ctx, input, opts.due as string, opts);
   await workArgs(ctx, opts, input);
   const clears: Record<string, string> = {
     clearNote: "note",
+    clearProject: "projectId",
     clearDue: "dueDate",
     clearTime: "dueTime",
     clearRepeat: "repeat",
@@ -485,6 +495,13 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
   if (links.length) input.links = links.map(parseLink);
   if (opts.clearLinks) input.links = [];
   return input;
+}
+
+/** Project options must never silently lose their meaning on an older backend. */
+async function projectArgs(ctx: RunContext, opts: Opts): Promise<Record<string, unknown>> {
+  if (opts.project === undefined && !opts.clearProject) return {};
+  await requireProjects(ctx);
+  return opts.project === undefined ? {} : { projectId: opts.project };
 }
 
 const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);

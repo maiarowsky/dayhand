@@ -36,7 +36,7 @@ const stable = (tool: string, value: any) => {
 type Case = { command: string[]; path: string; tool: string; args: Record<string, unknown> };
 
 /** Tools whose arguments name a request or a key made during the test, or a folder on disk: their own tests below. */
-const BY_ID = ["get_approval", "decide_approval", "set_tool_policy", "import_backlog", "export_backlog"];
+const BY_ID = ["get_approval", "decide_approval", "set_tool_policy", "import_backlog", "export_backlog", "list_projects", "add_project", "update_project", "delete_project"];
 
 // One user's day, in order. Changes carry a clientId, so the SDK call with the
 // same arguments is a replay that must return the same result.
@@ -100,10 +100,10 @@ const CASES: Case[] = [
 ];
 
 describe("agent contract", () => {
-  test("every one of the 35 MCP tools is reachable by a command", async () => {
+  test("every one of the 39 MCP tools is reachable by a command", async () => {
     const { key } = await newUser();
     const tools: string[] = (await dayhandJson(key, ["tools"])).tools.map((t: { name: string }) => t.name);
-    expect(tools).toHaveLength(35);
+    expect(tools).toHaveLength(39);
     const covered = new Set(flatten().flatMap((c) => c.spec.tools));
     expect(tools.filter((t) => !covered.has(t))).toEqual([]);
     expect(new Set([...CASES.map((c) => c.tool), ...BY_ID])).toEqual(new Set(tools));
@@ -146,6 +146,67 @@ describe("agent contract", () => {
       expect(validate(specOf(c.path).schema!, viaCommand), `schema of dayhand ${c.path}`).toEqual([]);
     }
     await sdk.close();
+  });
+
+  test("every project command and project task option prints the MCP structuredContent and passes its schema", async () => {
+    const { key, keyId } = await newUser();
+    const sdk = await mcpClient(key);
+    const cases: Case[] = [
+      { path: "project add", command: ["project", "add", "Strona", "piekarni", "--color", "amber", "--icon", "🥐", "--note", "Menu", "--client-id", "p-add"], tool: "add_project", args: { name: "Strona piekarni", color: "amber", icon: "🥐", note: "Menu", clientId: "p-add" } },
+      { path: "project", command: ["project"], tool: "list_projects", args: { includeArchived: false } },
+      { path: "project list", command: ["project", "list", "--archived"], tool: "list_projects", args: { includeArchived: true } },
+      { path: "add", command: ["add", "Menu", "-p", "strona PIEKARNI", "--client-id", "p-task"], tool: "add_task", args: { title: "Menu", projectId: "strona PIEKARNI", dueDate: "today", clientId: "p-task" } },
+      { path: "edit", command: ["edit", "1", "--project", "Strona piekarni", "--client-id", "p-edit-task"], tool: "update_task", args: { taskId: "#1", projectId: "Strona piekarni", clientId: "p-edit-task" } },
+      { path: "list", command: ["list", "-p", "Strona piekarni"], tool: "list_all", args: { includeDone: false, includeArchived: false, projectId: "Strona piekarni" } },
+      { path: "today", command: ["today", "-p", "Strona piekarni"], tool: "list_today", args: { projectId: "Strona piekarni" } },
+      { path: "board", command: ["board", "-p", "Strona piekarni"], tool: "board", args: { projectId: "Strona piekarni" } },
+      { path: "edit", command: ["edit", "1", "--clear-project", "--client-id", "p-clear"], tool: "update_task", args: { taskId: "#1", projectId: null, clientId: "p-clear" } },
+      { path: "project assign", command: ["project", "assign", "Strona piekarni", "1", "--client-id", "p-assign"], tool: "update_task", args: { taskId: "#1", projectId: "Strona piekarni", clientId: "p-assign" } },
+      { path: "project assign", command: ["project", "assign", "none", "1", "--client-id", "p-unassign"], tool: "update_task", args: { taskId: "#1", projectId: "none", clientId: "p-unassign" } },
+      { path: "list", command: ["list", "-p", "none"], tool: "list_all", args: { includeDone: false, includeArchived: false, projectId: "none" } },
+      { path: "project edit", command: ["project", "edit", "Strona piekarni", "--name", "Bakery", "--clear-color", "--clear-icon", "--clear-note", "--client-id", "p-edit"], tool: "update_project", args: { projectId: "Strona piekarni", name: "Bakery", color: null, icon: null, note: null, clientId: "p-edit" } },
+      { path: "project archive", command: ["project", "archive", "Bakery", "--client-id", "p-archive"], tool: "update_project", args: { projectId: "Bakery", archived: true, clientId: "p-archive" } },
+      { path: "project unarchive", command: ["project", "unarchive", "Bakery", "--client-id", "p-restore"], tool: "update_project", args: { projectId: "Bakery", archived: false, clientId: "p-restore" } },
+      { path: "project rm", command: ["project", "rm", "Bakery", "--client-id", "p-delete"], tool: "delete_project", args: { projectId: "Bakery", clientId: "p-delete" } },
+    ];
+    try {
+      for (const [i, c] of cases.entries()) {
+        if (i % 8 === 0) await admin("mutation", "callLimits:reset", { keyId });
+        const actual = await dayhandJson(key, c.command);
+        const expected = await sdkCall(sdk, c.tool, c.args);
+        expect(expected.isError, c.path).toBe(false);
+        expect(actual, c.command.join(" ")).toEqual(expected.structured);
+        expect(validate(specOf(c.path).schema!, actual), c.path).toEqual([]);
+      }
+    } finally { await sdk.close(); }
+  });
+
+  test("project Backlog.md imports/exports and general imports keep their JSON contracts", async () => {
+    const { key } = await newUser();
+    const added = await dayhandJson(key, ["project", "add", "Shop"]);
+    const sdk = await mcpClient(key);
+    try {
+      const dir = backlogFolder();
+      const files = await readFolder(dir);
+      const imported = await dayhandJson(key, ["backlog", "import", dir, "--project", "Shop"]);
+      expect(validate("backlog-import.schema.json", imported)).toEqual([]);
+      expect(imported.tasks.every((t: any) => t.projectId === added.project.id)).toBe(true);
+      const again = await dayhandJson(key, ["backlog", "import", dir, "--project", "Shop"]);
+      expect(again).toEqual((await sdkCall(sdk, "import_backlog", { files, projectId: added.project.id })).structured);
+      const exported = await dayhandJson(key, ["backlog", "export", "--project", "Shop"]);
+      expect(undated(exported)).toEqual(undated((await sdkCall(sdk, "export_backlog", { projectId: "Shop" })).structured));
+      expect(validate("backlog-export.schema.json", exported)).toEqual([]);
+      expect(exported.config.content).toContain('project_name: Shop');
+      const written = await dayhandJson(key, ["backlog", "export", join(TEST_HOME, "project-out"), "--project", "Shop"]);
+      expect(validate("backlog-written.schema.json", written)).toEqual([]);
+      const csv = join(TEST_HOME, "project.csv");
+      writeFileSync(csv, "TYPE,CONTENT\ntask,Imported task\n");
+      const importedCsv = await dayhandJson(key, ["import", csv, "--project", "Shop"]);
+      expect(validate("import-result.schema.json", importedCsv)).toEqual([]);
+      expect(importedCsv).toMatchObject({ created: 1, failed: [] });
+      const tasks = await dayhandJson(key, ["list", "-p", "Shop"]);
+      expect(tasks.result.map((t: any) => t.title)).toContain("Imported task");
+    } finally { await sdk.close(); }
   });
 
   test("dayhand backlog import and export print what the SDK client gets, and follow their schemas", async () => {
