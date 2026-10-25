@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import DayhandCore
 import DayhandLocalization
 import DayhandUpdates
@@ -110,12 +111,33 @@ struct GoCommands: View {
     }
 }
 
+/**
+ * SwiftUI fills a command menu in only when it opens, so a project item of ⌘4 to ⌘9, or Move to Project… (⇧⌘M) for a
+ * task selected since, would not answer its key until then. This fills the Go and Task menus in again after the model
+ * changes.
+ */
+@MainActor
+enum CommandMenus {
+    static func refresh() {
+        let titles: Set = [tr("Go"), tr("Task")]
+        for item in NSApp.mainMenu?.items ?? [] where titles.contains(item.title) {
+            guard let menu = item.submenu else { continue }
+            menu.delegate?.menuNeedsUpdate?(menu)
+        }
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var menuRefresh: AnyCancellable?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         MainActor.assumeIsolated {
-            _ = AppModel.shared
             _ = Updater.shared
             KeyboardShortcuts.onKeyUp(for: .quickAdd) { QuickAddPanel.shared.toggle() }
+            // Debounced on the run loop's default mode: after SwiftUI has applied the change, never while a menu is open.
+            menuRefresh = AppModel.shared.objectWillChange
+                .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+                .sink { _ in MainActor.assumeIsolated { CommandMenus.refresh() } }
         }
     }
 
