@@ -124,6 +124,12 @@ public final class AppDatabase: Sendable {
             try db.alter(table: "project") { t in t.add(column: "joinName", .text) }
             try db.execute(sql: "UPDATE outbox SET attempts = MAX(attempts, 1) WHERE mutation = ?", arguments: [Mutations.addProject])
         }
+        migrator.registerMigration("v6") { db in
+            for project in try Project.filter(Column("joinName") != nil && Column("serverId") == nil).fetchAll(db) {
+                try ProjectOutbox.discardRefusedCreation(db, project.localId)
+            }
+            try db.execute(sql: "ALTER TABLE project DROP COLUMN joinName")
+        }
         return migrator
     }
 }
@@ -219,8 +225,7 @@ extension Project: FetchableRecord, PersistableRecord {
             createdAt: row["createdAt"],
             updatedAt: row["updatedAt"],
             serverUpdatedAt: row["serverUpdatedAt"],
-            removing: row["removing"],
-            joinName: row["joinName"]
+            removing: row["removing"]
         )
     }
 
@@ -238,7 +243,6 @@ extension Project: FetchableRecord, PersistableRecord {
         container["updatedAt"] = updatedAt
         container["serverUpdatedAt"] = serverUpdatedAt
         container["removing"] = removing
-        container["joinName"] = joinName
     }
 }
 

@@ -113,7 +113,7 @@ extension TaskRepository {
                 try Self.checkTarget(db, target)
             }
             let creation = try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == localId).fetchOne(db)
-            let cancelCreation = project.serverId == nil && (creation?.attempts == 0 || project.joinName != nil)
+            let cancelCreation = project.serverId == nil && creation?.attempts == 0
             for var task in try TaskItem.filter(Column("projectLocalId") == localId).fetchAll(db) {
                 task.projectLocalId = target
                 task.updatedAt = now
@@ -158,8 +158,8 @@ extension TaskRepository {
 
     /// Projects need a server that has them, or none yet.
     static func requireProjects(_ db: Database) throws {
-        if try Meta.projectSupport(db) == .unsupported {
-            throw RepositoryError.invalid(tr("This server has no projects. Projects need Dayhand server 0.13.0 or later."))
+        if let requirement = try Meta.projectSupport(db).requirement {
+            throw RepositoryError.invalid(requirement)
         }
     }
 
@@ -229,10 +229,9 @@ private struct ProjectInput: Sendable {
  * server refuses for its project is sent again without it.
  */
 enum ProjectOutbox {
-    static func ref(_ db: Database, _ localId: String, allowName: Bool) throws -> String? {
+    static func ref(_ db: Database, _ localId: String) throws -> String? {
         guard let project = try Project.fetchOne(db, key: localId) else { return nil }
         if let serverId = project.serverId { return serverId }
-        if allowName, let name = project.joinName { return name }
         return try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == localId).fetchOne(db)?.clientId
     }
 
@@ -245,8 +244,9 @@ enum ProjectOutbox {
             guard let localId, let serverId = returned?["id"]?.string else { return }
             try bind(db, localId, serverId: serverId)
         case Mutations.deleteProject:
-            guard let id = JSONValue.decode(op.argsJson)?["projectId"]?.string else { return }
-            _ = try Project.deleteOne(db, key: id)
+            guard let args = JSONValue.decode(op.argsJson), let id = args["projectId"]?.string else { return }
+            let target = args["moveTasksTo"]?.string
+            try drop(db, id, moveTasksTo: target == ProjectRules.noProject ? nil : target)
         default:
             break
         }
@@ -275,7 +275,6 @@ enum ProjectOutbox {
         }
         project.serverId = serverId
         project.serverUpdatedAt = nil
-        project.joinName = nil
         try project.save(db)
     }
 
@@ -284,9 +283,7 @@ enum ProjectOutbox {
      *
      * - A task change refused for its project (archived or deleted meanwhile) goes again without it, and the task
      *   leaves the project here.
-     * - `addProject` refused because a project that is not archived has the name: the row stays and joins that
-     *   project (`ProjectMerger`); refused for anything else, the project never existed on the server and goes, its
-     *   tasks staying without a project.
+     * - `addProject` refused: the project never existed on the server and goes, its tasks staying without a project.
      * - `updateProject` or `deleteProject` refused: the server's copy wins at the next snapshot.
      */
     static func refused(_ db: Database, _ op: OutboxOp, reason: String) throws -> Bool {
@@ -319,17 +316,7 @@ enum ProjectOutbox {
         guard ofProject else { return false }
         _ = try OutboxOp.deleteOne(db, key: op.seq)
         if op.mutation == Mutations.addProject {
-            if try Project.fetchOne(db, key: op.clientId)?.removing == true {
-                let deletion = try OutboxOp.filter(Column("mutation") == Mutations.deleteProject).fetchAll(db)
-                    .first { JSONValue.decode($0.argsJson)?["projectId"]?.string == op.clientId }
-                let target = deletion.flatMap { JSONValue.decode($0.argsJson)?["moveTasksTo"]?.string }
-                try drop(db, op.clientId, moveTasksTo: target == ProjectRules.noProject ? nil : target)
-            } else if RemoteJSON.nameTakenByActiveProject(reason), var project = try Project.fetchOne(db, key: op.clientId) {
-                project.joinName = JSONValue.decode(op.argsJson)?["name"]?.string
-                try project.save(db)
-            } else {
-                try drop(db, op.clientId)
-            }
+            try discardRefusedCreation(db, op.clientId)
             return true
         }
         guard let id = JSONValue.decode(op.argsJson)?["projectId"]?.string, var project = try Project.fetchOne(db, key: id) else { return true }
@@ -341,6 +328,13 @@ enum ProjectOutbox {
         }
         try project.save(db)
         return true
+    }
+
+    static func discardRefusedCreation(_ db: Database, _ localId: String) throws {
+        let deletion = try OutboxOp.filter(Column("mutation") == Mutations.deleteProject).fetchAll(db)
+            .first { JSONValue.decode($0.argsJson)?["projectId"]?.string == localId }
+        let target = deletion.flatMap { JSONValue.decode($0.argsJson)?["moveTasksTo"]?.string }
+        try drop(db, localId, moveTasksTo: target == ProjectRules.noProject ? nil : target)
     }
 
     static func suspend(_ db: Database) throws {
@@ -409,12 +403,6 @@ enum ProjectOutbox {
         for op in try OutboxOp.fetchAll(db) where op.mutation == Mutations.addProject {
             if remote.contains(where: { $0.clientId == op.clientId }) {
                 _ = try OutboxOp.deleteOne(db, key: op.seq)
-            }
-        }
-        for project in try Project.fetchAll(db) where project.serverId == nil && !project.removing {
-            if let name = project.joinName,
-               let match = remote.first(where: { $0.archivedAt == nil && ProjectRules.nameKey($0.name) == ProjectRules.nameKey(name) }) {
-                try bind(db, project.localId, serverId: match.id)
             }
         }
         let pending = try OutboxOp.order(Column("seq")).fetchAll(db)

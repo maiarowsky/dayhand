@@ -280,6 +280,8 @@
 	<string>在看板上移动</string>
 	<key>Moved to the trash</key>
 	<string>已移到废纸篓</string>
+	<key>Needs backend 0.13.0 or later</key>
+	<string>需要后端 0.13.0 或更高版本</string>
 	<key>Never</key>
 	<string>永不</string>
 	<key>New Task</key>
@@ -538,8 +540,6 @@
 	<string>无法读取：%@</string>
 	<key>This Mac</key>
 	<string>这台 Mac</string>
-	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
-	<string>此服务器不支持项目。项目需要 Dayhand 服务器 0.13.0 或更高版本。</string>
 	<key>This version</key>
 	<string>当前版本</string>
 	<key>Tick %@</key>

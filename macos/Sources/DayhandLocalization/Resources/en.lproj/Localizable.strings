@@ -280,6 +280,8 @@
 	<string>Moved on the board</string>
 	<key>Moved to the trash</key>
 	<string>Moved to the trash</string>
+	<key>Needs backend 0.13.0 or later</key>
+	<string>Needs backend 0.13.0 or later</string>
 	<key>Never</key>
 	<string>Never</string>
 	<key>New Task</key>
@@ -538,8 +540,6 @@
 	<string>They could not be read: %@</string>
 	<key>This Mac</key>
 	<string>This Mac</string>
-	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
-	<string>This server has no projects. Projects need Dayhand server 0.13.0 or later.</string>
 	<key>This version</key>
 	<string>This version</string>
 	<key>Tick %@</key>

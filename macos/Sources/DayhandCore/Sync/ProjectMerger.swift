@@ -33,7 +33,6 @@ public enum ProjectMerger {
             if var row, row.removing {
                 if row.serverId != r.id {
                     row.serverId = r.id
-                    row.joinName = nil
                     upserts.append(row)
                 }
                 continue

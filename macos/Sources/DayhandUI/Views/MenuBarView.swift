@@ -39,7 +39,7 @@ struct MenuBarView: View {
                 let more = s.openCount - rows.count
                 if more > 0 { Text(tr("and \(more) more")).font(.caption).foregroundStyle(.secondary) }
             }
-            if let status = Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline) {
+            if let status = Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline, projectSupport: model.projectSupport) {
                 Divider()
                 Text(status).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }

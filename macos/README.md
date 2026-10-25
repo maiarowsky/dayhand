@@ -158,12 +158,12 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   task moves and sends a destination's creation before any retargeted reference. A repeating task's next
   occurrence keeps its project.
 - The snapshot adds `app:listProjects`; projects merge last write wins per field, as tasks do, and a project deleted
-  on the Mac stays hidden until the server has the deletion. Two Macs that make a project of the same name offline
-  end with one: the second `addProject` is refused as a taken name and its row joins the server's project using
-  the name submitted by that creation, not a later rename. Subsequent edits and task assignments use that identity.
-  Binding also retargets queued references and preserves their latest edits. A snapshot-confirmed creation takes
-  the server's fields except those changed by later queued edits. Migration v5 stores the refused-name identity
-  and treats older pending creations as uncertain.
+  on the Mac stays hidden until the server has the deletion. Project identity matches only by server id or
+  `clientId`, never by name. A refused creation is removed with its queued project edits; its tasks and notes stay
+  without that project, and another device's same-named project is untouched. Binding an acknowledged id retargets
+  cached references and preserves their latest edits. A snapshot-confirmed creation takes the server's fields
+  except those changed by later queued edits. Migration v5 treats older pending creations as uncertain; v6 removes
+  obsolete name-join metadata and applies normal refusal handling to those unbound creations.
 - A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
   the project; the next snapshot restores authoritative membership unless a later assignment is waiting. Missing
   local references follow the same reconciliation. A refused project edit cannot unhide a later queued deletion.
@@ -171,10 +171,12 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`). Local projects and task
   memberships stay. Project operations and membership changes wait for a server with projects, without blocking
   other task changes or retrying in a loop. Tasks, including their notes, sync without `projectId`; their memberships
-  stay queued with fresh mutation ids. Adding a project says "This server has no projects. Projects need Dayhand
-  server 0.13.0 or later." Once an upgraded server supplies projects in a snapshot, waiting operations resume in
-  order on the next round, using the server's project ids. Membership for a task in the trash stays queued until
-  restoration, on this Mac or another device; unrelated task changes continue syncing.
+  stay queued with fresh mutation ids. The status reads "Needs backend 0.13.0 or later", localized in all eight
+  languages. Once an upgraded server supplies projects in a snapshot, waiting operations resume in order on the
+  next round, using the server's project ids. Ordinary assignments retain their queue order before trash,
+  archival, deletion and completion. Only membership refused because the task is in the trash waits for
+  restoration, without blocking unrelated changes. If the server purges a known task, deferred-only memberships
+  are retired so the task and its cached history can leave the Mac; unsent task creations stay.
 - Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
   sets the project and leaves the title, the first one only; an exact trimmed, NFC, case-insensitive name wins
   over the hyphen-as-space alias. A `+word` naming none stays in the title and is
@@ -261,7 +263,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`): the name, icon, note and order rules, quick
   add's `+project` with the shared cases, the sidebar counts and the task list of a project, the merge (by server
-  id, `clientId`, or a name made on two Macs), migration v4 from a 0.3.0 database without losing a task. Against the
+  id or `clientId`, never a shared name), migrations from a 0.3.0 database without losing a task. Against the
   fake server: a project and its tasks written offline arrive in order with the server's project id; projects made
   or changed elsewhere arrive; a task refused for an archived project is sent again without it; a refused project
   goes and its tasks stay. Deletion chains resolve to their final destination, rejected assignments preserve later

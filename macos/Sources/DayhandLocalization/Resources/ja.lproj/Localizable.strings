@@ -280,6 +280,8 @@
 	<string>ボード上で移動</string>
 	<key>Moved to the trash</key>
 	<string>ゴミ箱に移動</string>
+	<key>Needs backend 0.13.0 or later</key>
+	<string>バックエンド 0.13.0 以降が必要です</string>
 	<key>Never</key>
 	<string>なし</string>
 	<key>New Task</key>
@@ -538,8 +540,6 @@
 	<string>読み込めませんでした：%@</string>
 	<key>This Mac</key>
 	<string>この Mac</string>
-	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
-	<string>このサーバーはプロジェクトに対応していません。プロジェクトには Dayhand サーバー 0.13.0 以降が必要です。</string>
 	<key>This version</key>
 	<string>このバージョン</string>
 	<key>Tick %@</key>

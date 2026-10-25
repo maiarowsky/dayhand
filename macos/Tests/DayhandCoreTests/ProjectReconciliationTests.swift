@@ -4,17 +4,19 @@ import Testing
 
 extension ProjectSyncTests {
     @Test(arguments: ["add", "move", "edit", "source", "destination"], [false, true])
-    func bindingRetargetsEveryQueuedReferenceAndPreservesOptimisticState(action: String, acknowledge: Bool) async throws {
+    func acknowledgedIdentityRetargetsCachedReferencesWithoutNameMatching(action: String, acknowledge: Bool) async throws {
         let (repo, engine) = try setUp()
         let mine = try await repo.addProject(name: "Dom")
-        let cached = server.addProjectElsewhere("Dom")
         let q = server.addProjectElsewhere("Q")
+        server.loseNextAnswer = true
+        #expect(try await OutboxProcessor(store: repo, sender: remote()).drain() == .retryLater)
+        let cached = try #require(server.project(named: "Dom")?["id"]?.string)
+        server.editProjectElsewhere(cached, ["clientId": .null])
         let outside = server.addElsewhere("Outside")
         let inside = server.addElsewhere("Inside")
         server.editElsewhere(outside, ["projectId": .string(q)])
         server.editElsewhere(inside, ["projectId": .string(cached)])
-        server.failNextMutation = true
-        guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
+        try await repo.apply(try await remote().snapshot().get())
         try await repo.moveProject(mine.localId, to: 999)
         var taskId = outside
         switch action {
@@ -33,10 +35,12 @@ extension ProjectSyncTests {
         }
         server.editElsewhere(inside, ["note": "New server copy"])
         server.editElsewhere(outside, ["note": "New server copy"])
-        let add = try #require(try await repo.next())
-        try await repo.reject(add, reason: "A project named \"Dom\" already exists")
         if acknowledge {
             #expect(try await OutboxProcessor(store: repo, sender: remote(), maxOps: 1).drain() == .moreLeft)
+        } else {
+            let add = try #require(try await repo.next())
+            let project = try #require(server.project(named: "Dom"))
+            try await repo.acknowledge(add, value: ["project": project])
         }
         server.failNextMutation = true
         guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
@@ -137,6 +141,153 @@ extension ProjectSyncTests {
         #expect(server.task(titled: "T")?["note"] == "Keep note")
         #expect(try await repo.task(taskId)?.projectLocalId == (clear ? nil : home))
         #expect(try await repo.task(taskId)?.inTrash == false)
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test(arguments: ["delete", "archive", "complete"], [false, true])
+    func ordinaryAssignmentsKeepTheirOrderBeforeTrashAndProjectTransitions(action: String, restoreBeforeSending: Bool) async throws {
+        let (repo, engine) = try setUp()
+        let a = server.addProjectElsewhere("A")
+        let b = server.addProjectElsewhere("B")
+        let c = server.addProjectElsewhere("C")
+        let t = server.addElsewhere("T", dueDate: "2026-10-22")
+        server.editElsewhere(t, ["projectId": .string(a)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        if action == "complete" {
+            try await repo.setRepeat(t, RepeatRule(every: .day))
+            guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        }
+        try await repo.setProject(t, b)
+        if action == "complete" { try await repo.complete(t) }
+        try await repo.moveToTrash(t)
+        if action == "delete" { try await repo.deleteProject(b, moveTasksTo: c) }
+        if action == "archive" { try await repo.setArchived(b, true) }
+        if restoreBeforeSending { try await repo.restore(t) }
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        if !restoreBeforeSending {
+            #expect(try await repo.task(t)?.inTrash == true)
+            try await repo.restore(t)
+            guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        }
+        let expected = action == "delete" ? c : b
+        #expect(server.task(titled: "T")?["projectId"] == .string(expected))
+        #expect(try await repo.task(t)?.projectLocalId == expected)
+        #expect(try await repo.task(t)?.inTrash == false)
+        #expect(try await repo.pendingOps().isEmpty)
+        let mutations = sent()
+        let assigned = try #require(mutations.firstIndex { $0.0 == Mutations.update && $0.1["projectId"] == .string(b) })
+        let trashed = try #require(mutations.firstIndex { $0.0 == Mutations.softDelete })
+        #expect(assigned < trashed)
+        if action == "complete" {
+            let next = try #require(server.allTasks.first { $0["id"]?.string != t })
+            #expect(next["projectId"] == .string(b))
+        }
+    }
+
+    @Test(arguments: [("refused", false), ("refused", true), ("old-add", false), ("old-add", true), ("upgrade", false)])
+    func purgedTasksRetireOnlyDeferredMembershipsAndKeepUnsentCreations(scenario: (String, Bool)) async throws {
+        let (source, clear) = scenario
+        let (repo, engine) = try setUp()
+        let t: String
+        if source == "old-add" {
+            let p = try await repo.addProject(name: "P")
+            t = try await repo.add(title: "T", dueDate: nil, dueTime: nil, note: "Note", projectLocalId: p.localId).localId
+            if clear { try await repo.setProject(t, nil) }
+            try await repo.moveToTrash(t)
+            server.hasProjects = false
+            guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        } else {
+            let p = server.addProjectElsewhere("P")
+            t = server.addElsewhere("T")
+            if clear || source == "upgrade" { server.editElsewhere(t, ["projectId": .string(p)]) }
+            guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+            if source == "refused" { try await repo.setProject(t, clear ? nil : p) }
+            server.editElsewhere(t, ["deletedAt": .of(clock.now)])
+            if source == "upgrade" { server.hasProjects = false }
+            guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+            if source == "upgrade" {
+                server.hasProjects = true
+                for _ in 0..<2 {
+                    guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+                }
+            }
+        }
+        let serverId = try #require(try await repo.task(t)?.serverId)
+        try await repo.saveHistory(serverId, [TaskEvent(taskServerId: serverId, at: clock.now, actor: "app", action: "create")])
+        #expect(try await repo.pendingOps().contains { $0.taskLocalId == t && $0.isProjectAssignment })
+        #expect(try await repo.history(serverId).count == 1)
+        clock.advance(Int64(TaskItem.trashRetentionDays) * HelmDates.dayMs)
+        server.purge(serverId)
+        server.hasProjects = true
+        let unsent = try await repo.add(title: "Unsent", dueDate: nil, dueTime: nil, note: "Keep offline note")
+        try await repo.apply(try await remote().snapshot().get())
+        #expect(try await repo.task(t) == nil)
+        #expect(try await repo.history(serverId).isEmpty)
+        #expect(try await repo.pendingOps().allSatisfy { $0.taskLocalId != t })
+        #expect(try await repo.task(unsent.localId)?.note == "Keep offline note")
+        #expect(try await repo.pendingOps().contains { $0.taskLocalId == unsent.localId && $0.mutation == Mutations.add })
+    }
+
+    @Test func missingTasksWithOtherPendingEditsAreNotTreatedAsDeferredOnly() async throws {
+        let (repo, engine) = try setUp()
+        let p = server.addProjectElsewhere("P")
+        let t = server.addElsewhere("T")
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.setProject(t, p)
+        try await repo.setNote(t, "Other pending edit")
+        let assignment = try #require(try await repo.next())
+        try await repo.reject(assignment, reason: "Task is in the trash")
+        clock.advance(Int64(TaskItem.trashRetentionDays) * HelmDates.dayMs)
+        server.purge(t)
+        let pending = try await repo.pendingOps()
+        try await repo.apply(try await remote().snapshot().get())
+        #expect(try await repo.task(t)?.note == "Other pending edit")
+        #expect(try await repo.pendingOps() == pending)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(t) == nil)
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func projectCapabilityObservationTracksUpgradeWithoutDiscardingLocalData() async throws {
+        let (repo, engine) = try setUp()
+        var support = repo.observeProjectSupport().makeAsyncIterator()
+        #expect(try await support.next() == .unknown)
+        let p = try await repo.addProject(name: "Offline")
+        server.hasProjects = false
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await support.next() == .unsupported)
+        #expect(try await repo.projectSupport().requirement == "Needs backend 0.13.0 or later")
+        #expect(try await repo.projects().map(\.localId) == [p.localId])
+        server.hasProjects = true
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        var resumed = try await support.next()
+        while resumed != nil && resumed != .supported { resumed = try await support.next() }
+        #expect(resumed == .supported)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.project(named: "Offline") != nil)
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func aRetainedMembershipFollowsItsProjectsDeletionDestinationAfterRestore() async throws {
+        let (repo, engine) = try setUp()
+        let a = server.addProjectElsewhere("A")
+        let b = server.addProjectElsewhere("B")
+        let c = server.addProjectElsewhere("C")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(a)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.setProject(t, b)
+        server.editElsewhere(t, ["deletedAt": .of(clock.now)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.deleteProject(b, moveTasksTo: c)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.next() == nil)
+        let retained = try #require(try await repo.pendingOps().first)
+        #expect(JSONValue.decode(retained.argsJson)?["projectId"] == .string(c))
+        try await repo.restore(t)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.task(titled: "T")?["projectId"] == .string(c))
+        #expect(try await repo.task(t)?.projectLocalId == c)
         #expect(try await repo.pendingOps().isEmpty)
     }
 

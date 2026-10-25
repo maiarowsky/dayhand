@@ -1,3 +1,4 @@
+import DayhandLocalization
 import Foundation
 
 /// A project's color: a named token, as the backend spells it (`PROJECT_COLORS` in `convex/lib/validators.ts`). Each
@@ -33,12 +34,11 @@ public struct Project: Hashable, Sendable, Identifiable {
     /// Deleted on this Mac; the row stays, hidden, until the server has the deletion, so the deletion can still name
     /// the project by its server id.
     public var removing: Bool
-    public var joinName: String?
 
     public init(
         localId: String, serverId: String? = nil, clientId: String? = nil, name: String, color: ProjectColor? = nil,
         icon: String? = nil, note: String? = nil, position: Double, archivedAt: Int64? = nil, createdAt: Int64,
-        updatedAt: Int64, serverUpdatedAt: Int64? = nil, removing: Bool = false, joinName: String? = nil
+        updatedAt: Int64, serverUpdatedAt: Int64? = nil, removing: Bool = false
     ) {
         self.localId = localId
         self.serverId = serverId
@@ -53,7 +53,6 @@ public struct Project: Hashable, Sendable, Identifiable {
         self.updatedAt = updatedAt
         self.serverUpdatedAt = serverUpdatedAt
         self.removing = removing
-        self.joinName = joinName
     }
 
     public var id: String { localId }
@@ -104,4 +103,8 @@ public struct RemoteProject: Hashable, Sendable {
  */
 public enum ProjectSupport: String, Hashable, Sendable {
     case unknown, supported, unsupported
+
+    public var requirement: String? {
+        self == .unsupported ? tr("Needs backend 0.13.0 or later") : nil
+    }
 }

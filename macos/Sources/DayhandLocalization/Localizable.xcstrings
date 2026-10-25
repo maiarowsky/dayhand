@@ -18669,56 +18669,56 @@
         }
       }
     },
-    "This server has no projects. Projects need Dayhand server 0.13.0 or later." : {
-      "comment" : "Error when the connected server is older than projects",
+    "Needs backend 0.13.0 or later" : {
+      "comment" : "Project support status while local project changes wait for a backend upgrade",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dieser Server kennt keine Projekte. Projekte brauchen den Dayhand-Server 0.13.0 oder neuer."
+            "value" : "Benötigt Backend 0.13.0 oder neuer"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This server has no projects. Projects need Dayhand server 0.13.0 or later."
+            "value" : "Needs backend 0.13.0 or later"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este servidor no tiene proyectos. Los proyectos necesitan el servidor de Dayhand 0.13.0 o posterior."
+            "value" : "Requiere el backend 0.13.0 o posterior"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ce serveur ne gère pas les projets. Les projets nécessitent le serveur Dayhand 0.13.0 ou plus récent."
+            "value" : "Nécessite le backend 0.13.0 ou ultérieur"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このサーバーはプロジェクトに対応していません。プロジェクトには Dayhand サーバー 0.13.0 以降が必要です。"
+            "value" : "バックエンド 0.13.0 以降が必要です"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ten serwer nie obsługuje projektów. Projekty wymagają serwera Dayhand 0.13.0 lub nowszego."
+            "value" : "Wymaga backendu 0.13.0 lub nowszego"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este servidor não tem projetos. Projetos exigem o servidor do Dayhand 0.13.0 ou mais recente."
+            "value" : "Requer backend 0.13.0 ou posterior"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此服务器不支持项目。项目需要 Dayhand 服务器 0.13.0 或更高版本。"
+            "value" : "需要后端 0.13.0 或更高版本"
           }
         }
       }

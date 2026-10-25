@@ -280,6 +280,8 @@
 	<string>Movida en el tablero</string>
 	<key>Moved to the trash</key>
 	<string>Movida a la papelera</string>
+	<key>Needs backend 0.13.0 or later</key>
+	<string>Requiere el backend 0.13.0 o posterior</string>
 	<key>Never</key>
 	<string>Nunca</string>
 	<key>New Task</key>
@@ -538,8 +540,6 @@
 	<string>No se pudieron leer: %@</string>
 	<key>This Mac</key>
 	<string>Este Mac</string>
-	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
-	<string>Este servidor no tiene proyectos. Los proyectos necesitan el servidor de Dayhand 0.13.0 o posterior.</string>
 	<key>This version</key>
 	<string>Esta versión</string>
 	<key>Tick %@</key>

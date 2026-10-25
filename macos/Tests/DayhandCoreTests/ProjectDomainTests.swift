@@ -221,17 +221,17 @@ struct ProjectMergerTests {
         #expect(plan.deletes.isEmpty)
     }
 
-    @Test(arguments: [false, true]) func aProjectWhoseNameWasTakenJoinsOnlyAnActiveServerProject(archived: Bool) async throws {
+    @Test(arguments: [false, true]) func aRefusedCreationNeverJoinsAnUnrelatedProject(archived: Bool) async throws {
         let repo = TaskRepository(database: try AppDatabase.inMemory())
         let mine = try await repo.addProject(name: "dom")
         let creation = try #require(try await repo.next())
         try await repo.reject(creation, reason: "A project named \"Dom\" already exists")
         let remote = RemoteProject(id: "s9", clientId: "other-mac", name: "Dom", position: 1024, archivedAt: archived ? 3 : nil, createdAt: 50, updatedAt: 50)
         try await repo.apply(Snapshot(tasks: [], projects: [remote]))
-        let local = try #require(try await repo.projects().first { $0.localId == mine.localId })
-        #expect(local.serverId == (archived ? nil : "s9"))
-        #expect(local.name == (archived ? "dom" : "Dom"))
-        #expect(try await repo.projects().count == (archived ? 2 : 1))
+        let local = try #require(try await repo.projects().first)
+        #expect(local.localId != mine.localId && local.serverId == "s9")
+        #expect(local.name == "Dom" && local.isArchived == archived)
+        #expect(try await repo.projects().count == 1)
     }
 
     @Test func aProjectBeingDeletedStaysHiddenAndItsTasksReadAsMoved() {
@@ -286,6 +286,27 @@ struct ProjectMergerTests {
 
 /// The database of 0.3.0 (migrations v1 to v3) moves on to projects (v4) without losing a task.
 struct ProjectMigrationTests {
+    @Test func obsoleteNameJoinMetadataCannotRebindARefusedCreation() async throws {
+        let queue = try DatabaseQueue()
+        try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v5")
+        try await queue.write { db in
+            try db.execute(sql: """
+                INSERT INTO project (localId, clientId, name, position, createdAt, updatedAt, joinName)
+                VALUES ('refused', 'refused', 'Local edit', 1024, 1, 1, 'Dom')
+                """)
+            let t = TaskItem(localId: "t", title: "Keep", note: "Keep note", createdAt: 1, updatedAt: 1, projectLocalId: "refused")
+            try t.save(db)
+            var add = OutboxOp(opId: "t", mutation: Mutations.add, argsJson: #"{"title":"Keep","note":"Keep note","projectId":"refused","clientId":"t"}"#, taskLocalId: "t", clientId: "t", createdAt: 1)
+            try add.insert(db)
+        }
+        let repo = TaskRepository(database: try AppDatabase(queue))
+        try await repo.apply(Snapshot(tasks: [], projects: [RemoteProject(id: "other", name: "Dom", position: 1024, createdAt: 1, updatedAt: 1)]))
+        #expect(try await repo.projects().map(\.localId) == ["other"])
+        #expect(try await repo.task("t")?.note == "Keep note")
+        #expect(try await repo.task("t")?.projectLocalId == nil)
+        #expect(JSONValue.decode(try #require(try await repo.next()).argsJson)?["projectId"] == nil)
+    }
+
     @Test func olderPendingCreationsRemainUncertainUntilASnapshotResolvesThem() async throws {
         let queue = try DatabaseQueue()
         try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v4")
@@ -301,7 +322,7 @@ struct ProjectMigrationTests {
         try await repo.deleteProject("mine", moveTasksTo: nil)
         #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.addProject, Mutations.deleteProject])
         try await repo.apply(Snapshot(tasks: [], projects: [RemoteProject(id: "server", clientId: "mine", name: "Dom", position: 1024, createdAt: 1, updatedAt: 1)]))
-        #expect(try await repo.projectRef("mine", allowName: false) == "server")
+        #expect(try await repo.projectRef("mine") == "server")
         #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.deleteProject])
         #expect(try await repo.projects().isEmpty)
     }
@@ -364,7 +385,5 @@ struct RemoteProjectTests {
         #expect(RemoteJSON.refusesProject("Uncaught ConvexError: Project \"Web\" is archived; restore it first"))
         #expect(RemoteJSON.refusesProject("Project \"Web\" not found"))
         #expect(!RemoteJSON.refusesProject("Task not found"))
-        #expect(RemoteJSON.nameTakenByActiveProject("A project named \"Dom\" already exists"))
-        #expect(!RemoteJSON.nameTakenByActiveProject("A project named \"Dom\" already exists (archived)"))
     }
 }

@@ -276,19 +276,21 @@ struct ProjectSyncTests {
         #expect(try await repo.allTasks().first { $0.serverId == id }?.projectLocalId == nil)
     }
 
-    @Test func twoMacsMakingTheSameProjectOfflineEndUpInOne() async throws {
+    @Test func sameNamedCreationsNeverAdoptAnotherDevicesProject() async throws {
         let (repo, engine) = try setUp()
         server.offline = true
         let mine = try await repo.addProject(name: "dom")
-        let t = try await repo.add(title: "Mine", dueDate: nil, dueTime: nil, projectLocalId: mine.localId)
+        let t = try await repo.add(title: "Mine", dueDate: nil, dueTime: nil, note: "Offline note", projectLocalId: mine.localId)
         server.offline = false
         let theirs = server.addProjectElsewhere("Dom")
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(server.allProjects.count == 1)
-        #expect(server.task(titled: "Mine")?["projectId"] == .string(theirs))
-        let joined = try #require(try await repo.projects().first)
-        #expect(joined.localId == mine.localId && joined.serverId == theirs && joined.name == "Dom")
-        #expect(try await repo.task(t.localId)?.projectLocalId == mine.localId)
+        #expect(server.task(titled: "Mine")?["projectId"]?.string == nil)
+        let other = try #require(try await repo.projects().first)
+        #expect(other.localId != mine.localId && other.serverId == theirs && other.name == "Dom")
+        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
+        #expect(server.task(titled: "Mine")?["note"] == "Offline note")
+        #expect(try await repo.task(t.localId)?.note == "Offline note")
         #expect(try await repo.pendingOps().isEmpty)
     }
 
@@ -324,7 +326,7 @@ struct ProjectSyncTests {
         #expect(try await repo.task(t.localId)?.projectLocalId == target.localId)
     }
 
-    @Test(arguments: [false, true]) func cancellingALocalProjectClearsExistingTasksOnTheServer(assignmentAlreadySent: Bool) async throws {
+    @Test(arguments: [false, true]) func cancellingOrRefusingALocalProjectClearsItsPendingAssignments(refused: Bool) async throws {
         let (repo, engine) = try setUp()
         let work = server.addProjectElsewhere("Praca")
         let t = server.addElsewhere("Existing")
@@ -333,12 +335,9 @@ struct ProjectSyncTests {
         let mine = try await repo.addProject(name: "Dom")
         let theirs = server.addProjectElsewhere("Dom")
         try await repo.setProject(t, mine.localId)
-        if assignmentAlreadySent {
+        if refused {
             let add = try #require(try await repo.next())
             try await repo.reject(add, reason: "A project named \"Dom\" already exists")
-            let assignment = try #require(try await repo.next())
-            server.editElsewhere(t, ["projectId": .string(theirs)])
-            try await repo.acknowledge(assignment, value: .null)
         }
         try await repo.deleteProject(mine.localId, moveTasksTo: nil)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
@@ -368,7 +367,7 @@ struct ProjectSyncTests {
         #expect(try await repo.pendingOps().isEmpty)
     }
 
-    @Test func aDeletionDestinationNeverFallsBackToTheNameOfAnotherMacsProject() async throws {
+    @Test func aRefusedDeletionDestinationNeverRedirectsToASameNamedProject() async throws {
         let (repo, engine) = try setUp()
         let source = server.addProjectElsewhere("Source")
         let t = server.addElsewhere("T")
@@ -378,10 +377,11 @@ struct ProjectSyncTests {
         let theirs = server.addProjectElsewhere("Dom")
         try await repo.deleteProject(source, moveTasksTo: destination.localId)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(Set(server.allProjects.compactMap { $0["id"]?.string }) == [source, theirs])
-        #expect(server.task(titled: "T")?["projectId"] == .string(source))
-        #expect(!sent().contains { $0.0 == Mutations.deleteProject })
-        #expect(try await repo.task(t)?.projectLocalId == source)
+        #expect(server.allProjects.compactMap { $0["id"]?.string } == [theirs])
+        #expect(server.task(titled: "T")?["projectId"]?.string == nil)
+        let deletion = try #require(sent().first { $0.0 == Mutations.deleteProject })
+        #expect(deletion.1["projectId"] == .string(source) && deletion.1["moveTasksTo"] == "none")
+        #expect(try await repo.task(t)?.projectLocalId == nil)
     }
 
     @Test(arguments: [false, true]) func anUnacknowledgedCreationKeepsItsDeletionUntilIdentityResolves(snapshot: Bool) async throws {
@@ -396,7 +396,7 @@ struct ProjectSyncTests {
         #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.addProject, Mutations.deleteProject])
         if snapshot {
             try await repo.apply(try await remote().snapshot().get())
-            #expect(try await repo.projectRef(p.localId, allowName: false) == serverId)
+            #expect(try await repo.projectRef(p.localId) == serverId)
             #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.deleteProject])
         }
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
@@ -464,7 +464,7 @@ struct ProjectSyncTests {
         #expect(created < referenced)
     }
 
-    @Test(arguments: [false, true]) func refusedCreationKeepsItsSubmittedIdentityThroughLaterRenames(conflicting: Bool) async throws {
+    @Test(arguments: [false, true]) func aRefusedCreationCannotRedirectLaterRenamesOrNotes(conflicting: Bool) async throws {
         let (repo, engine) = try setUp()
         let mine = try await repo.addProject(name: "Dom")
         try await repo.updateProject(mine.localId, name: "Praca", color: nil, icon: "", note: "My note")
@@ -472,16 +472,17 @@ struct ProjectSyncTests {
         let home = server.addProjectElsewhere("Dom")
         let other = conflicting ? server.addProjectElsewhere("Praca") : nil
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(server.task(titled: "Mine")?["projectId"] == .string(home))
-        #expect(try await repo.task(t.localId)?.projectLocalId == mine.localId)
-        #expect(try await repo.projects().first { $0.localId == mine.localId }?.serverId == home)
-        #expect(server.allProjects.first { $0["id"]?.string == home }?["name"] == .string(conflicting ? "Dom" : "Praca"))
+        #expect(server.task(titled: "Mine")?["projectId"]?.string == nil)
+        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
+        #expect(try await repo.projects().allSatisfy { $0.localId != mine.localId })
+        #expect(server.allProjects.first { $0["id"]?.string == home }?["name"] == "Dom")
+        #expect(server.allProjects.first { $0["id"]?.string == home }?["note"]?.string == nil)
         if let other { #expect(server.allProjects.first { $0["id"]?.string == other }?["note"]?.string == nil) }
-        else { #expect(server.project(named: "Praca")?["note"] == "My note") }
+        #expect(!sent().contains { $0.0 == Mutations.updateProject })
         #expect(try await repo.pendingOps().isEmpty)
     }
 
-    @Test(arguments: [false, true]) func aSnapshotBindsARefusedCreationBeforeReplayingItsLaterEdits(cachedSnapshot: Bool) async throws {
+    @Test(arguments: [false, true]) func aRefusedCreationDoesNotAdoptCachedSameNamedProjects(cachedSnapshot: Bool) async throws {
         let (repo, engine) = try setUp()
         let mine = try await repo.addProject(name: "Dom")
         try await repo.updateProject(mine.localId, name: "Praca", color: nil, icon: "", note: "Waiting note")
@@ -498,13 +499,12 @@ struct ProjectSyncTests {
         try await repo.reject(add, reason: "A project named \"Dom\" already exists")
         server.failNextMutation = true
         guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
-        let joined = try #require(try await repo.projects().first { $0.localId == mine.localId })
-        #expect(joined.serverId == home && joined.name == "Praca" && joined.note == "Waiting note")
-        #expect(try await repo.task(theirs)?.projectLocalId == mine.localId)
+        #expect(try await repo.projects().allSatisfy { $0.localId != mine.localId })
+        #expect(try await repo.task(theirs)?.projectLocalId == home)
         #expect(try await repo.projects().count == 2)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(server.task(titled: "Mine")?["projectId"] == .string(home))
-        #expect(try await repo.task(t.localId)?.projectLocalId == mine.localId)
+        #expect(server.task(titled: "Mine")?["projectId"]?.string == nil)
+        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
         #expect(server.allProjects.first { $0["id"]?.string == other }?["note"]?.string == nil)
     }
 
@@ -624,7 +624,7 @@ struct OldServerTests {
         #expect(try await repo.task(mine.localId)?.serverId != nil)
         #expect(try await repo.allTasks().count == 2)
         #expect(try await repo.projectSupport() == .unsupported)
-        await #expect(throws: RepositoryError.invalid("This server has no projects. Projects need Dayhand server 0.13.0 or later.")) {
+        await #expect(throws: RepositoryError.invalid("Needs backend 0.13.0 or later")) {
             try await repo.addProject(name: "Dom")
         }
         await #expect(throws: RepositoryError.self) { try await repo.setProject(mine.localId, "x") }

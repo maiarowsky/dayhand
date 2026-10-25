@@ -178,11 +178,6 @@ public enum RemoteJSON {
         message.contains("is archived; restore it first") || (message.contains("Project \"") && message.contains("\" not found"))
     }
 
-    /// `addProject` was refused because a project that is not archived has the name (`checkNameFree`).
-    public static func nameTakenByActiveProject(_ message: String) -> Bool {
-        message.contains("already exists") && !message.contains("already exists (archived)")
-    }
-
     public static func settings(_ value: JSONValue) -> ReminderSettings {
         let timezone = value["timezone"]?.string.flatMap { HelmDates.isTimezone($0) ? $0 : nil }
         return ReminderSettings(
