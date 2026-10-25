@@ -42,6 +42,13 @@ public struct DayhandApp: App {
                     .keyboardShortcut("n")
             }
             SidebarCommands()
+            CommandGroup(before: .sidebar) {
+                ForEach(ViewMode.allCases, id: \.self) { mode in
+                    Button(mode.title) { model.viewMode = mode }
+                        .keyboardShortcut(mode.key, modifiers: [.command, .control])
+                }
+                Divider()
+            }
             CommandMenu(tr("Go")) { GoCommands().environmentObject(model) }
             CommandMenu(tr("Task")) {
                 Button(tr("Move to Project…")) {

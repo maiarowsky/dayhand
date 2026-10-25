@@ -19,6 +19,17 @@ struct MainWindow: View {
             MainArea()
                 .navigationTitle(PlaceText.title(model.place, model: model))
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        if model.placeHasViews {
+                            Picker(tr("View"), selection: $model.viewMode) {
+                                ForEach(ViewMode.allCases, id: \.self) { Text($0.title).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+                            .fixedSize()
+                            .help(tr("Board or list (⌃⌘1, ⌃⌘2)"))
+                        }
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button { QuickAddPanel.shared.show(place: model.place) } label: { Label(tr("Task"), systemImage: "plus") }
                             .labelStyle(.titleAndIcon)

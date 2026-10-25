@@ -19,6 +19,12 @@ This version is the basic one (MVP):
   Later with the day, No Day) and the latest done (folded), each task with a second line of its project (outside
   that project's own list), day, repeat, checklist and labels. Quick add at the top of a project's list adds to
   that project, without a day.
+- **Board or list**: the toolbar's switcher (and the **View** menu, ⌃⌘1 Board, ⌃⌘2 List) shows Today and every
+  list place either as the list above or as a **Board** of three status columns, To do, In progress and Done, each
+  with its line icon (no round background) and a count. A card holds the title, the project and chips for the day,
+  labels and the checklist, with a **…** menu of the task's moves; dragging a card to another column changes its
+  status, and a selected card opens the panel along the bottom. **Add Task** under To do opens quick add for the
+  place (not in an archived project's place, which takes no new tasks). The choice is kept between launches.
 - **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first by time) and
   done today (folded). One click ticks a task off; the context menu works on it now, moves it to today or
   tomorrow, archives it or moves it to the trash.
@@ -319,7 +325,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
 - **Screens**: `swift run DayhandSnapshots <folder>` draws the main window with Today, a project and All Tasks
-  (a task's panel open) at 1100 and 820 points wide in both appearances, Done and Archived, the archived projects,
+  (a task's panel open) at 1100 and 820 points wide in both appearances, Today and a project as a board, Done and Archived, the archived projects,
   No Project, a label and the trash, the sidebar with its update button, the project editor, Move to Project and
   the deletion dialog, the panel with cached history and
   with history unavailable offline, the Agent section (claim, blocked, criteria, plan, waiting for) and a proof,
@@ -329,12 +335,14 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
   them is missing from the string catalog. It also lays out the main window in a real window with its title bar
-  (wide, narrowest, sidebar closed, light and dark) and fails when the content is taller than the window or quick
+  (wide, narrowest, sidebar closed, light and dark, as a list and as a board) and fails when the content is taller than the window or quick
   add sits under the title bar and its window buttons.
 - **Sidebar and lists** (`SidebarTests`): the sidebar's counts against the database, a project's list in sections
   and search, quick add in a project, a task dropped on a place, a server without projects hiding them, project
   changes without a server saying "Requires a connection to the server." with nothing queued, the panel's height
   and the project colours.
+- **Board** (`BoardTests`): a project's and Today's columns by status and with search, a card's new status moving it,
+  no new tasks in an archived project's place, and the view switcher's choice kept between launches.
 - **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
   classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,
   the month choices and counts of the repeat editor in English and Polish, and picker days and times that do not

@@ -14,12 +14,14 @@ struct TaskListView: View {
         let s = model.list
         VStack(spacing: 0) {
             header
-            if takesTasks {
+            if model.placeTakesTasks {
                 InlineQuickAdd()
                     .padding(.horizontal, Metrics.gutter)
                     .padding(.vertical, 8)
             }
-            if s.isEmpty {
+            if model.viewMode == .board {
+                BoardView()
+            } else if s.isEmpty {
                 PlaceEmpty(icon: "checklist", text: model.isSearching ? tr("No task matches the search.") : emptyText)
             } else {
                 List(selection: $model.selection) {
@@ -69,12 +71,6 @@ struct TaskListView: View {
         } else {
             PlaceHeader(title: title, subtitle: subtitle)
         }
-    }
-
-    /// An archived project's list takes no new tasks, so it has no quick add.
-    private var takesTasks: Bool {
-        guard case .project(let id) = model.place else { return true }
-        return model.project(id)?.isArchived != true
     }
 
     private var emptyText: String {
