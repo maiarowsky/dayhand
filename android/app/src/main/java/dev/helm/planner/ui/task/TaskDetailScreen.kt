@@ -133,8 +133,8 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
     }
     val projects = LocalProjects.current
     CardSection(stringResource(R.string.project_label)) {
-        ValueRow(stringResource(R.string.project_label), projects.projects.firstOrNull { it.localId == task.projectLocalId }?.name
-            ?: stringResource(R.string.project_no_project), placeholder = task.projectLocalId == null,
+        ValueRow(stringResource(R.string.project_label), projects.projects.firstOrNull { it.localId == task.projectId }?.name
+            ?: stringResource(R.string.project_no_project), placeholder = task.projectId == null,
             editLabel = stringResource(R.string.project_move), enabled = editable, onClick = { projects.pickTask(task) },
             modifier = Modifier.testTag("detail-project"))
     }

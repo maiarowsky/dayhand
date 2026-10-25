@@ -3,7 +3,6 @@ package dev.helm.planner.sync
 import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.OutboxOp
 import dev.helm.planner.data.local.Project
-import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.remote.RemoteJson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -11,39 +10,35 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProjectSyncTest {
-    private val local = Project("local", clientId = "local", name = "New name", color = "red", position = 1.0, createdAt = 1, updatedAt = 3)
-    private fun op(mutation: String, args: String, task: String? = null, project: String? = "local") =
-        OutboxOp(opId = "op", mutation = mutation, argsJson = args, taskLocalId = task, projectLocalId = project, clientId = "op", createdAt = 3)
+    private val confirmed = Project("server", serverId = "server", name = "New", position = 1.0, createdAt = 1, updatedAt = 3, serverUpdatedAt = 3)
 
-    @Test fun projectsMatchClientIdsAndKeepOnlyPendingFields() {
-        val remote = local.copy(localId = "server", serverId = "server", name = "Old name", color = "blue", updatedAt = 2, serverUpdatedAt = 2)
-        val merge = ProjectSnapshotMerger.merge(listOf(local), listOf(op(Mutations.UPDATE_PROJECT, """{"name":"New name"}""")), listOf(remote), 4)
-        val row = merge.upserts.single()
-        assertEquals("local", row.localId)
-        assertEquals("server", row.serverId)
-        assertEquals("New name", row.name)
-        assertEquals("blue", row.color)
+    @Test fun newerConfirmedMetadataWinsOverStaleFeedWithoutPendingProjectCommands() {
+        val old = confirmed.copy(name = "Old", updatedAt = 2, serverUpdatedAt = 2)
+        val merge = ProjectSnapshotMerger.merge(listOf(confirmed), listOf(old), 4)
+        assertTrue(merge.upserts.isEmpty())
         assertTrue(merge.deletes.isEmpty())
+        val fresh = ProjectSnapshotMerger.merge(listOf(confirmed), listOf(old.copy(updatedAt = 4)), 5)
+        assertEquals("Old", fresh.upserts.single().name)
     }
 
-    @Test fun projectReferencesUseTheLocalIdAndAPendingAssignmentWins() {
+    @Test fun taskReferencesAreCanonicalAndAPendingTaskAssignmentWins() {
         val remote = RemoteJson.task(Json.parseToJsonElement("""{"id":"task","title":"Task","status":"todo","projectId":"server-project","createdAt":1,"updatedAt":2}""").jsonObject)
-        val mapping = mapOf("server-project" to "local-project")
-        val task = SnapshotMerger.merge(emptyList(), emptyList(), listOf(remote), 3, mapping).upserts.single()
-        assertEquals("local-project", task.projectLocalId)
-        val pending = op(Mutations.UPDATE, "{}", "task", "offline-project")
-        val edited = task.copy(projectLocalId = "offline-project", serverUpdatedAt = null)
-        val merged = SnapshotMerger.merge(listOf(edited), listOf(pending), listOf(remote), 4, mapping).upserts.single()
-        assertEquals("offline-project", merged.projectLocalId)
+        val task = SnapshotMerger.merge(emptyList(), emptyList(), listOf(remote), 3).upserts.single()
+        assertEquals("server-project", task.projectId)
+        val pending = OutboxOp(opId = "op", mutation = Mutations.UPDATE, argsJson = """{"projectId":"another-confirmed-project"}""",
+            taskLocalId = "task", clientId = "op", createdAt = 3)
+        val edited = task.copy(projectId = "another-confirmed-project", serverUpdatedAt = null)
+        val merged = SnapshotMerger.merge(listOf(edited), listOf(pending), listOf(remote), 4).upserts.single()
+        assertEquals("another-confirmed-project", merged.projectId)
         assertEquals("Task", merged.title)
     }
 
-    @Test fun pendingDeletionIsNotResurrectedAndUnseenOfflineCreationsStay() {
-        val deleted = local.copy(serverId = "server", deletedAt = 4)
-        val merge = ProjectSnapshotMerger.merge(listOf(deleted), listOf(op(Mutations.DELETE_PROJECT, "{}")), listOf(deleted.copy(deletedAt = null)), 5)
-        assertTrue(merge.upserts.isEmpty())
-        assertTrue(merge.deletes.isEmpty())
-        val unseen = ProjectSnapshotMerger.merge(listOf(local), listOf(op(Mutations.ADD_PROJECT, "{}")), emptyList(), 999999)
-        assertTrue(unseen.deletes.isEmpty())
+    @Test fun removedProjectIsNotKeptByTaskReferencesOrReconciledByName() {
+        val sameName = confirmed.copy(localId = "other", serverId = "other")
+        val merge = ProjectSnapshotMerger.merge(listOf(confirmed), listOf(sameName), 999999)
+        assertEquals(listOf("server"), merge.deletes)
+        assertEquals("other", merge.upserts.single().localId)
+        val absent = ProjectSnapshotMerger.merge(listOf(confirmed), emptyList(), 999999)
+        assertEquals(listOf("server"), absent.deletes)
     }
 }

@@ -6,8 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import dev.helm.planner.data.local.HelmDatabase
 import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.remote.HttpTaskRemote
-import dev.helm.planner.data.remote.MutationSender
-import dev.helm.planner.data.remote.RemoteEvent
 import dev.helm.planner.data.remote.RemoteJson
 import dev.helm.planner.data.remote.SendResult
 import dev.helm.planner.sync.DrainResult
@@ -15,12 +13,11 @@ import dev.helm.planner.sync.OutboxProcessor
 import dev.helm.planner.sync.RoomOutboxStore
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import kotlinx.coroutines.async
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
+import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -28,53 +25,186 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Opt-in integration against this checkout's real local Convex deployment; no invented project server. */
+/** Opt-in checks of the merged backend, not a project-server mock. No production URL is accepted. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class)
 class ProjectBackendTest {
-    @Test fun offlineCreationConflictMappingAndDeletionAgainstMergedBackend() = runBlocking {
+    private fun remote(): HttpTaskRemote {
         val url = System.getenv("DAYHAND_ANDROID_TEST_URL")
         val token = System.getenv("DAYHAND_ANDROID_TEST_TOKEN")
-        assumeTrue("Start the local backend and set DAYHAND_ANDROID_TEST_URL/TOKEN", url != null && token != null)
-        require(url.startsWith("http://127.0.0.1:")) { "This test never uses a production backend" }
-        val remote = HttpTaskRemote(url, token)
+        assumeTrue("Requires the task-local backend", url != null && token != null)
+        require(requireNotNull(url).startsWith("http://127.0.0.1:"))
+        return HttpTaskRemote(url, requireNotNull(token))
+    }
+    private fun name(prefix: String) = "$prefix ${UUID.randomUUID().toString().take(8)}"
+    private fun applied(result: SendResult) = (result as? SendResult.Applied)?.value ?: error("Local test backend refused a command: $result")
+    private suspend fun tasks(remote: HttpTaskRemote) = RemoteJson.tasks(applied(remote.query(RemoteJson.QUERY_TASKS,
+        buildJsonObject { put("includeDone", true); put("includeArchived", true) })))
+
+    @Test fun onlineManagementAndOfflineTasksUseOnlyConfirmedIds() = runBlocking {
+        val remote = remote()
         val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
         try {
-            val repository = TaskRepository(db)
-            val name = "Android JVM ${UUID.randomUUID().toString().take(8)}"
-            val project = repository.projectStore.add(name, "amber", "🥐", "Local backend proof")
-            val task = repository.add("Offline task", "2026-10-25", null, null, project.localId)
-            val sent = mutableListOf<String>()
-            val sender = MutationSender { path, args -> sent += path; remote.send(path, args) }
-            assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), sender, queries = remote).drain())
-            assertEquals(listOf(Mutations.ADD_PROJECT, Mutations.ADD), sent)
-            val remoteProjects = applied(remote.query(RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap())))
-            val serverProject = RemoteJson.projects(remoteProjects).single { it.name == name }
-            val remoteTasks = applied(remote.query(RemoteJson.QUERY_TASKS, buildJsonObject { put("includeDone", true); put("includeArchived", true) }))
-            val serverTask = RemoteJson.tasks(remoteTasks).single { it.clientId == task.localId }
-            assertEquals(serverProject.serverId, serverTask.projectId)
-            assertEquals(serverProject.serverId, db.projects().byLocalId(project.localId)?.serverId)
-            repository.applySnapshot(RemoteEvent.Snapshot(listOf(serverTask), "UTC", projects = listOf(serverProject)))
-            assertEquals(project.localId, db.tasks().byLocalId(task.localId)?.projectLocalId)
-
-            val duplicateName = "Conflict ${UUID.randomUUID().toString().take(8)}"
-            val existing = applied(remote.send(Mutations.ADD_PROJECT, buildJsonObject { put("name", duplicateName.uppercase()); put("clientId", UUID.randomUUID().toString()) }))
-                .jsonObject.getValue("project").jsonObject.getValue("id").jsonPrimitive.content
-            val duplicate = repository.projectStore.add(duplicateName)
-            val next = repository.add("Same name on two devices", null, null, null, duplicate.localId)
-            assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), remote).drain())
-            assertEquals(existing, db.projects().byLocalId(duplicate.localId)?.serverId)
-            val all = RemoteJson.tasks(applied(remote.query(RemoteJson.QUERY_TASKS, JsonObject(emptyMap()))))
-            assertEquals(existing, all.single { it.clientId == next.localId }.projectId)
-            repository.moveToTrash(task.localId)
-            repository.projectStore.delete(project.localId, duplicate.localId)
-            assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), remote).drain())
-            val trash = RemoteJson.tasks(applied(remote.query(RemoteJson.QUERY_TRASH, JsonObject(emptyMap()))))
-            assertEquals(existing, trash.single { it.clientId == task.localId }.projectId)
-            assertFalse(RemoteJson.projects(applied(remote.query(RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap())))).any { it.name == name })
+            var online = false
+            val repo = TaskRepository(db, projectRemote = { remote.takeIf { online } })
+            try { repo.projectStore.add(name("No connection")); fail() } catch (_: ProjectConnectionRequired) { }
+            assertTrue(db.projects().all().isEmpty())
             assertTrue(db.outbox().all().isEmpty())
+            online = true
+            val p = repo.projectStore.add(name("Bakery"), "amber", "🥐", "Context")
+            assertEquals(p.serverId, p.localId)
+            assertTrue(db.outbox().all().isEmpty())
+            online = false
+            val t = repo.add("Offline task", "2026-10-25", null, null, p.localId)
+            repo.rename(t.localId, "Edited offline")
+            assertEquals(listOf(Mutations.ADD, Mutations.UPDATE), db.outbox().all().map { it.mutation })
+            assertFalse(tasks(remote).any { it.clientId == t.localId })
+            try { repo.projectStore.update(p.localId, "Cannot change offline", null, null, null); fail() } catch (_: ProjectConnectionRequired) { }
+            assertEquals(p.name, db.projects().byLocalId(p.localId)?.name)
+            online = true
+            // A direct project command drains earlier tasks before reading server-side conversion/move state.
+            repo.projectStore.update(p.localId, p.name, "green", "🥐", "Updated context")
+            val sent = tasks(remote).single { it.clientId == t.localId }
+            assertEquals("Edited offline", sent.title)
+            assertEquals(p.serverId, sent.projectId)
+            assertTrue(db.outbox().all().isEmpty())
+            assertEquals("green", db.projects().byLocalId(p.localId)?.color)
+            repo.projectStore.archive(p.localId, true, archiveTasks = true)
+            assertNotNull(tasks(remote).single { it.clientId == t.localId }.archivedAt)
+            assertTrue(db.projects().byLocalId(p.localId)!!.archived)
         } finally { db.close() }
     }
 
-    private fun applied(result: SendResult) = (result as? SendResult.Applied)?.value ?: error("Local backend rejected the test: $result")
+    @Test fun labelConversionUsesServerResultAndDuplicateNameCannotPretendToSucceed() = runBlocking {
+        val remote = remote()
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
+        try {
+            val repo = TaskRepository(db, projectRemote = { remote })
+            val label = name("tag")
+            val other = repo.projectStore.add(name("Other"))
+            val loose = repo.add("Loose", null, null, null)
+            val assigned = repo.add("Assigned", null, null, null, other.localId)
+            repo.setLabels(loose.localId, listOf(label))
+            repo.setLabels(assigned.localId, listOf(label))
+            val p = repo.projectStore.add(name("Converted"), fromLabel = label, removeLabel = true)
+            assertEquals(p.serverId, db.tasks().byLocalId(loose.localId)?.projectId)
+            assertTrue(db.tasks().byLocalId(loose.localId)!!.labels.isEmpty())
+            assertEquals(other.serverId, db.tasks().byLocalId(assigned.localId)?.projectId)
+            assertEquals(listOf(label), db.tasks().byLocalId(assigned.localId)?.labels)
+            val count = db.projects().all().size
+            try { repo.projectStore.add(p.name.uppercase(), fromLabel = label); fail() } catch (_: IllegalArgumentException) { }
+            assertEquals(count, db.projects().all().size)
+            assertTrue(db.outbox().all().isEmpty())
+            repo.moveToTrash(loose.localId)
+            repo.projectStore.delete(p.localId, other.localId)
+            val trash = RemoteJson.tasks(applied(remote.query(RemoteJson.QUERY_TRASH, JsonObject(emptyMap()))))
+            assertEquals(other.serverId, trash.single { it.clientId == loose.localId }.projectId)
+            assertEquals(other.serverId, db.tasks().byLocalId(loose.localId)?.projectId)
+            assertNull(db.projects().byLocalId(p.localId))
+        } finally { db.close() }
+    }
+
+    @Test fun archivedAndDeletedTargetsStripOnlyTheRefusedAssignment() = runBlocking {
+        val remote = remote()
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
+        try {
+            val repo = TaskRepository(db, projectRemote = { remote })
+            for (deleted in listOf(false, true)) {
+                val p = repo.projectStore.add(name("Refused"))
+                val t = repo.add("Keep task", null, null, null, p.localId)
+                repo.rename(t.localId, "Keep later edit")
+                applied(remote.send(if (deleted) "app:deleteProject" else "app:updateProject", buildJsonObject {
+                    put("projectId", requireNotNull(p.serverId))
+                    if (deleted) put("moveTasksTo", "none") else put("archived", true)
+                }))
+                assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), remote).drain())
+                assertEquals("Keep later edit", db.tasks().byLocalId(t.localId)?.title)
+                assertNull(db.tasks().byLocalId(t.localId)?.projectId)
+                val server = tasks(remote).single { it.clientId == t.localId }
+                assertNull(server.projectId)
+                assertEquals("Keep later edit", server.title)
+                if (!deleted) assertTrue(RemoteJson.projects(applied(remote.query(RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap()))))
+                    .single { it.serverId == p.serverId }.archived)
+            }
+        } finally { db.close() }
+    }
+
+    @Test fun archivedProjectBackupRestoresThroughConfirmedServerIdsAndIsIdempotent() = runBlocking {
+        val remote = remote()
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
+        try {
+            val repo = TaskRepository(db, projectRemote = { remote })
+            val imported = dev.helm.planner.backup.BackupProject("file-project", name("Restored"), "green", "🥐", "Backup context", true)
+            val task = dev.helm.planner.backup.BackupTask(UUID.randomUUID().toString(), "Restored task", projectId = imported.id)
+            assertEquals(RestoreResult(1, 0), repo.restore(listOf(task), listOf(imported)))
+            val project = db.projects().all().single { it.name == imported.name }
+            assertTrue(project.archived)
+            assertEquals("Backup context", project.note)
+            assertEquals(project.serverId, tasks(remote).single { it.clientId == task.id }.projectId)
+            assertTrue(db.outbox().all().isEmpty())
+            assertEquals(RestoreResult(0, 1), repo.restore(listOf(task), listOf(imported)))
+            assertEquals(1, tasks(remote).count { it.clientId == task.id })
+            assertTrue(db.projects().byLocalId(project.localId)!!.archived)
+        } finally { db.close() }
+    }
+
+    @Test fun ownerSwitchWaitsForAnInflightProjectReplyThenClearsBeforeSavingCredentials() = runBlocking {
+        withTimeout(10_000) {
+            val remote = remote()
+            val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
+            try {
+                val applied = CompletableDeferred<Unit>()
+                val release = CompletableDeferred<Unit>()
+                val delayed = object : dev.helm.planner.data.remote.TaskRemote by remote {
+                    override suspend fun send(mutation: String, args: JsonObject): SendResult {
+                        val response = remote.send(mutation, args)
+                        if (mutation == "app:addProject") { applied.complete(Unit); release.await() }
+                        return response
+                    }
+                }
+                val repo = TaskRepository(db, projectRemote = { delayed })
+                val creating = async { repo.projectStore.add(name("Old owner"), note = "Private") }
+                applied.await()
+                var credentialsSaved = false
+                val switching = async { repo.projectStore.withOwnerChange {
+                    repo.clearAll()
+                    assertTrue(repo.backupSnapshot().projects.isEmpty())
+                    credentialsSaved = true
+                } }
+                yield()
+                assertFalse(credentialsSaved)
+                release.complete(Unit)
+                creating.await()
+                switching.await()
+                assertTrue(credentialsSaved)
+                assertTrue(repo.backupSnapshot().projects.isEmpty())
+            } finally { db.close() }
+        }
+    }
+
+    @Test fun reorderingRepairsTiesExhaustedGapsAndBothPositionEndpoints() = runBlocking {
+        val remote = remote()
+        val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
+        try {
+            val repo = TaskRepository(db, projectRemote = { remote })
+            val a = repo.projectStore.add(name("Order A"))
+            val b = repo.projectStore.add(name("Order B"))
+            for (positions in listOf(1e15 to 1e15, -1e15 to -1e15, 1.0 to Math.nextUp(1.0))) {
+                listOf(a to positions.first, b to positions.second).forEach { (p, position) ->
+                    applied(remote.send("app:updateProject", buildJsonObject { put("projectId", p.localId); put("position", position) }))
+                }
+                repo.projectStore.refreshForRestore()
+                val before = db.projects().all().filter { it.selectable }
+                val first = before.indexOfFirst { it.localId == a.localId }
+                val second = before.indexOfFirst { it.localId == b.localId }
+                val from = if (first < second) b else a
+                val target = if (first < second) first else second
+                repo.projectStore.move(from.localId, target - maxOf(first, second))
+                val ordered = db.projects().all().filter { it.selectable }
+                assertEquals(from.localId, ordered[target].localId)
+                assertTrue(ordered.all { it.position.isFinite() && kotlin.math.abs(it.position) <= 1e15 })
+                assertTrue(ordered.zipWithNext().all { (left, right) -> left.position < right.position })
+            }
+        } finally { db.close() }
+    }
 }

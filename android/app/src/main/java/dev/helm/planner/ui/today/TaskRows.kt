@@ -85,16 +85,10 @@ fun DoneRow(task: Task, actions: TodayActions) {
             .padding(horizontal = 8.dp),
     ) {
         TaskCheckbox(checked = true, description = description) { actions.reopen(task.localId) }
-        Text(
-            task.title,
-            style = helmType.body,
-            color = palette.textMuted,
-            textDecoration = TextDecoration.LineThrough,
-            modifier = Modifier
-                .weight(1f)
-                .openTask(task, actions)
-                .padding(end = 16.dp),
-        )
+        Column(Modifier.weight(1f).openTask(task, actions).padding(end = 16.dp)) {
+            Text(task.title, style = helmType.body, color = palette.textMuted, textDecoration = TextDecoration.LineThrough)
+            ProjectBadge(task)
+        }
     }
 }
 

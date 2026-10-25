@@ -3,23 +3,17 @@ package dev.helm.planner.data
 import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import dev.helm.planner.data.local.HelmDatabase
-import dev.helm.planner.data.local.Mutations
-import dev.helm.planner.data.local.RepeatEvery
-import dev.helm.planner.data.local.RepeatRule
+import dev.helm.planner.auth.PlanSwitch
+import dev.helm.planner.backup.BackupProject
+import dev.helm.planner.backup.BackupTask
+import dev.helm.planner.data.local.*
 import dev.helm.planner.data.remote.MutationSender
 import dev.helm.planner.data.remote.QueryRunner
 import dev.helm.planner.data.remote.SendResult
-import dev.helm.planner.sync.DrainResult
-import dev.helm.planner.sync.OutboxProcessor
-import dev.helm.planner.sync.RoomOutboxStore
+import dev.helm.planner.sample.SamplePlan
+import dev.helm.planner.sync.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
@@ -33,138 +27,166 @@ class ProjectRepositoryTest {
     private val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
     private var next = 0
     private val repository = TaskRepository(db, clock = { 1000 }, newId = { "local-${++next}" }, repeatsOnPhone = { "2026-10-23" })
+    private fun project(id: String = "confirmed") = Project(id, serverId = id, name = id, position = 0.0, createdAt = 1, updatedAt = 1)
     @After fun close() = db.close()
 
-    @Test fun offlineProjectAndTaskAreDurableAndResolveReferencesInOrder() = runBlocking {
-        val project = repository.projectStore.add("Dom", "amber", "🏠", "Context")
-        val task = repository.add("Milk", "2026-10-23", null, null, project.localId)
-        assertEquals(project.localId, db.tasks().byLocalId(task.localId)?.projectLocalId)
-        assertEquals(listOf(Mutations.ADD_PROJECT, Mutations.ADD), db.outbox().all().map { it.mutation })
-        val sent = mutableListOf<Pair<String, JsonObject>>()
-        val sender = MutationSender { name, args ->
-            sent += name to args
-            SendResult.Applied(if (name == Mutations.ADD_PROJECT) Json.parseToJsonElement("""{"project":{"id":"server-project"},"moved":[],"skipped":[]}""")
-                else buildJsonObject { put("id", "server-task") })
+    @Test fun unpairedManagementNeverChangesCacheOrQueuesAProjectCommand() = runBlocking {
+        val p = project()
+        db.projects().upsert(listOf(p))
+        val before = db.projects().all()
+        val actions: List<suspend () -> Unit> = listOf(
+            { repository.projectStore.add("New") },
+            { repository.projectStore.add("Label", fromLabel = "phone", removeLabel = true) },
+            { repository.projectStore.update(p.localId, "Edited", "red", "🥐", "Private") },
+            { repository.projectStore.archive(p.localId, true, true) },
+            { repository.projectStore.move(p.localId, 1) },
+            { repository.projectStore.delete(p.localId, null) },
+        )
+        actions.forEach { action ->
+            try { action(); fail("Unpaired management must require the server") } catch (_: ProjectConnectionRequired) { }
+            assertEquals(before, db.projects().all())
+            assertTrue(db.outbox().all().isEmpty())
         }
-        assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), sender).drain())
-        assertEquals(JsonPrimitive("server-project"), sent.last().second["projectId"])
-        assertFalse(sent.last().second.containsKey("projectLocalId"))
-        assertEquals("server-project", db.projects().byLocalId(project.localId)?.serverId)
-        assertEquals("server-task", db.tasks().byLocalId(task.localId)?.serverId)
-        assertTrue(db.outbox().all().isEmpty())
     }
 
-    @Test fun existingNameOnAnotherDeviceLinksWithoutLosingTasks() = runBlocking {
-        val project = repository.projectStore.add("Dom")
-        val task = repository.add("Milk", null, null, null, project.localId)
-        val sender = MutationSender { mutation, args ->
-            if (mutation == Mutations.ADD_PROJECT) SendResult.Rejected("name taken", "invalid_argument")
-            else {
-                assertEquals(JsonPrimitive("existing"), args["projectId"])
-                SendResult.Applied(buildJsonObject { put("id", "task") })
-            }
+    @Test fun taskQueueContainsConfirmedProjectIdsAndAppendsLaterEdits() = runBlocking {
+        val p = project()
+        db.projects().upsert(listOf(p))
+        val task = repository.add("Milk", null, null, null, p.localId)
+        repository.rename(task.localId, "Bread")
+        assertEquals(listOf(Mutations.ADD, Mutations.UPDATE), db.outbox().all().map { it.mutation })
+        assertEquals(JsonPrimitive(p.serverId), Json.parseToJsonElement(db.outbox().all().first().argsJson).jsonObject["projectId"])
+        val sample = SamplePlan.projects(1000) { it.name }.first()
+        db.projects().upsert(listOf(sample))
+        try { repository.add("Not a confirmed project", null, null, null, sample.localId); fail() } catch (_: IllegalArgumentException) { }
+        assertEquals(1, db.tasks().all().size)
+        assertEquals(2, db.outbox().all().size)
+    }
+
+    @Test fun rejectedAssignmentKeepsTaskLaterEditsAndQueueSequence() = runBlocking {
+        val p = project()
+        db.projects().upsert(listOf(p))
+        val task = repository.add("Milk", null, null, null, p.localId)
+        repository.rename(task.localId, "Keep my edit")
+        val seqs = db.outbox().all().map { it.seq }
+        val sent = mutableListOf<JsonObject>()
+        val sender = MutationSender { _, args ->
+            sent += args
+            if (args["projectId"] is JsonPrimitive && args["projectId"] !is JsonNull) SendResult.Rejected("Project removed", "not_found")
+            else SendResult.Applied(buildJsonObject { put("id", "server-task") })
         }
-        val queries = QueryRunner { _, _ -> SendResult.Applied(Json.parseToJsonElement(
-            """[{"id":"existing","name":"DOM","position":1024.0,"createdAt":1.0,"updatedAt":2.0}]""")) }
+        val queries = QueryRunner { _, _ -> SendResult.Applied(JsonArray(emptyList())) }
+        val first = OutboxProcessor(RoomOutboxStore(db), sender, maxOpsPerRun = 1, queries = queries)
+        assertEquals(DrainResult.MORE_LEFT, first.drain())
+        assertEquals(seqs, db.outbox().all().map { it.seq })
+        assertEquals("Keep my edit", db.tasks().byLocalId(task.localId)?.title)
+        assertNull(db.tasks().byLocalId(task.localId)?.projectId)
         assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), sender, queries = queries).drain())
-        assertEquals("existing", db.projects().byLocalId(project.localId)?.serverId)
-        assertEquals(project.localId, db.tasks().byLocalId(task.localId)?.projectLocalId)
+        assertEquals("Keep my edit", db.tasks().byLocalId(task.localId)?.title)
+        assertFalse(sent[1].containsKey("projectId"))
+        assertEquals(JsonPrimitive("Keep my edit"), sent.last()["title"])
     }
 
-    @Test fun repeatOnPhoneKeepsItsProject() = runBlocking {
-        val project = repository.projectStore.add("Home")
-        val task = repository.add("Plants", "2026-10-23", null, null, project.localId)
-        repository.setRepeat(task.localId, RepeatRule(RepeatEvery.DAY))
-        repository.complete(task.localId)
-        val next = db.tasks().all().single { it.localId != task.localId }
-        assertEquals(project.localId, next.projectLocalId)
-        assertEquals(project.localId, db.outbox().all().last().projectLocalId)
+    @Test fun rejectedParentAssignmentAlsoClearsItsQueuedChildsDependentProof() = runBlocking {
+        val p = project()
+        db.projects().upsert(listOf(p))
+        val parent = repository.add("Repeat", "2026-10-23", null, null, p.localId)
+        repository.setRepeat(parent.localId, RepeatRule(RepeatEvery.DAY))
+        repository.complete(parent.localId)
+        val child = db.tasks().all().single { it.localId != parent.localId }
+        repository.rename(child.localId, "Keep child edit")
+        val op = db.outbox().all().first()
+        RoomOutboxStore(db).clearProjectAssignment(op)
+        assertTrue(db.tasks().all().all { it.projectId == null })
+        val childAdd = db.outbox().all().single { it.taskLocalId == child.localId && it.mutation == Mutations.ADD }
+        val args = Json.parseToJsonElement(childAdd.argsJson).jsonObject
+        assertFalse("projectId" in args)
+        assertFalse("repeatParentLocalId" in args)
+        assertFalse("repeatCompletedBy" in args)
+        assertFalse("repeatCompletedOn" in args)
+        assertEquals("Keep child edit", db.tasks().byLocalId(child.localId)?.title)
     }
 
-    @Test fun deleteMovesEveryStateIncludingTrashAndCanTargetAnUnsentProject() = runBlocking {
-        val from = repository.projectStore.add("From")
-        val target = repository.projectStore.add("To")
-        val task = repository.add("Keep me", null, null, null, from.localId)
-        repository.moveToTrash(task.localId)
-        repository.projectStore.delete(from.localId, target.localId)
-        assertEquals(target.localId, db.tasks().byLocalId(task.localId)?.projectLocalId)
-        assertNotNull(db.tasks().byLocalId(task.localId)?.deletedAt)
-        assertNotNull(db.projects().byLocalId(from.localId)?.deletedAt)
-        assertEquals(target.localId, Json.parseToJsonElement(db.outbox().all().last().argsJson).jsonObject["moveTasksToLocalId"]?.let { (it as JsonPrimitive).content })
+    @Test fun rejectedOldAssignmentDoesNotEraseALaterDifferentConfirmedAssignment() = runBlocking {
+        val from = project("from")
+        val to = project("to")
+        db.projects().upsert(listOf(from, to))
+        val task = repository.add("Keep", null, null, null, from.localId)
+        repository.setProject(task.localId, to.localId)
+        val before = db.outbox().all()
+        RoomOutboxStore(db).clearProjectAssignment(before.first())
+        assertEquals(to.localId, db.tasks().byLocalId(task.localId)?.projectId)
+        assertEquals(before.last(), db.outbox().all().last())
     }
 
-    @Test fun conversionIsOptInAndPreservesTasksAlreadyInAProject() = runBlocking {
-        val other = repository.projectStore.add("Other")
-        val loose = repository.add("Loose", null, null, null)
-        val assigned = repository.add("Assigned", null, null, null, other.localId)
-        repository.setLabels(loose.localId, listOf("home"))
-        repository.setLabels(assigned.localId, listOf("home"))
-        val project = repository.projectStore.add("Home", fromLabel = "home", removeLabel = true)
-        assertEquals(project.localId, db.tasks().byLocalId(loose.localId)?.projectLocalId)
-        assertTrue(db.tasks().byLocalId(loose.localId)!!.labels.isEmpty())
-        assertEquals(other.localId, db.tasks().byLocalId(assigned.localId)?.projectLocalId)
-        assertEquals(listOf("home"), db.tasks().byLocalId(assigned.localId)?.labels)
-        assertEquals(JsonPrimitive("home"), Json.parseToJsonElement(db.outbox().all().last().argsJson).jsonObject["fromLabel"])
-    }
-
-    @Test fun restoringAProjectBackupKeepsReferencesAndQueuesArchiveAfterTasks() = runBlocking {
-        val fileProject = dev.helm.planner.backup.BackupProject("file-project", "Home", "green", null, "Context", true)
-        val fileTask = dev.helm.planner.backup.BackupTask("file-task", "Keep", projectId = "file-project")
-        repository.restore(listOf(fileTask), listOf(fileProject))
-        val project = db.projects().all().single()
-        assertTrue(project.archived)
-        assertEquals(project.localId, db.tasks().all().single().projectLocalId)
-        assertEquals(listOf(Mutations.ADD_PROJECT, Mutations.ADD, Mutations.UPDATE_PROJECT), db.outbox().all().map { it.mutation })
-    }
-
-    @Test fun removingSampleProjectsDoesNotLoseAnOwnTaskOrSendSampleData() = runBlocking {
-        val project = dev.helm.planner.sample.SamplePlan.projects(1000) { it.name }.first()
-        repository.loadSample(emptyList(), listOf(project))
-        val task = repository.add("My task", null, null, null, project.localId)
+    @Test fun sampleCleanupClearsDependentRepeatProofWithoutLosingOwnTasks() = runBlocking {
+        val p = SamplePlan.projects(1000) { it.name }.first()
+        repository.loadSample(emptyList(), listOf(p))
+        val task = Task("own", title = "Keep", projectId = p.localId, createdAt = 1, updatedAt = 1)
+        db.tasks().upsert(listOf(task))
+        db.outbox().insert(OutboxOp(opId = "op", mutation = Mutations.ADD, taskLocalId = task.localId,
+            clientId = "op", createdAt = 1, argsJson = buildJsonObject {
+                put("title", task.title); put("projectId", p.localId)
+                put("repeatParentLocalId", "parent"); put("repeatCompletedBy", "completion"); put("repeatCompletedOn", "2026-10-23")
+            }.toString()))
         repository.removeSample()
-        assertEquals("My task", db.tasks().byLocalId(task.localId)?.title)
-        assertNull(db.tasks().byLocalId(task.localId)?.projectLocalId)
-        assertNull(db.outbox().all().single().projectLocalId)
-        assertEquals(Mutations.ADD, db.outbox().all().single().mutation)
+        assertEquals("Keep", db.tasks().byLocalId("own")?.title)
+        assertNull(db.tasks().byLocalId("own")?.projectId)
+        val args = Json.parseToJsonElement(db.outbox().all().single().argsJson).jsonObject
+        assertEquals(setOf("title"), args.keys)
         assertTrue(db.projects().all().isEmpty())
     }
 
     @Test fun refusedLocalOccurrenceKeepsItsRowAndAllLaterEdits() = runBlocking {
-        val project = repository.projectStore.add("Archived")
-        val parent = repository.add("Repeat", "2026-10-23", null, null, project.localId)
+        val p = project()
+        db.projects().upsert(listOf(p))
+        val parent = repository.add("Repeat", "2026-10-23", null, null, p.localId)
         repository.setRepeat(parent.localId, RepeatRule(RepeatEvery.DAY))
-        repository.projectStore.archive(project.localId, true)
+        db.projects().upsert(listOf(p.copy(archivedAt = 1)))
         repository.complete(parent.localId)
-        val next = db.tasks().all().single { it.localId != parent.localId }
-        repository.rename(next.localId, "Keep my edit")
-        val sender = MutationSender { mutation, args ->
-            when {
-                "repeatedFrom" in args -> SendResult.Rejected("An older backend does not accept the proof")
-                mutation == Mutations.ADD_PROJECT -> SendResult.Applied(Json.parseToJsonElement("""{"project":{"id":"project"}}"""))
-                else -> SendResult.Applied(buildJsonObject { put("id", "parent") })
-            }
+        val child = db.tasks().all().single { it.localId != parent.localId }
+        repository.rename(child.localId, "Keep my edit")
+        val sender = MutationSender { _, args ->
+            if ("repeatedFrom" in args) SendResult.Rejected("An older backend does not accept proof")
+            else SendResult.Applied(buildJsonObject { put("id", "parent") })
         }
         assertEquals(DrainResult.RETRY_LATER, OutboxProcessor(RoomOutboxStore(db), sender).drain())
         assertEquals(2, db.tasks().all().size)
-        assertEquals("Keep my edit", db.tasks().byLocalId(next.localId)?.title)
+        assertEquals("Keep my edit", db.tasks().byLocalId(child.localId)?.title)
         assertEquals(listOf(Mutations.ADD, Mutations.UPDATE), db.outbox().all().map { it.mutation })
-        assertEquals(1, db.outbox().all().first().attempts)
     }
 
-    @Test fun refusedProjectNeverDeletesItsUnsentTasks() = runBlocking {
-        val project = repository.projectStore.add("Home")
-        val task = repository.add("Keep this", null, null, null, project.localId)
-        val sender = MutationSender { mutation, args ->
-            if (mutation == Mutations.ADD_PROJECT) SendResult.Rejected("limit", "invalid_argument")
-            else {
-                assertFalse(args.containsKey("projectId"))
-                SendResult.Applied(buildJsonObject { put("id", "kept") })
-            }
-        }
-        val queries = QueryRunner { _, _ -> SendResult.Applied(Json.parseToJsonElement("[]")) }
-        assertEquals(DrainResult.DONE, OutboxProcessor(RoomOutboxStore(db), sender, queries = queries).drain())
-        assertEquals("Keep this", db.tasks().byLocalId(task.localId)?.title)
-        assertNull(db.tasks().byLocalId(task.localId)?.projectLocalId)
-        assertTrue(db.projects().all().isEmpty())
+    @Test fun projectOnlyPlanRequiresOwnerReplacementAndClearAllRemovesItsNotes() = runBlocking {
+        db.projects().upsert(listOf(project().copy(note = "Private old owner")))
+        val size = repository.planSize()
+        assertEquals(PlanSize(0, 0, 1), size)
+        val replacement = PlanSwitch.check("https://old.convex.site", "https://new.convex.site", size.tasks, size.pending, size.projects)
+        assertNotNull(replacement)
+        assertEquals(1, replacement?.projects)
+        repository.clearAll()
+        assertEquals(PlanSize(0, 0, 0), repository.planSize())
+        assertTrue(repository.backupSnapshot().projects.isEmpty())
+    }
+
+    @Test fun combinedRestoreCapacityFailsBeforeNetworkOrAnyPartialLocalChange() = runBlocking {
+        db.projects().upsert((1..199).map { project("existing-$it") })
+        var attempted = false
+        val repo = TaskRepository(db, projectRemote = { attempted = true; null })
+        val before = repo.backupSnapshot()
+        val projects = listOf("one", "two").map { BackupProject(it, it, null, null, null, false) }
+        try { repo.restore(listOf(BackupTask("task", "Keep")), projects); fail() } catch (_: RestoreCapacityExceeded) { }
+        assertFalse(attempted)
+        assertEquals(before, repo.backupSnapshot())
+        assertTrue(db.outbox().all().isEmpty())
+    }
+
+    @Test fun backupReadsAssignmentsAndProjectNotesTogetherAndOmitsSampleData() = runBlocking {
+        val p = project().copy(note = "Context")
+        db.projects().upsert(listOf(p))
+        repository.add("Milk", null, null, null, p.localId)
+        repository.loadSample(emptyList(), SamplePlan.projects(1000) { it.name })
+        val snapshot = repository.backupSnapshot()
+        assertEquals(listOf(p), snapshot.projects)
+        assertEquals(p.serverId, snapshot.tasks.single().projectId)
     }
 }

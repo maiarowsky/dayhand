@@ -2,151 +2,174 @@ package dev.helm.planner.data
 
 import androidx.room.withTransaction
 import dev.helm.planner.data.local.HelmDatabase
-import dev.helm.planner.data.local.Mutations
-import dev.helm.planner.data.local.OutboxOp
 import dev.helm.planner.data.local.Project
+import dev.helm.planner.data.remote.RemoteEvent
+import dev.helm.planner.data.remote.RemoteJson
+import dev.helm.planner.data.remote.SendResult
+import dev.helm.planner.data.remote.TaskRemote
 import dev.helm.planner.domain.ProjectRules
-import dev.helm.planner.sample.SamplePlan
+import dev.helm.planner.sync.DrainResult
+import dev.helm.planner.sync.OutboxProcessor
+import dev.helm.planner.sync.RoomOutboxStore
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-/** Project and task changes are atomic with their ordered outbox records. Nothing waits for a network. */
+class ProjectConnectionRequired : Exception("project connection required")
+class ProjectCommandRefused : Exception("project command refused")
+
+/** Project management is online-only. Only server-confirmed projects enter the cache; never the outbox. */
 class ProjectRepository(
     private val db: HelmDatabase,
-    private val clock: () -> Long,
     private val newId: () -> String,
-    private val onOutboxChanged: () -> Unit,
+    private val remote: suspend () -> TaskRemote?,
+    private val applySnapshot: suspend (RemoteEvent.Snapshot) -> Unit,
 ) {
     val projects = db.projects().observeAll()
+    private val commands = Mutex()
+
+    /** Pairing clears the old owner and saves new credentials without an in-flight project reply repopulating it. */
+    suspend fun <T> withOwnerChange(block: suspend () -> T): T = commands.withLock { block() }
 
     suspend fun add(name: String, color: String? = null, icon: String? = null, note: String? = null,
-                    fromLabel: String? = null, removeLabel: Boolean = false): Project {
-        val result = db.withTransaction {
-            val existing = db.projects().all()
-            validate(name, color, icon, note, existing)
-            require(existing.count { it.deletedAt == null } < ProjectRules.MAX_PROJECTS) { "project limit" }
-            val now = clock()
-            val id = newId()
-            val project = Project(id, clientId = id, name = requireNotNull(ProjectRules.name(name)), color = color,
-                icon = icon?.trim()?.ifEmpty { null }, note = note?.takeIf { it.isNotBlank() },
-                position = (existing.maxOfOrNull { it.position } ?: 0.0).coerceAtLeast(0.0) + ProjectRules.POSITION_STEP,
-                createdAt = now, updatedAt = now)
-            db.projects().upsert(listOf(project))
-            queue(Mutations.ADD_PROJECT, project, buildJsonObject {
-                put("name", project.name)
-                project.color?.let { put("color", it) }
-                project.icon?.let { put("icon", it) }
-                project.note?.let { put("note", it) }
-                put("position", project.position)
-                fromLabel?.let { put("fromLabel", it); put("removeLabel", removeLabel) }
-            }, clientId = id)
-            // Earlier task creations precede this operation. The backend conversion includes trash and archived tasks.
-            if (fromLabel != null) {
-                val tasks = db.tasks().all().filter { fromLabel in it.labels && it.projectLocalId == null &&
-                    (it.claimExpiresAt == null || it.claimExpiresAt <= now) }
-                require(tasks.size <= MAX_MOVED_TASKS) { "too many tasks" }
-                db.tasks().upsert(tasks.map { it.copy(projectLocalId = id,
-                    labels = if (removeLabel) it.labels - fromLabel else it.labels, updatedAt = now) })
-            }
-            project
-        }
-        onOutboxChanged()
-        return result
+                    fromLabel: String? = null, removeLabel: Boolean = false): Project = command { server ->
+        validate(name, color, icon, note)
+        val result = send(server, ADD, buildJsonObject {
+            put("name", requireNotNull(ProjectRules.name(name)))
+            color?.let { put("color", it) }
+            icon?.trim()?.takeIf { it.isNotEmpty() }?.let { put("icon", it) }
+            note?.takeIf { it.isNotBlank() }?.let { put("note", it) }
+            fromLabel?.let { put("fromLabel", it); put("removeLabel", removeLabel) }
+        }) as JsonObject
+        val project = parse(requireNotNull(result["project"]))
+        db.projects().upsert(listOf(project))
+        refresh(server)
+        project
     }
 
-    suspend fun update(localId: String, name: String, color: String?, icon: String?, note: String?) {
+    suspend fun update(id: String, name: String, color: String?, icon: String?, note: String?) = command { server ->
+        validate(name, color, icon, note, id)
+        update(server, id, buildJsonObject {
+            put("name", requireNotNull(ProjectRules.name(name)))
+            put("color", color?.let(::JsonPrimitive) ?: JsonNull)
+            put("icon", icon?.trim()?.takeIf { it.isNotEmpty() }?.let(::JsonPrimitive) ?: JsonNull)
+            put("note", note?.takeIf { it.isNotBlank() }?.let(::JsonPrimitive) ?: JsonNull)
+        })
+    }
+
+    suspend fun archive(id: String, archived: Boolean, archiveTasks: Boolean = false) = command { server ->
+        val project = confirmed(id)
+        update(server, id, buildJsonObject { put("archived", archived) })
+        if (archived && archiveTasks) {
+            // The preceding drain/refresh includes tasks created on this phone and by other devices.
+            val tasks = db.tasks().all().filter { it.projectId == project.serverId && it.isActive &&
+                it.status != dev.helm.planner.data.local.TaskStatus.DONE }
+            tasks.forEach { task -> task.serverId?.let { taskId ->
+                send(server, "app:archive", buildJsonObject { put("taskId", taskId) })
+            } }
+            refresh(server)
+        }
+    }
+
+    /** Re-space on ties, exhausted floating-point gaps or endpoints; all positions stay in the backend range. */
+    suspend fun move(id: String, by: Int) = command { server ->
+        val ordered = db.projects().all().filter { it.selectable }
+        val from = ordered.indexOfFirst { it.localId == id }
+        if (from < 0) return@command
+        val to = (from + by).coerceIn(0, ordered.lastIndex)
+        if (from == to) return@command
+        val desired = ordered.toMutableList().apply { add(to, removeAt(from)) }
+        val before = desired.getOrNull(to - 1)?.position
+        val after = desired.getOrNull(to + 1)?.position
+        val position = when {
+            before == null -> (after ?: 0.0) - ProjectRules.POSITION_STEP
+            after == null -> before + ProjectRules.POSITION_STEP
+            else -> before + (after - before) / 2
+        }
+        if (position.isFinite() && kotlin.math.abs(position) <= ProjectRules.MAX_POSITION &&
+            (before == null || position > before) && (after == null || position < after) &&
+            ordered.zipWithNext().all { (a, b) -> a.position < b.position }) {
+            update(server, id, buildJsonObject { put("position", position) })
+        } else desired.forEachIndexed { index, project ->
+            update(server, project.localId, buildJsonObject { put("position", (index + 1) * ProjectRules.POSITION_STEP) })
+        }
+    }
+
+    /** The backend moves every state, including trash. No optimistic task move can survive a refusal. */
+    suspend fun delete(id: String, moveTasksTo: String?) = command { server ->
+        require(id != moveTasksTo)
+        val project = confirmed(id)
+        val target = moveTasksTo?.let { confirmed(it).also { p -> require(p.selectable) } }
+        send(server, DELETE, buildJsonObject {
+            put("projectId", requireNotNull(project.serverId))
+            put("moveTasksTo", target?.serverId ?: "none")
+        })
         db.withTransaction {
-            val project = requireNotNull(db.projects().byLocalId(localId))
-            validate(name, color, icon, note, db.projects().all(), localId)
-            val updated = project.copy(name = requireNotNull(ProjectRules.name(name)), color = color,
-                icon = icon?.trim()?.ifEmpty { null }, note = note?.takeIf { it.isNotBlank() }, updatedAt = clock())
-            db.projects().upsert(listOf(updated))
-            queue(Mutations.UPDATE_PROJECT, updated, buildJsonObject {
-                put("name", updated.name)
-                put("color", updated.color?.let(::JsonPrimitive) ?: JsonNull)
-                put("icon", updated.icon?.let(::JsonPrimitive) ?: JsonNull)
-                put("note", updated.note?.let(::JsonPrimitive) ?: JsonNull)
-            })
+            db.projects().delete(listOf(id))
+            // A stale feed must not hide the server's moves behind an unchanged cached task version.
+            db.tasks().upsert(db.tasks().all().map { it.copy(serverUpdatedAt = null) })
         }
-        onOutboxChanged()
+        refresh(server)
     }
 
-    suspend fun archive(localId: String, archived: Boolean, archiveTasks: Boolean = false) {
-        db.withTransaction {
-            val project = requireNotNull(db.projects().byLocalId(localId))
-            val now = clock()
-            val updated = project.copy(archivedAt = now.takeIf { archived }, updatedAt = now)
-            db.projects().upsert(listOf(updated))
-            queue(Mutations.UPDATE_PROJECT, updated, buildJsonObject { put("archived", archived) })
-            if (archived && archiveTasks) {
-                val tasks = db.tasks().all().filter { it.projectLocalId == localId && it.isActive && it.status != dev.helm.planner.data.local.TaskStatus.DONE }
-                db.tasks().upsert(tasks.map { it.copy(archivedAt = now, isNow = false, updatedAt = now) })
-                tasks.filterNot { SamplePlan.isSample(it.localId) }.forEach { task ->
-                    val clientId = newId()
-                    db.outbox().insert(OutboxOp(opId = clientId, mutation = Mutations.ARCHIVE, taskLocalId = task.localId,
-                        clientId = clientId, createdAt = now, argsJson = buildJsonObject { put("clientId", clientId) }.toString()))
-                }
-            }
-        }
-        onOutboxChanged()
+    /** Obtain the latest server project set before a capacity-sensitive restore, without changing projects. */
+    suspend fun refreshForRestore() = command { }
+
+    private suspend fun <T> command(block: suspend (TaskRemote) -> T): T = commands.withLock {
+        val server = remote() ?: throw ProjectConnectionRequired()
+        if (OutboxProcessor(RoomOutboxStore(db), server).drain() != DrainResult.DONE) throw ProjectConnectionRequired()
+        refresh(server)
+        block(server)
     }
 
-    /** Accessible up/down controls and drag handles use the same midpoint position. */
-    suspend fun move(localId: String, by: Int) {
-        db.withTransaction {
-            val projects = db.projects().all().filter { it.selectable }
-            val index = projects.indexOfFirst { it.localId == localId }
-            if (index < 0) return@withTransaction
-            val to = (index + by).coerceIn(0, projects.lastIndex)
-            if (to == index) return@withTransaction
-            val others = projects.filterNot { it.localId == localId }
-            val before = others.getOrNull(to - 1)?.position
-            val after = others.getOrNull(to)?.position
-            val position = when {
-                before == null -> (after ?: 0.0) - ProjectRules.POSITION_STEP
-                after == null -> before + ProjectRules.POSITION_STEP
-                else -> before + (after - before) / 2
-            }
-            val project = projects[index].copy(position = position, updatedAt = clock())
-            db.projects().upsert(listOf(project))
-            queue(Mutations.UPDATE_PROJECT, project, buildJsonObject { put("position", position) })
-        }
-        onOutboxChanged()
+    private suspend fun update(server: TaskRemote, id: String, fields: JsonObject) {
+        val project = confirmed(id)
+        val value = send(server, UPDATE, JsonObject(fields + ("projectId" to JsonPrimitive(requireNotNull(project.serverId)))))
+        db.projects().upsert(listOf(parse(value)))
     }
 
-    /** Always supplies a destination, including for tasks in the trash or only known to the server. */
-    suspend fun delete(localId: String, moveTasksTo: String?) {
-        db.withTransaction {
-            require(localId != moveTasksTo)
-            val target = moveTasksTo?.let { requireNotNull(db.projects().byLocalId(it)).also { p -> require(p.selectable) } }
-            val project = requireNotNull(db.projects().byLocalId(localId))
-            val now = clock()
-            val tasks = db.tasks().all().filter { it.projectLocalId == localId }
-            require(tasks.size <= MAX_MOVED_TASKS)
-            db.tasks().upsert(tasks.map { it.copy(projectLocalId = moveTasksTo, updatedAt = now) })
-            db.projects().upsert(listOf(project.copy(deletedAt = now, updatedAt = now)))
-            queue(Mutations.DELETE_PROJECT, project, buildJsonObject {
-                if (target == null) put("moveTasksTo", "none") else put("moveTasksToLocalId", target.localId)
-            })
-        }
-        onOutboxChanged()
+    private suspend fun confirmed(id: String): Project = requireNotNull(db.projects().byLocalId(id)).also {
+        if (it.serverId == null) throw ProjectConnectionRequired()
     }
 
-    private fun validate(name: String, color: String?, icon: String?, note: String?, projects: List<Project>, except: String? = null) {
-        require(ProjectRules.validName(name, projects, except)) { "invalid project name" }
-        require(color == null || color in ProjectRules.colors) { "invalid project color" }
-        require(ProjectRules.validIcon(icon.orEmpty())) { "invalid project icon" }
-        require((note?.length ?: 0) <= ProjectRules.MAX_NOTE) { "invalid project note" }
+    private suspend fun validate(name: String, color: String?, icon: String?, note: String?, except: String? = null) {
+        require(ProjectRules.validName(name, db.projects().all(), except))
+        require(color == null || color in ProjectRules.colors)
+        require(ProjectRules.validIcon(icon.orEmpty()))
+        require((note?.length ?: 0) <= ProjectRules.MAX_NOTE)
     }
 
-    private suspend fun queue(mutation: String, project: Project, args: JsonObject, clientId: String = newId()) {
-        if (SamplePlan.isSample(project.localId)) return
-        db.outbox().insert(OutboxOp(opId = newId(), mutation = mutation, taskLocalId = null, projectLocalId = project.localId,
-            clientId = clientId, createdAt = clock(), argsJson = JsonObject(args + ("clientId" to JsonPrimitive(clientId))).toString()))
+    private suspend fun send(server: TaskRemote, path: String, args: JsonObject): JsonElement =
+        value(server.send(path, JsonObject(args + ("clientId" to JsonPrimitive(newId())))))
+
+    private fun value(result: SendResult): JsonElement = when (result) {
+        is SendResult.Applied -> result.value
+        is SendResult.Rejected -> throw ProjectCommandRefused()
+        is SendResult.Failed, SendResult.Unauthorized -> throw ProjectConnectionRequired()
     }
 
-    private companion object { const val MAX_MOVED_TASKS = 1000 }
+    private suspend fun refresh(server: TaskRemote) {
+        val empty = JsonObject(emptyMap())
+        val tasks = value(server.query(RemoteJson.QUERY_TASKS, buildJsonObject {
+            RemoteJson.TASKS_ARGS.forEach { (key, value) -> put(key, value) }
+        }))
+        val trash = value(server.query(RemoteJson.QUERY_TRASH, empty))
+        val settings = value(server.query(RemoteJson.QUERY_SETTINGS, empty))
+        val projects = value(server.query(RemoteJson.QUERY_PROJECTS, empty))
+        applySnapshot(RemoteJson.snapshot(tasks, trash, settings, projects))
+    }
+
+    private fun parse(value: JsonElement) = RemoteJson.projects(JsonArray(listOf(value))).single()
+
+    private companion object {
+        const val ADD = "app:addProject"
+        const val UPDATE = "app:updateProject"
+        const val DELETE = "app:deleteProject"
+    }
 }

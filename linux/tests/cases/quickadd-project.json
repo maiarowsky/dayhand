@@ -2,6 +2,8 @@
   "now": "2026-10-23T10:00:00Z",
   "timezone": "Europe/Warsaw",
   "projects": [
+    { "id": "literal", "name": "Strona-piekarni", "archived": false },
+    { "id": "only-literal", "name": "Hard-hyphen", "archived": false },
     { "id": "bakery", "name": "Strona piekarni", "archived": false },
     { "id": "home", "name": "Dom", "archived": false },
     { "id": "cafe", "name": "Café", "archived": false },
@@ -14,6 +16,8 @@
     { "line": "Kup +dom mleko", "title": "Kup mleko", "projectId": "home" },
     { "line": "  Kup mleko +Dom  ", "title": "Kup mleko", "projectId": "home" },
     { "line": "Menu +café", "title": "Menu", "projectId": "cafe" },
+    { "line": "Pomysł +hard-hyphen", "title": "Pomysł +hard-hyphen", "projectId": null },
+    { "line": "Zdjęcia +strona-piekarni tomorrow", "title": "Zdjęcia", "projectId": "bakery", "dueDate": "2026-10-24" },
     { "line": "Pomysł +x", "title": "Pomysł +x", "projectId": null },
     { "line": "Pomysł +Old", "title": "Pomysł +Old", "projectId": null },
     { "line": "Cena C++", "title": "Cena C++", "projectId": null },

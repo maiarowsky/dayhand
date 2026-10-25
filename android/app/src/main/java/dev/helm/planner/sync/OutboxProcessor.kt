@@ -3,47 +3,41 @@ package dev.helm.planner.sync
 import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.OutboxOp
 import dev.helm.planner.data.remote.MutationSender
+import dev.helm.planner.data.remote.QueryRunner
+import dev.helm.planner.data.remote.RemoteJson
 import dev.helm.planner.data.remote.SendResult
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 
-/** Durable queue of local changes, as the processor needs it. */
+/** Durable append-only queue of task changes. Project management never enters it. */
 interface OutboxStore {
-    /** The oldest waiting change, or null when everything was sent. */
     suspend fun next(): OutboxOp?
-
     suspend fun serverIdOf(taskLocalId: String): String?
-
-    suspend fun projectServerIdOf(localId: String): String? = null
-    suspend fun linkProject(op: OutboxOp, serverId: String) {}
-
-    /** The server applied [op]: forget it (and remember the server id of a new task). */
     suspend fun acknowledge(op: OutboxOp, value: JsonElement)
-
-    /** The server refused [op] for good: forget it and let the next snapshot repair the row. */
     suspend fun reject(op: OutboxOp, reason: String)
-
+    /** Keep the task and queued edits, removing only the refused assignment and its dependent proof. */
+    suspend fun clearProjectAssignment(op: OutboxOp) {}
     suspend fun recordFailure(op: OutboxOp, reason: String)
 }
 
 enum class DrainResult { DONE, MORE_LEFT, RETRY_LATER, UNAUTHORIZED }
 
-/**
- * Sends the outbox strictly in order, one change at a time. A change leaves the queue only
- * when the server answered; on any doubt the processor stops, so nothing behind it can
- * overtake it. Resending after a lost answer is safe because every change carries the
- * `clientId` the backend deduplicates on.
- */
+/** One ordered drain, shared by the worker and online commands. Lost replies are safe by clientId. */
 class OutboxProcessor(
     private val store: OutboxStore,
     private val sender: MutationSender,
     private val maxOpsPerRun: Int = MAX_OPS_PER_RUN,
-    private val queries: dev.helm.planner.data.remote.QueryRunner? = sender as? dev.helm.planner.data.remote.QueryRunner,
+    private val queries: QueryRunner? = sender as? QueryRunner,
 ) {
-    suspend fun drain(): DrainResult {
+    suspend fun drain(): DrainResult = drainLock.withLock { drainInOrder() }
+
+    private suspend fun drainInOrder(): DrainResult {
         repeat(maxOpsPerRun) {
             val op = store.next() ?: return DrainResult.DONE
             val args = argsFor(op)
@@ -58,31 +52,14 @@ class OutboxProcessor(
             when (val result = sender.send(op.mutation, args)) {
                 is SendResult.Applied -> store.acknowledge(op, result.value)
                 is SendResult.Rejected -> {
-                    // Two devices may create the same name offline. Only a confirmed name match repairs that conflict.
-                    if (op.mutation == Mutations.ADD && "repeatedFrom" in args) {
-                        // An old backend or a changed parent must not erase a locally created occurrence and its edits.
-                        store.recordFailure(op, result.code ?: "local repeat not accepted")
-                        return DrainResult.RETRY_LATER
-                    } else if (op.mutation == Mutations.ADD_PROJECT && result.code == "invalid_argument") {
-                        when (val projects = queries?.query(dev.helm.planner.data.remote.RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap()))) {
-                            is SendResult.Applied -> {
-                                val name = (args["name"] as? JsonPrimitive)?.content.orEmpty()
-                                val match = dev.helm.planner.data.remote.RemoteJson.projects(projects.value).firstOrNull {
-                                    dev.helm.planner.domain.ProjectRules.nameKey(it.name) == dev.helm.planner.domain.ProjectRules.nameKey(name)
-                                }
-                                if (match != null) {
-                                    store.linkProject(op, requireNotNull(match.serverId))
-                                    store.acknowledge(op, kotlinx.serialization.json.buildJsonObject {
-                                        put("project", kotlinx.serialization.json.buildJsonObject { put("id", JsonPrimitive(match.serverId)) })
-                                    })
-                                } else store.reject(op, result.message)
-                            }
-                            else -> {
-                                store.recordFailure(op, "project conflict lookup unavailable")
-                                return DrainResult.RETRY_LATER
-                            }
-                        }
-                    } else store.reject(op, result.message)
+                    when (assignmentRefused(op, args, result)) {
+                        true -> store.clearProjectAssignment(op) // Retry the same seq, not a new/reordered task.
+                        null -> return DrainResult.RETRY_LATER
+                        false -> if (op.mutation == Mutations.ADD && "repeatedFrom" in args) {
+                            store.recordFailure(op, result.code ?: "local repeat not accepted")
+                            return DrainResult.RETRY_LATER
+                        } else store.reject(op, result.message)
+                    }
                 }
                 SendResult.Unauthorized -> {
                     store.recordFailure(op, "unauthorized")
@@ -97,30 +74,31 @@ class OutboxProcessor(
         return if (store.next() == null) DrainResult.DONE else DrainResult.MORE_LEFT
     }
 
-    /** Stored arguments plus the task's server id, which a task created offline gets only after its `add`. */
+    /** Only a confirmed deleted/archived target permits stripping an assignment, never an unrelated validation error. */
+    private suspend fun assignmentRefused(op: OutboxOp, args: JsonObject, result: SendResult.Rejected): Boolean? {
+        if (op.mutation !in setOf(Mutations.ADD, Mutations.UPDATE) || result.code !in setOf("invalid_argument", "not_found")) return false
+        val id = (args["projectId"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return false
+        return when (val projects = queries?.query(RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap()))) {
+            is SendResult.Applied -> RemoteJson.projects(projects.value).firstOrNull { it.serverId == id }?.archived != false
+            else -> {
+                store.recordFailure(op, "project assignment lookup unavailable")
+                null
+            }
+        }
+    }
+
     private suspend fun argsFor(op: OutboxOp): JsonObject? {
         var args = Json.parseToJsonElement(op.argsJson).jsonObject
-        val projectId = op.projectLocalId
-        if (projectId != null && op.mutation != Mutations.ADD_PROJECT) {
-            val serverId = store.projectServerIdOf(projectId) ?: return null
-            args = JsonObject(args + ("projectId" to JsonPrimitive(serverId)))
-        }
-        val target = (args["moveTasksToLocalId"] as? JsonPrimitive)?.content
-        if (target != null) {
-            val serverId = store.projectServerIdOf(target) ?: return null
-            args = JsonObject(args - "moveTasksToLocalId" + ("moveTasksTo" to JsonPrimitive(serverId)))
-        }
-        val parentLocalId = (args["repeatParentLocalId"] as? JsonPrimitive)?.content
-        if (parentLocalId != null) {
-            val parentId = store.serverIdOf(parentLocalId) ?: return null
+        val parent = (args["repeatParentLocalId"] as? JsonPrimitive)?.content
+        if (parent != null) {
+            val parentId = store.serverIdOf(parent) ?: return null
             val completedBy = args["repeatCompletedBy"] ?: return null
             val completedOn = args["repeatCompletedOn"] ?: return null
-            args = JsonObject(args - setOf("repeatParentLocalId", "repeatCompletedBy", "repeatCompletedOn") +
-                ("repeatedFrom" to kotlinx.serialization.json.buildJsonObject {
-                    put("taskId", JsonPrimitive(parentId))
-                    put("completedBy", completedBy)
-                    put("completedOn", completedOn)
-                }))
+            args = JsonObject(args - REPEAT_PROOF_KEYS + ("repeatedFrom" to buildJsonObject {
+                put("taskId", JsonPrimitive(parentId))
+                put("completedBy", completedBy)
+                put("completedOn", completedOn)
+            }))
         }
         val localId = op.taskLocalId
         if (localId == null || op.mutation == Mutations.ADD) return args
@@ -130,5 +108,7 @@ class OutboxProcessor(
 
     companion object {
         const val MAX_OPS_PER_RUN = 200
+        internal val REPEAT_PROOF_KEYS = setOf("repeatParentLocalId", "repeatCompletedBy", "repeatCompletedOn", "repeatedFrom")
+        private val drainLock = Mutex()
     }
 }

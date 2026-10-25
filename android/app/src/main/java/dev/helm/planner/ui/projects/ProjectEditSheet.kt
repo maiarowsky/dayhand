@@ -56,7 +56,7 @@ fun ProjectEditSheet(project: Project? = null, fromLabel: String? = null, onDism
             HelmTextField(name, { name = it }, label = stringResource(R.string.project_name), singleLine = true,
                 modifier = Modifier.testTag("project-name"))
             ListNote(stringResource(R.string.project_name_hint))
-            if (context.failed) ListNote(stringResource(R.string.project_failed))
+            if (context.failed) ListNote(stringResource(if (context.connectionRequired) R.string.project_connection_required else R.string.project_failed))
             PrimaryButton(stringResource(R.string.save), onClick = {
                 val draft = ProjectDraft(name, color, icon, note, fromLabel, removeLabel)
                 if (project == null) context.actions.create(draft) { onSaved(it); onDismiss() }

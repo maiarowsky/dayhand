@@ -195,7 +195,7 @@ class PlanBackupTest {
     fun projectsAndTaskReferencesSurviveTheBackupFile() {
         val project = dev.helm.planner.data.local.Project("local-project", serverId = "server-project", name = "Home", color = "amber", icon = "🏠",
             note = "Context", position = 1024.0, archivedAt = 10, createdAt = 1, updatedAt = 2)
-        val file = PlanBackup.write(listOf(full.copy(projectLocalId = project.localId)), settings, 100, listOf(project))
+        val file = PlanBackup.write(listOf(full.copy(projectId = project.localId)), settings, 100, listOf(project))
         val read = PlanBackup.read(file, newId) as BackupRead.Plan
         assertEquals("server-project", read.tasks.single().projectId)
         assertEquals(BackupProject("server-project", "Home", "amber", "🏠", "Context", true), read.projects.single())

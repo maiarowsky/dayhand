@@ -37,13 +37,14 @@ interface ProjectActions {
 }
 
 data class ProjectUiContext(val projects: List<Project> = emptyList(), val actions: ProjectActions = object : ProjectActions {},
-                            val failed: Boolean = false, val pickTask: (Task) -> Unit = {})
+                            val failed: Boolean = false, val pickTask: (Task) -> Unit = {}, val connectionRequired: Boolean = false)
 val LocalProjects = staticCompositionLocalOf { ProjectUiContext() }
 
 data class ProjectsUiState(val projects: List<Project>, val tasks: List<Task>, val today: String, val timezone: String, val pending: Int)
 
 class ProjectsViewModel(private val repository: TaskRepository, settings: SettingsStore) : ViewModel(), ProjectActions {
     val failed = MutableStateFlow(false)
+    val connectionRequired = MutableStateFlow(false)
     val state = combine(repository.projects, repository.tasks, settings.settings, minuteTicks(System::currentTimeMillis), repository.pendingChanges) { projects, tasks, s, now, pending ->
         ProjectsUiState(projects, tasks, HelmDates.localDate(now, s.timezone), s.timezone, pending)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -62,12 +63,14 @@ class ProjectsViewModel(private val repository: TaskRepository, settings: Settin
     }
     override fun move(project: Project, by: Int) = run { repository.projectStore.move(project.localId, by) }
     override fun assign(taskId: String, projectId: String?) = run { repository.setProject(taskId, projectId) }
-    override fun clearError() { failed.value = false }
+    override fun clearError() { failed.value = false; connectionRequired.value = false }
 
     private fun run(block: suspend () -> Unit) {
         viewModelScope.launch {
-            failed.value = false
-            try { block() } catch (e: CancellationException) { throw e } catch (_: Exception) { failed.value = true }
+            clearError()
+            try { block() } catch (e: CancellationException) { throw e }
+            catch (_: dev.helm.planner.data.ProjectConnectionRequired) { connectionRequired.value = true; failed.value = true }
+            catch (_: Exception) { failed.value = true }
         }
     }
 }
@@ -78,15 +81,16 @@ fun ProjectHost(repository: TaskRepository, settings: SettingsStore, content: @C
     val model = viewModel(key = "project-actions") { ProjectsViewModel(repository, settings) }
     val state by model.state.collectAsStateWithLifecycle()
     val failed by model.failed.collectAsStateWithLifecycle()
+    val connectionRequired by model.connectionRequired.collectAsStateWithLifecycle()
     var assigning by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf<String?>(null) }
-    CompositionLocalProvider(LocalProjects provides ProjectUiContext(state?.projects.orEmpty(), model, failed, { assigning = it.localId })) {
+    CompositionLocalProvider(LocalProjects provides ProjectUiContext(state?.projects.orEmpty(), model, failed, { assigning = it.localId }, connectionRequired)) {
         content()
         state?.tasks?.firstOrNull { it.localId == assigning }?.let { task ->
-            ProjectPickerSheet(task.projectLocalId, onDismiss = { assigning = null }, onPick = { model.assign(task.localId, it) })
+            ProjectPickerSheet(task.projectId, onDismiss = { assigning = null }, onPick = { model.assign(task.localId, it) })
         }
         if (failed) dev.helm.planner.ui.components.HelmDialog(
             title = androidx.compose.ui.res.stringResource(dev.helm.planner.R.string.project_label), onDismiss = model::clearError,
             confirm = androidx.compose.ui.res.stringResource(dev.helm.planner.R.string.ok), onConfirm = model::clearError,
-        ) { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(dev.helm.planner.R.string.project_failed)) }
+        ) { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(if (connectionRequired) dev.helm.planner.R.string.project_connection_required else dev.helm.planner.R.string.project_failed)) }
     }
 }

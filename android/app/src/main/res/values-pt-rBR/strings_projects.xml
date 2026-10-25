@@ -48,4 +48,7 @@
     <string name="project_color_pink">Rosa</string>
     <string name="project_color_brown">Marrom</string>
     <string name="project_color_gray">Cinza</string>
+    <string name="project_connection_required">Requer conexão com o servidor</string>
+    <string name="project_replace_count">Projetos removidos deste telefone: %1$d (incluindo suas notas).</string>
+    <string name="project_restore_limit">O backup e o telefone excedem o limite de 200 projetos. Exclua um projeto primeiro.</string>
 </resources>

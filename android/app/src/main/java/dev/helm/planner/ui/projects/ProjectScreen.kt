@@ -60,7 +60,7 @@ fun ProjectScreen(state: ProjectUiState, todayActions: TodayActions, boardAction
     val counts = projectCounts(state.tasks, state.today)
     val title = state.label?.let { "# $it" } ?: state.project?.let { listOfNotNull(it.icon, it.name).joinToString(" ") }
         ?: stringResource(R.string.project_no_project)
-    val canAdd = state.label == null && (state.projectLocalId == null || state.project?.selectable == true)
+    val canAdd = state.label == null && (state.projectId == null || state.project?.assignable == true)
     val header: @Composable () -> Unit = {
         Column {
             LargeHeader(title, subtitle = stringResource(R.string.project_counts, counts.open, counts.overdue), onBack = onBack) {
@@ -69,22 +69,22 @@ fun ProjectScreen(state: ProjectUiState, todayActions: TodayActions, boardAction
                     HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, state.project.name), { managing = true })
                 }
             }
-            PrimaryTabRow(selectedTabIndex = if (board) 1 else 0, containerColor = palette.background, contentColor = palette.accent,
+            if (state.project != null && state.label == null) PrimaryTabRow(selectedTabIndex = if (board) 1 else 0, containerColor = palette.background, contentColor = palette.accent,
                 divider = { HorizontalDivider(color = palette.border) }) {
                 Tab(!board, { board = false }, text = { Text(stringResource(R.string.project_list), style = helmType.smallStrong) }, modifier = Modifier.testTag("project-list-tab"))
                 Tab(board, { board = true }, text = { Text(stringResource(R.string.project_board), style = helmType.smallStrong) }, modifier = Modifier.testTag("project-board-tab"))
             }
         }
     }
-    if (board) {
+    if (board && state.project != null && state.label == null) {
         val now = LocalDate.parse(state.today).atStartOfDay(dev.helm.planner.domain.HelmDates.zone(state.timezone)).toInstant().toEpochMilli()
         BoardScreen(BoardUiState(boardColumns(state.tasks, now, state.timezone), ConnectionStatus.LOCAL, 0, state.timezone,
-            AgentWork.blockedTasks(state.tasks)), boardActions, bottomBar = bottomBar, header = header,
-            defaultProjectId = state.projectLocalId, allowAdding = canAdd)
+            state.blocked), boardActions, bottomBar = bottomBar, header = header,
+            defaultProjectId = state.projectId, allowAdding = canAdd)
     } else Scaffold(containerColor = palette.background, topBar = header, bottomBar = bottomBar, floatingActionButton = {
         if (canAdd) HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag("project-add"))
     }) { padding -> ProjectTaskList(state, todayActions, Modifier.padding(padding)) }
-    if (adding) QuickAddSheet(state.timezone, onDismiss = { adding = false }, defaultProjectId = state.projectLocalId,
+    if (adding) QuickAddSheet(state.timezone, onDismiss = { adding = false }, defaultProjectId = state.projectId,
         onSave = { taskTitle, day, time, note, project -> todayActions.add(taskTitle, day, time, note, project); adding = false })
     if (editing) state.project?.let { ProjectEditSheet(it, onDismiss = { editing = false }) }
     if (managing) state.project?.let { ProjectManagement(it, onDismiss = { managing = false }, onDeleted = onBack) }
@@ -94,7 +94,7 @@ fun ProjectScreen(state: ProjectUiState, todayActions: TodayActions, boardAction
 private fun ProjectTaskList(state: ProjectUiState, actions: TodayActions, modifier: Modifier) {
     val sections = projectSections(state.tasks, state.today)
     val today = LocalDate.parse(state.today)
-    val blocked = AgentWork.blockedTasks(state.tasks)
+    val blocked = state.blocked
     var done by rememberSaveable { mutableStateOf(false) }
     LazyColumn(modifier.fillMaxSize().testTag("project-task-list"), contentPadding = PaddingValues(bottom = 96.dp)) {
         if (sections.overdue.isNotEmpty()) {

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "19917600d1528771f00579ae6b7c4577",
+    "identityHash": "758e0abd7eba8a6ab4697382c302da8f",
     "entities": [
       {
         "tableName": "tasks",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localId` TEXT NOT NULL, `serverId` TEXT, `clientId` TEXT, `title` TEXT NOT NULL, `note` TEXT, `dueDate` TEXT, `dueTime` TEXT, `status` TEXT NOT NULL, `isNow` INTEGER NOT NULL, `resumeNote` TEXT, `completedAt` INTEGER, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `serverUpdatedAt` INTEGER, `repeat` TEXT, `labels` TEXT NOT NULL DEFAULT '[]', `links` TEXT NOT NULL DEFAULT '[]', `deletedAt` INTEGER, `checklist` TEXT NOT NULL DEFAULT '[]', `reminders` TEXT, `acceptance` TEXT NOT NULL DEFAULT '[]', `proof` TEXT, `claimName` TEXT, `claimExpiresAt` INTEGER, `ref` INTEGER, `plan` TEXT, `dependsOn` TEXT NOT NULL DEFAULT '[]', `blockedReason` TEXT, `projectLocalId` TEXT, PRIMARY KEY(`localId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localId` TEXT NOT NULL, `serverId` TEXT, `clientId` TEXT, `title` TEXT NOT NULL, `note` TEXT, `dueDate` TEXT, `dueTime` TEXT, `status` TEXT NOT NULL, `isNow` INTEGER NOT NULL, `resumeNote` TEXT, `completedAt` INTEGER, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `serverUpdatedAt` INTEGER, `repeat` TEXT, `labels` TEXT NOT NULL DEFAULT '[]', `links` TEXT NOT NULL DEFAULT '[]', `deletedAt` INTEGER, `checklist` TEXT NOT NULL DEFAULT '[]', `reminders` TEXT, `acceptance` TEXT NOT NULL DEFAULT '[]', `proof` TEXT, `claimName` TEXT, `claimExpiresAt` INTEGER, `ref` INTEGER, `plan` TEXT, `dependsOn` TEXT NOT NULL DEFAULT '[]', `blockedReason` TEXT, `projectId` TEXT, PRIMARY KEY(`localId`))",
         "fields": [
           {
             "fieldPath": "localId",
@@ -170,8 +170,8 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "projectLocalId",
-            "columnName": "projectLocalId",
+            "fieldPath": "projectId",
+            "columnName": "projectId",
             "affinity": "TEXT"
           }
         ],
@@ -204,7 +204,7 @@
       },
       {
         "tableName": "outbox",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`seq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `opId` TEXT NOT NULL, `mutation` TEXT NOT NULL, `argsJson` TEXT NOT NULL, `taskLocalId` TEXT, `clientId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `attempts` INTEGER NOT NULL, `lastError` TEXT, `projectLocalId` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`seq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `opId` TEXT NOT NULL, `mutation` TEXT NOT NULL, `argsJson` TEXT NOT NULL, `taskLocalId` TEXT, `clientId` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `attempts` INTEGER NOT NULL, `lastError` TEXT)",
         "fields": [
           {
             "fieldPath": "seq",
@@ -256,11 +256,6 @@
           {
             "fieldPath": "lastError",
             "columnName": "lastError",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "projectLocalId",
-            "columnName": "projectLocalId",
             "affinity": "TEXT"
           }
         ],
@@ -459,7 +454,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '19917600d1528771f00579ae6b7c4577')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '758e0abd7eba8a6ab4697382c302da8f')"
     ]
   }
 }

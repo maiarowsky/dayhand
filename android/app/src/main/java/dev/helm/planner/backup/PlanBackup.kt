@@ -116,7 +116,7 @@ object PlanBackup {
 
     /** A task as the server's export writes it (`toTask`): the server id where there is one, else the phone's. */
     private fun taskJson(task: Task, projects: Map<String, String>): JsonObject = buildJsonObject {
-        projects[task.projectLocalId]?.let { put("projectId", it) }
+        projects[task.projectId]?.let { put("projectId", it) }
         put("id", task.serverId ?: task.localId)
         put("title", task.title)
         put("status", task.status.wire)

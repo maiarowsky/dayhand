@@ -213,7 +213,8 @@ data class Task(
     /** Why the task cannot go on; read-only, taken from the server. */
     val blockedReason: String? = null,
     /** Zero or one project, addressed by its stable local id. */
-    val projectLocalId: String? = null,
+    /** Server-confirmed project id (sample ids are used only by the demo plan). */
+    val projectId: String? = null,
 ) {
     val inTrash: Boolean get() = deletedAt != null
 

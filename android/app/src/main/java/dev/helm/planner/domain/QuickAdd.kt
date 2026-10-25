@@ -8,7 +8,7 @@ data class QuickAddInput(
     val `when`: When?,
     /** The words read as the date ("fri 2pm"), so the sheet can show what was understood. */
     val phrase: String?,
-    val projectLocalId: String? = null,
+    val projectId: String? = null,
     val unknownProject: String? = null,
 )
 
@@ -28,9 +28,9 @@ object QuickAdd {
     fun parse(line: String, now: Long, timezone: String, projects: List<Project> = emptyList(), readDate: Boolean = true): QuickAddInput {
         val token = Regex("(?<!\\S)\\+([^\\s]+)").find(line)
         val project = token?.groupValues?.get(1)?.let { name -> projects.firstOrNull {
-            it.selectable && ProjectRules.nameKey(it.name).replace(Regex("\\s+"), "-") == ProjectRules.nameKey(name)
+            it.assignable && ProjectRules.nameKey(it.name) == ProjectRules.nameKey(name.replace('-', ' '))
         } }
-        val withoutProject = if (project != null && token != null) line.removeRange(token.range).trim().replace(Regex("\\s+"), " ") else line.trim()
+        val withoutProject = if (project != null) line.removeRange(requireNotNull(token).range).trim().replace(Regex("\\s+"), " ") else line.trim()
         val trimmed = withoutProject.takeIf { it.isNotEmpty() } ?: line.trim()
         val selected = project?.localId.takeIf { withoutProject.isNotEmpty() }
         val unknown = token?.value.takeIf { project == null }

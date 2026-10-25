@@ -48,4 +48,7 @@
     <string name="project_color_pink">Rosa</string>
     <string name="project_color_brown">Marrón</string>
     <string name="project_color_gray">Gris</string>
+    <string name="project_connection_required">Requiere conexión con el servidor</string>
+    <string name="project_replace_count">Proyectos que se eliminarán de este teléfono: %1$d (incluidas sus notas).</string>
+    <string name="project_restore_limit">La copia y el teléfono superan el límite de 200 proyectos. Elimina un proyecto primero.</string>
 </resources>

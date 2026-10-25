@@ -16,14 +16,22 @@ called Helm until 0.9.0.
   `+Project-name` in quick add recognizes existing active projects; unknown tokens stay text.
 - Project dots on Today and Board, contrast-tested across all sixteen palettes. All project
   strings are in the eight app languages; the sample plan now has projects instead of project-like labels.
-- Room schema 6 with AutoMigration(5,6), project snapshots and ordered offline project/task
-  creation. Same-name creations from two devices link to the existing project. Repeating tasks
-  made on the phone inherit their project; backend 0.13.2 confirms their parent completion so
-  an archived project stays archived. A refused local occurrence stays queued instead of losing
-  its row and edits. **Deploy backend 0.13.2 before Android 0.12.0.** Backup files preserve projects
-  and their assignments.
-- JVM/Robolectric coverage for the real Room migration, Compose screens/pickers and the project
-  outbox; an opt-in real-local-backend integration test, shared quick-add project cases and
+- Room schema 6 with AutoMigration(5,6), project snapshots and server-confirmed task project ids.
+  Project management is online-only: create/edit, archive, delete/move, order and label conversion
+  execute on the server; without a connection (also unpaired) a translated message explains why.
+  Only task/settings edits enter the append-only outbox, including offline assignments to confirmed
+  projects. A refused assignment keeps the task and later edits and removes only that assignment
+  and its dependent repeat proof. There is no name-conflict linking or automatic project reopening.
+- Repeating tasks made on the phone inherit their project; backend 0.13.2 confirms their parent
+  completion so an archived project stays archived. A refused local occurrence stays queued
+  instead of losing its row and edits. **Deploy backend 0.13.2 before Android 0.12.0.** Backup files
+  read tasks/projects in one transaction; restore preflights combined project capacity and needs
+  a connection for project management. Switching servers also detects and clears project-only plans.
+- Project markers retain both dot and optional emoji, including Today’s Done rows. Labels and
+  No project offer List only. Cross-project dependencies stay visible in project scopes; ordering
+  handles tied/exhausted positions, and hiding project search clears its filter.
+- JVM/Robolectric coverage for the real Room migration, Compose screens/pickers and task-assignment
+  outbox; opt-in real-local-backend integration tests, shared quick-add project cases and
   `scripts/e2e-projects.py` for one emulator run with light/dark screenshots.
 
 ## 0.11.0 (unreleased)

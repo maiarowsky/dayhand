@@ -99,11 +99,15 @@ handles and Move up/down buttons and screen-reader actions. Archiving optionally
 tasks too; otherwise its tasks stay in Today, Calendar and Board with a neutral marker. Deleting
 keeps every task, including those in the trash, and asks for a destination (another project or No
 project). Long-press a label for **Make a project from label**, optionally removing that label only
-from moved tasks; tasks already in a project stay where they are.
+from moved tasks; tasks already in a project stay where they are. Creating, editing, archiving,
+reordering, deleting and converting a label require a server connection (also when unpaired).
+They execute on the server, not through the offline queue; without a connection the app says
+**Requires a connection to the server** and keeps the current project unchanged.
 
 A project, No project or a label opens its task list: Overdue, Today, Later, No day and the fifty
-latest Done (collapsed). **List / Board** switches to the existing board filtered to the same
-scope. A project's **+** preselects it in quick add; archived projects cannot receive new tasks.
+latest Done (collapsed). In a real project, **List / Board** switches to the existing board
+filtered to that project; labels and No project offer only the list. A project's **+** preselects
+it in quick add; archived projects and unpaired demo projects cannot receive new tasks.
 The same project picker (with search above eight active projects and New project in place) is in
 quick add's More options, task details and the menus on Today, Board and the calendar's day sheet.
 Project dots meet 3:1 on the surfaces of every palette; the name remains readable text, never
@@ -331,7 +335,8 @@ tap ──> Room transaction: change the task row + append to outbox ──> scr
 Convex subscription (app:listAll, app:listTrash, app:listProjects, app:getSettings) ──> SnapshotMerger ──> Room
 ```
 
-- **Room is the source of truth for the screens.** The screen never waits for the network.
+- **Room is the source of truth for the screens.** Task edits appear at once; project management
+  waits for the server to confirm the command.
 - **Outbox** (`outbox` table): one record per change with `opId`, mutation name, arguments,
   time and a `clientId`. The backend applies an operation with a known `clientId` only once, so
   a change resent after a lost answer is not applied twice. A new task's `clientId` is its local
@@ -339,11 +344,15 @@ Convex subscription (app:listAll, app:listTrash, app:listProjects, app:getSettin
 - **WorkManager** sends the outbox strictly in order and stops at the first failure, so nothing
   overtakes an earlier change. The request survives the app being killed and the phone
   restarting. After a force stop, Android runs it again once the app is opened.
-- **Projects offline**: Room schema 6 adds projects and local project references without changing
-  existing tasks. Project creation precedes dependent task creation in the outbox; server ids are
-  resolved only when sending. A same-name project made by another device is linked to the local
-  row after a confirmed lookup, preserving task references. Sample projects never leave the phone;
-  removing them clears an own task's sample-project assignment, not the task.
+- **Projects**: Room schema 6 and AutoMigration(5,6) preserve existing tasks and the task outbox,
+  adding the project cache and a server-confirmed `projectId` on tasks. Project management is
+  online-only; there are no project commands or local project references in the outbox, and no
+  name-conflict linking. Task edits and assignments to previously confirmed active projects still
+  work offline and append at the end of the task queue. If another device deletes or archives a
+  target before an assignment reaches the server, the task and later edits are kept: only the
+  refused assignment and its dependent repeat proof are cleared. The project is never reopened
+  as conflict recovery. Sample projects never leave the phone; removing them also clears any old
+  sample assignment and its dependent proof without losing the task.
   A locally calculated repeat carries the parent's local id, its completion operation id and the
   phone's completion day. At send time these become `app:add.repeatedFrom`: backend 0.13.2 checks
   the repeat-clear and completion history, the next date/rule and the same project, deduplicates
@@ -386,9 +395,10 @@ waits (WorkManager finds no server and stops). Nothing leaves the phone.
   when the phone connects to it again (no question asked).
 - **Another server**: a code for another address than the server last paired with (`serverUrl`,
   kept after Disconnect) is not used before the user agrees to **Replace the plan on this
-  phone?**, which says how many tasks go from the phone and how many changes would never be
-  sent, and how to keep them (a backup, or connecting to the old server). **Replace and connect**
-  empties the phone (tasks, history, outbox) before the new sign-in is stored, so nothing of the
+  phone?**, which says how many tasks and projects (including notes) go from the phone and how
+  many changes would never be sent, and how to keep them (a backup, or connecting to the old
+  server). A plan containing only projects also requires this confirmation. **Replace and connect**
+  empties the phone (tasks, projects, history, outbox) before the new sign-in is stored, so nothing of the
   old plan reaches the new server; **Cancel** leaves everything as it was. A phone that never had
   a server needs no question. (One deployment has one owner, so another account is another
   address; `auth/PlanSwitch.kt`.)
@@ -407,7 +417,11 @@ The **backup file** (`backup/PlanBackup.kt`) is Dayhand's JSON export format, ve
 `app:exportPlan` and `dayhand export --format json` write it (`docs/schemas/export.schema.json`):
 `version`, `exportedAt`, `settings`, `projects`, `tasks` (with the server id where the server knows a task,
 else the phone's, and `projectId`) and an empty `events`. Project names, colours, icons, notes,
-order and archive state are kept; restore matches projects by name and queues projects before their tasks. Task numbers (`ref`), cached change history and agent-work
+order and archive state are kept. Tasks and projects are read in one Room transaction. Restoring
+a file containing projects requires a connection: projects are matched by name or created directly
+on the server, tasks use their confirmed ids, and archive commands wait for the task queue to drain.
+The combined existing/imported project count is checked before changes (at most 200). Project
+management is not queued if the connection fails; restore reports the failure rather than crashing. Task numbers (`ref`), cached change history and agent-work
 fields (including the plan, dependencies and blocked reason) are not included. Sample tasks are
 not in it. A server reads it (`dayhand import`, `POST /api/v1/import`, format `dayhand-json`), and
 so does **Restore from a file**: every task the backend's rules accept
@@ -530,8 +544,10 @@ over the installed app: keep a copy of the keystore and its password somewhere s
 
 Project integration against a real local backend is opt-in: set `DAYHAND_ANDROID_TEST_URL` to
 its loopback Convex API URL and `DAYHAND_ANDROID_TEST_TOKEN` to a temporary app JWT, then run
-`:app:testDebugUnitTest --tests '*ProjectBackendTest'`. Without them only this integration test
-is skipped. The test refuses non-loopback URLs. Robolectric's Android 34 runtime and all of its
+`:app:testDebugUnitTest`. Without them the `ProjectBackendTest` and `ArchivedProjectRepeatTest`
+integration cases are skipped. They refuse non-loopback URLs. These cover online-only management,
+offline task assignments, refused targets, conversion/delete, ordering limits, backup restore,
+owner-switch isolation and archived-repeat replay against the actual app mutations. Robolectric's Android 34 runtime and all of its
 dependencies are pinned in the Gradle lockfile; its own Maven downloader is disabled.
 
 `AgentsRefreshRaceTest` covers overlapping control reads and the busy interval of agent changes,
@@ -560,6 +576,11 @@ python3 scripts/e2e-local.py --apk app/build/outputs/apk/debug/app-debug.apk --s
 python3 scripts/e2e-pairing.py --apk app/build/outputs/apk/debug/app-debug.apk --shots /tmp/shots
 python3 scripts/e2e-offline.py --apk app/build/outputs/apk/debug/app-debug.apk
 ```
+
+`scripts/e2e-projects.py` checks that unpaired/offline project creation is refused, pairs the
+phone, creates a project online, adds its task offline, switches List/Board, takes light/dark
+screenshots and verifies both ids through `dayhand call list_projects --json` and `dayhand list`.
+It uses one task-owned emulator for that whole feature run.
 
 `scripts/e2e-board-details.py` (same arguments) checks the board and details the same way: a task
 added by the agent is dragged to "In progress", moved to "Done" from its menu, renamed and given a

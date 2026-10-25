@@ -41,19 +41,23 @@ import dev.helm.planner.ui.theme.palette
 fun ProjectPickerSheet(selected: String?, onDismiss: () -> Unit, onPick: (String?) -> Unit,
                        exclude: String? = null, allowCreate: Boolean = true) {
     val context = LocalProjects.current
-    val projects = context.projects.filter { it.selectable && it.localId != exclude }
+    val projects = context.projects.filter { it.assignable && it.localId != exclude }
     var search by rememberSaveable { mutableStateOf("") }
     var creating by rememberSaveable { mutableStateOf(false) }
     var name by rememberSaveable { mutableStateOf("") }
+    val showSearch = projects.size > SEARCH_THRESHOLD
+    androidx.compose.runtime.LaunchedEffect(showSearch) { if (!showSearch) search = "" }
+    val query = search.takeIf { showSearch }.orEmpty()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = palette.surface, contentColor = palette.text, shape = HelmShapes.sheet,
         dragHandle = { BottomSheetDefaults.DragHandle(color = palette.border) }, modifier = Modifier.testTag("project-picker")) {
         Column(Modifier.fillMaxWidth().imePadding().verticalScroll(rememberScrollState())
             .padding(horizontal = HelmDimens.screenMargin).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.project_label), style = helmType.screenTitle)
-            if (projects.size > SEARCH_THRESHOLD) HelmTextField(search, { search = it }, label = stringResource(R.string.project_search), singleLine = true)
+            if (showSearch) HelmTextField(search, { search = it }, label = stringResource(R.string.project_search), singleLine = true,
+                modifier = Modifier.testTag("project-search"))
             ChoiceRow(stringResource(R.string.project_no_project), selected == null, "project-pick-none", { onPick(null); onDismiss() })
-            projects.filter { ProjectRules.nameKey(it.name).contains(ProjectRules.nameKey(search)) }.forEach { project ->
+            projects.filter { ProjectRules.nameKey(it.name).contains(ProjectRules.nameKey(query)) }.forEach { project ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ProjectMark(project)
                     Column(Modifier.weight(1f)) {
@@ -65,7 +69,7 @@ fun ProjectPickerSheet(selected: String?, onDismiss: () -> Unit, onPick: (String
                 if (!creating) TextAction(stringResource(R.string.project_new), { creating = true }, Modifier.testTag("project-picker-new")) else {
                     HelmTextField(name, { name = it }, label = stringResource(R.string.project_name), singleLine = true, modifier = Modifier.testTag("project-picker-name"))
                     ListNote(stringResource(R.string.project_name_hint))
-                    if (context.failed) ListNote(stringResource(R.string.project_failed))
+                    if (context.failed) ListNote(stringResource(if (context.connectionRequired) R.string.project_connection_required else R.string.project_failed))
                     PrimaryButton(stringResource(R.string.save), onClick = {
                         context.actions.create(ProjectDraft(name)) { onPick(it.localId); onDismiss() }
                     }, enabled = ProjectRules.validName(name, context.projects) && context.projects.size < ProjectRules.MAX_PROJECTS,

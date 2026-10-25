@@ -37,7 +37,7 @@ sealed interface BackupStatus {
     data class Failed(val reason: BackupFailure) : BackupStatus
 }
 
-enum class BackupFailure { WRITE, READ, NOT_HELM, TOO_MANY }
+enum class BackupFailure { WRITE, READ, NOT_HELM, TOO_MANY, PROJECT_LIMIT, CONNECTION, PROJECT }
 
 /**
  * The Backup page: save the plan on this phone to a file, share it, or restore one; when the last backup was made,
@@ -81,6 +81,9 @@ private fun BackupResult(status: BackupStatus) {
             BackupFailure.READ -> stringResource(R.string.backup_read_failed)
             BackupFailure.NOT_HELM -> stringResource(R.string.backup_not_helm)
             BackupFailure.TOO_MANY -> pluralStringResource(R.plurals.backup_too_many, PlanBackup.MAX_TASKS, PlanBackup.MAX_TASKS)
+            BackupFailure.PROJECT_LIMIT -> stringResource(R.string.project_restore_limit)
+            BackupFailure.CONNECTION -> stringResource(R.string.project_connection_required)
+            BackupFailure.PROJECT -> stringResource(R.string.project_failed)
         }
     }
     ListRow(

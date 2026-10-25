@@ -70,7 +70,7 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
             if (context.failed) ListNote(stringResource(R.string.project_failed))
             if (ordering) TextAction(stringResource(R.string.project_reorder_done), { ordering = false })
             ListGroup(null, active.map { project -> @Composable {
-                val counts = projectCounts(state.tasks.filter { it.projectLocalId == project.localId }, state.today)
+                val counts = projectCounts(state.tasks.filter { it.projectId == project.localId }, state.today)
                 ListRow(project.name, "project-row-${project.localId}", value = counts.open.toString(),
                     note = stringResource(R.string.project_counts, counts.open, counts.overdue),
                     leadingContent = { ProjectMark(project) }, valueColor = if (counts.overdue > 0) palette.danger else palette.textMuted,
@@ -78,7 +78,7 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
                     longClickLabel = stringResource(R.string.project_edit),
                     trailing = if (ordering) { { ProjectReorder(project, context.actions) } } else null)
             } } + listOf<@Composable () -> Unit>({
-                val counts = projectCounts(state.tasks.filter { it.projectLocalId == null }, state.today)
+                val counts = projectCounts(state.tasks.filter { it.projectId == null }, state.today)
                 ListRow(stringResource(R.string.project_no_project), "project-row-none", value = counts.open.toString(),
                     leadingContent = { ProjectMark(null) }, valueColor = if (counts.overdue > 0) palette.danger else palette.textMuted,
                     note = stringResource(R.string.project_counts, counts.open, counts.overdue), onClick = { onProject(null) })

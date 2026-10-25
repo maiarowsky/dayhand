@@ -15,7 +15,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProjectsTest {
-    private fun project(id: String, name: String = id, archived: Boolean = false) = Project(id, name = name, position = 0.0,
+    private fun project(id: String, name: String = id, archived: Boolean = false) = Project(id, serverId = id, name = name, position = 0.0,
         archivedAt = if (archived) 1 else null, createdAt = 0, updatedAt = 0)
     private fun task(id: String, due: String? = null) = Task(id, title = id, dueDate = due, createdAt = 0, updatedAt = 0)
 
@@ -44,6 +44,19 @@ class ProjectsTest {
         assertEquals("done-55", sections.done.first().localId)
     }
 
+    @Test fun projectScopesResolveDependenciesBeforeFiltering() {
+        val dependency = task("dependency").copy(serverId = "dep-server", projectId = "other")
+        val waiting = task("waiting").copy(projectId = "home", labels = listOf("phone"), dependsOn = listOf("dep-server"))
+        val tasks = listOf(dependency, waiting)
+        val projectState = dev.helm.planner.ui.projects.projectUiState(tasks, emptyList(), "home", null, "2026-10-23", "UTC")
+        assertEquals(listOf(waiting), projectState.tasks)
+        assertEquals(1, projectState.blocked[waiting.localId]?.waitingOn)
+        val labelState = dev.helm.planner.ui.projects.projectUiState(tasks, emptyList(), null, "phone", "2026-10-23", "UTC")
+        assertEquals(1, labelState.blocked[waiting.localId]?.waitingOn)
+        val noProject = dev.helm.planner.ui.projects.projectUiState(listOf(dependency, waiting.copy(projectId = null)), emptyList(), null, null, "2026-10-23", "UTC")
+        assertEquals(1, noProject.blocked[waiting.localId]?.waitingOn)
+    }
+
     @Test fun sharedProjectQuickAddCases() {
         val cases = listOf(File("../../linux/tests/cases/quickadd-project.json"), File("../linux/tests/cases/quickadd-project.json"))
             .first { it.exists() }
@@ -59,7 +72,7 @@ class ProjectsTest {
             val line = c.getValue("line").jsonPrimitive.content
             val parsed = QuickAdd.parse(line, now, timezone, projects)
             assertEquals(line, c.getValue("title").jsonPrimitive.content, parsed.title)
-            assertEquals(line, c["projectId"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content, parsed.projectLocalId)
+            assertEquals(line, c["projectId"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content, parsed.projectId)
             assertEquals(line, c["dueDate"]?.jsonPrimitive?.content, parsed.`when`?.date)
             assertEquals(line, c["dueTime"]?.jsonPrimitive?.content, parsed.`when`?.time)
         }

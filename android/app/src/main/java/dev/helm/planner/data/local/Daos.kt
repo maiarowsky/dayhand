@@ -57,9 +57,6 @@ interface ProjectDao {
     @Upsert
     suspend fun upsert(projects: List<Project>)
 
-    @Query("UPDATE projects SET serverId = :serverId WHERE localId = :localId")
-    suspend fun setServerId(localId: String, serverId: String)
-
     @Query("DELETE FROM projects WHERE localId IN (:ids)")
     suspend fun delete(ids: List<String>)
 

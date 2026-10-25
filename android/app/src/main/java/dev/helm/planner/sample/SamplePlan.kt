@@ -63,7 +63,7 @@ object SamplePlan {
                 title = text(title),
                 dueDate = day?.toString(),
                 dueTime = time,
-                projectLocalId = labels.firstOrNull()?.let(::projectId),
+                projectId = labels.firstOrNull()?.let(::projectId),
                 createdAt = now - (20 - n) * MINUTE,
                 updatedAt = now,
             )

@@ -48,4 +48,7 @@
     <string name="project_color_pink">Rose</string>
     <string name="project_color_brown">Brun</string>
     <string name="project_color_gray">Gris</string>
+    <string name="project_connection_required">Connexion au serveur requise</string>
+    <string name="project_replace_count">Projets supprimés de ce téléphone : %1$d (avec leurs notes).</string>
+    <string name="project_restore_limit">La sauvegarde et le téléphone dépassent la limite de 200 projets. Supprimez d’abord un projet.</string>
 </resources>

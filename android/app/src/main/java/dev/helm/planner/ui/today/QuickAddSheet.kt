@@ -82,7 +82,7 @@ object QuickAddTags {
 fun QuickAddSheet(
     timezone: String,
     onDismiss: () -> Unit,
-    onSave: (title: String, dueDate: String, dueTime: String?, note: String?, projectLocalId: String?) -> Unit,
+    onSave: (title: String, dueDate: String, dueTime: String?, note: String?, projectId: String?) -> Unit,
     now: () -> Long = System::currentTimeMillis,
     defaultProjectId: String? = null,
 ) {
@@ -107,7 +107,7 @@ fun QuickAddSheet(
     val today = LocalDate.parse(HelmDates.localDate(referenceTime, timezone))
     val selectedDay = day ?: today.toString()
     val parsed = QuickAdd.parse(title, referenceTime, timezone, projects)
-    val selectedProject = if (pickedProject) projectId else parsed.projectLocalId ?: projectId
+    val selectedProject = if (pickedProject) projectId else parsed.projectId ?: projectId
     val canSave = title.isNotBlank() && (selectedProject == null || projects.any { it.localId == selectedProject && it.selectable })
     val input = parsed.takeIf { it.`when` != null && !picked }
     val read = input?.takeIf { !keep }
@@ -117,7 +117,7 @@ fun QuickAddSheet(
         val submitted = QuickAdd.parse(title, submittedAt, timezone, projects, readDate = !keep && !picked)
         val trimmedNote = note.trim().ifEmpty { null }
         val due = submitted.`when`
-        val project = if (pickedProject) projectId else submitted.projectLocalId ?: projectId
+        val project = if (pickedProject) projectId else submitted.projectId ?: projectId
         if (canSave && submitted.title.isNotBlank()) {
             onSave(submitted.title, due?.date ?: day ?: HelmDates.localDate(submittedAt, timezone), due?.time ?: time, trimmedNote, project)
         }

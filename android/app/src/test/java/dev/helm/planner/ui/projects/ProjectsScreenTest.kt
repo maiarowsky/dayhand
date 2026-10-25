@@ -8,6 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -42,9 +45,9 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34], application = Application::class, qualifiers = "en")
 class ProjectsScreenTest {
     @get:Rule val compose = createComposeRule()
-    private val project = Project("home", name = "Home", color = "amber", position = 0.0, createdAt = 0, updatedAt = 0)
+    private val project = Project("home", serverId = "home", name = "Home", color = "amber", position = 0.0, createdAt = 0, updatedAt = 0)
     private val archived = project.copy(localId = "old", name = "Old", archivedAt = 1)
-    private val task = Task("task", title = "Milk", projectLocalId = "home", dueDate = "2026-10-22", labels = listOf("phone"), createdAt = 0, updatedAt = 0)
+    private val task = Task("task", title = "Milk", projectId = "home", dueDate = "2026-10-22", labels = listOf("phone"), createdAt = 0, updatedAt = 0)
     private val projects = listOf(project, archived)
     private var picked: String? = "not-picked"
 
@@ -53,14 +56,14 @@ class ProjectsScreenTest {
         CompositionLocalProvider(LocalProjects provides ProjectUiContext(projects = projects, pickTask = { selecting = it })) {
             HelmTheme {
                 content()
-                selecting?.let { ProjectPickerSheet(it.projectLocalId, onDismiss = { selecting = null }, onPick = { picked = it }) }
+                selecting?.let { ProjectPickerSheet(it.projectId, onDismiss = { selecting = null }, onPick = { picked = it }) }
             }
         }
     }
 
     @Test fun projectsListHasCountsNoProjectLabelsArchiveAndTrash() {
         var opened: String? = "none"
-        compose.setContent { Host { ProjectsScreen(ProjectsUiState(projects, listOf(task, task.copy(localId = "loose", projectLocalId = null)), "2026-10-23", "UTC", 0),
+        compose.setContent { Host { ProjectsScreen(ProjectsUiState(projects, listOf(task, task.copy(localId = "loose", projectId = null)), "2026-10-23", "UTC", 0),
             onProject = { opened = it }, onLabel = {}, onTrash = {}, onSettings = {}) } }
         compose.onNodeWithTag("project-row-home").assertTextContains("1", substring = true).performClick()
         assertEquals("home", opened)
@@ -74,7 +77,7 @@ class ProjectsScreenTest {
     @Test fun projectSwitchesBetweenListAndFilteredBoardAndFabKeepsProject() {
         var added: String? = null
         val actions = object : TodayActions {
-            override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) { added = "$title:$projectLocalId" }
+            override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) { added = "$title:$projectId" }
         }
         compose.setContent { Host { ProjectScreen(ProjectUiState(project, "home", null, listOf(task), "2026-10-23", "UTC"), actions, object : BoardActions {}, {}) } }
         compose.onNodeWithTag("project-task-list").assertIsDisplayed()
@@ -131,6 +134,55 @@ class ProjectsScreenTest {
         compose.onNodeWithText("Move to project…").performClick()
         compose.onNodeWithTag("project-pick-none").performClick()
         assertNull(picked)
+    }
+
+    @Test fun labelAndNoProjectScopesNeverOfferABoard() {
+        var label by mutableStateOf<String?>("phone")
+        compose.setContent { Host { ProjectScreen(ProjectUiState(null, null, label, listOf(task), "2026-10-23", "UTC"),
+            object : TodayActions {}, object : BoardActions {}, {}) } }
+        compose.onNodeWithTag("project-list-tab").assertDoesNotExist()
+        compose.onNodeWithTag("project-board-tab").assertDoesNotExist()
+        compose.runOnIdle { label = null }
+        compose.onNodeWithTag("project-board-tab").assertDoesNotExist()
+        compose.onNodeWithTag("project-task-list").assertIsDisplayed()
+    }
+
+    @Test fun searchDisappearingAtEightProjectsClearsTheActiveFilter() {
+        var choices by mutableStateOf((0..8).map { project.copy(localId = "p$it", serverId = "p$it", name = "Project $it") })
+        compose.setContent { CompositionLocalProvider(LocalProjects provides ProjectUiContext(choices)) {
+            HelmTheme { ProjectPickerSheet(null, {}, {}) }
+        } }
+        compose.onNodeWithTag("project-search").performTextInput("Project 0")
+        compose.onNodeWithTag("project-pick-p1").assertDoesNotExist()
+        compose.runOnIdle { choices = choices.take(8) }
+        compose.onNodeWithTag("project-search").assertDoesNotExist()
+        compose.onNodeWithTag("project-pick-p1").assertExists()
+        compose.onNodeWithTag("project-pick-p7").assertExists()
+    }
+
+    @Test fun everyTodayRepresentationAndBoardKeepDotAlongsideEmoji() {
+        val marked = project.copy(icon = "🥐")
+        compose.setContent { CompositionLocalProvider(LocalProjects provides ProjectUiContext(listOf(marked))) { HelmTheme {
+            androidx.compose.foundation.layout.Column {
+                val actions = object : TodayActions {}
+                val day = LocalDate.parse("2026-10-23")
+                dev.helm.planner.ui.today.TodayRow(task, day, actions)
+                dev.helm.planner.ui.today.OverdueRow(task, day, actions)
+                dev.helm.planner.ui.today.NowCard(task, day, actions)
+                dev.helm.planner.ui.today.DoneRow(task, actions)
+                dev.helm.planner.ui.board.BoardCard(task, day, object : BoardActions {}, dev.helm.planner.ui.board.BoardDragState())
+            }
+        } } }
+        compose.onAllNodesWithTag("project-dot-home", useUnmergedTree = true).assertCountEquals(5)
+        compose.onAllNodesWithText("🥐", useUnmergedTree = true).assertCountEquals(5)
+    }
+
+    @Test fun offlineProjectMessageIsVisibleInTheSharedPicker() {
+        compose.setContent { CompositionLocalProvider(LocalProjects provides ProjectUiContext(failed = true, connectionRequired = true)) {
+            HelmTheme { ProjectPickerSheet(null, {}, {}) }
+        } }
+        compose.onNodeWithTag("project-picker-new").performClick()
+        compose.onNodeWithText("Requires a connection to the server").assertExists()
     }
 
     @Test fun pickerCreatesAProjectInPlace() {

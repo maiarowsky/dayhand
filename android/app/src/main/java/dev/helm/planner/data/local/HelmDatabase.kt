@@ -13,7 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 /**
  * Version 2 adds repeat, labels, links and the trash to tasks, and the cached change history; version 3 the
  * checklist and the task's own reminders; version 4 the agent work: acceptance criteria, proof and the claim; version 5
- * the task's number, its plan, its dependencies and the blocked reason; version 6 adds projects and local project references.
+ * the task's number, its plan, its dependencies and the blocked reason; version 6 adds projects and server-confirmed task project references.
  */
 @Database(
     entities = [Task::class, OutboxOp::class, TaskEvent::class, Project::class],

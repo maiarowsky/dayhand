@@ -156,7 +156,20 @@ class SettingsViewModel(
                 if (read.problem == BackupProblem.TOO_MANY) BackupFailure.TOO_MANY else BackupFailure.NOT_HELM,
             )
             is BackupRead.Plan -> {
-                val result = container.repository.restore(read.tasks, read.projects)
+                val result = try { container.repository.restore(read.tasks, read.projects) }
+                catch (_: dev.helm.planner.data.RestoreCapacityExceeded) {
+                    backup.value = BackupStatus.Failed(BackupFailure.PROJECT_LIMIT)
+                    return@launch
+                } catch (_: dev.helm.planner.data.ProjectConnectionRequired) {
+                    backup.value = BackupStatus.Failed(BackupFailure.CONNECTION)
+                    return@launch
+                } catch (_: dev.helm.planner.data.ProjectCommandRefused) {
+                    backup.value = BackupStatus.Failed(BackupFailure.PROJECT)
+                    return@launch
+                } catch (_: IllegalArgumentException) {
+                    backup.value = BackupStatus.Failed(BackupFailure.NOT_HELM)
+                    return@launch
+                }
                 val settings = read.settings?.takeIf { container.settings.current().isLocal }
                 settings?.let {
                     setSummaryTime(it.summaryTime)
@@ -171,11 +184,12 @@ class SettingsViewModel(
     private suspend fun backupFile(): Pair<String, String> {
         val s = container.settings.current()
         val now = clock()
+        val snapshot = container.repository.backupSnapshot()
         val content = PlanBackup.write(
-            container.repository.backupTasks(),
+            snapshot.tasks,
             BackupSettings(s.timezone, s.summaryTime, s.reminderMinutes),
             now,
-            container.repository.backupProjects(),
+            snapshot.projects,
         )
         return PlanBackup.fileName(HelmDates.localDate(now, s.timezone)) to content
     }

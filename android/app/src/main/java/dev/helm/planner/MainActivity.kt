@@ -196,8 +196,8 @@ private fun HelmRoot(
                 object : TodayActions by viewModel {
                     override fun openSettings() = open(Route.SETTINGS)
                     override fun openTask(localId: String) = open(Route.task(localId))
-                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
-                        viewModel.add(title, dueDate, dueTime, note, projectLocalId)
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) {
+                        viewModel.add(title, dueDate, dueTime, note, projectId)
                         timeSet(dueTime)
                     }
                 }
@@ -239,8 +239,8 @@ private fun HelmRoot(
                     override fun openSettings() = open(Route.SETTINGS)
                     override fun openTask(localId: String) = open(Route.task(localId))
                     override fun openTrash() = open(Route.TRASH)
-                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
-                        viewModel.add(title, dueDate, dueTime, note, projectLocalId)
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) {
+                        viewModel.add(title, dueDate, dueTime, note, projectId)
                         timeSet(dueTime)
                     }
                 }
@@ -261,15 +261,15 @@ private fun HelmRoot(
             val state by model.state.collectAsStateWithLifecycle()
             val todayActions = remember(model) { object : TodayActions by model.todayActions {
                 override fun openTask(localId: String) = open(Route.task(localId))
-                override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
-                    model.todayActions.add(title, dueDate, dueTime, note, projectLocalId)
+                override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) {
+                    model.todayActions.add(title, dueDate, dueTime, note, projectId)
                     timeSet(dueTime)
                 }
             } }
             val boardActions = remember(model) { object : BoardActions by model.boardActions {
                 override fun openTask(localId: String) = open(Route.task(localId))
-                override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) =
-                    todayActions.add(title, dueDate, dueTime, note, projectLocalId)
+                override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) =
+                    todayActions.add(title, dueDate, dueTime, note, projectId)
             } }
             state?.let { ProjectScreen(it, todayActions, boardActions, onBack = back, bottomBar = { MainTabs(Route.PROJECTS, selectTab) }) }
         }

@@ -92,7 +92,7 @@ class SamplePlanTest {
         val groceries = plan().single { it.title == "GROCERIES" }
         assertEquals(listOf("MILK", "EGGS", "BREAD", "COFFEE"), groceries.checklist.map { it.title })
         val projects = SamplePlan.projects(now) { it.name }
-        assertEquals("HOME", projects.single { it.localId == groceries.projectLocalId }.name)
+        assertEquals("HOME", projects.single { it.localId == groceries.projectId }.name)
         assertTrue(groceries.labels.isEmpty())
         assertEquals(1, groceries.checklist.count { it.done })
     }

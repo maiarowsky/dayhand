@@ -4,7 +4,7 @@ package dev.helm.planner.auth
  * Connecting to [newServer] would replace the plan of [oldServer] on the phone: its [tasks] go from the phone and
  * its [pending] changes are never sent.
  */
-data class PlanReplace(val oldServer: String, val newServer: String, val tasks: Int, val pending: Int)
+data class PlanReplace(val oldServer: String, val newServer: String, val tasks: Int, val pending: Int, val projects: Int = 0)
 
 /**
  * The plan on a phone belongs to the server it was last paired with, also after Disconnect (the changes made then
@@ -14,11 +14,11 @@ data class PlanReplace(val oldServer: String, val newServer: String, val tasks: 
  */
 object PlanSwitch {
     /** What pairing with [address] would remove, or null when it removes nothing and needs no question. */
-    fun check(planServer: String?, address: String, tasks: Int, pending: Int): PlanReplace? {
+    fun check(planServer: String?, address: String, tasks: Int, pending: Int, projects: Int = 0): PlanReplace? {
         val old = planServer ?: return null
         val new = PairingInput.normalizeServerUrl(address) ?: return null
-        if (sameServer(old, new) || (tasks == 0 && pending == 0)) return null
-        return PlanReplace(old, new, tasks, pending)
+        if (sameServer(old, new) || (tasks == 0 && pending == 0 && projects == 0)) return null
+        return PlanReplace(old, new, tasks, pending, projects)
     }
 
     /** Two HTTP actions URLs name one server; the host's case does not matter. */

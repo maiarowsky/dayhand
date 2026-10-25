@@ -48,4 +48,7 @@
     <string name="project_color_pink">ピンク</string>
     <string name="project_color_brown">茶</string>
     <string name="project_color_gray">グレー</string>
+    <string name="project_connection_required">サーバーへの接続が必要です</string>
+    <string name="project_replace_count">この端末から削除されるプロジェクト：%1$d（メモを含む）。</string>
+    <string name="project_restore_limit">バックアップと端末の合計が200プロジェクトの上限を超えます。先にプロジェクトを削除してください。</string>
 </resources>

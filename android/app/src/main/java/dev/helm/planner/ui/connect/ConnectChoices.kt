@@ -67,6 +67,7 @@ internal fun ReplacePlanDialog(replace: PlanReplace, onDismiss: () -> Unit, onCo
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val tasks = pluralStringResource(R.plurals.replace_tasks, replace.tasks, replace.tasks)
             Text(stringResource(R.string.replace_text, old, new, tasks), style = helmType.body)
+            if (replace.projects > 0) Text(stringResource(R.string.project_replace_count, replace.projects), style = helmType.body)
             if (replace.pending > 0) {
                 val changes = pluralStringResource(R.plurals.replace_changes, replace.pending, replace.pending)
                 Text(stringResource(R.string.replace_pending, changes, old), style = helmType.body)

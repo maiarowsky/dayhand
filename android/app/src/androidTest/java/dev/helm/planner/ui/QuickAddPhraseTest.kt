@@ -71,7 +71,7 @@ class QuickAddPhraseTest {
     fun tearDown() = db.close()
 
     private val actions = object : TodayActions {
-        override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
+        override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) {
             runBlocking { repository.add(title, dueDate, dueTime, note) }
         }
     }

@@ -55,12 +55,13 @@ class MigrationTest {
             assertEquals("Plan", task.plan)
             assertEquals("Blocked", task.blockedReason)
             assertEquals(42L, task.ref)
-            assertNull(task.projectLocalId)
+            assertNull(task.projectId)
             assertNull(task.serverUpdatedAt)
             assertTrue(db.projects().all().isEmpty())
             assertEquals(listOf("one", "two"), db.outbox().all().map { it.opId })
-            assertTrue(db.outbox().all().all { it.projectLocalId == null })
-            val project = TaskRepository(db).projectStore.add("After upgrade")
+            assertEquals(listOf("app:update", "app:complete"), db.outbox().all().map { it.mutation })
+            val project = dev.helm.planner.data.local.Project("server-project", serverId = "server-project", name = "After upgrade", position = 0.0, createdAt = 1, updatedAt = 1)
+            db.projects().upsert(listOf(project))
             assertEquals("After upgrade", db.projects().byLocalId(project.localId)?.name)
         } finally { db.close(); context.deleteDatabase(name) }
     }

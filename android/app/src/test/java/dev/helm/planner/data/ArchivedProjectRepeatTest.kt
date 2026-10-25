@@ -43,17 +43,17 @@ class ArchivedProjectRepeatTest {
         val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
         try {
             val today = LocalDate.now().toString()
-            val repo = TaskRepository(db, repeatsOnPhone = { today })
+            val remote = HttpTaskRemote(url, requireNotNull(token))
+            val repo = TaskRepository(db, repeatsOnPhone = { today }, projectRemote = { remote })
             val name = "Archived ${UUID.randomUUID().toString().take(8)}"
             val p = repo.projectStore.add(name)
             val t = repo.add(name, today, null, null, p.localId)
             repo.setRepeat(t.localId, RepeatRule(RepeatEvery.DAY))
             repo.projectStore.archive(p.localId, true)
             repo.complete(t.localId)
-            assertEquals("The next occurrence exists on the phone", 2, db.tasks().all().size)
-            val next = db.tasks().all().single { it.localId != t.localId }
+            val next = db.tasks().all().single { it.localId != t.localId && it.projectId == p.serverId }
+            assertEquals("The next occurrence exists on the phone", 2, db.tasks().all().count { it.projectId == p.serverId })
             repo.rename(next.localId, "Edited before reconnect")
-            val remote = HttpTaskRemote(url, requireNotNull(token))
             var lost = false
             val sent = mutableListOf<JsonObject>()
             val sender = MutationSender { path, args ->
@@ -66,7 +66,7 @@ class ArchivedProjectRepeatTest {
             }
             val processor = OutboxProcessor(RoomOutboxStore(db), sender, queries = remote)
             assertEquals(DrainResult.RETRY_LATER, processor.drain())
-            assertEquals("The next occurrence must not disappear while reconnecting", 2, db.tasks().all().size)
+            assertEquals("The next occurrence must not disappear while reconnecting", 2, db.tasks().all().count { it.projectId == p.serverId })
             assertEquals(DrainResult.DONE, processor.drain())
             assertTrue(lost)
             assertTrue(db.outbox().all().isEmpty())
