@@ -23,8 +23,8 @@ once and is signed `cli` in the history. Installing it: [Install](install.md#com
 | Try a change without saving it | add `--dry-run` to the command |
 
 Tasks are referred to by number (`3` or `#3`), `now` for the now task, or their id. Dates are English
-phrases in your time zone from the server settings ([dates](cli.md#topic-dates)). Changing three or more
-tasks at once asks first (or needs `--yes` in a script). Every command and option:
+phrases in your time zone from the server settings ([dates](cli.md#topic-dates)). Bulk changes
+[may ask for confirmation](cli.md#prompts) (or require `--yes` in a script). Every command and option:
 [command reference](cli.md), also as `dayhand help <command>` and the manual page `man/dayhand.1`.
 
 ## dayhand ui
@@ -53,15 +53,14 @@ The keys most people need:
 | `e`, `E` | Edit title, day, labels and resume note; title and note in `$EDITOR` |
 | `m` | Move: `tomorrow`, `fri 9am`, `none` |
 | `d`, `u`, `r` | To the trash (asks first), undo, restore |
-| `/` | Filter by title, `#label`, note or `#42` |
+| `/` | Narrow the task list ([filter syntax](cli.md#topic-ui)) |
 | `?`, `q` | Every key; quit |
 
 The full list is `?` in the app, `dayhand help ui` and [the reference](cli.md#topic-ui). The layout and
 keys follow vim and lazygit.
 
-- **Quick add** (`a`) reads a date phrase at the end or the start of the line and `#labels` anywhere. The
-  line below shows how it was read before `Enter` adds it; `no date` adds no day, and quotes keep words as
-  text.
+- **Quick add** (`a`) previews the line before `Enter` adds it. Date phrases, labels and project tokens
+  follow [the quick-add rules](cli.md#topic-ui).
 - **The mouse** selects and scrolls. Mouse reporting stops the terminal's own text selection: hold
   `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`.
 - **Refresh**: what is on screen is read again every 12 seconds (`--interval 10` to `300`), within the

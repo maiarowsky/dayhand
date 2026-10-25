@@ -1,4 +1,4 @@
-// Task commands: verbs at the top level, one MCP tool each (see docs/cli.md).
+// Task commands: verbs at the top level (see docs/cli.md).
 import { usageError } from "../core/exit.js";
 import { requireProjects } from "../projects.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";

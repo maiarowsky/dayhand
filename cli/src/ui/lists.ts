@@ -10,7 +10,7 @@ export type Section = { key: "now" | "overdue" | "today" | "done"; label: string
 export type Column = { key: "todo" | "doing" | "done"; label: string; tasks: Task[] };
 export type Day = { date: string; isToday: boolean; tasks: Task[] };
 
-/** Title, labels, notes or the number contain the text, in any case. */
+/** Project filters must preserve quick add's canonical-name precedence. */
 export function matches(task: Task, filter: string, projects: Project[] = []): boolean {
   const tokens = filter.trim().split(/\s+/);
   const projectMatches = tokens.filter((token) => token.startsWith("+")).every((token) => {

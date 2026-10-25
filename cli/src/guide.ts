@@ -4,9 +4,9 @@
 export const AGENT_RULES: string[] = [
   "Pass --json and read stdout; on failure stdout is empty and stderr has one line {\"error\":{\"code\",\"message\",\"exitCode\",\"retryable\",\"clientId\"}}.",
   "Refer to tasks by number: #42 or 42 (stable, never reused), or now for the now task.",
-  "Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun), 6 refused by the task's state (conflict: another agent holds it, pick another task; precondition_failed: meet the acceptance criteria and give --summary), 7 refused by the owner (agents_paused: stop changing things and wait; forbidden: do not retry; approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>).",
+  "Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun), 6 state refusal (see dayhand --help for preconditions), 7 refused by the owner (agents_paused: stop changing things and wait; forbidden: do not retry; approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>).",
   "After exit 5 the change may have been applied: rerun the same command line with --client-id <the clientId from the error>; it is never applied twice.",
-  "dayhand never prompts without a terminal; changing 3 or more tasks at once needs --yes.",
+  "dayhand never prompts without a terminal; bulk changes may need --yes (dayhand <command> --help).",
   "Dates are English phrases in the user's time zone: today, tomorrow, fri 14:00, in 3 days, 2026-10-23. Check one with dayhand when \"<phrase>\" or add --dry-run.",
   "Before stopping work on a task, record where you are: dayhand now <ref> --note \"<next step>\".",
   "Working on a task alongside other agents: dayhand claim <ref> first (exit 6 conflict: pick another task), dayhand renew <ref> while you work, dayhand release <ref> --note \"<checkpoint>\" when you stop.",

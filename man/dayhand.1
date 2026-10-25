@@ -850,7 +850,7 @@ Destination for tasks without a project in the file; must exist (backend 0.13.0)
 .B dayhand backlog import <dir>
 Import a Backlog.md folder: each task file becomes a task; files imported before are skipped
 .br
-Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non\-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog\-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with \-\-approval after the owner allows it. \-\-project names the destination and creates it if missing. With a new project, \-\-dry\-run validates its creation and the files separately, without assigning a preview id. \-\-dry\-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
+Reads the Markdown files below <dir> (and the config.yml with the project's statuses); the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non\-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog\-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with \-\-approval after the owner allows it. \-\-project names the destination and creates it if missing in a separate call before importing; that project remains if the import fails. With a new project, \-\-dry\-run validates its creation and the files separately, without assigning a preview id. \-\-dry\-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
 .RS
 .TP
 .B \-\-project <name>
@@ -961,7 +961,7 @@ Print the shell completion script for bash, zsh, fish or powershell (dayhand hel
 .B dayhand ui
 Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)
 .br
-Quick add recognizes +project (hyphens may replace spaces) and #labels; unknown +tokens stay in the title. The / filter accepts an exact +project token in any case. Projects need backend 0.13.0. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or \-\-lang) when it is one of en, pl, de, es, fr, pt\-BR, ja, zh\-Hans, else English; date phrases stay English.
+Quick\-add and project\-filter syntax: dayhand help ui. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or \-\-lang) when it is one of en, pl, de, es, fr, pt\-BR, ja, zh\-Hans, else English; date phrases stay English.
 .RS
 .TP
 .B \-\-view <view>
@@ -977,7 +977,7 @@ Leave the mouse to the terminal (for selecting text)
 The screens' language: en, pl, de, es, fr, pt\-BR, ja, zh\-Hans (default: DAYHAND_LANG, then the locale)
 .RE
 .SH GLOBAL OPTIONS
-Valid before or after the command.
+Valid before or after the command. Command\-specific options take precedence; see the command's description.
 .TP
 .B \-\-json
 Print the tool's structuredContent as JSON; errors as JSON on stderr
@@ -1023,7 +1023,7 @@ Help for dayhand or for a command; dayhand help <topic> for a topic.
 .SH JSON OUTPUT
 \-\-json (or DAYHAND_FORMAT=json) prints the MCP tool's structuredContent exactly as an MCP client receives it. Fields may be added in a minor version; they are never removed or retyped within a major version. Errors go to standard error as one line: {"error":{"code","message","exitCode","retryable","clientId",...}}; standard output then stays empty. \-\-plain prints tab\-separated rows without headers.
 .PP
-Task \-\-plain columns remain ref, status, dueDate, dueTime, title, labels. \-\-fields project,projectId selects the resolved project name and id. Human output shows +Project before #labels; resolving names costs one list_projects read, also with \-\-fields project.
+Project fields and human name resolution: see docs/cli.md, JSON output and Human output.
 .SH EXIT STATUS
 .TP
 .B 0
@@ -1039,13 +1039,13 @@ Usage: unknown command or flag, bad value or date, \-\-yes missing, broken confi
 Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one
 .TP
 .B 4
-Not found: no such task (#n), device or now task
+Not found: no such task (#n), project, device or now task
 .TP
 .B 5
 Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same \-\-client\-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names
 .TP
 .B 6
-Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed)
+Refused by the current state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met, the proof has no summary, or a non\-empty project has no \-\-move\-tasks\-to destination (precondition_failed)
 .TP
 .B 7
 Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with \-\-approval <approvalId>)
@@ -1199,10 +1199,13 @@ Shell completion (dayhand completion <shell>)
   PowerShell   dayhand completion powershell | Out\-String | Invoke\-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
-numbers with their titles, labels, profiles and date words. Task numbers and
-labels come from one list_all call, cached for 60 seconds in the cache folder
-(~/.cache/dayhand, ~/Library/Caches/dayhand or %LOCALAPPDATA%\edayhand\eCache). Completion
-never prompts and prints nothing when it cannot reach the server.
+numbers with their titles, labels, project names, profiles and date words. Task
+hints come from list_all, projects from list_projects; both are cached for 60 seconds
+per server URL and credential in the cache folder (~/.cache/dayhand,
+~/Library/Caches/dayhand or %LOCALAPPDATA%\edayhand\eCache). Completion never prompts;
+server failures omit remote hints but leave local candidates available.
+Bash leaves quoted, escaped or expansion\-containing prefixes unchanged; start
+with an unquoted prefix to complete a project name.
 .RE
 .fi
 .SH UI
@@ -1225,6 +1228,14 @@ The mouse selects and scrolls (\-\-no\-mouse leaves it to the terminal).
 Quick add (a) reads a date phrase at the end or the start of the line, and
 #labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
+With backend 0.13.0 or later, the first recognized +project token selects an
+existing active project. Names match in any case; hyphens may replace spaces
+when unambiguous, but an exact name or id wins. Unknown, ambiguous or archived
+project tokens stay in the title and are marked with ? in the preview.
+
+The / filter accepts exact +project tokens with the same name resolution,
+including archived projects; +Home does not match Home\-office. Remaining text
+searches titles, #labels, notes and task numbers as before.
 
 Move:
   j k  ↓ ↑            Next / previous task

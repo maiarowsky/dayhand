@@ -129,19 +129,19 @@ Without a command, `dayhand` shows Today.
 - `--json` (or `DAYHAND_FORMAT=json`) prints the tool's `structuredContent` exactly as an MCP
   client receives it; schemas are in [schemas/](schemas/). Indented on a terminal, one line in a pipe.
 - Fields may be added in a minor version; they are never removed or retyped within a major version.
-- A list tool returns `{"result": [...]}`. A command given several tasks returns `{"results": [...]}`,
-  one tool result per task. `--fields a,b` keeps only those fields of every task (or of the settings).
+- A list tool returns `{"result": [...]}`. Bulk commands follow the [results schema](schemas/results.schema.json).
+  `--fields a,b` keeps only those fields of every task (or of the settings).
 - `dayhand now` without a task prints `list_today`; `dayhand note <ref>` without text prints `get_task`.
 - A Markdown export's JSON is `{"format":"markdown","content":"…"}`.
 - Errors go to stderr as one line: `{"error":{"code","message","exitCode","retryable","clientId",…}}`
   ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{"warning":{…}}` lines.
 - `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`
   (or the `--fields`); views with sections (Today, board) start each row with the section name.
-- `--fields project,projectId` selects the resolved project name and id. Names require one list_projects read; default JSON is unchanged.
+- `--fields project,projectId` selects the resolved project name and id; see [name resolution](#human-output).
 - `dayhand list` filters (`--project`, `--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)
   run on the backend and keep list_all's shape: `{"result": [...], "total", "nextCursor"}`. With `--limit`, pass
   `nextCursor` as `--cursor` for the next page. A backend older than 0.4.0 has no `total` and `nextCursor`;
-  dayhand then filters its full list itself.
+  dayhand then applies non-project filters to its full list itself.
 - `--dry-run` on a command that changes something prints `{"dryRun":true,"calls":[{"tool","arguments","result"}]}`
   ([schema](schemas/dry-run.schema.json)) with dates resolved. The backend checks each change and returns
   what it would give (`result`) without saving anything; reads still happen. A backend older than 0.4.0
@@ -153,7 +153,9 @@ Tables are aligned by display width; due days read as `today`, `tomorrow`, `yest
 `Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,
 `[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without
 colors or cutting. `dayhand board` shows its columns side by side on terminals 90 columns or wider.
-Projects appear as `+Strona-piekarni` after the title, before `#labels`. Names are resolved with one list_projects read per command.
+Task views show projects as `+Strona-piekarni` after the title, before `#labels`. Resolving task project
+names uses one `list_projects` read when needed, not for default JSON or plain output; explicit
+`--fields project` also resolves names.
 On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options open `$VISUAL`/`$EDITOR`.
 
 ## Exit codes
@@ -164,9 +166,9 @@ On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options ope
 | 1 | Other error (internal) |
 | 2 | Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml |
 | 3 | Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one |
-| 4 | Not found: no such task (#n), device or now task |
+| 4 | Not found: no such task (#n), project, device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
-| 6 | Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed) |
+| 6 | Refused by the current state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met, the proof has no summary, or a non-empty project has no --move-tasks-to destination (precondition_failed) |
 | 7 | Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>) |
 | 130 | Interrupted (Ctrl-C) |
 
@@ -315,10 +317,13 @@ Shell completion (dayhand completion <shell>)
   PowerShell   dayhand completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
-numbers with their titles, labels, profiles and date words. Task numbers and
-labels come from one list_all call, cached for 60 seconds in the cache folder
-(~/.cache/dayhand, ~/Library/Caches/dayhand or %LOCALAPPDATA%\dayhand\Cache). Completion
-never prompts and prints nothing when it cannot reach the server.
+numbers with their titles, labels, project names, profiles and date words. Task
+hints come from list_all, projects from list_projects; both are cached for 60 seconds
+per server URL and credential in the cache folder (~/.cache/dayhand,
+~/Library/Caches/dayhand or %LOCALAPPDATA%\dayhand\Cache). Completion never prompts;
+server failures omit remote hints but leave local candidates available.
+Bash leaves quoted, escaped or expansion-containing prefixes unchanged; start
+with an unquoted prefix to complete a project name.
 ```
 
 ## Topic: ui
@@ -341,6 +346,14 @@ The mouse selects and scrolls (--no-mouse leaves it to the terminal).
 Quick add (a) reads a date phrase at the end or the start of the line, and
 #labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
+With backend 0.13.0 or later, the first recognized +project token selects an
+existing active project. Names match in any case; hyphens may replace spaces
+when unambiguous, but an exact name or id wins. Unknown, ambiguous or archived
+project tokens stay in the title and are marked with ? in the preview.
+
+The / filter accepts exact +project tokens with the same name resolution,
+including archived projects; +Home does not match Home-office. Remaining text
+searches titles, #labels, notes and task numbers as before.
 
 Move:
   j k  ↓ ↑            Next / previous task
@@ -1861,7 +1874,7 @@ dayhand import calendar.ics --format ics --json
 
 Import a Backlog.md folder: each task file becomes a task; files imported before are skipped
 
-Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. --project names the destination and creates it if missing. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. --dry-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
+Reads the Markdown files below <dir> (and the config.yml with the project's statuses); the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. --project names the destination and creates it if missing in a separate call before importing; that project remains if the import fails. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. --dry-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
 
 ```
 dayhand backlog import <dir> [options]
@@ -2055,7 +2068,7 @@ dayhand completion powershell | Out-String | Invoke-Expression
 
 Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)
 
-Quick add recognizes +project (hyphens may replace spaces) and #labels; unknown +tokens stay in the title. The / filter accepts an exact +project token in any case. Projects need backend 0.13.0. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
+Quick-add and project-filter syntax: dayhand help ui. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
 
 ```
 dayhand ui [options]

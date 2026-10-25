@@ -54,11 +54,11 @@ const importCommand: CommandSpec = {
   schema: "backlog-import.schema.json",
   summary: "Import a Backlog.md folder: each task file becomes a task; files imported before are skipped",
   description:
-    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
+    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses); the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
     "A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
     "Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. " +
-    "--project names the destination and creates it if missing. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. " +
+    "--project names the destination and creates it if missing in a separate call before importing; that project remains if the import fails. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. " +
     `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
   args: [{ name: "dir", description: "The backlog folder (backlog/, or one of its folders such as backlog/tasks)", required: true }],
   options: [{ flags: "--project <name>", description: "Assign new tasks to this project, creating it if missing (backend 0.13.0)" }],

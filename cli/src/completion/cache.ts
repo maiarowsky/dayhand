@@ -1,6 +1,6 @@
-// Task numbers, titles and labels for completion: one list_all call, kept for
-// 60 seconds in the cache folder (mode 0600: titles are private). Completion
-// must never hang or print errors, so every failure here means "no candidates".
+// Completion hints contain private task/project data: partition by URL and
+// credential, never URL alone, and keep files owner-readable. Failures must
+// omit remote hints rather than hang completion or print errors.
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
