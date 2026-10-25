@@ -130,8 +130,11 @@ struct SidebarTests {
         #expect(model.trashHeader == "Tasks stay here for \(days) days, then they are deleted for good.")
         model.show(.project(bakery))
         #expect(model.list.overdue.map(\.title) == ["Invoice"] && model.list.noDay.map(\.title) == ["Photos"])
+        #expect(model.listCount == SidebarCounts.Count(open: 2, overdue: 1))
         model.search = "xyz"
         #expect(model.trash.isEmpty && model.trashHeader == "No task matches the search.")
+        #expect(model.list.isEmpty && model.listCount == SidebarCounts.Count(open: 2, overdue: 1))
+        #expect(TaskListView.subtitle(model.listCount) != "Nothing open")
     }
 
     @Test func aTaskDroppedOnAProjectMovesThereAndOnNoProjectLeavesIt() async throws {

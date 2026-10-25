@@ -68,6 +68,17 @@ extension AppModel {
         return sections.overdue.isEmpty && sections.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today.")
     }
 
+    /// The open and overdue tasks of the place's list as in the sidebar, so a search hiding them leaves the count.
+    var listCount: SidebarCounts.Count {
+        switch place.filter {
+        case .all: return counts.all
+        case .noProject: return counts.noProject
+        case .project(let id): return counts.project(id)
+        case .label(let name): return counts.label(name)
+        case nil: return SidebarCounts.Count()
+        }
+    }
+
     /// The line over the trash: how long tasks stay there, or that it is empty, unless a search hides what is in it.
     var trashHeader: String {
         let days = TaskItem.trashRetentionDays

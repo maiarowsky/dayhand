@@ -8,19 +8,16 @@ struct TrashView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            StatusLine()
-            List(selection: $model.selection) {
-                Section {
-                    ForEach(model.trash) { task in
-                        TrashRow(task: task, today: model.today).tag(task.localId)
-                    }
-                } header: {
-                    Text(model.trashHeader)
+        List(selection: $model.selection) {
+            Section {
+                ForEach(model.trash) { task in
+                    TrashRow(task: task, today: model.today).tag(task.localId)
                 }
+            } header: {
+                Text(model.trashHeader)
             }
-            .listStyle(.sidebar)
         }
+        .listStyle(.sidebar)
         .navigationTitle(tr("Trash"))
     }
 }

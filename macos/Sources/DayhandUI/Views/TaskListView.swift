@@ -55,7 +55,7 @@ struct TaskListView: View {
 
     @ViewBuilder private var header: some View {
         let title = PlaceText.title(model.place, model: model)
-        let subtitle = Self.subtitle(model.list)
+        let subtitle = Self.subtitle(model.listCount)
         if case .project(let id) = model.place, let project = model.project(id) {
             PlaceHeader(title: title, subtitle: project.isArchived ? Formatting.pair(tr("Archived project"), subtitle) : subtitle) {
                 ProjectMark(project: project, size: 12)
@@ -86,9 +86,9 @@ struct TaskListView: View {
     }
 
     /// "5 open · 2 overdue", "5 open", or "Nothing open".
-    static func subtitle(_ s: TaskListSections) -> String {
-        guard s.openCount > 0 else { return tr("Nothing open") }
-        return s.overdue.isEmpty ? tr("\(s.openCount) open") : Formatting.pair(tr("\(s.openCount) open"), tr("\(s.overdue.count) overdue"))
+    static func subtitle(_ count: SidebarCounts.Count) -> String {
+        guard count.open > 0 else { return tr("Nothing open") }
+        return count.overdue == 0 ? tr("\(count.open) open") : Formatting.pair(tr("\(count.open) open"), tr("\(count.overdue) overdue"))
     }
 }
 
