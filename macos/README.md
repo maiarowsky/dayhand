@@ -30,7 +30,7 @@ This version is the basic one (MVP):
   In progress.
 - **Plan**: the place's week, Monday to Sunday, as a grid of the whole day's hours that opens at 08:00, with
   ‹ **This Week** › to move between weeks. A task with a time is a block with its project's colour on the left, its
-  title, project and start time (a task has only a start, so a block is an hour long); tasks within the same hour
+  title, project and start time (a task has only a start, so a block is an hour long); tasks whose blocks overlap
   share the width. Tasks without a time sit at the top of their day (**+n more** past a few). A block opens a popover
   with the status, the day and time, the checklist and **Open Task**, which opens the panel. The **Tasks** drawer
   along the bottom (it folds) holds the place's tasks in the three status columns: drag one onto an hour to plan it
@@ -359,7 +359,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   while it shows the latest, no new tasks in an archived project's place, and the view switcher (Board, Plan, List)
   with its choice kept between launches.
 - **Plan** (`PlanTests`): the week from Monday and moving it, where times sit in the grid and the half hour a point
-  gives, tasks within one hour sharing the width, a short window keeping room for the hours, and a place's active
+  gives, tasks whose blocks overlap sharing the width, a short window keeping room for the hours, and a place's active
   tasks due in the week, narrowed by the search.
 - **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
   classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,

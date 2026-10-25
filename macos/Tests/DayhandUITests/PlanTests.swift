@@ -45,6 +45,11 @@ struct PlanTests {
         #expect(lanes["b"]?.lane == 1 && lanes["b"]?.of == 2)
         #expect(lanes["late"]?.lane == 0 && lanes["late"]?.of == 1)
         #expect(lanes["all day"] == nil)
+
+        let chained = PlanGrid.lanes([task("a", "09:00"), task("b", "09:30"), task("c", "10:00"), task("d", "11:00")])
+        #expect(chained["a"]?.lane == 0 && chained["b"]?.lane == 1 && chained["c"]?.lane == 2)
+        #expect([chained["a"]?.of, chained["b"]?.of, chained["c"]?.of] == [3, 3, 3])
+        #expect(chained["d"]?.lane == 0 && chained["d"]?.of == 1)
     }
 
     @Test func aShortWindowKeepsRoomForTheHours() {

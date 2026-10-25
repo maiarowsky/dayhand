@@ -59,8 +59,8 @@ enum PlanGrid {
         return String(format: "%02d:%02d", minutes / 60, minutes % 60)
     }
 
-    /// Side by side lanes for tasks that start within an hour of each other: each task's lane and the lanes of its
-    /// group, by `localId`.
+    /// Side by side lanes for tasks whose hour blocks overlap: each task's lane and the lanes of its group, by
+    /// `localId`.
     static func lanes(_ tasks: [TaskItem]) -> [String: (lane: Int, of: Int)] {
         let timed = tasks.compactMap { task in task.dueTime.flatMap(offset).map { (task, $0) } }.sorted { $0.1 < $1.1 }
         var result: [String: (lane: Int, of: Int)] = [:]
@@ -70,7 +70,7 @@ enum PlanGrid {
             group = []
         }
         for item in timed {
-            if let first = group.first, item.1 - first.1 >= hourHeight { close() }
+            if let last = group.last, item.1 >= last.1 + hourHeight { close() }
             group.append(item)
         }
         close()
