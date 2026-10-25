@@ -104,7 +104,8 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
             return .applied(body["value"] ?? .object([:]))
         case "error":
             if RemoteJSON.errorCode(body["errorData"]) == "unauthenticated" { return .unauthorized }
-            return .rejected(body["errorMessage"]?.string ?? "error")
+            // A ConvexError carries the server's words in its data; `errorMessage` adds the request id and stack.
+            return .rejected(body["errorData"]?["message"]?.string ?? body["errorMessage"]?.string ?? "error")
         default:
             return .failed("unexpected answer")
         }
