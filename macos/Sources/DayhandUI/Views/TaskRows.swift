@@ -189,7 +189,7 @@ struct TaskMenu: View {
             Button(tr("To Today")) { model.moveToToday(task.localId) }
             Button(tr("To Tomorrow")) { model.moveToTomorrow(task.localId) }
         }
-        if model.showsProjects && !task.inTrash {
+        if model.canMoveToProject(task.localId) {
             Divider()
             Button(tr("Move to Project…")) { model.movingTask = TaskPick(id: task.localId) }
         }

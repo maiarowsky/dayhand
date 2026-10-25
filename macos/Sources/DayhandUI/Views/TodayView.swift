@@ -8,11 +8,7 @@ struct TodayView: View {
     @State private var showDone = false
 
     var body: some View {
-        let s = model.sections
-        let overdue = s.overdue.filter(model.matchesSearch)
-        let now = s.now.flatMap { model.matchesSearch($0) ? $0 : nil }
-        let today = s.today.filter(model.matchesSearch)
-        let done = s.done.filter(model.matchesSearch)
+        let s = model.searchedToday
         VStack(spacing: 0) {
             PlaceHeader(title: tr("Today"), subtitle: DateText.longDay(s.date))
             HealthCard()
@@ -20,41 +16,45 @@ struct TodayView: View {
                 .padding(.horizontal, Metrics.gutter)
                 .padding(.vertical, 8)
             if s.isEmpty && s.done.isEmpty {
-                EmptyToday()
+                if model.search.isEmpty {
+                    EmptyToday()
+                } else {
+                    PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
+                }
             } else {
                 List(selection: $model.selection) {
-                    if !overdue.isEmpty {
+                    if !s.overdue.isEmpty {
                         Section {
-                            ForEach(overdue) { task in
+                            ForEach(s.overdue) { task in
                                 TaskRow(task: task, today: s.date, overdue: true, showsDay: false).tag(task.localId)
                             }
                         } header: {
-                            Text(tr("Overdue (\(overdue.count))")).foregroundStyle(Color.overdue)
+                            Text(tr("Overdue (\(s.overdue.count))")).foregroundStyle(Color.overdue)
                         }
                     }
-                    if let now {
+                    if let now = s.now {
                         Section(tr("Now")) {
                             NowRow(task: now, today: s.date).tag(now.localId)
                         }
                     }
                     Section(tr("Today")) {
-                        if today.isEmpty {
-                            Text(overdue.isEmpty && now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today."))
+                        if s.today.isEmpty {
+                            Text(s.overdue.isEmpty && s.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today."))
                                 .foregroundStyle(.secondary)
                         }
-                        ForEach(today) { task in
+                        ForEach(s.today) { task in
                             TaskRow(task: task, today: s.date, showsDay: false).tag(task.localId)
                         }
                     }
-                    if !done.isEmpty {
+                    if !s.done.isEmpty {
                         Section {
                             if showDone {
-                                ForEach(done) { task in
+                                ForEach(s.done) { task in
                                     TaskRow(task: task, today: s.date, showsDay: false).tag(task.localId)
                                 }
                             }
                         } header: {
-                            FoldHeader(title: tr("Done (\(done.count))"), open: $showDone,
+                            FoldHeader(title: tr("Done (\(s.done.count))"), open: $showDone,
                                        hint: showDone ? tr("Hides the tasks done today") : tr("Shows the tasks done today"))
                         }
                     }

@@ -264,17 +264,22 @@ final class AppModel: ObservableObject {
     /**
      * Adds a task from one line of quick add: a date phrase at its end sets the day and time, otherwise the day of
      * [place] (today on Today, none in the other lists); a `+project` word sets the project, otherwise the project of
-     * [place].
+     * [place] while it takes tasks.
      */
     @discardableResult
     func quickAdd(_ line: String, readPhrase: Bool = true, in place: Place = .today) -> Bool {
         let input = parseQuickAdd(line, readPhrase: readPhrase)
         guard TaskRules.title(input.title) != nil else { return false }
-        let context = QuickAddContext(place, today: today)
+        let context = quickAddContext(place)
         let date = input.when?.date ?? context.date
-        let project = input.projectLocalId ?? (showsProjects ? context.project : nil)
+        let project = input.projectLocalId ?? context.project
         run { try await $0.add(title: input.title, dueDate: date, dueTime: input.when?.time, projectLocalId: project) }
         return true
+    }
+
+    /// What quick add takes from [place]; its project only while the server has projects.
+    func quickAddContext(_ place: Place) -> QuickAddContext {
+        QuickAddContext(place, today: today, projects: showsProjects ? projects : [])
     }
 
     /// One line of quick add as it will be added; without [readPhrase] the date words stay in the title.
@@ -610,17 +615,21 @@ enum Place: Hashable {
     }
 }
 
-/// What quick add takes from the place it is typed in: the day (today on Today) and the project.
+/// What quick add takes from the place it is typed in: the day (today on Today) and the project, if it takes tasks.
 struct QuickAddContext: Equatable {
     let date: String?
     let project: String?
 
-    init(_ place: Place, today: String) {
+    init(_ place: Place, today: String, projects: [Project]) {
         switch place {
         case .inbox, .today, .archivedProjects, .done, .trash: date = today
         case .all, .noProject, .project, .label: date = nil
         }
-        if case .project(let id) = place { project = id } else { project = nil }
+        if case .project(let id) = place, projects.contains(where: { $0.localId == id && !$0.isArchived }) {
+            project = id
+        } else {
+            project = nil
+        }
     }
 }
 

@@ -54,6 +54,9 @@ extension AppModel {
             || task.labels.contains { $0.range(of: query, options: options) != nil }
     }
 
+    /// Today's sections with only the tasks the search matches.
+    var searchedToday: TodaySections { sections.filter(matchesSearch) }
+
     /// The done tasks (the latest first) and the archived ones of the Done place, at most 50 each.
     var doneAndArchived: (done: [TaskItem], archived: [TaskItem]) {
         let shown = tasks.filter { !$0.inTrash && matchesSearch($0) }
@@ -118,13 +121,20 @@ extension AppModel {
      */
     func deleteProject(_ localId: String, moveTasksTo target: String?) async -> String? {
         guard let engine else { return Self.needsConnection }
+        let shown = place == .project(localId)
         do {
             try await engine.deleteProject(localId, moveTasksTo: target)
-            if case .project(localId) = place { show(target.map(Place.project) ?? .noProject) }
+            if shown { show(target.map(Place.project) ?? .noProject) }
             return nil
         } catch {
             return Self.failure(error)
         }
+    }
+
+    /// Whether Move to Project… can take [taskId]: a task out of the trash, with a server that has projects.
+    func canMoveToProject(_ taskId: String?) -> Bool {
+        guard showsProjects, let task = taskId.flatMap(task) else { return false }
+        return !task.inTrash
     }
 
     func setProject(_ taskId: String, _ projectId: String?) { run { try await $0.setProject(taskId, projectId) } }

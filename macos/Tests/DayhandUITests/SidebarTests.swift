@@ -81,6 +81,41 @@ struct SidebarTests {
         #expect(preview.project == "Bakery website" && preview.unknownProject == "gardn" && preview.phrase != nil)
     }
 
+    @Test func quickAddInAnArchivedProjectAddsTheTaskOutsideIt() async throws {
+        let model = try makeModel()
+        _ = try await seeded(model)
+        let old = try #require(model.archivedProjects.first)
+        model.show(.project(old.localId))
+        let preview = try #require(QuickAddPreview.of("Sweep", readPhrase: true, model: model, place: model.place))
+        #expect(preview.project == nil)
+        #expect(model.quickAdd("Sweep", in: model.place))
+        try await eventually { model.tasks.contains { $0.title == "Sweep" } }
+        #expect(model.tasks.first { $0.title == "Sweep" }?.projectLocalId == nil)
+        #expect(model.alert == nil)
+    }
+
+    @Test func moveToProjectTakesATaskOutOfTheTrashOnly() async throws {
+        let model = try makeModel()
+        _ = try await seeded(model)
+        let milk = try #require(model.tasks.first { $0.title == "Milk" })
+        #expect(!model.canMoveToProject(nil))
+        #expect(model.canMoveToProject(milk.localId))
+        model.moveToTrash(milk.localId)
+        try await eventually { model.task(milk.localId)?.inTrash == true }
+        #expect(!model.canMoveToProject(milk.localId))
+    }
+
+    @Test func todayNarrowedByASearchShowsNothingWhenNothingMatches() async throws {
+        let model = try makeModel()
+        _ = try await seeded(model)
+        #expect(model.searchedToday.today.map(\.title) == ["Milk"])
+        model.search = "xyz"
+        #expect(!model.sections.isEmpty)
+        #expect(model.searchedToday.isEmpty && model.searchedToday.done.isEmpty)
+        model.search = "inv"
+        #expect(model.searchedToday.overdue.map(\.title) == ["Invoice"] && model.searchedToday.today.isEmpty)
+    }
+
     @Test func aTaskDroppedOnAProjectMovesThereAndOnNoProjectLeavesIt() async throws {
         let model = try makeModel()
         let (bakery, home) = try await seeded(model)
@@ -149,9 +184,12 @@ struct SidebarTests {
         #expect(Place.project("p").lists(open, projects: projects) && !Place.noProject.lists(open, projects: projects))
         #expect(Place.trash.lists(deleted, projects: projects) && !Place.all.lists(deleted, projects: projects))
         #expect(Place.done.lists(archived, projects: projects) && !Place.inbox.lists(open, projects: projects))
-        #expect(QuickAddContext(.today, today: "2026-10-25") == QuickAddContext(.trash, today: "2026-10-25"))
-        #expect(QuickAddContext(.project("p"), today: "2026-10-25").date == nil)
-        #expect(QuickAddContext(.project("p"), today: "2026-10-25").project == "p")
+        let active = Project(localId: "p", name: "P", position: 1, createdAt: 0, updatedAt: 0)
+        let old = Project(localId: "q", name: "Q", position: 2, archivedAt: 1, createdAt: 0, updatedAt: 0)
+        #expect(QuickAddContext(.today, today: "2026-10-25", projects: []) == QuickAddContext(.trash, today: "2026-10-25", projects: []))
+        #expect(QuickAddContext(.project("p"), today: "2026-10-25", projects: [active]).date == nil)
+        #expect(QuickAddContext(.project("p"), today: "2026-10-25", projects: [active]).project == "p")
+        #expect(QuickAddContext(.project("q"), today: "2026-10-25", projects: [active, old]).project == nil)
     }
 
     @Test func thePanelFollowsTheWindowUntilDraggedAndLeavesTheListRoom() {

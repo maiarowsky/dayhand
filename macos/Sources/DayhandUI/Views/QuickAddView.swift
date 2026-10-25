@@ -19,10 +19,10 @@ struct QuickAddPreview: Equatable {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         let today = model.today
-        let context = QuickAddContext(place, today: today)
+        let context = model.quickAddContext(place)
         let input = model.parseQuickAdd(trimmed, readPhrase: readPhrase)
         let day = input.when.map { Formatting.when($0, today: today) } ?? context.date.map { Formatting.day($0, today: today) }
-        let project = model.project(input.projectLocalId ?? (model.showsProjects ? context.project : nil))
+        let project = model.project(input.projectLocalId ?? context.project)
         return QuickAddPreview(
             title: input.title, when: day, phrase: input.phrase, project: project?.name, unknownProject: input.unknownProject
         )
@@ -142,7 +142,7 @@ struct InlineQuickAdd: View {
     }
 
     private func prompt(_ place: Place) -> String {
-        if case .project(let id) = place, let project = model.project(id) { return tr("Add to \(project.name)") }
+        if let project = model.project(model.quickAddContext(place).project) { return tr("Add to \(project.name)") }
         return tr("Add a task (try: Pay rent fri 9am)")
     }
 }

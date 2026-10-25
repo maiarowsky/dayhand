@@ -47,7 +47,7 @@ public struct DayhandApp: App {
                     if let id = model.selection { model.movingTask = TaskPick(id: id) }
                 }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
-                .disabled(model.selection == nil || !model.showsProjects)
+                .disabled(!model.canMoveToProject(model.selection))
                 Button(tr("New Project…")) {
                     model.showMainWindow()
                     model.projectEditor = ProjectEditorRequest()

@@ -15,6 +15,14 @@ public struct TodaySections: Hashable, Sendable {
     public var openCount: Int { overdue.count + today.count + (now == nil ? 0 : 1) }
 
     public static let empty = TodaySections(date: "", overdue: [], now: nil, today: [], done: [])
+
+    /// The same sections with only the tasks [isIncluded] keeps.
+    public func filter(_ isIncluded: (TaskItem) -> Bool) -> TodaySections {
+        TodaySections(
+            date: date, overdue: overdue.filter(isIncluded), now: now.flatMap { isIncluded($0) ? $0 : nil },
+            today: today.filter(isIncluded), done: done.filter(isIncluded)
+        )
+    }
 }
 
 /// Timed tasks first by time, then untimed by creation (backend `bySchedule`).
