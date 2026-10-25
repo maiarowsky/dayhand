@@ -11,8 +11,7 @@
   "scripts": {
     "dev": "node scripts/astro.mjs dev",
     "build": "node scripts/astro.mjs build",
-    "preview": "node scripts/astro.mjs preview",
-    "deploy": "node scripts/check-release.mjs && node scripts/astro.mjs build && wrangler deploy"
+    "preview": "node scripts/astro.mjs preview"
   },
   "dependencies": {
     "astro": "7.3.8"

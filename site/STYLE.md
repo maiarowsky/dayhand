@@ -42,7 +42,6 @@ npm run preview   # serves dist/ as it will be published
 | `worker/` | the Worker script: `POST /api/waitlist` only (`index.ts`), and the checks on what the form sends (`input.ts`) |
 | `migrations/` | the D1 tables of the waitlist; setup and reading the list: [CONTRIBUTING.md](../CONTRIBUTING.md#the-dayhand-cloud-waitlist) |
 | `scripts/check-waitlist.mjs` | checks the waitlist endpoint against a local `wrangler dev` |
-| `scripts/check-release.mjs` | run by `npm run deploy`: stops a deploy unless `CONTACT_EMAIL` in `src/site.ts` is a valid address |
 
 Check the build with `scripts/check-site.sh` before every change is merged (`--build` installs and builds
 first). It reads `site/dist/`: HTML structure, image attributes, internal links and fragments, that pages

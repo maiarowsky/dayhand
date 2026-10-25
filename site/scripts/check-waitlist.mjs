@@ -1,7 +1,8 @@
 // Checks POST /api/waitlist against a local `wrangler dev` (CONTRIBUTING.md): a good address, a bad one, the same
 // address twice, the hidden field, a form sent too quickly, a wrong content type, another site's origin and the
 // per-address rate limit. Each case sends its own CF-Connecting-IP, which `wrangler dev` passes through and
-// Cloudflare overwrites in production, so the cases do not share a rate limit.
+// Cloudflare overwrites in production, in a network taken from the second the run starts, so neither the cases nor runs
+// within the ten-minute window share a rate limit.
 //
 //   node scripts/check-waitlist.mjs http://localhost:8787
 //
@@ -14,6 +15,9 @@ if (!base) {
 }
 const url = new URL("/api/waitlist", base).href;
 const run = Date.now().toString(36);
+const second = Math.floor(Date.now() / 1000) % 65536;
+const network = `10.${second >> 8}.${second & 255}`;
+const client = (n) => `${network}.${n}`;
 let failures = 0;
 
 async function post(ip, body, headers = {}) {
@@ -36,18 +40,18 @@ function expect(name, actual, status, ok) {
 }
 
 const email = `check-${run}@example.com`;
-expect("good address", await post(`10.0.0.1`, form(`  ${email.toUpperCase()} `)), 200, true);
-expect("same address again", await post(`10.0.0.2`, form(email)), 200, true);
-expect("not an address", await post(`10.0.0.3`, form("not-an-email")), 400, false);
-expect("address too long", await post(`10.0.0.3`, form(`${"a".repeat(250)}@example.com`)), 400, false);
-expect("hidden field filled", await post(`10.0.0.4`, form(`bot-${run}@example.com`, { website: "spam" })), 200, true);
-expect("sent too quickly", await post(`10.0.0.5`, form(`fast-${run}@example.com`, { elapsedMs: 300 })), 400, false);
-expect("unknown source", await post(`10.0.0.5`, form(`src-${run}@example.com`, { source: "elsewhere" })), 400, false);
-expect("not JSON", await post(`10.0.0.6`, "email=a@example.com", { "content-type": "application/x-www-form-urlencoded" }), 415, false);
-expect("other site", await post(`10.0.0.6`, form(`origin-${run}@example.com`), { origin: "https://example.com" }), 403, false);
-expect("body too large", await post(`10.0.0.6`, form(`big-${run}@example.com`, { pad: "x".repeat(4096) })), 413, false);
+expect("good address", await post(client(1), form(`  ${email.toUpperCase()} `)), 200, true);
+expect("same address again", await post(client(2), form(email)), 200, true);
+expect("not an address", await post(client(3), form("not-an-email")), 400, false);
+expect("address too long", await post(client(3), form(`${"a".repeat(250)}@example.com`)), 400, false);
+expect("hidden field filled", await post(client(4), form(`bot-${run}@example.com`, { website: "spam" })), 200, true);
+expect("sent too quickly", await post(client(5), form(`fast-${run}@example.com`, { elapsedMs: 300 })), 400, false);
+expect("unknown source", await post(client(5), form(`src-${run}@example.com`, { source: "elsewhere" })), 400, false);
+expect("not JSON", await post(client(6), "email=a@example.com", { "content-type": "application/x-www-form-urlencoded" }), 415, false);
+expect("other site", await post(client(6), form(`origin-${run}@example.com`), { origin: "https://example.com" }), 403, false);
+expect("body too large", await post(client(6), form(`big-${run}@example.com`, { pad: "x".repeat(4096) })), 413, false);
 
-const limited = `10.0.1.${Math.floor(Math.random() * 250) + 1}`;
+const limited = client(7);
 const answers = [];
 for (let attempt = 0; attempt < 6; attempt += 1) answers.push(await post(limited, form(`rate-${attempt}-${run}@example.com`)));
 expect("five tries from one address", answers[4], 200, true);
