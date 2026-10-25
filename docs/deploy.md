@@ -323,6 +323,13 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.13.2
+
+0.13.2 lets the app restore a locally calculated repeat into its parent's project, including an
+archived one ([`app:add` with `repeatedFrom`](api.md#projects)). It changes no stored schema and
+needs no migration or new configuration. Deploy it before installing Android 0.12.0. Rolling back
+to 0.13.1 makes Android 0.12.0 keep such occurrences in its outbox until 0.13.2 is back.
+
 ## Upgrading to 0.13.1
 
 0.13.1 exposes the 0.13.0 project operations through [MCP](mcp.md#projects) and

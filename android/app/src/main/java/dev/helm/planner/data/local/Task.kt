@@ -190,7 +190,7 @@ data class Task(
     /** `updatedAt` of the last server copy merged into this row; null until the server has it. */
     val serverUpdatedAt: Long? = null,
     val repeat: RepeatRule? = null,
-    /** Labels, which also serve as projects (the backend has one list for both). */
+    /** Free tags across projects. */
     @ColumnInfo(defaultValue = "[]") val labels: List<String> = emptyList(),
     @ColumnInfo(defaultValue = "[]") val links: List<TaskLink> = emptyList(),
     /** In the trash since then; the server purges it 30 days later unless restored. */
@@ -212,6 +212,9 @@ data class Task(
     @ColumnInfo(defaultValue = "[]") val dependsOn: List<String> = emptyList(),
     /** Why the task cannot go on; read-only, taken from the server. */
     val blockedReason: String? = null,
+    /** Zero or one project, addressed by its stable local id. */
+    /** Server-confirmed project id (sample ids are used only by the demo plan). */
+    val projectId: String? = null,
 ) {
     val inTrash: Boolean get() = deletedAt != null
 

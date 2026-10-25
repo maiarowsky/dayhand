@@ -84,6 +84,7 @@ class HttpTaskRemoteTest {
             val value = when (path) {
                 "app:listAll" ->
                     """[{"id":"s1","title":"A","status":"todo","isNow":false,"labels":["home"],"links":[{"url":"https://a.pl","title":"A"}],"repeat":{"every":"week","interval":2.0,"weekdays":[1.0,5.0]},"createdAt":1.7E12,"updatedAt":1761130000000,"dueDate":"2026-10-22"}]"""
+                "app:listProjects" -> """[{"id":"p1","name":"Dom","position":1024.0,"createdAt":1.0,"updatedAt":2.0}]"""
                 "app:listTrash" ->
                     """[{"id":"s2","title":"B","status":"todo","isNow":false,"labels":[],"links":[],"createdAt":1,"updatedAt":2,"deletedAt":1761130000001}]"""
                 else -> """{"timezone":"Europe/Warsaw","summaryTime":"05:30","defaultReminderMinutes":[0,15.0]}"""
@@ -102,7 +103,8 @@ class HttpTaskRemoteTest {
         assertEquals(RepeatRule(RepeatEvery.WEEK, 2, listOf(1, 5)), active.repeat)
         assertEquals(null, active.deletedAt)
         assertEquals(1761130000001L, trashed.deletedAt)
-        assertEquals(listOf("http://h/api/query", "http://h/api/query", "http://h/api/query"), urls)
+        assertEquals(listOf("http://h/api/query", "http://h/api/query", "http://h/api/query", "http://h/api/query"), urls)
+        assertEquals("Dom", snapshot.projects!!.single().name)
     }
 
     @Test

@@ -49,6 +49,18 @@ class PaletteContrastTest {
     }
 
     @Test
+    fun everyProjectDotMeetsThreeToOneOnEveryPalette() {
+        dev.helm.planner.domain.ProjectRules.colors.forEach { token ->
+            Palettes.all.forEach { p ->
+                val dot = ProjectColors.color(token, p)
+                listOf(p.surface, p.background, p.accentSoft, p.surfaceRaised).forEach { background ->
+                    assertTrue("${p.id}: $token", contrast(dot, background) >= 3.0)
+                }
+            }
+        }
+    }
+
+    @Test
     fun idsAreUniqueAndBothVariantsExist() {
         assertEquals(Palettes.all.size, Palettes.all.map { it.id }.toSet().size)
         assertEquals(11, Palettes.dark.size)

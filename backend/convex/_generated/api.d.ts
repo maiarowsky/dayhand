@@ -47,6 +47,7 @@ import type * as lib_mcpTools from "../lib/mcpTools.js";
 import type * as lib_oauthConfig from "../lib/oauthConfig.js";
 import type * as lib_oauthPage from "../lib/oauthPage.js";
 import type * as lib_oauthRules from "../lib/oauthRules.js";
+import type * as lib_offlineRepeat from "../lib/offlineRepeat.js";
 import type * as lib_openapi from "../lib/openapi.js";
 import type * as lib_outputSchemas from "../lib/outputSchemas.js";
 import type * as lib_problem from "../lib/problem.js";
@@ -123,6 +124,7 @@ declare const fullApi: ApiFromModules<{
   "lib/oauthConfig": typeof lib_oauthConfig;
   "lib/oauthPage": typeof lib_oauthPage;
   "lib/oauthRules": typeof lib_oauthRules;
+  "lib/offlineRepeat": typeof lib_offlineRepeat;
   "lib/openapi": typeof lib_openapi;
   "lib/outputSchemas": typeof lib_outputSchemas;
   "lib/problem": typeof lib_problem;

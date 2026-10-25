@@ -2,6 +2,7 @@ package dev.helm.planner.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -78,6 +79,10 @@ fun ListRow(
     clickLabel: String? = null,
     /** "›" at the end; by default when the row opens something. */
     chevron: Boolean? = null,
+    onLongClick: (() -> Unit)? = null,
+    longClickLabel: String? = null,
+    leadingContent: (@Composable () -> Unit)? = null,
+    valueColor: Color = palette.textMuted,
     onClick: (() -> Unit)? = null,
 ) {
     val p = palette
@@ -88,7 +93,8 @@ fun ListRow(
             .heightIn(min = HelmDimens.listRowMinHeight)
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(enabled = enabled, onClickLabel = clickLabel, role = Role.Button, onClick = onClick)
+                    Modifier.combinedClickable(enabled = enabled, onClickLabel = clickLabel, role = Role.Button, onClick = onClick,
+                        onLongClick = onLongClick, onLongClickLabel = longClickLabel)
                 } else {
                     // Name and value are read as one.
                     Modifier.semantics(mergeDescendants = true) {}
@@ -98,6 +104,7 @@ fun ListRow(
             .testTag(tag),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        leadingContent?.let { it(); Spacer(Modifier.width(16.dp)) }
         icon?.let {
             LineIconView(it, if (enabled) p.textMuted else p.textFaint, size = HelmDimens.lineIcon)
             Spacer(Modifier.width(16.dp))
@@ -112,7 +119,7 @@ fun ListRow(
                 maxLines = if (oneLine) 1 else Int.MAX_VALUE,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (large) value?.let { Text(it, style = helmType.body, color = p.textMuted, modifier = Modifier.testTag("$tag-value")) }
+            if (large) value?.let { Text(it, style = helmType.body, color = valueColor, modifier = Modifier.testTag("$tag-value")) }
             note?.let { Text(it, style = helmType.small, color = p.textMuted) }
         }
         if (!large) {
@@ -121,7 +128,7 @@ fun ListRow(
                 Text(
                     it,
                     style = helmType.body,
-                    color = p.textMuted,
+                    color = valueColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.widthIn(max = VALUE_MAX_WIDTH).testTag("$tag-value"),

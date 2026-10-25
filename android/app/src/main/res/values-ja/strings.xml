@@ -133,7 +133,7 @@
     </plurals>
     <string name="add_label">ラベルを追加</string>
     <string name="remove_label">ラベルを削除：%1$s</string>
-    <string name="label_name">ラベルまたはプロジェクト</string>
+    <string name="label_name">ラベル</string>
     <plurals name="labels_full">
         <item quantity="other">ラベルは最大%1$d個</item>
     </plurals>

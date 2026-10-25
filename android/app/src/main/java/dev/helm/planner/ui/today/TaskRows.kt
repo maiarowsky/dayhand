@@ -47,6 +47,8 @@ import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.components.helmCheckboxColors
+import dev.helm.planner.ui.projects.LocalProjects
+import dev.helm.planner.ui.projects.ProjectBadge
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
@@ -83,16 +85,10 @@ fun DoneRow(task: Task, actions: TodayActions) {
             .padding(horizontal = 8.dp),
     ) {
         TaskCheckbox(checked = true, description = description) { actions.reopen(task.localId) }
-        Text(
-            task.title,
-            style = helmType.body,
-            color = palette.textMuted,
-            textDecoration = TextDecoration.LineThrough,
-            modifier = Modifier
-                .weight(1f)
-                .openTask(task, actions)
-                .padding(end = 16.dp),
-        )
+        Column(Modifier.weight(1f).openTask(task, actions).padding(end = 16.dp)) {
+            Text(task.title, style = helmType.body, color = palette.textMuted, textDecoration = TextDecoration.LineThrough)
+            ProjectBadge(task)
+        }
     }
 }
 
@@ -114,6 +110,7 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentW
             Column(Modifier.weight(1f).padding(top = 10.dp)) {
                 SectionLabel(stringResource(R.string.section_now))
                 TaskTitle(task, blocked, emphasized = true, modifier = Modifier.openTask(task, actions))
+                ProjectBadge(task)
                 val resume = task.resumeNote
                 Text(
                     text = resume ?: stringResource(R.string.resume_empty),
@@ -159,6 +156,7 @@ private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, block
                 .padding(vertical = 8.dp),
         ) {
             TaskTitle(task, blocked)
+            ProjectBadge(task)
             if (subtitle != null) {
                 Text(subtitle, style = helmType.small, color = palette.danger)
             }
@@ -211,12 +209,14 @@ private fun Modifier.openTask(task: Task, actions: TodayActions): Modifier {
 
 @Composable
 private fun TaskMenu(task: Task, today: LocalDate, actions: TodayActions, offerNow: Boolean) {
+    val projects = LocalProjects.current
     var open by remember { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
     Box {
         HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
         HelmMenu(expanded = open, onDismiss = { open = false }) {
             if (offerNow) MenuItem(R.string.set_now) { open = false; actions.setNow(task.localId) }
+            MenuItem(R.string.project_move) { open = false; projects.pickTask(task) }
             MenuItem(R.string.move_to_day) { open = false; picking = true }
             MenuItem(R.string.archive) { open = false; actions.archive(task.localId) }
         }
@@ -232,12 +232,14 @@ private fun TaskMenu(task: Task, today: LocalDate, actions: TodayActions, offerN
 
 @Composable
 private fun NowMenu(task: Task, today: LocalDate, actions: TodayActions, onEditNote: () -> Unit) {
+    val projects = LocalProjects.current
     var open by remember { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
     Box {
         HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
         HelmMenu(expanded = open, onDismiss = { open = false }) {
             MenuItem(R.string.resume_edit) { open = false; onEditNote() }
+            MenuItem(R.string.project_move) { open = false; projects.pickTask(task) }
             MenuItem(R.string.stop_now) { open = false; actions.clearNow() }
             MenuItem(R.string.move_to_day) { open = false; picking = true }
             MenuItem(R.string.archive) { open = false; actions.archive(task.localId) }

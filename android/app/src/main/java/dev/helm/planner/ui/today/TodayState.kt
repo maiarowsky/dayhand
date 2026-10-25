@@ -49,7 +49,7 @@ interface TodayActions {
     fun setNow(localId: String) {}
     fun clearNow() {}
     fun saveResumeNote(localId: String, note: String) {}
-    fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {}
+    fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String? = null) {}
     fun openSettings() {}
     fun openTask(localId: String) {}
     fun removeSample() {}

@@ -19,6 +19,7 @@ import dev.helm.planner.domain.Recurrence
 import dev.helm.planner.domain.TaskRules
 import dev.helm.planner.sample.SamplePlan
 import dev.helm.planner.sync.SnapshotMerger
+import dev.helm.planner.sync.dropAssignment
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -50,7 +51,10 @@ class TaskRepository(
      * occurrence itself; null when a server does it on `complete`.
      */
     private val repeatsOnPhone: suspend () -> String? = { null },
+    projectRemote: suspend () -> dev.helm.planner.data.remote.TaskRemote? = { null },
 ) {
+    val projectStore = ProjectRepository(db, newId, projectRemote, ::applySnapshot)
+    val projects = projectStore.projects
     val tasks: Flow<List<Task>> = db.tasks().observeAll()
     val pendingChanges: Flow<Int> = db.outbox().observeCount()
 
@@ -62,7 +66,7 @@ class TaskRepository(
     fun history(serverId: String): Flow<List<TaskEvent>> = db.events().observe(serverId)
 
     /** Adds a task; [dueTime] is kept only together with [dueDate], as the backend requires. */
-    suspend fun add(title: String, dueDate: String?, dueTime: String?, note: String?): Task {
+    suspend fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String? = null): Task {
         val cleanTitle = title.trim()
         require(cleanTitle.isNotEmpty() && cleanTitle.length <= MAX_TITLE) { "title must be 1 to $MAX_TITLE characters" }
         val now = clock()
@@ -73,6 +77,7 @@ class TaskRepository(
         val task = Task(
             localId = localId,
             clientId = localId,
+            projectId = projectId,
             title = cleanTitle,
             note = cleanNote,
             dueDate = dueDate,
@@ -82,11 +87,13 @@ class TaskRepository(
         )
         val args = buildJsonObject {
             put("title", cleanTitle)
+            projectId?.let { put("projectId", it) }
             cleanNote?.let { put("note", it) }
             dueDate?.let { put("dueDate", it) }
             time?.let { put("dueTime", it) }
         }
         db.withTransaction {
+            projectId?.let { require(db.projects().byLocalId(it)?.assignable == true) { "project is not confirmed and active" } }
             db.tasks().upsert(listOf(task))
             enqueue(Mutations.ADD, localId, args, clientId = localId, now = now)
         }
@@ -118,6 +125,7 @@ class TaskRepository(
                     localId = id,
                     clientId = id,
                     title = task.title,
+                    projectId = task.projectId,
                     note = task.note,
                     dueDate = occurrence.dueDate,
                     dueTime = task.dueTime,
@@ -131,9 +139,21 @@ class TaskRepository(
                 )
             }
             db.tasks().upsert(listOfNotNull(done.copy(repeat = null), next))
+            val completedBy = newId()
             enqueue(Mutations.UPDATE, localId, buildJsonObject { put("repeat", JsonNull) }, now = now)
-            enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now)
-            next?.let { enqueue(Mutations.ADD, it.localId, addArgs(it), clientId = it.localId, now = now) }
+            enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now, clientId = completedBy)
+            next?.let { occurrence ->
+                val args = buildJsonObject {
+                    addArgs(occurrence).forEach { (key, value) -> put(key, value) }
+                    if (occurrence.projectId != null && !SamplePlan.isSample(occurrence.projectId)) {
+                        // These local-only references become app:add.repeatedFrom after the parent was sent.
+                        put("repeatParentLocalId", localId)
+                        put("repeatCompletedBy", completedBy)
+                        put("repeatCompletedOn", today)
+                    }
+                }
+                enqueue(Mutations.ADD, occurrence.localId, args, clientId = occurrence.localId, now = now)
+            }
             true
         }
         if (changed) onOutboxChanged()
@@ -236,7 +256,20 @@ class TaskRepository(
         if (changed) onOutboxChanged()
     }
 
-    /** Sets the labels (which also serve as projects), cleaned as the backend cleans them. */
+    /** Moves a task to an active project, or clears its project. */
+    suspend fun setProject(localId: String, projectId: String?) {
+        val now = clock()
+        db.withTransaction {
+            projectId?.let { require(db.projects().byLocalId(it)?.assignable == true) { "project is not confirmed and active" } }
+            val task = db.tasks().byLocalId(localId) ?: return@withTransaction
+            if (task.inTrash || task.projectId == projectId) return@withTransaction
+            db.tasks().upsert(listOf(task.copy(projectId = projectId, updatedAt = now)))
+            enqueue(Mutations.UPDATE, localId, buildJsonObject { put("projectId", projectId.orNull()) }, now = now)
+        }
+        onOutboxChanged()
+    }
+
+    /** Sets free tags across projects, cleaned as the backend cleans them. */
     suspend fun setLabels(localId: String, labels: List<String>) {
         val clean = requireNotNull(TaskRules.labels(labels)) { "too many or too long labels" }
         edit(localId, Mutations.UPDATE, { put("labels", JsonArray(clean.map(::JsonPrimitive))) }) { task, _ ->
@@ -339,23 +372,39 @@ class TaskRepository(
     val hasSample: Flow<Boolean> = db.tasks().observeSampleCount(SAMPLE_PATTERN).map { it > 0 }
 
     /** Puts the sample plan on the phone, without queueing anything for a server. */
-    suspend fun loadSample(tasks: List<Task>) {
-        require(tasks.all { SamplePlan.isSample(it.localId) }) { "not sample tasks" }
-        db.tasks().upsert(tasks)
+    suspend fun loadSample(tasks: List<Task>, projects: List<dev.helm.planner.data.local.Project> = emptyList()) {
+        require(tasks.all { SamplePlan.isSample(it.localId) } && projects.all { SamplePlan.isSample(it.localId) }) { "not sample data" }
+        db.withTransaction {
+            db.projects().upsert(projects)
+            db.tasks().upsert(tasks)
+        }
     }
 
     /** Removes every sample task (and anything queued for one, which there should not be). */
     suspend fun removeSample() = db.withTransaction {
         db.outbox().deleteForTasksLike(SAMPLE_PATTERN)
+        val sampleProjects = db.projects().all().filter { SamplePlan.isSample(it.localId) }.map { it.localId }.toSet()
+        db.tasks().upsert(db.tasks().all().filter { it.projectId in sampleProjects && !SamplePlan.isSample(it.localId) }
+            .map { it.copy(projectId = null, serverUpdatedAt = null) })
+        db.outbox().all().filter { it.taskLocalId != null }.forEach { op ->
+            val args = Json.parseToJsonElement(op.argsJson) as JsonObject
+            val projectId = (args["projectId"] as? JsonPrimitive)?.content
+            if (projectId in sampleProjects) db.dropAssignment(op, args)
+        }
         db.tasks().deleteLike(SAMPLE_PATTERN)
+        db.projects().deleteLike(SAMPLE_PATTERN)
     }
 
     /** The tasks a backup holds: everything on the phone except the sample plan. */
-    suspend fun backupTasks(): List<Task> = db.tasks().all().filterNot { SamplePlan.isSample(it.localId) }
+    suspend fun backupSnapshot(): PlanSnapshot = db.withTransaction {
+        PlanSnapshot(db.tasks().all().filterNot { SamplePlan.isSample(it.localId) },
+            db.projects().all().filterNot { SamplePlan.isSample(it.localId) })
+    }
 
-    /** How much of the plan a switch to another server would remove: tasks (sample ones not counted) and waiting changes. */
-    suspend fun planSize(): Pair<Int, Int> = db.withTransaction {
-        db.tasks().all().count { !SamplePlan.isSample(it.localId) } to db.outbox().count()
+    /** Project-only plans must also be confirmed and cleared before changing owners. */
+    suspend fun planSize(): PlanSize = db.withTransaction {
+        PlanSize(db.tasks().all().count { !SamplePlan.isSample(it.localId) }, db.outbox().count(),
+            db.projects().all().count { !SamplePlan.isSample(it.localId) })
     }
 
     /**
@@ -365,7 +414,18 @@ class TaskRepository(
      * `clientId` keeps one copy. A done task is queued without its repeat rule, so the server does not add its next
      * occurrence again; archived tasks are archived.
      */
-    suspend fun restore(tasks: List<BackupTask>): RestoreResult {
+    suspend fun restore(tasks: List<BackupTask>, projects: List<dev.helm.planner.backup.BackupProject> = emptyList()): RestoreResult {
+        // Check all missing names before a single network mutation or local change.
+        checkRestoreCapacity(projects)
+        if (projects.isNotEmpty()) projectStore.refreshForRestore()
+        checkRestoreCapacity(projects)
+        val projectIds = projects.associate { imported ->
+            val existing = db.projects().all().firstOrNull { dev.helm.planner.domain.ProjectRules.nameKey(it.name) == dev.helm.planner.domain.ProjectRules.nameKey(imported.name) }
+            val created = existing ?: projectStore.add(imported.name, imported.color, imported.icon, imported.note)
+                .also { if (imported.archived) projectStore.archive(it.localId, true) }
+            val project = requireNotNull(db.projects().byLocalId(created.localId))
+            imported.id to project.serverId?.takeUnless { project.archived }
+        }
         val now = clock()
         val result = db.withTransaction {
             val known = db.tasks().all().flatMap { listOfNotNull(it.localId, it.serverId, it.clientId) }.toMutableSet()
@@ -379,6 +439,7 @@ class TaskRepository(
                     localId = id,
                     clientId = id,
                     title = item.title,
+                    projectId = item.projectId?.let { projectIds[it] },
                     note = item.note,
                     dueDate = item.dueDate,
                     dueTime = item.dueTime,
@@ -406,6 +467,13 @@ class TaskRepository(
         return result
     }
 
+    private suspend fun checkRestoreCapacity(imported: List<dev.helm.planner.backup.BackupProject>) = db.withTransaction {
+        val existing = db.projects().all().filterNot { SamplePlan.isSample(it.localId) }
+        val names = (existing.map { dev.helm.planner.domain.ProjectRules.nameKey(it.name) } +
+            imported.map { dev.helm.planner.domain.ProjectRules.nameKey(it.name) }).toSet()
+        if (names.size > dev.helm.planner.domain.ProjectRules.MAX_PROJECTS) throw RestoreCapacityExceeded()
+    }
+
     /**
      * Empties the phone: tasks, history and waiting changes. Used before the phone pairs with another server, so
      * the plan and the unsent changes of the old one cannot reach the new one.
@@ -414,12 +482,19 @@ class TaskRepository(
         db.outbox().deleteAll()
         db.events().deleteAll()
         db.tasks().deleteAll()
+        db.projects().deleteAll()
     }
 
     /** Writes a server snapshot into Room (see [SnapshotMerger]). */
     suspend fun applySnapshot(snapshot: RemoteEvent.Snapshot) {
         db.withTransaction {
-            val plan = SnapshotMerger.merge(db.tasks().all(), db.outbox().all(), snapshot.tasks, clock())
+            val pending = db.outbox().all()
+            snapshot.projects?.let { remote ->
+                val projects = dev.helm.planner.sync.ProjectSnapshotMerger.merge(db.projects().all(), remote, clock())
+                db.projects().upsert(projects.upserts)
+                db.projects().delete(projects.deletes)
+            }
+            val plan = SnapshotMerger.merge(db.tasks().all(), pending, snapshot.tasks, clock())
             if (plan.upserts.isNotEmpty()) db.tasks().upsert(plan.upserts)
             if (plan.deletes.isNotEmpty()) {
                 db.tasks().delete(plan.deletes)
@@ -449,6 +524,7 @@ class TaskRepository(
     /** The arguments of `app:add` for a task with all its fields (a restored task, a repeat made on the phone). */
     private fun addArgs(task: Task): JsonObject = buildJsonObject {
         put("title", task.title)
+        task.projectId?.takeUnless { SamplePlan.isSample(it) }?.let { put("projectId", it) }
         task.note?.let { put("note", it) }
         task.dueDate?.let { put("dueDate", it) }
         task.dueTime?.let { put("dueTime", it) }

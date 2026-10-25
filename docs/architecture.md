@@ -118,7 +118,8 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 Backend 0.13.0 adds projects in `convex/lib/projectOps.ts` and `convex/app.ts`; 0.13.1 exposes
 [project tools over MCP](mcp.md#projects) and [REST routes](api.md#projects). CLI 0.15.0 adds
-[project commands](cli.md#dayhand-project); project menus in the apps are not implemented yet.
+[project commands](cli.md#dayhand-project); Android 0.12.0 adds a
+[Projects tab](../android/README.md#screens) with online-only project management.
 Task tools accept project selectors; [JSON import](api.md#import) and
 [Backlog.md transfer](backlog-md.md#using-it) can carry projects.
 

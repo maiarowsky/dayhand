@@ -43,6 +43,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class HelmApplication : Application() {
@@ -88,6 +89,9 @@ class AppContainer(context: Context) {
     val repository = TaskRepository(
         database,
         onOutboxChanged = outboxScheduler::schedule,
+        projectRemote = {
+            settings.current().backend?.takeIf { network.online.first() }?.let { HttpTaskRemote(it.url, tokensFor(it)) }
+        },
         repeatsOnPhone = { settings.current().takeIf { it.isLocal }?.let { HelmDates.localDate(System.currentTimeMillis(), it.timezone) } },
     )
     val liveSync = LiveSync(settings, repository, ::feedFor)

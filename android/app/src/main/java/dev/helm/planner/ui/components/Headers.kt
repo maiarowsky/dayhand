@@ -48,7 +48,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = pal
  * of the status bar by itself.
  */
 @Composable
-fun LargeHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null, actions: @Composable RowScope.() -> Unit = {}) {
+fun LargeHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
     val p = palette
     Row(
         modifier
@@ -58,6 +58,7 @@ fun LargeHeader(title: String, modifier: Modifier = Modifier, subtitle: String? 
             .padding(start = HelmDimens.screenMargin, end = 8.dp, top = 12.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (onBack != null) HeaderIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack)
         Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
             Text(title, style = helmType.headline, color = p.text)
             subtitle?.let { Text(it, style = helmType.body, color = p.textMuted) }

@@ -5,11 +5,13 @@ import dev.helm.planner.data.local.OutboxOp
 import dev.helm.planner.data.remote.MutationSender
 import dev.helm.planner.data.remote.SendResult
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
@@ -83,6 +85,9 @@ private class FakeStore : OutboxStore {
     }
     override suspend fun recordFailure(op: OutboxOp, reason: String) {
         ops[ops.indexOf(op)] = op.copy(attempts = op.attempts + 1, lastError = reason)
+    }
+    override suspend fun dropRepeatProof(op: OutboxOp) {
+        ops[ops.indexOf(op)] = op.copy(argsJson = JsonObject(Json.parseToJsonElement(op.argsJson).jsonObject - OutboxProcessor.REPEAT_PROOF_KEYS).toString())
     }
 }
 

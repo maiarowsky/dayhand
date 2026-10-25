@@ -46,6 +46,9 @@ import dev.helm.planner.domain.QuickAddInput
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.common.minuteTicks
+import dev.helm.planner.ui.projects.LocalProjects
+import dev.helm.planner.ui.projects.ProjectPickerSheet
+import dev.helm.planner.ui.components.ListRow
 import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.PrimaryButton
@@ -79,9 +82,14 @@ object QuickAddTags {
 fun QuickAddSheet(
     timezone: String,
     onDismiss: () -> Unit,
-    onSave: (title: String, dueDate: String, dueTime: String?, note: String?) -> Unit,
+    onSave: (title: String, dueDate: String, dueTime: String?, note: String?, projectId: String?) -> Unit,
     now: () -> Long = System::currentTimeMillis,
+    defaultProjectId: String? = null,
 ) {
+    val projects = LocalProjects.current.projects
+    var projectId by rememberSaveable { mutableStateOf(defaultProjectId) }
+    var pickedProject by rememberSaveable { mutableStateOf(false) }
+    var pickingProject by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     var day by rememberSaveable { mutableStateOf<String?>(null) }
@@ -94,23 +102,24 @@ fun QuickAddSheet(
     var pickingDay by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
-    val canSave = title.isNotBlank()
     var referenceTime by remember(now) { mutableLongStateOf(now()) }
     LaunchedEffect(now) { minuteTicks(now).collect { referenceTime = it } }
     val today = LocalDate.parse(HelmDates.localDate(referenceTime, timezone))
     val selectedDay = day ?: today.toString()
-    val input = QuickAdd.parse(title, referenceTime, timezone).takeIf { it.`when` != null && !picked }
+    val parsed = QuickAdd.parse(title, referenceTime, timezone, projects)
+    val selectedProject = if (pickedProject) projectId else parsed.projectId ?: projectId
+    val canSave = title.isNotBlank() && (selectedProject == null || projects.any { it.localId == selectedProject && it.selectable })
+    val input = parsed.takeIf { it.`when` != null && !picked }
     val read = input?.takeIf { !keep }
     val save = {
         val submittedAt = now()
         referenceTime = submittedAt
-        val submitted = QuickAdd.parse(title, submittedAt, timezone).takeIf { !keep && !picked }
+        val submitted = QuickAdd.parse(title, submittedAt, timezone, projects, readDate = !keep && !picked)
         val trimmedNote = note.trim().ifEmpty { null }
-        val due = submitted?.`when`
-        when {
-            !canSave -> Unit
-            submitted != null && due != null -> onSave(submitted.title, due.date, due.time, trimmedNote)
-            else -> onSave(title.trim(), day ?: HelmDates.localDate(submittedAt, timezone), time, trimmedNote)
+        val due = submitted.`when`
+        val project = if (pickedProject) projectId else submitted.projectId ?: projectId
+        if (canSave && submitted.title.isNotBlank()) {
+            onSave(submitted.title, due?.date ?: day ?: HelmDates.localDate(submittedAt, timezone), due?.time ?: time, trimmedNote, project)
         }
     }
 
@@ -132,7 +141,8 @@ fun QuickAddSheet(
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text(stringResource(R.string.quick_add_title), style = helmType.screenTitle, color = p.text)
+            Text(projects.firstOrNull { it.localId == defaultProjectId }?.let { stringResource(R.string.project_add_to, it.name) }
+                ?: stringResource(R.string.quick_add_title), style = helmType.screenTitle, color = p.text)
             HelmTextField(
                 value = title,
                 onValueChange = {
@@ -152,6 +162,11 @@ fun QuickAddSheet(
             )
             if (canSave) {
                 WhenLine(today, read, picked, selectedDay, time)
+                projects.firstOrNull { it.localId == selectedProject }?.let {
+                    Text(stringResource(R.string.project_preview, it.name), style = helmType.small, color = p.textMuted,
+                        modifier = Modifier.testTag("quick-add-project-preview"))
+                }
+                parsed.unknownProject?.let { Text(stringResource(R.string.project_unknown, it), style = helmType.small, color = p.textMuted) }
                 if (input != null) {
                     SwitchRow(
                         stringResource(R.string.quick_add_keep_in_title),
@@ -180,6 +195,8 @@ fun QuickAddSheet(
                 )
             }
             if (expanded) {
+                ListRow(stringResource(R.string.project_label), "quick-add-project", value = projects.firstOrNull { it.localId == selectedProject }?.name
+                    ?: stringResource(R.string.project_no_project), onClick = { pickingProject = true })
                 MoreOptions(
                     today = today,
                     day = selectedDay,
@@ -200,6 +217,10 @@ fun QuickAddSheet(
             }
         }
     }
+    if (pickingProject) ProjectPickerSheet(selectedProject, onDismiss = { pickingProject = false }, onPick = {
+        projectId = it
+        pickedProject = true
+    })
     LaunchedEffect(Unit) { focus.requestFocus() }
     if (pickingDay) {
         DayPickerDialog(LocalDate.parse(selectedDay), onDismiss = { pickingDay = false }) {

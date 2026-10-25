@@ -47,9 +47,11 @@ class ConnectViewModel(
         isOnline = { container.network.online.first() },
         save = { convexUrl, device ->
             // Before the sign-in is stored, so neither the outbox nor the live feed can see what goes.
-            container.repository.removeSample()
-            if (replacing) container.repository.clearAll()
-            container.settings.saveDevice(convexUrl, device)
+            container.repository.projectStore.withOwnerChange {
+                container.repository.removeSample()
+                if (replacing) container.repository.clearAll()
+                container.settings.saveDevice(convexUrl, device)
+            }
         },
     )
     private val phase = MutableStateFlow<ConnectPhase>(ConnectPhase.Idle)
@@ -59,8 +61,8 @@ class ConnectViewModel(
         if (phase.value == ConnectPhase.Working) return
         phase.value = ConnectPhase.Working
         viewModelScope.launch {
-            val (tasks, pending) = container.repository.planSize()
-            val replace = PlanSwitch.check(container.settings.current().serverUrl, address, tasks, pending)
+            val size = container.repository.planSize()
+            val replace = PlanSwitch.check(container.settings.current().serverUrl, address, size.tasks, size.pending, size.projects)
             if (replace == null) {
                 pair(address, code, replacePlan = false)
             } else {
@@ -106,7 +108,7 @@ class ConnectViewModel(
             val timezone = container.settings.current().timezone
             val now = clock()
             val today = LocalDate.parse(HelmDates.localDate(now, timezone))
-            container.repository.loadSample(SamplePlan.tasks(today, now, HelmDates.zone(timezone), text))
+            container.repository.loadSample(SamplePlan.tasks(today, now, HelmDates.zone(timezone), text), SamplePlan.projects(now, text))
         }
     }
 

@@ -46,6 +46,8 @@ import dev.helm.planner.ui.common.statusLabel
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmMenu
 import dev.helm.planner.ui.components.SectionLabel
+import dev.helm.planner.ui.projects.LocalProjects
+import dev.helm.planner.ui.projects.ProjectBadge
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
@@ -144,6 +146,7 @@ fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Bo
                 color = if (overdue) palette.danger else palette.textMuted,
             )
         }
+        ProjectBadge(task)
         if (task.labels.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 task.labels.forEach { LabelTag(it) }
@@ -168,10 +171,13 @@ fun LabelTag(label: String, color: Color = palette.secondary) {
 /** Moves without dragging: one menu per card, every other column plus "now". */
 @Composable
 private fun MoveMenu(task: Task, actions: BoardActions) {
+    val projects = LocalProjects.current
     var open by remember { mutableStateOf(false) }
     Box {
         HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
         HelmMenu(expanded = open, onDismiss = { open = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.project_move), style = helmType.body, color = palette.text) },
+                onClick = { open = false; projects.pickTask(task) }, modifier = Modifier.heightIn(min = 48.dp))
             moves(task).forEach { move ->
                 DropdownMenuItem(
                     text = { Text(move.label(), style = helmType.body, color = palette.text) },
@@ -190,8 +196,10 @@ private fun MoveMenu(task: Task, actions: BoardActions) {
 @Composable
 private fun Modifier.moveActions(task: Task, actions: BoardActions): Modifier {
     val labelled = moves(task).map { it.label() to it }
+    val projects = LocalProjects.current
+    val projectMove = stringResource(R.string.project_move)
     return semantics {
-        customActions = labelled.map { (label, move) ->
+        customActions = listOf(CustomAccessibilityAction(projectMove) { projects.pickTask(task); true }) + labelled.map { (label, move) ->
             CustomAccessibilityAction(label) {
                 move.run(task, actions)
                 true

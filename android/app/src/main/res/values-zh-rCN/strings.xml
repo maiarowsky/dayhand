@@ -133,7 +133,7 @@
     </plurals>
     <string name="add_label">添加标签</string>
     <string name="remove_label">移除标签：%1$s</string>
-    <string name="label_name">标签或项目</string>
+    <string name="label_name">标签</string>
     <plurals name="labels_full">
         <item quantity="other">最多 %1$d 个标签</item>
     </plurals>

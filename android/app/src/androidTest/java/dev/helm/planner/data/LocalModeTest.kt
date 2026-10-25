@@ -111,7 +111,7 @@ class LocalModeTest {
         val repository = repository()
         val zone = ZoneId.of("Europe/Warsaw")
         val plan = SamplePlan.tasks(LocalDate.parse("2026-10-23"), clock, zone) { it.name }
-        repository.loadSample(plan)
+        repository.loadSample(plan, SamplePlan.projects(clock) { it.name })
         assertTrue(repository.hasSample.first())
         assertEquals(0, ops().size)
 
@@ -125,7 +125,7 @@ class LocalModeTest {
         assertEquals(0, ops().size)
 
         val mine = repository.add("My own task", null, null, null)
-        assertEquals(listOf(mine.localId), repository.backupTasks().map { it.localId })
+        assertEquals(listOf(mine.localId), repository.backupSnapshot().tasks.map { it.localId })
         repository.setNow(mine.localId)
         val queued = ops().size
         repository.setNow(plan.single { it.title == "DENTIST" }.localId)
@@ -180,7 +180,7 @@ class LocalModeTest {
         val task = repository.add("Call the dentist", "2026-10-24", "09:30", "Ask about Friday")
         repository.setLabels(task.localId, listOf("Health"))
         repository.setRepeat(task.localId, RepeatRule(RepeatEvery.MONTH, monthDay = -1))
-        val file = PlanBackup.write(repository.backupTasks(), BackupSettings("Europe/Warsaw", "05:00", listOf(0)), clock)
+        val file = PlanBackup.write(repository.backupSnapshot().tasks, BackupSettings("Europe/Warsaw", "05:00", listOf(0)), clock)
 
         val other = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
         try {
@@ -202,9 +202,9 @@ class LocalModeTest {
         val repository = repository()
         repository.add("One", null, null, null)
         repository.add("Two", null, null, null)
-        assertEquals(2 to 2, repository.planSize())
+        assertEquals(dev.helm.planner.data.PlanSize(2, 2, 0), repository.planSize())
         repository.clearAll()
-        assertEquals(0 to 0, repository.planSize())
+        assertEquals(dev.helm.planner.data.PlanSize(0, 0, 0), repository.planSize())
         assertTrue(db.tasks().all().isEmpty())
     }
 }

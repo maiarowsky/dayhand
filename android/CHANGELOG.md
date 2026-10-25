@@ -3,6 +3,41 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.12.0 (unreleased)
+
+### Added
+
+- A fourth bottom-bar tab, **Projects**: projects and labels with open/overdue counts, No project,
+  an archive and Trash. Projects have a unique name, one of twelve colours, an optional emoji
+  and a note; edit, reorder (drag or accessible up/down controls), archive and delete with a task
+  destination. Labels can become projects on request, without moving already assigned tasks.
+- Each project has **List / Board**, and its add button preselects the project. One searchable
+  picker serves quick add, task details, Today and Board menus and the calendar day sheet.
+  `+Project-name` in quick add recognizes existing active projects; unknown tokens stay text.
+- Project dots on Today and Board, contrast-tested across all sixteen palettes. All project
+  strings are in the eight app languages; the sample plan now has projects instead of project-like labels.
+- Room schema 6 with AutoMigration(5,6), project snapshots and server-confirmed task project ids.
+  Project management is online-only: create/edit, archive, delete/move, order and label conversion
+  execute on the server; without a connection (also unpaired) a translated message explains why.
+  Only task/settings edits enter the append-only outbox, including offline assignments to confirmed
+  projects. A refused assignment keeps the task and later edits and removes only that assignment
+  and its dependent repeat proof; a refused move leaves the task in its previous server project.
+  There is no name-conflict linking or automatic project reopening.
+- Repeating tasks made on the phone inherit their project; backend 0.13.2 confirms their parent
+  completion so an archived project stays archived. A local occurrence whose proof the server
+  refuses is sent as an ordinary task (an older backend keeps it queued), never losing its row and
+  edits. **Deploy backend 0.13.2 before Android 0.12.0.** Backup files
+  read tasks/projects in one transaction; restore preflights combined project capacity and needs
+  a connection for project management. Restoring never reopens an archived project: tasks of a
+  project archived on the server or in the file are restored without a project. Switching servers
+  also detects and clears project-only plans.
+- Project markers retain both dot and optional emoji, including Today’s Done rows. Labels and
+  No project offer List only. Cross-project dependencies stay visible in project scopes; ordering
+  handles tied/exhausted positions, and hiding project search clears its filter.
+- JVM/Robolectric coverage for the real Room migration, Compose screens/pickers and task-assignment
+  outbox; opt-in real-local-backend integration tests, shared quick-add project cases and
+  `scripts/e2e-projects.py` for one emulator run with light/dark screenshots.
+
 ## 0.11.0 (unreleased)
 
 ### Added

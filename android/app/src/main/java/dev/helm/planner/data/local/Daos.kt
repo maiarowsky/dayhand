@@ -44,9 +44,36 @@ interface TaskDao {
 }
 
 @Dao
+interface ProjectDao {
+    @Query("SELECT * FROM projects ORDER BY position, createdAt")
+    fun observeAll(): Flow<List<Project>>
+
+    @Query("SELECT * FROM projects ORDER BY position, createdAt")
+    suspend fun all(): List<Project>
+
+    @Query("SELECT * FROM projects WHERE localId = :localId")
+    suspend fun byLocalId(localId: String): Project?
+
+    @Upsert
+    suspend fun upsert(projects: List<Project>)
+
+    @Query("DELETE FROM projects WHERE localId IN (:ids)")
+    suspend fun delete(ids: List<String>)
+
+    @Query("DELETE FROM projects WHERE localId LIKE :pattern")
+    suspend fun deleteLike(pattern: String)
+
+    @Query("DELETE FROM projects")
+    suspend fun deleteAll()
+}
+
+@Dao
 interface OutboxDao {
     @Insert
     suspend fun insert(op: OutboxOp): Long
+
+    @Upsert
+    suspend fun upsert(op: OutboxOp)
 
     @Query("SELECT * FROM outbox ORDER BY seq LIMIT 1")
     suspend fun first(): OutboxOp?

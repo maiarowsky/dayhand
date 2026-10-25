@@ -141,7 +141,7 @@
     </plurals>
     <string name="add_label">Label hinzufügen</string>
     <string name="remove_label">Label entfernen: %1$s</string>
-    <string name="label_name">Label oder Projekt</string>
+    <string name="label_name">Label</string>
     <plurals name="labels_full">
         <item quantity="one">Höchstens %1$d Label</item>
         <item quantity="other">Höchstens %1$d Labels</item>

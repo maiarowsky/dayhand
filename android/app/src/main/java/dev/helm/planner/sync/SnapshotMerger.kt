@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
 /** Groups of task fields that one kind of change touches. */
-enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM }
+enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM, PROJECT }
 
 data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
 
@@ -83,8 +83,10 @@ object SnapshotMerger {
             plan = r.plan,
             dependsOn = r.dependsOn,
             blockedReason = r.blockedReason,
+            projectId = r.projectId,
         )
         if (row == null || keepLocal.isEmpty()) return task
+        if (Field.PROJECT in keepLocal) task = task.copy(projectId = row.projectId)
         if (Field.TITLE in keepLocal) task = task.copy(title = row.title)
         if (Field.NOTE in keepLocal) task = task.copy(note = row.note)
         if (Field.DUE in keepLocal) task = task.copy(dueDate = row.dueDate, dueTime = row.dueTime)
@@ -112,7 +114,7 @@ class DirtyFields private constructor(
     fun hasChanges(localId: String) = localId in byTask
 
     fun forTask(localId: String): Set<Field> =
-        byTask[localId].orEmpty() + if (nowEverywhere) setOf(Field.NOW) else emptySet()
+        byTask[localId].orEmpty() + (if (nowEverywhere) setOf(Field.NOW) else emptySet())
 
     companion object {
         fun of(pending: List<OutboxOp>): DirtyFields {
@@ -147,6 +149,7 @@ class DirtyFields private constructor(
                 return Field.entries.toSet() - Field.CLAIM
             }
             return buildSet {
+                if ("projectId" in keys) add(Field.PROJECT)
                 if ("title" in keys) add(Field.TITLE)
                 if ("note" in keys) add(Field.NOTE)
                 if ("dueDate" in keys || "dueTime" in keys) add(Field.DUE)

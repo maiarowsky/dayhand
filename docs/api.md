@@ -118,6 +118,13 @@ merged key by key. Status, now, archive and trash have their own routes.
 
 ### Projects
 
+Backend 0.13.2 also lets the authenticated app restore a locally calculated repeat through
+`app:add` with `repeatedFrom: { taskId, completedBy, completedOn }` and a `clientId`. The server
+confirms the parent's repeat-clear and completion history, the next date/rule and the same
+project; one completion has one successor. This keeps an archived project archived. It is an
+app-only sync argument, **not** an option on `POST /tasks` or MCP `add_task`; ordinary additions
+to archived projects still fail. Deploy backend 0.13.2 before Android 0.12.0.
+
 Since backend 0.13.1, the four project routes use the [project tool contracts](mcp.md#projects).
 `{projectId}` accepts a stored id or a case-insensitive name, URL-encoded in the path
 (`/projects/Strona%20piekarni`). Task routes also accept `projectId`: in `POST /tasks` and
