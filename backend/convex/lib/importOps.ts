@@ -25,7 +25,7 @@ import {
   type Identity,
 } from "./core";
 import { localDate } from "./dates";
-import { insertProject, nameKeyOf, projectNamed, projectTarget } from "./projectOps";
+import { allProjects, insertProject, nameKeyOf, projectNamed, projectTarget } from "./projectOps";
 import {
   checklistInputValidator,
   linkValidator,
@@ -131,10 +131,12 @@ async function alreadyHere(ctx: MutationCtx, userId: string, item: ImportTask, c
 
 /** Makes the file's projects the plan has no project of that name for (any case), in the file's order. */
 async function addMissingProjects(ctx: MutationCtx, identity: Identity, projects: ImportProject[], outcome: Outcome) {
+  let catalog = await allProjects(ctx, identity.userId);
   for (const project of projects) {
-    if (await projectNamed(ctx, identity.userId, project.name)) continue;
+    if (catalog.some((existing) => existing.nameKey === nameKeyOf(project.name))) continue;
     try {
-      await insertProject(ctx, identity, project);
+      const projectId = await insertProject(ctx, identity, project, catalog);
+      catalog = [...catalog, (await ctx.db.get(projectId))!];
     } catch (error) {
       if (!(error instanceof ConvexError)) throw error;
       outcome.failed.push({ title: `Project "${project.name}"`, message: (error.data as { message: string }).message, projectKey: nameKeyOf(project.name) });

@@ -70,8 +70,7 @@ export function checkPosition(position: number): number {
   return position;
 }
 
-async function checkNameFree(ctx: QueryCtx, userId: string, name: string) {
-  const taken = await projectNamed(ctx, userId, name);
+function checkNameFree(taken: Doc<"projects"> | null | undefined) {
   if (taken) fail("invalid_argument", `A project named "${taken.name}" already exists${taken.archivedAt !== undefined ? " (archived)" : ""}`);
 }
 
@@ -240,10 +239,9 @@ export type NewProject = { name: string; color?: ProjectColor; icon?: string; no
  * Checks and stores a new project, at the end of the menu unless `position` is
  * given, with its projectAdd history entry (`extra` adds to what it records).
  */
-export async function insertProject(ctx: MutationCtx, identity: Identity, input: NewProject, clientId?: string, extra: Record<string, unknown> = {}) {
+export async function insertProject(ctx: MutationCtx, identity: Identity, input: NewProject, projects: readonly Doc<"projects">[], clientId?: string, extra: Record<string, unknown> = {}) {
   const name = checkProjectName(input.name);
-  await checkNameFree(ctx, identity.userId, name);
-  const projects = await allProjects(ctx, identity.userId);
+  checkNameFree(projects.find((project) => project.nameKey === nameKeyOf(name)));
   if (projects.length >= PROJECT_LIMITS.projects) fail("invalid_argument", `at most ${PROJECT_LIMITS.projects} projects, archived ones included; delete one first`);
   const last = projects.reduce((max, p) => Math.max(max, p.position), 0);
   const now = Date.now();
@@ -280,7 +278,7 @@ export async function addProject(ctx: MutationCtx, identity: Identity, input: Ar
   if (input.removeLabel && label === undefined) fail("invalid_argument", "removeLabel needs fromLabel");
   const { name, color, icon, note, position } = input;
   const from = label === undefined ? {} : { fromLabel: label, removeLabel: input.removeLabel === true };
-  const projectId = await insertProject(ctx, identity, { name, color, icon, note, position }, clientId, from);
+  const projectId = await insertProject(ctx, identity, { name, color, icon, note, position }, await allProjects(ctx, identity.userId), clientId, from);
   const { moved, skipped } = label === undefined ? { moved: [], skipped: [] } : await moveLabel(ctx, identity, label, projectId, input.removeLabel === true, clientId);
   return { project: toProject((await ctx.db.get(projectId))!), moved, skipped };
 }
@@ -295,7 +293,7 @@ export async function updateProject(ctx: MutationCtx, identity: Identity, input:
   if (input.name !== undefined) {
     const name = checkProjectName(input.name);
     // The same name in another case keeps its key; any other name must be free.
-    if (nameKeyOf(name) !== project.nameKey) await checkNameFree(ctx, identity.userId, name);
+    if (nameKeyOf(name) !== project.nameKey) checkNameFree(await projectNamed(ctx, identity.userId, name));
     patch.name = name;
   }
   if (input.color !== undefined) patch.color = input.color ?? undefined;

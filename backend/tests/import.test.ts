@@ -310,6 +310,74 @@ describe("imports and projects (0.13.0)", () => {
     expect(after.content.tasks.every((task: any) => task.projectId === after.content.projects.at(-1).id)).toBe(true);
   }, 60_000);
 
+  test.each([
+    { existingCount: 199, taskCount: 0 },
+    { existingCount: 197, taskCount: 201 },
+  ])("bulk restoration with $existingCount existing projects and $taskCount tasks stops at capacity", async ({ existingCount, taskCount }) => {
+    const target = await account();
+    const now = Date.now();
+    await importRows("projects", Array.from({ length: existingCount }, (_, index) => ({
+      userId: target.userId, name: `Existing ${index}`, nameKey: `existing ${index}`, position: (index + 1) * 1024,
+      archivedAt: index === existingCount - 1 ? now : undefined, createdAt: now, updatedAt: now,
+    })));
+    const initial: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    const available = 200 - existingCount;
+    const projects = Array.from({ length: 200 }, (_, index) => ({ id: `p${index}`, name: `Imported ${index}`, icon: "🥐", archived: index === 0 }));
+    const content = JSON.stringify({
+      version: 1, projects,
+      tasks: Array.from({ length: taskCount }, (_, index) => ({ id: `t${index}`, title: `Task ${index}`, projectId: `p${index % available}` })),
+    });
+    const failed = projects.slice(available).map((project) => ({ title: `Project "${project.name}"`, message: expect.stringMatching(/at most 200 projects/) }));
+    const preview = await rest(target.key, "POST", "/import?dryRun=true", { body: { content } });
+    expect(preview.status).toBe(200);
+    expect(preview.body).toMatchObject({ total: taskCount, created: taskCount, skipped: [], failed });
+    const unchanged: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    expect(unchanged.content.projects).toEqual(initial.content.projects);
+    expect(unchanged.content.events).toEqual(initial.content.events);
+    expect(unchanged.content.tasks).toEqual([]);
+
+    const imported = await rest(target.key, "POST", "/import", { body: { content } });
+    expect(imported.status).toBe(200);
+    expect(imported.body).toMatchObject({ total: taskCount, created: taskCount, skipped: [], failed });
+    const after: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    expect(after.content.projects).toHaveLength(200);
+    expect(after.content.projects.slice(existingCount).map((project: any) => [project.name, project.position, project.archived, project.icon])).toEqual(
+      projects.slice(0, available).map((project, index) => [project.name, (existingCount + index + 1) * 1024, project.archived, project.icon]),
+    );
+    expect(after.content.events.filter((event: any) => event.action === "projectAdd")).toHaveLength(available);
+    expect(after.content.tasks).toHaveLength(taskCount);
+    expect(after.content.tasks.every((task: any) => after.content.projects.slice(existingCount).some((project: any) => project.id === task.projectId))).toBe(true);
+  }, 60_000);
+
+  test("bulk creation reuses normalized names and advances position only after successful inserts", async () => {
+    const target = await account();
+    const { project: existing }: any = await target.user.mutation(internal.ops.addProject, { name: "Café", position: 8192 });
+    await target.user.mutation(internal.ops.updateProject, { projectId: existing.id, archived: true });
+    const content = JSON.stringify({
+      version: 1,
+      projects: [
+        { id: "existing", name: " CAFÉ " },
+        { id: "invalid", name: "Invalid", note: "x".repeat(2001) },
+        { id: "first", name: "Garden" },
+        { id: "duplicate", name: " GARDEN " },
+        { id: "next", name: "Work" },
+      ],
+      tasks: [
+        { id: "t1", title: "Existing", projectId: "existing" },
+        { id: "t2", title: "First", projectId: "first" },
+        { id: "t3", title: "Duplicate", projectId: "duplicate" },
+      ],
+    });
+    const imported = await rest(target.key, "POST", "/import", { body: { content } });
+    expect(imported.status).toBe(200);
+    expect(imported.body).toMatchObject({ created: 3, failed: [{ title: 'Project "Invalid"', message: expect.stringMatching(/note is longer than 2000/) }] });
+    const after: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    expect(after.content.projects.map((project: any) => [project.name, project.position, project.archived])).toEqual([
+      ["Café", 8192, true], ["Garden", 9216, false], ["Work", 10240, false],
+    ]);
+    expect(imported.body.tasks.map((task: any) => task.projectId)).toEqual([existing.id, after.content.projects[1].id, after.content.projects[1].id]);
+  });
+
   test.each(["abc🥐", "🥐🥐"])("JSON import rejects an invalid icon without recreating its project from a task: %s", async (icon) => {
     const target = await account();
     const initial: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
