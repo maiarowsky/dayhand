@@ -3,6 +3,12 @@
 Dayhand deploys the `backend/` folder to a Convex deployment (Convex Cloud or self-hosted). The
 repository holds no secrets: everything below goes into the deployment's environment.
 
+Today you run the server yourself, or not at all: the Android, macOS and Linux apps also keep a plan
+on the device with no server. Without a server the plan lives only on that device, and Android's own
+backup is off for Dayhand, so keep a backup file ([Android backups](android.md#backups)). A hosted
+server, Dayhand Cloud, is planned for $5 a month; it is not open yet, and its waitlist is on
+[dayhand.dev](https://dayhand.dev/#dayhand-cloud).
+
 ## Run your own server in 5 minutes
 
 One command sets up a complete Dayhand server of your own on your own free Convex account: sync for

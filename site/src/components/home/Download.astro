@@ -13,7 +13,7 @@ import { DOCS_PATH, repoFile } from "../../site";
   </p>
 
   <ul class="cards downloads" role="list">
-    <li class="card wide">
+    <li class="card wide" id="download-cli">
       <h3>Command line</h3>
       <p class="meta">macOS, Linux and Windows; Node.js 22.12 or newer</p>
       <p>
@@ -30,14 +30,14 @@ import { DOCS_PATH, repoFile } from "../../site";
         repository, as <a href={repoFile("docs/deploy.md")}>the deployment guide</a> shows.
       </p>
     </li>
-    <li class="card">
+    <li class="card" id="download-android">
       <h3>Android</h3>
       <p class="meta">Android 8.0 or newer</p>
       <p><span class="badge ok">Works today</span> <a href={repoFile("android/README.md")}>Build the app yourself</a></p>
       <p class="later"><span class="badge soon">Coming soon</span> A signed APK on GitHub Releases</p>
       <p class="later"><span class="badge soon">Coming soon</span> Google Play</p>
     </li>
-    <li class="card">
+    <li class="card" id="download-macos">
       <h3>macOS</h3>
       <p class="meta">macOS 13 or newer; builds with Xcode 26</p>
       <p><span class="badge ok">Works today</span> From the source:</p>
@@ -45,7 +45,7 @@ import { DOCS_PATH, repoFile } from "../../site";
 open macos/dist/Dayhand.app</code></pre>
       <p class="later"><span class="badge soon">Coming soon</span> A signed download</p>
     </li>
-    <li class="card">
+    <li class="card" id="download-linux">
       <h3>Linux</h3>
       <p class="meta">Qt 6; a package for Arch Linux and Omarchy</p>
       <p><span class="badge ok">Works today</span> From the source:</p>

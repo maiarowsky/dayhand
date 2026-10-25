@@ -1,47 +1,97 @@
 ---
-// Where the plan lives: a server you start with one command, your own Convex account, or the phone alone.
-import { repoFile } from "../../site";
+// Getting started in two steps: install an app, then choose where the plan lives (this device, the planned hosted
+// Dayhand Cloud with its waitlist, or a server of your own). Server details live in docs/deploy.md.
+import { CONTACT_EMAIL, DOCS_PATH } from "../../site";
+
+const installs = [
+  { href: "#download-macos", label: "macOS" },
+  { href: "#download-android", label: "Android" },
+  { href: "#download-linux", label: "Linux" },
+  { href: "#download-cli", label: "Command line" },
+];
 ---
 
-<section id="self-hosting" aria-labelledby="self-hosting-title">
-  <h2 id="self-hosting-title">Your plan, on your own server</h2>
-  <p class="section-lead">
-    There is no Dayhand cloud and no server address built into the apps. You run the server, with one command, or
-    skip it: the apps also work on their own.
-  </p>
+<section id="get-dayhand" aria-labelledby="get-dayhand-title">
+  <h2 id="get-dayhand-title">Get Dayhand</h2>
+  <p class="section-lead">Install the app, then choose where your plan lives.</p>
 
-  <ol class="steps" role="list">
+  <ol class="get-steps" role="list">
     <li>
-      <h3>Start a server on this computer</h3>
-      <p>
-        On macOS or Linux, with the <code>dayhand</code> command from <a href="#download">Download</a>, which carries
-        the server code (<code>backend/</code>), so there is no repository to clone. The first run downloads the
-        Convex local backend once, signs <code>dayhand</code> in and prints a pairing code. Data and keys stay in a
-        private folder.
-      </p>
-      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that starts a server"><code>dayhand server start</code></pre>
+      <h3>Install the app</h3>
+      <ul class="actions" role="list">
+        {
+          installs.map((install) => (
+            <li>
+              <a class="button" href={install.href}>
+                {install.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
     </li>
     <li>
-      <h3>Connect your phone</h3>
-      <p>
-        In the app, choose Settings, Server, Connect to my server, and scan the code. Release builds connect only over
-        HTTPS, so a server on your computer needs <code>tailscale serve</code> in front of it.
+      <h3>Choose where your plan lives</h3>
+      <ul class="cards plans" role="list">
+        <li class="card">
+          <h4>On this device</h4>
+          <p class="price">Free</p>
+          <p>Nothing to set up. Your plan stays on your phone or computer.</p>
+        </li>
+        <li class="card cloud" id="dayhand-cloud">
+          <h4>Dayhand Cloud</h4>
+          <p class="price">$5 <span>/ month</span></p>
+          <p>
+            We run the server for you, so all your devices and Claude stay in sync.
+            <span class="badge soon">Opens soon</span>
+          </p>
+          <form class="waitlist" action="/api/waitlist" method="post" data-waitlist novalidate>
+            <label for="waitlist-email">Email</label>
+            <div class="waitlist-row">
+              <input
+                id="waitlist-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                maxlength="254"
+                required
+                aria-describedby="waitlist-privacy"
+              />
+              <button class="button primary" type="submit">Join the waitlist</button>
+            </div>
+            <div class="waitlist-trap" aria-hidden="true">
+              <label for="waitlist-website">Leave this empty</label>
+              <input id="waitlist-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+            <p class="waitlist-status" role="status" data-waitlist-status></p>
+            <p class="fineprint" id="waitlist-privacy">
+              We use your address only to send one email when Dayhand Cloud opens, then delete the list. To have it
+              removed sooner, write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+            </p>
+          </form>
+          <p class="fineprint waitlist-noscript">Joining the waitlist needs JavaScript turned on.</p>
+        </li>
+        <li class="card">
+          <h4>Your own server</h4>
+          <p class="price">Free</p>
+          <p>
+            One command on your computer, or a deploy to your own Convex account. Your data and keys stay with you.
+          </p>
+          <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that starts a server"><code>dayhand server start</code></pre>
+          <a class="more" href={`${DOCS_PATH}deploy/`}>
+            Guide<span class="visually-hidden"> to running your own server</span> <span aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+      <p class="note">
+        Already have a server? In the app, choose Settings → Server → Connect to my server, then scan or type the code
+        that <code>dayhand pair</code> prints.
       </p>
-      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that prints a pairing code"><code>dayhand pair</code></pre>
-    </li>
-    <li>
-      <h3>Or use your own Convex account</h3>
-      <p>
-        This deploys to your free Convex account and gives a public HTTPS address, which the Claude apps and a phone
-        away from home need. It works from Windows too, and the Free plan costs nothing.
-      </p>
-      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that deploys a server"><code>dayhand server deploy</code></pre>
     </li>
   </ol>
-
-  <p class="note">
-    No server at all? The Android app starts with an empty plan or sample data and keeps everything on the phone.
-    Android backups are off for Dayhand, so keep a backup file. Costs, backups, updates and Tailscale:
-    <a href={repoFile("docs/deploy.md")}>the deployment guide</a>.
-  </p>
 </section>
+
+<script>
+  import "../../scripts/waitlist.ts";
+</script>

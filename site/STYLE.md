@@ -1,8 +1,9 @@
 # dayhand.dev: how the site is built
 
 `site/` is an [Astro](https://astro.build) project that builds dayhand.dev into `site/dist/` as plain
-static files: the home page and the documentation (from `docs/*.md`) as HTML, one stylesheet, two small
-scripts and images, with no server code, no framework on the page and nothing loaded from other servers. The
+static files: the home page and the documentation (from `docs/*.md`) as HTML, one stylesheet, three small
+scripts and images, with no framework on the page and nothing loaded from other servers. The only server
+code is the Worker script in `worker/`, which answers the waitlist form (`POST /api/waitlist`). The
 site is in English; its text is written for this project.
 
 Astro is the only dependency, pinned in `package-lock.json`. Install from the lockfile with install scripts
@@ -33,10 +34,14 @@ npm run preview   # serves dist/ as it will be published
 | `src/styles/site.css` | every style, with the tokens on `:root` |
 | `src/scripts/copy-buttons.ts` | adds a Copy button to code blocks; the page works without it |
 | `src/scripts/docs-search.ts` | keeps the docs menu open beside the page and runs the search; the docs work without it |
+| `src/scripts/waitlist.ts` | sends the Dayhand Cloud waitlist form; without it the form is hidden and a line says why |
 | `src/site.ts` | the addresses the pages link to |
 | `src/assets/screens/` | the app screenshots the build resizes |
 | `public/` | files copied as they are: `favicon.svg` (a copy of `design/icon/dayhand-icon.svg`), `robots.txt`, and `apple-touch-icon.png` and `og-image.png`, rendered by `scripts/render-site-images.sh` from the icon and `og-image.svg` |
-| `wrangler.toml` | the Cloudflare Worker that serves `dist/` at dayhand.dev |
+| `wrangler.toml` | the Cloudflare Worker that serves `dist/` at dayhand.dev, and its D1 waitlist database |
+| `worker/` | the Worker script: `POST /api/waitlist` only (`index.ts`), and the checks on what the form sends (`input.ts`) |
+| `migrations/` | the D1 tables of the waitlist; setup and reading the list: [CONTRIBUTING.md](../CONTRIBUTING.md#the-dayhand-cloud-waitlist) |
+| `scripts/check-waitlist.mjs` | checks the waitlist endpoint against a local `wrangler dev` |
 
 Check the build with `scripts/check-site.sh` before every change is merged (`--build` installs and builds
 first). It reads `site/dist/`: HTML structure, image attributes, internal links and fragments, that pages
@@ -131,7 +136,8 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **`overflow: clip` instead of `hidden`** on the terminal frames, and `tabular-nums` only on the step
   numbers.
 - **Native elements before scripts.** The FAQ and the docs menu are `<details>`, the search box is
-  `<search>`; JavaScript only adds Copy buttons, keeps the docs menu open beside the page and searches.
+  `<search>`; JavaScript only adds Copy buttons, keeps the docs menu open beside the page, searches and
+  sends the waitlist form.
 - **Never disable zoom**, never `user-select: none` on text you read (only on the `$` prompt of the
   terminal samples), never truncate page content.
 
@@ -152,6 +158,7 @@ scroll-driven animation, `text-box` and `@property`.
 
 ## Privacy
 
-No cookies, no analytics, no fonts or scripts from other servers. `scripts/check-site.sh` checks what the
+No cookies, no analytics, no fonts or scripts from other servers. The waitlist form sends an email
+address to this site's own Worker, which keeps it in D1 for one email when Dayhand Cloud opens. `scripts/check-site.sh` checks what the
 built pages reference and lints the built CSS and JS; it does not prove runtime network behaviour. Verify
 requests separately in a browser's Network panel.

@@ -273,7 +273,8 @@ Every command in this README runs against a local backend with sample data in
 
 Start with `dayhand help` and the [documentation](docs/README.md): [quick start](docs/getting-started.md),
 [FAQ and troubleshooting](docs/faq.md), [docs/cli.md](docs/cli.md) and [docs/deploy.md](docs/deploy.md).
-Dayhand is a personal project with no hosted service and no support promise; issues are for bugs
+Dayhand is a personal project with no hosted service yet (a hosted backend is planned, with a waitlist on
+[dayhand.dev](https://dayhand.dev/#dayhand-cloud)) and no support promise; issues are for bugs
 you can reproduce and for feature ideas. Security problems go privately, never in an issue
 ([SECURITY.md](SECURITY.md)).
 

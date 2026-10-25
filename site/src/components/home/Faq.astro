@@ -9,15 +9,16 @@ import { DOCS_PATH, repoFile } from "../../site";
     <details>
       <summary>Is Dayhand really free?</summary>
       <p>
-        Yes. Every app, the server and the command line are free, with no paid plan and no trial. A server on your
-        computer costs nothing, and so does a server on Convex's Free plan; its limits are in the
-        <a href={repoFile("docs/deploy.md")}>deployment guide</a>.
+        Yes. Every app, the server and the command line are free, with no trial. A server on your computer costs
+        nothing, and so does a server on Convex's Free plan; its limits are in the
+        <a href={repoFile("docs/deploy.md")}>deployment guide</a>. The one paid option planned is
+        <a href="#dayhand-cloud">Dayhand Cloud</a>, a server we run for you for $5 a month; it is not open yet.
       </p>
     </details>
     <details>
       <summary>Why is it free?</summary>
       <p>
-        Dayhand is a personal project with no hosted service, so there is nothing to bill for. It is shared under the
+        Dayhand is a personal project with no hosted service yet, so there is nothing to bill for. It is shared under the
         Apache License 2.0, and support is what the issues on GitHub offer: bugs you can reproduce and ideas, with no
         promise of a reply time.
       </p>
@@ -25,7 +26,7 @@ import { DOCS_PATH, repoFile } from "../../site";
     <details>
       <summary>Do I need an account?</summary>
       <p>
-        Not with us; there is no Dayhand account. A server on your computer needs no account. To reach it from your
+        Not with us; there are no Dayhand accounts today. A server on your computer needs no account. To reach it from your
         phone you put Tailscale in front of it, which has its own sign-in, and <code>dayhand server deploy</code> asks
         you to log in to your own Convex account.
       </p>
@@ -34,7 +35,8 @@ import { DOCS_PATH, repoFile } from "../../site";
       <summary>Where does my data live?</summary>
       <p>
         On your devices and on the server you chose: your computer or your own Convex account. Each app keeps a copy
-        for working offline. Nothing goes to us, because there is no server of ours to send it to.
+        for working offline. Nothing goes to us: there is no server of ours yet, and Dayhand Cloud will be a choice
+        you make.
       </p>
     </details>
     <details>

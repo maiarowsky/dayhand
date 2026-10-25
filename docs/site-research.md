@@ -39,7 +39,7 @@ and Cal.com; first-party analytics only on Plausible, Ghostty and Super Producti
   section, the slot Super Productivity uses for the same message.
 - **The licence named in the body and again in the FAQ**, with a plain "why is it free?" answer, as on
   Vikunja, Super Productivity and Plausible. Dayhand adds that there is no paid plan and no hosted
-  service, and says what the one non-Apache part (the Convex local backend) is.
+  service yet (Dayhand Cloud is planned), and says what the one non-Apache part (the Convex local backend) is.
 - **Frank about self-hosting.** Like Vikunja's two paths and Plausible's comparison: explain the choices
   before setup. Dayhand's server paths are in [README.md](../README.md#your-own-server).
 - **Phone and desktop together, showing the same plan**, the idea from Joplin, built the way Immich builds
