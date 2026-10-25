@@ -19,15 +19,15 @@ This version is the basic one (MVP):
   Later with the day, No Day) and the latest done (folded), each task with a second line of its project (outside
   that project's own list), day, repeat, checklist and labels. Quick add at the top of a project's list adds to
   that project, without a day.
-- **Board, plan or list**: the toolbar's switcher (and the **View** menu, ⌃⌘1 Board, ⌃⌘2 Plan, ⌃⌘3 List) shows
-  Today and every list place as the list above, as the week's **Plan** below, or as a **Board** of three status columns, To do, In progress and Done, each
-  with its line icon (no round background) and a count (Done shows the latest done tasks and counts them all, as
-  the list's Done does). A card holds the title, the project and chips for the day, labels and the checklist, with a
-  **…** menu of the task's moves; dragging a card to another column changes its status, and a selected card opens
-  the panel along the bottom. **Add Task** under To do opens quick add for the place (not in an archived project's
-  place, which takes no new tasks). The choice is kept between launches. A drop changes only the status, never the
-  day: on Today's board a task done today without today's day leaves the board when it is dragged back to To do or
-  In progress.
+- **Board, plan or list**: the toolbar's switcher (and the **View** menu, ⌃⌘1 Board, ⌃⌘2 Plan, ⌃⌘3 List) shows Today
+  and every list place as the list above, as the week's **Plan** below, or as a **Board** of three status columns, To
+  do, In progress and Done, each with its line icon (no round background) and a count (Done shows the latest done
+  tasks and counts them all, as the list's Done does). A card holds the title, the project and chips for the day,
+  labels and the checklist, with a **…** menu of the task's moves; dragging a card to another column changes its
+  status, and a selected card opens the panel along the bottom. **Add Task** under To do opens quick add for the place
+  (not in an archived project's place, which takes no new tasks). The choice is kept between launches. A drop changes
+  only the status, never the day: on Today's board a task done today without today's day leaves the board when it is
+  dragged back to To do or In progress.
 - **Plan**: the place's week, Monday to Sunday, as a grid of the whole day's hours that opens at 08:00, with
   ‹ **This Week** › to move between weeks. A task with a time is a block with its project's colour on the left, its
   title, project and start time (a task has only a start, so a block is an hour long); tasks whose blocks overlap
@@ -348,8 +348,8 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).
   `swift run DayhandSnapshots <folder> pl` draws them in another language, and the tool fails when a text on
   them is missing from the string catalog. It also lays out the main window in a real window with its title bar
-  (wide, narrowest, sidebar closed, light and dark, as a list, a board and a plan) and fails when the content is taller
-  than the window or quick add sits under the title bar and its window buttons.
+  (wide, narrowest, sidebar closed, light and dark, as a list, a board and a plan) and fails when the content is
+  taller than the window or quick add (the plan has none) sits under the title bar and its window buttons.
 - **Sidebar and lists** (`SidebarTests`): the sidebar's counts against the database, a project's list in sections
   and search, quick add in a project, a task dropped on a place, a server without projects hiding them, project
   changes without a server saying "Requires a connection to the server." with nothing queued, the panel's height
