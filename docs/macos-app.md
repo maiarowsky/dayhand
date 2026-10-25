@@ -1,7 +1,7 @@
 # Dayhand for macOS
 
-Dayhand for macOS has Today, projects and task lists in a sidebar, quick add from the menu bar or a
-global shortcut, a task panel with the change history, the trash, reminders and the morning summary
+Dayhand for macOS has Today, projects and task lists in a sidebar, each as a list, a board or a week
+plan, quick add from the menu bar or a global shortcut, a task panel with the change history, the trash, reminders and the morning summary
 as notifications, and works offline like the phone. It runs on macOS 13 or newer, in English, Polish,
 German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese.
 
@@ -22,14 +22,25 @@ on the server. When the server revokes the Mac, Today says so, and the tasks and
 
 A sidebar on the left lists the places: Inbox, **Today**, **All Tasks**, **No Project**, the projects
 (with their open counts), Labels, **Done and Archived** and **Trash**. The place picked is on the right,
-and the selected task opens in a panel along the bottom. Projects need Dayhand server 0.13.0 or later;
-the sidebar, its shortcuts and the project rules: [Mac app features](../macos/README.md).
+and the selected task opens in a panel along the bottom. Projects need Dayhand server 0.13.0 or later.
+
+- **Shortcuts**: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects; ⌥⌘N a new
+  project, ⇧⌘M **Move to Project…**, ⌃⌘S folds the sidebar.
+- **Projects** in the sidebar: drag them into your order, and drag a task onto a project, No Project or
+  Today to move it there. **+** makes a project; its context menu edits, archives or deletes it. Archived
+  projects wait under **Archived**. How projects work: [Projects and labels](projects.md).
+- **List, Board or Plan**: the switcher in the toolbar (⌃⌘1 Board, ⌃⌘2 Plan, ⌃⌘3 List) shows Today and
+  every list place in three ways, and the choice is kept.
 
 - **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first, by
   time) and done today, folded. One click ticks a task off. The context menu makes a task the one you
   work on now, moves it to today or tomorrow, archives it or moves it to the trash.
 - **Lists**: All Tasks, No Project, a project or a label, their open tasks in sections by day, with search
   in the toolbar.
+- **Board**: To do, In progress and Done side by side; drag a card to another column to change its status.
+- **Plan**: the week, Monday to Sunday, on an hour grid. Tasks with a time are blocks in their project's
+  colour; tasks without a time sit at the top of their day. Drag a task from the **Tasks** drawer along
+  the bottom onto an hour to plan it then, or onto a day's top for the day without a time.
 - **Task panel**: title, status, "working on it now" with the resume note, the day and time (a date
   phrase, **Today**, **Tomorrow**, **No day**, **Remove the time**), labels, the project, the checklist and
   the note. Links are shown. For repeat and reminder editors and read-only agent work, see

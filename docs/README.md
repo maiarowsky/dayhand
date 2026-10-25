@@ -25,7 +25,9 @@ repository as `docs/*.md`. They describe what is in the `main` branch, not a pub
 ```
 
 - **The plan.** Tasks with a day and an optional time, repeats, checklists, labels, links, reminders
-  and a note. One task can be the *now* task, with a note of where you stopped. Today shows what is
+  and a note. A task can be in one project, which has a colour, an emoji and a note; labels are free
+  tags across projects ([projects and labels](projects.md)). One task can be the *now* task, with a
+  note of where you stopped. Today shows what is
   overdue, the now task, today and what you finished today; the board has three columns (to do, in
   progress, done); deleted tasks wait 30 days in the trash. Every task has a number (`#42`) that is
   never given to another task.
@@ -51,6 +53,7 @@ repository as `docs/*.md`. They describe what is in the `main` branch, not a pub
 | Try Dayhand on one computer in ten minutes | [Quick start](getting-started.md) |
 | Install an app or the command line | [Install](install.md) |
 | Use the phone app | [Android](android.md) |
+| Sort tasks into projects | [Projects and labels](projects.md) |
 | Use the Mac or Linux app | [macOS](macos-app.md), [Linux and Omarchy](linux.md) |
 | Work in the terminal | [Terminal: dayhand ui](terminal.md), [command reference](cli.md) |
 | Let an AI agent work on your plan | [Agents and you](agents.md), [MCP endpoint](mcp.md) |

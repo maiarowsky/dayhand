@@ -1,7 +1,7 @@
 # Dayhand for Android
 
 The Android app is the fullest Dayhand client: Today with quick add, the week and day calendar, the
-board, task details with repeats, checklists and reminders, the trash, a backup file, and, with a
+board, projects, task details with repeats, checklists and reminders, the trash, a backup file, and, with a
 server, phone pairing, the calendar address, agent connections and the controls for your agents. It
 works offline, and reminders and the morning summary are worked out on the phone.
 
@@ -15,7 +15,7 @@ The first start asks where your plan lives, on two cards:
 
 - **On this phone only**: no account and no server. **Start with an empty plan**, or **Try with
   sample data** to look around first: a few overdue, today's and done tasks, a repeating one, a
-  checklist and labels. One tap removes the sample tasks (on Today, or Settings → Data), and they are
+  checklist, labels and three projects. One tap removes the sample tasks (on Today, or Settings → Data), and they are
   never sent to a server.
 - **Connect to my server**: the pairing form ([below](#connect-to-your-server)). Back returns to the
   two cards.
@@ -53,9 +53,13 @@ The phrases are English in every language of the app, the same as `dayhand add -
 `tomorrow 9am`, `fri`, `next mon`, `in 3 days`, `23 oct`, `2026-10-23`, `2pm`. The full list:
 [dates](cli.md#topic-dates).
 
+`+Project-name` anywhere in the line puts the task in a project that exists, in any case, with hyphens
+for spaces: "Order business cards +Bakery-website fri". A name that matches no active project stays in
+the title, with a hint. **More options** also has the project picker.
+
 ## Calendar
 
-The bar at the bottom switches between Today, the calendar and the board.
+The bar at the bottom switches between Today, the calendar, the board and Projects.
 
 - **Week** shows Monday to Sunday on an hour grid, **Day** one day. Swipe or use the arrows to turn.
 - Tasks with a time are blocks at their hour; tasks without a time sit in a band above the hours.
@@ -73,6 +77,26 @@ recently done). On a phone one column shows at a time under tabs; from 600 dp wi
 side. Long-press a card and drag it to another column or tab, or use the card's menu. The bin icon
 opens the trash.
 
+## Projects
+
+The **Projects** tab lists your projects in your order, each with its colour, its emoji and the number of
+open and overdue tasks, then **No project**, your labels, **Archived** and **Trash**. Tap one for its
+tasks: overdue, today, later, without a day and the latest done. A project also has **List / Board**, and
+its **+** adds a task to it.
+
+- **+** at the top makes a project: a name, one of twelve colours, an optional emoji and a note on what
+  it is about. Long-press a project to edit, archive or delete it; **Set order** shows handles to drag
+  and buttons to move a project up or down.
+- **Archive** keeps the project's tasks where they are, in Today, the calendar and the board; a switch
+  archives its open tasks too. **Delete** asks where its tasks go, to another project or to No project;
+  no task is deleted.
+- Long-press a label for **Make a project from label**: its tasks without a project move into the new
+  project, and you choose whether the label comes off them.
+- Managing projects needs your server: offline, or without a server, the app says **Requires a connection
+  to the server** and changes nothing. Putting a task into a project works offline.
+
+The rules, and how projects differ from labels: [Projects and labels](projects.md).
+
 ## Task details
 
 Tap a task to open it. You can change its title, status, the now flag and its note, the day with an
@@ -86,7 +110,8 @@ optional time, the repeat, reminders, a checklist, labels and links (http and ht
   a repeating task starts with every item unticked.
 - **Reminders**: the defaults from Settings, none, or the task's own: minutes before the due time, or
   a time on the due day or days before (at most five).
-- **Labels and projects**: see [backend project support and client availability](architecture.md#projects).
+- **Labels and projects**: labels are free tags; **Project** picks the task's one project, or none
+  ([Projects and labels](projects.md)).
 - **Move to trash** keeps the task for 30 days. A task in the trash is read only until you restore it.
 - **Change history** lists who changed what, newest first: you in the app, you with `dayhand`, or an
   agent by name.
