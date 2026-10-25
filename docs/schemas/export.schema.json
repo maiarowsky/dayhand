@@ -49,6 +49,13 @@
             "settings": {
               "$ref": "settings.schema.json"
             },
+            "projects": {
+              "type": "array",
+              "description": "Every project in menu order, archived and empty ones included; tasks name theirs by projectId (since 0.13.0)",
+              "items": {
+                "$ref": "project.schema.json"
+              }
+            },
             "tasks": {
               "type": "array",
               "items": {

@@ -6,7 +6,7 @@
 // documents (https://spec.openapis.org/oas/3.1/schema/2022-10-07, Apache-2.0).
 import { readFileSync } from "node:fs";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import { TOOLS } from "../convex/lib/mcpTools";
 import { TOOL_ROUTES } from "../convex/lib/restRoutes";
 import { createKey, mcpClient, newUserId, openApiChecker, rest, utc, type RestAnswer } from "./helpers";
@@ -76,9 +76,53 @@ const STEPS: Step[] = [
   { tool: "import_backlog", args: { files: [{ path: "tasks/task-1 - Pack.md", content: "---\nid: TASK-1\ntitle: Pack\nstatus: In Progress\n---\n" }] },
     method: "POST", path: "/import/backlog", body: { files: [{ path: "tasks/task-1 - Pack.md", content: "---\nid: TASK-1\ntitle: Pack\nstatus: In Progress\n---\n" }] } },
   { tool: "export_backlog", args: { prefix: "home" }, method: "GET", path: "/export/backlog?prefix=home" },
+  // Since 0.13.1: projects; an agent key may add and change them, but not delete them.
+  { tool: "list_projects", args: { at: AT }, method: "GET", path: `/projects?at=${AT}` },
+  { tool: "add_project", args: { name: "Report", color: "blue", fromLabel: "work", clientId: "p-1" },
+    method: "POST", path: "/projects", body: { name: "Report", color: "blue", fromLabel: "work" }, headers: { "Idempotency-Key": "p-1" } },
+  { tool: "add_task", args: { title: "Charts", projectId: "report" }, method: "POST", path: "/tasks", body: { title: "Charts", projectId: "report" } },
+  { tool: "update_project", args: { projectId: "Report", note: "Q4 report", icon: "📊", color: null },
+    method: "PATCH", path: "/projects/Report", body: { note: "Q4 report", icon: "📊", color: null } },
+  { tool: "list_all", args: { projectId: "report", at: AT }, method: "GET", path: `/tasks?projectId=report&at=${AT}` },
+  { tool: "list_all", args: { projectId: "none", at: AT }, method: "GET", path: `/tasks?projectId=none&at=${AT}` },
+  { tool: "update_task", args: { taskId: "#3", projectId: "Report" }, method: "PATCH", path: "/tasks/3", body: { projectId: "Report" } },
+  { tool: "list_today", args: { projectId: "none", at: AT }, method: "GET", path: `/today?projectId=none&at=${AT}` },
+  { tool: "board", args: { projectId: "Report", at: AT }, method: "GET", path: `/board?projectId=Report&at=${AT}` },
+  { tool: "update_project", args: { projectId: "Nope", name: "x" }, method: "PATCH", path: "/projects/Nope", body: { name: "x" } },
+  { tool: "update_project", args: { projectId: "Report", archived: true }, method: "PATCH", path: "/projects/Report", body: { archived: true } },
+  { tool: "list_projects", args: { includeArchived: true, at: AT }, method: "GET", path: `/projects?includeArchived=true&at=${AT}` },
+  { tool: "delete_project", args: { projectId: "Report", moveTasksTo: "none" }, method: "DELETE", path: "/projects/Report", body: { moveTasksTo: "none" } },
 ];
 
-const ID_FIELDS = new Set(["id", "taskId", "repeatedFrom", "keyId"]);
+// The owner (a cli key) through both: names in the path, dry runs, refusals and deleting projects.
+const OWNER_STEPS: Step[] = [
+  { tool: "add_project", args: { name: "Strona piekarni", icon: "🥐", note: "Menu and photos" },
+    method: "POST", path: "/projects", body: { name: "Strona piekarni", icon: "🥐", note: "Menu and photos" } },
+  { tool: "add_project", args: { name: "Dom", position: 10 }, method: "POST", path: "/projects", body: { name: "Dom", position: 10 } },
+  { tool: "add_project", args: { name: "dom" }, method: "POST", path: "/projects", body: { name: "dom" } },
+  { tool: "add_task", args: { title: "Menu", dueDate: "2026-11-03", projectId: "strona piekarni" },
+    method: "POST", path: "/tasks", body: { title: "Menu", dueDate: "2026-11-03", projectId: "strona piekarni" } },
+  { tool: "add_task", args: { title: "Boiler", dueDate: "2026-11-01", projectId: "Dom" }, method: "POST", path: "/tasks", body: { title: "Boiler", dueDate: "2026-11-01", projectId: "Dom" } },
+  { tool: "list_projects", args: { at: AT }, method: "GET", path: `/projects?at=${AT}` },
+  { tool: "update_project", args: { projectId: "Strona piekarni", position: 5, color: "amber" },
+    method: "PATCH", path: "/projects/Strona%20piekarni", body: { position: 5, color: "amber" } },
+  { tool: "list_projects", args: { at: AT }, method: "GET", path: `/projects?at=${AT}` },
+  { tool: "delete_project", args: { projectId: "Dom" }, method: "DELETE", path: "/projects/Dom" },
+  { tool: "delete_project", args: { projectId: "Dom", moveTasksTo: "Dom" }, method: "DELETE", path: "/projects/Dom", body: { moveTasksTo: "Dom" } },
+  { tool: "delete_project", args: { projectId: "Dom", moveTasksTo: "strona piekarni", dryRun: true },
+    method: "DELETE", path: "/projects/Dom?dryRun=true", body: { moveTasksTo: "strona piekarni" } },
+  { tool: "delete_project", args: { projectId: "Dom", moveTasksTo: "strona piekarni", clientId: "d-1" },
+    method: "DELETE", path: "/projects/Dom", body: { moveTasksTo: "strona piekarni" }, headers: { "Idempotency-Key": "d-1" } },
+  { tool: "delete_project", args: { projectId: "Dom", moveTasksTo: "strona piekarni", clientId: "d-1" },
+    method: "DELETE", path: "/projects/Dom", body: { moveTasksTo: "strona piekarni" }, headers: { "Idempotency-Key": "d-1" } },
+  { tool: "list_all", args: { projectId: "Strona piekarni", at: AT }, method: "GET", path: `/tasks?projectId=Strona%20piekarni&at=${AT}` },
+  { tool: "agent_brief", args: { at: AT }, method: "GET", path: `/brief?at=${AT}` },
+  { tool: "export_backlog", args: { projectId: "strona piekarni" }, method: "GET", path: "/export/backlog?projectId=strona%20piekarni" },
+  { tool: "delete_project", args: { projectId: "Strona piekarni", moveTasksTo: "none" }, method: "DELETE", path: "/projects/Strona%20piekarni", body: { moveTasksTo: "none" } },
+  { tool: "list_projects", args: { at: AT }, method: "GET", path: `/projects?at=${AT}` },
+];
+
+const ID_FIELDS = new Set(["id", "taskId", "repeatedFrom", "keyId", "projectId"]);
 const TIME_FIELDS = new Set(["createdAt", "updatedAt", "completedAt", "archivedAt", "deletedAt", "at", "exportedAt", "claimExpiresAt", "proposedAt", "expiresAt"]);
 
 /** Ids become their order of appearance and times a placeholder, so two users' results compare. */
@@ -122,7 +166,7 @@ describe("REST contract", () => {
   });
 
   test("the steps cover every tool", () => {
-    const stepped = new Set(STEPS.map((s) => s.tool));
+    const stepped = new Set([...STEPS, ...OWNER_STEPS].map((s) => s.tool));
     expect(TOOLS.map((t) => t.name).filter((name) => !stepped.has(name))).toEqual([]);
   });
 
@@ -149,34 +193,61 @@ describe("REST contract", () => {
     expect(new Set(operations.map((o) => o.operationId)).size).toBe(operations.length);
   });
 
+  test("the document has the project routes and the projectId of an import (since 0.13.1)", () => {
+    const { paths } = document;
+    expect(Object.keys(paths["/projects"])).toEqual(["get", "post"]);
+    expect(Object.keys(paths["/projects/{projectId}"])).toEqual(["patch", "delete"]);
+    expect(paths["/projects/{projectId}"].delete).toMatchObject({ "x-mcp-tool": "delete_project", "x-dayhand-scope": "write", tags: ["Projects"] });
+    expect(paths["/projects"].post.responses).toHaveProperty("201");
+    const tasks = paths["/tasks"].get.parameters.find((p: any) => p.name === "projectId");
+    expect(tasks).toMatchObject({ in: "query", required: false, description: expect.stringContaining('"none"') });
+    const imported = paths["/import"].post.requestBody.content["application/json"].schema;
+    expect(imported.properties.projectId).toMatchObject({ type: "string", description: expect.stringContaining("project") });
+  });
+
   describe("the same steps through MCP and REST give the same results", () => {
-    let mcp: Awaited<ReturnType<typeof mcpClient>>;
-    let restKey: string;
-
-    beforeAll(async () => {
-      mcp = await mcpClient(await createKey(newUserId(), "integration", "agent"));
-      restKey = await createKey(newUserId(), "integration", "agent");
-    });
-    afterAll(() => mcp.close());
-
     test("step by step", async () => {
-      const mcpIds = new Map<string, string>();
-      const restIds = new Map<string, string>();
-      for (const [i, step] of STEPS.entries()) {
-        const label = `step ${i + 1}: ${step.tool} / ${step.method} ${step.path}`;
-        const viaMcp = await mcp.callTool({ name: step.tool, arguments: step.args });
-        const viaRest = await rest(restKey, step.method, step.path, { body: step.body, headers: step.headers });
-        expect(conforms(step.method, step.path, viaRest), label).toEqual([]);
-        const structured = viaMcp.structuredContent as Record<string, any>;
-        if (viaMcp.isError) {
-          // The same error code and message, as problem details.
-          expect(viaRest.headers.get("content-type"), label).toBe("application/problem+json");
-          expect({ code: viaRest.body.code, message: viaRest.body.detail }, label).toEqual(structured.error);
-          continue;
-        }
-        expect(viaRest.status, label).toBeLessThan(300);
-        expect(normalize(viaRest.body, restIds), label).toEqual(normalize(structured, mcpIds));
-      }
+      const errors = await sameResults(STEPS, "agent");
+      // The project steps: what succeeds and what is refused, the same through both.
+      expect(errors.slice(-13)).toEqual([null, null, null, null, null, null, null, null, null, "not_found", null, null, "forbidden"]);
+    });
+
+    test("the owner's project steps", async () => {
+      const errors = await sameResults(OWNER_STEPS, "cli");
+      expect(errors).toEqual([null, null, "invalid_argument", null, null, null, null, null, "precondition_failed", "invalid_argument", null, null, null, null, null, null, null, null]);
     });
   });
 });
+
+/**
+ * Runs the steps for two new users, one through MCP (official SDK client) and one through REST,
+ * and compares each result. Returns each step's error code, null when it succeeded.
+ */
+async function sameResults(steps: Step[], kind: "agent" | "cli"): Promise<(string | null)[]> {
+  const mcp = await mcpClient(await createKey(newUserId(), "integration", kind));
+  const restKey = await createKey(newUserId(), "integration", kind);
+  const mcpIds = new Map<string, string>();
+  const restIds = new Map<string, string>();
+  const errors: (string | null)[] = [];
+  try {
+    for (const [i, step] of steps.entries()) {
+      const label = `step ${i + 1}: ${step.tool} / ${step.method} ${step.path}`;
+      const viaMcp = await mcp.callTool({ name: step.tool, arguments: step.args });
+      const viaRest = await rest(restKey, step.method, step.path, { body: step.body, headers: step.headers });
+      expect(conforms(step.method, step.path, viaRest), label).toEqual([]);
+      const structured = viaMcp.structuredContent as Record<string, any>;
+      errors.push(viaMcp.isError ? structured.error.code : null);
+      if (viaMcp.isError) {
+        // The same error code and message, as problem details.
+        expect(viaRest.headers.get("content-type"), label).toBe("application/problem+json");
+        expect({ code: viaRest.body.code, message: viaRest.body.detail }, label).toEqual(structured.error);
+        continue;
+      }
+      expect(viaRest.status, label).toBeLessThan(300);
+      expect(normalize(viaRest.body, restIds), label).toEqual(normalize(structured, mcpIds));
+    }
+  } finally {
+    await mcp.close();
+  }
+  return errors;
+}

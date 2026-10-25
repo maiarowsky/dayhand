@@ -39,6 +39,7 @@ const PATH_DOCS: Record<string, string> = {
   keyId: "Id of the API key (GET /keys).",
   webhookId: "Id of the webhook (GET /webhooks).",
   approvalId: "Id of the approval request (POST /approvals, GET /approvals).",
+  projectId: "The project id, or the project's name in any case, URL-encoded (e.g. Strona%20piekarni).",
 };
 
 const RATE_HEADERS = {

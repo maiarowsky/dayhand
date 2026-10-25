@@ -144,6 +144,11 @@ export async function listProjects(ctx: QueryCtx, identity: Identity, input: Arg
     .query("tasks")
     .withIndex("by_user", (q) => q.eq("userId", identity.userId))
     .collect();
+  return countedProjects(ctx, identity.userId, tasks, today, input.includeArchived === true);
+}
+
+/** Reuse the tasks agent_brief has already read, with the same counts as list_projects. */
+export async function countedProjects(ctx: QueryCtx, userId: string, tasks: readonly Doc<"tasks">[], today: string, includeArchived: boolean) {
   const counts = new Map<string, Counts>();
   const countsOf = (key: string) => counts.get(key) ?? { open: 0, overdue: 0, dueToday: 0, done: 0 };
   for (const task of tasks.filter(counted)) {
@@ -157,7 +162,7 @@ export async function listProjects(ctx: QueryCtx, identity: Identity, input: Arg
       done: c.done + (open ? 0 : 1),
     });
   }
-  const projects = (await allProjects(ctx, identity.userId)).filter((p) => input.includeArchived === true || p.archivedAt === undefined);
+  const projects = (await allProjects(ctx, userId)).filter((p) => includeArchived || p.archivedAt === undefined);
   const none = countsOf(NO_PROJECT);
   return {
     result: projects.map((p) => ({ ...toProject(p), counts: countsOf(p._id) })),

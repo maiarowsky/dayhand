@@ -17,6 +17,7 @@ const ROOTS = [
   "import-result",
   "approval", "approval-list", "agent-controls", "merge", "plan-health",
   "agent-brief", "backlog-import", "backlog-export",
+  "project", "project-list", "project-added", "project-delete",
 ];
 
 const nameOf = (file) => file.replace(/\.schema\.json$/, "");

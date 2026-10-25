@@ -2,7 +2,8 @@
 // of a session, from its own point of view. It is list_today with more fields:
 // the claims in force and the caller's own, the owner's pause and the caller's
 // tool policies, approval requests waiting and the caller's recent decisions,
-// the first tasks ready to work on, and next steps written out as sentences.
+// the first tasks ready to work on, the projects (since 0.13.1), and next steps
+// written out as sentences.
 import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
@@ -11,7 +12,8 @@ import { isReady, sameHolder } from "./agentWork";
 import { MAX_APPROVAL_MINUTES, statusOf } from "./approvals";
 import type { args } from "./args";
 import { loadSettings, type Identity } from "./core";
-import { localDateTime } from "./dates";
+import { localDate, localDateTime } from "./dates";
+import { countedProjects } from "./projectOps";
 import { listToday } from "./views";
 
 type Args = ObjectType<(typeof args)["agentBrief"]>;
@@ -100,6 +102,7 @@ export async function agentBrief(ctx: QueryCtx, identity: Identity, input: Args)
   const pending = approvals.filter((a) => statusOf(a, at) === "pending").sort((a, b) => a.expiresAt - b.expiresAt);
   const decided = approvals.filter((a) => a.decidedAt !== undefined && a.decidedAt > at - DAY_MS && sameHolder(a.requestedBy, identity)).sort((a, b) => b.decidedAt! - a.decidedAt!);
   const mine = active.filter((t) => sameHolder(t.claimedBy, identity));
+  const projects = await countedProjects(ctx, identity.userId, all, localDate(at, timezone), false);
 
   return {
     ...today,
@@ -117,6 +120,7 @@ export async function agentBrief(ctx: QueryCtx, identity: Identity, input: Args)
       decided: section(decided.map((a) => approvalItem(a, byId, identity))),
     },
     ready: section(ready.map(brief)),
+    projects: section(projects.result),
     nextSteps: nextSteps({
       paused: controls.paused,
       reason: controls.reason,

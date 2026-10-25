@@ -100,6 +100,22 @@ describe("agent_brief", () => {
     expect(brief.nextSteps.some((step: string) => step.includes("Old decision"))).toBe(false);
   });
 
+  test("projects: those not archived, in menu order with their counts, the first 10 of them", async () => {
+    const agent = await mcpClient(await createKey(newUserId(), "planner", "agent"));
+    expect((await callTool(agent, "agent_brief")).projects).toEqual({ count: 0, items: [] });
+    for (let i = 1; i <= 12; i++) await callTool(agent, "add_project", { name: `Project ${i}` });
+    await callTool(agent, "add_task", { title: "Task in an archived project", projectId: "Project 1" });
+    await callTool(agent, "update_project", { projectId: "Project 1", archived: true });
+    await callTool(agent, "update_project", { projectId: "Project 12", position: 1 });
+    await callTool(agent, "add_task", { title: "Send the quote", dueDate: "2020-01-01", projectId: "Project 2" });
+    const brief = await callTool(agent, "agent_brief");
+    expect(brief.projects.count).toBe(11);
+    expect(brief.projects.items.map((p: any) => p.name)).toEqual(["Project 12", ...Array.from({ length: 9 }, (_, i) => `Project ${i + 2}`)]);
+    expect(brief.projects.items[1]).toMatchObject({ name: "Project 2", archived: false, counts: { open: 1, overdue: 1, dueToday: 0, done: 0 } });
+    expect(brief.projects.items).toEqual((await callTool(agent, "list_projects")).result.slice(0, 10));
+    await agent.close();
+  });
+
   test("an expired claim of the caller asks to renew or release; REST gives the same brief", async () => {
     const userId = newUserId();
     const key = await createKey(userId, "slow", "agent");
@@ -123,7 +139,7 @@ describe("phase guides", () => {
   test("listed after the guide, Markdown, readable by anyone with a key and cached as public", async () => {
     const client = await mcpClient(await createKey(newUserId()));
     const { resources } = await client.listResources();
-    expect(resources.map((r) => r.uri)).toEqual(["dayhand://today", "dayhand://activity", "dayhand://guide", ...WORKFLOWS]);
+    expect(resources.map((r) => r.uri)).toEqual(["dayhand://today", "dayhand://projects", "dayhand://activity", "dayhand://guide", ...WORKFLOWS]);
     const titles = [];
     for (const uri of WORKFLOWS) {
       const read = await client.readResource({ uri });

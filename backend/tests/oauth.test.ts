@@ -129,7 +129,7 @@ describe("the flow with a Client ID Metadata Document", () => {
     expect(tokens.body.refresh_token).toMatch(/^helmrt_/);
 
     const mcp = await mcpWith(tokens.body.access_token);
-    expect((await mcp.listTools()).tools).toHaveLength(29);
+    expect((await mcp.listTools()).tools).toHaveLength(32);
     const today = await callTool(mcp, "list_today");
     expect(today.today.map((t: any) => t.title)).toEqual(["Call the accountant"]);
     const added = await callTool(mcp, "add_task", { title: "Book the dentist" });
@@ -149,7 +149,15 @@ describe("the flow with a Client ID Metadata Document", () => {
     expect(names).toEqual(expect.arrayContaining(["list_today", "get_task", "export_plan"]));
     expect(names).not.toContain("delete_task");
     expect(names).not.toContain("add_task");
-    expect(names).toHaveLength(14);
+    expect(names).toHaveLength(15);
+    expect(names.filter((name: string) => ["list_projects", "add_project", "update_project", "delete_project"].includes(name))).toEqual(["list_projects"]);
+    const projects = await callToolRaw(tokens.access_token, "list_projects");
+    expect(projects.status).toBe(200);
+    expect((await projects.json()).result.structuredContent).toEqual({ result: [], noProject: { open: 0, overdue: 0 } });
+    const addProject = await callToolRaw(tokens.access_token, "add_project", { name: "Not allowed" });
+    expect(addProject.status).toBe(403);
+    expect(addProject.headers.get("www-authenticate")).toContain('error="insufficient_scope"');
+    expect(await addProject.json()).toMatchObject({ error: "insufficient_scope" });
 
     const refused = await callToolRaw(tokens.access_token, "delete_task", { taskId: "#1" });
     expect(refused.status).toBe(403);
@@ -165,6 +173,8 @@ describe("the flow with a Client ID Metadata Document", () => {
     const rpc = (method: string, params: Record<string, unknown>) => mcpRequest(tokens.access_token, { jsonrpc: "2.0", id: 3, method, params });
     expect((await callToolRaw(tokens.access_token, "list_today")).status).toBe(403);
     expect((await rpc("resources/read", { uri: "dayhand://today" })).status).toBe(403);
+    expect((await callToolRaw(tokens.access_token, "list_projects")).status).toBe(403);
+    expect((await rpc("resources/read", { uri: "dayhand://projects" })).status).toBe(403);
     expect((await rpc("prompts/get", { name: (await (await rpc("prompts/list", {})).json()).result.prompts[0].name })).status).toBe(403);
     // The guide holds no user data.
     expect((await rpc("resources/read", { uri: "dayhand://guide" })).status).toBe(200);
@@ -236,7 +246,7 @@ describe("the flow with Dynamic Client Registration, driven by the MCP SDK's OAu
 
     const client = new Client({ name: "claude-sim", version: "0.0.0" });
     await client.connect(new StreamableHTTPClientTransport(new URL(resource()), { authProvider: provider as any }));
-    expect((await client.listTools()).tools).toHaveLength(29);
+    expect((await client.listTools()).tools).toHaveLength(32);
     await callTool(client, "add_task", { title: "From the SDK client" });
 
     // A refresh through the SDK rotates both tokens.
@@ -541,6 +551,6 @@ describe("tokens at the protected resource", () => {
     expect((await fetch(`${site()}/connections`, { headers: bearer })).status).toBe(401);
     const key = await createKey(owner.userId, "claude-code");
     expect((await listTools(key)).status).toBe(200);
-    expect((await (await listTools(key)).json()).result.tools).toHaveLength(29);
+    expect((await (await listTools(key)).json()).result.tools).toHaveLength(32);
   });
 });

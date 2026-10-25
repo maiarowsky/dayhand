@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/project-list.schema.json",
+  "title": "Project list",
+  "description": "list_projects, also the resource dayhand://projects: the projects in menu order (archived ones only with includeArchived), each with the counts of its tasks, and the counts of the tasks without a project (since 0.13.1). Counted are tasks in the plan: not archived, not in the trash, not proposals. Fields may be added.",
+  "type": "object",
+  "required": [
+    "result",
+    "noProject"
+  ],
+  "properties": {
+    "result": {
+      "type": "array",
+      "items": {
+        "$ref": "project-counted.schema.json"
+      }
+    },
+    "noProject": {
+      "type": "object",
+      "required": [
+        "open",
+        "overdue"
+      ],
+      "description": "Tasks without a project",
+      "properties": {
+        "open": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Not done"
+        },
+        "overdue": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Not done and due before today in the user's time zone"
+        }
+      }
+    }
+  }
+}

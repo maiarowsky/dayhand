@@ -5,6 +5,7 @@ import { internal } from "../convex/_generated/api";
 import { admin, callTool, createKey, mcpClient, mcpUrl, newUserId } from "./helpers";
 
 const EXPECTED_TOOLS = [
+  "add_project",
   "add_task",
   "agent_brief",
   "archive_task",
@@ -22,6 +23,7 @@ const EXPECTED_TOOLS = [
   "list_all",
   "list_approvals",
   "list_events",
+  "list_projects",
   "list_today",
   "list_trash",
   "plan_health",
@@ -32,6 +34,7 @@ const EXPECTED_TOOLS = [
   "restore_task",
   "set_now",
   "set_status",
+  "update_project",
   "update_settings",
   "update_task",
 ];

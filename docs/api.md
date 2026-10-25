@@ -5,7 +5,7 @@ n8n, Home Assistant, a cron script. It lives under `<deployment HTTP actions URL
 (e.g. `https://<name>.convex.site/api/v1`) and is described by an OpenAPI 3.1 document at
 [`/api/v1/openapi.json`](#openapi), which needs no key.
 
-The REST API is a thin layer: every task route runs the same domain operation as one MCP tool
+The REST API is a thin layer: every task and project route runs the same domain operation as one MCP tool
 ([mcp.md](mcp.md#tools)), with the same arguments, the same results and the same error codes.
 The route table is `backend/convex/lib/restRoutes.ts`; the dispatcher (`convex/rest.ts`) only
 checks the key, counts the call and translates HTTP to the tool's arguments and back. A contract
@@ -23,7 +23,7 @@ curl -s https://<name>.convex.site/api/v1/today -H "Authorization: Bearer $DAYHA
 OAuth access tokens of agent connections are bound to `/mcp` (RFC 8707) and get `401` here.
 
 Each route needs a key **scope** ([mcp.md](mcp.md#keys-and-actors)): `read` for `GET` routes,
-`write` for changes to tasks and settings, `full` for the account routes (API keys, webhooks,
+`write` for changes to tasks, projects and settings, `full` for the account routes (API keys, webhooks,
 import). The OpenAPI document gives it per operation as `x-dayhand-scope`; a key with less gets
 `403 insufficient_scope`. Give an integration the smallest scope it needs and an expiry date:
 
@@ -31,8 +31,8 @@ import). The OpenAPI document gives it per operation as `x-dayhand-scope`; a key
 dayhand key create n8n --scope read --expires 90d
 ```
 
-Changes are recorded in the task history like changes made through MCP: `agent: <key name>`
-for an agent key, `cli` for a CLI key.
+Changes use the same [actors as MCP](mcp.md#keys-and-actors).
+See [project history](architecture.md#projects) for changes to the catalog itself.
 
 ## Routes
 
@@ -56,6 +56,10 @@ for an agent key, `cli` for a CLI key.
 | `POST /tasks/{taskId}/accept` | `accept_proposal`: the proposal joins the plan (the owner: a `cli` key) | write |
 | `POST /tasks/{taskId}/merge` | `merge_proposal` (`{ "intoTaskId": "#12" }`; the owner) | write |
 | `POST /tasks/{taskId}/reject` | `reject_proposal` (`{ "reason": "…" }` optional; the owner) | write |
+| `GET /projects` | `list_projects` (`includeArchived`, `at`; [projects](#projects)) | read |
+| `POST /projects` | `add_project` (`201`; `name`, optional metadata and `fromLabel`) | write |
+| `PATCH /projects/{projectId}` | `update_project` (JSON Merge Patch: `null` clears optional metadata) | write |
+| `DELETE /projects/{projectId}` | `delete_project` (body `moveTasksTo` when it has tasks; the owner: a `cli` key) | write |
 | `GET /approvals` | `list_approvals` (query parameters `status`, `taskId`, `limit`) | read |
 | `POST /approvals` | `request_approval` (`201`; `{ "action": "…", "options": [ … ], "reversible": false }`) | write |
 | `GET /approvals/{approvalId}` | `get_approval` | read |
@@ -64,7 +68,7 @@ for an agent key, `cli` for a CLI key.
 | `POST /agents/pause` | `pause_agents` (`{ "paused": true, "reason": "…" }`; the owner) | write |
 | `POST /agents/policies` | `set_tool_policy` (`{ "apiKeyId": "…", "toolName": "delete_task", "rule": "deny" }`; the owner) | write |
 | `GET /health` | `plan_health` (query parameter `at`) | read |
-| `GET /brief` | `agent_brief` (query parameter `at`): Today plus claims, approvals, ready tasks and next steps | read |
+| `GET /brief` | `agent_brief` (query parameter `at`): Today plus claims, approvals, ready tasks, active projects and next steps | read |
 | `POST /import/backlog` | `import_backlog` (`{ "files": [{ "path": "tasks/task-1 - x.md", "content": "…" }] }`; `?dryRun=true` stores nothing; [backlog-md.md](backlog-md.md)) | write |
 | `GET /export/backlog` | `export_backlog` ([parameters](backlog-md.md#using-it)) | read |
 | `GET /events` | `list_events` (query parameters `since`, `by`, `taskId`, `limit`): the activity log ([agent-work.md](agent-work.md)) | read |
@@ -111,6 +115,34 @@ curl -s -X PATCH https://<name>.convex.site/api/v1/tasks/42 \
 One difference from RFC 7386: an object or list value (`repeat`, `labels`, `links`,
 `checklist`, `reminders`) replaces the old one as a whole, as `update_task` does; it is not
 merged key by key. Status, now, archive and trash have their own routes.
+
+### Projects
+
+Since backend 0.13.1, the four project routes use the [project tool contracts](mcp.md#projects).
+`{projectId}` accepts a stored id or a case-insensitive name, URL-encoded in the path
+(`/projects/Strona%20piekarni`). Task routes also accept `projectId`: in `POST /tasks` and
+`PATCH /tasks/{taskId}` bodies, or `GET /tasks`, `/today` and `/board` query parameters;
+`"none"` selects tasks without a project, and `null` in a task patch clears membership.
+
+```sh
+curl -s -X POST https://<name>.convex.site/api/v1/projects \
+  -H "Authorization: Bearer $DAYHAND_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"Bakery site","color":"amber","icon":"🥐","note":"Menu and photos"}'
+curl -s 'https://<name>.convex.site/api/v1/tasks?projectId=Bakery%20site' \
+  -H "Authorization: Bearer $DAYHAND_API_KEY"
+curl -s -X DELETE https://<name>.convex.site/api/v1/projects/Bakery%20site \
+  -H "Authorization: Bearer $DAYHAND_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"moveTasksTo":"none"}'
+```
+
+`GET /projects` returns `{ result: [project with counts], noProject: { open, overdue } }`;
+`POST` returns `{ project, moved, skipped }`, `PATCH` the project, and `DELETE` `{ project, moved }`.
+An agent key may add and update projects by default, subject to pause and policies, but deleting
+requires a `cli` key (`403 forbidden` otherwise). Deleting a project with tasks without a
+`moveTasksTo` destination returns `412 precondition_failed`, including tasks in the trash.
+Project changes support `Idempotency-Key` and `?dryRun=true`, but **not ETag or If-Match**;
+the last write wins. Archiving a project leaves its tasks where they are. Changes of the project
+itself have no `project.*` webhook events; moved tasks emit `task.updated`.
 
 ### Pages
 
@@ -159,10 +191,10 @@ is the same code an MCP tool error has ([mcp.md](mcp.md#errors)), and `detail` t
 | 403 | `agents_paused` | The owner paused every agent; an agent key's changes wait until they resume agents |
 | 403 | `forbidden` | Only the owner may do this, or the owner's policy denies the tool to this key, or the owner denied the approval |
 | 403 | `approval_required` | The owner's policy asks first; `approvalId` names the request to wait for |
-| 404 | `not_found` | No such task, key or webhook, or no such route |
+| 404 | `not_found` | No such task, project, key or webhook, or no such route |
 | 405 | `method_not_allowed` | The path exists with other methods (`Allow` lists them) |
 | 409 | `conflict` | Another agent holds the task's claim (`claim_task`) |
-| 412 | `precondition_failed` | `If-Match` does not match the task's version, or the task's state does not allow the change yet (an agent completing a task with unmet acceptance criteria, renewing a claim it does not hold) |
+| 412 | `precondition_failed` | `If-Match` does not match the task's version, or the task's state does not allow the change yet (an agent completing a task with unmet acceptance criteria, renewing a claim it does not hold, deleting a non-empty project without `moveTasksTo`) |
 | 413 | `payload_too_large` | A body over 256 KB (2 MB for `POST /import`) |
 | 415 | `unsupported_media_type` | A body that is not JSON |
 | 422 | `invalid_argument` | Wrong or missing arguments, an unknown field or query parameter, or a change the task's state does not allow |

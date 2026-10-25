@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/project-counted.schema.json",
+  "title": "Project with counts",
+  "description": "A project as list_projects and agent_brief list it: the project and the counts of its tasks in the plan (not archived, not in the trash, not proposals) (since 0.13.1).",
+  "allOf": [
+    {
+      "$ref": "project.schema.json"
+    },
+    {
+      "type": "object",
+      "required": [
+        "counts"
+      ],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "required": [
+            "open",
+            "overdue",
+            "dueToday",
+            "done"
+          ],
+          "properties": {
+            "open": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Not done"
+            },
+            "overdue": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Not done and due before today in the user's time zone"
+            },
+            "dueToday": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Not done and due today"
+            },
+            "done": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

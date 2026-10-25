@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/task-ref.schema.json",
+  "title": "Task reference",
+  "description": "A task named by its id and number, as add_project and delete_project list the tasks they moved (since 0.13.1).",
+  "type": "object",
+  "required": [
+    "id",
+    "ref"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "ref": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "The task number (#42); null only on tasks from before 0.3.0 that were not migrated"
+    }
+  }
+}

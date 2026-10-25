@@ -317,6 +317,15 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.13.1
+
+0.13.1 exposes the 0.13.0 project operations through [MCP](mcp.md#projects) and
+[REST](api.md#projects), adds `dayhand://projects` and projects in `agent_brief`, and publishes
+the result schemas. It changes no stored schema and needs no migration or new configuration.
+Agents may add and update projects by default; the owner's pause and tool policies still apply.
+Deleting projects requires a `cli` key. Rolling back to 0.13.0 only removes these interfaces;
+rolling back to 0.12.x still requires the project-to-label migration below.
+
 ## Upgrading to 0.13.0
 
 0.13.0 adds [backend project support](architecture.md#projects). There is no new status, error

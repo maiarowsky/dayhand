@@ -20,6 +20,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
           "claims",
           "approvals",
           "ready",
+          "projects",
           "nextSteps"
         ],
         "properties": {
@@ -423,6 +424,29 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
                 "description": "The first 10",
                 "items": {
                   "$ref": "#/$defs/task-brief"
+                }
+              }
+            }
+          },
+          "projects": {
+            "type": "object",
+            "required": [
+              "count",
+              "items"
+            ],
+            "description": "The projects that are not archived, in menu order, with the counts of their tasks (since 0.13.1)",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "How many in all"
+              },
+              "items": {
+                "type": "array",
+                "maxItems": 10,
+                "description": "The first 10",
+                "items": {
+                  "$ref": "#/$defs/project-counted"
                 }
               }
             }
@@ -918,11 +942,11 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
             "type": "string"
           }
         },
-        "description": "config.yml with the statuses To Do, In Progress and Done"
+        "description": "config.yml with the statuses To Do, In Progress and Done; project_name is the project's name with projectId (since 0.13.0), else Dayhand export"
       },
       "files": {
         "type": "array",
-        "description": "One file per task: tasks/, drafts/ (proposals), archive/tasks/ (archived tasks) or archive/drafts/ (archived proposals)",
+        "description": "One file per task: tasks/, drafts/ (proposals), archive/tasks/ (archived tasks) or archive/drafts/ (archived proposals); with projectId only that project's tasks",
         "items": {
           "allOf": [
             {
@@ -1013,7 +1037,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "items": {
           "$ref": "#/$defs/task"
         },
-        "description": "The tasks created, dependencies first"
+        "description": "The tasks created, dependencies first; with projectId each is in that project (since 0.13.0)"
       },
       "skipped": {
         "type": "array",
@@ -1299,6 +1323,13 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
               },
               "settings": {
                 "$ref": "#/$defs/settings"
+              },
+              "projects": {
+                "type": "array",
+                "description": "Every project in menu order, archived and empty ones included; tasks name theirs by projectId (since 0.13.0)",
+                "items": {
+                  "$ref": "#/$defs/project"
+                }
               },
               "tasks": {
                 "type": "array",
@@ -1870,6 +1901,231 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       }
     }
   },
+  "project": {
+    "title": "Project",
+    "description": "A project as update_project returns it (since 0.13.1); list_projects adds counts. A task is in at most one project (its projectId); labels are free tags across projects. Fields that are not set are left out. Fields may be added; none are removed or retyped within a major version.",
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "position",
+      "archived",
+      "createdAt",
+      "updatedAt"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Stable project id, the projectId of its tasks"
+      },
+      "name": {
+        "type": "string",
+        "description": "1 to 50 characters, unique among the user's projects in any case, archived ones included; never \"none\""
+      },
+      "color": {
+        "enum": [
+          "red",
+          "orange",
+          "amber",
+          "green",
+          "teal",
+          "cyan",
+          "blue",
+          "indigo",
+          "purple",
+          "pink",
+          "brown",
+          "gray"
+        ],
+        "description": "Color token; the apps pick the shade for the theme. Missing: neutral"
+      },
+      "icon": {
+        "type": "string",
+        "description": "One emoji"
+      },
+      "note": {
+        "type": "string",
+        "description": "What the project is about, for people and agents (up to 2000 characters)"
+      },
+      "position": {
+        "type": "number",
+        "description": "Order in the menu, lowest first"
+      },
+      "archived": {
+        "type": "boolean",
+        "description": "true: out of the menu and of the choice for new tasks; its tasks stay where they are"
+      },
+      "archivedAt": {
+        "type": "number",
+        "description": "When it was archived, Unix time in milliseconds; only on archived projects"
+      },
+      "createdAt": {
+        "type": "number",
+        "description": "Unix time in milliseconds"
+      },
+      "updatedAt": {
+        "type": "number",
+        "description": "Unix time in milliseconds"
+      },
+      "clientId": {
+        "type": "string",
+        "description": "clientId of the operation that created the project"
+      }
+    }
+  },
+  "project-added": {
+    "title": "Added project",
+    "description": "add_project: the new project and, with fromLabel, the label's tasks that moved into it and those left where they were; with dryRun what it would do (since 0.13.1). A retry with the same clientId returns the project and the tasks moved the first time, with skipped empty. Fields may be added.",
+    "type": "object",
+    "required": [
+      "project",
+      "moved",
+      "skipped"
+    ],
+    "properties": {
+      "project": {
+        "$ref": "#/$defs/project"
+      },
+      "moved": {
+        "type": "array",
+        "description": "Tasks that moved into the project; empty without fromLabel",
+        "items": {
+          "$ref": "#/$defs/task-ref"
+        }
+      },
+      "skipped": {
+        "type": "array",
+        "description": "Tasks with the label that stayed where they were: already in a project (with its projectId), or claimed by another agent",
+        "items": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/task-ref"
+            },
+            {
+              "type": "object",
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "projectId": {
+                  "type": "string",
+                  "description": "The project the task is in"
+                },
+                "reason": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "project-counted": {
+    "title": "Project with counts",
+    "description": "A project as list_projects and agent_brief list it: the project and the counts of its tasks in the plan (not archived, not in the trash, not proposals) (since 0.13.1).",
+    "allOf": [
+      {
+        "$ref": "#/$defs/project"
+      },
+      {
+        "type": "object",
+        "required": [
+          "counts"
+        ],
+        "properties": {
+          "counts": {
+            "type": "object",
+            "required": [
+              "open",
+              "overdue",
+              "dueToday",
+              "done"
+            ],
+            "properties": {
+              "open": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Not done"
+              },
+              "overdue": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Not done and due before today in the user's time zone"
+              },
+              "dueToday": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Not done and due today"
+              },
+              "done": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "project-delete": {
+    "title": "Deleted project",
+    "description": "delete_project, the owner's alone: the project as it was before it was deleted, and the tasks that moved out of it (to moveTasksTo); with dryRun what it would do (since 0.13.1). A retry with the same clientId returns the same. Fields may be added.",
+    "type": "object",
+    "required": [
+      "project",
+      "moved"
+    ],
+    "properties": {
+      "project": {
+        "$ref": "#/$defs/project"
+      },
+      "moved": {
+        "type": "array",
+        "description": "Tasks that pointed at the project, in any state (also archived, in the trash and proposals), now in moveTasksTo",
+        "items": {
+          "$ref": "#/$defs/task-ref"
+        }
+      }
+    }
+  },
+  "project-list": {
+    "title": "Project list",
+    "description": "list_projects, also the resource dayhand://projects: the projects in menu order (archived ones only with includeArchived), each with the counts of its tasks, and the counts of the tasks without a project (since 0.13.1). Counted are tasks in the plan: not archived, not in the trash, not proposals. Fields may be added.",
+    "type": "object",
+    "required": [
+      "result",
+      "noProject"
+    ],
+    "properties": {
+      "result": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/project-counted"
+        }
+      },
+      "noProject": {
+        "type": "object",
+        "required": [
+          "open",
+          "overdue"
+        ],
+        "description": "Tasks without a project",
+        "properties": {
+          "open": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Not done"
+          },
+          "overdue": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Not done and due before today in the user's time zone"
+          }
+        }
+      }
+    }
+  },
   "proof": {
     "title": "Proof of completion",
     "description": "What complete_task was given to show the work is done (dayhand done --summary, --check, --proof-link), kept on the task as `proof` (since 0.10.0).",
@@ -2103,7 +2359,12 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Free tags across projects; the task's project is projectId"
+      },
+      "projectId": {
+        "type": "string",
+        "description": "Id of the task's project (since 0.13.0); missing when it is in none"
       },
       "links": {
         "type": "array",
@@ -2456,6 +2717,27 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
         "type": "integer",
         "minimum": 0,
         "description": "list_all only: number of matching tasks on all pages"
+      }
+    }
+  },
+  "task-ref": {
+    "title": "Task reference",
+    "description": "A task named by its id and number, as add_project and delete_project list the tasks they moved (since 0.13.1).",
+    "type": "object",
+    "required": [
+      "id",
+      "ref"
+    ],
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "ref": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "description": "The task number (#42); null only on tasks from before 0.3.0 that were not migrated"
       }
     }
   },

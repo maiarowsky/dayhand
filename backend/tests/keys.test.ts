@@ -4,7 +4,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { internal } from "../convex/_generated/api";
-import { admin, callTool, createKey, helm, importRows, mcpClient, mcpPost, newUserId } from "./helpers";
+import { admin, callTool, createKey, helm, importRows, mcpClient, mcpPost, newUserId, rest } from "./helpers";
 
 type Created = { id: string; key: string; scope: string; expiresAt: number | null };
 
@@ -51,6 +51,27 @@ describe("API key scopes and expiry", () => {
       expect(response.status, `${method} ${path}`).toBe(403);
       expect((await response.json()).error).toBe("insufficient_scope");
     }
+  });
+
+  test.each(["read", "write", "full"])("project tools respect a cli key's %s scope", async (scope) => {
+    const { key } = await create(newUserId(), { scope, kind: "cli" });
+    const client = await mcpClient(key);
+    const projects = (await client.listTools()).tools.map((t) => t.name).filter((name) => ["list_projects", "add_project", "update_project", "delete_project"].includes(name));
+    expect(projects).toEqual(scope === "read" ? ["list_projects"] : ["list_projects", "add_project", "update_project", "delete_project"]);
+    expect(await callTool(client, "list_projects")).toEqual({ result: [], noProject: { open: 0, overdue: 0 } });
+    if (scope === "read") {
+      const refused = await mcpPost(key, { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "add_project", arguments: { name: "No" } } });
+      expect(refused.status).toBe(403);
+      expect(await refused.json()).toMatchObject({ error: "insufficient_scope" });
+      const viaRest = await rest(key, "POST", "/projects", { body: { name: "No" } });
+      expect(viaRest.status).toBe(403);
+      expect(viaRest.body.code).toBe("insufficient_scope");
+    } else {
+      const { project } = await callTool(client, "add_project", { name: "Scoped" });
+      expect(await callTool(client, "update_project", { projectId: project.id, note: scope })).toMatchObject({ note: scope });
+      expect(await callTool(client, "delete_project", { projectId: project.id })).toMatchObject({ project: { name: "Scoped" }, moved: [] });
+    }
+    await client.close();
   });
 
   test("an expired key gets 401 everywhere", async () => {

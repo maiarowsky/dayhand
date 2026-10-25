@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/project.schema.json",
+  "title": "Project",
+  "description": "A project as update_project returns it (since 0.13.1); list_projects adds counts. A task is in at most one project (its projectId); labels are free tags across projects. Fields that are not set are left out. Fields may be added; none are removed or retyped within a major version.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "position",
+    "archived",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Stable project id, the projectId of its tasks"
+    },
+    "name": {
+      "type": "string",
+      "description": "1 to 50 characters, unique among the user's projects in any case, archived ones included; never \"none\""
+    },
+    "color": {
+      "enum": [
+        "red",
+        "orange",
+        "amber",
+        "green",
+        "teal",
+        "cyan",
+        "blue",
+        "indigo",
+        "purple",
+        "pink",
+        "brown",
+        "gray"
+      ],
+      "description": "Color token; the apps pick the shade for the theme. Missing: neutral"
+    },
+    "icon": {
+      "type": "string",
+      "description": "One emoji"
+    },
+    "note": {
+      "type": "string",
+      "description": "What the project is about, for people and agents (up to 2000 characters)"
+    },
+    "position": {
+      "type": "number",
+      "description": "Order in the menu, lowest first"
+    },
+    "archived": {
+      "type": "boolean",
+      "description": "true: out of the menu and of the choice for new tasks; its tasks stay where they are"
+    },
+    "archivedAt": {
+      "type": "number",
+      "description": "When it was archived, Unix time in milliseconds; only on archived projects"
+    },
+    "createdAt": {
+      "type": "number",
+      "description": "Unix time in milliseconds"
+    },
+    "updatedAt": {
+      "type": "number",
+      "description": "Unix time in milliseconds"
+    },
+    "clientId": {
+      "type": "string",
+      "description": "clientId of the operation that created the project"
+    }
+  }
+}

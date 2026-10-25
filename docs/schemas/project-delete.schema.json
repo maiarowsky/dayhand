@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.dayhand.invalid/project-delete.schema.json",
+  "title": "Deleted project",
+  "description": "delete_project, the owner's alone: the project as it was before it was deleted, and the tasks that moved out of it (to moveTasksTo); with dryRun what it would do (since 0.13.1). A retry with the same clientId returns the same. Fields may be added.",
+  "type": "object",
+  "required": [
+    "project",
+    "moved"
+  ],
+  "properties": {
+    "project": {
+      "$ref": "project.schema.json"
+    },
+    "moved": {
+      "type": "array",
+      "description": "Tasks that pointed at the project, in any state (also archived, in the trash and proposals), now in moveTasksTo",
+      "items": {
+        "$ref": "task-ref.schema.json"
+      }
+    }
+  }
+}

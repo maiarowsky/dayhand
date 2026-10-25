@@ -1,6 +1,6 @@
-// Resources (dayhand://today, dayhand://tasks/{ref}, dayhand://guide) and the three prompts.
+// Resources (dayhand://today, dayhand://projects, dayhand://tasks/{ref}, dayhand://guide) and the prompts.
 import { describe, expect, test } from "vitest";
-import { callTool, createKey, mcpClient, mcpPost, newUserId } from "./helpers";
+import { callTool, createKey, mcpClient, mcpPost, modern, newUserId, rest } from "./helpers";
 
 const textOf = (contents: object[]) => (contents[0] as { text: string }).text;
 
@@ -11,6 +11,7 @@ describe("MCP resources", () => {
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri)).toEqual([
       "dayhand://today",
+      "dayhand://projects",
       "dayhand://activity",
       "dayhand://guide",
       "dayhand://workflow/intake",
@@ -39,12 +40,39 @@ describe("MCP resources", () => {
     await client.close();
   });
 
+  test("dayhand://projects is list_projects, a private read counted against the shared limit", async () => {
+    const key = await createKey(newUserId());
+    const client = await mcpClient(key);
+    const empty = await client.readResource({ uri: "dayhand://projects" });
+    expect(empty.contents[0]).toMatchObject({ uri: "dayhand://projects", mimeType: "application/json" });
+    expect(JSON.parse(textOf(empty.contents))).toEqual({ result: [], noProject: { open: 0, overdue: 0 } });
+    const afterRead = await rest(key, "GET", "/projects");
+    expect(afterRead.status).toBe(200);
+    expect(afterRead.headers.get("x-ratelimit-remaining")).toBe("118");
+
+    await callTool(client, "add_project", { name: "Garden", icon: "🌱" });
+    await callTool(client, "add_project", { name: "Old flat" });
+    await callTool(client, "update_project", { projectId: "Old flat", archived: true });
+    await callTool(client, "add_task", { title: "Plant tulips", dueDate: "today", projectId: "garden" });
+    await callTool(client, "add_task", { title: "Call the bank" });
+    const projects = JSON.parse(textOf((await client.readResource({ uri: "dayhand://projects" })).contents));
+    expect(projects).toEqual(await callTool(client, "list_projects"));
+    expect(projects.result).toEqual([expect.objectContaining({ name: "Garden", icon: "🌱", counts: { open: 1, overdue: 0, dueToday: 1, done: 0 } })]);
+    expect(projects.noProject).toEqual({ open: 1, overdue: 0 });
+    const { body, headers } = modern("resources/read", { uri: "dayhand://projects" });
+    const modernRead = await (await mcpPost(key, body, headers)).json();
+    expect(modernRead.result).toMatchObject({ cacheScope: "private", ttlMs: 0 });
+    expect(JSON.parse(modernRead.result.contents[0].text)).toEqual(projects);
+    await client.close();
+  });
+
   test("dayhand://guide is Markdown for agents", async () => {
     const client = await mcpClient(await createKey(newUserId()));
     const guide = await client.readResource({ uri: "dayhand://guide" });
     expect(guide.contents[0]).toMatchObject({ mimeType: "text/markdown" });
     expect(textOf(guide.contents)).toMatch(/^# Working with Dayhand/);
     expect(textOf(guide.contents)).toContain("dryRun");
+    expect(textOf(guide.contents)).toContain("## Projects and labels");
     await client.close();
   });
 
@@ -96,6 +124,7 @@ describe("MCP prompts", () => {
     await callTool(client, "add_task", { title: "Renew the passport", dueDate: "2020-01-01" });
     const review = await client.getPrompt({ name: "weekly_review" });
     expect((review.messages[0] as any).content.text).toMatch(/today is \d{4}-\d{2}-\d{2}, Europe\/London/);
+    expect((review.messages[0] as any).content.text).toContain("call list_projects");
     const triage = await client.getPrompt({ name: "triage_overdue" });
     const listed = (triage.messages[1] as any).content.text as string;
     expect(listed).toContain("Renew the passport");

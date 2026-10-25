@@ -41,7 +41,9 @@ const FIELD_DOCS: Record<string, string> = {
   requestedBy: "Who asked for the task, e.g. a customer or a colleague (up to 200 characters). Default for an agent's proposal: the agent itself.",
   returnTo:
     "Id of one of the user's webhooks: it gets task.returned, with the proof, when the task is completed (or rejected, or merged into another task).",
-  labels: "Labels (projects).",
+  labels: "Free tags across projects; a task's project is projectId.",
+  projectId:
+    'The task\'s project: its id or its name (any case), or "none" for no project. An archived project takes no new task (restore it first). In update_task, null also takes the task out of its project.',
   links: "Links attached to the task (URL and optional title). Files are not supported.",
   clientId:
     "Optional unique id of this operation (e.g. a UUID). Retrying with the same clientId does not apply the change twice.",
@@ -59,6 +61,7 @@ const FIELD_DOCS: Record<string, string> = {
 
 const FIND_DOCS: Record<string, string> = {
   labels: "Only tasks having all of these labels.",
+  projectId: 'Only the tasks of this project (its id or its name, any case), or "none" for the tasks without a project.',
   includeDone: "Include done tasks (default true). Ignored when status is given.",
   query: "Only tasks whose title, note, resume note or labels contain this text (any case).",
   status: "Only tasks with one of these statuses (todo, doing, done); done tasks are included only when listed here.",
@@ -108,11 +111,44 @@ const PROPOSAL_DOCS: Record<string, string> = {
   reason: "Why it is rejected; the return webhook gets it (optional).",
 };
 
+// Today and the board narrowed to one project (since 0.13.0).
+const VIEW_DOCS: Record<string, string> = {
+  projectId: 'Only the tasks of this project (its id or its name, any case), or "none" for the tasks without a project. The now task is null when it is outside the filter.',
+};
+
 const BACKLOG_DOCS: Record<string, string> = {
   files:
     'Backlog.md files: {path, content}, path relative to the backlog folder (e.g. "tasks/task-3 - Write docs.md", "drafts/…", "completed/…", "archive/tasks/…", "config.yml"). Up to 200 files per call; send the tasks that others depend on first, or all in one call.',
   prefix: 'ID prefix of tasks that did not come from Backlog.md, e.g. "task" gives TASK-12 for task #12 (default "task"). Proposals become drafts with DRAFT-<number>.',
   includeArchived: "Include archived tasks in archive/tasks/ and archived proposals in archive/drafts/ (default false).",
+};
+
+const BACKLOG_IMPORT_DOCS: Record<string, string> = {
+  ...BACKLOG_DOCS,
+  projectId:
+    'The project every new task goes into: its id or its name (any case), or "none"; not an archived project. Tasks imported before stay where they are.',
+};
+
+const BACKLOG_EXPORT_DOCS: Record<string, string> = {
+  ...BACKLOG_DOCS,
+  projectId: "Only the tasks of this project (its id or its name, any case; archived projects too); config.yml gets its name as project_name.",
+};
+
+// Since 0.13.1: projects (lib/projectOps.ts).
+const PROJECT_DOCS: Record<string, string> = {
+  projectId: "The project: its id or its name (any case).",
+  name: 'Project name: 1 to 50 characters on one line, unique among the user\'s projects in any case (archived ones too). "none" is reserved: in filters it means no project.',
+  color: "Color token; the apps pick its shade for the theme. In update_project, null clears it.",
+  icon: 'One emoji, e.g. "🥐" (up to 16 UTF-16 code units); "" means none. In update_project, null clears it.',
+  note: "What the project is about, for people and agents (up to 2000 characters). In update_project, null clears it.",
+  position: "Place in the menu, lowest first. A new project goes to the end; to move one between two others, give a number between their positions.",
+  archived: "true: archive the project (it leaves the menu and takes no new tasks; its tasks stay where they are); false: restore it.",
+  includeArchived: "Include archived projects (default false).",
+  fromLabel:
+    "Make the project from this label: every task with it and without a project moves in (at most 1000); tasks already in a project, or claimed by another agent, stay and are listed in skipped.",
+  removeLabel: "With fromLabel: take the label off the tasks that move (default false: the label stays).",
+  moveTasksTo:
+    'Where the project\'s tasks go, all of them (open, done, archived, in the trash, proposals): another project (its id or name) or "none". Needed when any task points at the project.',
 };
 
 export type ToolKind = "read" | "write";
@@ -152,9 +188,9 @@ type Spec = {
   ownerOnly?: boolean;
 };
 
-// Changes keep the previous values in history and repeat safely with the same
-// arguments (clientId); only moving a task to the trash and changing settings
-// (which decide what "today" means) are marked destructive.
+// Changes keep the previous values in history and repeat safely with clientId.
+// Deleting projects, moving tasks to the trash (including rejecting proposals)
+// and changing settings (which decide what "today" means) are marked destructive.
 const read = (name: string, spec: Spec): Tool => define(name, "read", spec, { destructiveHint: false, idempotentHint: true });
 // Agents' changes can be held back by the owner's policy "ask"; they then repeat the call with approvalId.
 const write = (name: string, spec: Spec): Tool =>
@@ -184,7 +220,7 @@ export const TOOLS: Tool[] = [
   write("update_task", {
     title: "Update task",
     description:
-      "Change a task's title, note, due date/time, resume note, repeat rule, labels, links, checklist, reminders, acceptance criteria, plan, dependencies or blocked reason.",
+      "Change a task's title, note, due date/time, resume note, repeat rule, labels, project, links, checklist, reminders, acceptance criteria, plan, dependencies or blocked reason.",
     fields: args.update,
     output: "task",
     ref: internal.ops.update,
@@ -248,15 +284,55 @@ export const TOOLS: Tool[] = [
     fields: args.listToday,
     output: "today",
     ref: internal.ops.listToday,
+    docs: VIEW_DOCS,
   }),
   read("list_all", {
     title: "Find tasks",
     description:
-      "Tasks not in the trash, oldest due first, narrowed by search text, status, labels, due day and overdue. Returns `result`, `total` (all matches) and `nextCursor`; pass limit to get pages.",
+      "Tasks not in the trash, oldest due first, narrowed by search text, status, labels, project, due day and overdue. Returns `result`, `total` (all matches) and `nextCursor`; pass limit to get pages.",
     fields: args.findTasks,
     output: "task-list",
     ref: internal.ops.findTasks,
     docs: FIND_DOCS,
+  }),
+  read("list_projects", {
+    title: "Projects",
+    description:
+      "The user's projects in menu order, each with the counts of its open, overdue, due-today and done tasks, and the open and overdue tasks without a project (noProject). A task is in at most one project (projectId); labels are free tags across projects. Archived projects only with includeArchived.",
+    fields: args.listProjects,
+    output: "project-list",
+    ref: internal.ops.listProjects,
+    docs: PROJECT_DOCS,
+  }),
+  write("add_project", {
+    title: "Add project",
+    description:
+      "Add a project at the end of the menu (or at position). With fromLabel the label's tasks without a project move into it (removeLabel takes the label off them); tasks already in a project stay and are listed in skipped.",
+    fields: args.addProject,
+    output: "project-added",
+    ref: internal.ops.addProject,
+    docs: PROJECT_DOCS,
+    hints: { idempotentHint: false },
+  }),
+  write("update_project", {
+    title: "Update project",
+    description:
+      "Change a project's name, color, icon or note (null clears color, icon and note), its position in the menu, or archive it (archived: true; it leaves the menu and takes no new tasks, its tasks stay where they are) and restore it (archived: false).",
+    fields: args.updateProject,
+    output: "project",
+    ref: internal.ops.updateProject,
+    docs: PROJECT_DOCS,
+  }),
+  write("delete_project", {
+    title: "Delete project",
+    description:
+      'Delete a project. When any task points at it (open, done, archived, in the trash or a proposal), moveTasksTo says where they go, another project or "none", else precondition_failed; each moved task gets a history entry. No task is deleted. Only the owner can call it.',
+    fields: args.deleteProject,
+    output: "project-delete",
+    ref: internal.ops.deleteProject,
+    docs: PROJECT_DOCS,
+    hints: { destructiveHint: true },
+    ownerOnly: true,
   }),
   read("list_trash", {
     title: "Trash",
@@ -271,6 +347,7 @@ export const TOOLS: Tool[] = [
     fields: args.board,
     output: "board",
     ref: internal.ops.board,
+    docs: { projectId: FIND_DOCS.projectId! },
   }),
   read("get_task", {
     title: "Task with history",
@@ -406,7 +483,7 @@ export const TOOLS: Tool[] = [
   write("merge_proposal", {
     title: "Merge proposal",
     description:
-      "Merge a proposal into a task already in the plan: the task gets its note, links, labels, source and return webhooks; the proposal goes to the trash. Only the owner can call it.",
+      "Merge a proposal into a task already in the plan: the task gets its note, links, labels, source and return webhooks, and its project when the task has none and that project is not archived; the proposal goes to the trash. Only the owner can call it.",
     fields: args.mergeProposal,
     output: "merge",
     ref: internal.ops.mergeProposal,
@@ -426,7 +503,7 @@ export const TOOLS: Tool[] = [
   read("agent_brief", {
     title: "Agent brief",
     description:
-      "Start of a session, in one read: list_today (the now task, overdue, today, done today) plus the claims in force (yours marked mine) and those that ran out, whether the owner paused agents and your tool policies, approval requests waiting and the owner's recent decisions on yours, the first tasks ready to work on, and nextSteps as sentences.",
+      "Start of a session, in one read: list_today (the now task, overdue, today, done today) plus the claims in force (yours marked mine) and those that ran out, whether the owner paused agents and your tool policies, approval requests waiting and the owner's recent decisions on yours, the first tasks ready to work on, the active projects with task counts, and nextSteps as sentences.",
     fields: args.agentBrief,
     output: "agent-brief",
     ref: internal.ops.agentBrief,
@@ -438,7 +515,7 @@ export const TOOLS: Tool[] = [
     fields: args.importBacklog,
     output: "backlog-import",
     ref: internal.ops.importBacklog,
-    docs: BACKLOG_DOCS,
+    docs: BACKLOG_IMPORT_DOCS,
   }),
   read("export_backlog", {
     title: "Export as Backlog.md",
@@ -447,7 +524,7 @@ export const TOOLS: Tool[] = [
     fields: args.exportBacklog,
     output: "backlog-export",
     ref: internal.ops.exportBacklog,
-    docs: BACKLOG_DOCS,
+    docs: BACKLOG_EXPORT_DOCS,
   }),
   read("plan_health", {
     title: "Plan health",
