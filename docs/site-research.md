@@ -51,8 +51,8 @@ and Cal.com; first-party analytics only on Plausible, Ghostty and Super Producti
 - **Rows of phone screens that scroll sideways under the reader's control**, never a slideshow that moves
   by itself.
 - **Every platform visible with its real state.** One card per platform with requirements, as Ente, Zed and
-  Ghostty list them, the source build that works today, and "Coming soon" for the APK, Google Play, a
-  signed Mac download, npm and Homebrew, with no badge or link for what does not exist.
+  Ghostty list them; availability follows [Install](install.md), with no badge or link for what does not
+  exist.
 - **An unreleased platform said plainly.** Tasks.org's "Desktop (alpha)" line is the most honest model:
   iPhone and iPad get a muted "In the works" card and a line in the platform list, with no store badge,
   and the download section starts with a "Pre-release" note.
