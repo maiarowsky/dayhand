@@ -62,18 +62,18 @@ repository as `docs/*.md`. They describe what is in the `main` branch, not a pub
 
 ## What exists and what is planned
 
-Everything in these pages can be built and run from the source today. Nothing is published as a
-package or a signed download yet ([Install](install.md) says when that changes):
+Everything in these pages can be built and run from the source today. For package and download
+availability, see [Install](install.md).
 
 | Piece | Today | Planned |
 |---|---|---|
-| `dayhand` CLI and `dayhand ui` | build from source (macOS, Linux, Windows) | `npm i -g dayhand` and `brew install maiarowsky/tap/dayhand`, after the first release |
+| `dayhand` CLI and `dayhand ui` | [Install the command line](install.md#command-line-dayhand) | |
 | Android app | build it yourself | a signed APK on GitHub Releases and Google Play, coming soon |
 | Dayhand for macOS | build from source, runs on the Mac that built it | a signed, notarized download with updates, coming soon |
 | Dayhand for Linux | Arch Linux and Omarchy package built from the repository; CMake elsewhere | no AUR package yet |
 | iPhone and iPad | in development; nothing to install yet | an iOS app on the same backend |
 | Windows desktop app | none; the CLI works on Windows with a server on Convex | |
-| Backlog.md import and export | [Available from source](backlog-md.md) | |
+| Backlog.md import and export | [Usage and compatibility](backlog-md.md) | |
 
 Pages that describe a planned piece say so where it matters, and give no command for it.
 

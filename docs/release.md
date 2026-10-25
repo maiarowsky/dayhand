@@ -6,8 +6,8 @@ versions; `dayhand version` checks the server's `serverInfo.version` against
 `MIN_SERVER_VERSION` in `cli/src/core/version.ts` (same major, not older than the minimum).
 
 The CLI goes to npm as `dayhand` (`npm i -g dayhand`) and to the Homebrew tap `maiarowsky/tap`
-(`brew install maiarowsky/tap/dayhand`). Everything needed to publish is in the repository, and
-**nothing publishes yet**:
+(`brew install maiarowsky/tap/dayhand`). Everything needed to publish is in the repository. The first
+version was published by hand, and **nothing publishes by itself yet**:
 
 | File | What it does | Off until |
 |---|---|---|
@@ -20,13 +20,12 @@ The CLI goes to npm as `dayhand` (`npm i -g dayhand`) and to the Homebrew tap `m
 `check-release.mjs` stops the publish job while the package is private, when the tag does not
 match the version, when `repository.url` is missing, or when npm is older than 11.5.1.
 
-## Before the first release (on the maintainer's word)
+## Release automation setup (on the maintainer's word)
 
-Done in the repository: the package is named `dayhand` (free on npm: `npm view dayhand` answered 404
-on 2026-10-24), it is no longer private, and `repository`, `homepage` and `bugs` point to the public
-repository `maiarowsky/dayhand`, which provenance checks. `node scripts/check-release.mjs
-dayhand-v<version>` in `cli/` passes. The commands stay `dayhand` and `dh` (the `bin` field, which
-also keeps `hlm` until 1.0).
+Package metadata is owned by [`cli/package.json`](../cli/package.json); command names and legacy
+compatibility are described in the [CLI guide](../cli/README.md). The first manual npm publication,
+tap creation and install-page switch (steps 3, 6 and 7 below) are complete. Until steps 1, 2, 4 and 5
+are done too, every release is published by hand.
 
 Each step below changes something outside this repository or makes it public, so each needs the
 maintainer's explicit go-ahead.
@@ -66,6 +65,9 @@ maintainer's explicit go-ahead.
    [After the first release](#after-the-first-release)).
 
 ## Every release
+
+Until automation is enabled, publish by hand as in setup step 3, then update the tap as in step 4
+below. The automated sequence is:
 
 1. Merge work into `main` with Conventional Commit messages (`feat:` → minor, `fix:` → patch;
    before 1.0.0 a breaking change bumps the minor version).
@@ -113,14 +115,7 @@ npx dayhand --version && npx dh --help && npx dayhand completion bash | head
 
 ## After the first release
 
-The release badge is already live and updates when a release exists. Once `npm view dayhand` and
-`brew install maiarowsky/tap/dayhand` work, one small commit switches the install pages from
-“available after the first release” to available:
-
-- [ ] `README.md`: delete the quoted line “**npm and Homebrew: available after the first release.** …”
-  under the Install table, and switch the npm badge as described in [badges.md](badges.md).
-- [ ] `docs/install.md`: delete the same quoted line under the table.
-- [ ] `docs/README.md`: in “What exists and what is planned”, move npm and Homebrew to *Today*.
-- [ ] `docs/contributing.md`: drop “nothing is published yet” from Releases.
-- [ ] [badges.md](badges.md): the npm row becomes live.
-- [ ] `site/index.html` (dayhand.dev): the same commands in its install section.
+The install pages now list npm and Homebrew as available. Installation instructions live in
+[Install](install.md), and README badge sources in [badges.md](badges.md). Landing-page source and
+deployment instructions are linked from the
+[site contribution guide](../CONTRIBUTING.md#the-site-and-the-documentation).

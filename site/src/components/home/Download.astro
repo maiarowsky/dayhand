@@ -26,9 +26,8 @@ import { DOCS_PATH, repoFile } from "../../site";
       <p>With Homebrew, on macOS and Linux:</p>
       <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line with Homebrew"><code>brew install maiarowsky/tap/dayhand</code></pre>
       <p class="later">
-        Running your own server with <code>dayhand server start</code> also needs a copy of the repository, because
-        the server code (<code>backend/</code>) is not in the npm package: <a href={repoFile("docs/deploy.md")}>the
-        deployment guide</a> shows how.
+        The package carries the server too: <code>dayhand server start</code> runs your own, with no copy of the
+        repository, as <a href={repoFile("docs/deploy.md")}>the deployment guide</a> shows.
       </p>
     </li>
     <li class="card">

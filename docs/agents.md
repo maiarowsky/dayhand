@@ -215,5 +215,5 @@ The same steps are in the `dayhand://guide` resource, in `dayhand prime` and in 
 
 ## Related guides
 
-- [Backlog.md import and export](backlog-md.md).
+- [Backlog.md import and export](backlog-md.md): moving a plan between Dayhand and task files.
 - [Phase guides as MCP resources](agent-work.md#9-phase-guides-and-the-agent-brief).

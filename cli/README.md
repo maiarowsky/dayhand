@@ -25,7 +25,7 @@ source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help com
 ```
 
 In a checkout, build and link it from this folder instead: `npm ci --ignore-scripts && npm run build && npm link`
-(also the way to get it before the first release; [every way to install](../docs/install.md)).
+([every way to install](../docs/install.md)).
 
 The package includes the backend for `dayhand server start` and `dayhand server deploy`; no checkout
 is needed. [Your own server](../docs/deploy.md#run-your-own-server-in-5-minutes) explains backend

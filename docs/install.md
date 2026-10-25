@@ -8,8 +8,6 @@
 | [macOS](#macos) | macOS 13 or newer; built with Xcode 26 | from source; coming soon: signed, notarized download |
 | [Linux](#linux-and-omarchy) | Qt 6 desktops; a package for Arch Linux and Omarchy | from source |
 
-> **npm and Homebrew: available after the first release.** Nothing is on npm or Homebrew yet; until then, build the command line [from source](#from-source).
-
 The iPhone and iPad app is in development and has nothing to install yet. There is no Windows desktop
 app; on Windows the command line works with a server on your own Convex account.
 
@@ -44,7 +42,7 @@ asks for a key ([command reference](cli.md#dayhand-login)).
 
 ### From source
 
-For contributors, and the way to get `dayhand` before the first release. You also need git:
+For contributors, and to try changes that are not released yet. You also need git:
 
 ```sh
 git clone https://github.com/maiarowsky/dayhand.git

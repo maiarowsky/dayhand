@@ -18,8 +18,7 @@ npm i -g dayhand
 
 This puts `dayhand` and its short name `dh` on your PATH; `npm rm -g dayhand` removes them. With
 Homebrew, `brew install maiarowsky/tap/dayhand` does the same. `dayhand --version` prints the version.
-Before the first release, build it from source instead; every way to install, and the state of each:
-[Install](install.md).
+Every way to install, and the state of each: [Install](install.md).
 
 The `dayhand` package carries the server (the `backend/` folder of the repository), so there is nothing
 else to get: no clone, nothing to build. (A clone of the repository still works, and wins when you run

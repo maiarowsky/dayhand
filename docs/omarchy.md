@@ -18,8 +18,7 @@ run on an Omarchy machine (see [Not checked](#not-checked)).
 omarchy pkg add nodejs npm          # or: sudo pacman -S nodejs npm
 ```
 
-Then install `dayhand` and sign it in (before the first release, build it from source instead:
-[Install](install.md#from-source)):
+Then install `dayhand` and sign it in:
 
 ```sh
 npm i -g dayhand
