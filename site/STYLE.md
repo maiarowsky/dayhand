@@ -118,7 +118,8 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **A content grid with named lines.** Header, sections and footer share
   `[full-start] … [content-start] … [content-end] … [full-end]`, so the 16 px gutter (`--gutter`) holds at
   any width and the page never scrolls sideways; code blocks and the rows of phone screens scroll inside
-  themselves.
+  themselves, except the install commands in Download, which wrap at their spaces beside the Copy
+  button.
 - **Intrinsic grids first.** Cards use `repeat(auto-fit, minmax(min(100%, …), 1fr))`. The few width
   queries move the header navigation below the name, put a screenshot beside its text, turn a row of
   phone screens from a sideways strip into a grid, and give the phone in the first screen more room on
