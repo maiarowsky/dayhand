@@ -7,9 +7,9 @@ export const EXIT_CODES: [number, string][] = [
   [1, "Other error (internal)"],
   [2, "Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml"],
   [3, "Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one"],
-  [4, "Not found: no such task (#n), device or now task"],
+  [4, "Not found: no such task (#n), project, device or now task"],
   [5, "Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names"],
-  [6, "Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed)"],
+  [6, "Refused by the current state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met, the proof has no summary, or a non-empty project has no --move-tasks-to destination (precondition_failed)"],
   [7, "Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>)"],
   [130, "Interrupted (Ctrl-C)"],
 ];

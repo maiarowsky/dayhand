@@ -17,7 +17,7 @@ const schemaLinks = (spec: CommandSpec) =>
 
 const escape = (text: string) => text.replace(/\|/g, "\\|");
 const optionRows = (options: OptSpec[]) =>
-  options.map((o) => `| \`${o.flags}\` | ${escape(o.description)}${o.choices ? ` (${o.choices.join(", ")})` : ""} |`);
+  options.map((o) => `| \`${escape(o.flags)}\` | ${escape(o.description)}${o.choices ? ` (${o.choices.join(", ")})` : ""} |`);
 
 export function renderDocs(): string {
   const commands = flatten().filter(({ spec }) => spec.run);
@@ -55,18 +55,19 @@ export function renderDocs(): string {
     "- `--json` (or `DAYHAND_FORMAT=json`) prints the tool's `structuredContent` exactly as an MCP",
     "  client receives it; schemas are in [schemas/](schemas/). Indented on a terminal, one line in a pipe.",
     "- Fields may be added in a minor version; they are never removed or retyped within a major version.",
-    "- A list tool returns `{\"result\": [...]}`. A command given several tasks returns `{\"results\": [...]}`,",
-    "  one tool result per task. `--fields a,b` keeps only those fields of every task (or of the settings).",
+    "- A list tool returns `{\"result\": [...]}`. Bulk commands follow the [results schema](schemas/results.schema.json).",
+    "  `--fields a,b` keeps only those fields of every task (or of the settings).",
     "- `dayhand now` without a task prints `list_today`; `dayhand note <ref>` without text prints `get_task`.",
     "- A Markdown export's JSON is `{\"format\":\"markdown\",\"content\":\"…\"}`.",
     "- Errors go to stderr as one line: `{\"error\":{\"code\",\"message\",\"exitCode\",\"retryable\",\"clientId\",…}}`",
     "  ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{\"warning\":{…}}` lines.",
     "- `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`",
     "  (or the `--fields`); views with sections (Today, board) start each row with the section name.",
-    "- `dayhand list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)",
+    "- `--fields project,projectId` selects the resolved project name and id; see [name resolution](#human-output).",
+    "- `dayhand list` filters (`--project`, `--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)",
     "  run on the backend and keep list_all's shape: `{\"result\": [...], \"total\", \"nextCursor\"}`. With `--limit`, pass",
     "  `nextCursor` as `--cursor` for the next page. A backend older than 0.4.0 has no `total` and `nextCursor`;",
-    "  dayhand then filters its full list itself.",
+    "  dayhand then applies non-project filters to its full list itself.",
     "- `--dry-run` on a command that changes something prints `{\"dryRun\":true,\"calls\":[{\"tool\",\"arguments\",\"result\"}]}`",
     "  ([schema](schemas/dry-run.schema.json)) with dates resolved. The backend checks each change and returns",
     "  what it would give (`result`) without saving anything; reads still happen. A backend older than 0.4.0",
@@ -78,6 +79,9 @@ export function renderDocs(): string {
     "`Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,",
     "`[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without",
     "colors or cutting. `dayhand board` shows its columns side by side on terminals 90 columns or wider.",
+    "Task views show projects as `+Strona-piekarni` after the title, before `#labels`. Resolving task project",
+    "names uses one `list_projects` read when needed, not for default JSON or plain output; explicit",
+    "`--fields project` also resolves names.",
     "On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options open `$VISUAL`/`$EDITOR`.",
     "",
     "## Exit codes",
@@ -100,6 +104,7 @@ export function renderDocs(): string {
     "",
     `Changing ${3} or more tasks at once needs \`--yes\`. On a terminal dayhand asks instead; without a`,
     "terminal (or with `--no-input` / `DAYHAND_NO_INPUT=1`) it never waits for input and exits with 2.",
+    "`project assign` requires confirmation already for two tasks.",
     "",
     "## Environment",
     "",

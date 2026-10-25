@@ -38,6 +38,7 @@ export type HeldCall =
 export const READ_ONLY_TOOLS = new Set([
   "list_today",
   "list_all",
+  "list_projects",
   "board",
   "get_task",
   "list_trash",

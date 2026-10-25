@@ -5,6 +5,7 @@
 import { CliError, toCliError } from "../core/exit.js";
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
+import { withProjectNames } from "../projects.js";
 import { isoWeekday, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
 import { agentId } from "./agents.js";
@@ -119,7 +120,7 @@ export class Controller {
   }
 
   snapshot(): Snapshot {
-    return { ui: this.ui, data: this.data, conn: this.conn, flash: this.flash, busy: this.busy, columns: this.columns, rows: this.rows, timezone: this.timezone, today: this.today(), now: this.now(), interval: this.options.interval ?? DEFAULT_INTERVAL_S };
+    return { ui: this.ui, data: withProjectNames(this.data, this.data.projects ?? []), conn: this.conn, flash: this.flash, busy: this.busy, columns: this.columns, rows: this.rows, timezone: this.timezone, today: this.today(), now: this.now(), interval: this.options.interval ?? DEFAULT_INTERVAL_S };
   }
 
   frame(): Screen {
@@ -157,7 +158,7 @@ export class Controller {
       await this.load("settings", () => this.options.api.settings(), (s) => this.setZone(s.timezone));
       if (!this.timezone) return;
     }
-    const jobs = [this.loadView(this.ui.view)];
+    const jobs = [this.loadView(this.ui.view), this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }))];
     if (this.ui.detail) {
       const id = this.ui.detail.taskId;
       jobs.push(this.load(`task:${id}`, () => this.options.api.task(id), (detail) => (this.data = { ...this.data, detail })));
@@ -338,6 +339,7 @@ export class Controller {
     }
     const context: EffectContext = {
       api: this.options.api,
+      projects: this.data.projects,
       timezone: this.timezone,
       now: this.now,
       today,

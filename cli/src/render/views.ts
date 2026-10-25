@@ -2,6 +2,7 @@
 // JSON value plus one of these views; --json prints the value and ignores the view.
 // The human format is the same on a terminal and in a pipe, except that a
 // terminal gets colors (unless turned off) and long titles cut to its width.
+import { projectToken } from "../projects.js";
 import type { HeldCall } from "../transport/client.js";
 import { cell, describeChange, describeReminder, describeRepeat, fieldCells, formatDay, formatTimestamp, refOf, relativeDate, taskCells, taskRow, tsv } from "./format.js";
 import type { Connection, Device, HistoryEntry, Task, TodayView } from "./model.js";
@@ -162,7 +163,7 @@ function renderToday(view: TodayView, fields: string[] | undefined, options: Ren
   const { style } = options;
   const lines = [style.bold(`Today, ${formatDay(view.date)}`) + style.dim(` (${view.timezone})`)];
   if (view.now) {
-    lines.push(`${style.green("NOW")}  ${style.cyan(refOf(view.now))} ${style.bold(view.now.title)}`);
+    lines.push(`${style.green("NOW")}  ${style.cyan(refOf(view.now))} ${style.bold(view.now.title)}${view.now.project ? ` +${projectToken(view.now.project)}` : ""}`);
     if (view.now.resumeNote) lines.push(`     next: ${view.now.resumeNote}`);
   }
   const groups: Group[] = [
@@ -184,7 +185,8 @@ function boardColumns(sections: Section[], options: RenderOptions): string {
     if (s.tasks.length === 0) return [heading, options.style.dim(`(${s.empty ?? "empty"})`)];
     const rows = s.tasks.map((t) => {
       const [ref, , due, title] = taskCells(t, { style: options.style, today: options.today });
-      return withDue ? [ref!, title!, due!] : [ref!, title!];
+      const named = cellOf(`${title!.text}${t.project ? ` +${projectToken(t.project)}` : ""}`, title!.paint);
+      return withDue ? [ref!, named, due!] : [ref!, named];
     });
     return [heading, ...table(rows, { width, flex: 1, indent: 0, gap: 1, minFlex: 6 })];
   });
@@ -209,6 +211,7 @@ function renderDetail(task: Task, history: HistoryEntry[], timezone: string | un
   add("due", due ? (relative && relative !== task.dueDate ? `${due} (${relative})` : due) : "no date");
   add("repeat", task.repeat ? describeRepeat(task.repeat) : undefined);
   add("remind", task.reminders ? (task.reminders.length ? task.reminders.map(describeReminder).join(", ") : "none") : undefined);
+  add("project", task.project ? `+${projectToken(task.project)}` : undefined);
   add("labels", task.labels.join(", "));
   add("links", task.links.map((l) => (l.title ? `${l.title} <${l.url}>` : l.url)).join(", "));
   add("next", task.resumeNote);

@@ -47,7 +47,7 @@ export function renderMan(): string {
   }
   lines.push(
     ".SH GLOBAL OPTIONS",
-    roff("Valid before or after the command."),
+    roff("Valid before or after the command. Command-specific options take precedence; see the command's description."),
     ...GLOBAL_OPTIONS.flatMap(option),
     ".TP",
     ".B \\-V, \\-\\-version",
@@ -57,6 +57,8 @@ export function renderMan(): string {
     roff("Help for dayhand or for a command; dayhand help <topic> for a topic."),
     ".SH JSON OUTPUT",
     roff("--json (or DAYHAND_FORMAT=json) prints the MCP tool's structuredContent exactly as an MCP client receives it. Fields may be added in a minor version; they are never removed or retyped within a major version. Errors go to standard error as one line: {\"error\":{\"code\",\"message\",\"exitCode\",\"retryable\",\"clientId\",...}}; standard output then stays empty. --plain prints tab-separated rows without headers."),
+    ".PP",
+    roff("Project fields and human name resolution: see docs/cli.md, JSON output and Human output."),
     ".SH EXIT STATUS",
     ...EXIT_CODES.flatMap(([code, meaning]) => [".TP", `.B ${code}`, roff(meaning)]),
     ".SH ENVIRONMENT",

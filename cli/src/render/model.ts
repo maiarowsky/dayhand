@@ -28,6 +28,9 @@ export type Task = {
   repeat?: Repeat;
   rrule?: string;
   labels: string[];
+  projectId?: string;
+  /** Resolved only for human output or explicit --fields project. */
+  project?: string;
   links: Link[];
   checklist?: ChecklistItem[];
   reminders?: Reminder[];
@@ -69,7 +72,7 @@ export type Connection = {
   active: boolean;
 };
 
-/** Fields a task can have; `--fields` accepts these. Mirrors docs/schemas/task.schema.json. */
+/** Task fields accepted by --fields, plus the CLI-resolved project name. */
 export const TASK_FIELDS = [
   "id",
   "ref",
@@ -83,6 +86,8 @@ export const TASK_FIELDS = [
   "repeat",
   "rrule",
   "labels",
+  "project",
+  "projectId",
   "links",
   "checklist",
   "reminders",

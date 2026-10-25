@@ -15,7 +15,7 @@ Without a command, `dayhand` shows Today.
 
 | Command | Calls | `--json` schema | Summary |
 |---|---|---|---|
-| `dayhand today` | `list_today` | [today](schemas/today.schema.json) | The Today screen: now task, overdue, today and done today (also plain `dayhand`) |
+| `dayhand today [options]` | `list_today` | [today](schemas/today.schema.json) | The Today screen: now task, overdue, today and done today (also plain `dayhand`) |
 | `dayhand add <title...> [options]` | `add_task` | [task](schemas/task.schema.json) | Add a task (due today unless --due or --no-due) |
 | `dayhand list [options]` | `list_all` | [task-list](schemas/task-list.schema.json) | Open tasks, oldest due first (with --done also done ones); filters narrow the list |
 | `dayhand board [options]` | `board` | [board](schemas/board.schema.json) | Kanban board: todo, doing and done columns |
@@ -33,6 +33,14 @@ Without a command, `dayhand` shows Today.
 | `dayhand rm <refs...>` | `delete_task` | [task](schemas/task.schema.json) | Move tasks to the trash (purged after 30 days) |
 | `dayhand restore <refs...>` | `restore_task` | [task](schemas/task.schema.json) | Restore tasks from the trash (or the archive) |
 | `dayhand trash` | `list_trash` | [task-list](schemas/task-list.schema.json) | Tasks in the trash, newest first |
+| `dayhand project [options]` | `list_projects` | [project-list](schemas/project-list.schema.json) | Projects and their task counts (same as project list) |
+| `dayhand project list [options]` | `list_projects` | [project-list](schemas/project-list.schema.json) | Projects in menu order with open and overdue counts |
+| `dayhand project add <name...> [options]` | `add_project` | [project-added](schemas/project-added.schema.json) | Create a project, optionally moving tasks from a label |
+| `dayhand project edit <project> [options]` | `update_project`, `list_projects` | [project](schemas/project.schema.json) | Change project metadata or menu order |
+| `dayhand project archive <projects...>` | `update_project` | [project](schemas/project.schema.json), [results](schemas/results.schema.json) | Archive projects; their tasks stay where they are |
+| `dayhand project unarchive <projects...>` | `update_project` | [project](schemas/project.schema.json), [results](schemas/results.schema.json) | Restore archived projects |
+| `dayhand project rm <project> [options]` | `delete_project` | [project-delete](schemas/project-delete.schema.json) | Delete a project (owner only); move all its tasks explicitly |
+| `dayhand project assign <project> <refs...>` | `update_task` | [task](schemas/task.schema.json), [results](schemas/results.schema.json) | Move tasks to a project (none clears it); several tasks require --yes or confirmation |
 | `dayhand log [options]` | `list_events` | [event-list](schemas/event-list.schema.json) | The activity log: task changes after a cursor or a time, oldest first (who changed what) |
 | `dayhand claim <ref> [options]` | `claim_task` | [task](schemas/task.schema.json) | Claim a task for a while (default 120 minutes) so other agents leave it alone |
 | `dayhand renew <ref> [options]` | `renew_claim` | [task](schemas/task.schema.json) | Extend your claim of a task by --minutes from now (default 120) |
@@ -87,7 +95,7 @@ Without a command, `dayhand` shows Today.
 | `dayhand webhook enable <webhookId>` | `/api/v1/webhooks` | [webhook-one](schemas/webhook-one.schema.json) | Turn a webhook back on after it was turned off for failing |
 | `dayhand webhook deliveries <webhookId> [options]` | `/api/v1/webhooks` | [webhook-delivery-list](schemas/webhook-delivery-list.schema.json) | The delivery log: newest first, each attempt's HTTP status or error |
 | `dayhand import <file> [options]` | `/api/v1/import` | [import-result](schemas/import-result.schema.json) | Import tasks from Dayhand's JSON export, an iCalendar file or a Todoist CSV export |
-| `dayhand backlog import <dir>` | `import_backlog` | [backlog-import](schemas/backlog-import.schema.json) | Import a Backlog.md folder: each task file becomes a task; files imported before are skipped |
+| `dayhand backlog import <dir> [options]` | `import_backlog`, `list_projects`, `add_project` | [backlog-import](schemas/backlog-import.schema.json) | Import a Backlog.md folder: each task file becomes a task; files imported before are skipped |
 | `dayhand backlog export [dir] [options]` | `export_backlog` | [backlog-written](schemas/backlog-written.schema.json), [backlog-export](schemas/backlog-export.schema.json) | Write the plan as Backlog.md task files into a folder (without one, --json prints the files) |
 | `dayhand login [options]` | `get_settings` | [login](schemas/login.schema.json) | Store an API key for the deployment in the OS keychain (or a private file) |
 | `dayhand logout` | - | [logout](schemas/logout.schema.json) | Remove the stored API key for the deployment (keychain and file) |
@@ -121,18 +129,19 @@ Without a command, `dayhand` shows Today.
 - `--json` (or `DAYHAND_FORMAT=json`) prints the tool's `structuredContent` exactly as an MCP
   client receives it; schemas are in [schemas/](schemas/). Indented on a terminal, one line in a pipe.
 - Fields may be added in a minor version; they are never removed or retyped within a major version.
-- A list tool returns `{"result": [...]}`. A command given several tasks returns `{"results": [...]}`,
-  one tool result per task. `--fields a,b` keeps only those fields of every task (or of the settings).
+- A list tool returns `{"result": [...]}`. Bulk commands follow the [results schema](schemas/results.schema.json).
+  `--fields a,b` keeps only those fields of every task (or of the settings).
 - `dayhand now` without a task prints `list_today`; `dayhand note <ref>` without text prints `get_task`.
 - A Markdown export's JSON is `{"format":"markdown","content":"…"}`.
 - Errors go to stderr as one line: `{"error":{"code","message","exitCode","retryable","clientId",…}}`
   ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{"warning":{…}}` lines.
 - `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`
   (or the `--fields`); views with sections (Today, board) start each row with the section name.
-- `dayhand list` filters (`--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)
+- `--fields project,projectId` selects the resolved project name and id; see [name resolution](#human-output).
+- `dayhand list` filters (`--project`, `--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)
   run on the backend and keep list_all's shape: `{"result": [...], "total", "nextCursor"}`. With `--limit`, pass
   `nextCursor` as `--cursor` for the next page. A backend older than 0.4.0 has no `total` and `nextCursor`;
-  dayhand then filters its full list itself.
+  dayhand then applies non-project filters to its full list itself.
 - `--dry-run` on a command that changes something prints `{"dryRun":true,"calls":[{"tool","arguments","result"}]}`
   ([schema](schemas/dry-run.schema.json)) with dates resolved. The backend checks each change and returns
   what it would give (`result`) without saving anything; reads still happen. A backend older than 0.4.0
@@ -144,6 +153,9 @@ Tables are aligned by display width; due days read as `today`, `tomorrow`, `yest
 `Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,
 `[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without
 colors or cutting. `dayhand board` shows its columns side by side on terminals 90 columns or wider.
+Task views show projects as `+Strona-piekarni` after the title, before `#labels`. Resolving task project
+names uses one `list_projects` read when needed, not for default JSON or plain output; explicit
+`--fields project` also resolves names.
 On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options open `$VISUAL`/`$EDITOR`.
 
 ## Exit codes
@@ -154,9 +166,9 @@ On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options ope
 | 1 | Other error (internal) |
 | 2 | Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml |
 | 3 | Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one |
-| 4 | Not found: no such task (#n), device or now task |
+| 4 | Not found: no such task (#n), project, device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
-| 6 | Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed) |
+| 6 | Refused by the current state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met, the proof has no summary, or a non-empty project has no --move-tasks-to destination (precondition_failed) |
 | 7 | Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>) |
 | 130 | Interrupted (Ctrl-C) |
 
@@ -174,6 +186,7 @@ not apply an operation twice. A command given several tasks uses `<id>:1`, `<id>
 
 Changing 3 or more tasks at once needs `--yes`. On a terminal dayhand asks instead; without a
 terminal (or with `--no-input` / `DAYHAND_NO_INPUT=1`) it never waits for input and exits with 2.
+`project assign` requires confirmation already for two tasks.
 
 ## Environment
 
@@ -304,10 +317,13 @@ Shell completion (dayhand completion <shell>)
   PowerShell   dayhand completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
-numbers with their titles, labels, profiles and date words. Task numbers and
-labels come from one list_all call, cached for 60 seconds in the cache folder
-(~/.cache/dayhand, ~/Library/Caches/dayhand or %LOCALAPPDATA%\dayhand\Cache). Completion
-never prompts and prints nothing when it cannot reach the server.
+numbers with their titles, labels, project names, profiles and date words. Task
+hints come from list_all, projects from list_projects; both are cached for 60 seconds
+per server URL and credential in the cache folder (~/.cache/dayhand,
+~/Library/Caches/dayhand or %LOCALAPPDATA%\dayhand\Cache). Completion never prompts;
+server failures omit remote hints but leave local candidates available.
+Bash leaves quoted, escaped or expansion-containing prefixes unchanged; start
+with an unquoted prefix to complete a project name.
 ```
 
 ## Topic: ui
@@ -330,6 +346,14 @@ The mouse selects and scrolls (--no-mouse leaves it to the terminal).
 Quick add (a) reads a date phrase at the end or the start of the line, and
 #labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
+With backend 0.13.0 or later, the first recognized +project token selects an
+existing active project. Names match in any case; hyphens may replace spaces
+when unambiguous, but an exact name or id wins. Unknown, ambiguous or archived
+project tokens stay in the title and are marked with ? in the preview.
+
+The / filter accepts exact +project tokens with the same name resolution,
+including archived projects; +Home does not match Home-office. Remaining text
+searches titles, #labels, notes and task numbers as before.
 
 Move:
   j k  ↓ ↑            Next / previous task
@@ -390,8 +414,12 @@ and lazygit; no code is taken from either.
 The Today screen: now task, overdue, today and done today (also plain `dayhand`)
 
 ```
-dayhand today
+dayhand today [options]
 ```
+
+| Option | Meaning |
+|---|---|
+| `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
 
 ```sh
 dayhand
@@ -422,6 +450,7 @@ dayhand add <title...> [options]
 | `--until <date>` | Last date the repeat may fall on (dayhand help dates) |
 | `--count <n>` | How many times it repeats, this one included |
 | `--rrule <rule>` | The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=-1FR" |
+| `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
 | `--no-due` | No due day: the task shows only in list and board |
 | `-l, --label <label>` | Label (repeatable) |
 | `--note <text>` | Note |
@@ -442,6 +471,7 @@ dayhand add <title...> [options]
 
 ```sh
 dayhand add Call the accountant --due "fri 2pm" -l home
+dayhand add "Zdjęcia do galerii" --due fri -p "strona piekarni"
 dayhand add Pay rent --due "1 nov" --dry-run
 dayhand add "Review the plan" --time 09:00 --every week --on mon,thu
 dayhand add Payroll --due 2026-10-30 --month-weekday "last fri" --remind "09:00 -1d"
@@ -463,6 +493,7 @@ dayhand list [options]
 | Option | Meaning |
 |---|---|
 | `-l, --label <label>` | Only tasks with this label (repeatable: all must match) |
+| `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
 | `--done` | Include done tasks |
 | `--archived` | Include archived tasks |
 | `--status <statuses>` | Only these statuses, comma-separated: todo, doing, done (done implies --done) |
@@ -481,6 +512,7 @@ dayhand list --due-before eow --search accountant --limit 20
 dayhand list --limit 50 --cursor <nextCursor> --json
 dayhand list --done --json --fields ref,title,status
 dayhand list --ready --json
+dayhand list -p none --json
 ```
 
 ### dayhand board
@@ -493,6 +525,7 @@ dayhand board [options]
 
 | Option | Meaning |
 |---|---|
+| `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
 | `--done-limit <n>` | Maximum tasks in the done column (default 50) |
 
 ```sh
@@ -528,6 +561,8 @@ dayhand edit <ref> [options]
 | Option | Meaning |
 |---|---|
 | `--title <text>` | New title |
+| `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
+| `--clear-project` | Remove the project |
 | `--note <text>` | Replace the note |
 | `--clear-note` | Remove the note |
 | `--due <when>` | Due day, optionally with a time: tomorrow, fri 14:00, in 3 days, 2026-10-23 (dayhand help dates) |
@@ -791,6 +826,159 @@ dayhand trash
 ```sh
 dayhand trash
 dayhand trash --json
+```
+
+### dayhand project
+
+Projects and their task counts (same as project list)
+
+Needs backend 0.13.0 or later (dayhand version)
+
+```
+dayhand project [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--archived` | Include archived projects |
+
+```sh
+dayhand project
+dayhand project list --json
+```
+
+### dayhand project list
+
+Projects in menu order with open and overdue counts
+
+```
+dayhand project list [options]
+```
+
+| Option | Meaning |
+|---|---|
+| `--archived` | Include archived projects |
+
+```sh
+dayhand project list --archived --json
+```
+
+### dayhand project add
+
+Create a project, optionally moving tasks from a label
+
+Here --color is the project's token; put terminal --color auto|always|never before project. --no-color still controls terminal output.
+
+```
+dayhand project add <name...> [options]
+```
+
+- `name`: Project name (1–50 characters, unique in any case)
+
+| Option | Meaning |
+|---|---|
+| `--color <token>` | Project color (red, orange, amber, green, teal, cyan, blue, indigo, purple, pink, brown, gray) |
+| `--icon <emoji>` | One emoji |
+| `--note <text>` | Project context (up to 2000 characters) |
+| `--from-label <label>` | Move tasks with this label and no project; report skipped tasks |
+| `--remove-label` | Remove the label from moved tasks (requires --from-label) |
+
+```sh
+dayhand project add "Strona piekarni" --color amber --icon 🥐 --note "Strona i menu dla piekarni"
+dayhand project add Dom --from-label dom --dry-run
+```
+
+### dayhand project edit
+
+Change project metadata or menu order
+
+Here --color is the project's token; put terminal --color auto|always|never before project. --no-color still controls terminal output.
+
+```
+dayhand project edit <project> [options]
+```
+
+- `project`: Project name or id
+
+| Option | Meaning |
+|---|---|
+| `--name <name>` | New name |
+| `--color <token>` | Project color (red, orange, amber, green, teal, cyan, blue, indigo, purple, pink, brown, gray) |
+| `--clear-color` | Remove the color |
+| `--icon <emoji>` | One emoji |
+| `--clear-icon` | Remove the icon |
+| `--note <text>` | Project context |
+| `--clear-note` | Remove the note |
+| `--before <project>` | Move before this project |
+| `--after <project>` | Move after this project |
+| `--first` | Move to the start |
+| `--last` | Move to the end |
+
+```sh
+dayhand project edit Home --first
+dayhand project edit Home --name "New home" --clear-icon
+```
+
+### dayhand project archive
+
+Archive projects; their tasks stay where they are
+
+```
+dayhand project archive <projects...>
+```
+
+- `projects`: Project names or ids
+
+```sh
+dayhand project archive Home
+```
+
+### dayhand project unarchive
+
+Restore archived projects
+
+```
+dayhand project unarchive <projects...>
+```
+
+- `projects`: Project names or ids
+
+```sh
+dayhand project unarchive Home
+```
+
+### dayhand project rm
+
+Delete a project (owner only); move all its tasks explicitly
+
+```
+dayhand project rm <project> [options]
+```
+
+- `project`: Project name or id
+
+| Option | Meaning |
+|---|---|
+| `--move-tasks-to <project\|none>` | Destination for every task, including trash; required if the project has tasks |
+
+```sh
+dayhand project rm Zdrowie --move-tasks-to none
+```
+
+### dayhand project assign
+
+Move tasks to a project (none clears it); several tasks require --yes or confirmation
+
+```
+dayhand project assign <project> <refs...>
+```
+
+- `project`: Project name, id or none
+- `refs`: Task numbers, now or ids
+
+```sh
+dayhand project assign Dom 41 42 -y
+dayhand project assign none 41
 ```
 
 ### dayhand log
@@ -1674,6 +1862,7 @@ dayhand import <file> [options]
 | Option | Meaning |
 |---|---|
 | `--format <format>` | auto (default), dayhand-json, ics or todoist-csv (auto, dayhand-json, helm-json, ics, todoist-csv) |
+| `--project <name>` | Destination for tasks without a project in the file; must exist (backend 0.13.0) |
 
 ```sh
 dayhand export --format json -o dayhand.json && dayhand import dayhand.json --dry-run
@@ -1685,13 +1874,17 @@ dayhand import calendar.ics --format ics --json
 
 Import a Backlog.md folder: each task file becomes a task; files imported before are skipped
 
-Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. --dry-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
+Reads the Markdown files below <dir> (and the config.yml with the project's statuses); the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. --project names the destination and creates it if missing in a separate call before importing; that project remains if the import fails. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. --dry-run asks the server what would happen without storing anything. Needs backend 0.12.0 or later.
 
 ```
-dayhand backlog import <dir>
+dayhand backlog import <dir> [options]
 ```
 
 - `dir`: The backlog folder (backlog/, or one of its folders such as backlog/tasks)
+
+| Option | Meaning |
+|---|---|
+| `--project <name>` | Assign new tasks to this project, creating it if missing (backend 0.13.0) |
 
 ```sh
 dayhand backlog import backlog --dry-run
@@ -1713,6 +1906,7 @@ dayhand backlog export [dir] [options]
 
 | Option | Meaning |
 |---|---|
+| `--project <name>` | Export only this project and use its name in config.yml (backend 0.13.0) |
 | `--prefix <prefix>` | ID prefix of tasks that did not come from Backlog.md (default task: TASK-12) |
 | `--archived` | Also write archived tasks to archive/tasks/ and archived proposals to archive/drafts/ |
 | `--force` | Confirm writing into a non-empty folder and replacing exported files, config.yml too |
@@ -1874,7 +2068,7 @@ dayhand completion powershell | Out-String | Invoke-Expression
 
 Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)
 
-Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
+Quick-add and project-filter syntax: dayhand help ui. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
 
 ```
 dayhand ui [options]

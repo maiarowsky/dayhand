@@ -1,5 +1,6 @@
 // --fields: narrows task objects anywhere in a result (or the settings keys)
-// and picks the columns of the text output.
+// and picks the columns of the text output. projectId is stored; project is
+// resolved once by run.ts only when requested (or for human output).
 import { usageError } from "./core/exit.js";
 import { isTask, SETTINGS_FIELDS, TASK_FIELDS } from "./render/model.js";
 import type { FieldsKind } from "./registry/types.js";

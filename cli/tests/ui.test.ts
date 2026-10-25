@@ -9,6 +9,9 @@ import { DayhandClient } from "../src/transport/client.js";
 import { makeApi } from "../src/ui/api.js";
 import { Controller } from "../src/ui/controller.js";
 import { rowsText } from "../src/ui/text.js";
+import { whenText } from "../src/ui/effects.js";
+import { parseWhen } from "../src/when/parse.js";
+import { localAt } from "../src/when/calendar.js";
 
 const pty = loadPty();
 const sessions: UiSession[] = [];
@@ -275,7 +278,9 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const s = open(key);
     await s.waitFor("Pay rent");
     await s.press("e", "C-u", ..."Pay the rent", "tab", "C-u", ..."next mon 9am", "tab", ..." money");
-    await s.waitFor(/Due +next mon 9am +→ Mon \d+ \w+ 09:00/);
+    const now = Date.now();
+    const target = parseWhen("next mon 9am", { now, timezone: "Europe/London" });
+    await s.waitFor(`→ ${whenText(target, localAt(now, "Europe/London").date)}`);
     await s.shot("edit");
     await s.press("enter");
     await s.waitFor("Saved #1 Pay the rent");

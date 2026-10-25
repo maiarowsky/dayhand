@@ -24,6 +24,7 @@ const brief = {
   claims: { active: empty, expired: empty },
   approvals: { pending: empty, decided: empty },
   ready: empty,
+  projects: empty,
   nextSteps: [],
 };
 

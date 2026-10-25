@@ -47,9 +47,10 @@ are `prefix`, `includeArchived` and `projectId`; the last selects one project by
 including an archived project, and sets `config.yml`'s `project_name` to its name. Dependencies on
 tasks outside the selected project are left out and counted in `notes`. Without `projectId`,
 export includes the whole plan and uses `Dayhand export` as the configuration's project name.
-A configuration's `project_name` does not create a Dayhand project on import. These selectors are
-not CLI flags yet. Create a project with `add_project` (MCP) or `POST /api/v1/projects` (REST),
-then pass its id or name explicitly; the backend never guesses a project from `project_name`.
+A configuration's `project_name` never selects or creates a Dayhand project on import.
+CLI selection and project creation are described in [backlog import](cli.md#dayhand-backlog-import)
+and [backlog export](cli.md#dayhand-backlog-export). MCP and REST callers create the destination
+with the [project tools](mcp.md#projects) or [project routes](api.md#projects) before selecting it.
 For example, MCP `export_backlog {"projectId":"Bakery site"}` exports only that project;
 REST `GET /api/v1/export/backlog?projectId=Bakery%20site` does the same. On import, send
 `{"files":[{"path":"tasks/task-1 - Menu.md","content":"…"}],"projectId":"Bakery site"}` to
@@ -133,7 +134,7 @@ Decisions:
   report names that task. Source lifetime, including merges and trash purging, follows the shared
   [source identity rules](agent-work.md#7-the-proposal-inbox). Import never updates a task from a
   changed file: that would be sync.
-- **One call per invocation, dependencies first.** `dayhand backlog import` sends one call,
+- **One import call per invocation, dependencies first.** `dayhand backlog import` sends one import call,
   including its config: at most 200 files, 200 KiB of file JSON (leaving room within the server's
   256 KiB request limit), and 100,000 characters per file. A larger folder fails before anything
   is sent; import it by subdirectories. The CLI forwards collected files unchanged; within the call,

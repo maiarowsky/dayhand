@@ -1,4 +1,5 @@
 // Small text formatters shared by the human and plain renderers. English only in v1.
+import { projectToken } from "../projects.js";
 import { addDays, daysBetween, yearOf } from "../when/calendar.js";
 import type { Reminder, Repeat, Task } from "./model.js";
 import { PLAIN_STYLE, type Style } from "./style.js";
@@ -117,7 +118,7 @@ export function taskCells(task: Task, options: TaskRowOptions = {}): Cell[] {
     dueCell(task, options),
     cellOf(task.title, done ? style.dim : task.isNow ? style.bold : undefined),
     // Already painted per part; widths are measured without the color codes.
-    cellOf([...labels, ...marks].join(" ")),
+    cellOf([...(task.project ? [style.cyan(`+${projectToken(task.project)}`)] : []), ...labels, ...marks].join(" ")),
   ];
 }
 

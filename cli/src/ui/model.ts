@@ -1,5 +1,6 @@
 // What the controller knows besides the key state: the server's data per view,
 // the connection, the last message, and what the screens list from them.
+import type { Project } from "../projects.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import { agentItems, type Agents, type Health } from "./agents.js";
 import { addDays } from "../when/calendar.js";
@@ -7,6 +8,7 @@ import { boardColumns, matches, todaySections, todayTasks, weekDays, type Column
 import type { Lists, UiState } from "./state.js";
 
 export type Data = {
+  projects?: Project[];
   today?: TodayView;
   health?: Health;
   agents?: Agents;
@@ -49,17 +51,18 @@ export type Derived = { sections: Section[]; columns: Column[]; days: Day[]; lis
 
 export function derive(s: Pick<Snapshot, "ui" | "data" | "today" | "rows">): Derived {
   const { ui, data, today } = s;
-  const sections = data.today ? todaySections(data.today, ui.filter) : [];
-  const columns = boardColumns(data.board ?? { todo: [], doing: [], done: [] }, ui.filter);
+  const projects = data.projects ?? [];
+  const sections = data.today ? todaySections(data.today, ui.filter, projects) : [];
+  const columns = boardColumns(data.board ?? { todo: [], doing: [], done: [] }, ui.filter, projects);
   const weekTasks = data.week?.start === ui.weekStart ? data.week.tasks : [];
-  const days = weekDays(ui.weekStart, weekTasks, today, ui.filter);
+  const days = weekDays(ui.weekStart, weekTasks, today, ui.filter, projects);
   const lists: Lists = {
     today: todayTasks(sections),
     board: [columns[0]!.tasks, columns[1]!.tasks, columns[2]!.tasks],
     week: days.map((d) => d.tasks),
     weekDates: Array.from({ length: 7 }, (_, i) => addDays(ui.weekStart, i)),
-    trash: (data.trash ?? []).filter((t) => matches(t, ui.filter)),
-    agents: agentItems(data.agents, ui.filter),
+    trash: (data.trash ?? []).filter((t) => matches(t, ui.filter, projects)),
+    agents: agentItems(data.agents, ui.filter, projects),
     paused: data.agents?.controls.paused,
     detail: ui.detail && data.detail?.task.id === ui.detail.taskId ? data.detail.task : undefined,
     date: today,

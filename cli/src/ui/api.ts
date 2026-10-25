@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import { CliError } from "../core/exit.js";
 import { t } from "../i18n/index.js";
+import { unknownProjectTool, type Project, type ProjectList } from "../projects.js";
 import type { Board, Detail, Task, TodayView } from "../render/model.js";
 import type { DayhandClient } from "../transport/client.js";
 import { addDays } from "../when/calendar.js";
@@ -20,6 +21,7 @@ export class Throttled extends Error {
 
 export type Api = {
   settings(): Promise<{ timezone: string }>;
+  projects(): Promise<Project[]>;
   today(): Promise<TodayView>;
   health(): Promise<Health>;
   agents(): Promise<Agents>;
@@ -64,6 +66,10 @@ export function makeApi(
 
   return {
     settings: () => read("get_settings"),
+    projects: async () => {
+      try { return (await read<ProjectList>("list_projects", { includeArchived: true })).result; }
+      catch (error) { if (unknownProjectTool(error)) return []; throw error; }
+    },
     today: () => read("list_today"),
     health: () => read("plan_health"),
     agents: async () => {

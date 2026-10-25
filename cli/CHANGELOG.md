@@ -2,6 +2,30 @@
 
 Versions before 0.13.0 are described in the commit history (`git log -- cli`).
 
+## 0.15.0 (unreleased)
+
+Projects need backend 0.13.0 or later; other features keep their previous minimum versions.
+
+### Added
+
+- `dayhand project` / `project list`, `add`, `edit`, `archive`, `unarchive`, `rm` and `assign`:
+  metadata, menu order, label-to-project conversion with `--dry-run`, and explicit destinations
+  when deleting a project with tasks. Assigning several tasks requires confirmation.
+- `-p, --project` on add, edit, list, board and today; `edit --clear-project`.
+- `--project` on imports and Backlog.md import/export. Backlog import creates a missing named
+  project only when explicitly requested.
+- `--fields project,projectId`, human `+Project` markers and project-name completion.
+- `dayhand ui` quick add recognizes `+project` (hyphens may replace spaces); unknown tokens stay
+  in the title. The `/` filter accepts an exact `+project` token in any case.
+
+### Unchanged
+
+- Default `--plain` task columns and default JSON output are unchanged, apart from the backend's
+  additive `projectId`. Resolved project names are printed only for humans or explicit `--fields`.
+- The global minimum backend stays 0.3.0. Project commands explain their 0.13.0 requirement on
+  older servers; `--color` before `project` controls the terminal, while project add/edit's
+  `--color` chooses the project token.
+
 ## 0.14.0 (2026-10-24)
 
 Needs backend 0.12.0 for Backlog.md and the new agent brief; other features work with older servers as before.

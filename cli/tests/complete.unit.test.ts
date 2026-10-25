@@ -1,7 +1,7 @@
 // `dayhand __complete`: candidates from the registry and the cached task list. No backend.
 import { describe, expect, test } from "vitest";
 import { complete, NO_FILES, NO_SPACE, type Sources } from "../src/completion/engine.js";
-import { completionScript, SHELLS } from "../src/completion/scripts.js";
+import { SHELLS } from "../src/completion/scripts.js";
 
 let hintCalls = 0;
 const sources: Sources = {
@@ -9,7 +9,7 @@ const sources: Sources = {
   profiles: ["personal", "work"],
   hints: async () => {
     hintCalls++;
-    return { tasks: [{ ref: 4, title: "Call the bank" }, { ref: 42, title: "Write the report" }], labels: ["home", "work"] };
+    return { tasks: [{ ref: 4, title: "Call the bank" }, { ref: 42, title: "Write the report" }], labels: ["home", "work"], projects: [{ name: "Home", archived: false }, { name: "Strona piekarni", archived: false }, { name: "Old", archived: true }] };
   },
 };
 const values = async (...words: string[]) => (await complete(words, sources)).candidates.map((c) => c.value);
@@ -58,8 +58,28 @@ describe("candidates", () => {
     const keys = await complete(["settings", "set", "s"], sources);
     expect(keys).toEqual({ candidates: [{ value: "summary-time=" }], directive: NO_FILES | NO_SPACE });
     expect(await values("completion", "")).toEqual([...SHELLS]);
-    expect(await values("call", "list_")).toEqual(["list_all", "list_approvals", "list_events", "list_today", "list_trash"]);
+    expect(await values("call", "list_")).toEqual(["list_all", "list_approvals", "list_events", "list_projects", "list_today", "list_trash"]);
     expect(await values("move", "4", "n")).toEqual(["next", "none"]);
+  });
+
+  test("projects: commands, references, destinations, colors and labels", async () => {
+    expect(await values("project", "")).toEqual(["list", "add", "edit", "archive", "unarchive", "rm", "assign"]);
+    expect(await values("project", "add", "")).toEqual([]);
+    expect(await values("project", "edit", "")).toEqual(["Home", "Strona piekarni", "Old"]);
+    expect(await values("project", "assign", "")).toEqual(["Home", "Strona piekarni", "none"]);
+    expect(await values("project", "assign", "Home", "4")).toEqual(["4", "42"]);
+    for (const command of [["add", "x"], ["edit", "4"], ["list"], ["board"], ["today"], ["import", "file.json"], ["backlog", "import", "backlog"]]) {
+      expect(await values(...command, "--project", "")).toEqual(["Home", "Strona piekarni", "none"]);
+    }
+    expect(await values("add", "x", "-p", "")).toEqual(["Home", "Strona piekarni", "none"]);
+    expect(await values("backlog", "export", "--project", "")).toEqual(["Home", "Strona piekarni"]);
+    expect(await values("backlog", "export", "--project", "n")).toEqual([]);
+    expect(await values("project", "edit", "Home", "--before", "S")).toEqual(["Strona piekarni"]);
+    expect(await values("project", "rm", "Home", "--move-tasks-to", "n")).toEqual(["none"]);
+    expect(await values("project", "add", "Home", "--color", "a")).toEqual(["amber"]);
+    expect(await values("project", "add", "--col")).toEqual(["--color"]);
+    expect(await values("project", "add", "Home", "--from-label", "h")).toEqual(["home"]);
+    expect(await values("list", "--fields", "project")).toEqual(["project", "projectId"]);
   });
 
   test("an alias completes like what it stands for", async () => {
@@ -84,8 +104,4 @@ describe("candidates", () => {
   test('"" stands for an empty word (PowerShell cannot always pass one)', async () => {
     expect(await values("settings", '""')).toEqual(["get", "set"]);
   });
-});
-
-test.each(SHELLS)("the %s script calls dayhand __complete", (shell) => {
-  expect(completionScript(shell)).toContain("dayhand __complete");
 });

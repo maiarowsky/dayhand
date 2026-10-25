@@ -5,6 +5,7 @@ import { usageError } from "../core/exit.js";
 import { relativeDay } from "../i18n/dates.js";
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
+import type { Project } from "../projects.js";
 import { addDays } from "../when/calendar.js";
 import type { When } from "../when/parse.js";
 import { parseWhen, WhenError } from "../when/parse.js";
@@ -16,6 +17,7 @@ import type { EditKey } from "./state.js";
 
 export type EffectContext = {
   api: Api;
+  projects?: Project[];
   timezone: string;
   now: () => number;
   today: string;
@@ -53,13 +55,14 @@ export async function runChange(effect: Change, ctx: EffectContext): Promise<Don
       await api.change("reject_proposal", { taskId: effect.task.id, reason: effect.reason });
       return { text: t("done.rejected", { task: label(effect.task) }) };
     case "add": {
-      const parsed = parseQuickAdd(effect.text, when);
+      const parsed = parseQuickAdd(effect.text, when, ctx.projects);
       if (!parsed.title) throw usageError(t("error.titleOnlyDate"));
       const input: Record<string, unknown> = { title: parsed.title };
       const due = parsed.due === undefined ? { date: effect.date } : parsed.due;
       if (due) input.dueDate = due.date;
       if (due?.time) input.dueTime = due.time;
       if (parsed.labels.length) input.labels = parsed.labels;
+      if (parsed.projectId) input.projectId = parsed.projectId;
       if (effect.status) input.status = effect.status;
       const task = await api.change<Task>("add_task", input);
       return { text: t("done.added", { task: label(task), when: whenText(due, ctx.today) }), select: task.id };

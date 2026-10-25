@@ -95,7 +95,7 @@ export async function complete(words: string[], sources: Sources): Promise<Compl
     else if (!command) return { candidates: [], directive: NO_FILES };
     else positional++;
   }
-  if (pending) return optionValues(pending, current, sources);
+  if (pending) return optionValues(pending, current, sources, command);
   if (current.startsWith("-")) return filtered(current, optionCandidates(command));
   if (!command) return filtered(current, topLevel(sources.aliases));
   const candidates = positional === 0 && command.subcommands ? command.subcommands.map(describe) : [];
@@ -123,7 +123,8 @@ const helpWords = (): Candidate[] => [
 ];
 
 function optionCandidates(command: CommandSpec | undefined): Candidate[] {
-  return [...(command?.options ?? []), ...GLOBAL_OPTIONS, { flags: "-h, --help", description: "Show help" }].map((o) => ({
+  const options = [...(command?.options ?? []), ...GLOBAL_OPTIONS, { flags: "-h, --help", description: "Show help" }];
+  return options.filter((option, index) => options.findIndex((other) => longName(other) === longName(option)) === index).map((o) => ({
     value: longName(o),
     description: o.description,
   }));
@@ -144,13 +145,20 @@ function commaList(current: string, values: readonly string[]): Completion {
   return filtered(current, candidates, NO_FILES | NO_SPACE);
 }
 
-async function optionValues(option: OptSpec, current: string, sources: Sources): Promise<Completion> {
+async function optionValues(option: OptSpec, current: string, sources: Sources, command: CommandSpec | undefined): Promise<Completion> {
   if (option.choices) return filtered(current, words(option.choices));
   switch (longName(option)) {
     case "--due":
     case "--due-before":
     case "--due-after":
       return filtered(current, words(DATE_WORDS));
+    case "--project":
+    case "--move-tasks-to":
+      return filtered(current, words([...(await sources.hints()).projects?.filter((p) => !p.archived).map((p) => p.name) ?? [], ...(command?.tools.includes("export_backlog") ? [] : ["none"])]));
+    case "--before":
+    case "--after":
+      return filtered(current, words((await sources.hints()).projects?.map((p) => p.name) ?? []));
+    case "--from-label":
     case "--label":
     case "--add-label":
     case "--rm-label":
@@ -183,6 +191,11 @@ async function argValues(command: CommandSpec, positional: number, current: stri
       const candidates = [{ value: "now", description: "the now task" }, ...tasks.map((t) => ({ value: `${hash}${t.ref}`, description: t.title }))];
       return filtered(current, candidates);
     }
+    case "project":
+    case "projects": {
+      const projects = (await sources.hints()).projects ?? [];
+      return filtered(current, words([...projects.filter((p) => command.name !== "assign" || !p.archived).map((p) => p.name), ...(command.name === "assign" ? ["none"] : [])]));
+    }
     case "date":
       return filtered(current, words([...DATE_WORDS, "none"]));
     case "phrase":
@@ -191,7 +204,7 @@ async function argValues(command: CommandSpec, positional: number, current: stri
       return filtered(current, words(SHELLS));
     case "tool":
     case "name":
-      return filtered(current, words(TOOL_NAMES));
+      return filtered(current, command.tools.includes("add_project") ? [] : words(TOOL_NAMES));
     case "pairs":
       return current.startsWith("timezone=")
         ? filtered(current, words(Intl.supportedValuesOf("timeZone").map((z) => `timezone=${z}`)))

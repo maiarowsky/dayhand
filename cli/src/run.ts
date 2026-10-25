@@ -11,6 +11,7 @@ import { Output } from "./core/output.js";
 import { ask, askHidden, confirm } from "./core/prompt.js";
 import { credentialStores, keyStores } from "./credentials/index.js";
 import { parseFields, projectFields } from "./fields.js";
+import { hasProjectTasks, readProjects, withProjectNames } from "./projects.js";
 import type { Args, CommandSpec, RunContext } from "./registry/types.js";
 import { colorEnabled, makeStyle } from "./render/style.js";
 import { renderDryRun, renderHuman, renderPlain, type View } from "./render/views.js";
@@ -50,13 +51,15 @@ export async function execute(io: Io, setup: Setup, spec: CommandSpec, name: str
     const ctx = context(io, setup, global, { format, out, fields, held }, (id) => (usedClientId = id));
     // Human output shows days relative to the user's today: fetch the time zone alongside the command.
     const zone = format === "human" && spec.fields === "task" && !held ? ctx.zone().catch(() => undefined) : undefined;
-    const outcome = await spec.run!(ctx, args, opts);
+    const result = await spec.run!(ctx, args, opts);
     if (held?.length) {
       if (format === "json") out.json({ dryRun: true, calls: held });
       else out.text(renderDryRun(held, format));
       return EXIT.ok;
     }
-    if (outcome.printed) return EXIT.ok;
+    if (result.printed) return EXIT.ok;
+    const needsNames = (format === "human" && result.view.kind !== "text") || fields?.includes("project");
+    const outcome = needsNames && hasProjectTasks(result) ? withProjectNames(result, await readProjects(await ctx.client())) : result;
     const value = fields && spec.fields ? projectFields(outcome.value, spec.fields, fields) : outcome.value;
     if (format === "json") out.json(value);
     else if (format === "plain") out.text(renderPlain(outcome.view, value, fields));

@@ -21,9 +21,9 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 
 - Pass --json and read stdout; on failure stdout is empty and stderr has one line {"error":{"code","message","exitCode","retryable","clientId"}}.
 - Refer to tasks by number: #42 or 42 (stable, never reused), or now for the now task.
-- Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun), 6 refused by the task's state (conflict: another agent holds it, pick another task; precondition_failed: meet the acceptance criteria and give --summary), 7 refused by the owner (agents_paused: stop changing things and wait; forbidden: do not retry; approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>).
+- Exit codes: 0 ok (also a no-op), 2 usage or bad date (fix the command), 3 key missing or revoked (ask the user), 4 not found, 5 server unavailable or rate_limited (too many calls: wait as the message says, then rerun), 6 state refusal (see dayhand --help for preconditions), 7 refused by the owner (agents_paused: stop changing things and wait; forbidden: do not retry; approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>).
 - After exit 5 the change may have been applied: rerun the same command line with --client-id <the clientId from the error>; it is never applied twice.
-- dayhand never prompts without a terminal; changing 3 or more tasks at once needs --yes.
+- dayhand never prompts without a terminal; bulk changes may need --yes (dayhand <command> --help).
 - Dates are English phrases in the user's time zone: today, tomorrow, fri 14:00, in 3 days, 2026-10-23. Check one with dayhand when "<phrase>" or add --dry-run.
 - Before stopping work on a task, record where you are: dayhand now <ref> --note "<next step>".
 - Working on a task alongside other agents: dayhand claim <ref> first (exit 6 conflict: pick another task), dayhand renew <ref> while you work, dayhand release <ref> --note "<checkpoint>" when you stop.
@@ -69,6 +69,12 @@ dayhand add "Send the report" --due "next fri 9am" --dry-run --json
 # Retry after exit 5 without creating a duplicate
 dayhand add "Book the dentist" --client-id dentist-2026-10-22 --json
 
+# Projects are distinct from labels; names or ids work as references
+dayhand project list --json
+dayhand add "Write the menu" -p "Strona piekarni" --json
+dayhand list -p none --json
+dayhand project assign Home 41 42 --yes --json
+
 # Anything else the tools can do
 dayhand tools update_task --json
 dayhand call update_task '{"taskId":"#42","note":null}'
@@ -82,16 +88,15 @@ dayhand call update_task '{"taskId":"#42","note":null}'
 | 1 | Other error (internal) |
 | 2 | Usage: unknown command or flag, bad value or date, --yes missing, broken config.toml |
 | 3 | Authentication: no key (dayhand login or DAYHAND_API_KEY), or a wrong or revoked one |
-| 4 | Not found: no such task (#n), device or now task |
+| 4 | Not found: no such task (#n), project, device or now task |
 | 5 | Server unavailable (network, timeout, HTTP 5xx): the change may have been applied; retry with the same --client-id. Also too many calls with the key (rate_limited): nothing was applied; run it again after the wait the message names |
-| 6 | Refused by the task's state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met or the proof has no summary (precondition_failed) |
+| 6 | Refused by the current state, nothing applied: another agent holds the task's claim (conflict), or its acceptance criteria are not met, the proof has no summary, or a non-empty project has no --move-tasks-to destination (precondition_failed) |
 | 7 | Refused by the owner, nothing applied: agents are paused (agents_paused), only the owner may do this or a tool policy denies it (forbidden), or the policy asks first (approval_required: wait for dayhand approval <approvalId>, then rerun with --approval <approvalId>) |
 | 130 | Interrupted (Ctrl-C) |
 
 ## JSON
 
-`--json` prints the tool's `structuredContent`: a task object, `{"task","next"}` from `done`,
-`{"result":[...]}` from list commands, `{"results":[...]}` when a command is given several tasks.
+`--json` prints the tool's `structuredContent`; result shapes are documented in docs/cli.md (JSON output).
 Dates are `YYYY-MM-DD` and `HH:MM` in the user's time zone, timestamps Unix milliseconds. Fields may
 be added, never removed or retyped within a major version. `--fields ref,title,dueDate` narrows tasks.
 
@@ -117,6 +122,14 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `dayhand rm <refs...>` | Move tasks to the trash (purged after 30 days) |
 | `dayhand restore <refs...>` | Restore tasks from the trash (or the archive) |
 | `dayhand trash` | Tasks in the trash, newest first |
+| `dayhand project` | Projects and their task counts (same as project list) |
+| `dayhand project list` | Projects in menu order with open and overdue counts |
+| `dayhand project add <name...>` | Create a project, optionally moving tasks from a label |
+| `dayhand project edit <project>` | Change project metadata or menu order |
+| `dayhand project archive <projects...>` | Archive projects; their tasks stay where they are |
+| `dayhand project unarchive <projects...>` | Restore archived projects |
+| `dayhand project rm <project>` | Delete a project (owner only); move all its tasks explicitly |
+| `dayhand project assign <project> <refs...>` | Move tasks to a project (none clears it); several tasks require --yes or confirmation |
 | `dayhand log` | The activity log: task changes after a cursor or a time, oldest first (who changed what) |
 | `dayhand claim <ref>` | Claim a task for a while (default 120 minutes) so other agents leave it alone |
 | `dayhand renew <ref>` | Extend your claim of a task by --minutes from now (default 120) |

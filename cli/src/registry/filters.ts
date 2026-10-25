@@ -33,7 +33,7 @@ export function parseStatuses(raw: unknown): string[] | undefined {
 }
 
 export const hasFilters = (opts: Opts) =>
-  ["status", "overdue", "ready", "dueBefore", "dueAfter", "search", "limit", "cursor"].some((k) => opts[k] !== undefined);
+  ["project", "status", "overdue", "ready", "dueBefore", "dueAfter", "search", "limit", "cursor"].some((k) => opts[k] !== undefined);
 
 export type TaskList = { result: Task[]; total?: number; nextCursor?: string | null };
 

@@ -8,14 +8,25 @@ export type Shell = (typeof SHELLS)[number];
 
 const bash = `# dayhand completion for bash (also for dh). Load it with: source <(dayhand completion bash)
 _dayhand_complete() {
-  local IFS=$'\\n' line directive
-  local -a lines
-  lines=($(dayhand __complete "\${COMP_WORDS[@]:1:COMP_CWORD}" 2>/dev/null)) || return 0
+  local line directive candidate
+  local -a lines=()
+  COMPREPLY=()
+  # Readline can replace only a suffix inside an existing quote/expansion.
+  # Do not splice a whole escaped candidate into that partial shell context.
+  case \${COMP_WORDS[COMP_CWORD]} in
+    *"'"*|*'"'*|*'\\'*|*'\`'*|*'$'*|*'('*|*')'*) return 0 ;;
+  esac
+  while IFS= read -r line; do
+    lines+=("$line")
+  done < <(dayhand __complete "\${COMP_WORDS[@]:1:COMP_CWORD}" 2>/dev/null)
   [[ \${#lines[@]} -eq 0 ]] && return 0
   directive=\${lines[\${#lines[@]}-1]#:}
   unset 'lines[\${#lines[@]}-1]'
-  COMPREPLY=()
-  for line in "\${lines[@]}"; do COMPREPLY+=("\${line%%$'\\t'*}"); done
+  for line in "\${lines[@]}"; do
+    printf -v candidate '%q' "\${line%%$'\\t'*}"
+    COMPREPLY+=("$candidate")
+  done
+  compopt -o noquote 2>/dev/null
   if (( directive & 2 )); then compopt -o nospace 2>/dev/null; fi
   if (( \${#COMPREPLY[@]} == 0 && !(directive & 4) )); then compopt -o default 2>/dev/null; fi
   return 0
@@ -34,7 +45,9 @@ _dayhand() {
   for line in "\${lines[@]}"; do
     [[ -z $line ]] && continue
     value=\${line%%$'\\t'*}
-    if [[ $line == *$'\\t'* ]]; then described+=("\${value//:/\\\\:}:\${line#*$'\\t'}"); else described+=("\${value//:/\\\\:}"); fi
+    value=\${value//\\\\/\\\\\\\\}
+    value=\${value//:/\\\\:}
+    if [[ $line == *$'\\t'* ]]; then described+=("$value:\${line#*$'\\t'}"); else described+=("$value"); fi
   done
   if (( \${#described} )); then
     if (( directive & 2 )); then _describe -t dayhand dayhand described -S ''; else _describe -t dayhand dayhand described; fi
@@ -79,7 +92,7 @@ Register-ArgumentCompleter -Native -CommandName 'dayhand', 'dh' -ScriptBlock {
         $parts = $line -split "\`t", 2
         $value = $parts[0]
         $tip = if ($parts.Count -gt 1 -and $parts[1]) { $parts[1] } else { $value }
-        $text = if ($value -match '\\s') { "'" + $value + "'" } else { $value }
+        $text = if ($value -cmatch '^[a-zA-Z0-9_./:-]+$') { $value } else { "'" + $value.Replace("'", "''") + "'" }
         [System.Management.Automation.CompletionResult]::new($text, $value, 'ParameterValue', $tip)
     }
 }

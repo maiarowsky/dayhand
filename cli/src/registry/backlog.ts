@@ -3,6 +3,8 @@
 // server reads and writes the format (import_backlog, export_backlog); these
 // commands move the files between the folder and the server.
 import { FILE_CHARS, IMPORT_BYTES, IMPORT_FILES, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
+import { backlogProject } from "../backlog/project.js";
+import { requireProjects } from "../projects.js";
 import { CliError, usageError } from "../core/exit.js";
 import { tool } from "./ops.js";
 import type { CommandSpec, RunContext } from "./types.js";
@@ -30,9 +32,10 @@ type Export = {
 };
 
 /** One call: the tool, or with --dry-run the REST route that asks the server for a dry run (nothing is held back). */
-async function importFiles(ctx: RunContext, files: BacklogFile[]): Promise<Report> {
-  if (!ctx.dryRun) return tool<Report>(ctx, "import_backlog", { files });
-  return (await ctx.client()).request("POST", "/api/v1/import/backlog?dryRun=true", { files });
+async function importFiles(ctx: RunContext, files: BacklogFile[], projectId?: string): Promise<Report> {
+  const input = { files, ...(projectId === undefined ? {} : { projectId }) };
+  if (!ctx.dryRun) return tool<Report>(ctx, "import_backlog", input);
+  return (await ctx.client()).request("POST", "/api/v1/import/backlog?dryRun=true", input);
 }
 
 export function importText(report: Report): string {
@@ -51,15 +54,17 @@ const importCommand: CommandSpec = {
   schema: "backlog-import.schema.json",
   summary: "Import a Backlog.md folder: each task file becomes a task; files imported before are skipped",
   description:
-    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses) and sends one call; the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
+    "Reads the Markdown files below <dir> (and the config.yml with the project's statuses); the backend creates prerequisites first. At most 200 files and 200 KiB of file JSON per invocation; a larger folder is refused before sending anything: import it by subdirectories. " +
     "A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
     "Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. " +
+    "--project names the destination and creates it if missing in a separate call before importing; that project remains if the import fails. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. " +
     `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
   args: [{ name: "dir", description: "The backlog folder (backlog/, or one of its folders such as backlog/tasks)", required: true }],
-  tools: ["import_backlog"],
+  options: [{ flags: "--project <name>", description: "Assign new tasks to this project, creating it if missing (backend 0.13.0)" }],
+  tools: ["import_backlog", "list_projects", "add_project"],
   examples: ["dayhand backlog import backlog --dry-run", "dayhand backlog import backlog --json", "dayhand backlog import backlog/completed"],
-  run: async (ctx, args) => {
+  run: async (ctx, args, opts) => {
     const dir = args.dir as string;
     const files = await readFolder(dir).catch((cause: unknown) => {
       throw new CliError("usage", `Cannot read the folder ${dir}`, {}, { cause });
@@ -70,7 +75,9 @@ const importCommand: CommandSpec = {
     }
     const tooLong = files.find((file) => file.content.length > FILE_CHARS);
     if (tooLong) throw usageError(`${tooLong.path} is longer than ${FILE_CHARS} characters; shorten the file before importing`);
-    const value = await importFiles(ctx, files);
+    const destination = opts.project === undefined ? {} : await backlogProject(ctx, opts.project as string);
+    const value = await importFiles(ctx, files, destination.projectId);
+    if (destination.preview) ctx.out.warn({ code: "backlog_project_preview", message: `Would create project ${JSON.stringify(destination.preview)} and assign the new tasks to it; files were previewed without a project` });
     return { value, view: { kind: "text", text: importText(value) } };
   },
 };
@@ -88,6 +95,7 @@ const exportCommand: CommandSpec = {
     `Due dates, repeat rules and reminders have no place in the format and are left out (the notes say how many). Notes also identify tasks or config.yml whose exported text exceeds Dayhand import limits, including the 100,000-character file limit; text is not truncated. ${NEEDS}`,
   args: [{ name: "dir", description: "The folder to write into (made if missing), e.g. backlog" }],
   options: [
+    { flags: "--project <name>", description: "Export only this project and use its name in config.yml (backend 0.13.0)" },
     { flags: "--prefix <prefix>", description: "ID prefix of tasks that did not come from Backlog.md (default task: TASK-12)" },
     { flags: "--archived", description: "Also write archived tasks to archive/tasks/ and archived proposals to archive/drafts/" },
     { flags: "--force", description: "Confirm writing into a non-empty folder and replacing exported files, config.yml too" },
@@ -96,7 +104,9 @@ const exportCommand: CommandSpec = {
   dryRun: false,
   examples: ["dayhand backlog export backlog", "dayhand backlog export backlog --prefix shop --archived", "dayhand backlog export --json"],
   run: async (ctx, args, opts) => {
+    if (opts.project !== undefined) await requireProjects(ctx);
     const value = await tool<Export>(ctx, "export_backlog", {
+      ...(opts.project === undefined ? {} : { projectId: opts.project }),
       ...(opts.prefix !== undefined ? { prefix: opts.prefix } : {}),
       ...(opts.archived ? { includeArchived: true } : {}),
     });
