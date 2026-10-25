@@ -51,6 +51,8 @@ class TaskRepository(
      */
     private val repeatsOnPhone: suspend () -> String? = { null },
 ) {
+    val projectStore = ProjectRepository(db, clock, newId, onOutboxChanged)
+    val projects = projectStore.projects
     val tasks: Flow<List<Task>> = db.tasks().observeAll()
     val pendingChanges: Flow<Int> = db.outbox().observeCount()
 
@@ -62,7 +64,7 @@ class TaskRepository(
     fun history(serverId: String): Flow<List<TaskEvent>> = db.events().observe(serverId)
 
     /** Adds a task; [dueTime] is kept only together with [dueDate], as the backend requires. */
-    suspend fun add(title: String, dueDate: String?, dueTime: String?, note: String?): Task {
+    suspend fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String? = null): Task {
         val cleanTitle = title.trim()
         require(cleanTitle.isNotEmpty() && cleanTitle.length <= MAX_TITLE) { "title must be 1 to $MAX_TITLE characters" }
         val now = clock()
@@ -73,6 +75,7 @@ class TaskRepository(
         val task = Task(
             localId = localId,
             clientId = localId,
+            projectLocalId = projectLocalId,
             title = cleanTitle,
             note = cleanNote,
             dueDate = dueDate,
@@ -87,8 +90,9 @@ class TaskRepository(
             time?.let { put("dueTime", it) }
         }
         db.withTransaction {
+            projectLocalId?.let { require(db.projects().byLocalId(it)?.selectable == true) { "project is not active" } }
             db.tasks().upsert(listOf(task))
-            enqueue(Mutations.ADD, localId, args, clientId = localId, now = now)
+            enqueue(Mutations.ADD, localId, args, clientId = localId, now = now, projectLocalId = projectLocalId)
         }
         onOutboxChanged()
         return task
@@ -118,6 +122,7 @@ class TaskRepository(
                     localId = id,
                     clientId = id,
                     title = task.title,
+                    projectLocalId = task.projectLocalId,
                     note = task.note,
                     dueDate = occurrence.dueDate,
                     dueTime = task.dueTime,
@@ -133,7 +138,7 @@ class TaskRepository(
             db.tasks().upsert(listOfNotNull(done.copy(repeat = null), next))
             enqueue(Mutations.UPDATE, localId, buildJsonObject { put("repeat", JsonNull) }, now = now)
             enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now)
-            next?.let { enqueue(Mutations.ADD, it.localId, addArgs(it), clientId = it.localId, now = now) }
+            next?.let { enqueue(Mutations.ADD, it.localId, addArgs(it), clientId = it.localId, now = now, projectLocalId = it.projectLocalId) }
             true
         }
         if (changed) onOutboxChanged()
@@ -236,7 +241,22 @@ class TaskRepository(
         if (changed) onOutboxChanged()
     }
 
-    /** Sets the labels (which also serve as projects), cleaned as the backend cleans them. */
+    /** Moves a task to an active project, or clears its project. */
+    suspend fun setProject(localId: String, projectLocalId: String?) {
+        val now = clock()
+        db.withTransaction {
+            projectLocalId?.let { require(db.projects().byLocalId(it)?.selectable == true) { "project is not active" } }
+            val task = db.tasks().byLocalId(localId) ?: return@withTransaction
+            if (task.inTrash || task.projectLocalId == projectLocalId) return@withTransaction
+            db.tasks().upsert(listOf(task.copy(projectLocalId = projectLocalId, updatedAt = now)))
+            enqueue(Mutations.UPDATE, localId, buildJsonObject {
+                if (projectLocalId == null) put("projectId", JsonNull)
+            }, now = now, projectLocalId = projectLocalId)
+        }
+        onOutboxChanged()
+    }
+
+    /** Sets free tags across projects, cleaned as the backend cleans them. */
     suspend fun setLabels(localId: String, labels: List<String>) {
         val clean = requireNotNull(TaskRules.labels(labels)) { "too many or too long labels" }
         edit(localId, Mutations.UPDATE, { put("labels", JsonArray(clean.map(::JsonPrimitive))) }) { task, _ ->
@@ -339,19 +359,32 @@ class TaskRepository(
     val hasSample: Flow<Boolean> = db.tasks().observeSampleCount(SAMPLE_PATTERN).map { it > 0 }
 
     /** Puts the sample plan on the phone, without queueing anything for a server. */
-    suspend fun loadSample(tasks: List<Task>) {
-        require(tasks.all { SamplePlan.isSample(it.localId) }) { "not sample tasks" }
-        db.tasks().upsert(tasks)
+    suspend fun loadSample(tasks: List<Task>, projects: List<dev.helm.planner.data.local.Project> = emptyList()) {
+        require(tasks.all { SamplePlan.isSample(it.localId) } && projects.all { SamplePlan.isSample(it.localId) }) { "not sample data" }
+        db.withTransaction {
+            db.projects().upsert(projects)
+            db.tasks().upsert(tasks)
+        }
     }
 
     /** Removes every sample task (and anything queued for one, which there should not be). */
     suspend fun removeSample() = db.withTransaction {
         db.outbox().deleteForTasksLike(SAMPLE_PATTERN)
+        val sampleProjects = db.projects().all().filter { SamplePlan.isSample(it.localId) }.map { it.localId }.toSet()
+        db.tasks().upsert(db.tasks().all().filter { it.projectLocalId in sampleProjects && !SamplePlan.isSample(it.localId) }
+            .map { it.copy(projectLocalId = null) })
+        db.outbox().all().filter { it.projectLocalId in sampleProjects && it.taskLocalId != null }.forEach { op ->
+            val args = Json.parseToJsonElement(op.argsJson) as JsonObject
+            db.outbox().upsert(op.copy(projectLocalId = null, argsJson = (if (op.mutation == Mutations.ADD) JsonObject(args - "projectId")
+                else JsonObject(args + ("projectId" to JsonNull))).toString()))
+        }
         db.tasks().deleteLike(SAMPLE_PATTERN)
+        db.projects().deleteLike(SAMPLE_PATTERN)
     }
 
     /** The tasks a backup holds: everything on the phone except the sample plan. */
     suspend fun backupTasks(): List<Task> = db.tasks().all().filterNot { SamplePlan.isSample(it.localId) }
+    suspend fun backupProjects() = db.projects().all().filter { it.deletedAt == null && !SamplePlan.isSample(it.localId) }
 
     /** How much of the plan a switch to another server would remove: tasks (sample ones not counted) and waiting changes. */
     suspend fun planSize(): Pair<Int, Int> = db.withTransaction {
@@ -365,9 +398,17 @@ class TaskRepository(
      * `clientId` keeps one copy. A done task is queued without its repeat rule, so the server does not add its next
      * occurrence again; archived tasks are archived.
      */
-    suspend fun restore(tasks: List<BackupTask>): RestoreResult {
+    suspend fun restore(tasks: List<BackupTask>, projects: List<dev.helm.planner.backup.BackupProject> = emptyList()): RestoreResult {
         val now = clock()
         val result = db.withTransaction {
+            val rearchive = mutableSetOf<String>()
+            val projectIds = projects.associate { imported ->
+                val existing = db.projects().all().firstOrNull { dev.helm.planner.domain.ProjectRules.nameKey(it.name) == dev.helm.planner.domain.ProjectRules.nameKey(imported.name) && it.deletedAt == null }
+                val project = existing ?: projectStore.add(imported.name, imported.color, imported.icon, imported.note)
+                if (project.archived) projectStore.archive(project.localId, false)
+                if (project.archived || imported.archived) rearchive += project.localId
+                imported.id to project.localId
+            }
             val known = db.tasks().all().flatMap { listOfNotNull(it.localId, it.serverId, it.clientId) }.toMutableSet()
             var added = 0
             for (item in tasks) {
@@ -379,6 +420,7 @@ class TaskRepository(
                     localId = id,
                     clientId = id,
                     title = item.title,
+                    projectLocalId = item.projectId?.let { requireNotNull(projectIds[it]) },
                     note = item.note,
                     dueDate = item.dueDate,
                     dueTime = item.dueTime,
@@ -395,11 +437,12 @@ class TaskRepository(
                     reminders = item.reminders,
                 )
                 db.tasks().upsert(listOf(task))
-                enqueue(Mutations.ADD, id, addArgs(task.copy(status = if (done) TaskStatus.TODO else task.status)), clientId = id, now = now)
+                enqueue(Mutations.ADD, id, addArgs(task.copy(status = if (done) TaskStatus.TODO else task.status)), clientId = id, now = now, projectLocalId = task.projectLocalId)
                 if (done) enqueue(Mutations.COMPLETE, id, JsonObject(emptyMap()), now = now)
                 if (item.archivedAt != null) enqueue(Mutations.ARCHIVE, id, JsonObject(emptyMap()), now = now)
                 added++
             }
+            rearchive.forEach { projectStore.archive(it, true) }
             RestoreResult(added, tasks.size - added)
         }
         if (result.added > 0) onOutboxChanged()
@@ -414,12 +457,20 @@ class TaskRepository(
         db.outbox().deleteAll()
         db.events().deleteAll()
         db.tasks().deleteAll()
+        db.projects().deleteAll()
     }
 
     /** Writes a server snapshot into Room (see [SnapshotMerger]). */
     suspend fun applySnapshot(snapshot: RemoteEvent.Snapshot) {
         db.withTransaction {
-            val plan = SnapshotMerger.merge(db.tasks().all(), db.outbox().all(), snapshot.tasks, clock())
+            val pending = db.outbox().all()
+            snapshot.projects?.let { remote ->
+                val projects = dev.helm.planner.sync.ProjectSnapshotMerger.merge(db.projects().all(), pending, remote, clock())
+                db.projects().upsert(projects.upserts)
+                db.projects().delete(projects.deletes)
+            }
+            val projectIds = db.projects().all().filter { it.serverId != null }.associate { it.serverId!! to it.localId }
+            val plan = SnapshotMerger.merge(db.tasks().all(), pending, snapshot.tasks, clock(), projectIds)
             if (plan.upserts.isNotEmpty()) db.tasks().upsert(plan.upserts)
             if (plan.deletes.isNotEmpty()) {
                 db.tasks().delete(plan.deletes)
@@ -465,7 +516,7 @@ class TaskRepository(
      * Appends a change; its `clientId` makes the server apply it once however often it is sent. A change of a sample
      * task is not queued: sample tasks never reach a server.
      */
-    private suspend fun enqueue(mutation: String, taskLocalId: String?, args: JsonObject, now: Long, clientId: String = newId()) {
+    private suspend fun enqueue(mutation: String, taskLocalId: String?, args: JsonObject, now: Long, clientId: String = newId(), projectLocalId: String? = null) {
         if (taskLocalId != null && SamplePlan.isSample(taskLocalId)) return
         val withClientId = JsonObject(args + ("clientId" to JsonPrimitive(clientId)))
         db.outbox().insert(
@@ -474,6 +525,7 @@ class TaskRepository(
                 mutation = mutation,
                 argsJson = withClientId.toString(),
                 taskLocalId = taskLocalId,
+                projectLocalId = projectLocalId,
                 clientId = clientId,
                 createdAt = now,
             ),

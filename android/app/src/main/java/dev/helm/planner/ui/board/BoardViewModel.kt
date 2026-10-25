@@ -40,8 +40,8 @@ class BoardViewModel(
     override fun setNow(localId: String) = launch { repository.setNow(localId) }
     override fun clearNow() = launch { repository.clearNow() }
     override fun saveResumeNote(localId: String, note: String) = launch { repository.setResumeNote(localId, note) }
-    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) =
-        launch { repository.add(title, dueDate, dueTime, note) }
+    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) =
+        launch { repository.add(title, dueDate, dueTime, note, projectLocalId) }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }

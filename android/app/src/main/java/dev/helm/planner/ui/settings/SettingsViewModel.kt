@@ -156,7 +156,7 @@ class SettingsViewModel(
                 if (read.problem == BackupProblem.TOO_MANY) BackupFailure.TOO_MANY else BackupFailure.NOT_HELM,
             )
             is BackupRead.Plan -> {
-                val result = container.repository.restore(read.tasks)
+                val result = container.repository.restore(read.tasks, read.projects)
                 val settings = read.settings?.takeIf { container.settings.current().isLocal }
                 settings?.let {
                     setSummaryTime(it.summaryTime)
@@ -175,6 +175,7 @@ class SettingsViewModel(
             container.repository.backupTasks(),
             BackupSettings(s.timezone, s.summaryTime, s.reminderMinutes),
             now,
+            container.repository.backupProjects(),
         )
         return PlanBackup.fileName(HelmDates.localDate(now, s.timezone)) to content
     }

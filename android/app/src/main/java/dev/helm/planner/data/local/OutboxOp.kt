@@ -28,6 +28,8 @@ data class OutboxOp(
     val createdAt: Long,
     val attempts: Int = 0,
     val lastError: String? = null,
+    /** The project itself for project mutations, or the task's target project; resolved just before sending. */
+    val projectLocalId: String? = null,
 )
 
 /** Mutations of the app layer (`backend/convex/app.ts`) that the outbox sends. */
@@ -44,4 +46,7 @@ object Mutations {
     /** The owner takes a task over from an agent: its claim ends at once. */
     const val RELEASE = "app:release"
     const val UPDATE_SETTINGS = "app:updateSettings"
+    const val ADD_PROJECT = "app:addProject"
+    const val UPDATE_PROJECT = "app:updateProject"
+    const val DELETE_PROJECT = "app:deleteProject"
 }

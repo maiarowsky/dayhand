@@ -44,6 +44,7 @@ sealed interface RemoteEvent {
         val timezone: String,
         val summaryTime: String = ReminderRules.DEFAULT_SUMMARY_TIME,
         val reminderMinutes: List<Int> = ReminderRules.DEFAULT_REMINDER_MINUTES,
+        val projects: List<dev.helm.planner.data.local.Project>? = null,
     ) : RemoteEvent
     data object Unauthorized : RemoteEvent
     data class Failed(val message: String) : RemoteEvent
@@ -94,6 +95,7 @@ data class RemoteTask(
     /** Server ids of the tasks this one waits for. */
     val dependsOn: List<String> = emptyList(),
     val blockedReason: String? = null,
+    val projectId: String? = null,
 )
 
 /** One entry of a task's history (`getTask` in `backend/convex/lib/views.ts`); before/after as JSON objects. */

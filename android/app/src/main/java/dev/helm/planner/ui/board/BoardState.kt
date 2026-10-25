@@ -22,7 +22,7 @@ interface BoardActions {
     fun setNow(localId: String) {}
     fun clearNow() {}
     fun saveResumeNote(localId: String, note: String) {}
-    fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {}
+    fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String? = null) {}
     fun openTask(localId: String) {}
     fun openTrash() {}
     fun openSettings() {}

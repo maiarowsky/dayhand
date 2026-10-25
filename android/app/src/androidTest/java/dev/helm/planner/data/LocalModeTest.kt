@@ -111,7 +111,7 @@ class LocalModeTest {
         val repository = repository()
         val zone = ZoneId.of("Europe/Warsaw")
         val plan = SamplePlan.tasks(LocalDate.parse("2026-10-23"), clock, zone) { it.name }
-        repository.loadSample(plan)
+        repository.loadSample(plan, SamplePlan.projects(clock) { it.name })
         assertTrue(repository.hasSample.first())
         assertEquals(0, ops().size)
 

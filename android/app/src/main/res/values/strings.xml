@@ -143,7 +143,7 @@
     </plurals>
     <string name="add_label">Add label</string>
     <string name="remove_label">Remove label: %1$s</string>
-    <string name="label_name">Label or project</string>
+    <string name="label_name">Label</string>
     <plurals name="labels_full">
         <item quantity="one">At most %1$d label</item>
         <item quantity="other">At most %1$d labels</item>

@@ -8,6 +8,8 @@ import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.data.local.TaskReminder
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.TaskRules
+import dev.helm.planner.domain.ProjectRules
+import dev.helm.planner.data.local.Project
 import java.security.MessageDigest
 import java.time.DateTimeException
 import java.time.LocalDate
@@ -46,7 +48,10 @@ data class BackupTask(
     val reminders: List<TaskReminder>? = null,
     val completedAt: Long? = null,
     val archivedAt: Long? = null,
+    val projectId: String? = null,
 )
+
+data class BackupProject(val id: String, val name: String, val color: String?, val icon: String?, val note: String?, val archived: Boolean)
 
 /** Why a file is not a backup Dayhand can read. */
 enum class BackupProblem { NOT_JSON, NOT_HELM, TOO_MANY }
@@ -58,6 +63,7 @@ sealed interface BackupRead {
         val settings: BackupSettings?,
         val trashed: Int,
         val invalid: List<String>,
+        val projects: List<BackupProject> = emptyList(),
     ) : BackupRead
 
     data class Unreadable(val problem: BackupProblem) : BackupRead
@@ -80,7 +86,8 @@ object PlanBackup {
     fun fileName(today: String) = "dayhand-backup-$today.json"
 
     /** The backup file of [tasks] (trash included, as in the server's export) with [settings], made at [at]. */
-    fun write(tasks: List<Task>, settings: BackupSettings, at: Long): String {
+    fun write(tasks: List<Task>, settings: BackupSettings, at: Long, projects: List<Project> = emptyList()): String {
+        val projectIds = projects.associate { it.localId to (it.serverId ?: it.localId) }
         val content = buildJsonObject {
             put("version", VERSION)
             put("exportedAt", at)
@@ -89,14 +96,27 @@ object PlanBackup {
                 put("summaryTime", settings.summaryTime)
                 put("defaultReminderMinutes", JsonArray(settings.defaultReminderMinutes.map { JsonPrimitive(it) }))
             })
-            put("tasks", JsonArray(tasks.sortedBy { it.createdAt }.map(::taskJson)))
+            put("projects", JsonArray(projects.sortedBy { it.position }.map { project -> buildJsonObject {
+                put("id", project.serverId ?: project.localId)
+                put("name", project.name)
+                project.color?.let { put("color", it) }
+                project.icon?.let { put("icon", it) }
+                project.note?.let { put("note", it) }
+                put("position", project.position)
+                put("archived", project.archived)
+                project.archivedAt?.let { put("archivedAt", it) }
+                put("createdAt", project.createdAt)
+                put("updatedAt", project.updatedAt)
+            } }))
+            put("tasks", JsonArray(tasks.sortedBy { it.createdAt }.map { taskJson(it, projectIds) }))
             put("events", buildJsonArray {})
         }
         return pretty.encodeToString(JsonElement.serializer(), content) + "\n"
     }
 
     /** A task as the server's export writes it (`toTask`): the server id where there is one, else the phone's. */
-    private fun taskJson(task: Task): JsonObject = buildJsonObject {
+    private fun taskJson(task: Task, projects: Map<String, String>): JsonObject = buildJsonObject {
+        projects[task.projectLocalId]?.let { put("projectId", it) }
         put("id", task.serverId ?: task.localId)
         put("title", task.title)
         put("status", task.status.wire)
@@ -135,6 +155,20 @@ object PlanBackup {
         if (tasks.size > MAX_TASKS) return BackupRead.Unreadable(BackupProblem.TOO_MANY)
         var trashed = 0
         val invalid = mutableListOf<String>()
+        val projectValues = plan["projects"] as? JsonArray ?: JsonArray(emptyList())
+        if (projectValues.size > ProjectRules.MAX_PROJECTS) return BackupRead.Unreadable(BackupProblem.TOO_MANY)
+        val projects = projectValues.mapNotNull { element ->
+            val o = element as? JsonObject
+            val name = o?.string("name")?.let(ProjectRules::name)
+            val id = o?.string("id")
+            if (o == null || id == null || name == null || !ProjectRules.validIcon(o.string("icon").orEmpty()) ||
+                (o.string("note")?.length ?: 0) > ProjectRules.MAX_NOTE || o.string("color")?.let { it !in ProjectRules.colors } == true) {
+                invalid += o?.string("name") ?: "Project"
+                null
+            } else BackupProject(id, name, o.string("color"), o.string("icon"), o.string("note"),
+                (o["archived"] as? JsonPrimitive)?.booleanOrNull == true || o.long("archivedAt") != null)
+        }
+        val projectIds = projects.map { it.id }.toSet()
         val read = mutableListOf<BackupTask>()
         tasks.forEachIndexed { index, element ->
             val o = element as? JsonObject
@@ -142,11 +176,11 @@ object PlanBackup {
             when {
                 o == null -> invalid += "#${index + 1}"
                 o["deletedAt"].let { it != null && it !is JsonNull } -> trashed++
-                task != null -> read += task
+                task != null && (task.projectId == null || task.projectId in projectIds) -> read += task
                 else -> invalid += o.string("title")?.takeIf { it.isNotBlank() } ?: "#${index + 1}"
             }
         }
-        return BackupRead.Plan(read, (plan["settings"] as? JsonObject)?.let(::settings), trashed, invalid)
+        return BackupRead.Plan(read, (plan["settings"] as? JsonObject)?.let(::settings), trashed, invalid, projects)
     }
 
     private fun task(o: JsonObject, newId: () -> String): BackupTask? {
@@ -183,6 +217,7 @@ object PlanBackup {
             reminders = reminders,
             completedAt = o.long("completedAt"),
             archivedAt = o.long("archivedAt"),
+            projectId = o.string("projectId"),
         )
     }
 

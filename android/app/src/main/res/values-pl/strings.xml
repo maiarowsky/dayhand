@@ -157,7 +157,7 @@
     </plurals>
     <string name="add_label">Dodaj etykietę</string>
     <string name="remove_label">Usuń etykietę: %1$s</string>
-    <string name="label_name">Etykieta lub projekt</string>
+    <string name="label_name">Etykieta</string>
     <plurals name="labels_full">
         <item quantity="one">Najwyżej %1$d etykieta</item>
         <item quantity="few">Najwyżej %1$d etykiety</item>

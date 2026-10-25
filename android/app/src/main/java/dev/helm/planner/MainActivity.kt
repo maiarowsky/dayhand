@@ -33,6 +33,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.helm.planner.auth.PairingInput
 import dev.helm.planner.auth.PairingLink
+import dev.helm.planner.ui.projects.ProjectHost
+import dev.helm.planner.ui.projects.ProjectsViewModel
+import dev.helm.planner.ui.projects.ProjectsScreen
+import dev.helm.planner.ui.projects.ProjectViewModel
+import dev.helm.planner.ui.projects.ProjectScreen
+import dev.helm.planner.ui.today.TodayActions
+import dev.helm.planner.ui.components.ProjectFolderIcon
 import dev.helm.planner.ui.agents.AgentsRoute
 import dev.helm.planner.ui.connect.ConnectRoute
 import dev.helm.planner.ui.board.BoardActions
@@ -52,7 +59,6 @@ import dev.helm.planner.ui.components.HelmTabBar
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.HealthCard
 import dev.helm.planner.ui.today.HealthCardViewModel
-import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
 import dev.helm.planner.ui.today.TodayViewModel
 import dev.helm.planner.ui.trash.TrashActions
@@ -89,7 +95,9 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
             HelmTheme(appearance, systemDark) {
-                HelmRoot(container, versionName, pairingLink, onLinkUsed = { pairingLink = null }, openAgents, onAgentsOpened = { openAgents = false })
+                ProjectHost(container.repository, container.settings) {
+                    HelmRoot(container, versionName, pairingLink, onLinkUsed = { pairingLink = null }, openAgents, onAgentsOpened = { openAgents = false })
+                }
             }
         }
     }
@@ -121,6 +129,11 @@ private object Route {
     const val SETTINGS = "settings"
     const val CONNECT = "connect"
     const val AGENTS = "agents"
+    const val PROJECTS = "projects"
+    const val PROJECT = "project/"
+    const val LABEL = "label/"
+    fun project(localId: String?) = PROJECT + (localId ?: "none")
+    fun label(name: String) = LABEL + android.net.Uri.encode(name)
 
     /** Connect shown by itself at the first start without a server (with "Not now"). */
     const val FIRST_CONNECT = "first-connect"
@@ -183,8 +196,8 @@ private fun HelmRoot(
                 object : TodayActions by viewModel {
                     override fun openSettings() = open(Route.SETTINGS)
                     override fun openTask(localId: String) = open(Route.task(localId))
-                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
-                        viewModel.add(title, dueDate, dueTime, note)
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
+                        viewModel.add(title, dueDate, dueTime, note, projectLocalId)
                         timeSet(dueTime)
                     }
                 }
@@ -226,14 +239,39 @@ private fun HelmRoot(
                     override fun openSettings() = open(Route.SETTINGS)
                     override fun openTask(localId: String) = open(Route.task(localId))
                     override fun openTrash() = open(Route.TRASH)
-                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) {
-                        viewModel.add(title, dueDate, dueTime, note)
+                    override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
+                        viewModel.add(title, dueDate, dueTime, note, projectLocalId)
                         timeSet(dueTime)
                     }
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
             state?.let { BoardScreen(it, actions, bottomBar = tabs) }
+        }
+        route == Route.PROJECTS -> {
+            val model = viewModel(key = "projects-list") { ProjectsViewModel(container.repository, container.settings) }
+            val state by model.state.collectAsStateWithLifecycle()
+            state?.let { ProjectsScreen(it, { id -> open(Route.project(id)) }, { name -> open(Route.label(name)) },
+                onTrash = { open(Route.TRASH) }, onSettings = { open(Route.SETTINGS) }, bottomBar = tabs) }
+        }
+        route.startsWith(Route.PROJECT) || route.startsWith(Route.LABEL) -> {
+            val projectId = route.takeIf { it.startsWith(Route.PROJECT) }?.removePrefix(Route.PROJECT)?.takeUnless { it == "none" }
+            val label = route.takeIf { it.startsWith(Route.LABEL) }?.removePrefix(Route.LABEL)?.let(android.net.Uri::decode)
+            val model = viewModel(key = "project-screen-$route") { ProjectViewModel(container.repository, container.settings, projectId, label) }
+            val state by model.state.collectAsStateWithLifecycle()
+            val todayActions = remember(model) { object : TodayActions by model.todayActions {
+                override fun openTask(localId: String) = open(Route.task(localId))
+                override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) {
+                    model.todayActions.add(title, dueDate, dueTime, note, projectLocalId)
+                    timeSet(dueTime)
+                }
+            } }
+            val boardActions = remember(model) { object : BoardActions by model.boardActions {
+                override fun openTask(localId: String) = open(Route.task(localId))
+                override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) =
+                    todayActions.add(title, dueDate, dueTime, note, projectLocalId)
+            } }
+            state?.let { ProjectScreen(it, todayActions, boardActions, onBack = back, bottomBar = { MainTabs(Route.PROJECTS, selectTab) }) }
         }
         taskId != null -> {
             val viewModel = viewModel { TaskDetailViewModel(container.repository, container.settings, container.historySync) }
@@ -292,6 +330,7 @@ private fun MainTabs(current: String, onSelect: (String) -> Unit) {
         Tab(Route.TODAY, current, Icons.Filled.Home, R.string.today_title, onSelect)
         Tab(Route.CALENDAR, current, Icons.Filled.DateRange, R.string.calendar_title, onSelect)
         Tab(Route.BOARD, current, Icons.AutoMirrored.Filled.List, R.string.board_title, onSelect)
+        Tab(Route.PROJECTS, current, ProjectFolderIcon, R.string.projects_title, onSelect)
     }
 }
 

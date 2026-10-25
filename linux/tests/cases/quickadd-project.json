@@ -1,0 +1,27 @@
+{
+  "now": "2026-10-23T10:00:00Z",
+  "timezone": "Europe/Warsaw",
+  "projects": [
+    { "id": "bakery", "name": "Strona piekarni", "archived": false },
+    { "id": "home", "name": "Dom", "archived": false },
+    { "id": "cafe", "name": "Café", "archived": false },
+    { "id": "old", "name": "Old", "archived": true }
+  ],
+  "cases": [
+    { "line": "Zdjęcia +strona-piekarni", "title": "Zdjęcia", "projectId": "bakery" },
+    { "line": "Zdjęcia +STRONA-PIEKARNI", "title": "Zdjęcia", "projectId": "bakery" },
+    { "line": "+Dom Kup mleko", "title": "Kup mleko", "projectId": "home" },
+    { "line": "Kup +dom mleko", "title": "Kup mleko", "projectId": "home" },
+    { "line": "  Kup mleko +Dom  ", "title": "Kup mleko", "projectId": "home" },
+    { "line": "Menu +café", "title": "Menu", "projectId": "cafe" },
+    { "line": "Pomysł +x", "title": "Pomysł +x", "projectId": null },
+    { "line": "Pomysł +Old", "title": "Pomysł +Old", "projectId": null },
+    { "line": "Cena C++", "title": "Cena C++", "projectId": null },
+    { "line": "Adres a+b@example.com", "title": "Adres a+b@example.com", "projectId": null },
+    { "line": "Pomysł +none", "title": "Pomysł +none", "projectId": null },
+    { "line": "+Dom", "title": "+Dom", "projectId": null },
+    { "line": "Pomysł", "title": "Pomysł", "projectId": null },
+    { "line": "Menu +Dom tomorrow 9am", "title": "Menu", "projectId": "home", "dueDate": "2026-10-24", "dueTime": "09:00" },
+    { "line": "Menu tomorrow 9am +Dom", "title": "Menu", "projectId": "home", "dueDate": "2026-10-24", "dueTime": "09:00" }
+  ]
+}

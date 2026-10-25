@@ -22,6 +22,7 @@ import kotlinx.serialization.json.jsonObject
 /** Parsing of the app layer's JSON. Convex sends `v.number()` fields as JSON doubles. */
 object RemoteJson {
     const val QUERY_TASKS = "app:listAll"
+    const val QUERY_PROJECTS = "app:listProjects"
     const val QUERY_SETTINGS = "app:getSettings"
     const val QUERY_TRASH = "app:listTrash"
     const val QUERY_TASK = "app:getTask"
@@ -43,10 +44,11 @@ object RemoteJson {
      * A snapshot from the results of [QUERY_TASKS], [QUERY_TRASH] and [QUERY_SETTINGS]; missing
      * settings take the backend defaults.
      */
-    fun snapshot(tasks: JsonElement, trash: JsonElement, settings: JsonElement): RemoteEvent.Snapshot {
+    fun snapshot(tasks: JsonElement, trash: JsonElement, settings: JsonElement, projects: JsonElement? = null): RemoteEvent.Snapshot {
         val s = settings as? JsonObject
         return RemoteEvent.Snapshot(
             tasks = tasksWithTrash(tasks, trash),
+            projects = projects?.let(::projects),
             timezone = timezone(settings) ?: HelmDates.DEFAULT_TIMEZONE,
             summaryTime = s?.string("summaryTime") ?: ReminderRules.DEFAULT_SUMMARY_TIME,
             reminderMinutes = (s?.get("defaultReminderMinutes") as? JsonArray)
@@ -54,6 +56,20 @@ object RemoteJson {
                 ?: ReminderRules.DEFAULT_REMINDER_MINUTES,
         )
     }
+
+    /** The app's project query is a bare array, not list_projects' counted envelope. */
+    fun projects(value: JsonElement): List<dev.helm.planner.data.local.Project> =
+        requireNotNull(value as? JsonArray) { "projects must be an array" }.map { item ->
+            val o = item.jsonObject
+            val id = requireNotNull(o.string("id"))
+            dev.helm.planner.data.local.Project(
+                localId = id, serverId = id, clientId = o.string("clientId"), name = requireNotNull(o.string("name")),
+                color = o.string("color"), icon = o.string("icon"), note = o.string("note"),
+                position = requireNotNull((o["position"] as? JsonPrimitive)?.doubleOrNull),
+                archivedAt = o.long("archivedAt"), createdAt = o.long("createdAt") ?: 0, updatedAt = o.long("updatedAt") ?: 0,
+                serverUpdatedAt = o.long("updatedAt") ?: 0,
+            )
+        }
 
     fun task(o: JsonObject) = RemoteTask(
         id = requireNotNull(o.string("id")) { "task without id" },
@@ -83,6 +99,7 @@ object RemoteJson {
         plan = o.string("plan"),
         dependsOn = (o["dependsOn"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content },
         blockedReason = o.string("blockedReason"),
+        projectId = o.string("projectId"),
     )
 
     /** A task's change history from [QUERY_TASK], newest first. */

@@ -97,8 +97,8 @@ fun TodayScreen(
             timezone = state.timezone,
             now = now,
             onDismiss = { adding = false },
-            onSave = { title, day, time, note ->
-                actions.add(title, day, time, note)
+            onSave = { title, day, time, note, project ->
+                actions.add(title, day, time, note, project)
                 adding = false
             },
         )

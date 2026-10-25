@@ -59,7 +59,7 @@ class TodayScreenTest {
         val calls = mutableListOf<String>()
         override fun complete(localId: String) { calls += "complete:$localId" }
         override fun moveTo(localId: String, date: String) { calls += "move:$localId:$date" }
-        override fun add(title: String, dueDate: String?, dueTime: String?, note: String?) { calls += "add:$title:$dueDate:$dueTime" }
+        override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectLocalId: String?) { calls += "add:$title:$dueDate:$dueTime" }
         override fun openSettings() { calls += "settings" }
         override fun openTask(localId: String) { calls += "open:$localId" }
         override fun removeSample() { calls += "sample:remove" }

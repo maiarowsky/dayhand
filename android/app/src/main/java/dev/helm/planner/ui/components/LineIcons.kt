@@ -25,13 +25,24 @@ import kotlin.math.sin
  */
 enum class LineIcon {
     Contrast, Palette, Font, Globe, Bell, Sun, Clock, Download, Cloud, CloudOff, Link, Unlink, Phone, Document, Code,
-    List, Info, Warning, Check, Chevron, Calendar, Copy, Share, Refresh,
+    List, Info, Warning, Check, Chevron, Calendar, Copy, Share, Refresh, Folder,
 }
 
 @Composable
 fun LineIconView(icon: LineIcon, color: Color, modifier: Modifier = Modifier, size: Dp = 22.dp) {
     Canvas(modifier.size(size)) { draw(icon, color) }
 }
+
+/** Same outline folder as LineIcon.Folder, for NavigationBar's ImageVector API. */
+val ProjectFolderIcon: androidx.compose.ui.graphics.vector.ImageVector = androidx.compose.ui.graphics.vector.ImageVector.Builder(
+    name = "Projects", defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f,
+).apply {
+    addPath(pathData = androidx.compose.ui.graphics.vector.PathBuilder().apply {
+        moveTo(3f, 6f); lineTo(10f, 6f); lineTo(12f, 9f); lineTo(21f, 9f)
+        lineTo(21f, 20f); lineTo(3f, 20f); close()
+    }.nodes, fill = null, stroke = androidx.compose.ui.graphics.SolidColor(Color.Black), strokeLineWidth = 1.8f,
+        strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round)
+}.build()
 
 private fun DrawScope.draw(icon: LineIcon, color: Color) {
     val w = size.width
@@ -64,6 +75,7 @@ private fun DrawScope.draw(icon: LineIcon, color: Color) {
         drawPath(p, color, style = stroke)
     }
     when (icon) {
+        LineIcon.Folder -> path(0.12f to 0.24f, 0.4f to 0.24f, 0.5f to 0.36f, 0.88f to 0.36f, 0.88f to 0.82f, 0.12f to 0.82f, close = true)
         LineIcon.Contrast -> {
             circle(0.5f, 0.5f, 0.38f)
             drawArc(color, -90f, 180f, true, Offset(0.12f * w, 0.12f * w), Size(0.76f * w, 0.76f * w))

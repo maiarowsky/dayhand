@@ -81,6 +81,9 @@ fun BoardScreen(
     actions: BoardActions,
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
+    header: (@Composable () -> Unit)? = null,
+    defaultProjectId: String? = null,
+    allowAdding: Boolean = true,
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -88,7 +91,7 @@ fun BoardScreen(
     Scaffold(
         modifier = modifier,
         containerColor = p.background,
-        topBar = {
+        topBar = header ?: {
             LargeHeader(stringResource(R.string.board_title)) {
                 HeaderIconButton(Icons.Filled.Delete, stringResource(R.string.trash_title), actions::openTrash, tint = p.textMuted)
                 HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
@@ -96,7 +99,7 @@ fun BoardScreen(
         },
         bottomBar = bottomBar,
         floatingActionButton = {
-            HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(BoardTags.FAB))
+            if (allowAdding) HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(BoardTags.FAB))
         },
     ) { padding ->
         val drag = remember { BoardDragState() }
@@ -123,10 +126,11 @@ fun BoardScreen(
         QuickAddSheet(
             timezone = state.timezone,
             onDismiss = { adding = false },
-            onSave = { title, day, time, note ->
-                actions.add(title, day, time, note)
+            onSave = { title, day, time, note, project ->
+                actions.add(title, day, time, note, project)
                 adding = false
             },
+            defaultProjectId = defaultProjectId,
         )
     }
 }

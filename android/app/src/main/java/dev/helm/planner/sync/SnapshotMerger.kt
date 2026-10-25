@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
 /** Groups of task fields that one kind of change touches. */
-enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM }
+enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM, PROJECT }
 
 data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
 
@@ -31,7 +31,7 @@ object SnapshotMerger {
     /** How long a task the server has not shown yet is kept (a snapshot may predate it). */
     const val UNSEEN_GRACE_MS = 2 * 60 * 1000L
 
-    fun merge(local: List<Task>, pending: List<OutboxOp>, remote: List<RemoteTask>, nowMs: Long): MergePlan {
+    fun merge(local: List<Task>, pending: List<OutboxOp>, remote: List<RemoteTask>, nowMs: Long, projectIds: Map<String, String> = emptyMap()): MergePlan {
         val dirty = DirtyFields.of(pending)
         val byServerId = local.filter { it.serverId != null }.associateBy { it.serverId }
         val byClientId = local.filter { it.clientId != null }.associateBy { it.clientId }
@@ -42,7 +42,7 @@ object SnapshotMerger {
             if (row != null) seen += row.localId
             val known = row?.serverUpdatedAt
             if (row != null && known != null && r.updatedAt <= known) continue
-            val merged = mergeRow(row, r, row?.let { dirty.forTask(it.localId) }.orEmpty())
+            val merged = mergeRow(row, r, row?.let { dirty.forTask(it.localId) }.orEmpty(), projectIds)
             if (merged != row) upserts += merged
         }
         val deletes = local
@@ -52,7 +52,7 @@ object SnapshotMerger {
         return MergePlan(upserts, deletes)
     }
 
-    private fun mergeRow(row: Task?, r: RemoteTask, keepLocal: Set<Field>): Task {
+    private fun mergeRow(row: Task?, r: RemoteTask, keepLocal: Set<Field>, projectIds: Map<String, String>): Task {
         var task = Task(
             localId = row?.localId ?: r.clientId ?: r.id,
             serverId = r.id,
@@ -83,8 +83,10 @@ object SnapshotMerger {
             plan = r.plan,
             dependsOn = r.dependsOn,
             blockedReason = r.blockedReason,
+            projectLocalId = r.projectId?.let { projectIds[it] ?: it },
         )
         if (row == null || keepLocal.isEmpty()) return task
+        if (Field.PROJECT in keepLocal) task = task.copy(projectLocalId = row.projectLocalId)
         if (Field.TITLE in keepLocal) task = task.copy(title = row.title)
         if (Field.NOTE in keepLocal) task = task.copy(note = row.note)
         if (Field.DUE in keepLocal) task = task.copy(dueDate = row.dueDate, dueTime = row.dueTime)
@@ -108,22 +110,33 @@ class DirtyFields private constructor(
     private val byTask: Map<String, Set<Field>>,
     /** `setNow` moves the "now" flag off every other task too. */
     private val nowEverywhere: Boolean,
+    private val projectEverywhere: Boolean,
+    private val labelsEverywhere: Boolean,
 ) {
     fun hasChanges(localId: String) = localId in byTask
 
     fun forTask(localId: String): Set<Field> =
-        byTask[localId].orEmpty() + if (nowEverywhere) setOf(Field.NOW) else emptySet()
+        byTask[localId].orEmpty() + (if (nowEverywhere) setOf(Field.NOW) else emptySet()) +
+            (if (projectEverywhere) setOf(Field.PROJECT) else emptySet()) + (if (labelsEverywhere) setOf(Field.LABELS) else emptySet())
 
     companion object {
         fun of(pending: List<OutboxOp>): DirtyFields {
             val byTask = mutableMapOf<String, MutableSet<Field>>()
             var nowEverywhere = false
+            var projectEverywhere = false
+            var labelsEverywhere = false
             for (op in pending) {
                 if (op.mutation == Mutations.SET_NOW) nowEverywhere = true
+                if (op.mutation == Mutations.DELETE_PROJECT) projectEverywhere = true
+                if (op.mutation == Mutations.ADD_PROJECT && "fromLabel" in Json.parseToJsonElement(op.argsJson).jsonObject) {
+                    projectEverywhere = true
+                    labelsEverywhere = true
+                }
                 val localId = op.taskLocalId ?: continue
-                byTask.getOrPut(localId) { mutableSetOf() } += fieldsOf(op)
+                byTask.getOrPut(localId) { mutableSetOf() } += fieldsOf(op) +
+                    if (op.projectLocalId != null) setOf(Field.PROJECT) else emptySet()
             }
-            return DirtyFields(byTask, nowEverywhere)
+            return DirtyFields(byTask, nowEverywhere, projectEverywhere, labelsEverywhere)
         }
 
         private fun fieldsOf(op: OutboxOp): Set<Field> = when (op.mutation) {
@@ -147,6 +160,7 @@ class DirtyFields private constructor(
                 return Field.entries.toSet() - Field.CLAIM
             }
             return buildSet {
+                if ("projectId" in keys) add(Field.PROJECT)
                 if ("title" in keys) add(Field.TITLE)
                 if ("note" in keys) add(Field.NOTE)
                 if ("dueDate" in keys || "dueTime" in keys) add(Field.DUE)

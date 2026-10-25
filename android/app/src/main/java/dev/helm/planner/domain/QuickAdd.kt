@@ -1,11 +1,15 @@
 package dev.helm.planner.domain
 
+import dev.helm.planner.data.local.Project
+
 /** What quick add makes of one line: the title, and the day and time from a date phrase at its end. */
 data class QuickAddInput(
     val title: String,
     val `when`: When?,
     /** The words read as the date ("fri 2pm"), so the sheet can show what was understood. */
     val phrase: String?,
+    val projectLocalId: String? = null,
+    val unknownProject: String? = null,
 )
 
 /**
@@ -21,8 +25,16 @@ object QuickAdd {
     private const val MAX_PHRASE_WORDS = 9
     private val WORD = Regex("[^\\s\\p{Z}]+")
 
-    fun parse(line: String, now: Long, timezone: String): QuickAddInput {
-        val trimmed = line.trim()
+    fun parse(line: String, now: Long, timezone: String, projects: List<Project> = emptyList(), readDate: Boolean = true): QuickAddInput {
+        val token = Regex("(?<!\\S)\\+([^\\s]+)").find(line)
+        val project = token?.groupValues?.get(1)?.let { name -> projects.firstOrNull {
+            it.selectable && ProjectRules.nameKey(it.name).replace(Regex("\\s+"), "-") == ProjectRules.nameKey(name)
+        } }
+        val withoutProject = if (project != null && token != null) line.removeRange(token.range).trim().replace(Regex("\\s+"), " ") else line.trim()
+        val trimmed = withoutProject.takeIf { it.isNotEmpty() } ?: line.trim()
+        val selected = project?.localId.takeIf { withoutProject.isNotEmpty() }
+        val unknown = token?.value.takeIf { project == null }
+        if (!readDate) return QuickAddInput(trimmed, null, null, selected, unknown)
         val words = WORD.findAll(trimmed).map { it.range.first }.toList()
         for (length in minOf(MAX_PHRASE_WORDS, words.size - 1) downTo 1) {
             val start = words[words.size - length]
@@ -32,8 +44,8 @@ object QuickAdd {
             } catch (_: WhenException) {
                 continue
             }
-            return QuickAddInput(trimmed.substring(0, start).trim(), parsed, phrase)
+            return QuickAddInput(trimmed.substring(0, start).trim(), parsed, phrase, selected, unknown)
         }
-        return QuickAddInput(trimmed, null, null)
+        return QuickAddInput(trimmed, null, null, selected, unknown)
     }
 }

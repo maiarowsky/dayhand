@@ -45,6 +45,14 @@ object SamplePlan {
         Triple(SampleText.SUNDAY, "19:00", null),
     )
 
+    fun projects(now: Long, text: (SampleText) -> String): List<dev.helm.planner.data.local.Project> =
+        listOf(SampleText.HOME, SampleText.WORK, SampleText.HEALTH).mapIndexed { i, label ->
+            dev.helm.planner.data.local.Project(localId = projectId(label), name = text(label),
+                color = listOf("amber", "blue", "green")[i], position = (i + 1) * 1024.0, createdAt = now, updatedAt = now)
+        }
+
+    private fun projectId(label: SampleText) = ID_PREFIX + "project-" + label.name.lowercase(java.util.Locale.ROOT)
+
     fun tasks(today: LocalDate, now: Long, zone: ZoneId, text: (SampleText) -> String): List<Task> {
         var n = 0
         fun task(title: SampleText, day: LocalDate?, time: String? = null, vararg labels: SampleText): Task {
@@ -55,7 +63,7 @@ object SamplePlan {
                 title = text(title),
                 dueDate = day?.toString(),
                 dueTime = time,
-                labels = labels.map(text),
+                projectLocalId = labels.firstOrNull()?.let(::projectId),
                 createdAt = now - (20 - n) * MINUTE,
                 updatedAt = now,
             )

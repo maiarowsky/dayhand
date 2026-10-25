@@ -98,6 +98,8 @@ android {
     }
 
     sourceSets.getByName("androidTest").assets.directories.add("$projectDir/schemas")
+    sourceSets.getByName("test").resources.directories.add("$projectDir/schemas")
+    testOptions.unitTests.isIncludeAndroidResources = true
 
     packaging {
         resources {
@@ -108,6 +110,22 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// Keep the instrumented SDK out of plain JVM tests' classpath; only Robolectric's sandbox loads it.
+val robolectricSdk by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    resolutionStrategy.activateDependencyLocking()
+}
+
+// Resolve the Android test runtime through Gradle's lockfile, not Robolectric's dynamic Maven downloader.
+tasks.withType<Test>().configureEach {
+    systemProperty("robolectric.offline", "true")
+    doFirst {
+        val sdk = robolectricSdk.singleFile
+        systemProperty("robolectric.dependency.dir", sdk.parent)
+    }
 }
 
 dependencies {
@@ -139,6 +157,13 @@ dependencies {
 
     testImplementation(libs.junit4)
     testImplementation(libs.coroutines.test)
+    // 4.16.1 was published 2026-01-21; Room and Compose checks run without an emulator.
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    add(robolectricSdk.name, "org.robolectric:android-all-instrumented:14-robolectric-10818077-i7")
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.room.testing)
 
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)

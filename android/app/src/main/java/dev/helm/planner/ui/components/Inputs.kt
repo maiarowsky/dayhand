@@ -135,6 +135,7 @@ fun HelmChip(
     modifier: Modifier = Modifier,
     multiple: Boolean = false,
     enabled: Boolean = true,
+    leadingContent: (@Composable () -> Unit)? = null,
 ) {
     val p = palette
     Row(
@@ -148,6 +149,7 @@ fun HelmChip(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        leadingContent?.invoke()
         // Selected is shown by a tick too, not by colour alone.
         if (selected) Icon(Icons.Filled.Check, contentDescription = null, tint = p.accent, modifier = Modifier.size(18.dp))
         Text(

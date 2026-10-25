@@ -1,6 +1,16 @@
 package dev.helm.planner.ui.calendar
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.HelmMenu
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +37,7 @@ import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.TextAction
+import dev.helm.planner.ui.projects.LocalProjects
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
@@ -77,6 +88,7 @@ fun DaySheet(
                         maxLines = 2,
                         tag = CalendarTags.sheetEntry(entry.key),
                     )
+                    if (!entry.task.inTrash && !entry.repeat) DayProjectMenu(entry.task)
                     if (entry.movable) {
                         val label = stringResource(R.string.calendar_move_title, entry.task.title)
                         TextAction(
@@ -92,6 +104,19 @@ fun DaySheet(
                 { onOpenDay(day.date) },
                 Modifier.align(Alignment.End).testTag(CalendarTags.DAY_SHEET_OPEN_DAY),
             )
+        }
+    }
+}
+
+@Composable
+private fun DayProjectMenu(task: dev.helm.planner.data.local.Task) {
+    val projects = LocalProjects.current
+    var open by remember { mutableStateOf(false) }
+    Box {
+        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true })
+        HelmMenu(open, { open = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.project_move), style = helmType.body, color = palette.text) },
+                onClick = { open = false; projects.pickTask(task) })
         }
     }
 }

@@ -106,7 +106,7 @@ class ConnectViewModel(
             val timezone = container.settings.current().timezone
             val now = clock()
             val today = LocalDate.parse(HelmDates.localDate(now, timezone))
-            container.repository.loadSample(SamplePlan.tasks(today, now, HelmDates.zone(timezone), text))
+            container.repository.loadSample(SamplePlan.tasks(today, now, HelmDates.zone(timezone), text), SamplePlan.projects(now, text))
         }
     }
 

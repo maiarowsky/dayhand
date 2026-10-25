@@ -57,6 +57,7 @@ import dev.helm.planner.ui.components.PrimaryButton
 import dev.helm.planner.ui.components.ScreenHeader
 import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.components.SwitchRow
+import dev.helm.planner.ui.projects.LocalProjects
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
@@ -129,6 +130,13 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
         DueSection(task, today, editable, actions)
         RepeatSection(task, today, editable, actions)
         RemindersRow(task, state.defaultReminders, editable, actions)
+    }
+    val projects = LocalProjects.current
+    CardSection(stringResource(R.string.project_label)) {
+        ValueRow(stringResource(R.string.project_label), projects.projects.firstOrNull { it.localId == task.projectLocalId }?.name
+            ?: stringResource(R.string.project_no_project), placeholder = task.projectLocalId == null,
+            editLabel = stringResource(R.string.project_move), enabled = editable, onClick = { projects.pickTask(task) },
+            modifier = Modifier.testTag("detail-project"))
     }
     ChecklistSection(task, editable, actions)
     LabelsSection(task, state.knownLabels, editable, actions)

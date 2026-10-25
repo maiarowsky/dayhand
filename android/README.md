@@ -1,7 +1,7 @@
 # Dayhand for Android
 
 Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **calendar**
-(week and day), the **board**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
+(week and day), the **board**, **projects**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
 on the phone, has the **Settings** screen, connects to a server by **pairing** with a one-time
 code from `dayhand pair`, approves and disconnects **agent connections** such as the Claude app, and
 turns on the read-only **calendar address** for Google and Apple Calendar.
@@ -66,7 +66,7 @@ report, and without a server it is not shown.
    sample data**: two overdue tasks, the "now" task with its note, today's tasks (a checklist, a
    repeating stand-up, a task with its own reminder), something done, a timed task on every other
    day of this week (done before today), a task in progress with a link, one without a day and
-   the labels Home, Work and Health, in the app's language. Sample tasks (`sample-` ids,
+   the projects Home, Work and Health, in the app's language. Sample tasks (`sample-` ids,
    `sample/SamplePlan.kt`) change only on the phone: the outbox never sends them, and they go with
    one tap (Today's line or Settings → Data) or when the phone connects to a server.
 2. **Connect to my server** opens the pairing form below. Back returns to the two cards; leaving
@@ -89,7 +89,25 @@ report, and without a server it is not shown.
    phone first asks **Replace the plan on this phone?** (see ["On this phone only"](#on-this-phone-only)).
 
 Tapping a task opens its details. The bar at the bottom switches between Today (where the app
-opens), the calendar and the board.
+opens), the calendar, the board and **Projects**.
+
+**Projects**: a flat, manually ordered list with open and overdue counts, **No project**, labels,
+**Archived** and **Trash**. A project has a unique name (1–50 characters, case-insensitive, including
+archived projects; `none` is reserved), one of twelve named colours, an optional single emoji and
+a note. Add with **+**; long-press a project to edit, archive or delete it. **Set order** exposes drag
+handles and Move up/down buttons and screen-reader actions. Archiving optionally archives the open
+tasks too; otherwise its tasks stay in Today, Calendar and Board with a neutral marker. Deleting
+keeps every task, including those in the trash, and asks for a destination (another project or No
+project). Long-press a label for **Make a project from label**, optionally removing that label only
+from moved tasks; tasks already in a project stay where they are.
+
+A project, No project or a label opens its task list: Overdue, Today, Later, No day and the fifty
+latest Done (collapsed). **List / Board** switches to the existing board filtered to the same
+scope. A project's **+** preselects it in quick add; archived projects cannot receive new tasks.
+The same project picker (with search above eight active projects and New project in place) is in
+quick add's More options, task details and the menus on Today, Board and the calendar's day sheet.
+Project dots meet 3:1 on the surfaces of every palette; the name remains readable text, never
+colour alone. Backend 0.13.0 or later is required for project synchronization.
 
 **Calendar**: the week on an hour grid, or one day, switched by two text tabs (**Week** / **Day**).
 The week always shows Monday to Sunday; a swipe or the arrows turn it (in the day view the arrows go
@@ -134,7 +152,8 @@ trash.
 
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
 optional time, repeat, reminders, a checklist, labels, links (http/https only; no files in version 1)
-and the note. For projects, see [backend support and client availability](../docs/architecture.md#projects).
+and the note. **Project** uses the shared picker to assign or clear the task's single project;
+labels remain free tags across projects.
 Since 0.9.1 it also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
 completed with, read-only (backend 0.10.0, [agent-work.md](../docs/agent-work.md)). The owner's own
 changes always go through. Since 0.11.0 the **Agent** card shows "agent: \<name\> works until
@@ -177,7 +196,10 @@ today"; **Keep in title** keeps the words as text, until the title changes. "Mor
 day, a time and a note; a day or time picked there wins over the phrase, which then stays in the
 title. The grammar is ported from `cli/src/when/parse.ts` (`domain/When.kt`, `domain/QuickAdd.kt`),
 and `WhenParserTest` runs every case of `linux/tests/cases/when.json`, shared with the CLI, macOS
-and Linux.
+and Linux. A known `+Project-name` token sets the project, case-insensitively (hyphens stand for
+spaces); it works before or after the date phrase. Unknown or archived names remain in the title
+with a hint, and never create a project by accident. `linux/tests/cases/quickadd-project.json`
+holds the shared project cases.
 
 **Settings** is laid out like Mussh's: groups under upper-case labels, one row per setting with a
 thin outline icon, the name, a short current value and "›". Each row opens its own page with the
@@ -305,7 +327,7 @@ tap ──> Room transaction: change the task row + append to outbox ──> scr
             WorkManager (needs network) ── sends the outbox in order over
             POST /api/mutation, deletes a record only after the server answered
                                                 │
-Convex subscription (app:listAll, app:listTrash, app:getSettings) ──> SnapshotMerger ──> Room
+Convex subscription (app:listAll, app:listTrash, app:listProjects, app:getSettings) ──> SnapshotMerger ──> Room
 ```
 
 - **Room is the source of truth for the screens.** The screen never waits for the network.
@@ -316,6 +338,11 @@ Convex subscription (app:listAll, app:listTrash, app:getSettings) ──> Snapsh
 - **WorkManager** sends the outbox strictly in order and stops at the first failure, so nothing
   overtakes an earlier change. The request survives the app being killed and the phone
   restarting. After a force stop, Android runs it again once the app is opened.
+- **Projects offline**: Room schema 6 adds projects and local project references without changing
+  existing tasks. Project creation precedes dependent task creation in the outbox; server ids are
+  resolved only when sending. A same-name project made by another device is linked to the local
+  row after a confirmed lookup, preserving task references. Sample projects never leave the phone;
+  removing them clears an own task's sample-project assignment, not the task.
 - **Reads**: while the app is open, the official Convex client (`dev.convex:android-convexmobile`)
   keeps a live subscription and every snapshot is merged into Room. Both directions sit behind
   `TaskRemote` (`TaskFeed` + `MutationSender`), so the Convex client can be replaced by plain
@@ -372,8 +399,9 @@ and server copy of another phone would be hard to reason about.
 
 The **backup file** (`backup/PlanBackup.kt`) is Dayhand's JSON export format, version 1, as
 `app:exportPlan` and `dayhand export --format json` write it (`docs/schemas/export.schema.json`):
-`version`, `exportedAt`, `settings`, `tasks` (with the server id where the server knows a task,
-else the phone's) and an empty `events`. Task numbers (`ref`), cached change history and agent-work
+`version`, `exportedAt`, `settings`, `projects`, `tasks` (with the server id where the server knows a task,
+else the phone's, and `projectId`) and an empty `events`. Project names, colours, icons, notes,
+order and archive state are kept; restore matches projects by name and queues projects before their tasks. Task numbers (`ref`), cached change history and agent-work
 fields (including the plan, dependencies and blocked reason) are not included. Sample tasks are
 not in it. A server reads it (`dayhand import`, `POST /api/v1/import`, format `dayhand-json`), and
 so does **Restore from a file**: every task the backend's rules accept
@@ -478,7 +506,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM: dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
+./gradlew :app:testDebugUnitTest            # JVM + Robolectric: projects, Room 5→6, Compose project/picker flows; dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
                                             # agent connections (answers, code input, approval flow), calendar address,
                                             # backup file (write, read, the server's export), sample plan, another server,
@@ -493,6 +521,12 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # (ReminderDeliveryTest, about 80 s, with no server configured),
                                             # the eight languages and switching them in Settings (LanguageSwitchTest)
 ```
+
+Project integration against a real local backend is opt-in: set `DAYHAND_ANDROID_TEST_URL` to
+its loopback Convex API URL and `DAYHAND_ANDROID_TEST_TOKEN` to a temporary app JWT, then run
+`:app:testDebugUnitTest --tests '*ProjectBackendTest'`. Without them only this integration test
+is skipped. The test refuses non-loopback URLs. Robolectric's Android 34 runtime and all of its
+dependencies are pinned in the Gradle lockfile; its own Maven downloader is disabled.
 
 `AgentsRefreshRaceTest` covers overlapping control reads and the busy interval of agent changes,
 releasing held replies newest first and holding a pause mutation in flight.
