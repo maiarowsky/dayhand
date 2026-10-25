@@ -57,6 +57,12 @@ extension AppModel {
     /// Today's sections with only the tasks the search matches.
     var searchedToday: TodaySections { sections.filter(matchesSearch) }
 
+    /// The line in Today's section when it lists no task; none while a search may be hiding them.
+    var todayPlaceholder: String? {
+        guard search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, sections.today.isEmpty else { return nil }
+        return sections.overdue.isEmpty && sections.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today.")
+    }
+
     /// The done tasks (the latest first) and the archived ones of the Done place, at most 50 each.
     var doneAndArchived: (done: [TaskItem], archived: [TaskItem]) {
         let shown = tasks.filter { !$0.inTrash && matchesSearch($0) }

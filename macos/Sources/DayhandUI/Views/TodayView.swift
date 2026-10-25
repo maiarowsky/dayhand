@@ -16,7 +16,7 @@ struct TodayView: View {
                 .padding(.horizontal, Metrics.gutter)
                 .padding(.vertical, 8)
             if s.isEmpty && s.done.isEmpty {
-                if model.search.isEmpty {
+                if model.search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     EmptyToday()
                 } else {
                     PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
@@ -38,9 +38,8 @@ struct TodayView: View {
                         }
                     }
                     Section(tr("Today")) {
-                        if s.today.isEmpty {
-                            Text(s.overdue.isEmpty && s.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today."))
-                                .foregroundStyle(.secondary)
+                        if let placeholder = model.todayPlaceholder {
+                            Text(placeholder).foregroundStyle(.secondary)
                         }
                         ForEach(s.today) { task in
                             TaskRow(task: task, today: s.date, showsDay: false).tag(task.localId)

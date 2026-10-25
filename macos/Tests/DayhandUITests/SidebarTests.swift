@@ -112,8 +112,16 @@ struct SidebarTests {
         model.search = "xyz"
         #expect(!model.sections.isEmpty)
         #expect(model.searchedToday.isEmpty && model.searchedToday.done.isEmpty)
+        #expect(model.todayPlaceholder == nil)
         model.search = "inv"
         #expect(model.searchedToday.overdue.map(\.title) == ["Invoice"] && model.searchedToday.today.isEmpty)
+        #expect(model.todayPlaceholder == nil)
+        model.search = ""
+        #expect(model.todayPlaceholder == nil)
+        let milk = try #require(model.tasks.first { $0.title == "Milk" })
+        model.moveToTrash(milk.localId)
+        try await eventually { model.sections.today.isEmpty }
+        #expect(model.todayPlaceholder == "Nothing else planned for today.")
     }
 
     @Test func aTaskDroppedOnAProjectMovesThereAndOnNoProjectLeavesIt() async throws {
