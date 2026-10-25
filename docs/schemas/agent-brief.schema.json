@@ -18,6 +18,7 @@
         "claims",
         "approvals",
         "ready",
+        "projects",
         "nextSteps"
       ],
       "properties": {
@@ -421,6 +422,29 @@
               "description": "The first 10",
               "items": {
                 "$ref": "task-brief.schema.json"
+              }
+            }
+          }
+        },
+        "projects": {
+          "type": "object",
+          "required": [
+            "count",
+            "items"
+          ],
+          "description": "The projects that are not archived, in menu order, with the counts of their tasks (since 0.13.1)",
+          "properties": {
+            "count": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "How many in all"
+            },
+            "items": {
+              "type": "array",
+              "maxItems": 10,
+              "description": "The first 10",
+              "items": {
+                "$ref": "project-counted.schema.json"
               }
             }
           }

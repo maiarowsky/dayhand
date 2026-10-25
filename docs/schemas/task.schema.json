@@ -129,7 +129,12 @@
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Free tags across projects; the task's project is projectId"
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Id of the task's project (since 0.13.0); missing when it is in none"
     },
     "links": {
       "type": "array",

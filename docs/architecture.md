@@ -116,9 +116,9 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 ## Projects
 
-Backend 0.13.0 adds projects in `convex/lib/projectOps.ts` and `convex/app.ts`. This is backend
-support only: dedicated project MCP tools and REST routes, CLI commands and project menus in the
-apps are not implemented yet. Existing task tools already accept [project selectors](mcp.md#projects);
+Backend 0.13.0 adds projects in `convex/lib/projectOps.ts` and `convex/app.ts`; 0.13.1 exposes
+[project tools over MCP](mcp.md#projects) and [REST routes](api.md#projects). Dedicated CLI commands
+and project menus in the apps are not implemented yet. Task tools accept project selectors;
 [JSON import](api.md#import) and [Backlog.md transfer](backlog-md.md#using-it) can carry projects.
 
 A task has at most one project; an absent `tasks.projectId` means no project. Labels remain free

@@ -37,7 +37,7 @@
       "items": {
         "$ref": "task.schema.json"
       },
-      "description": "The tasks created, dependencies first"
+      "description": "The tasks created, dependencies first; with projectId each is in that project (since 0.13.0)"
     },
     "skipped": {
       "type": "array",

@@ -1,7 +1,6 @@
 // MCP resources and prompts. Resources give an agent context without a tool
-// call (the Today screen, one task, how to work with Dayhand); prompts start the
-// three routines of a day plan. Both read through the same domain queries as
-// the tools.
+// call (Today, projects, one task, how to work with Dayhand); prompts start
+// day-plan routines. Both read through the same domain queries as the tools.
 import { internal } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
 import type { Identity } from "./core";
@@ -14,6 +13,13 @@ export const RESOURCES = [
     name: "today",
     title: "Today",
     description: "The Today screen as list_today returns it: overdue, today, done today and the now task.",
+    mimeType: "application/json",
+  },
+  {
+    uri: "dayhand://projects",
+    name: "projects",
+    title: "Projects",
+    description: "The active projects in menu order as list_projects returns them, each with task counts, and counts of tasks without a project.",
     mimeType: "application/json",
   },
   {
@@ -91,6 +97,10 @@ export async function readResource(ctx: ActionCtx, identity: Identity, uri: stri
   if (name === "dayhand://today") {
     const today = await ctx.runQuery(internal.ops.listToday, { ...identity, at: Date.now() });
     return { uri, mimeType: "application/json", text: JSON.stringify(today, null, 2) };
+  }
+  if (name === "dayhand://projects") {
+    const projects = await ctx.runQuery(internal.ops.listProjects, { ...identity, at: Date.now() });
+    return { uri, mimeType: "application/json", text: JSON.stringify(projects, null, 2) };
   }
   const activity = /^dayhand:\/\/activity(?:\?since=([^&#]*))?$/.exec(name);
   if (activity) {
@@ -185,6 +195,7 @@ export async function getPrompt(ctx: ActionCtx, identity: Identity, name: string
             `2. Open loops: call list_all with overdue: true, then list_all with status ["doing"]; ask what to do with each.\n` +
             `3. Next week: call list_all with dueAfter "${addDays(today, -1)}" and dueBefore "${addDays(today, 8)}"; point out overloaded days and offer to move tasks.\n` +
             `4. Without a day: call list_all with status ["todo"] and offer a day for the tasks that have no dueDate.\n` +
+            "5. Projects: call list_projects; for a project with overdue tasks or none open, ask whether to plan its next step or archive it (update_project with archived: true), and offer a project for open tasks without one.\n" +
             SAFE_CHANGES,
         ),
       ],

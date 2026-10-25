@@ -48,7 +48,14 @@ including an archived project, and sets `config.yml`'s `project_name` to its nam
 tasks outside the selected project are left out and counted in `notes`. Without `projectId`,
 export includes the whole plan and uses `Dayhand export` as the configuration's project name.
 A configuration's `project_name` does not create a Dayhand project on import. These selectors are
-not CLI flags yet; for project creation and client availability see [architecture](architecture.md#projects).
+not CLI flags yet. Create a project with `add_project` (MCP) or `POST /api/v1/projects` (REST),
+then pass its id or name explicitly; the backend never guesses a project from `project_name`.
+For example, MCP `export_backlog {"projectId":"Bakery site"}` exports only that project;
+REST `GET /api/v1/export/backlog?projectId=Bakery%20site` does the same. On import, send
+`{"files":[{"path":"tasks/task-1 - Menu.md","content":"…"}],"projectId":"Bakery site"}` to
+`import_backlog` or `POST /api/v1/import/backlog`. `"none"` imports without a project;
+selecting an archived destination fails. The result's `tasks` include the stored `projectId`.
+See [project tools and permissions](mcp.md#projects) and [client availability](architecture.md#projects).
 
 ## The file format
 

@@ -61,6 +61,7 @@ const views = "Views";
 const settings = "Settings";
 const approvals = "Approvals";
 const agents = "Agents";
+const projects = "Projects";
 
 export const TOOL_ROUTES: ToolRoute[] = [
   { method: "GET", path: "/tasks", tool: "list_all", input: "query", operationId: "listTasks", tag: task, scope: "read", summary: "Find tasks (search, filters, pages)" },
@@ -102,6 +103,17 @@ export const TOOL_ROUTES: ToolRoute[] = [
     method: "POST", path: "/tasks/{taskId}/reject", tool: "reject_proposal", input: "body", operationId: "rejectProposal", tag: task, scope: "write", etag: true, ifMatch: true,
     summary: "Reject a proposal: it goes to the trash (the owner: a cli key)",
   },
+  // Since 0.13.1: projects. No ETag or If-Match: the last change wins.
+  { method: "GET", path: "/projects", tool: "list_projects", input: "query", operationId: "listProjects", tag: projects, scope: "read", summary: "Projects in menu order, with the counts of their tasks" },
+  { method: "POST", path: "/projects", tool: "add_project", input: "body", operationId: "createProject", tag: projects, scope: "write", status: 201, summary: "Add a project (fromLabel makes it from a label)" },
+  {
+    method: "PATCH", path: "/projects/{projectId}", tool: "update_project", input: "body", operationId: "updateProject", tag: projects, scope: "write",
+    summary: "Change, archive or restore a project (JSON Merge Patch: null clears a field)",
+  },
+  {
+    method: "DELETE", path: "/projects/{projectId}", tool: "delete_project", input: "body", operationId: "deleteProject", tag: projects, scope: "write",
+    summary: "Delete a project; moveTasksTo says where its tasks go (the owner: a cli key)",
+  },
   { method: "GET", path: "/approvals", tool: "list_approvals", input: "query", operationId: "listApprovals", tag: approvals, scope: "read", summary: "Approval requests, newest first" },
   { method: "POST", path: "/approvals", tool: "request_approval", input: "body", operationId: "requestApproval", tag: approvals, scope: "write", status: 201, summary: "Ask the owner to decide before doing something" },
   { method: "GET", path: "/approvals/{approvalId}", tool: "get_approval", input: "query", operationId: "getApproval", tag: approvals, scope: "read", summary: "One approval request and its decision" },
@@ -112,7 +124,7 @@ export const TOOL_ROUTES: ToolRoute[] = [
   { method: "GET", path: "/agents", tool: "get_agent_controls", input: "query", operationId: "getAgentControls", tag: agents, scope: "read", summary: "Whether agents are paused, and the tool policies" },
   { method: "POST", path: "/agents/pause", tool: "pause_agents", input: "body", operationId: "pauseAgents", tag: agents, scope: "write", summary: "Pause or resume every agent (the owner: a cli key)" },
   { method: "POST", path: "/agents/policies", tool: "set_tool_policy", input: "body", operationId: "setToolPolicy", tag: agents, scope: "write", summary: "Set one agent key's rule for a tool (the owner: a cli key)" },
-  { method: "GET", path: "/brief", tool: "agent_brief", input: "query", operationId: "getAgentBrief", tag: views, scope: "read", summary: "The agent brief: Today, claims, approvals, ready tasks, next steps" },
+  { method: "GET", path: "/brief", tool: "agent_brief", input: "query", operationId: "getAgentBrief", tag: views, scope: "read", summary: "The agent brief: Today, claims, approvals, ready tasks, projects, next steps" },
   {
     method: "POST", path: "/import/backlog", tool: "import_backlog", input: "body", operationId: "importBacklog", tag: task, scope: "write",
     summary: "Import Backlog.md task files (dryRun=true shows what would happen)",
@@ -185,10 +197,14 @@ export const HANDLER_ROUTES: HandlerRoute[] = [
     body: {
       content: v.string(),
       format: v.optional(v.union(v.literal("auto"), v.literal("dayhand-json"), v.literal("helm-json"), v.literal("ics"), v.literal("todoist-csv"))),
+      // Since 0.13.0, checked by restImport.ts.
+      projectId: v.optional(v.string()),
     },
     docs: {
       content: "The file's text: Dayhand's JSON export, an iCalendar file (VTODO, VEVENT) or a Todoist CSV export.",
       format: "auto (default: recognised from the content), dayhand-json (also its old name helm-json), ics or todoist-csv.",
+      projectId:
+        'The project (its id or its name, any case) for every task the file leaves without one; "none" keeps them without a project. Not an archived project. Projects named in a Dayhand JSON file take precedence (since 0.13.0).',
     },
     summary: "Import a plan from Dayhand JSON, iCalendar or Todoist CSV",
     description:

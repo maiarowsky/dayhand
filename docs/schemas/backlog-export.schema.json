@@ -40,11 +40,11 @@
           "type": "string"
         }
       },
-      "description": "config.yml with the statuses To Do, In Progress and Done"
+      "description": "config.yml with the statuses To Do, In Progress and Done; project_name is the project's name with projectId (since 0.13.0), else Dayhand export"
     },
     "files": {
       "type": "array",
-      "description": "One file per task: tasks/, drafts/ (proposals), archive/tasks/ (archived tasks) or archive/drafts/ (archived proposals)",
+      "description": "One file per task: tasks/, drafts/ (proposals), archive/tasks/ (archived tasks) or archive/drafts/ (archived proposals); with projectId only that project's tasks",
       "items": {
         "allOf": [
           {

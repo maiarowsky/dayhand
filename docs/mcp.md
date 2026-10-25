@@ -39,7 +39,7 @@ as `"#42"`.
 `tools/list` returns the tools in this order. Tools marked O are the owner's: only the app and
 `cli` keys may call them, and `tools/list` leaves them out for agents (agent keys and agent
 connections; since 0.11.0). Read-only tools are marked R, destructive ones D
-(`destructiveHint`); every change except `add_task` is idempotent (`idempotentHint`: repeating
+(`destructiveHint`); every change except `add_task` and `add_project` is idempotent (`idempotentHint`: repeating
 it with the same arguments changes nothing more), and no tool reaches outside Dayhand
 (`openWorldHint: false`). Each tool also has a `title`.
 
@@ -56,6 +56,10 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `restore_task` | Restore task | | `task` | Restore from the trash, or from the archive |
 | `list_today` | Today | R | `today` | Overdue, today, done today and the now task; optional [project filter](#projects) |
 | `list_all` | Find tasks | R | `task-list` | Tasks not in the trash: search, filters and pages ([below](#finding-tasks-list_all)) |
+| `list_projects` | Projects | R | `project-list` | Projects in menu order, with task counts; `includeArchived`, `at` ([below](#projects)) |
+| `add_project` | Add project | | `project-added` | Add a project; `fromLabel` moves unassigned tasks with that label into it |
+| `update_project` | Update project | | `project` | Rename, change metadata or position, archive or restore |
+| `delete_project` | Delete project | O, D | `project-delete` | Delete a project, moving its tasks to `moveTasksTo` when it has any |
 | `list_trash` | Trash | R | `task-list` | Tasks in the trash |
 | `board` | Board | R | `board` | Three columns: todo, doing, done; optional [project filter](#projects) |
 | `get_task` | Task with history | R | `task-detail` | One task with its change history |
@@ -76,7 +80,7 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `accept_proposal` | Accept proposal | O | `task` | A proposal joins the plan ([below](#proposals)) |
 | `merge_proposal` | Merge proposal | O | `merge` | Fold a proposal into a task already in the plan (`intoTaskId`) |
 | `reject_proposal` | Reject proposal | O, D | `task` | Move a proposal to the trash, optionally with a `reason` |
-| `agent_brief` | Agent brief | R | `agent-brief` | Start of a session: `list_today` plus claims, approvals, ready tasks and `nextSteps` ([below](#agent-brief-agent_brief)) |
+| `agent_brief` | Agent brief | R | `agent-brief` | Start of a session: `list_today` plus claims, approvals, ready tasks, projects and `nextSteps` ([below](#agent-brief-agent_brief)) |
 | `import_backlog` | Import Backlog.md tasks | | `backlog-import` | Backlog.md task files (`files: [{path, content}]`) as tasks, a file imported before skipped ([backlog-md.md](backlog-md.md)) |
 | `export_backlog` | Export as Backlog.md | R | `backlog-export` | The plan as Backlog.md task files and a `config.yml` ([parameters](backlog-md.md#using-it)) |
 | `plan_health` | Plan health | R | `plan-health` | What needs a look, in one read ([below](#plan-health-plan_health)) |
@@ -130,7 +134,51 @@ project the task is already in. Unknown projects return `not_found`.
 `list_all`, `list_today` and `board` take the same optional `projectId` selector: one project's
 tasks, `"none"` for tasks without a project, or omit it for all projects. The filter applies to
 every part of Today, including the now task and done today. Other filters and pagination still
-apply. Project CRUD and client availability are described in [architecture](architecture.md#projects).
+apply.
+
+Backend 0.13.1 exposes four project tools:
+
+| Tool | Arguments | Result |
+|---|---|---|
+| `list_projects` | `includeArchived?` (default false), `at?` (Unix ms, default now) | `{ result: [project with counts], noProject: { open, overdue } }` |
+| `add_project` | `name`, `color?`, `icon?`, `note?`, `position?`, `fromLabel?`, `removeLabel?`, `clientId?`, `dryRun?`, `approvalId?` | `{ project, moved: [{ id, ref }], skipped: [{ id, ref, projectId?, reason }] }` |
+| `update_project` | `projectId` (id or name), `name?`, `color?`, `icon?`, `note?`, `position?`, `archived?`, `clientId?`, `dryRun?`, `approvalId?` | The updated project |
+| `delete_project` | `projectId`, `moveTasksTo?` (another project or `"none"`), `clientId?`, `dryRun?` | `{ project, moved: [{ id, ref }] }` |
+
+A project has `id`, `name`, `position`, `archived`, `createdAt`, `updatedAt`, and optional `color`,
+`icon`, `note`, `archivedAt`, `clientId`; unset fields are omitted, not `null`. Lists are ordered
+by `position`, then creation time. `list_projects` adds `counts: { open, overdue, dueToday, done }`.
+These counts exclude archived tasks, trashed tasks and proposals; `overdue` and `dueToday` count
+only open tasks, in the user's time zone. `noProject` counts open and overdue tasks without a project.
+
+- Names are trimmed and NFC-normalized, 1–50 characters on one line, unique regardless of case
+  among all the user's projects, archived ones too. `"none"` is reserved.
+- `color`: `red`, `orange`, `amber`, `green`, `teal`, `cyan`, `blue`, `indigo`, `purple`, `pink`,
+  `brown` or `gray`; absent means neutral. `icon` is one emoji (up to 16 UTF-16 code units).
+  `note` is context for people and agents (up to 2000 characters).
+- New projects go to the end of the menu unless `position` is given. To reorder one, pass a
+  position between its neighbors. At most 200 projects, including archived ones.
+- `update_project` with `color`, `icon` or `note` set to `null` clears that field. `archived: true`
+  archives the project, not its tasks; `false` restores it. Its tasks remain in Today and the board.
+- `add_project { name, fromLabel }` moves tasks with that exact label and no project, in any state.
+  `removeLabel: true` removes the label only from moved tasks; by default it stays. Tasks already
+  in a project or claimed by another agent are listed in `skipped` with a reason. A dry run shows
+  the result without storing anything. No label is converted automatically.
+- Only the owner (`cli` key) may `delete_project`; agent keys and OAuth connections neither see
+  nor call it. When any task points at the project, including done, archived, trashed tasks and
+  proposals, omitting `moveTasksTo` fails with `precondition_failed` and task counts. Each moved
+  task gets a history entry and `task.updated` webhook; no task is deleted. A call can move at
+  most 1000 tasks, also for `fromLabel`.
+
+Agents may add and update projects by default, like tasks. Both tools obey the owner's pause and
+`allow/ask/deny` policies (`ask` returns `approval_required`). `list_projects` needs `tasks:read`,
+the three changes `tasks:write`; a read-only token sees only `list_projects` among these four.
+`dayhand://projects` gives the default list. The guide explains projects versus labels, and
+`weekly_review` includes a project review.
+
+Project changes themselves do not appear in `list_events` or emit `project.*` webhooks; read the
+catalog again for changes to names, colors and notes. The REST routes have no project ETag or
+`If-Match`: the last write wins. Client availability is in [architecture](architecture.md#projects).
 
 ### Export formats
 
@@ -255,8 +303,9 @@ caller's own key other than `allow`), `claims.active` and `claims.expired` (each
 `claimedBy`, `claimExpiresAt` and `mine`), `approvals.pending` (every request waiting, `mine` when the
 caller asked) and `approvals.decided` (the caller's requests decided in the last 24 hours, with the
 `decision`), `ready` (tasks ready to work on that no other agent holds, soonest due first), each
-`{ count, items }` with the first 10; and `nextSteps`, sentences most pressing first that name the
-tools and the [phase guides](#resources) to use ([schema](schemas/agent-brief.schema.json)). While
+`{ count, items }` with the first 10; `projects` (since 0.13.1), also `{ count, items }`, with the
+first 10 active projects in menu order, their notes and task counts as in `list_projects`; and
+`nextSteps`, sentences most pressing first that name the tools and the [phase guides](#resources) to use ([schema](schemas/agent-brief.schema.json)). While
 agents are paused, `nextSteps` says only that.
 
 ### Backlog.md (`import_backlog`, `export_backlog`)
@@ -281,6 +330,7 @@ the [limits](#limits).
 | URI | Type | Content |
 |---|---|---|
 | `dayhand://today` | `application/json` | `list_today` |
+| `dayhand://projects` | `application/json` | `list_projects` (active projects and task counts; since 0.13.1) |
 | `dayhand://activity` | `application/json` | `list_events` without `since`: the newest changes and the cursor to follow from |
 | `dayhand://activity{?since}` (template) | `application/json` | `list_events` with `since`, e.g. `dayhand://activity?since=c1793011200000123` |
 | `dayhand://guide` | `text/markdown` | How an agent should work with Dayhand: numbers, the now task, retries, dry runs, limits |
@@ -289,7 +339,7 @@ the [limits](#limits).
 | `dayhand://workflow/finalization` | `text/markdown` | Phase 3: check the criteria, complete with proof, ask the owner for the last step, or hand back |
 | `dayhand://tasks/{ref}` (template) | `application/json` | `get_task` of task `#ref`, e.g. `dayhand://tasks/42` |
 
-`resources/list` returns the six without a template, `resources/templates/list` the two templates. The `helm://`
+`resources/list` returns the seven without a template, `resources/templates/list` the two templates. The `helm://`
 URIs of the same resources, from before the rename, can still be read. Reading a
 resource that does not exist (also a task number that does not) is a JSON-RPC error with
 `data: { "uri" }`: `-32602` on 2026-07-28, `-32002` on 2025 revisions.
@@ -299,7 +349,7 @@ resource that does not exist (also a task number that does not) is a JSON-RPC er
 | Prompt | Arguments | What it starts |
 |---|---|---|
 | `plan_day` | `focus` (optional) | Go through overdue and today's tasks, agree on an order and set the now task; the Today screen is attached as the resource `dayhand://today` |
-| `weekly_review` | | Look back at the last 7 days (board's done column) and ahead at the next 7 (`list_all` with dates), then tidy the plan |
+| `weekly_review` | | Look back at the last 7 days (board's done column) and ahead at the next 7 (`list_all` with dates), then review projects and tidy the plan |
 | `triage_overdue` | | Decide, task by task, what happens to each overdue task; the overdue tasks are attached |
 | `plan_health` | | Go through what needs a look, most urgent first; the `plan_health` report is attached (since 0.11.0) |
 
@@ -311,7 +361,7 @@ larger changes with `dryRun`. An unknown prompt or argument is a JSON-RPC error 
 Each API key, and each agent connection (OAuth), may make 120 reads and 60 changes a minute
 (`convex/callLimits.ts`). The minute
 starts with the first call; reads and changes are counted apart. Reads are tool calls of
-read-only tools, `resources/read` of `dayhand://today`, `dayhand://activity…` and `dayhand://tasks/…`, and `prompts/get`;
+read-only tools, `resources/read` of `dayhand://today`, `dayhand://projects`, `dayhand://activity…` and `dayhand://tasks/…`, and `prompts/get`;
 listing tools, resources and prompts, `server/discover`, `dayhand://guide` and the `dayhand://workflow/…` guides are not counted.
 
 A call over the limit is refused before it runs, so nothing is applied:
@@ -393,10 +443,10 @@ for people; `structuredContent.error` holds the same message and a code for prog
 | Code | Meaning | Example message |
 |---|---|---|
 | `invalid_argument` | Wrong or missing arguments, or an operation the task's state does not allow | `dueDate must be YYYY-MM-DD, "today" or "tomorrow", got "someday"`; `Invalid arguments: taskId must be a task id or "#<number>", got "nope"`; `Task is in the trash; restore it first` |
-| `not_found` | No such task (or API key, device) for this user | `Task #404 not found` |
+| `not_found` | No such task, project, API key or device for this user | `Task #404 not found` |
 | `rate_limited` | Too many calls with this key or connection; `retryAfterMs` says when to try again | `Too many changes with this API key: at most 60 a minute. Try again in 12 s.` |
 | `unauthenticated` | Reserved for identity errors inside a tool; a missing, wrong or revoked key or token gets HTTP 401 before any tool runs | |
-| `precondition_failed` | The task's state does not allow the change yet: an agent completing a task with unmet acceptance criteria or without a proof summary, `renew_claim` without a claim of yours; through the REST API also `If-Match` naming a version the task is no longer at ([api.md](api.md#idempotency-versions-and-dry-runs)) | `Acceptance criteria not met: a2; mark them met with update_task first`; `The task has changed since that version (it is now "1793011200000"); read it again` |
+| `precondition_failed` | The task's state does not allow the change yet: an agent completing a task with unmet acceptance criteria or without a proof summary, `renew_claim` without a claim of yours, deleting a non-empty project without `moveTasksTo`; through the REST API also `If-Match` naming a version the task is no longer at ([api.md](api.md#idempotency-versions-and-dry-runs)) | `Acceptance criteria not met: a2; mark them met with update_task first`; `The task has changed since that version (it is now "1793011200000"); read it again` |
 | `conflict` | Another agent holds the task's claim ([Claims](#claims)); pick another task or wait for the time named | `Task #42 is claimed by claude-code until 2026-10-24T14:30:00.000Z` |
 | `agents_paused` | The owner paused every agent; reading works, changes wait until they resume (since 0.11.0) | `The owner has paused all agents (holiday): reading works, changes are refused until they resume agents` |
 | `forbidden` | Only the owner may do this, or the owner's policy denies the tool to this key, or the owner denied the approval (since 0.11.0) | `Only the owner can accept proposals (in the app or with a cli key)`; `The owner's policy does not let this key call delete_task` |
