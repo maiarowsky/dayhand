@@ -302,6 +302,26 @@
 			<string>%lld razy, łącznie z tym</string>
 		</dict>
 	</dict>
+	<key>+%lld more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>+%lld kolejne</string>
+			<key>many</key>
+			<string>+%lld kolejnych</string>
+			<key>one</key>
+			<string>+%lld kolejne</string>
+			<key>other</key>
+			<string>+%lld kolejnego</string>
+		</dict>
+	</dict>
 	<key>At most %lld reminders.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

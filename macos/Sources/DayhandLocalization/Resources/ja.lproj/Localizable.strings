@@ -110,8 +110,8 @@
 	<string>青</string>
 	<key>Board</key>
 	<string>ボード</string>
-	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
-	<string>ボードまたはリスト（⌃⌘1、⌃⌘2）</string>
+	<key>Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)</key>
+	<string>ボード、プラン、リスト（⌃⌘1、⌃⌘2、⌃⌘3）</string>
 	<key>Brown</key>
 	<string>茶色</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -248,6 +248,8 @@
 	<string>ダウンロード中…</string>
 	<key>Downloading… %lld%%</key>
 	<string>ダウンロード中… %lld%%</string>
+	<key>Drag to the calendar</key>
+	<string>カレンダーへドラッグ</string>
 	<key>Due</key>
 	<string>期限</string>
 	<key>Edit Project</key>
@@ -266,6 +268,8 @@
 	<string>間隔</string>
 	<key>Every task is in a project.</key>
 	<string>すべてのタスクがプロジェクトに入っています。</string>
+	<key>Fold the tasks</key>
+	<string>タスクを折りたたむ</string>
 	<key>Frequency</key>
 	<string>頻度</string>
 	<key>From %@</key>
@@ -386,6 +390,8 @@
 	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
+	<key>Next week</key>
+	<string>次の週</string>
 	<key>No Day</key>
 	<string>日付なし</string>
 	<key>No Project</key>
@@ -478,6 +484,8 @@
 	<string>Dayhand を開く</string>
 	<key>Open System Settings</key>
 	<string>システム設定を開く</string>
+	<key>Open Task</key>
+	<string>タスクを開く</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>文字ビューアを開きます（⌃⌘スペース）</string>
 	<key>Options: %@</key>
@@ -500,6 +508,8 @@
 	<string>アップデートを準備中…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>プレビュー版はリリース前の版で、未完成な部分があるかもしれません。</string>
+	<key>Previous week</key>
+	<string>前の週</string>
 	<key>Project</key>
 	<string>プロジェクト</string>
 	<key>Project actions</key>
@@ -598,6 +608,8 @@
 	<string>システム（%@）</string>
 	<key>Task</key>
 	<string>タスク</string>
+	<key>Tasks</key>
+	<string>タスク</string>
 	<key>Teal</key>
 	<string>ティール</string>
 	<key>That is not a date.</key>
@@ -688,6 +700,8 @@
 	<string>新しいタスクは追加できません。既存のタスクはそのまま残ります。</string>
 	<key>This Mac</key>
 	<string>この Mac</string>
+	<key>This Week</key>
+	<string>今週</string>
 	<key>This version</key>
 	<string>このバージョン</string>
 	<key>Tick %@</key>
@@ -722,6 +736,8 @@
 	<string>入力して絞り込み</string>
 	<key>Unarchive</key>
 	<string>アーカイブ解除</string>
+	<key>Unfold the tasks</key>
+	<string>タスクを展開する</string>
 	<key>Untick %@</key>
 	<string>チェックを外す：%@</string>
 	<key>Update and Relaunch</key>

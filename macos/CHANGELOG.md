@@ -24,8 +24,11 @@ latest one below).
   toolbar and quick add into the list's project.
 - **Board**: Today and every list as three status columns (To do, In progress, Done) with line icons and counts,
   cards with the project and chips for the day, labels and the checklist, a card menu, drag between columns to
-  change the status, and the task panel along the bottom. The toolbar's Board | List switcher (⌃⌘1, ⌃⌘2) is kept
-  between launches.
+  change the status, and the task panel along the bottom.
+- **Plan**: the week of Today or of a list as a grid of days and hours, task blocks with the project's colour, a
+  block's popover with Open Task, and a folding Tasks drawer of status columns along the bottom: dragging a task
+  onto an hour sets its day and time (by the half hour), onto a day's top only its day, onto a project in the
+  sidebar its project. The toolbar's Board | Plan | List switcher (⌃⌘1, ⌃⌘2, ⌃⌘3) is kept between launches.
 
 ### Changed
 

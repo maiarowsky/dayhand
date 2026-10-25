@@ -242,6 +242,22 @@
 			<string>%lld vezes, contando esta</string>
 		</dict>
 	</dict>
+	<key>+%lld more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>+%lld outra</string>
+			<key>other</key>
+			<string>+%lld outras</string>
+		</dict>
+	</dict>
 	<key>At most %lld reminders.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

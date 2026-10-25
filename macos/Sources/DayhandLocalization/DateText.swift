@@ -18,6 +18,13 @@ public enum DateText {
         return formatter("EEEEdMMMMyyyy").string(from: instant)
     }
 
+    /// "26 October" ("26 października", "10月26日") for a civil date "YYYY-MM-DD"; the date as it is when it is not one.
+    public static func dayAndMonth(_ date: String) -> String {
+        let parts = date.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3, let instant = utcCalendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2])) else { return date }
+        return formatter("dMMMM").string(from: instant)
+    }
+
     /// A wall-clock time "HH:mm" as the region writes it: "14:00", or "2:00 PM" where clocks have 12 hours. Anything
     /// else is returned as it is.
     public static func time(_ time: String) -> String {

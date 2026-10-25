@@ -110,8 +110,8 @@
 	<string>Blue</string>
 	<key>Board</key>
 	<string>Board</string>
-	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
-	<string>Board or list (⌃⌘1, ⌃⌘2)</string>
+	<key>Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)</key>
+	<string>Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)</string>
 	<key>Brown</key>
 	<string>Brown</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -248,6 +248,8 @@
 	<string>Downloading…</string>
 	<key>Downloading… %lld%%</key>
 	<string>Downloading… %lld%%</string>
+	<key>Drag to the calendar</key>
+	<string>Drag to the calendar</string>
 	<key>Due</key>
 	<string>Due</string>
 	<key>Edit Project</key>
@@ -266,6 +268,8 @@
 	<string>Every how many</string>
 	<key>Every task is in a project.</key>
 	<string>Every task is in a project.</string>
+	<key>Fold the tasks</key>
+	<string>Fold the tasks</string>
 	<key>Frequency</key>
 	<string>Frequency</string>
 	<key>From %@</key>
@@ -386,6 +390,8 @@
 	<string>New task (⌘N, or the quick add shortcut from any app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>New task, e.g. Call the accountant fri 2pm</string>
+	<key>Next week</key>
+	<string>Next week</string>
 	<key>No Day</key>
 	<string>No Day</string>
 	<key>No Project</key>
@@ -478,6 +484,8 @@
 	<string>Open Dayhand</string>
 	<key>Open System Settings</key>
 	<string>Open System Settings</string>
+	<key>Open Task</key>
+	<string>Open Task</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Opens the Character Viewer (⌃⌘Space)</string>
 	<key>Options: %@</key>
@@ -500,6 +508,8 @@
 	<string>Preparing the update…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Previews come before a release and may have rough edges.</string>
+	<key>Previous week</key>
+	<string>Previous week</string>
 	<key>Project</key>
 	<string>Project</string>
 	<key>Project actions</key>
@@ -598,6 +608,8 @@
 	<string>System (%@)</string>
 	<key>Task</key>
 	<string>Task</string>
+	<key>Tasks</key>
+	<string>Tasks</string>
 	<key>Teal</key>
 	<string>Teal</string>
 	<key>That is not a date.</key>
@@ -688,6 +700,8 @@
 	<string>They take no new tasks; their tasks stay in them.</string>
 	<key>This Mac</key>
 	<string>This Mac</string>
+	<key>This Week</key>
+	<string>This Week</string>
 	<key>This version</key>
 	<string>This version</string>
 	<key>Tick %@</key>
@@ -722,6 +736,8 @@
 	<string>Type to filter</string>
 	<key>Unarchive</key>
 	<string>Unarchive</string>
+	<key>Unfold the tasks</key>
+	<string>Unfold the tasks</string>
 	<key>Untick %@</key>
 	<string>Untick %@</string>
 	<key>Update and Relaunch</key>

@@ -31,15 +31,15 @@ enum WindowLayoutCheck {
     }
 
     /// What is wrong with the layout in each case (nothing when all is well).
-    static func run(_ root: some View) async throws -> [String] {
+    static func run(_ root: some View, quickAdd: Bool = true) async throws -> [String] {
         var problems: [String] = []
         for check in cases {
-            problems += try await layOut(root, check)
+            problems += try await layOut(root, check, quickAdd: quickAdd)
         }
         return problems
     }
 
-    static func layOut(_ root: some View, _ check: Case) async throws -> [String] {
+    static func layOut(_ root: some View, _ check: Case, quickAdd: Bool = true) async throws -> [String] {
         let controller = NSHostingController(rootView: root)
         controller.sizingOptions = []
         if #available(macOS 14, *) { controller.sceneBridgingOptions = [.toolbars, .title] }
@@ -57,15 +57,16 @@ enum WindowLayoutCheck {
             sidebar.isCollapsed = true
             try await settle(window)
         }
-        return problems(in: window, check)
+        return problems(in: window, check, quickAdd: quickAdd)
     }
 
-    /// The content's views stay inside the window, and quick add below the title bar.
-    static func problems(in window: NSWindow, _ check: Case) -> [String] {
+    /// The content's views stay inside the window, and quick add (where the view has it) below the title bar.
+    static func problems(in window: NSWindow, _ check: Case, quickAdd: Bool = true) -> [String] {
         guard let content = window.contentView else { return ["\(check.name): no content"] }
         var problems = content.subviews.filter { !content.bounds.insetBy(dx: -0.5, dy: -0.5).contains($0.frame) }.map {
             "\(check.name): the content is \(Int($0.frame.height)) pt tall in a window of \(Int(content.bounds.height)) pt"
         }
+        guard quickAdd else { return problems }
         let placeholder = tr("Add a task (try: Pay rent fri 9am)")
         guard let field = textFields(in: content).first(where: { $0.placeholderString == placeholder }) else {
             return problems + ["\(check.name): quick add is missing"]

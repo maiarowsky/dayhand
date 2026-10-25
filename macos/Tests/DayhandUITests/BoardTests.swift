@@ -4,7 +4,7 @@ import Foundation
 import Testing
 @testable import DayhandUI
 
-/// The board's columns, the view switcher's choice and where a new card may be added, through the app's model on a
+/// The board's columns, the view switcher (board, plan, list) and its choice and where a new card may be added, through the app's model on a
 /// database in memory.
 @MainActor
 struct BoardTests {
@@ -102,12 +102,13 @@ struct BoardTests {
         #expect(model.placeTakesTasks)
     }
 
-    @Test func theViewSwitcherRemembersBoardOrList() async throws {
+    @Test func theViewSwitcherOffersBoardPlanAndListAndRemembersTheChoice() async throws {
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
         let model = try makeModel(defaults)
         #expect(model.viewMode == .list)
-        model.viewMode = .board
-        #expect(try makeModel(defaults).viewMode == .board)
-        #expect(ViewMode.allCases.map(\.title) == ["Board", "List"])
+        model.viewMode = .plan
+        #expect(try makeModel(defaults).viewMode == .plan)
+        #expect(ViewMode.allCases.map(\.title) == ["Board", "Plan", "List"])
+        #expect(ViewMode.allCases.map(\.key) == ["1", "2", "3"])
     }
 }
