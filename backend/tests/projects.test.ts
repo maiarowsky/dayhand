@@ -90,6 +90,25 @@ describe("project names", () => {
     expect(cleared).not.toHaveProperty("note");
   });
 
+  test.each(["abc🥐", "🥐🥐"])("add and update reject an icon that is not one emoji: %s", async (icon) => {
+    const user = asUser(newUserId());
+    expect(await failure(user.mutation(internal.ops.addProject, { name: "Invalid", icon }))).toMatchObject({ code: "invalid_argument" });
+    expect(((await user.query(internal.ops.listProjects, {})) as any).result).toEqual([]);
+    const { project }: any = await user.mutation(internal.ops.addProject, { name: "Valid", icon: "🥐" });
+    expect(await failure(user.mutation(internal.ops.updateProject, { projectId: project.id, icon }))).toMatchObject({ code: "invalid_argument" });
+    expect(((await user.query(internal.ops.listProjects, {})) as any).result[0]).toMatchObject({ id: project.id, icon: "🥐" });
+  });
+
+  test("add and update accept keycaps, modifiers and joined emoji as one icon", async () => {
+    const user = asUser(newUserId());
+    for (const [index, icon] of ["1️⃣", "#️⃣", "👍🏽", "👩‍👩‍👧‍👦"].entries()) {
+      const { project }: any = await user.mutation(internal.ops.addProject, { name: `Emoji ${index}`, icon });
+      expect(project.icon).toBe(icon);
+      expect(await user.mutation(internal.ops.updateProject, { projectId: project.id, icon: "👩🏽‍💻" })).toMatchObject({ icon: "👩🏽‍💻" });
+      expect(await user.mutation(internal.ops.updateProject, { projectId: project.id, icon })).toMatchObject({ icon });
+    }
+  });
+
   test("new projects go last; position orders the list and archive takes a project out", async () => {
     const user = asUser(newUserId());
     for (const name of ["A", "B", "C"]) await user.mutation(internal.ops.addProject, { name });

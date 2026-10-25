@@ -16,7 +16,7 @@ import type { RestHandler } from "./rest";
 export const MAX_IMPORT = 2000;
 const KEY_LENGTH = 40;
 
-type BatchOutcome = { created: Record<string, unknown>[]; skipped: { title: string; reason: string }[]; failed: { title: string; message: string }[] };
+type BatchOutcome = { created: Record<string, unknown>[]; skipped: { title: string; reason: string }[]; failed: { title: string; message: string; projectKey?: string }[] };
 
 export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) => {
   const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format" && name !== "projectId");
@@ -47,15 +47,15 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
     ordered.map(async ({ source, ...task }) => ({ ...task, key: (await sha256Hex(`${KEY_NAME[format]}:${source}`)).slice(0, KEY_LENGTH) })),
   );
   const total: BatchOutcome = { created: [], skipped: [], failed: [] };
-  for (let start = 0; start < items.length; start += IMPORT_BATCH) {
+  const failedProjects = new Set<string>();
+  for (let start = 0; start < Math.max(items.length, 1); start += IMPORT_BATCH) {
     const batch = items.slice(start, start + IMPORT_BATCH);
     let outcome: BatchOutcome;
     try {
-      // The file's projects come with the first batch; later batches find them by name.
       outcome = await ctx.runMutation(internal.ops.importTasks as FunctionReference<"mutation", "internal">, {
         ...identity,
         items: batch,
-        ...(start === 0 && parsed.projects ? { projects: parsed.projects } : {}),
+        ...((start === 0 || dryRun) && parsed.projects ? { projects: parsed.projects } : {}),
         ...(projectId === undefined ? {} : { projectId }),
         dryRun,
       });
@@ -66,7 +66,10 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
     }
     total.created.push(...outcome.created);
     total.skipped.push(...outcome.skipped);
-    total.failed.push(...outcome.failed);
+    for (const { projectKey, ...failure } of outcome.failed) {
+      if (projectKey === undefined || !failedProjects.has(projectKey)) total.failed.push(failure);
+      if (projectKey !== undefined) failedProjects.add(projectKey);
+    }
   }
   return {
     body: {

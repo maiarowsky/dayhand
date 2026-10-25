@@ -151,7 +151,10 @@ export async function mergeProposal(ctx: MutationCtx, identity: Identity, input:
   const returnTo = union(into.returnTo ?? [], from.returnTo ?? [], (id) => id);
   if (returnTo.length) patch.returnTo = returnTo;
   if (into.source === undefined && from.source !== undefined) patch.source = from.source;
-  if (into.projectId === undefined && from.projectId !== undefined) patch.projectId = from.projectId;
+  if (into.projectId === undefined && from.projectId !== undefined) {
+    const project = await ctx.db.get(from.projectId);
+    if (project && project.userId === identity.userId && project.archivedAt === undefined) patch.projectId = project._id;
+  }
   const target = await patchTask(ctx, identity, into, "update", patch, input.clientId);
   const sources = await ctx.db
     .query("taskSources")

@@ -41,14 +41,17 @@ export function checkProjectName(name: string): string {
   return trimmed;
 }
 
-// One emoji: a pictograph, or a flag (two regional indicators), with its modifiers and joiners.
-const PICTOGRAPH = /\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]{2}/u;
+const EMOJI_COMPONENT = String.raw`(?:\p{Emoji_Modifier_Base}\uFE0F?\p{Emoji_Modifier}|\p{Extended_Pictographic}\uFE0F?)`;
+const EMOJI = new RegExp(
+  String.raw`^(?:[\u{1F1E6}-\u{1F1FF}]{2}|[#*0-9]\uFE0F?\u20E3|\u{1F3F4}[\u{E0061}-\u{E007A}]+\u{E007F}|${EMOJI_COMPONENT}(?:\u200D${EMOJI_COMPONENT})*)$`,
+  "u",
+);
 
 /** The icon as stored: one emoji (up to 16 UTF-16 code units, no spaces); empty = none. */
 export function checkIcon(icon: string): string | undefined {
   const value = icon.trim();
   if (value === "") return undefined;
-  if (value.length > PROJECT_LIMITS.icon || /\s/u.test(value) || !PICTOGRAPH.test(value)) {
+  if (value.length > PROJECT_LIMITS.icon || !EMOJI.test(value)) {
     fail("invalid_argument", `icon must be a single emoji (up to ${PROJECT_LIMITS.icon} UTF-16 code units, no spaces)`);
   }
   return value;

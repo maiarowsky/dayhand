@@ -248,6 +248,39 @@ describe("the plan health report", () => {
 });
 
 describe("proposals and projects (0.13.0)", () => {
+  test("merging a proposal from an archived project leaves an unassigned target without a project", async () => {
+    const { client: app } = await appClient();
+    const { project }: any = await app.mutation(api.app.addProject, { name: "P" });
+    const proposed: any = await app.mutation(api.app.add, { title: "Proposed", proposal: true, projectId: project.id });
+    const loose: any = await app.mutation(api.app.add, { title: "Loose" });
+    await app.mutation(api.app.updateProject, { projectId: project.id, archived: true });
+
+    const result: any = await app.mutation(api.app.mergeProposal, { taskId: proposed.id, intoTaskId: loose.id, clientId: "archived-merge" });
+    expect(result.task).not.toHaveProperty("projectId");
+    expect(result.task.note).toContain("Proposed");
+    expect(result.merged).toMatchObject({ id: proposed.id, deletedAt: expect.any(Number), mergedInto: loose.id, projectId: project.id });
+    expect((await app.query(api.app.getTask, { taskId: loose.id })).task).not.toHaveProperty("projectId");
+    const retry: any = await app.mutation(api.app.mergeProposal, { taskId: proposed.id, intoTaskId: loose.id, clientId: "archived-merge" });
+    expect(retry.task).not.toHaveProperty("projectId");
+  });
+
+  test("merging a proposal with a missing project leaves an unassigned target without a project", async () => {
+    const { client: app, userId } = await appClient();
+    const { project }: any = await app.mutation(api.app.addProject, { name: "Gone" });
+    await app.mutation(api.app.deleteProject, { projectId: project.id });
+    const now = Date.now();
+    await importRows("tasks", [{
+      userId, ref: 900, title: "Dangling proposal", proposedAt: now, projectId: project.id,
+      status: "todo", isNow: false, labels: [], links: [], createdAt: now, updatedAt: now,
+    }]);
+    const [proposed]: any[] = await app.query(api.app.listProposals, {});
+    const loose: any = await app.mutation(api.app.add, { title: "Loose" });
+    const result: any = await app.mutation(api.app.mergeProposal, { taskId: proposed.id, intoTaskId: loose.id });
+    expect(result.task).not.toHaveProperty("projectId");
+    expect(result.merged).toMatchObject({ id: proposed.id, mergedInto: loose.id });
+    expect((await app.query(api.app.getTask, { taskId: loose.id })).task).not.toHaveProperty("projectId");
+  });
+
   test("a proposal keeps its project when accepted; a merge keeps the target's project or gives it the proposal's", async () => {
     const { client: app, userId } = await appClient();
     const shop: any = (await app.mutation(api.app.addProject, { name: "Shop" })).project;

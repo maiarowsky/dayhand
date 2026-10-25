@@ -337,15 +337,18 @@ Older clients keep working: they ignore the field they do not know, and their ch
 what changed, so they never take a task out of its project.
 
 Rollback: 0.12.x's schema does not know `projectId`, so Convex refuses to deploy it while any task
-has one ("Object contains extra field `projectId`"). Turn the projects back into labels first:
+has one ("Object contains extra field `projectId`"). Turn the projects back into labels first.
+Every writer must be stopped: the apps, agents, REST and MCP clients. Keep them stopped from
+before starting `migrations:projectsToLabels` until 0.12.x is fully deployed, inclusive.
 
 1. `npx convex run migrations:projectsToLabels`: every task in a project gets a label with the
    project's name and loses its `projectId`, then the projects are deleted. A task that already
    has 20 labels keeps them and loses only the project; the deployment's logs name each one
-   (`npx convex logs`). Nothing enters the history. It works in batches and schedules itself;
-   `npx convex run migrations:status` shows `tasksWithProject: 0` and `projects: 0` when it is
-   done. Running it again changes nothing.
-2. Deploy 0.12.x.
+   (`npx convex logs`). Nothing enters the history. It works in batches and schedules itself.
+2. After it finishes, run `npx convex run migrations:projectsToLabels` again. Repeat after each
+   completed run until a call returns `done: true`, `cleared: 0` and `projectsDeleted: 0`, and
+   `npx convex run migrations:status` shows `tasksWithProject: 0` and `projects: 0`.
+3. Only then deploy 0.12.x. Keep every writer stopped until this deployment has finished.
 
 To go back to exactly the state before the upgrade instead, restore the snapshot from step 1,
 `npx convex import --replace-all dayhand-before-0.13.0.zip` (this also drops every change made

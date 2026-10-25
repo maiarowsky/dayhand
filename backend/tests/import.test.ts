@@ -5,7 +5,7 @@
 import { describe, expect, test } from "vitest";
 import { internal } from "../convex/_generated/api";
 import { detectFormat, parseCsv, readPlan, type ReadContext } from "../convex/lib/importFormats";
-import { admin, asUser, createKey, newUserId, openApiChecker, rest } from "./helpers";
+import { admin, asUser, createKey, importRows, newUserId, openApiChecker, rest } from "./helpers";
 
 const CONTEXT: ReadContext = { timezone: "Europe/London", today: "2026-11-02" }; // a Monday
 
@@ -246,6 +246,103 @@ describe("imports and projects (0.13.0)", () => {
       { name: "Old", archived: true },
     ]);
     expect(warnings).toContain("1 task(s) name a project that is not in the file; they are imported without a project");
+  });
+
+  test("a projects-only JSON export restores its catalog, while a dry run stores nothing", async () => {
+    const source = asUser(newUserId());
+    await source.mutation(internal.ops.addProject, { name: "Bakery", color: "amber", icon: "🥐", note: "Menu" });
+    await source.mutation(internal.ops.addProject, { name: "Old" });
+    await source.mutation(internal.ops.updateProject, { projectId: "Old", archived: true });
+    const exported: any = await source.query(internal.ops.exportPlan, { format: "json" });
+    const content = JSON.stringify(exported.content);
+    const target = await account();
+
+    const preview = await rest(target.key, "POST", "/import?dryRun=true", { body: { content } });
+    expect(preview.status).toBe(200);
+    expect(preview.body).toMatchObject({ total: 0, created: 0, skipped: [], failed: [] });
+    expect(((await target.user.query(internal.ops.listProjects, { includeArchived: true })) as any).result).toEqual([]);
+
+    const imported = await rest(target.key, "POST", "/import", { body: { content } });
+    expect(imported.status).toBe(200);
+    expect(imported.body).toMatchObject({ total: 0, created: 0, skipped: [], failed: [] });
+    const listed: any = await target.user.query(internal.ops.listProjects, { includeArchived: true });
+    expect(listed.result).toMatchObject([
+      { name: "Bakery", color: "amber", icon: "🥐", note: "Menu", archived: false },
+      { name: "Old", archived: true },
+    ]);
+    expect((await rest(target.key, "POST", "/import", { body: { content } })).body.failed).toEqual([]);
+    expect(((await target.user.query(internal.ops.listProjects, { includeArchived: true })) as any).result).toEqual(listed.result);
+  });
+
+  test("every preview batch reserves the catalog's capacity and reports project failures once", async () => {
+    const target = await account();
+    const now = Date.now();
+    await importRows("projects", Array.from({ length: 199 }, (_, index) => ({
+      userId: target.userId, name: `Existing ${index}`, nameKey: `existing ${index}`, position: index * 1024, createdAt: now, updatedAt: now,
+    })));
+    const initial: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    const content = JSON.stringify({
+      version: 1,
+      projects: [{ id: "a", name: "A", icon: "🥐" }, { id: "b", name: "B" }],
+      tasks: Array.from({ length: 201 }, (_, index) => ({ id: `task-${index}`, title: `Task ${index}`, ref: index + 1, projectId: index < 200 ? "a" : "b" })),
+    });
+    const preview = await rest(target.key, "POST", "/import?dryRun=true", { body: { content } });
+    expect(preview.status).toBe(200);
+    expect(preview.body).toMatchObject({ total: 201, created: 200, skipped: [] });
+    expect(preview.body.failed).toEqual([
+      { title: 'Project "B"', message: expect.stringMatching(/at most 200 projects/) },
+      { title: "Task 200", message: expect.any(String) },
+    ]);
+    const before: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    expect(before.content.projects).toHaveLength(199);
+    expect(before.content.tasks).toEqual([]);
+    expect(before.content.events).toEqual(initial.content.events);
+
+    const imported = await rest(target.key, "POST", "/import", { body: { content } });
+    expect(imported.status).toBe(200);
+    expect(imported.body.created).toBe(preview.body.created);
+    expect(imported.body.failed).toEqual(preview.body.failed);
+    const after: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    expect(after.content.projects).toHaveLength(200);
+    expect(after.content.projects.at(-1)).toMatchObject({ name: "A", icon: "🥐" });
+    expect(after.content.events.filter((event: any) => event.action === "projectAdd")).toHaveLength(1);
+    expect(after.content.tasks).toHaveLength(200);
+    expect(after.content.tasks.every((task: any) => task.projectId === after.content.projects.at(-1).id)).toBe(true);
+  }, 60_000);
+
+  test.each(["abc🥐", "🥐🥐"])("JSON import rejects an invalid icon without recreating its project from a task: %s", async (icon) => {
+    const target = await account();
+    const initial: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    const content = JSON.stringify({
+      version: 1,
+      projects: [{ id: "invalid", name: "Invalid", icon }],
+      tasks: [{ id: "task-1", title: 'Project "Invalid"', projectId: "invalid" }, { id: "task-2", title: 'Project "Invalid"', projectId: "invalid" }],
+    });
+    const preview = await rest(target.key, "POST", "/import?dryRun=true", { body: { content } });
+    const imported = await rest(target.key, "POST", "/import", { body: { content } });
+    expect(imported.status).toBe(200);
+    expect(imported.body.created).toBe(0);
+    expect(imported.body.failed).toEqual([
+      { title: 'Project "Invalid"', message: expect.stringMatching(/icon must be a single emoji/) },
+      { title: 'Project "Invalid"', message: expect.any(String) },
+      { title: 'Project "Invalid"', message: expect.any(String) },
+    ]);
+    expect(preview.body.failed).toEqual(imported.body.failed);
+    const exported: any = await target.user.query(internal.ops.exportPlan, { format: "json" });
+    expect(exported.content.projects).toEqual([]);
+    expect(exported.content.tasks).toEqual([]);
+    expect(exported.content.events).toEqual(initial.content.events);
+  });
+
+  test("JSON import accepts complete emoji sequences as project icons", async () => {
+    const target = await account();
+    const icons = ["🥐", "🇵🇱", "1️⃣", "👩🏽‍💻", "❤️", "\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}"];
+    const content = JSON.stringify({ version: 1, tasks: [], projects: icons.map((icon, index) => ({ id: `p${index}`, name: `Emoji ${index}`, icon })) });
+    const imported = await rest(target.key, "POST", "/import", { body: { content } });
+    expect(imported.status).toBe(200);
+    expect(imported.body.failed).toEqual([]);
+    const listed: any = await target.user.query(internal.ops.listProjects, {});
+    expect(listed.result.map((project: any) => project.icon)).toEqual(icons);
   });
 
   test("POST /import with projectId puts the tasks the file leaves without a project into it", async () => {

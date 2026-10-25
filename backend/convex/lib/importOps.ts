@@ -77,7 +77,7 @@ export const importArgs = { items: v.array(importItemValidator), projects: v.opt
 type Outcome = {
   created: ReturnType<typeof toTask>[];
   skipped: { title: string; reason: string }[];
-  failed: { title: string; message: string }[];
+  failed: { title: string; message: string; projectKey?: string }[];
 };
 
 /** The task's fields as add_task would store them, or a domain error. */
@@ -137,25 +137,21 @@ async function addMissingProjects(ctx: MutationCtx, identity: Identity, projects
       await insertProject(ctx, identity, project);
     } catch (error) {
       if (!(error instanceof ConvexError)) throw error;
-      outcome.failed.push({ title: `Project "${project.name}"`, message: (error.data as { message: string }).message });
+      outcome.failed.push({ title: `Project "${project.name}"`, message: (error.data as { message: string }).message, projectKey: nameKeyOf(project.name) });
     }
   }
 }
 
-/**
- * The project a task of the file names: the plan's project of that name (any
- * case, archived ones too, as the file had it), else a new one of that name.
- * Each name is looked up once per call.
- */
 function projectsByName(ctx: MutationCtx, identity: Identity) {
   const found = new Map<string, Id<"projects">>();
   return async (name: string): Promise<Id<"projects">> => {
     const key = nameKeyOf(name);
     const known = found.get(key);
     if (known) return known;
-    const id = (await projectNamed(ctx, identity.userId, name))?._id ?? (await insertProject(ctx, identity, { name }));
-    found.set(key, id);
-    return id;
+    const project = await projectNamed(ctx, identity.userId, name);
+    if (!project) fail("not_found", `Project "${name}" could not be imported`);
+    found.set(key, project._id);
+    return project._id;
   };
 }
 
