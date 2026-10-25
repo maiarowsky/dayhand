@@ -7,6 +7,7 @@ import type { args } from "./args";
 import { isReady } from "./agentWork";
 import { fail, loadSettings, toTask, type Identity } from "./core";
 import { isOverdue, localDate, resolveDate } from "./dates";
+import { projectFilter } from "./projectOps";
 
 type Args = ObjectType<(typeof args)["findTasks"]>;
 
@@ -104,8 +105,11 @@ export async function findTasks(ctx: QueryCtx, identity: Identity, input: Args) 
     .withIndex("by_user", (q) => q.eq("userId", identity.userId))
     .collect();
   const matches = matcher(input, today, new Map(tasks.map((t) => [t._id as string, t])));
+  // Since 0.13.0: one project, or "none" for tasks without a project.
+  const inProject = await projectFilter(ctx, identity.userId, input.projectId);
   const found = tasks
     .filter(matches)
+    .filter(inProject)
     .map((t) => ({ task: t, key: sortKey(t) }))
     .sort((a, b) => compareKeys(a.key, b.key));
   const rest = after === undefined ? found : found.filter((f) => compareKeys(f.key, after) > 0);

@@ -10,6 +10,7 @@ import {
   keyScopeValidator,
   linkValidator,
   policyRuleValidator,
+  projectColorValidator,
   proofValidator,
   reminderValidator,
   repeatInputValidator,
@@ -21,6 +22,10 @@ const clientId = v.optional(v.string());
 // A task id, or the task's number written as "#42".
 const taskId = v.string();
 const at = v.optional(v.number());
+// Since 0.13.0: a project id or the project's name (any case).
+const projectId = v.string();
+// A project filter: a project id or name, or "none" for tasks without a project.
+const projectFilter = v.optional(v.string());
 
 // Agent work fields of a task (docs/agent-work.md), in add_task and update_task.
 const agentWork = {
@@ -49,6 +54,8 @@ export const args = {
     source: v.optional(taskSourceValidator),
     requestedBy: v.optional(v.string()),
     returnTo: v.optional(v.string()),
+    // Since 0.13.0: the task's project.
+    projectId: v.optional(projectId),
     clientId,
   },
   update: {
@@ -67,6 +74,8 @@ export const args = {
     plan: clearable(v.string()),
     dependsOn: v.optional(v.array(taskId)),
     blockedReason: clearable(v.string()),
+    // Since 0.13.0: move the task to another project; null takes it out of its project.
+    projectId: clearable(projectId),
     clientId,
   },
   setStatus: { taskId, status: statusValidator, clientId },
@@ -76,7 +85,7 @@ export const args = {
   archive: { taskId, clientId },
   softDelete: { taskId, clientId },
   restore: { taskId, clientId },
-  listToday: { at },
+  listToday: { projectId: projectFilter, at },
   listAll: {
     labels: v.optional(v.array(v.string())),
     includeDone: v.optional(v.boolean()),
@@ -95,6 +104,7 @@ export const args = {
     overdue: v.optional(v.boolean()),
     ready: v.optional(v.boolean()),
     proposed: v.optional(v.boolean()),
+    projectId: projectFilter,
     limit: v.optional(v.number()),
     cursor: v.optional(v.string()),
     at,
@@ -142,10 +152,11 @@ export const args = {
   // Since 0.12.0: the agent brief (agent_brief, dayhand prime).
   agentBrief: { at },
   // Since 0.12.0: Backlog.md task files in (import_backlog) and out (export_backlog), docs/backlog-md.md.
-  importBacklog: { files: v.array(v.object({ path: v.string(), content: v.string() })) },
-  exportBacklog: { prefix: v.optional(v.string()), includeArchived: v.optional(v.boolean()) },
+  // Since 0.13.0: projectId puts every new task into that project (import) or exports only it (export).
+  importBacklog: { files: v.array(v.object({ path: v.string(), content: v.string() })), projectId: v.optional(projectId) },
+  exportBacklog: { prefix: v.optional(v.string()), includeArchived: v.optional(v.boolean()), projectId: v.optional(projectId) },
   listTrash: {},
-  board: { doneLimit: v.optional(v.number()), at },
+  board: { doneLimit: v.optional(v.number()), projectId: projectFilter, at },
   getTask: { taskId, at },
   exportPlan: { format: v.union(v.literal("markdown"), v.literal("json"), v.literal("ics")), at },
   getSettings: {},
@@ -155,6 +166,31 @@ export const args = {
     defaultReminderMinutes: v.optional(v.array(v.number())),
     clientId,
   },
+  // Since 0.13.0: projects (lib/projectOps.ts).
+  listProjects: { includeArchived: v.optional(v.boolean()), at },
+  addProject: {
+    name: v.string(),
+    color: v.optional(projectColorValidator),
+    icon: v.optional(v.string()),
+    note: v.optional(v.string()),
+    position: v.optional(v.number()),
+    // Make the project from a label: its tasks without a project move into it.
+    fromLabel: v.optional(v.string()),
+    removeLabel: v.optional(v.boolean()),
+    clientId,
+  },
+  updateProject: {
+    projectId,
+    name: v.optional(v.string()),
+    color: clearable(projectColorValidator),
+    icon: clearable(v.string()),
+    note: clearable(v.string()),
+    position: v.optional(v.number()),
+    archived: v.optional(v.boolean()),
+    clientId,
+  },
+  // moveTasksTo: a project id or name, or "none"; needed when tasks point at the project.
+  deleteProject: { projectId, moveTasksTo: v.optional(v.string()), clientId },
   revokeApiKey: { keyId: v.id("apiKeys") },
   listApiKeys: {},
   createApiKey: {

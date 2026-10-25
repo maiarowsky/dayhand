@@ -2,10 +2,10 @@
 // client, which also checks every result against the tool's output schema, and
 // the REST API. The folders are synthetic, written here for the tests.
 import { describe, expect, test } from "vitest";
-import { api } from "../convex/_generated/api";
+import { api, internal } from "../convex/_generated/api";
 import { readTask } from "../convex/lib/backlogMd";
 import { parseFrontmatter } from "../convex/lib/frontmatter";
-import { appClient, callTool, createKey, mcpClient, newUserId, openApiChecker, rest } from "./helpers";
+import { appClient, asUser, callTool, createKey, mcpClient, newUserId, openApiChecker, rest } from "./helpers";
 
 type File = { path: string; content: string };
 type Client = Awaited<ReturnType<typeof mcpClient>>;
@@ -514,5 +514,44 @@ describe("the phone", () => {
     const client = await mcpClient(await createKey(userId, "laptop", "cli"));
     await callTool(client, "import_backlog", { files: [file("tasks/t.md", "id: TASK-1\ntitle: From the folder\nstatus: In Progress")] });
     expect(((await app.query(api.app.listAll, {})) as any[]).map((t) => [t.title, t.status])).toEqual([["From the folder", "doing"]]);
+  });
+});
+
+describe("Backlog.md and projects (0.13.0)", () => {
+  test("import_backlog with projectId puts every new task into the project; tasks imported before stay", async () => {
+    const { userId, client } = await owner();
+    const user = asUser(userId);
+    const shop: any = (await user.mutation(internal.ops.addProject, { name: "Shop" })).project;
+    await callTool(client, "import_backlog", { files: [file("tasks/task-1.md", "id: TASK-1\ntitle: Before\nstatus: To Do")] });
+    const result = await callTool(client, "import_backlog", {
+      files: [file("tasks/task-1.md", "id: TASK-1\ntitle: Before\nstatus: To Do"), file("tasks/task-2.md", "id: TASK-2\ntitle: After\nstatus: To Do")],
+      projectId: "SHOP",
+    });
+    expect(result.tasks.map((t: any) => [t.title, t.projectId])).toEqual([["After", shop.id]]);
+    expect(result.skipped).toEqual([expect.objectContaining({ id: "TASK-1", reason: "imported before" })]);
+    expect(byTitle(await allTasks(client), "Before")).not.toHaveProperty("projectId");
+
+    await user.mutation(internal.ops.updateProject, { projectId: shop.id, archived: true });
+    const archived = await client.callTool({ name: "import_backlog", arguments: { files: [file("tasks/task-3.md", "id: TASK-3\ntitle: Late")], projectId: "Shop" } });
+    expect(archived.isError).toBe(true);
+    expect(JSON.stringify(archived.content)).toMatch(/archived; restore it first/);
+    const unknown = await client.callTool({ name: "import_backlog", arguments: { files: [file("tasks/task-3.md", "id: TASK-3\ntitle: Late")], projectId: "Nope" } });
+    expect(JSON.stringify(unknown.content)).toMatch(/Project \\"Nope\\" not found/);
+  });
+
+  test("export_backlog with projectId exports only that project and names it in config.yml", async () => {
+    const { userId, client } = await owner();
+    const user = asUser(userId);
+    await user.mutation(internal.ops.addProject, { name: "Shop front" });
+    const outside: any = await user.mutation(internal.ops.add, { title: "Outside", labels: ["misc"] });
+    await user.mutation(internal.ops.add, { title: "Inside", labels: ["site"], projectId: "shop front", dependsOn: [outside.id] });
+    const exported = await callTool(client, "export_backlog", { projectId: "Shop front" });
+    expect(exported.files.map((f: any) => f.content.match(/^title: (.*)$/m)?.[1])).toEqual(["Inside"]);
+    expect(exported.config.content).toMatch(/^project_name: Shop front$/m);
+    expect(exported.config.content).toMatch(/^labels: \['site'\]$/m);
+    expect(exported.notes).toContain("1 task(s) depend on tasks not exported (archived, in the trash or in another project); those dependencies are left out");
+    const whole = await callTool(client, "export_backlog", {});
+    expect(whole.total).toBe(2);
+    expect(whole.config.content).toMatch(/^project_name: Dayhand export$/m);
   });
 });

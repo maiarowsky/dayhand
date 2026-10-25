@@ -19,9 +19,12 @@ const KEY_LENGTH = 40;
 type BatchOutcome = { created: Record<string, unknown>[]; skipped: { title: string; reason: string }[]; failed: { title: string; message: string }[] };
 
 export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) => {
-  const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format");
+  const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format" && name !== "projectId");
   if (extra.length) throw new RestInputError(`Unknown field ${extra.join(", ")}; send { "content": "<file>", "format": "auto" }`);
   if (typeof body.content !== "string" || body.content.trim() === "") throw new RestInputError("content must be the file's text");
+  // Since 0.13.0: the project (id or name) of every task the file puts in none.
+  if (body.projectId !== undefined && typeof body.projectId !== "string") throw new RestInputError("projectId must be a project id or name");
+  const projectId = body.projectId as string | undefined;
   const requested: string = DEPRECATED_FORMATS[body.format as string] ?? body.format ?? "auto";
   if (requested !== "auto" && !IMPORT_FORMATS.includes(requested as ImportFormat)) {
     throw new RestInputError(`format must be auto, ${IMPORT_FORMATS.join(", ")}`);
@@ -48,7 +51,14 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
     const batch = items.slice(start, start + IMPORT_BATCH);
     let outcome: BatchOutcome;
     try {
-      outcome = await ctx.runMutation(internal.ops.importTasks as FunctionReference<"mutation", "internal">, { ...identity, items: batch, dryRun });
+      // The file's projects come with the first batch; later batches find them by name.
+      outcome = await ctx.runMutation(internal.ops.importTasks as FunctionReference<"mutation", "internal">, {
+        ...identity,
+        items: batch,
+        ...(start === 0 && parsed.projects ? { projects: parsed.projects } : {}),
+        ...(projectId === undefined ? {} : { projectId }),
+        dryRun,
+      });
     } catch (error) {
       const preview = dryRunResult(error);
       if (!preview) throw error;

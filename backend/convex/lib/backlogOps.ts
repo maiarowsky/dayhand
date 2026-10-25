@@ -27,6 +27,7 @@ import {
 import { checkLabels, checkLinks, checkText, checkTitle, fail, loadSettings, nextTaskRef, recordEvent, toTask, type Identity } from "./core";
 import { localDateTime } from "./dates";
 import { FrontmatterError } from "./frontmatter";
+import { loadProject, projectTarget } from "./projectOps";
 import { addSource, checkRequestedBy, checkSource, taskOfSource } from "./proposals";
 import type { Link, Status } from "./validators";
 
@@ -184,12 +185,14 @@ async function dependenciesOf(ctx: MutationCtx, userId: string, task: BacklogTas
   return checkDependsOn(ctx, userId, null, ids);
 }
 
+/** Since 0.13.0, with projectId every new task goes into that project; tasks imported before stay where they are. */
 export async function importBacklog(ctx: MutationCtx, identity: Identity, input: Args<"importBacklog"> & { dryRun?: boolean }) {
   if (input.files.length > BACKLOG_LIMITS.files) fail("invalid_argument", `at most ${BACKLOG_LIMITS.files} files per call; import it by subdirectories`);
   for (const file of input.files) {
     if (!file.path.trim() || file.path.length > BACKLOG_LIMITS.path) fail("invalid_argument", `file paths must be 1 to ${BACKLOG_LIMITS.path} characters`);
     if (file.content.length > BACKLOG_LIMITS.content) fail("invalid_argument", `${file.path} is longer than ${BACKLOG_LIMITS.content} characters`);
   }
+  const projectId = input.projectId === undefined ? undefined : await projectTarget(ctx, identity.userId, input.projectId);
   const { timezone } = await loadSettings(ctx, identity.userId);
   const now = Date.now();
   const skipped: Skipped[] = [];
@@ -207,7 +210,7 @@ export async function importBacklog(ctx: MutationCtx, identity: Identity, input:
     }
     let fields;
     try {
-      fields = { ...fieldsOf(task, statuses, identity, timezone, now, warnings), dependsOn: await dependenciesOf(ctx, identity.userId, task, made, warnings) };
+      fields = { ...fieldsOf(task, statuses, identity, timezone, now, warnings), dependsOn: await dependenciesOf(ctx, identity.userId, task, made, warnings), projectId };
     } catch (error) {
       if (!(error instanceof ConvexError)) throw error;
       failed.push({ path: task.path, title: task.title, message: (error.data as { message: string }).message });
@@ -326,7 +329,7 @@ function overflowNotes(file: BacklogFile & { id: string }): string[] {
 }
 
 /** What Backlog.md has no place for, as counts: "3 due dates". */
-function exportNotes(tasks: Doc<"tasks">[], ids: Map<string, string>): string[] {
+function exportNotes(tasks: Doc<"tasks">[], ids: Map<string, string>, oneProject: boolean): string[] {
   const count = (test: (t: Doc<"tasks">) => boolean) => tasks.filter(test).length;
   const missing = count((t) => (t.dependsOn ?? []).some((id) => !ids.has(id)));
   const notes = [
@@ -336,13 +339,16 @@ function exportNotes(tasks: Doc<"tasks">[], ids: Map<string, string>): string[] 
   ]
     .filter(([n]) => (n as number) > 0)
     .map(([n, what]) => `${n} ${what} left out: Backlog.md has no field for them`);
-  if (missing) notes.push(`${missing} task(s) depend on tasks not exported (archived or in the trash); those dependencies are left out`);
+  const where = oneProject ? "archived, in the trash or in another project" : "archived or in the trash";
+  if (missing) notes.push(`${missing} task(s) depend on tasks not exported (${where}); those dependencies are left out`);
   return notes;
 }
 
+/** Since 0.13.0, with projectId only that project's tasks, and config.yml carries its name. */
 export async function exportBacklog(ctx: QueryCtx, identity: Identity, input: Args<"exportBacklog">) {
   const prefix = input.prefix?.trim() || "task";
   if (!PREFIX.test(prefix) || prefix.length > BACKLOG_LIMITS.prefix) fail("invalid_argument", `prefix is 1 to ${BACKLOG_LIMITS.prefix} letters and digits, starting with a letter`);
+  const project = input.projectId === undefined ? undefined : await loadProject(ctx, identity.userId, input.projectId);
   const { timezone } = await loadSettings(ctx, identity.userId);
   const tasks = (
     await ctx.db
@@ -351,11 +357,12 @@ export async function exportBacklog(ctx: QueryCtx, identity: Identity, input: Ar
       .collect()
   )
     .filter((t) => t.deletedAt === undefined && (input.includeArchived === true || t.archivedAt === undefined))
+    .filter((t) => project === undefined || t.projectId === project._id)
     .sort((a, b) => (a.ref ?? 0) - (b.ref ?? 0));
   const ids = idsOf(tasks, prefix);
   const files = tasks.map((task) => ({ ...fileOf(task, ids, timezone), id: ids.get(task._id)!, taskId: task._id, ref: task.ref ?? null }));
   const labels = [...new Set(tasks.flatMap((t) => t.labels))].sort();
-  const config = writeConfig(prefix, labels);
-  const notes = [...exportNotes(tasks, ids), ...files.flatMap(overflowNotes), ...files.flatMap(fileSizeNotes), ...fileSizeNotes(config)];
+  const config = writeConfig(prefix, labels, project?.name);
+  const notes = [...exportNotes(tasks, ids, project !== undefined), ...files.flatMap(overflowNotes), ...files.flatMap(fileSizeNotes), ...fileSizeNotes(config)];
   return { format: BACKLOG_KIND, prefix, total: files.length, config, files, notes };
 }

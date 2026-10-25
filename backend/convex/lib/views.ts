@@ -5,6 +5,7 @@ import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
 import { actorLabel, loadSettings, loadTask, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
+import { projectFilter } from "./projectOps";
 import type { Status } from "./validators";
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
@@ -36,15 +37,17 @@ async function openTasksDueBy(ctx: QueryCtx, userId: string, status: Status, las
     .collect();
 }
 
-/** Today screen: overdue first, then today, then what was done today. */
+/** Today screen: overdue first, then today, then what was done today; optionally of one project (since 0.13.0). */
 export async function listToday(ctx: QueryCtx, identity: Identity, input: Args<"listToday">) {
   const at = input.at ?? Date.now();
   const { timezone } = await loadSettings(ctx, identity.userId);
   const today = localDate(at, timezone);
+  const inProject = await projectFilter(ctx, identity.userId, input.projectId);
+  const shown = (task: Doc<"tasks">) => isActive(task) && inProject(task);
   const open = [
     ...(await openTasksDueBy(ctx, identity.userId, "todo", today)),
     ...(await openTasksDueBy(ctx, identity.userId, "doing", today)),
-  ].filter(isActive);
+  ].filter(shown);
   // Completed in the last two days, narrowed to today's local date below.
   const recentlyDone = await ctx.db
     .query("tasks")
@@ -57,11 +60,11 @@ export async function listToday(ctx: QueryCtx, identity: Identity, input: Args<"
   return {
     date: today,
     timezone,
-    now: nowTask && isActive(nowTask) ? toTask(nowTask) : null,
+    now: nowTask && shown(nowTask) ? toTask(nowTask) : null,
     overdue: open.filter((t) => isOverdue(t, today)).sort(bySchedule).map(toTask),
     today: open.filter((t) => t.dueDate === today).sort(bySchedule).map(toTask),
     doneToday: recentlyDone
-      .filter((t) => t.status === "done" && isActive(t) && localDate(t.completedAt!, timezone) === today)
+      .filter((t) => t.status === "done" && shown(t) && localDate(t.completedAt!, timezone) === today)
       .sort((a, b) => b.completedAt! - a.completedAt!)
       .map(toTask),
   };
@@ -96,11 +99,13 @@ export async function listTrash(ctx: QueryCtx, identity: Identity) {
     .map(toTask);
 }
 
-/** Kanban: to do / in progress / done. The "now" task is flagged in "doing". */
+/** Kanban: to do / in progress / done, optionally of one project (since 0.13.0). The "now" task is flagged in "doing". */
 export async function board(ctx: QueryCtx, identity: Identity, input: Args<"board">) {
   const at = input.at ?? Date.now();
   const today = localDate(at, (await loadSettings(ctx, identity.userId)).timezone);
   const doneLimit = Math.max(0, Math.min(Math.floor(input.doneLimit ?? DEFAULT_DONE_LIMIT), 500));
+  const inProject = await projectFilter(ctx, identity.userId, input.projectId);
+  const shown = (task: Doc<"tasks">) => isActive(task) && inProject(task);
   const column = async (status: Status) =>
     (
       await ctx.db
@@ -108,7 +113,7 @@ export async function board(ctx: QueryCtx, identity: Identity, input: Args<"boar
         .withIndex("by_user_status_dueDate", (q) => q.eq("userId", identity.userId).eq("status", status))
         .collect()
     )
-      .filter(isActive)
+      .filter(shown)
       .sort(bySchedule)
       .map((t) => ({ ...toTask(t), overdue: isOverdue(t, today) }));
   const done = [];
@@ -117,7 +122,7 @@ export async function board(ctx: QueryCtx, identity: Identity, input: Args<"boar
     .withIndex("by_user_completedAt", (q) => q.eq("userId", identity.userId).gte("completedAt", 0))
     .order("desc")) {
     if (done.length >= doneLimit) break;
-    if (task.status === "done" && isActive(task)) done.push(toTask(task));
+    if (task.status === "done" && shown(task)) done.push(toTask(task));
   }
   return { todo: await column("todo"), doing: await column("doing"), done };
 }

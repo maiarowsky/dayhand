@@ -116,8 +116,9 @@ const union = <T>(a: T[], b: T[], key: (item: T) => string) => [...new Map([...a
 /**
  * merge_proposal: the proposal is folded into a task already in the plan. The
  * task gets its note (after a line naming it), links, labels, sources and
- * return webhooks; the proposal goes to the trash with mergedInto. Its return
- * webhooks hear "merged" now and "completed" when that task is done.
+ * return webhooks, and its project when it has none (since 0.13.0); the
+ * proposal goes to the trash with mergedInto. Its return webhooks hear
+ * "merged" now and "completed" when that task is done.
  */
 export async function mergeProposal(ctx: MutationCtx, identity: Identity, input: Args<"mergeProposal">) {
   ownerOnly(identity, "merge proposals");
@@ -150,6 +151,7 @@ export async function mergeProposal(ctx: MutationCtx, identity: Identity, input:
   const returnTo = union(into.returnTo ?? [], from.returnTo ?? [], (id) => id);
   if (returnTo.length) patch.returnTo = returnTo;
   if (into.source === undefined && from.source !== undefined) patch.source = from.source;
+  if (into.projectId === undefined && from.projectId !== undefined) patch.projectId = from.projectId;
   const target = await patchTask(ctx, identity, into, "update", patch, input.clientId);
   const sources = await ctx.db
     .query("taskSources")

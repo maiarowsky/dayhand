@@ -246,3 +246,25 @@ describe("the plan health report", () => {
     await agent.close();
   });
 });
+
+describe("proposals and projects (0.13.0)", () => {
+  test("a proposal keeps its project when accepted; a merge keeps the target's project or gives it the proposal's", async () => {
+    const { client: app, userId } = await appClient();
+    const shop: any = (await app.mutation(api.app.addProject, { name: "Shop" })).project;
+    const home: any = (await app.mutation(api.app.addProject, { name: "Home" })).project;
+    const agent = await mcpClient(await createKey(userId, "triage", "agent"));
+    const propose = (title: string) => callTool(agent, "add_task", { title, proposal: true, projectId: "shop" });
+
+    const accepted: any = await app.mutation(api.app.acceptProposal, { taskId: (await propose("accept me")).id });
+    expect(accepted.projectId).toBe(shop.id);
+
+    const loose: any = await app.mutation(api.app.add, { title: "no project yet" });
+    const intoLoose: any = await app.mutation(api.app.mergeProposal, { taskId: (await propose("merge into loose")).id, intoTaskId: loose.id });
+    expect(intoLoose.task.projectId).toBe(shop.id);
+
+    const atHome: any = await app.mutation(api.app.add, { title: "at home", projectId: home.id });
+    const intoHome: any = await app.mutation(api.app.mergeProposal, { taskId: (await propose("merge into home")).id, intoTaskId: atHome.id });
+    expect(intoHome.task.projectId).toBe(home.id);
+    await agent.close();
+  });
+});

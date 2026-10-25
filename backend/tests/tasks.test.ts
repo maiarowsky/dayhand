@@ -226,3 +226,21 @@ describe("views", () => {
     expect(cleared.note).toBeUndefined();
   });
 });
+
+describe("tasks keep their project (0.13.0)", () => {
+  test("the trash, a restore, the archive and a status change leave the project as it is", async () => {
+    const user = asUser(newUserId());
+    const { project }: any = await user.mutation(internal.ops.addProject, { name: "Dom" });
+    const task: any = await user.mutation(internal.ops.add, { title: "Paint the door", projectId: "Dom" });
+    for (const change of [
+      () => user.mutation(internal.ops.softDelete, { taskId: task.id }),
+      () => user.mutation(internal.ops.restore, { taskId: task.id }),
+      () => user.mutation(internal.ops.archive, { taskId: task.id }),
+      () => user.mutation(internal.ops.restore, { taskId: task.id }),
+      () => user.mutation(internal.ops.setNow, { taskId: task.id }),
+      () => user.mutation(internal.ops.complete, { taskId: task.id }),
+    ]) {
+      expect(((await change()) as any).projectId ?? ((await user.query(internal.ops.getTask, { taskId: task.id })) as any).task.projectId).toBe(project.id);
+    }
+  });
+});

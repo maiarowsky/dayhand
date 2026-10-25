@@ -223,3 +223,44 @@ describe("POST /api/v1/import", () => {
     expect((await rest(write.key, "POST", "/import", { body: { content: TODOIST } })).status).toBe(403);
   });
 });
+
+describe("imports and projects (0.13.0)", () => {
+  test("the Dayhand JSON reader names each task's project from the file's projects", () => {
+    const content = JSON.stringify({
+      version: 1,
+      projects: [
+        { id: "p1", name: "Dom", color: "teal", icon: "🏠", note: "the flat", archived: false },
+        { id: "p2", name: "Old", color: "#ffffff", archivedAt: 5 },
+        { name: "no id" },
+      ],
+      tasks: [
+        { id: "t1", title: "in Dom", projectId: "p1" },
+        { id: "t2", title: "loose" },
+        { id: "t3", title: "lost project", projectId: "gone" },
+      ],
+    });
+    const { items, warnings, projects } = readPlan("dayhand-json", content, CONTEXT);
+    expect(items.map((i) => i.project)).toEqual(["Dom", undefined, undefined]);
+    expect(projects).toEqual([
+      { name: "Dom", color: "teal", icon: "🏠", note: "the flat", archived: false },
+      { name: "Old", archived: true },
+    ]);
+    expect(warnings).toContain("1 task(s) name a project that is not in the file; they are imported without a project");
+  });
+
+  test("POST /import with projectId puts the tasks the file leaves without a project into it", async () => {
+    const userId = newUserId();
+    const key = await createKey(userId, "cli", "cli");
+    const shop: any = (await asUser(userId).mutation(internal.ops.addProject, { name: "Shop" })).project;
+    const imported = await rest(key, "POST", "/import", { body: { content: TODOIST, projectId: "shop" } });
+    expect(imported.status).toBe(200);
+    expect(imported.body.tasks.length).toBeGreaterThan(0);
+    expect(imported.body.tasks.every((t: any) => t.projectId === shop.id)).toBe(true);
+    expect((await rest(key, "POST", "/import", { body: { content: TODOIST, projectId: "Nope" } })).status).toBe(404);
+    expect((await rest(key, "POST", "/import", { body: { content: TODOIST, projectId: 7 } })).status).toBe(422);
+    await asUser(userId).mutation(internal.ops.updateProject, { projectId: "Shop", archived: true });
+    const archived = await rest(key, "POST", "/import", { body: { content: ICS, projectId: "Shop" } });
+    expect(archived.status).toBe(422);
+    expect(JSON.stringify(archived.body)).toMatch(/archived; restore it first/);
+  });
+});

@@ -6,7 +6,7 @@
 import { addDays, isValidTimezone, localDate, resolveDate, weekday } from "./dates";
 import { EXPORT_VERSION } from "./exportPlan";
 import { zonedInstant } from "./vtimezone";
-import type { ChecklistInput, Link, Reminder, RepeatInput } from "./validators";
+import { PROJECT_COLORS, type ChecklistInput, type Link, type ProjectColor, type Reminder, type RepeatInput } from "./validators";
 
 export const IMPORT_FORMATS = ["dayhand-json", "ics", "todoist-csv"] as const;
 export type ImportFormat = (typeof IMPORT_FORMATS)[number];
@@ -34,9 +34,14 @@ export type ImportItem = {
   reminders?: Reminder[];
   completedAt?: number;
   archivedAt?: number;
+  /** Since 0.13.0: the name of the task's project in the file (Dayhand JSON). */
+  project?: string;
 };
 
-export type Parsed = { items: ImportItem[]; warnings: string[] };
+/** A project of a Dayhand JSON export (since 0.13.0): matched by name on import, made when missing. */
+export type ImportProject = { name: string; color?: ProjectColor; icon?: string; note?: string; archived?: boolean };
+
+export type Parsed = { items: ImportItem[]; warnings: string[]; projects?: ImportProject[] };
 export type ReadContext = { timezone: string; today: string };
 
 export class ImportFormatError extends Error {}
@@ -63,6 +68,20 @@ const str = (value: unknown) => (typeof value === "string" ? value : undefined);
 const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : undefined);
 const arr = <T>(value: unknown) => (Array.isArray(value) ? (value as T[]) : undefined);
 
+/** The export's projects by id, in its order; a color that is not a token is left out. */
+function readProjects(value: unknown): Map<string, ImportProject> {
+  const projects = new Map<string, ImportProject>();
+  for (const project of arr<Record<string, unknown>>(value) ?? []) {
+    const id = str(project?.id);
+    const name = str(project?.name);
+    if (id === undefined || name === undefined) continue;
+    const color = PROJECT_COLORS.find((token) => token === project.color);
+    const archived = project.archived === true || num(project.archivedAt) !== undefined;
+    projects.set(id, { name, color, icon: str(project.icon), note: str(project.note), archived });
+  }
+  return projects;
+}
+
 function readDayhandJson(text: string): Parsed {
   let value: any;
   try {
@@ -77,13 +96,18 @@ function readDayhandJson(text: string): Parsed {
   }
   const warnings: string[] = [];
   const items: ImportItem[] = [];
+  const projects = readProjects(plan.projects);
   let trashed = 0;
+  let unknownProject = 0;
   for (const task of plan.tasks as Record<string, unknown>[]) {
     if (task.deletedAt !== undefined) {
       trashed++;
       continue;
     }
     const status = str(task.status);
+    const projectId = str(task.projectId);
+    const project = projectId === undefined ? undefined : projects.get(projectId)?.name;
+    if (projectId !== undefined && project === undefined) unknownProject++;
     items.push({
       source: `helm:${str(task.id) ?? JSON.stringify([task.title, task.createdAt])}`,
       originalId: str(task.id),
@@ -101,11 +125,13 @@ function readDayhandJson(text: string): Parsed {
       reminders: arr<Reminder>(task.reminders),
       completedAt: num(task.completedAt),
       archivedAt: num(task.archivedAt),
+      project,
     });
   }
   if (trashed) warnings.push(`${trashed} task(s) in the trash were not imported`);
+  if (unknownProject) warnings.push(`${unknownProject} task(s) name a project that is not in the file; they are imported without a project`);
   if (plan.settings) warnings.push("Settings and history are not imported; set the time zone with dayhand settings set if needed");
-  return { items, warnings };
+  return { items, warnings, projects: [...projects.values()] };
 }
 
 // ---- iCalendar ----

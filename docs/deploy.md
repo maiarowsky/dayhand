@@ -317,6 +317,40 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.13.0
+
+0.13.0 adds projects: a `projects` table (a name unique in any case, a color token, an emoji, a
+note, a place in the list and an archive) and an optional `projectId` on tasks, so a task is in at
+most one project. Labels stay what they are, free tags across projects. Adding and changing tasks,
+`list_all`, `list_today`, `board`, `import_backlog`, `export_backlog` and `POST /api/v1/import`
+take an optional `projectId` (a project's id or name; in filters `"none"` means tasks without a
+project), the JSON export carries the projects, and the app gets `app:listProjects`,
+`app:addProject`, `app:updateProject` and `app:deleteProject`. There is no new status, error code,
+secret or webhook event, and no migration: existing tasks and labels stay as they are, and no
+project is made from a label until the owner asks for one (`addProject` with `fromLabel`).
+
+1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.13.0.zip`.
+2. Deploy: `dayhand server deploy` (or `npx convex deploy`).
+3. Check: `dayhand version` shows server 0.13.0.
+
+Older clients keep working: they ignore the field they do not know, and their changes send only
+what changed, so they never take a task out of its project.
+
+Rollback: 0.12.x's schema does not know `projectId`, so Convex refuses to deploy it while any task
+has one ("Object contains extra field `projectId`"). Turn the projects back into labels first:
+
+1. `npx convex run migrations:projectsToLabels`: every task in a project gets a label with the
+   project's name and loses its `projectId`, then the projects are deleted. A task that already
+   has 20 labels keeps them and loses only the project; the deployment's logs name each one
+   (`npx convex logs`). Nothing enters the history. It works in batches and schedules itself;
+   `npx convex run migrations:status` shows `tasksWithProject: 0` and `projects: 0` when it is
+   done. Running it again changes nothing.
+2. Deploy 0.12.x.
+
+To go back to exactly the state before the upgrade instead, restore the snapshot from step 1,
+`npx convex import --replace-all dayhand-before-0.13.0.zip` (this also drops every change made
+since), then deploy 0.12.x.
+
 ## Upgrading to 0.12.0
 
 0.12.0 adds the phase guides `dayhand://workflow/intake`, `/execution` and `/finalization`, the

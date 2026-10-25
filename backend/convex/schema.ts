@@ -12,6 +12,7 @@ import {
   keyScopeValidator,
   linkValidator,
   policyRuleValidator,
+  projectColorValidator,
   proofValidator,
   reminderValidator,
   repeatValidator,
@@ -73,6 +74,8 @@ export default defineSchema({
     returnTo: v.optional(v.array(v.id("webhooks"))),
     // A proposal merged into another task (it is then in the trash).
     mergedInto: v.optional(v.id("tasks")),
+    // Since 0.13.0: the task's project, at most one (lib/projectOps.ts); absent = no project.
+    projectId: v.optional(v.id("projects")),
     completedAt: v.optional(v.number()),
     archivedAt: v.optional(v.number()),
     // Soft delete: the task sits in the trash for 30 days, then a cron purges it.
@@ -89,7 +92,34 @@ export default defineSchema({
     .index("by_user_isNow", ["userId", "isNow"])
     .index("by_user_completedAt", ["userId", "completedAt"])
     .index("by_user_proposedAt", ["userId", "proposedAt"])
+    .index("by_user_project", ["userId", "projectId"])
     .index("by_deletedAt", ["deletedAt"]),
+
+  // Since 0.13.0: the user's projects (lib/projectOps.ts). A task is in at most
+  // one project (tasks.projectId); labels stay free tags across projects. The
+  // list is flat, in the order of `position`, with an archive.
+  projects: defineTable({
+    userId: v.string(),
+    name: v.string(),
+    // The name trimmed, in NFC and lower case: unique per user, archived projects included.
+    nameKey: v.string(),
+    color: v.optional(projectColorValidator),
+    // One emoji shown instead of the color dot.
+    icon: v.optional(v.string()),
+    // What the project is about, for people and agents.
+    note: v.optional(v.string()),
+    // Place in the menu, lowest first; a new project goes last (the highest + 1024).
+    position: v.number(),
+    // An archived project leaves the menu and the project pickers; its tasks stay where they are.
+    archivedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    // Client-generated id that makes project creation idempotent.
+    clientId: v.optional(v.string()),
+  })
+    .index("by_user", ["userId", "position"])
+    .index("by_user_nameKey", ["userId", "nameKey"])
+    .index("by_user_clientId", ["userId", "clientId"]),
 
   // Since 0.11.0: which task each outside source made (task.source), so the same
   // alert never makes two tasks. A merged proposal's sources point at the task it

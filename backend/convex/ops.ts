@@ -22,6 +22,12 @@ import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { findTasks as findTasksOp } from "./lib/findTasks";
 import { planHealth as planHealthOp } from "./lib/health";
 import { importArgs, importTasks as importTasksOp } from "./lib/importOps";
+import {
+  addProject as addProjectOp,
+  deleteProject as deleteProjectOp,
+  listProjects as listProjectsOp,
+  updateProject as updateProjectOp,
+} from "./lib/projectOps";
 import { acceptProposal as acceptProposalOp, mergeProposal as mergeProposalOp, rejectProposal as rejectProposalOp } from "./lib/proposals";
 import { getSettings as getSettingsOp, updateSettings as updateSettingsOp } from "./lib/settingsOps";
 import {
@@ -112,6 +118,10 @@ export const acceptProposal = change(args.acceptProposal, acceptProposalOp);
 export const mergeProposal = change(args.mergeProposal, mergeProposalOp);
 export const rejectProposal = change(args.rejectProposal, rejectProposalOp);
 export const importBacklog = change(args.importBacklog, importBacklogOp);
+// Since 0.13.0: projects (lib/projectOps.ts); deleting one is the owner's alone.
+export const addProject = change(args.addProject, addProjectOp);
+export const updateProject = change(args.updateProject, updateProjectOp);
+export const deleteProject = change(args.deleteProject, deleteProjectOp);
 
 /**
  * The approval request behind a call that a policy "ask" refused (mcp.ts,
@@ -182,6 +192,10 @@ export const agentBrief = internalQuery({
 export const exportBacklog = internalQuery({
   args: { ...identity, ...args.exportBacklog },
   handler: (ctx, a) => exportBacklogOp(ctx, who(a), a),
+});
+export const listProjects = internalQuery({
+  args: { ...identity, ...args.listProjects },
+  handler: (ctx, a) => listProjectsOp(ctx, who(a), a),
 });
 /** Whether agents are paused, for the REST API's account routes (rest.ts). */
 export const agentsPaused = internalQuery({
