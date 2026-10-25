@@ -15,7 +15,9 @@ struct TodayView: View {
             InlineQuickAdd()
                 .padding(.horizontal, Metrics.gutter)
                 .padding(.vertical, 8)
-            if s.isEmpty && s.done.isEmpty {
+            if model.viewMode == .board {
+                BoardView()
+            } else if s.isEmpty && s.done.isEmpty {
                 if model.isSearching {
                     PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
                 } else {

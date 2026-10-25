@@ -108,6 +108,10 @@
 	<string>Bloqueada: %@</string>
 	<key>Blue</key>
 	<string>Azul</string>
+	<key>Board</key>
+	<string>Quadro</string>
+	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
+	<string>Quadro ou lista (⌃⌘1, ⌃⌘2)</string>
 	<key>Brown</key>
 	<string>Marrom</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -320,6 +324,8 @@
 	<string>Mais tarde</string>
 	<key>Links</key>
 	<string>Links</string>
+	<key>List</key>
+	<string>Lista</string>
 	<key>Mark as Done</key>
 	<string>Marcar como concluída</string>
 	<key>Mark as Not Done</key>
@@ -336,6 +342,8 @@
 	<string>Atendido: %@</string>
 	<key>Monthly</key>
 	<string>Mensalmente</string>
+	<key>More</key>
+	<string>Mais</string>
 	<key>Morning summary</key>
 	<string>Resumo da manhã</string>
 	<key>Move Down</key>
@@ -734,6 +742,8 @@
 	<string>A versão %@ é a mais recente.</string>
 	<key>Version %@.</key>
 	<string>Versão %@.</string>
+	<key>View</key>
+	<string>Visualização</string>
 	<key>Waiting for</key>
 	<string>Aguarda</string>
 	<key>Weekly</key>

@@ -48,6 +48,10 @@ final class AppModel: ObservableObject {
     @Published var selection: String?
     /// The place picked in the sidebar (`show(_:)` changes it).
     @Published private(set) var place: Place = .today
+    /// Board or list, as last picked in the toolbar.
+    @Published var viewMode: ViewMode {
+        didSet { defaults.set(viewMode.rawValue, forKey: Keys.viewMode) }
+    }
     /// Whether the sidebar shows its Projects and Labels sections open, as last left.
     @Published var projectsExpanded: Bool {
         didSet { defaults.set(projectsExpanded, forKey: Keys.projectsExpanded) }
@@ -97,6 +101,7 @@ final class AppModel: ObservableObject {
         static let language = "language"
         static let projectsExpanded = "sidebarProjectsExpanded"
         static let labelsExpanded = "sidebarLabelsExpanded"
+        static let viewMode = "viewMode"
         /// macOS's own per-app language, which the menus that come with AppKit follow from the next start.
         static let appleLanguages = "AppleLanguages"
     }
@@ -121,6 +126,7 @@ final class AppModel: ObservableObject {
         useOffline = environment.defaults.bool(forKey: Keys.useOffline)
         projectsExpanded = environment.defaults.object(forKey: Keys.projectsExpanded) as? Bool ?? true
         labelsExpanded = environment.defaults.object(forKey: Keys.labelsExpanded) as? Bool ?? true
+        viewMode = environment.defaults.string(forKey: Keys.viewMode).flatMap(ViewMode.init) ?? .list
         observe()
         clockTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             Task { @MainActor in AppModel.shared.recompute() }

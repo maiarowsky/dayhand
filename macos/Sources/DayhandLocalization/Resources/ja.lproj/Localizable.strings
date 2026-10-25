@@ -108,6 +108,10 @@
 	<string>ブロック中：%@</string>
 	<key>Blue</key>
 	<string>青</string>
+	<key>Board</key>
+	<string>ボード</string>
+	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
+	<string>ボードまたはリスト（⌃⌘1、⌃⌘2）</string>
 	<key>Brown</key>
 	<string>茶色</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -320,6 +324,8 @@
 	<string>あとで</string>
 	<key>Links</key>
 	<string>リンク</string>
+	<key>List</key>
+	<string>リスト</string>
 	<key>Mark as Done</key>
 	<string>完了にする</string>
 	<key>Mark as Not Done</key>
@@ -336,6 +342,8 @@
 	<string>達成：%@</string>
 	<key>Monthly</key>
 	<string>毎月</string>
+	<key>More</key>
+	<string>その他</string>
 	<key>Morning summary</key>
 	<string>朝のまとめ</string>
 	<key>Move Down</key>
@@ -734,6 +742,8 @@
 	<string>バージョン %@ が最新です。</string>
 	<key>Version %@.</key>
 	<string>バージョン %@。</string>
+	<key>View</key>
+	<string>表示</string>
 	<key>Waiting for</key>
 	<string>先に完了が必要なタスク</string>
 	<key>Weekly</key>

@@ -108,6 +108,10 @@
 	<string>受阻：%@</string>
 	<key>Blue</key>
 	<string>蓝色</string>
+	<key>Board</key>
+	<string>看板</string>
+	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
+	<string>看板或列表（⌃⌘1、⌃⌘2）</string>
 	<key>Brown</key>
 	<string>棕色</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -320,6 +324,8 @@
 	<string>以后</string>
 	<key>Links</key>
 	<string>链接</string>
+	<key>List</key>
+	<string>列表</string>
 	<key>Mark as Done</key>
 	<string>标记为完成</string>
 	<key>Mark as Not Done</key>
@@ -336,6 +342,8 @@
 	<string>已满足：%@</string>
 	<key>Monthly</key>
 	<string>每月</string>
+	<key>More</key>
+	<string>更多</string>
 	<key>Morning summary</key>
 	<string>早间摘要</string>
 	<key>Move Down</key>
@@ -734,6 +742,8 @@
 	<string>版本 %@ 是最新的。</string>
 	<key>Version %@.</key>
 	<string>版本 %@。</string>
+	<key>View</key>
+	<string>视图</string>
 	<key>Waiting for</key>
 	<string>等待完成</string>
 	<key>Weekly</key>

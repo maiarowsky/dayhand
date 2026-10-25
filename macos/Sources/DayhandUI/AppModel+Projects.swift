@@ -39,6 +39,12 @@ extension AppModel {
         projectOf(task).flatMap { place == .project($0.localId) ? nil : $0 }
     }
 
+    /// Whether a task added in the place lands in it: not in an archived project's place, which takes no new tasks.
+    var placeTakesTasks: Bool {
+        guard case .project(let id) = place else { return true }
+        return project(id)?.isArchived != true
+    }
+
     /// The first six projects, for ⌘4 to ⌘9.
     var shortcutProjects: [Project] { Array(activeProjects.prefix(Self.projectShortcuts)) }
 

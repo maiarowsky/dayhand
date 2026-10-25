@@ -191,8 +191,7 @@ The implemented features, including the trash and change history, are described 
 [macos/README.md](../macos/README.md). The research estimated 80 to 110 hours for full parity; what remains,
 by screen:
 
-- **Board**: three columns (To do, In progress with the now task first, Done: the 50 most recently done), drag
-  between columns, the same moves from a menu. The repository already has `move(_:to:)`.
+- **Board**: the now task first in In progress; the Mac's board keeps the order of the list.
 - **Calendar**: the week on an hour grid and one day, tasks with a time as blocks, the band of tasks without a
   time, later dates of a repeating task (`Recurrence.occurrences` is ported), drag to another day and time with
   Undo (`setDue` through the outbox is there).

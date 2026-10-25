@@ -83,9 +83,24 @@ public enum ScreenSnapshots {
                 if selected != nil { try await render(window(), narrow, dark, png("\(name)-820\(suffix)"), sidebar: sidebar()) }
             }
         }
+        // The same places as a board.
+        model.viewMode = .board
+        for (name, place, selected) in places where selected != nil {
+            model.show(place)
+            model.selection = selected.flatMap(task)?.localId
+            for dark in [false, true] {
+                let suffix = dark ? "-dark" : ""
+                try await render(window(), wide, dark, png("board-\(name)-1100\(suffix)"), sidebar: sidebar())
+                try await render(window(), narrow, dark, png("board-\(name)-820\(suffix)"), sidebar: sidebar())
+            }
+        }
         model.show(.today)
         model.selection = task("Call the accountant")?.localId
-        let layoutProblems = try await WindowLayoutCheck.run(window())
+        var layoutProblems: [String] = []
+        for mode in ViewMode.allCases {
+            model.viewMode = mode
+            layoutProblems += try await WindowLayoutCheck.run(window()).map { "\(mode.rawValue): \($0)" }
+        }
         if !layoutProblems.isEmpty { throw SnapshotError.layout(layoutProblems) }
         for dark in [false, true] {
             try await render(sidebar(), CGSize(width: 250, height: 700), dark, png("sidebar\(dark ? "-dark" : "")"))

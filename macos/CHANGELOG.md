@@ -22,6 +22,10 @@ latest one below).
   connection to the server." and nothing is queued.
 - **Lists** of every task, those without a project, a project's and a label's, in sections, with search in the
   toolbar and quick add into the list's project.
+- **Board**: Today and every list as three status columns (To do, In progress, Done) with line icons and counts,
+  cards with the project and chips for the day, labels and the checklist, a card menu, drag between columns to
+  change the status, and the task panel along the bottom. The toolbar's Board | List switcher (⌃⌘1, ⌃⌘2) is kept
+  between launches.
 
 ### Changed
 
