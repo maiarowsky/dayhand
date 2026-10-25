@@ -345,10 +345,15 @@ before starting `migrations:projectsToLabels` until 0.12.x is fully deployed, in
    project's name and loses its `projectId`, then the projects are deleted. A task that already
    has 20 labels keeps them and loses only the project; the deployment's logs name each one
    (`npx convex logs`). Nothing enters the history. It works in batches and schedules itself.
-2. After it finishes, run `npx convex run migrations:projectsToLabels` again. Repeat after each
-   completed run until a call returns `done: true`, `cleared: 0` and `projectsDeleted: 0`, and
-   `npx convex run migrations:status` shows `tasksWithProject: 0` and `projects: 0`.
-3. Only then deploy 0.12.x. Keep every writer stopped until this deployment has finished.
+2. Wait until `npx convex run migrations:status` shows `tasksWithProject: 0` and `projects: 0`.
+   The starting call's `done` describes only its own batch, not the scheduled run: with more than
+   200 tasks, even a repeated scan that changes nothing starts with `done: false`.
+3. After it finishes, run `npx convex run migrations:projectsToLabels '{"projects":true}'` to
+   repeat only the project-deletion phase. Never use this argument before step 2: it skips the
+   task scan. Require `done: true`, `cleared: 0` and `projectsDeleted: 0`, then check
+   `migrations:status` again for `tasksWithProject: 0` and `projects: 0`. If either check fails,
+   repeat from step 1, keeping every writer stopped.
+4. Only then deploy 0.12.x. Keep every writer stopped until this deployment has finished.
 
 To go back to exactly the state before the upgrade instead, restore the snapshot from step 1,
 `npx convex import --replace-all dayhand-before-0.13.0.zip` (this also drops every change made

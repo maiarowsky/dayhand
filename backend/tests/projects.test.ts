@@ -466,4 +466,28 @@ describe("rolling back: projectsToLabels", () => {
     // Running it again changes nothing.
     expect(await admin().mutation(internal.migrations.projectsToLabels, { projects: true })).toMatchObject({ projectsDeleted: 0, done: true });
   }, 60_000);
+
+  test("the documented rollback completion check terminates with more than 200 tasks", async () => {
+    const user = asUser(newUserId());
+    await user.mutation(internal.ops.addProject, { name: "Rollback" });
+    const items = Array.from({ length: 201 }, (_, i) => ({ key: `rollback-${i}`, title: `Task ${i}`, project: "Rollback", labels: ["keep"] }));
+    for (let offset = 0; offset < items.length; offset += 200) {
+      const imported: any = await user.mutation(internal.ops.importTasks, { items: items.slice(offset, offset + 200) });
+      expect(imported.failed).toEqual([]);
+      expect(imported.created).toHaveLength(Math.min(200, items.length - offset));
+    }
+    const before: any = await user.query(internal.ops.exportPlan, { format: "json" });
+    expect(await admin().mutation(internal.migrations.projectsToLabels, {})).toMatchObject({ done: false });
+    await expect.poll(() => admin().query(internal.migrations.status, {}), { timeout: 30_000 }).toMatchObject({ tasksWithProject: 0, projects: 0 });
+    // A completed full scan still starts with done:false; after the status check,
+    // repeating only the deletion phase gives the documented no-op confirmation.
+    expect(await admin().mutation(internal.migrations.projectsToLabels, { projects: true })).toEqual({ relabeled: 0, cleared: 0, noRoom: [], projectsDeleted: 0, done: true });
+    expect(await admin().query(internal.migrations.status, {})).toMatchObject({ tasksWithProject: 0, projects: 0 });
+    const { content }: any = await user.query(internal.ops.exportPlan, { format: "json" });
+    expect(content.tasks).toHaveLength(201);
+    expect(content.tasks.every((task: any) => task.projectId === undefined)).toBe(true);
+    expect(content.tasks.map((task: any) => task.labels)).toEqual(items.map(() => ["keep", "Rollback"]));
+    expect(content.projects).toEqual([]);
+    expect(content.events).toEqual(before.content.events);
+  }, 60_000);
 });
