@@ -64,4 +64,3 @@ export function hasProjectTasks(value: unknown): boolean {
   if (Array.isArray(value)) return value.some(hasProjectTasks);
   return typeof value === "object" && value !== null && Object.values(value).some(hasProjectTasks);
 }
-

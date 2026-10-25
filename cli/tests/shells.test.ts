@@ -6,7 +6,8 @@ import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, test } from "vitest";
-import { helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
+import { dayhand, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
+import { HOSTILE_PROJECT_NAMES } from "./fixtures/hostile-projects.js";
 
 const BIN = fileURLToPath(new URL("../dist/bin/dayhand.js", import.meta.url));
 const dir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-shells-"));
@@ -19,12 +20,12 @@ const cacheDir = join(TEST_HOME, "shell-cache");
 writeFileSync(join(dir, "dayhand"), `#!/bin/sh\nexec "${process.execPath}" "${BIN}" "$@"\n`);
 chmodSync(join(dir, "dayhand"), 0o755);
 
-function run(shell: string, args: string[], key?: string) {
+function run(shell: string, args: string[], key?: string, cache = cacheDir) {
   const env = {
     PATH: `${dir}${delimiter}${process.env.PATH}`,
     HOME: TEST_HOME,
     DAYHAND_CONFIG_DIR: join(TEST_HOME, "shell-config"),
-    DAYHAND_CACHE_DIR: cacheDir,
+    DAYHAND_CACHE_DIR: cache,
     DAYHAND_CREDENTIAL_STORE: "file",
     DAYHAND_URL: helm().siteUrl,
     ...(key ? { DAYHAND_API_KEY: key } : {}),
@@ -76,6 +77,32 @@ describe.skipIf(!has("zsh"))("zsh", () => {
 });
 
 describe.skipIf(!has("pwsh"))("PowerShell", () => {
+  test("project completion stays a single PowerShell literal even with shell punctuation", async () => {
+    const { key } = await newUser();
+    const names = HOSTILE_PROJECT_NAMES;
+    for (const name of names) await dayhandJson(key, ["project", "add", name]);
+    const prefixes = names.map((name) => `'${name.slice(0, 3)}'`).join(",");
+    const script = [
+      "dayhand completion powershell | Out-String | Invoke-Expression",
+      `$items = @(foreach ($prefix in @(${prefixes})) {`,
+      "  $line = 'dayhand add Menu -p ' + $prefix",
+      "  $matches = @((TabExpansion2 -inputScript $line -cursorColumn $line.Length).CompletionMatches)",
+      "  $tokens = $null; $errors = $null",
+      "  $completed = 'dayhand add Menu -p ' + $matches[0].CompletionText",
+      "  $ast = [System.Management.Automation.Language.Parser]::ParseInput($completed, [ref]$tokens, [ref]$errors)",
+      "  $commands = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true))",
+      "  $argument = $commands[0].CommandElements[-1]",
+      "  [pscustomobject]@{ matches=$matches.Count; errors=$errors.Count; commands=$commands.Count; literal=($argument -is [System.Management.Automation.Language.StringConstantExpressionAst]); value=$argument.Value }",
+      "})",
+      "$items | ConvertTo-Json -Compress",
+    ].join("\n");
+    const result = run("pwsh", ["-NoProfile", "-NonInteractive", "-Command", script], key, join(TEST_HOME, "ps-security-cache"));
+    expect(JSON.parse(result.join("\n"))).toEqual(names.map((value) => ({ matches: 1, errors: 0, commands: 1, literal: true, value })));
+    // Newlines never enter the candidate catalog: the actual backend rejects them.
+    const invalid = await dayhand(key, ["project", "add", "q09 line\nbreak", "--json"]);
+    expect(invalid.code).toBe(2);
+  }, 60_000);
+
   test("TabExpansion2 offers dayhand's candidates", () => {
     const script = [
       "dayhand completion powershell | Out-String | Invoke-Expression",
