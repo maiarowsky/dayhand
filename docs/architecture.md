@@ -57,7 +57,8 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 | Table | Purpose |
 |---|---|
-| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; proposals since 0.11.0: `proposedAt` (waiting in the inbox), `source` (`kind`, `ref`, `url`), `requestedBy`, `returnTo` (webhook ids), `mergedInto`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
+| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, optional `projectId` ([projects](#projects), since 0.13.0), `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; proposals since 0.11.0: `proposedAt` (waiting in the inbox), `source` (`kind`, `ref`, `url`), `requestedBy`, `returnTo` (webhook ids), `mergedInto`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
+| `projects` | Since 0.13.0: the user's ordered project catalog; fields in [`convex/schema.ts`](../backend/convex/schema.ts), operations [below](#projects) |
 | `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId`, and for task changes `seq`, the position in the activity log (`list_events`) |
 | `eventCounters` | Last activity log position given per user (`lastSeq`); every task change reads and writes it, so positions follow the commit order |
 | `taskCounters` | Last task number given per user (`lastRef`) |
@@ -112,6 +113,46 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 - **Idempotency.** Every mutation accepts an optional `clientId`. Adding a task with a
   `clientId` that already exists returns the existing task; any other operation whose
   `clientId` is already in the history is not applied again. The Android outbox relies on this.
+
+## Projects
+
+Backend 0.13.0 adds projects in `convex/lib/projectOps.ts` and `convex/app.ts`. This is backend
+support only: dedicated project MCP tools and REST routes, CLI commands and project menus in the
+apps are not implemented yet. Existing task tools already accept [project selectors](mcp.md#projects);
+[JSON import](api.md#import) and [Backlog.md transfer](backlog-md.md#using-it) can carry projects.
+
+A task has at most one project; an absent `tasks.projectId` means no project. Labels remain free
+tags across projects. The catalog is flat, ordered by `position`, with archived entries retained.
+Names are unique per user after trimming, NFC normalization and lowercasing, including archived
+projects; `"none"` is reserved for unassigned tasks. Field limits and allowed color tokens are
+owned by [`PROJECT_LIMITS`](../backend/convex/lib/projectOps.ts) and
+[`PROJECT_COLORS`](../backend/convex/lib/validators.ts), not client palettes.
+
+- `app:listProjects` takes no arguments and returns every project, archived ones included, without
+  counts. `app:listAll` remains the full task sync snapshot, with no project selector: apps filter
+  and count their local tasks. Internal `ops:listProjects` instead takes `includeArchived` and `at`
+  and returns `result` with per-project open, overdue, due-today and done counts, plus `noProject`
+  open and overdue counts. Archived tasks, trash and proposals do not count.
+- `app:addProject` returns `{ project, moved, skipped }`. With `fromLabel`, the label's tasks
+  without a project move into it, including done, archived, trashed tasks and proposals. Tasks
+  already in a project are reported as skipped, as are other agents' live claims when the internal
+  caller is an agent. Labels stay unless `removeLabel: true` removes that label from moved tasks.
+- `app:updateProject` returns the project; optional fields left out are unchanged, and `null`
+  clears color, icon or note. `position` controls ordering; a new project defaults to the end,
+  after the highest position including archived projects. `archived: true` excludes the project
+  from the default `ops:listProjects` result, but leaves its tasks in place and visible in task
+  views. A repeating task's next occurrence keeps its project, even after the project is archived.
+- `app:deleteProject` is owner-only and returns `{ project, moved }`. If any task references it
+  (including done, archived, trashed tasks and proposals), `moveTasksTo` is required: another
+  non-archived project or `"none"`. No tasks are deleted. Bulk moves are bounded by
+  `PROJECT_LIMITS.move`; move tasks individually first if deletion would exceed it.
+
+The app mutations share the validators in [`args.ts`](../backend/convex/lib/args.ts) and the
+internal operations in `ops.ts`. Changes are idempotent by `clientId`. Project changes record
+`projectAdd`, `projectUpdate` or `projectDelete` history without a task id, so they are absent
+from `list_events` and emit no task webhook. Each moved task instead gets its ordinary `update`
+history entry and `task.updated` webhook. Upgrade and rollback requirements are in
+[deploy.md](deploy.md#upgrading-to-0130).
 
 ## Authentication
 

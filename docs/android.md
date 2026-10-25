@@ -86,7 +86,7 @@ optional time, the repeat, reminders, a checklist, labels and links (http and ht
   a repeating task starts with every item unticked.
 - **Reminders**: the defaults from Settings, none, or the task's own: minutes before the due time, or
   a time on the due day or days before (at most five).
-- **Labels** are also the projects: there is one list for both.
+- **Labels and projects**: see [backend project support and client availability](architecture.md#projects).
 - **Move to trash** keeps the task for 30 days. A task in the trash is read only until you restore it.
 - **Change history** lists who changed what, newest first: you in the app, you with `dayhand`, or an
   agent by name.

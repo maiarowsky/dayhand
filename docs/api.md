@@ -38,7 +38,7 @@ for an agent key, `cli` for a CLI key.
 
 | Method and path | MCP tool | Scope |
 |---|---|---|
-| `GET /tasks` | `list_all` (query parameters `query`, `status`, `labels`, `dueBefore`, `dueAfter`, `overdue`, `ready`, `proposed`, `includeDone`, `includeArchived`, `limit`, `cursor`, `at`) | read |
+| `GET /tasks` | `list_all` ([task filters and pages](mcp.md#finding-tasks-list_all), plus `at`) | read |
 | `POST /tasks` | `add_task` (`201`, `Location: /api/v1/tasks/<number>`) | write |
 | `GET /tasks/{taskId}` | `get_task`: `{ task, history }` | read |
 | `PATCH /tasks/{taskId}` | `update_task` | write |
@@ -66,10 +66,10 @@ for an agent key, `cli` for a CLI key.
 | `GET /health` | `plan_health` (query parameter `at`) | read |
 | `GET /brief` | `agent_brief` (query parameter `at`): Today plus claims, approvals, ready tasks and next steps | read |
 | `POST /import/backlog` | `import_backlog` (`{ "files": [{ "path": "tasks/task-1 - x.md", "content": "…" }] }`; `?dryRun=true` stores nothing; [backlog-md.md](backlog-md.md)) | write |
-| `GET /export/backlog` | `export_backlog` (query parameters `prefix`, `includeArchived`) | read |
+| `GET /export/backlog` | `export_backlog` ([parameters](backlog-md.md#using-it)) | read |
 | `GET /events` | `list_events` (query parameters `since`, `by`, `taskId`, `limit`): the activity log ([agent-work.md](agent-work.md)) | read |
-| `GET /today` | `list_today` | read |
-| `GET /board` | `board` | read |
+| `GET /today` | `list_today` (optional [project filter](mcp.md#projects)) | read |
+| `GET /board` | `board` (optional [project filter](mcp.md#projects)) | read |
 | `GET /trash` | `list_trash` | read |
 | `GET /export?format=markdown\|json\|ics` | `export_plan` | read |
 | `GET /settings`, `PATCH /settings` | `get_settings`, `update_settings` | read, write |
@@ -206,7 +206,7 @@ outlive its parent's revocation, and an integration can never mint keys of its o
 
 | `format` | File | What becomes of it |
 |---|---|---|
-| `dayhand-json` | Dayhand's own JSON export (`dayhand export --format json`, `export_plan` format `json`, version 1); `helm-json`, its name before the rename, is still accepted | Every task outside the trash with all its fields: status, dates, repeat rule, labels, links, checklist, reminders, done and archived times. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
+| `dayhand-json` | Dayhand's own JSON export (`dayhand export --format json`, `export_plan` format `json`, version 1); `helm-json`, its name before the rename, is still accepted | Tasks outside the trash: status, dates, repeat rule, labels, links, checklist, reminders, done and archived times. Projects are restored as described below. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
 | `ics` | iCalendar: `VTODO` and `VEVENT` | `SUMMARY` → title, `DESCRIPTION` → note, `DUE` (or `DTSTART`) → day and time in your time zone (UTC and `TZID` times are converted), `RRULE` → repeat rule, `CATEGORIES` → labels, `URL` → link, `STATUS:COMPLETED`/`IN-PROCESS` → done/doing, `VALARM` before the start → reminders. Cancelled entries and changed occurrences of a series (`RECURRENCE-ID`) are skipped. Dayhand's own calendar file (`dayhand calendar export`) reads back without its `✓` and `Dayhand #n` marks. |
 | `todoist-csv` | Todoist's CSV export of a project | Rows of type `task`; `@label` words in the content → labels; the section → a label; `note` rows → the task's note; sub-tasks (`INDENT` 2 or more) → checklist items of their task; `DATE` in English (`2026-11-03`, `today`, `tomorrow at 9am`, `Nov 20 15:30`, a weekday, `every day`, `every 2 weeks`, `every monday, friday`, `every weekday`) → day, time and repeat rule. A date it does not understand stays in the note, with a warning. Priorities are not imported. Todoist's CSV format is not documented by Todoist; this reader follows its current export. |
 
@@ -217,17 +217,38 @@ curl -s -X POST "https://<name>.convex.site/api/v1/import?dryRun=true" \
 ```
 
 The body is `{ "content": "<the file's text>", "format": "auto" }`; `auto` (the default)
-recognises the format from the content. The answer (`docs/schemas/import-result.schema.json`)
-says how many tasks the file had (`total`), how many were imported (`created`, and the tasks in
-`tasks`), which were `skipped` and why, which `failed` add_task's checks (with the message; the
-others are imported all the same) and `warnings` about what could not be carried over.
+recognises the format from the content. Since backend 0.13.0, an optional body `projectId` supplies
+a destination for tasks the file leaves without a project, using the
+[`add_task` selector rules](mcp.md#projects). A project specified in the JSON file takes precedence;
+tasks skipped as already imported are not moved.
+
+Dayhand JSON resolves each task's file `projectId` through the file's `projects` catalog, then
+matches that project's name in the destination using the [project name rules](architecture.md#projects).
+Missing projects are created in file order with their color, icon, note and archive state;
+existing projects are reused without changing their metadata. New ids and positions are assigned,
+not copied from the file. Empty projects are restored too, even when `tasks` is empty. JSON
+restoration preserves memberships in archived projects, unlike selecting an archived destination
+for an ordinary import. A reference absent from the file's catalog produces a warning and leaves
+the task unassigned (or uses the body `projectId`, if supplied).
+
+The answer ([schema](schemas/import-result.schema.json)) says how many tasks the file had
+(`total`), how many were imported (`created`, and the tasks in `tasks`), which were `skipped` and
+why, which tasks or projects `failed` checks (with the message; the others are imported all the
+same) and `warnings` about what could not be carried over. Counts and `tasks` describe tasks,
+not project creation: a projects-only import can succeed with `total: 0` and `created: 0`.
+Project failures appear once per name in `failed` as `Project "<name>"`; tasks requiring a project
+that could not be restored also fail rather than silently losing that membership. Projects are
+created up to the catalog's capacity, and each remaining project is reported as a failure.
 
 - Every task is checked by the same rules as `add_task`, gets an `import` history entry with
   the key's actor, and sends `task.created` to webhooks.
 - **Importing the same file again imports nothing twice**: each task's `clientId` is a hash of
   the format and its place in the file. A task from a Dayhand export whose id is still in this
   account is skipped too, so importing an export into the account it came from changes nothing.
-- `?dryRun=true` reads the file and checks every task without storing anything (`dryRun: true`).
+- `?dryRun=true` previews task and project validation, name reuse and capacity failures without
+  storing tasks, projects or history (`dryRun: true`). Each preview batch includes the project
+  catalog, so later batches see the same project capacity as a real import; project failures are
+  still reported once.
 - At most 2000 tasks per import; the server stores them in batches of 200, so a failure halfway
   leaves the first batches imported, and running the same import again completes it.
 
@@ -237,8 +258,8 @@ others are imported all the same) and `warnings` about what could not be carried
 
 `GET /api/v1/openapi.json` serves the OpenAPI 3.1 document of this deployment (`servers` is its
 URL). It is generated from the same sources as the API: the route table, the tools' argument
-validators (the MCP `inputSchema`) and the result schemas of `docs/schemas`, so it cannot
-drift from what the server does. Each operation names its MCP tool (`x-mcp-tool`) and the key
+validators (the MCP `inputSchema`) and the result schemas of `docs/schemas`. Handler-specific
+request bodies are declared in `restRoutes.ts`. Each operation names its MCP tool (`x-mcp-tool`) and the key
 scope it needs (`x-dayhand-scope`). Load it into Swagger UI, Postman, n8n's HTTP Request node or a
 client generator. The tests validate it against the official OpenAPI 3.1 schema and check every
 answer they get against the response schema it gives.

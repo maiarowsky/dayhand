@@ -133,9 +133,9 @@ get the same moves as actions on the card. Tap a card for its details. The bin i
 trash.
 
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
-optional time, repeat, reminders, a checklist, labels (which are also the projects: the backend has
-one list for both), links (http/https only; no files in version 1) and the note. Since 0.9.1 it
-also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
+optional time, repeat, reminders, a checklist, labels, links (http/https only; no files in version 1)
+and the note. For projects, see [backend support and client availability](../docs/architecture.md#projects).
+Since 0.9.1 it also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
 completed with, read-only (backend 0.10.0, [agent-work.md](../docs/agent-work.md)). The owner's own
 changes always go through. Since 0.11.0 the **Agent** card shows "agent: \<name\> works until
 \<time\>" while a claim lasts, the blocked reason in red, the tasks it waits for ("#12 Send the

@@ -45,7 +45,7 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 
 | Tool | Title | Hints | Result ([schema](schemas/)) | Operation |
 |---|---|---|---|---|
-| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo) |
+| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo, [projectId](#projects)) |
 | `update_task` | Update task | | `task` | Change fields; `null` clears an optional field |
 | `set_status` | Set task status | | `task` | `todo` / `doing` / `done` |
 | `set_now` | Set the now task | | `set-now` | Make one task the "now" task, optionally with a resume note; `taskId: null` clears it |
@@ -54,12 +54,12 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `archive_task` | Archive task | | `task` | Archive |
 | `delete_task` | Move task to trash | D | `task` | Move to the trash (purged after 30 days) |
 | `restore_task` | Restore task | | `task` | Restore from the trash, or from the archive |
-| `list_today` | Today | R | `today` | Overdue, today, done today and the now task |
+| `list_today` | Today | R | `today` | Overdue, today, done today and the now task; optional [project filter](#projects) |
 | `list_all` | Find tasks | R | `task-list` | Tasks not in the trash: search, filters and pages ([below](#finding-tasks-list_all)) |
 | `list_trash` | Trash | R | `task-list` | Tasks in the trash |
-| `board` | Board | R | `board` | Three columns: todo, doing, done |
+| `board` | Board | R | `board` | Three columns: todo, doing, done; optional [project filter](#projects) |
 | `get_task` | Task with history | R | `task-detail` | One task with its change history |
-| `export_plan` | Export plan | R | `export` | Markdown, JSON or iCalendar (`ics`, [calendar.md](calendar.md)) export of the whole plan |
+| `export_plan` | Export plan | R | `export` | [Markdown, JSON or iCalendar](#export-formats) export of the whole plan |
 | `get_settings` | Settings | R | `settings` | Time zone, summary time, default reminders |
 | `update_settings` | Update settings | D | `settings` | Change them |
 | `list_events` | Activity log | R | `event-list` | Task changes after a cursor ([below](#activity-log-list_events)) |
@@ -78,7 +78,7 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `reject_proposal` | Reject proposal | O, D | `task` | Move a proposal to the trash, optionally with a `reason` |
 | `agent_brief` | Agent brief | R | `agent-brief` | Start of a session: `list_today` plus claims, approvals, ready tasks and `nextSteps` ([below](#agent-brief-agent_brief)) |
 | `import_backlog` | Import Backlog.md tasks | | `backlog-import` | Backlog.md task files (`files: [{path, content}]`) as tasks, a file imported before skipped ([backlog-md.md](backlog-md.md)) |
-| `export_backlog` | Export as Backlog.md | R | `backlog-export` | The plan as Backlog.md task files and a `config.yml` (`prefix`, `includeArchived`) |
+| `export_backlog` | Export as Backlog.md | R | `backlog-export` | The plan as Backlog.md task files and a `config.yml` ([parameters](backlog-md.md#using-it)) |
 | `plan_health` | Plan health | R | `plan-health` | What needs a look, in one read ([below](#plan-health-plan_health)) |
 
 ### Results
@@ -101,6 +101,7 @@ under `$defs`: clients never fetch a URL. The top level is an object, as 2025 cl
 | `query` | Tasks whose title, note, resume note or labels contain this text, in any case |
 | `status` | Only these statuses, e.g. `["todo", "doing"]`; done tasks are included only when listed |
 | `labels` | Only tasks having all of these labels |
+| `projectId` | Optional [project filter](#projects) (since 0.13.0) |
 | `ready` | `true`: only tasks ready to work on (not done, no `blockedReason`, not a proposal, every task in `dependsOn` done); `false`: only the others |
 | `proposed` | `true`: only proposals waiting in the inbox; without it, or `false`, proposals are left out (since 0.11.0) |
 | `dueBefore`, `dueAfter` | Only tasks due before / after this day (`YYYY-MM-DD`, `"today"`, `"tomorrow"`); tasks without a day never match |
@@ -117,6 +118,31 @@ stays valid when tasks are added or removed in the meantime.
 Without `limit`, every match comes back at once and the text block holds the plain task array,
 as before 0.4.0, so clients that read the text keep working; with `limit` or `cursor` the text
 block holds the whole object.
+
+### Projects
+
+Since backend 0.13.0, a task may carry `projectId`, the stored project id. `add_task` and
+`update_task` accept a project id or its name (case-insensitive); `"none"` means no project.
+An omitted field leaves the task unchanged on update; `projectId: null` also clears it.
+Selecting an archived project fails with `invalid_argument`, unless an update names the
+project the task is already in. Unknown projects return `not_found`.
+
+`list_all`, `list_today` and `board` take the same optional `projectId` selector: one project's
+tasks, `"none"` for tasks without a project, or omit it for all projects. The filter applies to
+every part of Today, including the now task and done today. Other filters and pagination still
+apply. Project CRUD and client availability are described in [architecture](architecture.md#projects).
+
+### Export formats
+
+`export_plan` exports the whole plan. Since backend 0.13.0:
+
+- Markdown task lines show the project as `+Project-name`, with whitespace replaced by hyphens,
+  next to the `#labels`. This is readable output, not an import format.
+- JSON adds a `projects` catalog in menu order, archived and empty projects included. Each task's
+  `projectId` references an id in that catalog. The export version stays 1; older importers
+  ignore project fields. [JSON import](api.md#import) describes restoration into another account.
+
+For iCalendar (`ics`), see [calendar.md](calendar.md).
 
 ### Agent work
 
@@ -199,8 +225,7 @@ Since 0.11.0 ([agent-work.md](agent-work.md#5-approval-requests) has the reasons
 `add_task` with `proposal: true` adds a task with `proposedAt`: it waits in the owner's inbox and
 stays out of `list_today`, `board`, `list_all` (unless `proposed: true`), `ready`, the calendar
 feed and the phone's Today until the owner accepts it (`accept_proposal`), merges it into another
-task (`merge_proposal`: that task gets the proposal's note after a line naming it, its links,
-labels, source and return webhooks; the proposal goes to the trash with `mergedInto`) or rejects
+task (`merge_proposal`; [merge rules](agent-work.md#7-the-proposal-inbox)) or rejects
 it (`reject_proposal`: to the trash). A proposal cannot be claimed, made the now task, moved to
 `doing` or completed (`invalid_argument`). Three fields work on any new task:
 
@@ -485,6 +510,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.13.0 | [Project selectors](#projects), [export fields](#export-formats) and [Backlog.md targeting](backlog-md.md#using-it); [backend project support and client availability](architecture.md#projects) |
 | 0.12.0 | Phase guides and Backlog.md ([agent-work.md](agent-work.md#9-phase-guides-and-the-agent-brief), [backlog-md.md](backlog-md.md)): resources `dayhand://workflow/intake`, `dayhand://workflow/execution` and `dayhand://workflow/finalization`; `agent_brief`; `import_backlog` and `export_backlog` (source kind `backlog-md`) |
 | 0.11.0 | Agents and the owner ([agent-work.md](agent-work.md)): `request_approval`, `get_approval`, `list_approvals`, `decide_approval`; `get_agent_controls`, `pause_agents`, `set_tool_policy`, and `approvalId` on every change an agent makes; proposals (`add_task` takes `proposal`, `source`, `requestedBy`, `returnTo`; task fields `proposedAt`, `source`, `requestedBy`, `returnTo`, `mergedInto`; `list_all` takes `proposed`; `accept_proposal`, `merge_proposal`, `reject_proposal`); `plan_health` and the prompt `plan_health`; error codes `agents_paused`, `forbidden`, `approval_required` (with `approvalId`); webhook events `approval.decided` and `task.returned`; the owner's tools (O) are left out of an agent's `tools/list` |
 | 0.10.0 | Agent work ([agent-work.md](agent-work.md)): `list_events` and the resource `dayhand://activity` (the activity log); task fields `acceptance`, `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; `complete_task` takes `proof`; `list_all` takes `ready`; `claim_task`, `renew_claim`, `release_task`; error code `conflict`, and `precondition_failed` outside `If-Match` too |

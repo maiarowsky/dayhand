@@ -126,9 +126,9 @@ export const projectsToLabels = internalMutation({
 });
 
 /**
- * What the migrations still have to do; every number is 0 when they are complete.
- * tasksWithProject and projects (since 0.13.0) are what projectsToLabels still
- * has to do: both must be 0 before a rollback to 0.12.x, and are not otherwise.
+ * Backfill counts reach 0 when complete; tasksWithProject and projects instead
+ * count live project data. Their rollback completion requirements are owned by
+ * docs/deploy.md#upgrading-to-0130.
  */
 export const status = internalQuery({
   args: {},

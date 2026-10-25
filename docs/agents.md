@@ -213,9 +213,7 @@ shows the same in one line above Today; agents get it as the tool and prompt `pl
 
 The same steps are in the `dayhand://guide` resource, in `dayhand prime` and in the Agent Skill.
 
-## Planned
+## Related guides
 
-- **Backlog.md import and export** are planned and not in `main` yet. Dayhand's criteria, plan and
-  dependencies follow the same ideas as [Backlog.md](https://github.com/MrLesk/Backlog.md), a Markdown
-  task board for people and agents, so a plan can later move between the two.
-- Phase guides as MCP resources.
+- [Backlog.md import and export](backlog-md.md).
+- [Phase guides as MCP resources](agent-work.md#9-phase-guides-and-the-agent-brief).

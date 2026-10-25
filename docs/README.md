@@ -73,7 +73,7 @@ package or a signed download yet ([Install](install.md) says when that changes):
 | Dayhand for Linux | Arch Linux and Omarchy package built from the repository; CMake elsewhere | no AUR package yet |
 | iPhone and iPad | in development; nothing to install yet | an iOS app on the same backend |
 | Windows desktop app | none; the CLI works on Windows with a server on Convex | |
-| Backlog.md import and export | not in `main` | planned |
+| Backlog.md import and export | [Available from source](backlog-md.md) | |
 
 Pages that describe a planned piece say so where it matters, and give no command for it.
 

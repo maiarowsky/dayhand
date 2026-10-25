@@ -45,7 +45,8 @@ the phone, or `dayhand calendar on` ([calendar feed](calendar.md)). Changes are 
 
 `dayhand import` reads Dayhand's own JSON export, iCalendar files (tasks and events) and Todoist's CSV
 export ([import](api.md#import)). `dayhand export` writes the whole plan as Markdown, JSON (with the
-history) or iCalendar, and the phone saves a backup file. Backlog.md import and export are planned.
+history) or iCalendar, and the phone saves a backup file. For Backlog.md task folders, see
+[import and export](backlog-md.md).
 
 ### Is there an app for iPhone or Windows?
 

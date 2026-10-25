@@ -319,15 +319,10 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 
 ## Upgrading to 0.13.0
 
-0.13.0 adds projects: a `projects` table (a name unique in any case, a color token, an emoji, a
-note, a place in the list and an archive) and an optional `projectId` on tasks, so a task is in at
-most one project. Labels stay what they are, free tags across projects. Adding and changing tasks,
-`list_all`, `list_today`, `board`, `import_backlog`, `export_backlog` and `POST /api/v1/import`
-take an optional `projectId` (a project's id or name; in filters `"none"` means tasks without a
-project), the JSON export carries the projects, and the app gets `app:listProjects`,
-`app:addProject`, `app:updateProject` and `app:deleteProject`. There is no new status, error code,
-secret or webhook event, and no migration: existing tasks and labels stay as they are, and no
-project is made from a label until the owner asks for one (`addProject` with `fromLabel`).
+0.13.0 adds [backend project support](architecture.md#projects). There is no new status, error
+code, secret or webhook event, and no forward migration: existing tasks and labels stay as they
+are. For task selectors see [MCP](mcp.md#projects); transfer rules are in
+[JSON import](api.md#import) and [Backlog.md](backlog-md.md#using-it).
 
 1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.13.0.zip`.
 2. Deploy: `dayhand server deploy` (or `npx convex deploy`).
@@ -596,9 +591,10 @@ find them) and old keys count as `agent` keys.
 
    Run it right away: tasks added between the deploy and the migration get numbers first, so
    older tasks get the numbers after them. Both migrations are idempotent and can be run again.
-3. Check that nothing is left: `npx convex run migrations:status` must print
-   `{ "keysWithoutKind": 0, "tasksWithoutRef": 0 }`. If `tasksWithoutRef` is not 0 yet, the
-   scheduled batches are still running; check again after a few seconds.
+3. Check that nothing is left: `npx convex run migrations:status` must show
+   `keysWithoutKind: 0` and `tasksWithoutRef: 0` (later backends return additional counters).
+   If `tasksWithoutRef` is not 0 yet, the scheduled batches are still running; check again after
+   a few seconds.
 4. If the key the user types commands with is a CLI key, make a new one with
    `"kind": "cli"` (see [mcp.md](mcp.md#keys-and-actors)), switch the CLI to it and revoke the
    old one, so the history shows `cli` instead of `agent: <name>`. Kinds cannot be changed on

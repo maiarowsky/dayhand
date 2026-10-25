@@ -120,8 +120,8 @@ what an agent does outside Dayhand.
 
 ### MCP
 
-The server speaks [MCP](https://modelcontextprotocol.io) at `/mcp`, with the same operations as
-the app. For Claude Code, with the agent key from above:
+The server speaks [MCP](https://modelcontextprotocol.io) at `/mcp`; its available operations are
+listed in [docs/mcp.md](docs/mcp.md#tools). For Claude Code, with the agent key from above:
 
 ```sh
 claude mcp add --transport http dayhand "$DAYHAND_URL/mcp" --header "Authorization: Bearer $AGENT_KEY"
