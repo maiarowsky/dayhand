@@ -158,7 +158,7 @@ struct ConnectionSettings: View {
                 Section(tr("Server")) {
                     LabeledContent(tr("Address"), value: credential.serverUrl)
                     LabeledContent(tr("This Mac"), value: credential.deviceName)
-                    LabeledContent(tr("Status"), value: Formatting.status(model.status, pending: model.pending, useOffline: false) ?? tr("Connected"))
+                    LabeledContent(tr("Status"), value: Formatting.status(model.status, pending: model.pending, useOffline: false, projectSupport: model.projectSupport) ?? tr("Connected"))
                     LabeledContent(tr("Changes waiting"), value: "\(model.pending)")
                     HStack {
                         Button(tr("Sync Now")) { Task { await model.syncNow() } }
@@ -168,7 +168,7 @@ struct ConnectionSettings: View {
                 }
             } else {
                 Section(tr("Server")) {
-                    Text(Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline) ?? tr("No server connected."))
+                    Text(Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline, projectSupport: model.projectSupport) ?? tr("No server connected."))
                     LabeledContent(tr("Changes waiting"), value: "\(model.pending)")
                     Button(tr("Connect to Server…")) {
                         model.showConnect = true

@@ -146,14 +146,14 @@ enum Formatting {
     }
 
     /// The connection in words, for the status line and Settings.
-    static func status(_ status: SyncStatus, pending: Int, useOffline: Bool) -> String? {
+    static func status(_ status: SyncStatus, pending: Int, useOffline: Bool, projectSupport: ProjectSupport) -> String? {
         switch status {
         case .notConnected:
             return useOffline ? tr("Not connected to a server; tasks stay on this Mac.") : tr("No server connected.")
         case .connecting:
             return tr("Connecting…")
         case .synced:
-            return pending > 0 ? tr("Sending \(pending) changes…") : nil
+            return projectSupport.requirement ?? (pending > 0 ? tr("Sending \(pending) changes…") : nil)
         case .signedOut:
             return tr("The server signed this Mac out. Connect again with a new code; your tasks stay here.")
         case .offline(let reason):

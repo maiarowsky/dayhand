@@ -133,7 +133,7 @@ struct StatusLine: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        if let text = Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline) {
+        if let text = Formatting.status(model.status, pending: model.pending, useOffline: model.useOffline, projectSupport: model.projectSupport) {
             HStack(spacing: 8) {
                 Image(systemName: icon).foregroundStyle(.secondary)
                 // Wraps without fixedSize: a fixed height is measured at the split view's narrowest width, many lines

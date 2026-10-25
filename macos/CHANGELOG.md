@@ -4,6 +4,38 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.4.0 (unreleased)
+
+### Added
+
+- **Projects** in the local database and sync, the groundwork for the project list in the sidebar: each task
+  belongs to at most one project. Managing projects (name, colour, emoji icon, note, order, archive, and deletion
+  with the tasks moved to another project or out of any) is online only: each change is made on the server at once
+  (`app:addProject`, `app:updateProject`, `app:deleteProject`) and its answer written on the Mac. Without a server or
+  a connection it says "Requires a connection to the server." and nothing is queued. Putting a task into a project
+  the server has (`projectId` in `app:add` and `app:update`) works offline through the outbox, and quick add reads
+  `+project` (`+strona-piekarni`). Behaviour, limits and the shared cases: [README.md](README.md#projects).
+
+### Changed
+
+- The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
+  Migrations v5 to v7 only clean up after development builds of 0.4.0, which queued project changes: v7 drops them
+  from the outbox together with the projects the server never confirmed (their tasks stay, without a project).
+- The offline queue holds task changes (and the settings) only, appended at the end and sent oldest first, with no
+  barriers or waiting conditions. A task goes only into a project the server has confirmed. When the server refuses an
+  assignment because the project was archived or deleted on another device, the task stays, the assignment is taken
+  off and the refusal shows as other refusals do. Projects match only by server id or `clientId`, never by name.
+- With a server older than 0.13.0 (no projects) nothing on the Mac is lost: tasks keep syncing, sent without
+  `projectId`, with no retry loop. Project changes and new assignments say "Needs backend 0.13.0 or later",
+  localized, as does the status line.
+
+### Known limitations
+
+- A repeating task can lose its project when the project is archived on another device or the server is older
+  (0.12.x): its next occurrence comes without a project. The task itself is never lost.
+- A task put into a project offline can also end without a project when this Mac archives or deletes that project
+  before the queue has been sent. The task itself is never lost.
+
 ## 0.3.0 (unreleased)
 
 ### Added

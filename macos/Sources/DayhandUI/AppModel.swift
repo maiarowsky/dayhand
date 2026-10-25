@@ -21,6 +21,7 @@ final class AppModel: ObservableObject {
     /// The tasks in the trash, the most recently deleted first.
     @Published private(set) var trash: [TaskItem] = []
     @Published private(set) var pending = 0
+    @Published private(set) var projectSupport: ProjectSupport = .unknown
     @Published private(set) var status: SyncStatus = .notConnected {
         didSet {
             if Self.historyRecovered(from: oldValue, to: status) { historyRefreshRevision += 1 }
@@ -129,6 +130,9 @@ final class AppModel: ObservableObject {
         }
         Task { @MainActor [weak self] in
             for try await count in repository.observePendingCount() { self?.pending = count }
+        }
+        Task { @MainActor [weak self] in
+            for try await support in repository.observeProjectSupport() { self?.projectSupport = support }
         }
         Task { @MainActor [weak self] in
             for try await health in repository.observePlanHealth() { self?.health = health }

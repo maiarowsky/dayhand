@@ -338,6 +338,20 @@
 			<string>タスクはここに%lld日間残り、その後完全に削除されます。</string>
 		</dict>
 	</dict>
+	<key>The name must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>名前は%lld文字以内にしてください。</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -364,6 +378,20 @@
 			<string>lld</string>
 			<key>other</key>
 			<string>ゴミ箱は空です。削除したタスクはここに%lld日間残ります。</string>
+		</dict>
+	</dict>
+	<key>There can be at most %lld projects, archived ones included.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>プロジェクトはアーカイブ済みを含めて最大%lld件です。</string>
 		</dict>
 	</dict>
 	<key>oldest open task %lld days old</key>

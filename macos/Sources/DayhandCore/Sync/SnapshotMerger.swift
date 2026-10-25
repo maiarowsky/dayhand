@@ -2,7 +2,7 @@ import Foundation
 
 /// Groups of task fields that one kind of change touches.
 public enum Field: CaseIterable, Hashable, Sendable {
-    case title, note, due, status, now, resume, archived, `repeat`, labels, links, deleted, checklist, reminders
+    case title, note, due, status, now, resume, archived, `repeat`, labels, links, deleted, checklist, reminders, project
 }
 
 public struct MergePlan: Hashable, Sendable {
@@ -19,12 +19,15 @@ public struct MergePlan: Hashable, Sendable {
  *   (`updatedAt`), so a late snapshot never undoes a newer state.
  * - A task missing from the snapshot was purged (or never reached the server) and goes, unless it still has changes
  *   waiting or is too fresh to be in any snapshot yet. Tasks in the trash are part of the snapshot, with `deletedAt`.
+ * - The server's `projectId` reads as the project's `localId` on this Mac ([projects]).
  */
 public enum SnapshotMerger {
     /// How long a task the server has not shown yet is kept (a snapshot may predate it).
     public static let unseenGraceMs: Int64 = 2 * 60 * 1000
 
-    public static func merge(local: [TaskItem], pending: [OutboxOp], remote: [RemoteTask], nowMs: Int64) -> MergePlan {
+    public static func merge(
+        local: [TaskItem], pending: [OutboxOp], remote: [RemoteTask], nowMs: Int64, projects: ProjectMapping = ProjectMapping()
+    ) -> MergePlan {
         let dirty = DirtyFields(pending)
         var byServerId: [String: TaskItem] = [:]
         var byClientId: [String: TaskItem] = [:]
@@ -38,7 +41,7 @@ public enum SnapshotMerger {
             let row = byServerId[r.id] ?? r.clientId.flatMap { byClientId[$0] }
             if let row { seen.insert(row.localId) }
             if let row, let known = row.serverUpdatedAt, r.updatedAt <= known { continue }
-            let merged = mergeRow(row, r, row.map { dirty.forTask($0.localId) } ?? [])
+            let merged = mergeRow(row, r, row.map { dirty.forTask($0.localId) } ?? [], projects)
             if merged != row { upserts.append(merged) }
         }
         let deletes = local
@@ -63,7 +66,7 @@ public enum SnapshotMerger {
         return merged
     }
 
-    private static func mergeRow(_ row: TaskItem?, _ r: RemoteTask, _ keepLocal: Set<Field>) -> TaskItem {
+    private static func mergeRow(_ row: TaskItem?, _ r: RemoteTask, _ keepLocal: Set<Field>, _ projects: ProjectMapping) -> TaskItem {
         var task = TaskItem(
             localId: row?.localId ?? r.clientId ?? r.id,
             serverId: r.id,
@@ -94,8 +97,10 @@ public enum SnapshotMerger {
             dependsOn: r.dependsOn,
             blockedReason: r.blockedReason,
             claimedBy: r.claimedBy,
-            claimExpiresAt: r.claimExpiresAt
+            claimExpiresAt: r.claimExpiresAt,
+            projectLocalId: projects.localId(r.projectId)
         )
+        if projects.preservesLocalMembership, let row { task.projectLocalId = row.projectLocalId }
         guard let row, !keepLocal.isEmpty else { return task }
         if keepLocal.contains(.title) { task.title = row.title }
         if keepLocal.contains(.note) { task.note = row.note }
@@ -110,6 +115,7 @@ public enum SnapshotMerger {
         if keepLocal.contains(.deleted) { task.deletedAt = row.deletedAt }
         if keepLocal.contains(.checklist) { task.checklist = row.checklist }
         if keepLocal.contains(.reminders) { task.reminders = row.reminders }
+        if keepLocal.contains(.project) { task.projectLocalId = row.projectLocalId }
         task.updatedAt = max(row.updatedAt, r.updatedAt)
         return task
     }
@@ -125,7 +131,10 @@ public struct DirtyFields: Sendable {
         for op in pending {
             if op.mutation == Mutations.setNow { nowEverywhere = true }
             guard let localId = op.taskLocalId else { continue }
-            byTask[localId, default: []].formUnion(DirtyFields.fields(of: op))
+            var fields = DirtyFields.fields(of: op)
+            // Refused for its project, the change goes again without it: the server's project stands.
+            if op.lastError.map(RemoteJSON.refusesProject) == true { fields.remove(.project) }
+            byTask[localId, default: []].formUnion(fields)
         }
     }
 
@@ -164,6 +173,7 @@ public struct DirtyFields: Sendable {
         if keys.contains("links") { fields.insert(.links) }
         if keys.contains("checklist") { fields.insert(.checklist) }
         if keys.contains("reminders") { fields.insert(.reminders) }
+        if keys.contains("projectId") { fields.insert(.project) }
         return fields
     }
 }

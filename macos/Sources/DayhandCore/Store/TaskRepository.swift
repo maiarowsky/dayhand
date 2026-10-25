@@ -10,13 +10,14 @@ public enum RepositoryError: Error, Hashable, Sendable {
 /**
  * Every user action changes the local row and appends its server mutation to the outbox in one transaction, as the
  * Android app's `TaskRepository`, so the screen updates at once and the change cannot be lost or sent without being
- * shown. [onOutboxChanged] wakes the sync engine.
+ * shown. [onOutboxChanged] wakes the sync engine. Project management is the exception: it is online only, through
+ * `SyncEngine`'s project calls (`ProjectCalls.swift`).
  */
 public final class TaskRepository: Sendable {
     public let database: AppDatabase
-    private let clock: @Sendable () -> Int64
-    private let newId: @Sendable () -> String
-    private let onOutboxChanged: @Sendable () -> Void
+    let clock: @Sendable () -> Int64
+    let newId: @Sendable () -> String
+    let onOutboxChanged: @Sendable () -> Void
     private let localTimezone: @Sendable () -> String
     private let repeatsOnMac: @Sendable () -> Bool
 
@@ -38,7 +39,7 @@ public final class TaskRepository: Sendable {
         self.repeatsOnMac = repeatsOnMac
     }
 
-    private var writer: DatabaseQueue { database.writer }
+    var writer: DatabaseQueue { database.writer }
 
     // MARK: Reading
 
@@ -80,9 +81,12 @@ public final class TaskRepository: Sendable {
 
     // MARK: Changes
 
-    /// Adds a task; [dueTime] is kept only together with [dueDate], as the backend requires.
+    /// Adds a task, in project [projectLocalId] when given; [dueTime] is kept only together with [dueDate], as the
+    /// backend requires.
     @discardableResult
-    public func add(title: String, dueDate: String?, dueTime: String?, note: String? = nil) async throws -> TaskItem {
+    public func add(
+        title: String, dueDate: String?, dueTime: String?, note: String? = nil, projectLocalId: String? = nil
+    ) async throws -> TaskItem {
         guard let cleanTitle = TaskRules.title(title) else { throw RepositoryError.invalid(tr("The title must be 1 to \(TaskRules.maxTitle) characters.")) }
         let cleanNote = note.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
         guard (cleanNote?.jsLength ?? 0) <= TaskRules.maxNote else { throw RepositoryError.invalid(tr("The note is too long.")) }
@@ -92,14 +96,16 @@ public final class TaskRepository: Sendable {
         let localId = newId()
         let task = TaskItem(
             localId: localId, clientId: localId, title: cleanTitle, note: cleanNote, dueDate: date, dueTime: time,
-            createdAt: now, updatedAt: now
+            createdAt: now, updatedAt: now, projectLocalId: projectLocalId
         )
         var args: [String: JSONValue] = ["title": .string(cleanTitle)]
         if let cleanNote { args["note"] = .string(cleanNote) }
         if let date { args["dueDate"] = .string(date) }
         if let time { args["dueTime"] = .string(time) }
+        if let projectLocalId { args["projectId"] = .string(projectLocalId) }
         let op = makeOp(Mutations.add, localId, args, now: now, clientId: localId)
         try await writer.write { db in
+            if let projectLocalId { try Self.checkTarget(db, projectLocalId) }
             try task.save(db)
             var op = op
             try op.insert(db)
@@ -202,7 +208,7 @@ public final class TaskRepository: Sendable {
         try await edit(localId, Mutations.reschedule, ["dueDate": .string(date)]) { task, _ in task.dueDate = date }
     }
 
-    /// Sets the labels (which also serve as projects), cleaned as the backend cleans them.
+    /// Sets the labels, cleaned as the backend cleans them.
     public func setLabels(_ localId: String, _ labels: [String]) async throws {
         guard let clean = TaskRules.labels(labels) else { throw RepositoryError.invalid(tr("There are too many labels, or one is too long.")) }
         try await edit(localId, Mutations.update, ["labels": .array(clean.map(JSONValue.string))]) { task, _ in task.labels = clean }
@@ -312,15 +318,16 @@ public final class TaskRepository: Sendable {
 
     // MARK: Server snapshots
 
-    /// Writes a server snapshot into the database (see `SnapshotMerger`) and keeps its settings, except the fields a
-    /// settings change still in the outbox sets.
+    /// Writes a server snapshot into the database (see `ProjectMerger` and `SnapshotMerger`) and keeps its settings,
+    /// except the fields a settings change still in the outbox sets.
     public func apply(_ snapshot: Snapshot) async throws {
         let now = clock()
         let zone = localTimezone()
         try await writer.write { db in
+            let projects = try ProjectSync.apply(db, snapshot.projects)
             let local = try TaskItem.fetchAll(db)
             let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
-            let plan = SnapshotMerger.merge(local: local, pending: pending, remote: snapshot.tasks, nowMs: now)
+            let plan = SnapshotMerger.merge(local: local, pending: pending, remote: snapshot.tasks, nowMs: now, projects: projects)
             for task in plan.upserts { try task.save(db) }
             if !plan.deletes.isEmpty { _ = try TaskItem.deleteAll(db, keys: plan.deletes) }
             // History of tasks that no longer exist on the Mac (purged from the trash on the server).
@@ -400,10 +407,11 @@ public final class TaskRepository: Sendable {
         try await writer.write { db in try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [Meta.planHealthKey]) }
     }
 
-    /// Forgets every task, its history and every waiting change (Disconnect and pairing with another account).
+    /// Forgets every task, project, history and waiting change (Disconnect and pairing with another account).
     public func eraseAll() async throws {
         try await writer.write { db in
             _ = try TaskItem.deleteAll(db)
+            _ = try Project.deleteAll(db)
             _ = try TaskEvent.deleteAll(db)
             _ = try OutboxOp.deleteAll(db)
             _ = try db.execute(sql: "DELETE FROM meta")
@@ -465,7 +473,7 @@ public final class TaskRepository: Sendable {
             localId: id, clientId: id, title: task.title, note: task.note, dueDate: occurrence.dueDate,
             dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat, labels: task.labels,
             links: task.links, checklist: task.checklist.map { ChecklistItem(id: $0.id, title: $0.title) },
-            reminders: task.reminders
+            reminders: task.reminders, projectLocalId: task.projectLocalId
         )
     }
 
@@ -480,11 +488,12 @@ public final class TaskRepository: Sendable {
         if !task.links.isEmpty { args["links"] = .array(task.links.map(\.wire)) }
         if !task.checklist.isEmpty { args["checklist"] = .array(task.checklist.map(\.wire)) }
         if let reminders = task.reminders { args["reminders"] = .array(reminders.map(\.wire)) }
+        if let project = task.projectLocalId { args["projectId"] = .string(project) }
         return args
     }
 
     /// A change with its own `clientId`, which makes the server apply it once however often it is sent.
-    private func makeOp(_ mutation: String, _ taskLocalId: String?, _ args: [String: JSONValue], now: Int64, clientId: String? = nil) -> OutboxOp {
+    func makeOp(_ mutation: String, _ taskLocalId: String?, _ args: [String: JSONValue], now: Int64, clientId: String? = nil) -> OutboxOp {
         let clientId = clientId ?? newId()
         var withClientId = args
         withClientId["clientId"] = .string(clientId)
@@ -510,6 +519,14 @@ extension TaskRepository: OutboxStore {
         try await writer.read { db in try TaskItem.fetchOne(db, key: taskLocalId)?.serverId }
     }
 
+    public func projectRef(_ localId: String) async throws -> String? {
+        try await writer.read { db in try Project.fetchOne(db, key: localId)?.serverId }
+    }
+
+    public func projectSupport() async throws -> ProjectSupport {
+        try await writer.read { db in try Meta.projectSupport(db) }
+    }
+
     public func acknowledge(_ op: OutboxOp, value: JSONValue) async throws {
         try await writer.write { db in
             _ = try OutboxOp.deleteOne(db, key: op.seq)
@@ -523,10 +540,14 @@ extension TaskRepository: OutboxStore {
 
     public func reject(_ op: OutboxOp, reason: String) async throws {
         try await writer.write { db in
+            guard let op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
+            // A task change refused for its project stays and goes again without it; see `ProjectSync.refused`.
+            if try ProjectSync.refused(db, op, reason: reason) { return }
             _ = try OutboxOp.deleteOne(db, key: op.seq)
             guard let localId = op.taskLocalId else { return }
+            let creating = try op.mutation == Mutations.add && TaskItem.fetchOne(db, key: localId)?.serverId == nil
             let clearsRepeat = op.mutation == Mutations.update && JSONValue.decode(op.argsJson)?["repeat"] == .null
-            if op.mutation == Mutations.add || op.mutation == Mutations.complete || clearsRepeat {
+            if creating || op.mutation == Mutations.complete || clearsRepeat {
                 var parents = [localId]
                 while let parent = parents.popLast() {
                     let children = try TaskItem.fetchAll(db, sql: """
@@ -540,7 +561,7 @@ extension TaskRepository: OutboxStore {
                     }
                 }
             }
-            if op.mutation == Mutations.add {
+            if creating {
                 // The task never existed on the server: drop it and every change made to it since.
                 _ = try OutboxOp.filter(Column("taskLocalId") == localId).deleteAll(db)
                 _ = try TaskItem.deleteOne(db, key: localId)
@@ -562,10 +583,20 @@ extension TaskRepository: OutboxStore {
     }
 }
 
-/// The server settings and the last plan health report, kept as JSON in the key-value table.
+/// The server settings, the last plan health report and whether the server has projects, kept in the key-value table.
 enum Meta {
     static let settingsKey = "settings"
     static let planHealthKey = "planHealth"
+    static let projectSupportKey = "projects"
+
+    static func projectSupport(_ db: Database) throws -> ProjectSupport {
+        try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [projectSupportKey])
+            .flatMap(ProjectSupport.init(rawValue:)) ?? .unknown
+    }
+
+    static func write(_ db: Database, _ support: ProjectSupport) throws {
+        try write(db, key: projectSupportKey, support.rawValue)
+    }
 
     static func settings(_ db: Database, localTimezone: String) throws -> ReminderSettings {
         guard let text = try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [settingsKey]),

@@ -13,6 +13,16 @@ struct ConvexRemoteTests {
         #expect(ConvexRemote.classify(HTTPReply(status: 200, body: Data("not json".utf8))) == .failed("unreadable answer"))
     }
 
+    @Test func aConvexErrorRefusalComesBackInTheServersWordsWithoutTheStackTrace() {
+        // What a live 0.13 deployment answers when `fail(...)` throws a ConvexError.
+        let raw = "[Request ID: 8e01d82b9dfe54f2] Server Error\nUncaught ConvexError: {\"code\":\"invalid_argument\",\"message\":\"A project named \\\"Taken\\\" already exists\"}\n    at fail (../../convex/lib/core.ts:50:0)\n"
+        let reply = HTTPReply(status: 560, json: [
+            "status": "error", "errorMessage": .string(raw),
+            "errorData": ["code": "invalid_argument", "message": "A project named \"Taken\" already exists"],
+        ])
+        #expect(ConvexRemote.classify(reply) == .rejected("A project named \"Taken\" already exists"))
+    }
+
     @Test func theRequestIsTheConvexHTTPAPIsShape() {
         let body = JSONValue.decode(ConvexRemote.requestBody(path: "app:add", args: ["title": "Milk", "interval": 1]))
         #expect(body == ["path": "app:add", "format": "convex_encoded_json", "args": [["title": "Milk", "interval": 1]]])

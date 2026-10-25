@@ -270,6 +270,8 @@
 	<string>毎月</string>
 	<key>Morning summary</key>
 	<string>朝のまとめ</string>
+	<key>Move the tasks to another project.</key>
+	<string>タスクを別のプロジェクトに移動してください。</string>
 	<key>Move to Trash</key>
 	<string>ゴミ箱に入れる</string>
 	<key>Move “%@” to the trash?</key>
@@ -278,6 +280,8 @@
 	<string>ボード上で移動</string>
 	<key>Moved to the trash</key>
 	<string>ゴミ箱に移動</string>
+	<key>Needs backend 0.13.0 or later</key>
+	<string>バックエンド 0.13.0 以降が必要です</string>
 	<key>Never</key>
 	<string>なし</string>
 	<key>New Task</key>
@@ -408,6 +412,8 @@
 	<string>繰り返し</string>
 	<key>Requests and proposals</key>
 	<string>リクエストと提案</string>
+	<key>Requires a connection to the server.</key>
+	<string>サーバーへの接続が必要です。</string>
 	<key>Restart Dayhand</key>
 	<string>Dayhand を再起動</string>
 	<key>Restore</key>
@@ -460,6 +466,10 @@
 	<string>サーバーアドレスではありません。https://&lt;name&gt;.convex.site の形式です。</string>
 	<key>That is not a time.</key>
 	<string>時刻ではありません。</string>
+	<key>That project is not on the server yet.</key>
+	<string>そのプロジェクトはまだサーバーにありません。</string>
+	<key>That project no longer exists.</key>
+	<string>そのプロジェクトはもうありません。</string>
 	<key>That version is older than this one, so it was not installed.</key>
 	<string>そのバージョンは現在のものより古いため、インストールされませんでした。</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
@@ -482,10 +492,16 @@
 	<string>期限日</string>
 	<key>The history starts once this task reaches the server.</key>
 	<string>履歴は、このタスクがサーバーに届いてから記録されます。</string>
+	<key>The icon must be a single emoji.</key>
+	<string>アイコンは絵文字1つにしてください。</string>
 	<key>The last day of the month</key>
 	<string>月末</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>新しいバージョンの一覧を読み取れませんでした。後でもう一度お試しください。</string>
+	<key>The name must be one line.</key>
+	<string>名前は1行で入力してください。</string>
+	<key>The name must not be empty.</key>
+	<string>名前を入力してください。</string>
 	<key>The note is too long.</key>
 	<string>メモが長すぎます。</string>
 	<key>The reminders are not valid.</key>
@@ -520,6 +536,8 @@
 	<string>チェックリストの項目が多すぎるか、長すぎるものがあります。</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>ラベルが多すぎるか、長すぎるものがあります。</string>
+	<key>There is already a project named “%@”.</key>
+	<string>「%@」という名前のプロジェクトがすでにあります。</string>
 	<key>These ring only when the task has a time.</key>
 	<string>タスクに時刻があるときだけ通知します。</string>
 	<key>They could not be read: %@</key>
@@ -732,5 +750,9 @@
 	<string>%@まで</string>
 	<key>yes</key>
 	<string>はい</string>
+	<key>“%@” is archived; restore it first.</key>
+	<string>「%@」はアーカイブされています。先に元に戻してください。</string>
+	<key>“none” is reserved: it means tasks without a project.</key>
+	<string>「none」は予約語です。プロジェクトのないタスクを表します。</string>
 </dict>
 </plist>

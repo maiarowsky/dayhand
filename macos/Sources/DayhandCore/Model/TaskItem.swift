@@ -208,7 +208,7 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
     /// `updatedAt` of the last server copy merged into this row; nil until the server has it.
     public var serverUpdatedAt: Int64?
     public var `repeat`: RepeatRule?
-    /// Labels, which also serve as projects (the backend has one list for both).
+    /// Free tags across projects (`#home`); the task's project is [projectLocalId].
     public var labels: [String]
     public var links: [TaskLink]
     /// In the trash since then; the server purges it 30 days later unless restored.
@@ -233,6 +233,8 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
     public var claimedBy: String?
     /// When the claim runs out (Unix ms).
     public var claimExpiresAt: Int64?
+    /// The `localId` of the task's project (backend 0.13.0); nil = no project.
+    public var projectLocalId: String?
 
     public init(
         localId: String, serverId: String? = nil, clientId: String? = nil, title: String, note: String? = nil,
@@ -241,7 +243,8 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
         updatedAt: Int64, serverUpdatedAt: Int64? = nil, repeat: RepeatRule? = nil, labels: [String] = [],
         links: [TaskLink] = [], deletedAt: Int64? = nil, checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil,
         ref: Int? = nil, acceptance: [AcceptanceItem] = [], plan: String? = nil, proof: TaskProof? = nil,
-        dependsOn: [String] = [], blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil
+        dependsOn: [String] = [], blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil,
+        projectLocalId: String? = nil
     ) {
         self.localId = localId
         self.serverId = serverId
@@ -272,6 +275,7 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
         self.blockedReason = blockedReason
         self.claimedBy = claimedBy
         self.claimExpiresAt = claimExpiresAt
+        self.projectLocalId = projectLocalId
     }
 
     public var id: String { localId }
@@ -286,6 +290,9 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
 
     /// Shown on Today: neither archived nor in the trash.
     public var isActive: Bool { archivedAt == nil && deletedAt == nil }
+
+    /// Counted as open in the sidebar: active and not done.
+    public var isOpen: Bool { isActive && status != .done }
 
     /// Whether an agent has set anything the details' Agent section shows.
     public var hasAgentWork: Bool {

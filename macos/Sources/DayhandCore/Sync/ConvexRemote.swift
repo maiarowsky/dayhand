@@ -24,7 +24,8 @@ public enum FeedError: Error, Hashable, Sendable {
  * The Convex HTTP API (`POST /api/mutation`, `/api/query`), the same calls the Android app's `HttpTaskRemote` and the
  * official `ConvexHttpClient` make. A function that failed answers 560 with `{status: "error"}`. The app JWT comes
  * from [tokens]; a refused one is refreshed and the call tried once more. Live updates come from polling
- * [snapshot]: `listAll`, `listTrash` and `getSettings`.
+ * [snapshot]: `listAll`, `listTrash`, `getSettings` and `listProjects` (which a server older than 0.13.0 does not
+ * have: its snapshot then has no projects, and nothing else changes).
  */
 public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
     public static let udfFailed = 560
@@ -56,7 +57,13 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
         guard case .applied(let trashList) = trash else { return .failure(Self.feedError(trash)) }
         let settings = await query(RemoteJSON.querySettings)
         guard case .applied(let settingsValue) = settings else { return .failure(Self.feedError(settings)) }
-        return .success(RemoteJSON.snapshot(tasks: taskList, trash: trashList, settings: settingsValue))
+        let projectList: JSONValue?
+        switch await query(RemoteJSON.queryProjects) {
+        case .applied(let value): projectList = value
+        case .rejected(let message) where RemoteJSON.isMissingFunction(message): projectList = nil
+        case let other: return .failure(Self.feedError(other))
+        }
+        return .success(RemoteJSON.snapshot(tasks: taskList, trash: trashList, settings: settingsValue, projects: projectList))
     }
 
     private func call(_ endpoint: String, path: String, args: JSONValue) async -> SendResult {
@@ -97,7 +104,8 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
             return .applied(body["value"] ?? .object([:]))
         case "error":
             if RemoteJSON.errorCode(body["errorData"]) == "unauthenticated" { return .unauthorized }
-            return .rejected(body["errorMessage"]?.string ?? "error")
+            // A ConvexError carries the server's words in its data; `errorMessage` adds the request id and stack.
+            return .rejected(body["errorData"]?["message"]?.string ?? body["errorMessage"]?.string ?? "error")
         default:
             return .failed("unexpected answer")
         }
