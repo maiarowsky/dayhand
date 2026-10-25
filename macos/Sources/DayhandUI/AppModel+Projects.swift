@@ -68,6 +68,13 @@ extension AppModel {
         return sections.overdue.isEmpty && sections.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today.")
     }
 
+    /// The line over the trash: how long tasks stay there, or that it is empty, unless a search hides what is in it.
+    var trashHeader: String {
+        let days = TaskItem.trashRetentionDays
+        if !trash.isEmpty { return tr("Tasks stay here for \(days) days, then they are deleted for good.") }
+        return isSearching ? tr("No task matches the search.") : tr("The trash is empty. Deleted tasks stay here for \(days) days.")
+    }
+
     /// The done tasks (the latest first) and the archived ones of the Done place, at most 50 each.
     var doneAndArchived: (done: [TaskItem], archived: [TaskItem]) {
         let shown = tasks.filter { !$0.inTrash && matchesSearch($0) }

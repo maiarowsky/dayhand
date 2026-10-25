@@ -8,7 +8,6 @@ struct TrashView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        let days = TaskItem.trashRetentionDays
         VStack(spacing: 0) {
             StatusLine()
             List(selection: $model.selection) {
@@ -17,9 +16,7 @@ struct TrashView: View {
                         TrashRow(task: task, today: model.today).tag(task.localId)
                     }
                 } header: {
-                    Text(model.trash.isEmpty
-                        ? tr("The trash is empty. Deleted tasks stay here for \(days) days.")
-                        : tr("Tasks stay here for \(days) days, then they are deleted for good."))
+                    Text(model.trashHeader)
                 }
             }
             .listStyle(.sidebar)

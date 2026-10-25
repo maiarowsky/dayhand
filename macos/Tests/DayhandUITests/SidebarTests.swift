@@ -118,14 +118,20 @@ struct SidebarTests {
         #expect(model.todayPlaceholder == nil)
         model.search = ""
         #expect(model.todayPlaceholder == nil)
+        let days = TaskItem.trashRetentionDays
+        #expect(model.trashHeader == "The trash is empty. Deleted tasks stay here for \(days) days.")
         let milk = try #require(model.tasks.first { $0.title == "Milk" })
         model.moveToTrash(milk.localId)
         try await eventually { model.sections.today.isEmpty }
+        #expect(model.trashHeader == "Tasks stay here for \(days) days, then they are deleted for good.")
         #expect(model.todayPlaceholder == "Nothing else planned for today.")
         model.search = "  "
         #expect(!model.isSearching && model.todayPlaceholder == "Nothing else planned for today.")
+        #expect(model.trashHeader == "Tasks stay here for \(days) days, then they are deleted for good.")
         model.show(.project(bakery))
         #expect(model.list.overdue.map(\.title) == ["Invoice"] && model.list.noDay.map(\.title) == ["Photos"])
+        model.search = "xyz"
+        #expect(model.trash.isEmpty && model.trashHeader == "No task matches the search.")
     }
 
     @Test func aTaskDroppedOnAProjectMovesThereAndOnNoProjectLeavesIt() async throws {
