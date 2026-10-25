@@ -5,12 +5,7 @@ public protocol OutboxStore: Sendable {
     /// The oldest waiting change, or nil when everything was sent.
     func next() async throws -> OutboxOp?
     func serverIdOf(_ taskLocalId: String) async throws -> String?
-    /**
-     * How the server names project [localId]: its server id, or its name while it has none (its `addProject` was
-     * refused because the server has a project of that name, which takes the name as well); nil when this Mac has no
-     * such project.
-     */
-    func projectRef(_ localId: String) async throws -> String?
+    func projectRef(_ localId: String, allowName: Bool) async throws -> String?
     /// Whether the server has projects, as the last snapshot said.
     func projectSupport() async throws -> ProjectSupport
     /// The server applied [op]: forget it (and remember the server id of a new task).
@@ -101,7 +96,7 @@ public struct OutboxProcessor: Sendable {
         }
         for key in ["projectId", "moveTasksTo"] {
             guard let localId = args[key]?.string, localId != ProjectRules.noProject else { continue }
-            if let ref = try await store.projectRef(localId) {
+            if let ref = try await store.projectRef(localId, allowName: op.mutation != Mutations.deleteProject) {
                 args[key] = .string(ref)
             } else if ofProject {
                 return "project never reached the server"

@@ -69,8 +69,9 @@ public enum QuickAdd {
         for range in wordRanges(line) {
             let word = String(line[range])
             guard word.count > 1, word.hasPrefix("+") else { continue }
-            let key = projectKey(String(word.dropFirst()))
-            if let project = active.first(where: { projectKey($0.name) == key }) {
+            let name = String(word.dropFirst())
+            let exact = active.first { ProjectRules.nameKey($0.name) == ProjectRules.nameKey(name) }
+            if let project = exact ?? active.first(where: { projectKey($0.name) == projectKey(name) }) {
                 let before = String(line[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
                 let after = String(line[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
                 let rest = [before, after].filter { !$0.isEmpty }.joined(separator: " ")

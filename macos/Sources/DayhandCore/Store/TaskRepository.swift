@@ -322,7 +322,15 @@ public final class TaskRepository: Sendable {
     public func apply(_ snapshot: Snapshot) async throws {
         let now = clock()
         let zone = localTimezone()
-        try await writer.write { db in
+        try await writer.write { [self] db in
+            if snapshot.projects != nil, try Meta.projectSupport(db) == .unsupported {
+                let pending = try OutboxOp.fetchAll(db)
+                let assigned = Set(pending.filter { JSONValue.decode($0.argsJson)?["projectId"] != nil }.compactMap(\.taskLocalId))
+                for task in try TaskItem.fetchAll(db) where task.projectLocalId != nil && !assigned.contains(task.localId) {
+                    var op = makeOp(Mutations.update, task.localId, ["projectId": .of(task.projectLocalId)], now: now)
+                    try op.insert(db)
+                }
+            }
             let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
             let projects = try ProjectOutbox.apply(db, snapshot.projects, pending: pending, nowMs: now)
             let local = try TaskItem.fetchAll(db)
@@ -511,15 +519,20 @@ public final class TaskRepository: Sendable {
 
 extension TaskRepository: OutboxStore {
     public func next() async throws -> OutboxOp? {
-        try await writer.read { db in try OutboxOp.order(Column("seq")).fetchOne(db) }
+        try await writer.read { db in
+            if try Meta.projectSupport(db) == .unsupported {
+                return try OutboxOp.order(Column("seq")).fetchAll(db).first { !$0.waitsForProjects }
+            }
+            return try OutboxOp.order(Column("seq")).fetchOne(db)
+        }
     }
 
     public func serverIdOf(_ taskLocalId: String) async throws -> String? {
         try await writer.read { db in try TaskItem.fetchOne(db, key: taskLocalId)?.serverId }
     }
 
-    public func projectRef(_ localId: String) async throws -> String? {
-        try await writer.read { db in try ProjectOutbox.ref(db, localId) }
+    public func projectRef(_ localId: String, allowName: Bool) async throws -> String? {
+        try await writer.read { db in try ProjectOutbox.ref(db, localId, allowName: allowName) }
     }
 
     public func projectSupport() async throws -> ProjectSupport {
@@ -527,8 +540,18 @@ extension TaskRepository: OutboxStore {
     }
 
     public func acknowledge(_ op: OutboxOp, value: JSONValue) async throws {
-        try await writer.write { db in
-            _ = try OutboxOp.deleteOne(db, key: op.seq)
+        try await writer.write { [self] db in
+            if try Meta.projectSupport(db) == .unsupported, let localId = op.taskLocalId,
+               let stored = try OutboxOp.fetchOne(db, key: op.seq), let project = JSONValue.decode(stored.argsJson)?["projectId"] {
+                let membershipId = newId()
+                let args: JSONValue = ["projectId": project, "clientId": .string(membershipId)]
+                try db.execute(sql: """
+                    UPDATE outbox SET mutation = ?, opId = ?, clientId = ?, argsJson = ?, attempts = 0, lastError = NULL
+                    WHERE seq = ? AND taskLocalId = ?
+                    """, arguments: [Mutations.update, membershipId, membershipId, args.encoded(), op.seq, localId])
+            } else {
+                _ = try OutboxOp.deleteOne(db, key: op.seq)
+            }
             try ProjectOutbox.acknowledge(db, op, value: value)
             if op.mutation == Mutations.add, let localId = op.taskLocalId, let serverId = value["id"]?.string,
                var task = try TaskItem.fetchOne(db, key: localId) {

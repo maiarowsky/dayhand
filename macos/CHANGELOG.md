@@ -18,8 +18,9 @@ latest one below).
 ### Changed
 
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
-- With a server older than 0.13.0 (no projects) the app syncs as before: projects stay off, a project written on the
-  Mac goes and its tasks reach the server without it, and nothing is resent in a loop.
+- With a server older than 0.13.0 (no projects), local projects, pending operations and task memberships wait for
+  an upgrade. Tasks and notes still sync without `projectId`, with no project retry loop or blocked task changes.
+  Once a snapshot confirms project support, the queue resumes with the server's project ids.
 
 ## 0.3.0 (unreleased)
 

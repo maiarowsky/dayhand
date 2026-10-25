@@ -125,23 +125,32 @@ public struct ProjectMapping: Sendable {
     private var localIdByServerId: [String: String] = [:]
     private var movedTo: [String: String?] = [:]
 
-    public init() {}
+    let preservesLocalMembership: Bool
+
+    public init(preservingLocalMembership: Bool = false) {
+        preservesLocalMembership = preservingLocalMembership
+    }
 
     public init(projects: [Project], pending: [OutboxOp]) {
+        preservesLocalMembership = false
         for project in projects {
             if let id = project.serverId { localIdByServerId[id] = project.localId }
         }
         for op in pending where op.mutation == Mutations.deleteProject {
             guard let args = JSONValue.decode(op.argsJson), let id = args["projectId"]?.string else { continue }
             let target = args["moveTasksTo"]?.string
-            movedTo[id] = target == ProjectRules.noProject ? nil : target
+            movedTo[id] = .some(target == ProjectRules.noProject ? nil : target)
         }
     }
 
     public func localId(_ serverId: String?) -> String? {
         guard let serverId else { return nil }
-        let local = localIdByServerId[serverId] ?? serverId
-        if let moved = movedTo[local] { return moved }
+        var local = localIdByServerId[serverId] ?? serverId
+        var visited = Set<String>()
+        while let moved = movedTo[local] {
+            guard visited.insert(local).inserted, let moved else { return nil }
+            local = moved
+        }
         return local
     }
 }

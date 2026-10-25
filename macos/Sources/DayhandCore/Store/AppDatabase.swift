@@ -302,6 +302,12 @@ public struct OutboxOp: Hashable, Sendable, FetchableRecord, MutablePersistableR
         self.lastError = lastError
     }
 
+    public var waitsForProjects: Bool {
+        if Mutations.projectChanges.contains(mutation) { return true }
+        guard mutation == Mutations.update, let args = JSONValue.decode(argsJson)?.object else { return false }
+        return Set(args.keys).subtracting(["clientId"]) == ["projectId"]
+    }
+
     public mutating func didInsert(_ inserted: InsertionSuccess) {
         seq = inserted.rowID
     }

@@ -185,8 +185,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
 
     private func query(_ path: String, _ args: JSONValue) -> HTTPReply {
         switch path {
-        case "app:listAll": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] == nil }))
-        case "app:listTrash": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] != nil }))
+        case "app:listAll": return success(.array(listedTasks(inTrash: false)))
+        case "app:listTrash": return success(.array(listedTasks(inTrash: true)))
         case "app:getSettings": return success(settings)
         case "app:listProjects": return hasProjects ? success(.array(sortedProjects())) : missing(path)
         case "app:planHealth": return success(planHealth)
@@ -196,6 +196,14 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             guard let id = args["taskId"]?.string, let task = tasks[id] else { return failure("Task not found") }
             return success(["task": task, "history": .array(events[id] ?? [])])
         default: return failure("unknown query \(path)")
+        }
+    }
+
+    private func listedTasks(inTrash: Bool) -> [JSONValue] {
+        order.compactMap { tasks[$0] }.filter { ($0["deletedAt"] != nil) == inTrash }.map { task in
+            guard !hasProjects, var fields = task.object else { return task }
+            fields.removeValue(forKey: "projectId")
+            return .object(fields)
         }
     }
 

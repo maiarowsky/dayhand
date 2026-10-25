@@ -5,8 +5,8 @@ import Testing
 /**
  * Projects against a real local backend (never production): a project and tasks in it written offline, then synced.
  * With a backend that has projects (0.13.0 or later) they arrive in order with the server's ids, and changes and the
- * deletion follow; with an older one (0.12.x) the tasks arrive without their project, the projects go from the Mac
- * and nothing waits or loops. Off unless these are set:
+ * deletion follow; with an older one (0.12.x) the tasks arrive without their project while projects and memberships
+ * wait on the Mac without retrying. Off unless these are set:
  *
  *     DAYHAND_LIVE_SITE=http://127.0.0.1:3211      # the HTTP actions URL
  *     DAYHAND_LIVE_PROJECTS_CODE=XXXX-XXXX-XXXX    # from dayhand pair, used once
@@ -37,7 +37,6 @@ struct LiveProjectsTests {
 
         transport.offline = false
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(try await repo.pendingOps().isEmpty)
         let check = ConvexRemote(deploymentUrl: credential.convexUrl, tokens: tokens)
         let snapshot = try await check.snapshot().get()
         let onServer = { (title: String) in snapshot.tasks.first { $0.title == title } }
@@ -48,10 +47,15 @@ struct LiveProjectsTests {
             #expect(snapshot.projects == nil)
             #expect(try await repo.projectSupport() == .unsupported)
             #expect(photos.projectId == nil && invoice.projectId == nil)
-            #expect(try await repo.projects().isEmpty)
+            #expect(try await repo.projects().map(\.localId) == [bakery.localId])
             #expect(try await repo.task(inIt.localId)?.serverId == photos.id)
+            #expect(try await repo.task(inIt.localId)?.projectLocalId == bakery.localId)
+            #expect(try await repo.task(typed.localId)?.projectLocalId == bakery.localId)
+            let waiting = try await repo.pendingOps()
+            #expect(waiting.count == 3 && waiting.allSatisfy(\.waitsForProjects))
+            #expect(try await repo.next() == nil)
             guard case .synced = await engine.round() else { Issue.record("expected synced again"); return }
-            #expect(try await repo.pendingOps().isEmpty)
+            #expect(try await repo.pendingOps() == waiting)
             return
         }
         #expect(try await repo.projectSupport() == .supported)

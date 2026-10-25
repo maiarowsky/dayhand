@@ -84,12 +84,77 @@ struct ProjectRepositoryTests {
         let home = try await repo.addProject(name: "Dom")
         let work = try await repo.addProject(name: "Praca")
         let t = try await repo.add(title: "T", dueDate: nil, dueTime: nil, projectLocalId: home.localId)
+        let add = try #require(try await repo.pendingOps().first)
+        try await repo.acknowledge(add, value: ["project": ["id": "server-home"]])
         try await repo.deleteProject(home.localId, moveTasksTo: work.localId)
         #expect(try await repo.projects().map(\.name) == ["Praca"])
         #expect(try await repo.task(t.localId)?.projectLocalId == work.localId)
         let delete = try #require(try await repo.pendingOps().last)
         #expect(args(delete) == ["projectId": .string(home.localId), "moveTasksTo": .string(work.localId), "clientId": .string(delete.clientId)])
         await #expect(throws: RepositoryError.self) { try await repo.deleteProject(work.localId, moveTasksTo: work.localId) }
+    }
+
+    @Test func invalidAssignmentTargetsLeaveTheTaskAndOutboxUnchanged() async throws {
+        let repo = try repository()
+        let home = try await repo.addProject(name: "Dom")
+        let work = try await repo.addProject(name: "Praca")
+        let t = try await repo.add(title: "T", dueDate: nil, dueTime: nil, projectLocalId: home.localId)
+        try await repo.setArchived(work.localId, true)
+        let pending = try await repo.pendingOps()
+        await #expect(throws: RepositoryError.self) { try await repo.setProject(t.localId, work.localId) }
+        await #expect(throws: RepositoryError.self) { try await repo.setProject(t.localId, "missing") }
+        #expect(try await repo.task(t.localId)?.projectLocalId == home.localId)
+        #expect(try await repo.pendingOps() == pending)
+        try await repo.setArchived(work.localId, false)
+        try await repo.deleteProject(work.localId, moveTasksTo: nil)
+        await #expect(throws: RepositoryError.self) { try await repo.setProject(t.localId, work.localId) }
+        try await repo.moveToTrash(t.localId)
+        let trashed = try await repo.pendingOps()
+        try await repo.setProject(t.localId, nil)
+        #expect(try await repo.task(t.localId)?.projectLocalId == home.localId)
+        #expect(try await repo.pendingOps() == trashed)
+    }
+
+    @Test(arguments: [false, true]) func rejectedAssignmentsPreserveLaterMembership(add: Bool) async throws {
+        let repo = try repository()
+        let projects = [
+            RemoteProject(id: "a", name: "A", position: 1, createdAt: 0, updatedAt: 1),
+            RemoteProject(id: "b", name: "B", position: 2, createdAt: 0, updatedAt: 1),
+        ]
+        let remote = RemoteTask(id: "t", title: "T", createdAt: 0, updatedAt: 1)
+        try await repo.apply(Snapshot(tasks: add ? [] : [remote], projects: projects))
+        let localId: String
+        if add {
+            localId = try await repo.add(title: "T", dueDate: nil, dueTime: nil, projectLocalId: "a").localId
+        } else {
+            localId = "t"
+            try await repo.setProject(localId, "a")
+        }
+        try await repo.setProject(localId, "b")
+        let first = try #require(try await repo.next())
+        try await repo.reject(first, reason: "Project \"A\" is archived; restore it first")
+        let later = try #require(try await repo.pendingOps().last)
+        try await repo.recordFailure(later, reason: "offline")
+        #expect(try await repo.task(localId)?.projectLocalId == "b")
+        #expect(try await repo.task(localId)?.serverUpdatedAt == nil)
+        try await repo.apply(Snapshot(tasks: add ? [] : [RemoteTask(id: "t", title: "Newer", createdAt: 0, updatedAt: 2)], projects: projects))
+        #expect(try await repo.task(localId)?.projectLocalId == "b")
+        #expect(JSONValue.decode(later.argsJson)?["projectId"] == "b")
+    }
+
+    @Test func rejectionRestoresAuthoritativeMembershipEvenAtTheCachedServerVersion() async throws {
+        let repo = try repository()
+        let projects = [
+            RemoteProject(id: "a", name: "A", position: 1, createdAt: 0, updatedAt: 1),
+            RemoteProject(id: "b", name: "B", position: 2, createdAt: 0, updatedAt: 1),
+        ]
+        let snapshot = Snapshot(tasks: [RemoteTask(id: "t", title: "T", createdAt: 0, updatedAt: 1, projectId: "b")], projects: projects)
+        try await repo.apply(snapshot)
+        try await repo.setProject("t", "a")
+        let op = try #require(try await repo.next())
+        try await repo.reject(op, reason: "Project \"A\" not found")
+        try await repo.apply(snapshot)
+        #expect(try await repo.task("t")?.projectLocalId == "b")
     }
 
     @Test func aRepeatingTaskDoneWithoutAServerKeepsItsProjectInTheNextOccurrence() async throws {
@@ -197,6 +262,98 @@ struct ProjectSyncTests {
         #expect(try await repo.pendingOps().isEmpty)
     }
 
+    @Test(arguments: [false, true]) func deletingAnUnsentOrNameRefusedProjectNeverDeletesTheOtherMacsProject(refused: Bool) async throws {
+        let (repo, engine) = try setUp()
+        let mine = try await repo.addProject(name: "Dom")
+        let t = try await repo.add(title: "Mine", dueDate: nil, dueTime: nil, projectLocalId: mine.localId)
+        let theirs = server.addProjectElsewhere("Dom")
+        if refused {
+            let add = try #require(try await repo.next())
+            try await repo.reject(add, reason: "A project named \"Dom\" already exists")
+        }
+        try await repo.deleteProject(mine.localId, moveTasksTo: nil)
+        #expect(try await repo.pendingOps().allSatisfy { !Mutations.projectChanges.contains($0.mutation) })
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.allProjects.map { $0["id"]?.string } == [theirs])
+        #expect(!sent().contains { $0.0 == Mutations.deleteProject })
+        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
+        #expect(server.task(titled: "Mine")?["projectId"]?.string == nil)
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func cancellingAnOfflineProjectMovesItsPendingTasksToTheDestination() async throws {
+        let (repo, engine) = try setUp()
+        let mine = try await repo.addProject(name: "Dom")
+        let target = try await repo.addProject(name: "Praca")
+        let t = try await repo.add(title: "Moved", dueDate: nil, dueTime: nil, projectLocalId: mine.localId)
+        try await repo.deleteProject(mine.localId, moveTasksTo: target.localId)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let targetId = try #require(server.project(named: "Praca")?["id"]?.string)
+        #expect(server.project(named: "Dom") == nil)
+        #expect(server.task(titled: "Moved")?["projectId"] == .string(targetId))
+        #expect(try await repo.task(t.localId)?.projectLocalId == target.localId)
+    }
+
+    @Test(arguments: [false, true]) func cancellingALocalProjectClearsExistingTasksOnTheServer(assignmentAlreadySent: Bool) async throws {
+        let (repo, engine) = try setUp()
+        let work = server.addProjectElsewhere("Praca")
+        let t = server.addElsewhere("Existing")
+        server.editElsewhere(t, ["projectId": .string(work)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let mine = try await repo.addProject(name: "Dom")
+        let theirs = server.addProjectElsewhere("Dom")
+        try await repo.setProject(t, mine.localId)
+        if assignmentAlreadySent {
+            let add = try #require(try await repo.next())
+            try await repo.reject(add, reason: "A project named \"Dom\" already exists")
+            let assignment = try #require(try await repo.next())
+            server.editElsewhere(t, ["projectId": .string(theirs)])
+            try await repo.acknowledge(assignment, value: .null)
+        }
+        try await repo.deleteProject(mine.localId, moveTasksTo: nil)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.task(titled: "Existing")?["projectId"]?.string == nil)
+        #expect(try await repo.task(t)?.projectLocalId == nil)
+        #expect(server.project(named: "Dom")?["id"] == .string(theirs))
+        #expect(!sent().contains { $0.0 == Mutations.deleteProject })
+    }
+
+    @Test(arguments: [false, true]) func newerSnapshotsKeepTheFinalDestinationOfOfflineDeletionChains(toNone: Bool) async throws {
+        let (repo, engine) = try setUp()
+        let a = server.addProjectElsewhere("A")
+        let b = server.addProjectElsewhere("B")
+        let c = server.addProjectElsewhere("C")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(a)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.deleteProject(a, moveTasksTo: b)
+        try await repo.deleteProject(b, moveTasksTo: toNone ? nil : c)
+        server.editElsewhere(t, ["note": "A newer server copy"])
+        server.failNextMutation = true
+        guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
+        #expect(try await repo.task(t)?.projectLocalId == (toNone ? nil : c))
+        #expect(try await repo.task(t)?.note == "A newer server copy")
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.task(titled: "T")?["projectId"]?.string == (toNone ? nil : c))
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func aDeletionDestinationNeverFallsBackToTheNameOfAnotherMacsProject() async throws {
+        let (repo, engine) = try setUp()
+        let source = server.addProjectElsewhere("Source")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(source)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let destination = try await repo.addProject(name: "Dom")
+        let theirs = server.addProjectElsewhere("Dom")
+        try await repo.deleteProject(source, moveTasksTo: destination.localId)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(Set(server.allProjects.compactMap { $0["id"]?.string }) == [source, theirs])
+        #expect(server.task(titled: "T")?["projectId"] == .string(source))
+        #expect(!sent().contains { $0.0 == Mutations.deleteProject })
+        #expect(try await repo.task(t)?.projectLocalId == source)
+    }
+
     @Test func aTaskRefusedForItsProjectGoesAgainWithoutIt() async throws {
         let (repo, engine) = try setUp()
         let home = server.addProjectElsewhere("Dom")
@@ -268,11 +425,11 @@ struct OldServerTests {
         await #expect(throws: RepositoryError.self) { try await repo.setProject(mine.localId, "x") }
     }
 
-    @Test func projectsMadeBeforeConnectingGoAndTheirTasksArriveWithoutThem() async throws {
+    @Test func projectsAndMembershipsWaitWhileTasksSyncThenResumeAfterAnUpgrade() async throws {
         let (repo, engine, _) = try setUp()
         server.offline = true
         let home = try await repo.addProject(name: "Dom")
-        let t = try await repo.add(title: "Written offline", dueDate: "2026-10-22", dueTime: nil, projectLocalId: home.localId)
+        let t = try await repo.add(title: "Written offline", dueDate: "2026-10-22", dueTime: nil, note: "Keep this note", projectLocalId: home.localId)
         try await repo.updateProject(home.localId, name: "Dom 2", color: nil, icon: "", note: "")
         guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
 
@@ -283,14 +440,85 @@ struct OldServerTests {
         let onServer = try #require(server.task(titled: "Written offline"))
         #expect(onServer["projectId"] == nil)
         #expect(try await repo.task(t.localId)?.serverId == onServer["id"]?.string)
-        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
-        #expect(try await repo.projects().isEmpty)
-        #expect(try await repo.pendingOps().isEmpty)
-        // No retry loop: further rounds send nothing.
+        #expect(onServer["note"] == "Keep this note")
+        #expect(try await repo.task(t.localId)?.projectLocalId == home.localId)
+        #expect(try await repo.task(t.localId)?.note == "Keep this note")
+        #expect(try await repo.projects().map(\.name) == ["Dom 2"])
+        let waiting = try await repo.pendingOps()
+        #expect(waiting.map(\.mutation) == [Mutations.addProject, Mutations.update, Mutations.updateProject])
+        #expect(waiting.allSatisfy { $0.waitsForProjects && $0.lastError == nil && $0.attempts == 0 })
+        #expect(try await repo.next() == nil)
         for _ in 0..<3 {
             guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         }
         #expect(server.mutationsSent() == afterFirst)
+        #expect(try await repo.pendingOps() == waiting)
+        try await repo.setNote(t.localId, "Edited on the old server")
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.task(titled: "Written offline")?["note"] == "Edited on the old server")
+        #expect(try await repo.task(t.localId)?.projectLocalId == home.localId)
+
+        server.hasProjects = true
+        for _ in 0..<2 {
+            guard case .synced = await engine.round() else { Issue.record("expected synced after upgrade"); return }
+        }
+        let projectId = try #require(server.project(named: "Dom 2")?["id"]?.string)
+        #expect(server.task(titled: "Written offline")?["projectId"] == .string(projectId))
+        #expect(server.task(titled: "Written offline")?["note"] == "Edited on the old server")
+        #expect(try await repo.task(t.localId)?.projectLocalId == home.localId)
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(Array(server.mutationsSent().suffix(3)) == [Mutations.addProject, Mutations.update, Mutations.updateProject])
+    }
+
+    @Test(arguments: [false, true]) func pendingAssignmentsAndClearsWaitWithoutBlockingOtherTaskEdits(clear: Bool) async throws {
+        let (repo, engine, _) = try setUp()
+        server.hasProjects = true
+        let home = server.addProjectElsewhere("Dom")
+        let work = server.addProjectElsewhere("Praca")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(home)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.setProject(t, clear ? nil : work)
+        try await repo.setNote(t, "Still syncs")
+        server.hasProjects = false
+        guard case .synced = await engine.round() else { Issue.record("expected synced on old server"); return }
+        #expect(server.task(titled: "T")?["note"] == "Still syncs")
+        #expect(try await repo.task(t)?.projectLocalId == (clear ? nil : work))
+        let waiting = try await repo.pendingOps()
+        #expect(waiting.count == 1 && waiting.allSatisfy(\.waitsForProjects))
+        let sent = server.mutationsSent()
+        guard case .synced = await engine.round() else { Issue.record("expected synced again"); return }
+        #expect(server.mutationsSent() == sent)
+        server.hasProjects = true
+        for _ in 0..<2 {
+            guard case .synced = await engine.round() else { Issue.record("expected synced after upgrade"); return }
+        }
+        #expect(server.task(titled: "T")?["projectId"]?.string == (clear ? nil : work))
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func unsupportedSnapshotsPreservePreviouslySyncedProjectsAndMemberships() async throws {
+        let (repo, engine, _) = try setUp()
+        server.hasProjects = true
+        let home = server.addProjectElsewhere("Dom")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(home)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        server.hasProjects = false
+        server.editElsewhere(t, ["note": "A newer task without a project field"])
+        guard case .synced = await engine.round() else { Issue.record("expected synced on old server"); return }
+        #expect(try await repo.task(t)?.note == "A newer task without a project field")
+        #expect(try await repo.task(t)?.projectLocalId == home)
+        #expect(try await repo.projects().map(\.localId) == [home])
+        #expect(try await repo.pendingOps().isEmpty)
+        server.editElsewhere(t, ["projectId": .null])
+        server.hasProjects = true
+        for _ in 0..<2 {
+            guard case .synced = await engine.round() else { Issue.record("expected synced after upgrade"); return }
+        }
+        #expect(server.task(titled: "T")?["projectId"] == .string(home))
+        #expect(try await repo.task(t)?.projectLocalId == home)
+        #expect(try await repo.pendingOps().isEmpty)
     }
 
     @Test func aServerRolledBackFromProjectsTakesTheTaskWithoutItsProject() async throws {
@@ -305,9 +533,18 @@ struct OldServerTests {
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(server.task(titled: "Before the rollback")?["projectId"] == nil)
         #expect(try await repo.task(t.localId)?.serverId != nil)
-        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
-        #expect(try await repo.projects().isEmpty)
+        #expect(try await repo.task(t.localId)?.projectLocalId == home)
+        #expect(try await repo.projects().map(\.localId) == [home])
         #expect(try await repo.projectSupport() == .unsupported)
+        #expect(try await repo.pendingOps().allSatisfy(\.waitsForProjects))
+        let sent = server.mutationsSent()
+        guard case .synced = await engine.round() else { Issue.record("expected synced again"); return }
+        #expect(server.mutationsSent() == sent)
+        server.hasProjects = true
+        for _ in 0..<2 {
+            guard case .synced = await engine.round() else { Issue.record("expected synced after upgrade"); return }
+        }
+        #expect(server.task(titled: "Before the rollback")?["projectId"] == .string(home))
         #expect(try await repo.pendingOps().isEmpty)
     }
 }

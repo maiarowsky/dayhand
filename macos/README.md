@@ -152,20 +152,24 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   fields that changed, `app:deleteProject` with `moveTasksTo` another project or `none` (the tasks move on the Mac
   at once), and `projectId` in `app:add` and `app:update` (`null` takes a task out of its project). A project made
   offline is named in the outbox by its local id, which is also its `clientId`; each mutation is sent with the
-  server's id once the `addProject` is answered (with the project's name, which the server also accepts, if it
-  never is). A repeating task's next occurrence keeps its project.
+  server's id once the `addProject` is answered. Deletion and its destination never resolve by name; a local
+  project deleted before it has a server id cancels its queued project changes, keeping its tasks' local moves.
+  A repeating task's next occurrence keeps its project.
 - The snapshot adds `app:listProjects`; projects merge last write wins per field, as tasks do, and a project deleted
   on the Mac stays hidden until the server has the deletion. Two Macs that make a project of the same name offline
   end with one: the second `addProject` is refused as a taken name and its row joins the server's project.
 - A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
   the project, and the task leaves it on the Mac too; a refused project change is undone by the next snapshot.
 - **Older servers (0.12.x)** have no `app:listProjects` ("Could not find public function"). The snapshot then has
-  no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`): its projects go, adding
-  one says "This server has no projects. Projects need Dayhand server 0.13.0 or later.", and task changes are sent
-  without `projectId`. A project change waiting from before is dropped once, never retried. After the server is
-  updated, the next snapshot turns projects on.
+  no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`). Local projects and task
+  memberships stay. Project operations and membership changes wait for a server with projects, without blocking
+  other task changes or retrying in a loop. Tasks, including their notes, sync without `projectId`; their memberships
+  stay queued with fresh mutation ids. Adding a project says "This server has no projects. Projects need Dayhand
+  server 0.13.0 or later." Once an upgraded server supplies projects in a snapshot, waiting operations resume in
+  order on the next round, using the server's project ids.
 - Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
-  sets the project and leaves the title, the first one only; a `+word` naming none stays in the title and is
+  sets the project and leaves the title, the first one only; an exact trimmed, NFC, case-insensitive name wins
+  over the hyphen-as-space alias. A `+word` naming none stays in the title and is
   reported as unknown, unless it is a date (`+3d`). The cases, shared with the other clients:
   [`Tests/cases/quickadd-project.json`](Tests/cases/quickadd-project.json).
 
@@ -252,8 +256,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   id, `clientId`, or a name made on two Macs), migration v4 from a 0.3.0 database without losing a task. Against the
   fake server: a project and its tasks written offline arrive in order with the server's project id; projects made
   or changed elsewhere arrive; a task refused for an archived project is sent again without it; a refused project
-  goes and its tasks stay. With the fake server acting as 0.12 (no projects): tasks sync, no project mutation is
-  sent, projects made offline go, their tasks arrive without them and no change waits or repeats.
+  goes and its tasks stay. Deletion chains resolve to their final destination, rejected assignments preserve later
+  moves, and cancelling an offline project cannot delete another device's same-named project. With the fake server
+  acting as 0.12 (no projects): tasks and notes sync while projects and memberships wait locally, without repeated
+  mutations or blocking other changes; upgrading resumes the queue and uploads memberships.
 - **Against a real local backend** (`LiveBackendTests` and `LiveProjectsTests`, off by default): pairs with a code,
   adds with a date phrase, works offline, syncs, and checks every change with a fresh client. `LiveProjectsTests`
   writes a project and its tasks offline and syncs them; `DAYHAND_LIVE_PROJECTS=yes` for a backend with projects

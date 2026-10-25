@@ -105,7 +105,7 @@ extension TaskRepository {
     public func deleteProject(_ localId: String, moveTasksTo target: String?) async throws {
         let now = clock()
         let op = makeOp(Mutations.deleteProject, nil, ["projectId": .string(localId), "moveTasksTo": .string(target ?? ProjectRules.noProject)], now: now)
-        let changed = try await writer.write { db -> Bool in
+        let changed = try await writer.write { [self] db -> Bool in
             try Self.requireProjects(db)
             guard var project = try Project.fetchOne(db, key: localId), !project.removing else { return false }
             if let target {
@@ -116,6 +116,14 @@ extension TaskRepository {
                 task.projectLocalId = target
                 task.updatedAt = now
                 try task.save(db)
+                if project.serverId == nil {
+                    var assignment = makeOp(Mutations.update, task.localId, ["projectId": .of(target)], now: now)
+                    try assignment.insert(db)
+                }
+            }
+            if project.serverId == nil {
+                try ProjectOutbox.drop(db, localId, moveTasksTo: target)
+                return true
             }
             project.removing = true
             project.updatedAt = now
@@ -129,13 +137,19 @@ extension TaskRepository {
 
     /// Moves a task into project [projectLocalId], or out of its project (nil).
     public func setProject(_ taskLocalId: String, _ projectLocalId: String?) async throws {
-        guard let current = try await task(taskLocalId), current.projectLocalId != projectLocalId, !current.inTrash else { return }
-        try await writer.read { db in
-            if let projectLocalId { try Self.checkTarget(db, projectLocalId, current: current.projectLocalId) } else { try Self.requireProjects(db) }
-        }
-        try await edit(taskLocalId, Mutations.update, ["projectId": projectLocalId.map(JSONValue.string) ?? .null]) { task, _ in
+        let now = clock()
+        let op = makeOp(Mutations.update, taskLocalId, ["projectId": projectLocalId.map(JSONValue.string) ?? .null], now: now)
+        let changed = try await writer.write { db -> Bool in
+            guard var task = try TaskItem.fetchOne(db, key: taskLocalId), task.projectLocalId != projectLocalId, !task.inTrash else { return false }
+            if let projectLocalId { try Self.checkTarget(db, projectLocalId, current: task.projectLocalId) } else { try Self.requireProjects(db) }
             task.projectLocalId = projectLocalId
+            task.updatedAt = now
+            try task.save(db)
+            var op = op
+            try op.insert(db)
+            return true
         }
+        if changed { onOutboxChanged() }
     }
 
     // MARK: Checks
@@ -213,10 +227,11 @@ private struct ProjectInput: Sendable {
  * server refuses for its project is sent again without it.
  */
 enum ProjectOutbox {
-    /// The server id of project [localId], or its name while it has none; nil when this Mac has no such project.
-    static func ref(_ db: Database, _ localId: String) throws -> String? {
+    static func ref(_ db: Database, _ localId: String, allowName: Bool) throws -> String? {
         guard let project = try Project.fetchOne(db, key: localId) else { return nil }
-        return project.serverId ?? project.name
+        if let serverId = project.serverId { return serverId }
+        if allowName { return project.name }
+        return try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == localId).fetchOne(db)?.clientId
     }
 
     /// A project made here gets its server id; a project deleted here goes once the server has the deletion.
@@ -242,8 +257,6 @@ enum ProjectOutbox {
     /**
      * A refusal about projects, handled here (true) or left to the task rules (false):
      *
-     * - The server has no projects (0.12.x): every project leaves this Mac, with the project changes still waiting;
-     *   task changes stay and go again without their project.
      * - A task change refused for its project (archived or deleted meanwhile) goes again without it, and the task
      *   leaves the project here.
      * - `addProject` refused because a project that is not archived has the name: the row stays and joins that
@@ -255,20 +268,33 @@ enum ProjectOutbox {
         let ofProject = Mutations.projectChanges.contains(op.mutation)
         let carriesProject = !ofProject && JSONValue.decode(op.argsJson)?["projectId"] != nil
         if (ofProject && RemoteJSON.isMissingFunction(reason)) || (carriesProject && RemoteJSON.refusesProjectField(reason)) {
-            try forgetProjects(db)
+            try suspend(db)
             return true
         }
         if carriesProject, RemoteJSON.refusesProject(reason) {
             try withoutProject(db, op)
-            if let localId = op.taskLocalId {
-                try db.execute(sql: "UPDATE task SET projectLocalId = NULL WHERE localId = ?", arguments: [localId])
+            if let localId = op.taskLocalId, var task = try TaskItem.fetchOne(db, key: localId) {
+                let later = try OutboxOp.filter(Column("taskLocalId") == localId && Column("seq") > (op.seq ?? 0)).fetchAll(db)
+                let hasLaterAssignment = later.contains { JSONValue.decode($0.argsJson)?["projectId"] != nil }
+                if !hasLaterAssignment, task.projectLocalId == JSONValue.decode(op.argsJson)?["projectId"]?.string {
+                    task.projectLocalId = nil
+                }
+                task.serverUpdatedAt = nil
+                try task.save(db)
             }
             return true
         }
         guard ofProject else { return false }
         _ = try OutboxOp.deleteOne(db, key: op.seq)
         if op.mutation == Mutations.addProject {
-            if !RemoteJSON.nameTakenByActiveProject(reason) { try drop(db, op.clientId) }
+            if try Project.fetchOne(db, key: op.clientId)?.removing == true {
+                let deletion = try OutboxOp.filter(Column("mutation") == Mutations.deleteProject).fetchAll(db)
+                    .first { JSONValue.decode($0.argsJson)?["projectId"]?.string == op.clientId }
+                let target = deletion.flatMap { JSONValue.decode($0.argsJson)?["moveTasksTo"]?.string }
+                try drop(db, op.clientId, moveTasksTo: target == ProjectRules.noProject ? nil : target)
+            } else if !RemoteJSON.nameTakenByActiveProject(reason) {
+                try drop(db, op.clientId)
+            }
             return true
         }
         guard let id = JSONValue.decode(op.argsJson)?["projectId"]?.string, var project = try Project.fetchOne(db, key: id) else { return true }
@@ -282,34 +308,31 @@ enum ProjectOutbox {
         return true
     }
 
-    /// The server has no projects: none stays on this Mac, and no change waiting names one.
-    static func forgetProjects(_ db: Database) throws {
+    static func suspend(_ db: Database) throws {
         try Meta.write(db, ProjectSupport.unsupported)
-        for op in try OutboxOp.fetchAll(db) {
-            if Mutations.projectChanges.contains(op.mutation) {
-                _ = try OutboxOp.deleteOne(db, key: op.seq)
-            } else {
-                try withoutProject(db, op)
-            }
+        for op in try OutboxOp.fetchAll(db) where op.waitsForProjects && (op.attempts != 0 || op.lastError != nil) {
+            try db.execute(sql: "UPDATE outbox SET attempts = 0, lastError = NULL WHERE seq = ?", arguments: [op.seq])
         }
-        try db.execute(sql: "UPDATE task SET projectLocalId = NULL WHERE projectLocalId IS NOT NULL")
-        _ = try Project.deleteAll(db)
     }
 
     /// A project that never existed on the server leaves this Mac, with its own changes; changes naming it stay
     /// without it.
-    static func drop(_ db: Database, _ localId: String) throws {
+    static func drop(_ db: Database, _ localId: String, moveTasksTo target: String? = nil) throws {
         for op in try OutboxOp.fetchAll(db) {
             let args = JSONValue.decode(op.argsJson)?.object ?? [:]
             if Mutations.projectChanges.contains(op.mutation), op.clientId == localId || args["projectId"]?.string == localId {
                 _ = try OutboxOp.deleteOne(db, key: op.seq)
             } else if args["projectId"]?.string == localId {
-                try withoutProject(db, op)
+                if target != nil || op.mutation != Mutations.add {
+                    try rewrite(db, op, args.merging(["projectId": .of(target)]) { $1 })
+                } else {
+                    try withoutProject(db, op)
+                }
             } else if args["moveTasksTo"]?.string == localId {
-                try rewrite(db, op, args.merging(["moveTasksTo": .string(ProjectRules.noProject)]) { $1 })
+                try rewrite(db, op, args.merging(["moveTasksTo": .string(target ?? ProjectRules.noProject)]) { $1 })
             }
         }
-        try db.execute(sql: "UPDATE task SET projectLocalId = NULL WHERE projectLocalId = ?", arguments: [localId])
+        try db.execute(sql: "UPDATE task SET projectLocalId = ? WHERE projectLocalId = ?", arguments: [target, localId])
         _ = try Project.deleteOne(db, key: localId)
     }
 
@@ -325,22 +348,13 @@ enum ProjectOutbox {
     }
 
     /**
-     * The projects of a snapshot: merged (`ProjectMerger`) from a server with projects; from a server without them
-     * (nil) every project with no change waiting goes (the others go when their change is refused). Returns how the
-     * tasks' server `projectId` reads on this Mac.
+     * The projects of a snapshot, merged (`ProjectMerger`) from a server with projects. Returns how the tasks'
+     * server `projectId` reads on this Mac.
      */
     static func apply(_ db: Database, _ remote: [RemoteProject]?, pending: [OutboxOp], nowMs: Int64) throws -> ProjectMapping {
         guard let remote else {
-            try Meta.write(db, ProjectSupport.unsupported)
-            let waiting = DirtyProjects(pending)
-            for project in try Project.fetchAll(db) where !waiting.hasChanges(project.localId) {
-                _ = try Project.deleteOne(db, key: project.localId)
-            }
-            try db.execute(sql: """
-                UPDATE task SET projectLocalId = NULL
-                WHERE projectLocalId IS NOT NULL AND projectLocalId NOT IN (SELECT localId FROM project)
-                """)
-            return ProjectMapping()
+            try suspend(db)
+            return ProjectMapping(preservingLocalMembership: true)
         }
         try Meta.write(db, ProjectSupport.supported)
         let plan = ProjectMerger.merge(local: try Project.fetchAll(db), pending: pending, remote: remote, nowMs: nowMs)

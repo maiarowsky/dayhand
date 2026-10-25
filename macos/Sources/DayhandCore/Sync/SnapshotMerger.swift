@@ -100,6 +100,7 @@ public enum SnapshotMerger {
             claimExpiresAt: r.claimExpiresAt,
             projectLocalId: projects.localId(r.projectId)
         )
+        if projects.preservesLocalMembership, let row { task.projectLocalId = row.projectLocalId }
         guard let row, !keepLocal.isEmpty else { return task }
         if keepLocal.contains(.title) { task.title = row.title }
         if keepLocal.contains(.note) { task.note = row.note }

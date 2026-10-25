@@ -74,6 +74,17 @@ struct QuickAddProjectTests {
         #expect(parse("Checkout +e-commerce").projectLocalId == "p4")
     }
 
+    @Test func exactNormalizedNamesWinOverAliasesInEitherProjectOrder() {
+        let active = [project("space", "e commerce"), project("hyphen", " e-Commerce ")]
+        for projects in [active, active.reversed().map { $0 }] {
+            let input = QuickAdd.parse("Checkout +E-commerce", now: Self.now, timezone: "Europe/London", projects: projects)
+            #expect(input.title == "Checkout" && input.projectLocalId == "hyphen")
+        }
+        let accented = [project("space", "Café shop"), project("hyphen", " Café-shop ")]
+        let input = QuickAdd.parse("Visit +CAFE\u{301}-shop", now: Self.now, timezone: "Europe/London", projects: accented)
+        #expect(input.projectLocalId == "hyphen")
+    }
+
     @Test func theProjectAndADatePhraseGoTogetherInEitherOrder() {
         let after = parse("Zdjęcia do galerii fri 2pm +dom")
         #expect(after.title == "Zdjęcia do galerii")
@@ -234,6 +245,28 @@ struct ProjectMergerTests {
         #expect(mapping.localId(nil) == nil)
         let toNone = OutboxOp(opId: "o2", mutation: Mutations.deleteProject, argsJson: #"{"projectId":"p1","moveTasksTo":"none","clientId":"o2"}"#, taskLocalId: nil, clientId: "o2", createdAt: 1)
         #expect(ProjectMapping(projects: [removing], pending: [toNone]).localId("p1") == nil)
+    }
+
+    @Test(arguments: [false, true]) func pendingDeletionChainsResolveToTheFinalMembership(toNone: Bool) {
+        let projects = [
+            project("a", "A") { $0.serverId = "server-a"; $0.removing = true },
+            project("b", "B") { $0.serverId = "server-b"; $0.removing = true },
+            project("c", "C") { $0.serverId = "server-c" },
+        ]
+        let first = OutboxOp(opId: "1", mutation: Mutations.deleteProject, argsJson: #"{"projectId":"a","moveTasksTo":"b"}"#, taskLocalId: nil, clientId: "1", createdAt: 1)
+        let second = OutboxOp(opId: "2", mutation: Mutations.deleteProject, argsJson: JSONValue.object(["projectId": "b", "moveTasksTo": .string(toNone ? "none" : "c")]).encoded(), taskLocalId: nil, clientId: "2", createdAt: 2)
+        let expected: String? = toNone ? nil : "c"
+        for pending in [[first, second], [second, first]] {
+            let mapping = ProjectMapping(projects: projects, pending: pending)
+            #expect(mapping.localId("server-a") == expected)
+            #expect(mapping.localId("a") == expected)
+            #expect(mapping.localId("server-b") == expected)
+            let local = task("t") { $0.serverId = "s1"; $0.serverUpdatedAt = 1; $0.projectLocalId = expected }
+            let remote = RemoteTask(id: "s1", title: "newer", createdAt: 0, updatedAt: 2, projectId: "server-a")
+            let plan = SnapshotMerger.merge(local: [local], pending: pending, remote: [remote], nowMs: 10, projects: mapping)
+            #expect(plan.upserts.first?.title == "newer")
+            #expect(plan.upserts.first?.projectLocalId == expected)
+        }
     }
 
     @Test func aTasksProjectReadsAsTheLocalProjectAndAWaitingMoveKeepsIt() {

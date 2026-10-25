@@ -98,7 +98,7 @@ public struct RemoteProject: Hashable, Sendable {
 /**
  * Whether the connected server has projects (backend 0.13.0 or later). Unknown until a snapshot has said so (no
  * server yet, or not reached yet): projects can then be made on this Mac and wait in the outbox. A server without
- * projects (0.12.x) hides them; changes about projects never reach it, and tasks keep everything else.
+ * projects (0.12.x) leaves them waiting; changes about projects never reach it, and tasks keep everything else.
  */
 public enum ProjectSupport: String, Hashable, Sendable {
     case unknown, supported, unsupported
