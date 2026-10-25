@@ -104,8 +104,7 @@ public actor SyncEngine {
                 break
             case .done, .moreLeft: break
             }
-            let knownTaskIds = try await repository.allTasks().compactMap(\.serverId)
-            switch await source.snapshot(knownTaskIds: knownTaskIds) {
+            switch await source.snapshot() {
             case .success(let snapshot):
                 try await repository.apply(snapshot)
                 if drained == .retryLater {

@@ -182,7 +182,9 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   change that names a project goes without `projectId` (refused once for it, then sent without it from the start),
   with no retry loop and nothing waiting.
 - **Known limitation:** a repeating task can lose its project when the project is archived on another device or the
-  server is older (0.12.x): its next occurrence comes without a project. The task itself is never lost.
+  server is older (0.12.x): its next occurrence comes without a project. A task put into a project offline can also
+  end without a project when this Mac archives or deletes that project before the queue has been sent. The task
+  itself is never lost.
 - Development builds of 0.4.0 queued project changes; migration v7 drops them from the outbox together with the
   projects the server never confirmed (their tasks stay, without a project).
 - Quick add: a `+word` naming a project the server has that is not archived (any case, a hyphen for a space:

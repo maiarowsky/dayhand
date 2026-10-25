@@ -33,6 +33,8 @@ latest one below).
 
 - A repeating task can lose its project when the project is archived on another device or the server is older
   (0.12.x): its next occurrence comes without a project. The task itself is never lost.
+- A task put into a project offline can also end without a project when this Mac archives or deletes that project
+  before the queue has been sent. The task itself is never lost.
 
 ## 0.3.0 (unreleased)
 
