@@ -161,7 +161,9 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   on the Mac stays hidden until the server has the deletion. Two Macs that make a project of the same name offline
   end with one: the second `addProject` is refused as a taken name and its row joins the server's project using
   the name submitted by that creation, not a later rename. Subsequent edits and task assignments use that identity.
-  Migration v5 stores this refused-name identity and treats older pending creations as uncertain.
+  Binding also retargets queued references and preserves their latest edits. A snapshot-confirmed creation takes
+  the server's fields except those changed by later queued edits. Migration v5 stores the refused-name identity
+  and treats older pending creations as uncertain.
 - A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
   the project; the next snapshot restores authoritative membership unless a later assignment is waiting. Missing
   local references follow the same reconciliation. A refused project edit cannot unhide a later queued deletion.
@@ -171,7 +173,8 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   other task changes or retrying in a loop. Tasks, including their notes, sync without `projectId`; their memberships
   stay queued with fresh mutation ids. Adding a project says "This server has no projects. Projects need Dayhand
   server 0.13.0 or later." Once an upgraded server supplies projects in a snapshot, waiting operations resume in
-  order on the next round, using the server's project ids.
+  order on the next round, using the server's project ids. Membership for a task in the trash stays queued until
+  restoration, on this Mac or another device; unrelated task changes continue syncing.
 - Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
   sets the project and leaves the title, the first one only; an exact trimmed, NFC, case-insensitive name wins
   over the hyphen-as-space alias. A `+word` naming none stays in the title and is

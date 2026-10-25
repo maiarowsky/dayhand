@@ -65,13 +65,19 @@ public enum ProjectMerger {
             serverUpdatedAt: r.updatedAt
         )
         guard let row, !keepLocal.isEmpty else { return project }
+        project = preserving(keepLocal, from: row, in: project)
+        project.updatedAt = max(row.updatedAt, r.updatedAt)
+        return project
+    }
+
+    static func preserving(_ keepLocal: Set<ProjectField>, from row: Project, in base: Project) -> Project {
+        var project = base
         if keepLocal.contains(.name) { project.name = row.name }
         if keepLocal.contains(.color) { project.color = row.color }
         if keepLocal.contains(.icon) { project.icon = row.icon }
         if keepLocal.contains(.note) { project.note = row.note }
         if keepLocal.contains(.position) { project.position = row.position }
         if keepLocal.contains(.archived) { project.archivedAt = row.archivedAt }
-        project.updatedAt = max(row.updatedAt, r.updatedAt)
         return project
     }
 }

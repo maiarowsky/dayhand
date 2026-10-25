@@ -163,6 +163,10 @@ public enum RemoteJSON {
         message.contains("extra field `projectId`")
     }
 
+    public static func refusesTrashedTask(_ message: String) -> Bool {
+        message.contains("Task is in the trash")
+    }
+
     /// Why a project change was not sent: the server has no projects (what `isMissingFunction` also reads as such).
     public static let noProjectsReason = "Could not find public function: the server has no projects"
 

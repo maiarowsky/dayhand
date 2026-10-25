@@ -309,7 +309,10 @@ public struct OutboxOp: Hashable, Sendable, FetchableRecord, MutablePersistableR
     }
 
     public var waitsForProjects: Bool {
-        if Mutations.projectChanges.contains(mutation) { return true }
+        Mutations.projectChanges.contains(mutation) || isProjectAssignment
+    }
+
+    public var isProjectAssignment: Bool {
         guard mutation == Mutations.update, let args = JSONValue.decode(argsJson)?.object else { return false }
         return Set(args.keys).subtracting(["clientId"]) == ["projectId"]
     }

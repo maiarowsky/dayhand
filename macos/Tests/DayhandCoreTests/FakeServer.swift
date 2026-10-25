@@ -97,7 +97,11 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     /// A change made by someone else, recorded in the history as theirs (an agent through MCP by default).
     func editElsewhere(_ id: String, _ fields: [String: JSONValue], actor: String = "agent", actorName: String? = "claude", action: String = "update") {
         lock.locked {
-            change(id, action: action, by: (actor, actorName)) { task in for (key, value) in fields { task[key] = value } }
+            change(id, action: action, by: (actor, actorName)) { task in
+                for (key, value) in fields {
+                    if value.isNull { task.removeValue(forKey: key) } else { task[key] = value }
+                }
+            }
         }
     }
 

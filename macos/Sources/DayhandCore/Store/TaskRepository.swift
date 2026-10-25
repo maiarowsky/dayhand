@@ -331,8 +331,8 @@ public final class TaskRepository: Sendable {
                     try op.insert(db)
                 }
             }
+            let projects = try ProjectOutbox.apply(db, snapshot.projects, nowMs: now)
             let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
-            let projects = try ProjectOutbox.apply(db, snapshot.projects, pending: pending, nowMs: now)
             let local = try TaskItem.fetchAll(db)
             let plan = SnapshotMerger.merge(local: local, pending: pending, remote: snapshot.tasks, nowMs: now, projects: projects)
             for task in plan.upserts { try task.save(db) }
@@ -520,11 +520,15 @@ public final class TaskRepository: Sendable {
 extension TaskRepository: OutboxStore {
     public func next(markSending: Bool = false) async throws -> OutboxOp? {
         try await writer.write { db in
-            var next: OutboxOp?
-            if try Meta.projectSupport(db) == .unsupported {
-                next = try OutboxOp.order(Column("seq")).fetchAll(db).first { !$0.waitsForProjects }
-            } else {
-                next = try OutboxOp.order(Column("seq")).fetchOne(db)
+            let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
+            let unsupported = try Meta.projectSupport(db) == .unsupported
+            let restoring = Set(pending.filter { $0.mutation == Mutations.restore }.compactMap(\.taskLocalId))
+            let next = try pending.first { op in
+                if unsupported && op.waitsForProjects { return false }
+                guard op.isProjectAssignment, let localId = op.taskLocalId,
+                      let task = try TaskItem.fetchOne(db, key: localId) else { return true }
+                if task.inTrash || restoring.contains(localId) { return false }
+                return task.serverUpdatedAt != nil || op.lastError.map(RemoteJSON.refusesTrashedTask) != true
             }
             if markSending, var op = next {
                 op.attempts += 1
@@ -549,8 +553,9 @@ extension TaskRepository: OutboxStore {
 
     public func acknowledge(_ op: OutboxOp, value: JSONValue) async throws {
         try await writer.write { [self] db in
+            guard let op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
             if try Meta.projectSupport(db) == .unsupported, let localId = op.taskLocalId,
-               let stored = try OutboxOp.fetchOne(db, key: op.seq), let project = JSONValue.decode(stored.argsJson)?["projectId"] {
+               let project = JSONValue.decode(op.argsJson)?["projectId"] {
                 let membershipId = newId()
                 let args: JSONValue = ["projectId": project, "clientId": .string(membershipId)]
                 try db.execute(sql: """
@@ -571,6 +576,7 @@ extension TaskRepository: OutboxStore {
 
     public func reject(_ op: OutboxOp, reason: String) async throws {
         try await writer.write { db in
+            guard let op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
             // A refusal about projects keeps the task's change (sent again without its project) or undoes the
             // project's own change; see `ProjectOutbox.refused`.
             if try ProjectOutbox.refused(db, op, reason: reason) { return }
