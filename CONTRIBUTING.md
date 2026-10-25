@@ -90,8 +90,12 @@ Maintainers deploy after a merge to `main`, from `site/`, with Wrangler logged i
 owns dayhand.dev:
 
 ```sh
-npm run build && wrangler deploy
+npm run deploy   # checks scripts/check-release.mjs, builds, then wrangler deploy
 ```
+
+`npm run deploy` stops while `CONTACT_EMAIL` in `site/src/site.ts` is empty: the waitlist promises a way
+to have an address removed, and that constant is the address the page gives for it. Set it to the
+address the owner chooses; nothing else on the page changes.
 
 `site/wrangler.toml` holds no account id and no secrets; the account comes from `wrangler login`.
 
@@ -118,7 +122,7 @@ secret), then:
 
 ```sh
 wrangler d1 migrations apply dayhand-waitlist --remote
-npm run build && wrangler deploy
+npm run deploy
 ```
 
 Read the list:

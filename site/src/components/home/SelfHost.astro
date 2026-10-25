@@ -1,7 +1,7 @@
 ---
 // Getting started in two steps: install an app, then choose where the plan lives (this device, the planned hosted
 // Dayhand Cloud with its waitlist, or a server of your own). Server details live in docs/deploy.md.
-import { DOCS_PATH } from "../../site";
+import { CONTACT_EMAIL, DOCS_PATH } from "../../site";
 
 const installs = [
   { href: "#download-macos", label: "macOS" },
@@ -67,6 +67,13 @@ const installs = [
             <p class="waitlist-status" role="status" data-waitlist-status></p>
             <p class="fineprint" id="waitlist-privacy">
               We use your address only to send one email when Dayhand Cloud opens, then delete the list.
+              {
+                CONTACT_EMAIL && (
+                  <>
+                    To have it removed sooner, write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+                  </>
+                )
+              }
             </p>
           </form>
           <p class="fineprint waitlist-noscript">Joining the waitlist needs JavaScript turned on.</p>
