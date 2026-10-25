@@ -45,9 +45,7 @@ struct ProjectRulesTests {
         #expect(ProjectRules.note(String(repeating: "x", count: 2001)) == nil)
     }
 
-    @Test func positionsGoAtTheEndOrBetweenNeighbours() {
-        #expect(ProjectRules.positionAtEnd([]) == 1024)
-        #expect(ProjectRules.positionAtEnd([project("a", "A", position: 3000), project("b", "B", position: -5, archived: true)]) == 4024)
+    @Test func aMovedProjectGoesBetweenItsNeighbours() {
         let ordered = [project("a", "A", position: 1024), project("b", "B", position: 2048), project("c", "C", position: 3072)]
         #expect(ProjectRules.position(moving: "c", to: 0, in: ordered) == 0)
         #expect(ProjectRules.position(moving: "a", to: 1, in: ordered) == 2560)

@@ -2,8 +2,8 @@ import DayhandLocalization
 import Foundation
 
 /**
- * The backend's checks of a project (`backend/convex/lib/projectOps.ts`), applied before a change enters the outbox,
- * as `TaskRules` does for tasks: a name, icon or note the server would refuse is never queued.
+ * The backend's checks of a project (`backend/convex/lib/projectOps.ts`), applied on the Mac before a project change
+ * is sent to the server (project changes are never queued): a name, icon or note the server would refuse is not sent.
  */
 public enum ProjectRules {
     /// As long as a label, so a label always fits as a name and back.
@@ -11,7 +11,7 @@ public enum ProjectRules {
     public static let maxNote = 2_000
     public static let maxIcon = 16
     public static let maxProjects = 200
-    /// Distance between the positions of projects added at the end.
+    /// Distance from the neighbour of a project moved to either end of the sidebar.
     public static let positionStep: Double = 1024
     public static let maxPosition: Double = 1e15
     /// In filters and as a target: no project. Reserved, so no project has this name.
@@ -77,11 +77,6 @@ public enum ProjectRules {
     public static func note(_ input: String) -> String?? {
         if input.jsLength > maxNote { return nil }
         return .some(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : input)
-    }
-
-    /// Where a project added at the end goes: after the highest position, archived projects included (`insertProject`).
-    public static func positionAtEnd(_ projects: [Project]) -> Double {
-        min(projects.reduce(0) { max($0, $1.position) } + positionStep, maxPosition)
     }
 
     /// The position of a project moved between two neighbours in the sidebar (nil: no neighbour on that side).
