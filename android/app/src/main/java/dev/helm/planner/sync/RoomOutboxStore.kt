@@ -6,15 +6,18 @@ import dev.helm.planner.data.local.Mutations
 import dev.helm.planner.data.local.OutboxOp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 
-/** Clearing an assignment also removes proof that was valid only in that project. */
-fun withoutProject(args: JsonObject, mutation: String): JsonObject {
-    val fields = args - OutboxProcessor.REPEAT_PROOF_KEYS - "projectId"
-    return JsonObject(if (mutation == Mutations.ADD) fields else fields + ("projectId" to JsonNull))
+/**
+ * Rewrites a queued change without a refused assignment and the proof valid only in that project. An update keeps the
+ * server's previous project rather than clearing it, and one left with nothing to change is removed.
+ */
+suspend fun HelmDatabase.dropAssignment(op: OutboxOp, args: JsonObject) {
+    val kept = JsonObject(args - OutboxProcessor.REPEAT_PROOF_KEYS - "projectId")
+    if (op.mutation == Mutations.UPDATE && (kept.keys - "clientId").isEmpty()) outbox().delete(op.seq)
+    else outbox().upsert(op.copy(argsJson = kept.toString()))
 }
 
 class RoomOutboxStore(private val db: HelmDatabase) : OutboxStore {
@@ -45,9 +48,12 @@ class RoomOutboxStore(private val db: HelmDatabase) : OutboxStore {
         db.tasks().upsert(db.tasks().all().filter { it.localId in affected && JsonPrimitive(it.projectId) == refused }
             .map { it.copy(projectId = null, serverUpdatedAt = null) })
         waiting.filter { (change, args) -> change.taskLocalId in affected && args["projectId"] == refused }.forEach { (change, args) ->
-            db.outbox().upsert(change.copy(argsJson = withoutProject(args, change.mutation).toString()))
+            db.dropAssignment(change, args)
         }
     }
+
+    override suspend fun dropRepeatProof(op: OutboxOp) = db.outbox().upsert(op.copy(
+        argsJson = JsonObject(Json.parseToJsonElement(op.argsJson).jsonObject - OutboxProcessor.REPEAT_PROOF_KEYS).toString()))
 
     override suspend fun reject(op: OutboxOp, reason: String) = db.withTransaction {
         db.outbox().delete(op.seq)

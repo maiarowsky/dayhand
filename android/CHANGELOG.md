@@ -21,12 +21,16 @@ called Helm until 0.9.0.
   execute on the server; without a connection (also unpaired) a translated message explains why.
   Only task/settings edits enter the append-only outbox, including offline assignments to confirmed
   projects. A refused assignment keeps the task and later edits and removes only that assignment
-  and its dependent repeat proof. There is no name-conflict linking or automatic project reopening.
+  and its dependent repeat proof; a refused move leaves the task in its previous server project.
+  There is no name-conflict linking or automatic project reopening.
 - Repeating tasks made on the phone inherit their project; backend 0.13.2 confirms their parent
-  completion so an archived project stays archived. A refused local occurrence stays queued
-  instead of losing its row and edits. **Deploy backend 0.13.2 before Android 0.12.0.** Backup files
+  completion so an archived project stays archived. A local occurrence whose proof the server
+  refuses is sent as an ordinary task (an older backend keeps it queued), never losing its row and
+  edits. **Deploy backend 0.13.2 before Android 0.12.0.** Backup files
   read tasks/projects in one transaction; restore preflights combined project capacity and needs
-  a connection for project management. Switching servers also detects and clears project-only plans.
+  a connection for project management. Restoring never reopens an archived project: tasks of a
+  project archived on the server or in the file are restored without a project. Switching servers
+  also detects and clears project-only plans.
 - Project markers retain both dot and optional emoji, including Today’s Done rows. Labels and
   No project offer List only. Cross-project dependencies stay visible in project scopes; ordering
   handles tied/exhausted positions, and hiding project search clears its filter.

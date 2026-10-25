@@ -19,6 +19,7 @@ import dev.helm.planner.domain.Recurrence
 import dev.helm.planner.domain.TaskRules
 import dev.helm.planner.sample.SamplePlan
 import dev.helm.planner.sync.SnapshotMerger
+import dev.helm.planner.sync.dropAssignment
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -384,12 +385,11 @@ class TaskRepository(
         db.outbox().deleteForTasksLike(SAMPLE_PATTERN)
         val sampleProjects = db.projects().all().filter { SamplePlan.isSample(it.localId) }.map { it.localId }.toSet()
         db.tasks().upsert(db.tasks().all().filter { it.projectId in sampleProjects && !SamplePlan.isSample(it.localId) }
-            .map { it.copy(projectId = null) })
+            .map { it.copy(projectId = null, serverUpdatedAt = null) })
         db.outbox().all().filter { it.taskLocalId != null }.forEach { op ->
             val args = Json.parseToJsonElement(op.argsJson) as JsonObject
             val projectId = (args["projectId"] as? JsonPrimitive)?.content
-            if (projectId in sampleProjects) db.outbox().upsert(op.copy(
-                argsJson = dev.helm.planner.sync.withoutProject(args, op.mutation).toString()))
+            if (projectId in sampleProjects) db.dropAssignment(op, args)
         }
         db.tasks().deleteLike(SAMPLE_PATTERN)
         db.projects().deleteLike(SAMPLE_PATTERN)
@@ -398,7 +398,7 @@ class TaskRepository(
     /** The tasks a backup holds: everything on the phone except the sample plan. */
     suspend fun backupSnapshot(): PlanSnapshot = db.withTransaction {
         PlanSnapshot(db.tasks().all().filterNot { SamplePlan.isSample(it.localId) },
-            db.projects().all().filter { it.deletedAt == null && !SamplePlan.isSample(it.localId) })
+            db.projects().all().filterNot { SamplePlan.isSample(it.localId) })
     }
 
     /** Project-only plans must also be confirmed and cleared before changing owners. */
@@ -419,13 +419,12 @@ class TaskRepository(
         checkRestoreCapacity(projects)
         if (projects.isNotEmpty()) projectStore.refreshForRestore()
         checkRestoreCapacity(projects)
-        val rearchive = mutableSetOf<String>()
         val projectIds = projects.associate { imported ->
-            val existing = db.projects().all().firstOrNull { dev.helm.planner.domain.ProjectRules.nameKey(it.name) == dev.helm.planner.domain.ProjectRules.nameKey(imported.name) && it.deletedAt == null }
-            val project = existing ?: projectStore.add(imported.name, imported.color, imported.icon, imported.note)
-            if (project.archived) projectStore.archive(project.localId, false)
-            if (project.archived || imported.archived) rearchive += project.localId
-            imported.id to requireNotNull(project.serverId)
+            val existing = db.projects().all().firstOrNull { dev.helm.planner.domain.ProjectRules.nameKey(it.name) == dev.helm.planner.domain.ProjectRules.nameKey(imported.name) }
+            val created = existing ?: projectStore.add(imported.name, imported.color, imported.icon, imported.note)
+                .also { if (imported.archived) projectStore.archive(it.localId, true) }
+            val project = requireNotNull(db.projects().byLocalId(created.localId))
+            imported.id to project.serverId?.takeUnless { project.archived }
         }
         val now = clock()
         val result = db.withTransaction {
@@ -440,7 +439,7 @@ class TaskRepository(
                     localId = id,
                     clientId = id,
                     title = item.title,
-                    projectId = item.projectId?.let { requireNotNull(projectIds[it]) },
+                    projectId = item.projectId?.let { projectIds[it] },
                     note = item.note,
                     dueDate = item.dueDate,
                     dueTime = item.dueTime,
@@ -465,13 +464,11 @@ class TaskRepository(
             RestoreResult(added, tasks.size - added)
         }
         if (result.added > 0) onOutboxChanged()
-        // Explicit restore commands wait for preceding task adds and never enter the outbox.
-        rearchive.forEach { projectStore.archive(it, true) }
         return result
     }
 
     private suspend fun checkRestoreCapacity(imported: List<dev.helm.planner.backup.BackupProject>) = db.withTransaction {
-        val existing = db.projects().all().filter { it.deletedAt == null && !SamplePlan.isSample(it.localId) }
+        val existing = db.projects().all().filterNot { SamplePlan.isSample(it.localId) }
         val names = (existing.map { dev.helm.planner.domain.ProjectRules.nameKey(it.name) } +
             imported.map { dev.helm.planner.domain.ProjectRules.nameKey(it.name) }).toSet()
         if (names.size > dev.helm.planner.domain.ProjectRules.MAX_PROJECTS) throw RestoreCapacityExceeded()

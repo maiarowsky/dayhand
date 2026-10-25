@@ -19,10 +19,8 @@ data class Project(
     val createdAt: Long,
     val updatedAt: Long,
     val serverUpdatedAt: Long? = null,
-    /** Reserved for cached/imported data; project deletions are applied directly on the server. */
-    val deletedAt: Long? = null,
 ) {
     val archived: Boolean get() = archivedAt != null
-    val selectable: Boolean get() = !archived && deletedAt == null
+    val selectable: Boolean get() = !archived
     val assignable: Boolean get() = selectable && serverId != null
 }

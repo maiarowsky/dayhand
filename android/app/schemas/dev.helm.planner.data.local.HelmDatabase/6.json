@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 6,
-    "identityHash": "758e0abd7eba8a6ab4697382c302da8f",
+    "identityHash": "cedac0b9160e2bfd5b819c3165e7a378",
     "entities": [
       {
         "tableName": "tasks",
@@ -351,7 +351,7 @@
       },
       {
         "tableName": "projects",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localId` TEXT NOT NULL, `serverId` TEXT, `clientId` TEXT, `name` TEXT NOT NULL, `color` TEXT, `icon` TEXT, `note` TEXT, `position` REAL NOT NULL, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `serverUpdatedAt` INTEGER, `deletedAt` INTEGER, PRIMARY KEY(`localId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localId` TEXT NOT NULL, `serverId` TEXT, `clientId` TEXT, `name` TEXT NOT NULL, `color` TEXT, `icon` TEXT, `note` TEXT, `position` REAL NOT NULL, `archivedAt` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `serverUpdatedAt` INTEGER, PRIMARY KEY(`localId`))",
         "fields": [
           {
             "fieldPath": "localId",
@@ -417,11 +417,6 @@
             "fieldPath": "serverUpdatedAt",
             "columnName": "serverUpdatedAt",
             "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "deletedAt",
-            "columnName": "deletedAt",
-            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -454,7 +449,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '758e0abd7eba8a6ab4697382c302da8f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cedac0b9160e2bfd5b819c3165e7a378')"
     ]
   }
 }

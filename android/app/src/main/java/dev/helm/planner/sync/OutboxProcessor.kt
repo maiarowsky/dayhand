@@ -23,6 +23,8 @@ interface OutboxStore {
     suspend fun reject(op: OutboxOp, reason: String)
     /** Keep the task and queued edits, removing only the refused assignment and its dependent proof. */
     suspend fun clearProjectAssignment(op: OutboxOp) {}
+    /** Keep a local occurrence whose proof the server refused, sending it as an ordinary task. */
+    suspend fun dropRepeatProof(op: OutboxOp)
     suspend fun recordFailure(op: OutboxOp, reason: String)
 }
 
@@ -42,10 +44,6 @@ class OutboxProcessor(
             val op = store.next() ?: return DrainResult.DONE
             val args = argsFor(op)
             if (args == null) {
-                if (op.mutation == Mutations.ADD && "repeatParentLocalId" in Json.parseToJsonElement(op.argsJson).jsonObject) {
-                    store.recordFailure(op, "local repeat parent not sent yet")
-                    return DrainResult.RETRY_LATER
-                }
                 store.reject(op, "task never reached the server")
                 return@repeat
             }
@@ -55,10 +53,14 @@ class OutboxProcessor(
                     when (assignmentRefused(op, args, result)) {
                         true -> store.clearProjectAssignment(op) // Retry the same seq, not a new/reordered task.
                         null -> return DrainResult.RETRY_LATER
-                        false -> if (op.mutation == Mutations.ADD && "repeatedFrom" in args) {
-                            store.recordFailure(op, result.code ?: "local repeat not accepted")
-                            return DrainResult.RETRY_LATER
-                        } else store.reject(op, result.message)
+                        false -> when {
+                            op.mutation != Mutations.ADD || "repeatedFrom" !in args -> store.reject(op, result.message)
+                            result.code != null -> store.dropRepeatProof(op)
+                            else -> {
+                                store.recordFailure(op, "local repeat not accepted")
+                                return DrainResult.RETRY_LATER
+                            }
+                        }
                     }
                 }
                 SendResult.Unauthorized -> {
@@ -91,10 +93,11 @@ class OutboxProcessor(
         var args = Json.parseToJsonElement(op.argsJson).jsonObject
         val parent = (args["repeatParentLocalId"] as? JsonPrimitive)?.content
         if (parent != null) {
-            val parentId = store.serverIdOf(parent) ?: return null
-            val completedBy = args["repeatCompletedBy"] ?: return null
-            val completedOn = args["repeatCompletedOn"] ?: return null
-            args = JsonObject(args - REPEAT_PROOF_KEYS + ("repeatedFrom" to buildJsonObject {
+            val parentId = store.serverIdOf(parent)
+            val completedBy = args["repeatCompletedBy"]
+            val completedOn = args["repeatCompletedOn"]
+            args = JsonObject(args - REPEAT_PROOF_KEYS)
+            if (parentId != null && completedBy != null && completedOn != null) args = JsonObject(args + ("repeatedFrom" to buildJsonObject {
                 put("taskId", JsonPrimitive(parentId))
                 put("completedBy", completedBy)
                 put("completedOn", completedOn)

@@ -22,7 +22,7 @@ object ProjectRules {
     }
 
     fun validName(input: String, projects: List<Project>, except: String? = null): Boolean =
-        name(input) != null && projects.none { it.localId != except && it.deletedAt == null && nameKey(it.name) == nameKey(input) }
+        name(input) != null && projects.none { it.localId != except && nameKey(it.name) == nameKey(input) }
 
     /** One emoji sequence, including flags, skin tones, keycaps and ZWJ sequences. */
     fun validIcon(input: String): Boolean {

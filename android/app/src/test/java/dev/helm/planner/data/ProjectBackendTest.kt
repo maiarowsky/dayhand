@@ -129,22 +129,32 @@ class ProjectBackendTest {
         } finally { db.close() }
     }
 
-    @Test fun archivedProjectBackupRestoresThroughConfirmedServerIdsAndIsIdempotent() = runBlocking {
+    @Test fun archivedProjectBackupNeverReopensItAndRestoresItsTasksWithoutAProject() = runBlocking {
         val remote = remote()
         val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
         try {
-            val repo = TaskRepository(db, projectRemote = { remote })
+            val sent = mutableListOf<JsonObject>()
+            val recording = object : dev.helm.planner.data.remote.TaskRemote by remote {
+                override suspend fun send(mutation: String, args: JsonObject): SendResult = remote.send(mutation, args).also { sent += args }
+            }
+            val repo = TaskRepository(db, projectRemote = { recording })
             val imported = dev.helm.planner.backup.BackupProject("file-project", name("Restored"), "green", "🥐", "Backup context", true)
             val task = dev.helm.planner.backup.BackupTask(UUID.randomUUID().toString(), "Restored task", projectId = imported.id)
             assertEquals(RestoreResult(1, 0), repo.restore(listOf(task), listOf(imported)))
             val project = db.projects().all().single { it.name == imported.name }
             assertTrue(project.archived)
             assertEquals("Backup context", project.note)
-            assertEquals(project.serverId, tasks(remote).single { it.clientId == task.id }.projectId)
+            val second = dev.helm.planner.backup.BackupTask(UUID.randomUUID().toString(), "Second restored task", projectId = imported.id)
+            assertEquals(RestoreResult(1, 1), repo.restore(listOf(task, second), listOf(imported)))
+            repo.projectStore.refreshForRestore()
             assertTrue(db.outbox().all().isEmpty())
-            assertEquals(RestoreResult(0, 1), repo.restore(listOf(task), listOf(imported)))
-            assertEquals(1, tasks(remote).count { it.clientId == task.id })
+            for (restored in listOf(task, second)) {
+                val server = tasks(remote).single { it.clientId == restored.id }
+                assertNull(server.projectId)
+                assertNull(db.tasks().byLocalId(restored.id)?.projectId)
+            }
             assertTrue(db.projects().byLocalId(project.localId)!!.archived)
+            assertFalse(sent.any { it["archived"]?.jsonPrimitive?.content == "false" })
         } finally { db.close() }
     }
 

@@ -350,14 +350,17 @@ Convex subscription (app:listAll, app:listTrash, app:listProjects, app:getSettin
   name-conflict linking. Task edits and assignments to previously confirmed active projects still
   work offline and append at the end of the task queue. If another device deletes or archives a
   target before an assignment reaches the server, the task and later edits are kept: only the
-  refused assignment and its dependent repeat proof are cleared. The project is never reopened
+  refused assignment and its dependent repeat proof are cleared, and a refused move leaves the task
+  in its previous server project. The project is never reopened
   as conflict recovery. Sample projects never leave the phone; removing them also clears any old
   sample assignment and its dependent proof without losing the task.
   A locally calculated repeat carries the parent's local id, its completion operation id and the
   phone's completion day. At send time these become `app:add.repeatedFrom`: backend 0.13.2 checks
   the repeat-clear and completion history, the next date/rule and the same project, deduplicates
-  by clientId, and permits that one inherited occurrence even in an archived project. A refused
-  or not-yet-resolved local occurrence stays in the outbox with its later edits, never erased.
+  by clientId, and permits that one inherited occurrence even in an archived project. If the
+  server refuses the proof (or the parent never reached it), the occurrence is sent as an ordinary
+  task; only an older backend that cannot read the proof keeps it waiting in the outbox. It is
+  never erased with its later edits.
 - **Reads**: while the app is open, the official Convex client (`dev.convex:android-convexmobile`)
   keeps a live subscription and every snapshot is merged into Room. Both directions sit behind
   `TaskRemote` (`TaskFeed` + `MutationSender`), so the Convex client can be replaced by plain
@@ -419,7 +422,8 @@ The **backup file** (`backup/PlanBackup.kt`) is Dayhand's JSON export format, ve
 else the phone's, and `projectId`) and an empty `events`. Project names, colours, icons, notes,
 order and archive state are kept. Tasks and projects are read in one Room transaction. Restoring
 a file containing projects requires a connection: projects are matched by name or created directly
-on the server, tasks use their confirmed ids, and archive commands wait for the task queue to drain.
+on the server (one archived in the file is archived right after creation), tasks use their confirmed
+ids, and an archived project is never reopened: its tasks are restored without a project.
 The combined existing/imported project count is checked before changes (at most 200). Project
 management is not queued if the connection fails; restore reports the failure rather than crashing. Task numbers (`ref`), cached change history and agent-work
 fields (including the plan, dependencies and blocked reason) are not included. Sample tasks are

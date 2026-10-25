@@ -45,7 +45,7 @@ interface TaskDao {
 
 @Dao
 interface ProjectDao {
-    @Query("SELECT * FROM projects WHERE deletedAt IS NULL ORDER BY position, createdAt")
+    @Query("SELECT * FROM projects ORDER BY position, createdAt")
     fun observeAll(): Flow<List<Project>>
 
     @Query("SELECT * FROM projects ORDER BY position, createdAt")

@@ -123,7 +123,10 @@ class ProjectRepository(
 
     private suspend fun <T> command(block: suspend (TaskRemote) -> T): T = commands.withLock {
         val server = remote() ?: throw ProjectConnectionRequired()
-        if (OutboxProcessor(RoomOutboxStore(db), server).drain() != DrainResult.DONE) throw ProjectConnectionRequired()
+        val processor = OutboxProcessor(RoomOutboxStore(db), server)
+        var drained = processor.drain()
+        while (drained == DrainResult.MORE_LEFT) drained = processor.drain()
+        if (drained != DrainResult.DONE) throw ProjectConnectionRequired()
         refresh(server)
         block(server)
     }
