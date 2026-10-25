@@ -3,7 +3,11 @@ import { admin, dayhand, dayhandJson, jsonError, newUser, schemaValidator } from
 
 const validate = schemaValidator();
 const catalog = (key: string) => dayhandJson(key, ["project", "list", "--archived"]);
-const history = (key: string) => dayhandJson(key, ["log", "--limit", "200"]);
+const history = async (key: string) => {
+  const events = (await dayhandJson(key, ["export", "--format", "json"])).content.events;
+  expect(events).toEqual(expect.arrayContaining([expect.objectContaining({ action: "projectAdd" })]));
+  return events;
+};
 const placements = [
   { flags: ["--first"] }, { flags: ["--last"] },
   { flags: ["--before", "Other"] }, { flags: ["--after", "Other"] },
@@ -32,6 +36,7 @@ describe("project ordering validation and retries", () => {
     for (const flag of ["--first", "--last"]) {
       expect(await dayhandJson(key, ["project", "edit", "Home", flag])).toMatchObject({ id: project.id, position: 0 });
     }
+    expect(await history(key)).toEqual([...events, expect.objectContaining({ action: "projectUpdate", after: { projectId: project.id, position: 0 } })]);
   });
 
   test.each(placements)("rename plus $flags replays by client ID after the original name disappears", async ({ flags }) => {

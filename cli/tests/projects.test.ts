@@ -204,10 +204,12 @@ describe("projects", () => {
     expect(exported.stdout.trim().split("\n")).toEqual(["Strona piekarni", ":4"]);
   });
 
-  test("human names cost one catalog call per command, JSON and default plain cost none", async () => {
+  test("names cost one catalog call when consumed, text outcomes and default JSON/plain cost none", async () => {
     const { key } = await newUser();
     await dayhandJson(key, ["project", "add", "Home"]);
-    await dayhandJson(key, ["add", "A", "-p", "Home"]);
+    await dayhandJson(key, ["add", "A", "-p", "Home", "--note", "Context"]);
+    await dayhandJson(key, ["add", "Suggested", "--propose", "-p", "Home"]);
+    const dir = folder();
     const calls: string[] = [];
     const proxy = createServer(async (request, response) => {
       let body = "";
@@ -220,11 +222,29 @@ describe("projects", () => {
     await new Promise<void>((resolve) => proxy.listen(0, "127.0.0.1", resolve));
     const url = `http://127.0.0.1:${(proxy.address() as { port: number }).port}`;
     try {
-      for (const flags of [[], ["--json"], ["--plain"], ["--json", "--fields", "project"]]) {
+      const cases = [
+        { args: ["list"], reads: 1 }, { args: ["list", "--json"], reads: 0 }, { args: ["list", "--plain"], reads: 0 },
+        { args: ["list", "--json", "--fields", "project"], reads: 1 },
+        { args: ["note", "1"], reads: 0 }, { args: ["note", "1", "--plain"], reads: 0 },
+        { args: ["note", "1", "--json", "--fields", "project"], reads: 1 },
+        { args: ["note", "1", "--json", "--fields", "projectId"], reads: 0 },
+        { args: ["checklist", "1"], reads: 0 }, { args: ["criteria", "1"], reads: 0 },
+        { args: ["proposals"], reads: 0 }, { args: ["proposals", "--json", "--fields", "project"], reads: 1 },
+        { args: ["export", "--format", "json"], reads: 0 },
+        { args: ["backlog", "import", dir, "--project", "Home", "--dry-run"], reads: 1 },
+        { args: ["backlog", "import", dir, "--project", "Home"], reads: 1 },
+      ];
+      for (const { args, reads } of cases) {
         calls.length = 0;
-        const run = await dayhand(key, ["list", ...flags], { url });
+        const run = await dayhand(key, args, { url });
         expect(run.code, run.stderr).toBe(0);
-        expect(calls.filter((name) => name === "list_projects")).toHaveLength(flags.length === 0 || flags.includes("project") ? 1 : 0);
+        expect(calls.filter((name) => name === "list_projects"), args.join(" ")).toHaveLength(reads);
+        if (args.includes("--fields") && args.includes("project")) {
+          const value = JSON.parse(run.stdout);
+          expect(value.task ?? value.result[0]).toEqual({ project: "Home" });
+        }
+        if (args[0] === "note" && !args.includes("--json")) expect(run.stdout).toBe("Context\n");
+        if (args[0] === "backlog") expect(run.stdout).toContain(args.includes("--dry-run") ? "Would import 1 task(s)" : "Imported 1 task(s)");
       }
     } finally { await new Promise<void>((resolve) => proxy.close(() => resolve())); }
   });

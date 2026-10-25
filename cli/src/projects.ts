@@ -29,10 +29,10 @@ export const projectKey = (name: string) => name.trim().normalize("NFC").toLower
 export const projectToken = (name: string) => name.replace(/\s+/g, "-");
 export const findProject = (projects: Project[], ref: string) => projects.find((p) => p.id === ref) ?? projects.find((p) => projectKey(p.name) === projectKey(ref));
 /** Quick add accepts a hyphen in place of a space, never creates from an unknown token. */
-export function tokenProject(projects: Project[], token: string): Project | undefined {
+export function tokenProject(projects: Project[], token: string, includeArchived = false): Project | undefined {
   const exact = findProject(projects, token);
-  if (exact) return exact.archived ? undefined : exact;
-  const matches = projects.filter((p) => !p.archived && projectKey(projectToken(p.name)) === projectKey(token));
+  if (exact) return !exact.archived || includeArchived ? exact : undefined;
+  const matches = projects.filter((p) => (!p.archived || includeArchived) && projectKey(projectToken(p.name)) === projectKey(token));
   return matches.length === 1 ? matches[0] : undefined;
 }
 

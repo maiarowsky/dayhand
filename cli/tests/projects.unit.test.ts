@@ -54,17 +54,34 @@ test("project name decoration is immutable, works in nested results, and enables
   const decorated = withProjectNames(value, projects);
   expect(decorated.results[0]!.task.project).toBe("Strona piekarni");
   expect(value.results[0]!.task).not.toHaveProperty("project");
-  expect(matches(decorated.results[0]!.task, "+STRONA-piekarni #web")).toBe(true);
-  expect(matches(decorated.results[0]!.task, "+Café")).toBe(false);
+  expect(matches(decorated.results[0]!.task, "+STRONA-piekarni #web", projects)).toBe(true);
+  expect(matches(decorated.results[0]!.task, "+Café", projects)).toBe(false);
 });
 
 test("project filters match complete tokens in any case and preserve ordinary text search", () => {
   const task: Task = { id: "task", title: "Menu", ref: 42, status: "todo", isNow: false, labels: ["web"], links: [], note: "Bakery", createdAt: 0, updatedAt: 0 };
-  for (const [name, expected] of [["Home", true], ["HOME", true], ["Home-office", false], ["My Home", false]] as const) {
-    const named = { ...task, projectId: name, project: name };
-    expect(matches(named, "+hOmE")).toBe(expected);
-    expect(matches(named, "+hOmE #web")).toBe(expected);
+  const catalog = [project("home", "Home"), project("prefix", "Home-office"), project("suffix", "My Home")];
+  for (const [id, name, expected] of [["home", "Home", true], ["home", "HOME", true], ["prefix", "Home-office", false], ["suffix", "My Home", false]] as const) {
+    const named = { ...task, projectId: id, project: name };
+    expect(matches(named, "+hOmE", catalog)).toBe(expected);
+    expect(matches(named, "+hOmE #web", catalog)).toBe(expected);
   }
-  expect(matches(task, "+Home")).toBe(false);
+  expect(matches(task, "+Home", catalog)).toBe(false);
   for (const filter of ["menu", "BAKERY", "#WEB", "#42", ""]) expect(matches(task, filter)).toBe(true);
+});
+
+test.each([false, true])("filters resolve catalog identity before matching, including archived projects (reversed: %s)", (reversed) => {
+  const catalog = [
+    project("space", "Web shop"), project("literal", "Web-shop"), project("shadow", "space"),
+    project("one", "Blue sky"), project("two", "Blue  sky"),
+    project("old", "Old shop", true), project("oldLiteral", "Old-shop", true), project("kept", "Kept project", true),
+  ];
+  const ordered = reversed ? [...catalog].reverse() : catalog;
+  const tasks: Task[] = catalog.map((p) => ({ id: `task-${p.id}`, title: "Menu", projectId: p.id, status: "todo", isNow: false, labels: [], links: [], createdAt: 0, updatedAt: 0 }));
+  for (const [filter, expected] of [
+    ["+WEB-shop", ["literal"]], ["+space", ["space"]], ["+SPACE", ["shadow"]],
+    ["+Blue-sky", []], ["+Old-shop", ["oldLiteral"]], ["+old", ["old"]], ["+Kept-project", ["kept"]], ["+Missing", []],
+  ] as const) {
+    expect(tasks.filter((task) => matches(task, filter, ordered)).map((task) => task.projectId), filter).toEqual(expected);
+  }
 });

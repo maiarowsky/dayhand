@@ -58,7 +58,7 @@ export async function execute(io: Io, setup: Setup, spec: CommandSpec, name: str
       return EXIT.ok;
     }
     if (result.printed) return EXIT.ok;
-    const needsNames = format === "human" || fields?.includes("project");
+    const needsNames = (format === "human" && result.view.kind !== "text") || fields?.includes("project");
     const outcome = needsNames && hasProjectTasks(result) ? withProjectNames(result, await readProjects(await ctx.client())) : result;
     const value = fields && spec.fields ? projectFields(outcome.value, spec.fields, fields) : outcome.value;
     if (format === "json") out.json(value);
