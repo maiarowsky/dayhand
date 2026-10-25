@@ -33,11 +33,12 @@ public struct Project: Hashable, Sendable, Identifiable {
     /// Deleted on this Mac; the row stays, hidden, until the server has the deletion, so the deletion can still name
     /// the project by its server id.
     public var removing: Bool
+    public var joinName: String?
 
     public init(
         localId: String, serverId: String? = nil, clientId: String? = nil, name: String, color: ProjectColor? = nil,
         icon: String? = nil, note: String? = nil, position: Double, archivedAt: Int64? = nil, createdAt: Int64,
-        updatedAt: Int64, serverUpdatedAt: Int64? = nil, removing: Bool = false
+        updatedAt: Int64, serverUpdatedAt: Int64? = nil, removing: Bool = false, joinName: String? = nil
     ) {
         self.localId = localId
         self.serverId = serverId
@@ -52,6 +53,7 @@ public struct Project: Hashable, Sendable, Identifiable {
         self.updatedAt = updatedAt
         self.serverUpdatedAt = serverUpdatedAt
         self.removing = removing
+        self.joinName = joinName
     }
 
     public var id: String { localId }

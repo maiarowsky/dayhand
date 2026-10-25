@@ -3,7 +3,7 @@ import Foundation
 /// Durable queue of local changes, as the processor needs it.
 public protocol OutboxStore: Sendable {
     /// The oldest waiting change, or nil when everything was sent.
-    func next() async throws -> OutboxOp?
+    func next(markSending: Bool) async throws -> OutboxOp?
     func serverIdOf(_ taskLocalId: String) async throws -> String?
     func projectRef(_ localId: String, allowName: Bool) async throws -> String?
     /// Whether the server has projects, as the last snapshot said.
@@ -40,7 +40,7 @@ public struct OutboxProcessor: Sendable {
 
     public func drain() async throws -> DrainResult {
         for _ in 0..<maxOps {
-            guard let op = try await store.next() else { return .done }
+            guard let op = try await store.next(markSending: true) else { return .done }
             let args: JSONValue
             switch try await argsFor(op) {
             case .send(let ready): args = ready
@@ -61,7 +61,7 @@ public struct OutboxProcessor: Sendable {
                 return .retryLater
             }
         }
-        return try await store.next() == nil ? .done : .moreLeft
+        return try await store.next(markSending: false) == nil ? .done : .moreLeft
     }
 
     /// The arguments as sent, or why the change cannot be sent at all.
@@ -83,8 +83,7 @@ public struct OutboxProcessor: Sendable {
 
     /**
      * Swaps the projects' `localId`s in `projectId` and `moveTasksTo` for what the server knows them by. A server
-     * without projects gets no project change and no `projectId`; a project this Mac no longer has is left out of a
-     * task change, and a change of the project itself is refused. Returns the reason for a refusal.
+     * without projects gets no project change and no `projectId`. Returns the reason for a refusal.
      */
     private func resolveProjects(_ op: OutboxOp, _ args: inout [String: JSONValue]) async throws -> String? {
         let ofProject = Mutations.projectChanges.contains(op.mutation)
@@ -101,7 +100,7 @@ public struct OutboxProcessor: Sendable {
             } else if ofProject {
                 return "project never reached the server"
             } else {
-                args.removeValue(forKey: key)
+                return "Project \"\(localId)\" not found"
             }
         }
         return nil

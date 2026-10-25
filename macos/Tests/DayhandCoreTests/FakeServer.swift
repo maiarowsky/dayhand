@@ -140,6 +140,15 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         lock.locked { projects[id] = patched(projects[id], fields) }
     }
 
+    func deleteProjectElsewhere(_ id: String) {
+        lock.locked {
+            projects[id] = nil
+            for taskId in order where tasks[taskId]?["projectId"]?.string == id {
+                change(taskId, action: "update") { _ = $0.removeValue(forKey: "projectId") }
+            }
+        }
+    }
+
     func task(titled title: String) -> JSONValue? { allTasks.first { $0["title"]?.string == title } }
 
     func mutationsSent() -> [String] {
@@ -333,7 +342,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         let old = task
         edit(&task)
         let keys = Set(old.keys).union(task.keys).filter { $0 != "updatedAt" && old[$0] != task[$0] }
-        if touch { task["updatedAt"] = .of(max(clock(), (task["updatedAt"]?.int64 ?? 0) + 1)) }
+        if touch && !keys.isEmpty { task["updatedAt"] = .of(max(clock(), (task["updatedAt"]?.int64 ?? 0) + 1)) }
         tasks[id] = .object(task)
         guard !keys.isEmpty else { return }
         let before = Dictionary(uniqueKeysWithValues: keys.map { ($0, old[$0] ?? .null) })
@@ -408,6 +417,11 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             return .failure(Refusal(message: "Project \"\(args["projectId"]?.string ?? "")\" not found"))
         }
         if path == "app:updateProject" {
+            if let name = args["name"]?.string,
+               let taken = projects.values.first(where: { $0["id"]?.string != id && nameKey($0["name"]?.string ?? "") == nameKey(name) }) {
+                let archived = taken["archived"]?.bool == true ? " (archived)" : ""
+                return .failure(Refusal(message: "A project named \"\(taken["name"]?.string ?? "")\" already exists\(archived)"))
+            }
             var fields: [String: JSONValue] = [:]
             for key in ["name", "color", "icon", "note", "position"] {
                 if let value = args[key] { fields[key] = value }
@@ -443,5 +457,29 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         ]
         event["by"] = .string(actor.0 == "agent" && actor.1 != nil ? "agent: \(actor.1!)" : actor.0)
         events[id, default: []].append(.object(event))
+    }
+}
+
+actor PausedProjectTransport: HTTPTransport {
+    private let server: FakeServer
+    private var didPause = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(_ server: FakeServer) { self.server = server }
+
+    var isPaused: Bool { continuation != nil }
+
+    func post(_ url: URL, json: Data, bearer: String?) async throws -> HTTPReply {
+        let reply = try await server.post(url, json: json, bearer: bearer)
+        if !didPause, JSONValue.decode(json)?["path"]?.string == Mutations.addProject {
+            didPause = true
+            await withCheckedContinuation { continuation = $0 }
+        }
+        return reply
+    }
+
+    func release() {
+        continuation?.resume()
+        continuation = nil
     }
 }

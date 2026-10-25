@@ -153,13 +153,18 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   at once), and `projectId` in `app:add` and `app:update` (`null` takes a task out of its project). A project made
   offline is named in the outbox by its local id, which is also its `clientId`; each mutation is sent with the
   server's id once the `addProject` is answered. Deletion and its destination never resolve by name; a local
-  project deleted before it has a server id cancels its queued project changes, keeping its tasks' local moves.
-  A repeating task's next occurrence keeps its project.
+  project cancels its creation only when it provably never left the Mac. An in-flight or unacknowledged creation
+  keeps its deletion queued until an answer or snapshot resolves its original `clientId`. Cancellation preserves
+  task moves and sends a destination's creation before any retargeted reference. A repeating task's next
+  occurrence keeps its project.
 - The snapshot adds `app:listProjects`; projects merge last write wins per field, as tasks do, and a project deleted
   on the Mac stays hidden until the server has the deletion. Two Macs that make a project of the same name offline
-  end with one: the second `addProject` is refused as a taken name and its row joins the server's project.
+  end with one: the second `addProject` is refused as a taken name and its row joins the server's project using
+  the name submitted by that creation, not a later rename. Subsequent edits and task assignments use that identity.
+  Migration v5 stores this refused-name identity and treats older pending creations as uncertain.
 - A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
-  the project, and the task leaves it on the Mac too; a refused project change is undone by the next snapshot.
+  the project; the next snapshot restores authoritative membership unless a later assignment is waiting. Missing
+  local references follow the same reconciliation. A refused project edit cannot unhide a later queued deletion.
 - **Older servers (0.12.x)** have no `app:listProjects` ("Could not find public function"). The snapshot then has
   no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`). Local projects and task
   memberships stay. Project operations and membership changes wait for a server with projects, without blocking

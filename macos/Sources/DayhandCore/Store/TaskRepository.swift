@@ -518,12 +518,20 @@ public final class TaskRepository: Sendable {
 // MARK: - Outbox store
 
 extension TaskRepository: OutboxStore {
-    public func next() async throws -> OutboxOp? {
-        try await writer.read { db in
+    public func next(markSending: Bool = false) async throws -> OutboxOp? {
+        try await writer.write { db in
+            var next: OutboxOp?
             if try Meta.projectSupport(db) == .unsupported {
-                return try OutboxOp.order(Column("seq")).fetchAll(db).first { !$0.waitsForProjects }
+                next = try OutboxOp.order(Column("seq")).fetchAll(db).first { !$0.waitsForProjects }
+            } else {
+                next = try OutboxOp.order(Column("seq")).fetchOne(db)
             }
-            return try OutboxOp.order(Column("seq")).fetchOne(db)
+            if markSending, var op = next {
+                op.attempts += 1
+                try op.update(db)
+                return op
+            }
+            return next
         }
     }
 
@@ -598,7 +606,7 @@ extension TaskRepository: OutboxStore {
     public func recordFailure(_ op: OutboxOp, reason: String) async throws {
         try await writer.write { db in
             try db.execute(
-                sql: "UPDATE outbox SET attempts = attempts + 1, lastError = ? WHERE seq = ?",
+                sql: "UPDATE outbox SET lastError = ? WHERE seq = ?",
                 arguments: [reason, op.seq]
             )
         }

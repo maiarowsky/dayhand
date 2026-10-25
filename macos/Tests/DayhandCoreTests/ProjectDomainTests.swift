@@ -221,15 +221,17 @@ struct ProjectMergerTests {
         #expect(plan.deletes.isEmpty)
     }
 
-    @Test func aProjectWhoseNameWasTakenJoinsTheServersProjectOfThatName() {
-        let refused = Project(localId: "c1", clientId: "c1", name: "dom", position: 1024, createdAt: 90, updatedAt: 90)
-        let remote = [RemoteProject(id: "s9", clientId: "other-mac", name: "Dom", position: 1024, createdAt: 50, updatedAt: 50)]
-        let plan = ProjectMerger.merge(local: [refused], pending: [], remote: remote, nowMs: 100)
-        #expect(plan.upserts.count == 1)
-        #expect(plan.upserts.first?.localId == "c1" && plan.upserts.first?.serverId == "s9" && plan.upserts.first?.name == "Dom")
-        // Not into an archived project: that one would refuse the tasks.
-        let archived = [RemoteProject(id: "s9", name: "Dom", position: 1024, archivedAt: 3, createdAt: 50, updatedAt: 50)]
-        #expect(ProjectMerger.merge(local: [refused], pending: [], remote: archived, nowMs: 100).upserts.first?.localId == "s9")
+    @Test(arguments: [false, true]) func aProjectWhoseNameWasTakenJoinsOnlyAnActiveServerProject(archived: Bool) async throws {
+        let repo = TaskRepository(database: try AppDatabase.inMemory())
+        let mine = try await repo.addProject(name: "dom")
+        let creation = try #require(try await repo.next())
+        try await repo.reject(creation, reason: "A project named \"Dom\" already exists")
+        let remote = RemoteProject(id: "s9", clientId: "other-mac", name: "Dom", position: 1024, archivedAt: archived ? 3 : nil, createdAt: 50, updatedAt: 50)
+        try await repo.apply(Snapshot(tasks: [], projects: [remote]))
+        let local = try #require(try await repo.projects().first { $0.localId == mine.localId })
+        #expect(local.serverId == (archived ? nil : "s9"))
+        #expect(local.name == (archived ? "dom" : "Dom"))
+        #expect(try await repo.projects().count == (archived ? 2 : 1))
     }
 
     @Test func aProjectBeingDeletedStaysHiddenAndItsTasksReadAsMoved() {
@@ -284,6 +286,26 @@ struct ProjectMergerTests {
 
 /// The database of 0.3.0 (migrations v1 to v3) moves on to projects (v4) without losing a task.
 struct ProjectMigrationTests {
+    @Test func olderPendingCreationsRemainUncertainUntilASnapshotResolvesThem() async throws {
+        let queue = try DatabaseQueue()
+        try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v4")
+        try await queue.write { db in
+            try db.execute(sql: """
+                INSERT INTO project (localId, clientId, name, position, createdAt, updatedAt)
+                VALUES ('mine', 'mine', 'Dom', 1024, 1, 1)
+                """)
+            var add = OutboxOp(opId: "mine", mutation: Mutations.addProject, argsJson: #"{"name":"Dom","clientId":"mine"}"#, taskLocalId: nil, clientId: "mine", createdAt: 1)
+            try add.insert(db)
+        }
+        let repo = TaskRepository(database: try AppDatabase(queue))
+        try await repo.deleteProject("mine", moveTasksTo: nil)
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.addProject, Mutations.deleteProject])
+        try await repo.apply(Snapshot(tasks: [], projects: [RemoteProject(id: "server", clientId: "mine", name: "Dom", position: 1024, createdAt: 1, updatedAt: 1)]))
+        #expect(try await repo.projectRef("mine", allowName: false) == "server")
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.deleteProject])
+        #expect(try await repo.projects().isEmpty)
+    }
+
     @Test func theMigrationKeepsEveryTaskAndAddsProjects() async throws {
         let queue = try DatabaseQueue()
         try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v3")

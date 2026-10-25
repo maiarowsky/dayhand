@@ -120,6 +120,10 @@ public final class AppDatabase: Sendable {
             // Hydrate projectId on the first snapshot even if the server's task version has not changed.
             try db.execute(sql: "UPDATE task SET serverUpdatedAt = NULL")
         }
+        migrator.registerMigration("v5") { db in
+            try db.alter(table: "project") { t in t.add(column: "joinName", .text) }
+            try db.execute(sql: "UPDATE outbox SET attempts = MAX(attempts, 1) WHERE mutation = ?", arguments: [Mutations.addProject])
+        }
         return migrator
     }
 }
@@ -215,7 +219,8 @@ extension Project: FetchableRecord, PersistableRecord {
             createdAt: row["createdAt"],
             updatedAt: row["updatedAt"],
             serverUpdatedAt: row["serverUpdatedAt"],
-            removing: row["removing"]
+            removing: row["removing"],
+            joinName: row["joinName"]
         )
     }
 
@@ -233,6 +238,7 @@ extension Project: FetchableRecord, PersistableRecord {
         container["updatedAt"] = updatedAt
         container["serverUpdatedAt"] = serverUpdatedAt
         container["removing"] = removing
+        container["joinName"] = joinName
     }
 }
 

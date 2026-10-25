@@ -14,10 +14,6 @@ public struct ProjectMergePlan: Hashable, Sendable {
  * Merges the server's projects into the local rows the way `SnapshotMerger` merges tasks: a field changed by a change
  * still in the outbox keeps its local value, every other field takes the value of a newer server copy, and a project
  * missing from the server goes unless it still has changes waiting or is too fresh.
- *
- * A project made here whose `addProject` was refused because the name was taken (another device made one with the
- * same name while both were offline) joins the server's project of that name: the row takes its server id, so its
- * tasks and later changes go to that project.
  */
 public enum ProjectMerger {
     public static func merge(local: [Project], pending: [OutboxOp], remote: [RemoteProject], nowMs: Int64) -> ProjectMergePlan {
@@ -28,18 +24,20 @@ public enum ProjectMerger {
             if let id = project.serverId { byServerId[id] = project }
             if let id = project.clientId { byClientId[id] = project }
         }
-        var joinable = local.filter { $0.serverId == nil && !$0.removing && !dirty.adding.contains($0.localId) }
         var seen = Set<String>()
         var upserts: [Project] = []
         for r in remote {
-            var row = byServerId[r.id] ?? r.clientId.flatMap { byClientId[$0] }
-            if row == nil, r.archivedAt == nil,
-               let index = joinable.firstIndex(where: { ProjectRules.nameKey($0.name) == ProjectRules.nameKey(r.name) }) {
-                row = joinable.remove(at: index)
-            }
+            let row = byServerId[r.id] ?? r.clientId.flatMap { byClientId[$0] }
             if let row { seen.insert(row.localId) }
             // Deleted here, the deletion still on its way: the row stays hidden as it is.
-            if let row, row.removing { continue }
+            if var row, row.removing {
+                if row.serverId != r.id {
+                    row.serverId = r.id
+                    row.joinName = nil
+                    upserts.append(row)
+                }
+                continue
+            }
             if let row, row.serverId == r.id, let known = row.serverUpdatedAt, r.updatedAt <= known { continue }
             let merged = mergeRow(row, r, row.map { dirty.fields($0.localId) } ?? [])
             if merged != row { upserts.append(merged) }
@@ -80,7 +78,6 @@ public enum ProjectMerger {
 
 /// Which fields of which projects have changes still waiting in the outbox, by the project's `localId`.
 struct DirtyProjects {
-    private(set) var adding = Set<String>()
     private var byProject: [String: Set<ProjectField>] = [:]
 
     init(_ pending: [OutboxOp]) {
@@ -88,7 +85,6 @@ struct DirtyProjects {
             let args = JSONValue.decode(op.argsJson)?.object ?? [:]
             switch op.mutation {
             case Mutations.addProject:
-                adding.insert(op.clientId)
                 byProject[op.clientId] = Set(ProjectField.allCases)
             case Mutations.updateProject:
                 guard let id = args["projectId"]?.string else { continue }

@@ -18,6 +18,9 @@ latest one below).
 ### Changed
 
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
+  Migration v5 preserves a refused creation's submitted name for joining and retains uncertain creations until
+  their server identity resolves. Cancellation preserves creation-before-reference order; refused operations
+  preserve later queued assignments and deletions.
 - With a server older than 0.13.0 (no projects), local projects, pending operations and task memberships wait for
   an upgrade. Tasks and notes still sync without `projectId`, with no project retry loop or blocked task changes.
   Once a snapshot confirms project support, the queue resumes with the server's project ids.
