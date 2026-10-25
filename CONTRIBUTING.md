@@ -84,7 +84,7 @@ scripts/render-site-images.sh   # after changing og-image.svg or the icon (needs
 ```
 
 Write only what is true today: a package or a download without a published release is "Coming soon",
-with no command or link for it. Screenshots show made-up demo data only.
+with no command or link for it. Screenshots show the real apps with sample data only.
 
 Maintainers deploy after a merge to `main`, from `site/`, with Wrangler logged in to the account that
 owns dayhand.dev:
