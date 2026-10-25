@@ -1,19 +1,14 @@
 ---
-// Every platform with its real state today: the command line from npm or Homebrew, the apps from the source, and
-// iOS, which is not out yet.
+// Every platform with its real state today: first the command line from npm or Homebrew, then the pre-release
+// note for the apps, which build from the source, and iOS, which is not out yet.
 import { DOCS_PATH, repoFile } from "../../site";
 ---
 
 <section id="download" aria-labelledby="download-title">
   <h2 id="download-title">Download</h2>
-  <p class="status">
-    <span class="badge wip">Pre-release</span>
-    The apps have no published release yet: they build from the source today, and ready-made downloads are marked
-    Coming soon.
-  </p>
 
-  <ul class="cards downloads" role="list">
-    <li class="card wide" id="download-cli">
+  <div class="cards downloads">
+    <div class="card wide" id="download-cli">
       <h3>Command line</h3>
       <p class="meta">macOS, Linux and Windows; Node.js 22.12 or newer</p>
       <p>
@@ -27,9 +22,18 @@ import { DOCS_PATH, repoFile } from "../../site";
       <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line with Homebrew"><code>brew install maiarowsky/tap/dayhand</code></pre>
       <p class="later">
         The package carries the server too: <code>dayhand server start</code> runs your own, with no copy of the
-        repository, as <a href={repoFile("docs/deploy.md")}>the deployment guide</a> shows.
+        repository, as <a href={`${DOCS_PATH}deploy/`}>the deployment guide</a> shows.
       </p>
-    </li>
+    </div>
+  </div>
+
+  <p class="status">
+    <span class="badge wip">Pre-release</span>
+    The apps for Android, macOS and Linux have no published release yet: they build from the source until the first
+    release, and ready-made downloads are marked Coming soon.
+  </p>
+
+  <ul class="cards downloads" role="list">
     <li class="card" id="download-android">
       <h3>Android</h3>
       <p class="meta">Android 8.0 or newer</p>
@@ -51,7 +55,7 @@ open macos/dist/Dayhand.app</code></pre>
       <p><span class="badge ok">Works today</span> From the source:</p>
       <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that builds the Linux package"><code>(cd packaging/arch &amp;&amp; makepkg -si)</code></pre>
       <p class="later">
-        Other distributions build with CMake, as the <a href={repoFile("docs/linux.md")}>Linux guide</a> shows. Not on
+        Other distributions build with CMake, as the <a href={`${DOCS_PATH}linux/`}>Linux guide</a> shows. Not on
         the AUR.
       </p>
     </li>
