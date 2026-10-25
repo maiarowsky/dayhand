@@ -1,6 +1,6 @@
 # Security and privacy
 
-Dayhand has no hosted service and no accounts of its own. Your plan lives on your devices and on a
+Dayhand has no hosted service yet and no accounts of its own. Your plan lives on your devices and on a
 server you run, and nothing in Dayhand sends it anywhere else. This page says what is stored where, which
 secrets exist and how they are protected, what the agent controls can and cannot do, and how to report a
 problem. The detailed threat models are linked at the end.

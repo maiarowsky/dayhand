@@ -33,7 +33,8 @@ repository as `docs/*.md`. They describe what is in the `main` branch, not a pub
   on the device, work offline and queue changes to send to the server in order when it can be reached.
   The command line (`dayhand`) and [terminal UI](terminal.md) (`dayhand ui`) need the server; they do
   not keep an offline plan or queue changes.
-- **The server.** There is no hosted Dayhand service. You run the backend yourself: on your
+- **The server.** There is no hosted Dayhand service yet (one is planned, with a
+  [waitlist](https://dayhand.dev/#dayhand-cloud)). You run the backend yourself: on your
   computer with one command, or on your own free Convex account ([your own server](deploy.md)). The
   Android, macOS and Linux apps also work with no server at all.
 - **The agents.** Any MCP client, or any agent that runs shell commands, works on the same plan
@@ -79,7 +80,7 @@ Pages that describe a planned piece say so where it matters, and give no command
 
 ## Help and feedback
 
-Dayhand is a personal open source project (Apache-2.0) with no hosted service and no support promise.
+Dayhand is a personal open source project (Apache-2.0) with no hosted service yet and no support promise.
 Issues on [GitHub](https://github.com/maiarowsky/dayhand/issues) are for bugs you can reproduce and for
 feature ideas. Security problems go privately, never in an issue: see [security](security.md#reporting-a-problem).
 

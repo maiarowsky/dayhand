@@ -95,6 +95,56 @@ npm run build && wrangler deploy
 
 `site/wrangler.toml` holds no account id and no secrets; the account comes from `wrangler login`.
 
+### The Dayhand Cloud waitlist
+
+The waitlist form on the home page posts to `POST /api/waitlist`, the only path the site's Worker script
+(`site/worker/`) answers; everything else is served from `dist/` without running it. Addresses go to
+their own D1 database, `dayhand-waitlist`, and nowhere else: no other list or CRM. The Worker trims and
+lowercases each address, checks it, stores it once with the date and the page it came from, and turns
+away a filled-in hidden field (answered as if accepted, stored nowhere), a form sent less than two
+seconds after the page opened, another site's origin, and more than five tries from one client address
+in ten minutes (counted in `waitlist_rate` under a SHA-256 hash of the address).
+
+Before the first deploy with the waitlist, create the database once and apply its migration
+(`site/migrations/`):
+
+```sh
+cd site
+wrangler d1 create dayhand-waitlist   # prints the database_id
+```
+
+Add that id under `[[d1_databases]]` in `site/wrangler.toml` as `database_id = "<id>"` (an id, not a
+secret), then:
+
+```sh
+wrangler d1 migrations apply dayhand-waitlist --remote
+npm run build && wrangler deploy
+```
+
+Read the list:
+
+```sh
+wrangler d1 execute dayhand-waitlist --remote --command "SELECT email, created_at, source FROM waitlist ORDER BY created_at"
+```
+
+Remove one address on request with
+`wrangler d1 execute dayhand-waitlist --remote --command "DELETE FROM waitlist WHERE email = 'name@example.com'"`
+(lowercase, as stored). The form promises one email when Dayhand Cloud opens and then deleting the
+list: `DELETE FROM waitlist` after that email.
+
+To try the form and the endpoint locally, with a local D1 database and no Cloudflare account:
+
+```sh
+cd site
+npm run build
+wrangler d1 migrations apply dayhand-waitlist --local
+wrangler dev --local                                  # http://localhost:8787
+node scripts/check-waitlist.mjs http://localhost:8787   # in a second terminal
+```
+
+A Wrangler whose runtime is older than `compatibility_date` refuses to start; pass
+`--compatibility-date <its newest date>` to `wrangler dev` for a local run, or update Wrangler.
+
 ## Secrets
 
 Never commit keys, tokens or `.env` files. `.env.example` lists the variable names only.

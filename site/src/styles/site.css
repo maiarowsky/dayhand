@@ -24,6 +24,7 @@
   --ok: light-dark(oklch(43% 0.09 150), oklch(80% 0.1 150));
   --soon: light-dark(oklch(45% 0.06 250), oklch(80% 0.07 250));
   --wip: light-dark(oklch(47% 0.1 70), oklch(82% 0.1 80));
+  --error: light-dark(oklch(48% 0.15 30), oklch(80% 0.11 35));
   --shot-shadow: oklch(20% 0.03 50 / 0.28);
 
   /* Type and space: one fluid scale, rem plus vw, maximum at most 2.5 times the minimum. */
@@ -394,8 +395,8 @@ pre.code {
 .badge.wip { color: var(--wip); }
 
 /* Numbered steps */
-.steps { counter-reset: step; }
-.steps > li {
+:is(.steps, .get-steps) { counter-reset: step; }
+:is(.steps, .get-steps) > li {
   counter-increment: step;
   display: flex;
   flex-direction: column;
@@ -403,7 +404,7 @@ pre.code {
   padding-block-start: var(--space-s);
   border-block-start: 2px solid var(--accent);
 }
-.steps > li::before {
+:is(.steps, .get-steps) > li::before {
   content: counter(step);
   font-family: var(--font-mono);
   font-weight: 700;
@@ -411,6 +412,52 @@ pre.code {
   font-variant-numeric: tabular-nums;
 }
 .steps p { color: var(--muted); }
+
+/* Get Dayhand: two numbered steps, one under the other; the second holds the places a plan can live. */
+.get-steps { display: grid; gap: var(--space-l); margin: 0; padding: 0; list-style: none; }
+.get-steps > li { gap: var(--space-s); }
+.get-steps h3 { font-size: var(--step-2); }
+.get-steps .actions { padding: 0; list-style: none; }
+.plans { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: start; }
+.plans h4 { font-size: var(--step-1); }
+.plans .price { color: var(--text); font-size: var(--step-2); font-weight: 700; line-height: 1.2; }
+.plans .price span { color: var(--muted); font-size: var(--step-0); font-weight: 400; }
+.plans .cloud { border-color: var(--accent); background: var(--surface-raised); }
+.plans .more { align-self: flex-start; font-weight: 600; }
+
+/* The waitlist form. It needs the script, so without one it is hidden and a line says why. */
+.waitlist { display: grid; gap: var(--space-xs); }
+.waitlist label { font-size: var(--step--1); font-weight: 600; }
+.waitlist-row { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.waitlist input[type="email"] {
+  flex: 1 1 12rem;
+  min-block-size: 2.75rem;
+  padding-inline: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-inner);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.waitlist input[aria-invalid="true"] { border-color: var(--error); }
+.waitlist .button { font: inherit; font-weight: 600; cursor: pointer; }
+.waitlist .button:disabled { opacity: 0.6; cursor: progress; }
+.waitlist-trap {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.waitlist-status:empty { display: none; }
+.waitlist-status[data-state="ok"] { color: var(--ok); font-weight: 600; }
+.waitlist-status[data-state="error"] { color: var(--error); }
+.waitlist-noscript { display: none; }
+@media (scripting: none) {
+  .waitlist { display: none; }
+  .waitlist-noscript { display: block; }
+}
 
 .split-text > div { display: grid; gap: var(--space-s); max-inline-size: 65ch; }
 .duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--space-m) var(--space-l); align-items: start; }

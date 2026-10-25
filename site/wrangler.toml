@@ -1,8 +1,10 @@
-# dayhand.dev runs as a Cloudflare Worker with static assets only: the files Astro builds into dist/, no Worker script.
-# Deploy from this folder: npm run build && wrangler deploy. The account comes from `wrangler login`, so no account
-# id and no secrets belong here.
+# dayhand.dev runs as a Cloudflare Worker: the static files Astro builds into dist/, plus one Worker script that
+# answers only POST /api/waitlist (worker/index.ts) and stores the Dayhand Cloud waitlist in D1. Deploy from this
+# folder: npm run build && wrangler deploy. The account comes from `wrangler login`, so no account id and no
+# secrets belong here. Setting up the D1 database before the first deploy: CONTRIBUTING.md.
 name = "dayhand-site"
 compatibility_date = "2026-10-24"
+main = "worker/index.ts"
 
 [[routes]]
 pattern = "dayhand.dev"
@@ -10,5 +12,13 @@ custom_domain = true
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 # Paths with no file get dist/404.html with status 404.
 not_found_handling = "404-page"
+# Every other path is served from dist/ without running the Worker script.
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "WAITLIST_DB"
+database_name = "dayhand-waitlist"
+migrations_dir = "migrations"

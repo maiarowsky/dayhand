@@ -4,8 +4,9 @@
 
 ### Is there a hosted Dayhand, or an account to create?
 
-No. You run the server yourself, on your computer or on your own Convex account, or use the apps with
-no server at all. Dayhand is a personal open source project with no hosted service.
+Not yet. You run the server yourself, on your computer or on your own Convex account, or use the apps
+with no server at all. A hosted server, Dayhand Cloud, is planned for $5 a month; it is not open, and
+its waitlist is on [dayhand.dev](https://dayhand.dev/#dayhand-cloud).
 
 ### What does it cost?
 
