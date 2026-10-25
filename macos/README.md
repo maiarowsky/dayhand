@@ -174,11 +174,12 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   stay in their original queue entries. Once the task exists remotely, its deferred membership is sent as an update
   using the entry's stable operation id, without rewriting its stored creation. The status reads "Needs backend
   0.13.0 or later", localized in all eight languages. Once an upgraded server supplies projects in a snapshot, waiting operations resume in order on the
-  next round, using the server's project ids. Ordinary assignments retain their queue order before trash,
-  archival, deletion and completion. Only membership refused because the task is in the trash waits for
-  restoration. Later changes to that task and subsequent project operations wait behind it; restoration and
-  unrelated tasks can still sync, so a remote restore cannot let a newer assignment overtake an older one. If the
-  server purges a known task, deferred memberships are retired without discarding other pending edits, which wait
+  next round, using the server's project ids. The only task dependency is an explicit reference to an unconfirmed
+  local project creation: it waits for that creation's acknowledgement or refusal, then uses the server id or is
+  sent without the refused project. Task state changes (trash, restore, archive, now and completion), clears and
+  unrelated operations have no task-state or focus barriers. A real trash refusal follows ordinary rejection
+  handling and is not retained or replayed after restoration. If the server purges a known task, suspended
+  memberships are retired without discarding other pending edits, which wait
   for their own server responses. The task and its cached history then leave the Mac; unsent task creations stay.
 - Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
   sets the project and leaves the title, the first one only; an exact trimmed, NFC, case-insensitive name wins

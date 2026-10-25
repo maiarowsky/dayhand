@@ -25,8 +25,9 @@ latest one below).
 - With a server older than 0.13.0 (no projects), local projects, pending operations and task memberships wait for
   an upgrade. Tasks and notes still sync without `projectId`, with no project retry loop or blocked task changes.
   The localized status says "Needs backend 0.13.0 or later". Once a snapshot confirms project support, the queue
-  resumes with the server's project ids. Ordinary assignments keep their order; memberships refused for trash
-  wait for restoration and hold later changes to that task while restoration and unrelated tasks still pass.
+  resumes with the server's project ids. Only explicit references to unconfirmed local project creations wait
+  for creation acknowledgement or refusal; task state changes have no extra task, lifecycle or focus gates.
+  Real trash refusals use ordinary rejection handling, with no retained assignment replay after restoration.
   Older-server task creations retain their original queue entries until their memberships can be sent. A purged
   task's deferred memberships are retired without discarding other pending edits, followed by normal task cleanup.
 

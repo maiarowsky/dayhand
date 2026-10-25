@@ -542,34 +542,15 @@ extension TaskRepository: OutboxStore {
         try await writer.write { db in
             let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
             let unsupported = try Meta.projectSupport(db) == .unsupported
-            let restoring = Set(pending.filter { $0.mutation == Mutations.restore }.compactMap(\.taskLocalId))
-            var blockedTasks = Set<String>()
-            var blockedNow = false
+            let creatingProjects = Set(pending.filter { $0.mutation == Mutations.addProject }.map(\.clientId))
             for var op in pending {
-                let task = try op.taskLocalId.flatMap { try TaskItem.fetchOne(db, key: $0) }
-                let uploadedCreation = op.mutation == Mutations.add && task?.serverId != nil && op.isProjectAssignment
-                if unsupported && (op.waitsForProjects || uploadedCreation) { continue }
-                let restoringLifecycle = task?.serverId != nil && (op.mutation == Mutations.restore ||
-                    (op.taskLocalId.map(restoring.contains) == true && [Mutations.softDelete, Mutations.archive].contains(op.mutation)))
-                if op.taskLocalId.map(blockedTasks.contains) == true && !restoringLifecycle {
-                    if op.mutation == Mutations.setNow { blockedNow = true }
-                    continue
-                }
-                if blockedNow && op.mutation == Mutations.setNow {
-                    if let id = op.taskLocalId { blockedTasks.insert(id) }
-                    continue
-                }
-                if !blockedTasks.isEmpty {
-                    if Mutations.projectChanges.contains(op.mutation) { continue }
-                    if let ref = JSONValue.decode(op.argsJson)?["projectId"]?.string,
-                       let project = try ProjectOutbox.find(db, ref), project.serverId == nil {
-                        if let id = op.taskLocalId { blockedTasks.insert(id) }
-                        continue
-                    }
-                }
-                if op.isProjectAssignment, op.lastError.map(RemoteJSON.refusesTrashedTask) == true,
-                   let task, task.inTrash || restoring.contains(task.localId) || task.serverUpdatedAt == nil {
-                    blockedTasks.insert(task.localId)
+                if unsupported {
+                    let task = try op.taskLocalId.flatMap { try TaskItem.fetchOne(db, key: $0) }
+                    let uploadedCreation = op.mutation == Mutations.add && task?.serverId != nil && op.isProjectAssignment
+                    if op.waitsForProjects || uploadedCreation { continue }
+                } else if op.taskLocalId != nil, let ref = JSONValue.decode(op.argsJson)?["projectId"]?.string,
+                          let project = try ProjectOutbox.find(db, ref), project.serverId == nil,
+                          creatingProjects.contains(project.localId) {
                     continue
                 }
                 if markSending {
@@ -604,13 +585,6 @@ extension TaskRepository: OutboxStore {
                var task = try TaskItem.fetchOne(db, key: localId) {
                 task.serverId = serverId
                 try task.save(db)
-            }
-            if op.mutation == Mutations.restore, let localId = op.taskLocalId, let seq = op.seq {
-                for var assignment in try OutboxOp.filter(Column("taskLocalId") == localId && Column("seq") < seq).fetchAll(db)
-                where assignment.isProjectAssignment && assignment.lastError.map(RemoteJSON.refusesTrashedTask) == true {
-                    assignment.lastError = nil
-                    try assignment.update(db)
-                }
             }
         }
     }

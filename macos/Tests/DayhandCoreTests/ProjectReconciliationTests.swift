@@ -94,7 +94,7 @@ extension ProjectSyncTests {
     }
 
     @Test(arguments: [(false, false), (false, true), (true, false), (true, true)], [false, true])
-    func suspendedMembershipSurvivesTrashAndReplaysAfterRestore(membership: (Bool, Bool), restoreElsewhere: Bool) async throws {
+    func unsupportedMembershipsWaitForUpgradeButRealTrashRefusalsDoNotWaitForRestore(membership: (Bool, Bool), restoreElsewhere: Bool) async throws {
         let (newTask, clear) = membership
         let (repo, engine) = try setUp()
         let home: String
@@ -115,6 +115,8 @@ extension ProjectSyncTests {
         server.hasProjects = false
         guard case .synced = await engine.round() else { Issue.record("expected synced on old server"); return }
         #expect(try await repo.task(taskId)?.projectLocalId == (clear ? nil : home))
+        #expect(try await repo.pendingOps().contains { $0.taskLocalId == taskId && $0.isProjectAssignment })
+        let originalMembership = server.task(titled: "T")?["projectId"]?.string
         let other = try await repo.add(title: "Unrelated", dueDate: nil, dueTime: nil)
         server.hasProjects = true
         for _ in 0..<2 {
@@ -122,29 +124,27 @@ extension ProjectSyncTests {
         }
         #expect(try await repo.task(other.localId)?.serverId != nil)
         #expect(try await repo.task(taskId)?.inTrash == true)
-        #expect(try await repo.task(taskId)?.projectLocalId == (clear ? nil : home))
-        let waiting = try await repo.pendingOps()
-        #expect(!waiting.isEmpty && waiting.allSatisfy(\.isProjectAssignment))
+        #expect(try await repo.task(taskId)?.projectLocalId == originalMembership)
+        #expect(try await repo.pendingOps().isEmpty)
         let sentBefore = server.mutationsSent()
         guard case .synced = await engine.round() else { Issue.record("expected synced while trashed"); return }
         #expect(server.mutationsSent() == sentBefore)
-        #expect(try await repo.pendingOps() == waiting)
         let serverId = try #require(try await repo.task(taskId)?.serverId)
         if restoreElsewhere { server.editElsewhere(serverId, ["deletedAt": .null]) }
         else { try await repo.restore(taskId) }
         for _ in 0..<2 {
             guard case .synced = await engine.round() else { Issue.record("expected synced after restore"); return }
         }
-        let projectId = try #require(server.project(named: "P")?["id"]?.string)
-        #expect(server.task(titled: "T")?["projectId"]?.string == (clear ? nil : projectId))
+        #expect(server.project(named: "P") != nil)
+        #expect(server.task(titled: "T")?["projectId"]?.string == originalMembership)
         #expect(server.task(titled: "T")?["note"] == "Keep note")
-        #expect(try await repo.task(taskId)?.projectLocalId == (clear ? nil : home))
+        #expect(try await repo.task(taskId)?.projectLocalId == originalMembership)
         #expect(try await repo.task(taskId)?.inTrash == false)
         #expect(try await repo.pendingOps().isEmpty)
     }
 
     @Test(arguments: ["assign", "clear", "complete"])
-    func restoreAcknowledgementsResumeOlderMembershipsBeforeLaterChanges(action: String) async throws {
+    func restorationDoesNotReplayARefusedMembershipBeforeLaterChanges(action: String) async throws {
         let (repo, engine) = try setUp()
         let a = server.addProjectElsewhere("A")
         let b = server.addProjectElsewhere("B")
@@ -161,17 +161,17 @@ extension ProjectSyncTests {
         for _ in 0..<2 {
             guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         }
-        let expected = action == "clear" ? nil : (action == "complete" ? b : c)
+        let expected = action == "clear" ? nil : (action == "complete" ? a : c)
         #expect(server.task(titled: "T")?["projectId"]?.string == expected)
         #expect(try await repo.task(t)?.projectLocalId == expected)
         #expect(try await repo.pendingOps().isEmpty)
         let mutations = sent()
         let restored = try #require(mutations.firstIndex { $0.0 == Mutations.restore })
-        #expect(mutations[restored + 1].0 == Mutations.update)
-        #expect(mutations[restored + 1].1["projectId"] == .string(b))
+        #expect(mutations[restored + 1].0 == (action == "complete" ? Mutations.complete : Mutations.update))
+        #expect(mutations.filter { $0.1["projectId"] == .string(b) }.count == 1)
         if action == "complete" {
             let next = try #require(server.allTasks.first { $0["id"]?.string != t })
-            #expect(next["projectId"] == .string(b))
+            #expect(next["projectId"] == .string(a))
         }
     }
 
@@ -196,12 +196,12 @@ extension ProjectSyncTests {
         }
         await transport.restoreAfterNextActiveQuery(t)
         guard case .synced = await engine.round() else { Issue.record("expected synced after remote restore"); return }
-        let expected = upgrade ? a : b
+        let expected = a
         #expect(try await repo.task(t)?.inTrash == false)
         #expect(try await repo.task(t)?.projectLocalId == expected)
         #expect(try await repo.history(t).count == 1)
         let pending = try await repo.pendingOps()
-        #expect(pending.count == 1 && pending.allSatisfy(\.isProjectAssignment))
+        #expect(pending.count == (upgrade ? 1 : 0) && pending.allSatisfy(\.isProjectAssignment))
         #expect(server.requests.contains { $0.body["path"]?.string == RemoteJSON.queryTask && $0.body["args"]?.array?.first?["taskId"] == .string(t) })
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(server.task(titled: "T")?["projectId"] == .string(expected))
@@ -249,7 +249,7 @@ extension ProjectSyncTests {
     }
 
     @Test(arguments: [("refused", false), ("refused", true), ("old-add", false), ("old-add", true), ("upgrade", false)])
-    func purgedTasksRetireOnlyDeferredMembershipsAndKeepUnsentCreations(scenario: (String, Bool)) async throws {
+    func purgedTasksCleanUpSuspendedOrRefusedMembershipsAndKeepUnsentCreations(scenario: (String, Bool)) async throws {
         let (source, clear) = scenario
         let (repo, engine) = try setUp()
         let t: String
@@ -278,7 +278,7 @@ extension ProjectSyncTests {
         }
         let serverId = try #require(try await repo.task(t)?.serverId)
         try await repo.saveHistory(serverId, [TaskEvent(taskServerId: serverId, at: clock.now, actor: "app", action: "create")])
-        #expect(try await repo.pendingOps().contains { $0.taskLocalId == t && $0.isProjectAssignment })
+        #expect(try await repo.pendingOps().contains { $0.taskLocalId == t && $0.isProjectAssignment } == (source == "old-add"))
         #expect(try await repo.history(serverId).count == 1)
         clock.advance(Int64(TaskItem.trashRetentionDays) * HelmDates.dayMs)
         server.purge(serverId)
@@ -334,7 +334,7 @@ extension ProjectSyncTests {
         #expect(try await repo.pendingOps().isEmpty)
     }
 
-    @Test func aRetainedMembershipFollowsItsProjectsDeletionDestinationAfterRestore() async throws {
+    @Test func aRealTrashRefusalDoesNotDelayProjectDeletionOrRedirectAssignments() async throws {
         let (repo, engine) = try setUp()
         let a = server.addProjectElsewhere("A")
         let b = server.addProjectElsewhere("B")
@@ -347,18 +347,17 @@ extension ProjectSyncTests {
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         try await repo.deleteProject(b, moveTasksTo: c)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.project(named: "B") == nil)
         #expect(try await repo.next() == nil)
-        let retained = try #require(try await repo.pendingOps().first)
-        #expect(JSONValue.decode(retained.argsJson)?["projectId"] == .string(b))
-        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.update, Mutations.deleteProject])
+        #expect(try await repo.pendingOps().isEmpty)
         try await repo.restore(t)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(server.task(titled: "T")?["projectId"] == .string(c))
-        #expect(try await repo.task(t)?.projectLocalId == c)
+        #expect(server.task(titled: "T")?["projectId"] == .string(a))
+        #expect(try await repo.task(t)?.projectLocalId == a)
         #expect(try await repo.pendingOps().isEmpty)
     }
 
-    @Test func aMembershipRefusedForRemoteTrashWaitsWithoutBlockingOtherTasks() async throws {
+    @Test func aRealTrashRefusalDoesNotHoldOtherTasksOrReplayAfterRestore() async throws {
         let (repo, engine) = try setUp()
         let home = server.addProjectElsewhere("P")
         let t = server.addElsewhere("T")
@@ -367,10 +366,10 @@ extension ProjectSyncTests {
         let other = try await repo.add(title: "Unrelated", dueDate: nil, dueTime: nil)
         server.editElsewhere(t, ["deletedAt": .of(clock.now)])
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(try await repo.task(t)?.projectLocalId == home)
+        #expect(try await repo.task(t)?.projectLocalId == nil)
         #expect(try await repo.task(other.localId)?.serverId != nil)
         let waiting = try await repo.pendingOps()
-        #expect(waiting.count == 1 && waiting.allSatisfy(\.isProjectAssignment))
+        #expect(waiting.isEmpty)
         let sentBefore = server.mutationsSent()
         guard case .synced = await engine.round() else { Issue.record("expected synced while trashed"); return }
         #expect(server.mutationsSent() == sentBefore)
@@ -379,8 +378,8 @@ extension ProjectSyncTests {
         for _ in 0..<2 {
             guard case .synced = await engine.round() else { Issue.record("expected synced after restore"); return }
         }
-        #expect(server.task(titled: "T")?["projectId"] == .string(home))
-        #expect(try await repo.task(t)?.projectLocalId == home)
+        #expect(server.task(titled: "T")?["projectId"] == nil)
+        #expect(try await repo.task(t)?.projectLocalId == nil)
         #expect(try await repo.pendingOps().isEmpty)
     }
 }

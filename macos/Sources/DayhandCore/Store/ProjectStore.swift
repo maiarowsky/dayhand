@@ -220,9 +220,7 @@ private struct ProjectInput: Sendable {
  */
 enum ProjectOutbox {
     static func ref(_ db: Database, _ localId: String) throws -> String? {
-        guard let project = try find(db, localId) else { return nil }
-        if let serverId = project.serverId { return serverId }
-        return try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == project.localId).fetchOne(db)?.clientId
+        try find(db, localId)?.serverId
     }
 
     static func find(_ db: Database, _ id: String) throws -> Project? {
@@ -276,13 +274,6 @@ enum ProjectOutbox {
      * - `updateProject` or `deleteProject` refused: the server's copy wins at the next snapshot.
      */
     static func refused(_ db: Database, _ op: OutboxOp, reason: String) throws -> Bool {
-        if op.isProjectAssignment, RemoteJSON.refusesTrashedTask(reason) {
-            try db.execute(sql: "UPDATE outbox SET lastError = ? WHERE seq = ?", arguments: [reason, op.seq])
-            if let localId = op.taskLocalId {
-                try db.execute(sql: "UPDATE task SET serverUpdatedAt = NULL WHERE localId = ?", arguments: [localId])
-            }
-            return true
-        }
         let ofProject = Mutations.projectChanges.contains(op.mutation)
         let carriesProject = !ofProject && JSONValue.decode(op.argsJson)?["projectId"] != nil
         if (ofProject && RemoteJSON.isMissingFunction(reason)) || (carriesProject && RemoteJSON.refusesProjectField(reason)) {
