@@ -1,9 +1,9 @@
 # Dayhand for macOS
 
-Dayhand for macOS has Today, quick add from the menu bar or a global shortcut, task details with
-their change history, the trash, reminders and the morning summary as notifications, and works
-offline like the phone. It runs on macOS 13 or newer, in English, Polish, German, Spanish, French,
-Brazilian Portuguese, Japanese or Simplified Chinese.
+Dayhand for macOS has Today, projects and task lists in a sidebar, quick add from the menu bar or a
+global shortcut, a task panel with the change history, the trash, reminders and the morning summary
+as notifications, and works offline like the phone. It runs on macOS 13 or newer, in English, Polish,
+German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese.
 
 It is built from source and is not signed for other Macs yet: [Install](install.md#macos). How the
 app is built and tested: [macos/README.md](../macos/README.md). Signing, notarization and the update
@@ -20,16 +20,21 @@ on the server. When the server revokes the Mac, Today says so, and the tasks and
 
 ## The window
 
-A sidebar on the left switches between **Today** and **Trash** and lists their tasks; the selected
-task's details are on the right.
+A sidebar on the left lists the places: Inbox, **Today**, **All Tasks**, **No Project**, the projects
+(with their open counts), Labels, **Done and Archived** and **Trash**. The place picked is on the right,
+and the selected task opens in a panel along the bottom. Projects need Dayhand server 0.13.0 or later;
+the sidebar, its shortcuts and the project rules: [Mac app features](../macos/README.md).
 
 - **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first, by
   time) and done today, folded. One click ticks a task off. The context menu makes a task the one you
   work on now, moves it to today or tomorrow, archives it or moves it to the trash.
-- **Task details**: title, status, "working on it now" with the resume note, the day and time (a date
-  phrase, **Today**, **No day**, **Remove the time**), labels, the checklist and the note. Links are shown.
-  For repeat and reminder editors and read-only agent work, see [Mac app features](../macos/README.md).
-- **History** at the bottom of the details: who changed the task (you in the app, you with `dayhand`,
+- **Lists**: All Tasks, No Project, a project or a label, their open tasks in sections by day, with search
+  in the toolbar.
+- **Task panel**: title, status, "working on it now" with the resume note, the day and time (a date
+  phrase, **Today**, **Tomorrow**, **No day**, **Remove the time**), labels, the project, the checklist and
+  the note. Links are shown. For repeat and reminder editors and read-only agent work, see
+  [Mac app features](../macos/README.md).
+- **History** in the task panel: who changed the task (you in the app, you with `dayhand`,
   or an agent by name) and when, each field from its old value to the new one. It comes from the
   server; offline, the last copy stays.
 - **Trash**: deleted tasks, newest first, with the day each was deleted and the day it goes for good.
@@ -37,11 +42,12 @@ task's details are on the right.
 
 ## Quick add
 
-Quick add is at the top of Today, in the menu bar, and in a floating panel from any app with
-**⌃⌥N** (change the shortcut in Settings). A date phrase at the end of the line sets the day and time:
-"Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below the field says
-what was understood; **Keep in title** keeps the words as text. Without a phrase, the task is for
-today. The phrases are English in every language ([dates](cli.md#topic-dates)).
+Quick add is at the top of Today and of a project's list (it adds to that project), in the menu bar,
+and in a floating panel from any app with **⌃⌥N** (change the shortcut in Settings). A date phrase at
+the end of the line sets the day and time: "Call the accountant fri 2pm", "Pay rent the 1st", "Plan
+next week". The line below the field says what was understood; **Keep in title** keeps the words as
+text. Without a phrase, the task is for today. The phrases are English in every language
+([dates](cli.md#topic-dates)).
 
 ## Menu bar
 

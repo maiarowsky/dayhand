@@ -17,13 +17,18 @@ enum WindowLayoutCheck {
         var dark = false
     }
 
-    static let cases = [
-        Case(name: "window", size: CGSize(width: 960, height: 640)),
-        Case(name: "window-dark", size: CGSize(width: 960, height: 640), dark: true),
-        // The smallest the window gets (DayhandApp), where the status line wraps the most.
-        Case(name: "window-narrow", size: CGSize(width: 720, height: 460)),
-        Case(name: "window-no-sidebar", size: CGSize(width: 720, height: 460), sidebar: false),
-    ]
+    /// The default size and the smallest the window gets (DayhandApp), where the status line wraps the most, with the
+    /// sidebar open and closed, light and dark.
+    static let cases: [Case] = [CGSize(width: 1100, height: 700), CGSize(width: 820, height: 500)].flatMap { size in
+        [true, false].flatMap { sidebar in
+            [false, true].map { dark in
+                Case(
+                    name: "window-\(Int(size.width))\(sidebar ? "" : "-no-sidebar")\(dark ? "-dark" : "")",
+                    size: size, sidebar: sidebar, dark: dark
+                )
+            }
+        }
+    }
 
     /// What is wrong with the layout in each case (nothing when all is well).
     static func run(_ root: some View) async throws -> [String] {
@@ -55,13 +60,12 @@ enum WindowLayoutCheck {
         return problems(in: window, check)
     }
 
-    /// The content's views stay inside the window, and quick add (when the sidebar shows it) below the title bar.
+    /// The content's views stay inside the window, and quick add below the title bar.
     static func problems(in window: NSWindow, _ check: Case) -> [String] {
         guard let content = window.contentView else { return ["\(check.name): no content"] }
         var problems = content.subviews.filter { !content.bounds.insetBy(dx: -0.5, dy: -0.5).contains($0.frame) }.map {
             "\(check.name): the content is \(Int($0.frame.height)) pt tall in a window of \(Int(content.bounds.height)) pt"
         }
-        guard check.sidebar else { return problems }
         let placeholder = tr("Add a task (try: Pay rent fri 9am)")
         guard let field = textFields(in: content).first(where: { $0.placeholderString == placeholder }) else {
             return problems + ["\(check.name): quick add is missing"]

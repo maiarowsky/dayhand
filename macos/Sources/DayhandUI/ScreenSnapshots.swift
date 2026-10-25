@@ -59,72 +59,115 @@ public enum ScreenSnapshots {
         try await seed(model)
         try await Task.sleep(nanoseconds: 800_000_000)
         model.recompute()
-        model.selection = model.sections.today.first { $0.title == "Call the accountant" }?.localId
-
         let updater = Updater.shared
-        for dark in [false, true] {
-            let suffix = dark ? "-dark" : ""
-            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 960, height: 680), dark, folder.appendingPathComponent("today\(suffix).png"))
-        }
-        try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 720, height: 680), false, folder.appendingPathComponent("today-compact.png"))
-        let layoutProblems = try await WindowLayoutCheck.run(MainWindow().environmentObject(model).environmentObject(updater))
-        if !layoutProblems.isEmpty { throw SnapshotError.layout(layoutProblems) }
-        try await render(TodayView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("today-list.png"))
-        for dark in [false, true] {
-            try await render(
-                Sidebar().environmentObject(model).environmentObject(updater), CGSize(width: 380, height: 680), dark,
-                folder.appendingPathComponent("sidebar-update\(dark ? "-dark" : "").png")
-            )
-        }
-        // The details from top to bottom, the repeat and reminder editors and the change history included.
-        let detailsSize = CGSize(width: 560, height: 2100)
-        if let task = model.selection.flatMap(model.task) {
-            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details.png"))
-            // The same task repeating monthly on its nth weekday, counted from completion, six times including this one.
-            var monthly = task
-            if let due = task.dueDate.flatMap(CivilDate.init) {
-                monthly.repeat = RepeatRule(
-                    every: .month, from: .completion,
-                    weekdayOfMonth: WeekdayOfMonth(nth: RepeatDraft.nthOfMonth(due), weekday: due.weekday), count: 6
-                )
+        let window = { MainWindow().environmentObject(model).environmentObject(updater) }
+        // The sidebar's translucent background does not draw off screen, so the window's shots draw it over its column.
+        let sidebar = { AnyView(Sidebar().environmentObject(model).environmentObject(updater)) }
+        let wide = CGSize(width: 1100, height: 700), narrow = CGSize(width: 820, height: 500)
+        func png(_ name: String) -> URL { folder.appendingPathComponent("\(name).png") }
+        func task(_ title: String) -> TaskItem? { model.tasks.first { $0.title == title } }
+
+        // Today and a project with a task's panel open, at both widths and in both appearances; every task.
+        let bakery = model.projects.first { $0.name == "Bakery website" }
+        let places: [(String, Place, String?)] = [
+            ("today", .today, "Call the accountant"),
+            ("project", .project(bakery?.localId ?? ""), "Send the invoice to Anna"),
+            ("all", .all, nil),
+        ]
+        for (name, place, selected) in places {
+            model.show(place)
+            model.selection = selected.flatMap(task)?.localId
+            for dark in [false, true] {
+                let suffix = dark ? "-dark" : ""
+                try await render(window(), wide, dark, png("\(name)-1100\(suffix)"), sidebar: sidebar())
+                if selected != nil { try await render(window(), narrow, dark, png("\(name)-820\(suffix)"), sidebar: sidebar()) }
             }
-            try await render(TaskDetailView(task: monthly).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-repeat-month.png"))
         }
-        // Weekly on two days, with the reminders from Settings.
-        if let task = model.sections.today.first(where: { $0.title == "Water the plants" }) {
-            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-repeat-week.png"))
+        model.show(.today)
+        model.selection = task("Call the accountant")?.localId
+        let layoutProblems = try await WindowLayoutCheck.run(window())
+        if !layoutProblems.isEmpty { throw SnapshotError.layout(layoutProblems) }
+        for dark in [false, true] {
+            try await render(sidebar(), CGSize(width: 250, height: 700), dark, png("sidebar\(dark ? "-dark" : "")"))
         }
-        if let task = model.sections.today.first(where: { $0.title == "Ship the release notes" }) {
-            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-agent.png"))
+        try await renderPanels(model, folder)
+        try await renderProjectSheets(model, folder)
+        for (name, place) in [("done", Place.done), ("archived-projects", .archivedProjects), ("no-project", .noProject), ("label", .label("home"))] {
+            model.show(place)
+            model.selection = nil
+            try await render(window(), wide, false, png(name), sidebar: sidebar())
         }
-        if let task = model.sections.done.first(where: { $0.title == "Publish the newsletter" }) {
-            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("details-proof.png"))
-        }
-        try await render(AgentInboxView(preview: .loaded(demoInbox)).environmentObject(model), CGSize(width: 480, height: 460), false, folder.appendingPathComponent("agent-inbox.png"))
-        if let task = model.sections.today.first(where: { $0.title == "Buy milk" }) {
-            try await render(TaskDetailView(task: task).environmentObject(model), detailsSize, false, folder.appendingPathComponent("history-offline-empty.png"))
-        }
-        try await render(TrashView().environmentObject(model), CGSize(width: 400, height: 680), false, folder.appendingPathComponent("trash-list.png"))
+        model.show(.inbox)
+        try await render(InboxPlace().environmentObject(model), CGSize(width: 700, height: 300), false, png("inbox-offline"))
+        try await render(AgentInboxView(preview: .loaded(demoInbox)).environmentObject(model), CGSize(width: 480, height: 460), false, png("agent-inbox"))
         model.show(.trash)
         model.selection = model.trash.first?.localId
         for dark in [false, true] {
-            try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 960, height: 680), dark, folder.appendingPathComponent("trash\(dark ? "-dark" : "").png"))
+            try await render(window(), wide, dark, png("trash\(dark ? "-dark" : "")"), sidebar: sidebar())
         }
-        try await render(MainWindow().environmentObject(model).environmentObject(updater), CGSize(width: 720, height: 680), false, folder.appendingPathComponent("trash-compact.png"))
         model.show(.today)
-        try await render(MenuBarView().environmentObject(model), CGSize(width: 340, height: 430), false, folder.appendingPathComponent("menu-bar.png"))
+        model.selection = nil
+        try await render(MenuBarView().environmentObject(model), CGSize(width: 340, height: 430), false, png("menu-bar"))
         try await render(
-            QuickAddView(line: "Call the accountant fri 2pm", onDone: {}).environmentObject(model),
-            CGSize(width: 560, height: 96), false, folder.appendingPathComponent("quick-add.png")
+            QuickAddView(line: "Call the accountant fri 2pm +home", onDone: {}).environmentObject(model),
+            CGSize(width: 560, height: 96), false, png("quick-add")
         )
         model.connectPrefill = PairingInput.parseLink("dayhand://pair?url=http%3A%2F%2F127.0.0.1%3A3211&code=E6M8-FE02-XSNT")
-        try await render(ConnectView().environmentObject(model), CGSize(width: 520, height: 400), false, folder.appendingPathComponent("connect.png"))
-        try await render(SettingsView().environmentObject(model).environmentObject(updater), CGSize(width: 520, height: 420), false, folder.appendingPathComponent("settings.png"))
-        try await render(
-            GeneralSettings().environmentObject(model), CGSize(width: 520, height: 700), false,
-            folder.appendingPathComponent("settings-notifications.png")
-        )
+        try await render(ConnectView().environmentObject(model), CGSize(width: 520, height: 400), false, png("connect"))
+        try await render(SettingsView().environmentObject(model).environmentObject(updater), CGSize(width: 520, height: 420), false, png("settings"))
+        try await render(GeneralSettings().environmentObject(model), CGSize(width: 520, height: 700), false, png("settings-notifications"))
         try await renderUpdates(to: folder)
+    }
+
+    /// The task panel from top to bottom for the tasks that fill each part, and the repeat and reminder editors.
+    @MainActor
+    static func renderPanels(_ model: AppModel, _ folder: URL) async throws {
+        let size = CGSize(width: 1000, height: 1100)
+        let shots = [
+            ("panel", "Call the accountant"), ("panel-agent", "Ship the release notes"),
+            ("panel-proof", "Publish the newsletter"), ("panel-history-offline-empty", "Buy milk"),
+        ]
+        for (name, title) in shots {
+            guard let task = model.tasks.first(where: { $0.title == title }) else { continue }
+            for dark in [false, true] where name == "panel" || !dark {
+                try await render(
+                    TaskPanel(task: task, available: 2000, pinnedHeight: size.height).environmentObject(model), size, dark,
+                    folder.appendingPathComponent("\(name)\(dark ? "-dark" : "").png")
+                )
+            }
+        }
+        guard let call = model.tasks.first(where: { $0.title == "Call the accountant" }) else { return }
+        // The same task repeating monthly on its nth weekday, counted from completion, six times including this one.
+        var monthly = call
+        if let due = call.dueDate.flatMap(CivilDate.init) {
+            monthly.repeat = RepeatRule(
+                every: .month, from: .completion,
+                weekdayOfMonth: WeekdayOfMonth(nth: RepeatDraft.nthOfMonth(due), weekday: due.weekday), count: 6
+            )
+        }
+        let today = model.today
+        try await render(Form { RepeatEditor(task: monthly, today: today) }.formStyle(.grouped).environmentObject(model), CGSize(width: 480, height: 560), false, folder.appendingPathComponent("repeat-month.png"))
+        if let plants = model.tasks.first(where: { $0.title == "Water the plants" }) {
+            try await render(Form { RepeatEditor(task: plants, today: today) }.formStyle(.grouped).environmentObject(model), CGSize(width: 480, height: 520), false, folder.appendingPathComponent("repeat-week.png"))
+            try await render(Form { ReminderEditor(task: plants, defaults: model.settings.reminderMinutes) }.formStyle(.grouped).environmentObject(model), CGSize(width: 460, height: 400), false, folder.appendingPathComponent("reminders-settings.png"))
+        }
+        try await render(Form { ReminderEditor(task: call, defaults: model.settings.reminderMinutes) }.formStyle(.grouped).environmentObject(model), CGSize(width: 460, height: 400), false, folder.appendingPathComponent("reminders-custom.png"))
+    }
+
+    /// The project editor (new and editing), Move to Project… and Delete Project….
+    @MainActor
+    static func renderProjectSheets(_ model: AppModel, _ folder: URL) async throws {
+        let bakery = model.projects.first { $0.name == "Bakery website" }
+        for dark in [false, true] {
+            try await render(ProjectEditor(project: nil).environmentObject(model), CGSize(width: 480, height: 400), dark, folder.appendingPathComponent("project-new\(dark ? "-dark" : "").png"))
+        }
+        try await render(ProjectEditor(project: bakery).environmentObject(model), CGSize(width: 480, height: 400), false, folder.appendingPathComponent("project-edit.png"))
+        if let milk = model.tasks.first(where: { $0.title == "Buy milk" }) {
+            try await render(ProjectPicker(taskId: milk.localId).environmentObject(model), CGSize(width: 360, height: 390), false, folder.appendingPathComponent("project-picker.png"))
+        }
+        if let bakery {
+            try await render(DeleteProjectSheet(projectId: bakery.localId).environmentObject(model), CGSize(width: 420, height: 220), false, folder.appendingPathComponent("project-delete.png"))
+        }
     }
 
     /// Requests and proposals as Review lists them.
@@ -191,20 +234,30 @@ public enum ScreenSnapshots {
             change(&t)
             return t
         }
+        let projects = [
+            RemoteProject(id: "p-bakery", name: "Bakery website", color: .amber, icon: "🥐", note: "The new site for Anna's bakery", position: 1024, createdAt: now, updatedAt: now),
+            RemoteProject(id: "p-home", name: "Home", color: .green, position: 2048, createdAt: now, updatedAt: now),
+            RemoteProject(id: "p-dayhand", name: "Dayhand", color: .indigo, position: 3072, createdAt: now, updatedAt: now),
+            RemoteProject(id: "p-health", name: "Health", color: .teal, position: 4096, createdAt: now, updatedAt: now),
+            RemoteProject(id: "p-blog", name: "Old blog", color: .gray, position: 5120, archivedAt: now - 86_400_000, createdAt: now, updatedAt: now),
+        ]
         let tasks = [
-            task("Send the invoice to Anna") { $0.dueDate = day(-2); $0.labels = ["work"] },
+            task("Send the invoice to Anna") { $0.dueDate = day(-2); $0.labels = ["work"]; $0.projectId = "p-bakery" },
             task("Write the project brief") {
+                $0.projectId = "p-dayhand"
                 $0.status = "doing"
                 $0.isNow = true
                 $0.resumeNote = "Section 3: the budget"
             },
             task("Call the accountant") {
+                $0.projectId = "p-home"
                 $0.dueTime = "14:00"
                 $0.labels = ["home"]
                 $0.note = "Ask about the VAT return and the new invoice numbering."
                 $0.reminders = [.before(30), .at("09:00")]
             },
             task("Review pull request #42") {
+                $0.projectId = "p-dayhand"
                 $0.dueTime = "09:30"
                 $0.checklist = [
                     ChecklistItem(id: "c1", title: "Read the diff", done: true),
@@ -216,6 +269,7 @@ public enum ScreenSnapshots {
             // Agent work as `dayhand` and an agent set it: claimed for an hour, two of three criteria met, waiting for
             // the overdue invoice, blocked and with a plan.
             task("Ship the release notes") {
+                $0.projectId = "p-dayhand"
                 $0.status = "doing"
                 $0.labels = ["work"]
                 $0.claimedBy = "claude"
@@ -238,14 +292,23 @@ public enum ScreenSnapshots {
                     checks: [ProofCheck(name: "spell check", result: "pass"), ProofCheck(name: "link check", result: "fail")]
                 )
             },
-            task("Water the plants") { $0.repeat = RepeatRule(every: .week, weekdays: [3, 7]) },
-            task("Morning run") { $0.status = "done"; $0.completedAt = now - 3_600_000 },
-            task("Dentist") { $0.dueDate = day(1); $0.dueTime = "10:00" },
+            task("Water the plants") { $0.repeat = RepeatRule(every: .week, weekdays: [3, 7]); $0.projectId = "p-home" },
+            task("Morning run") { $0.status = "done"; $0.completedAt = now - 3_600_000; $0.projectId = "p-health" },
+            task("Dentist") { $0.dueDate = day(1); $0.dueTime = "10:00"; $0.projectId = "p-health" },
+            task("Order business cards") { $0.dueDate = day(4); $0.projectId = "p-bakery" },
+            task("Photos for the gallery") {
+                $0.dueDate = nil
+                $0.projectId = "p-bakery"
+                $0.checklist = [ChecklistItem(id: "g1", title: "Croissants"), ChecklistItem(id: "g2", title: "The shop window", done: true)]
+            },
+            task("Idea for a blog post") { $0.dueDate = nil },
+            task("Archive the old posts") { $0.archivedAt = now - 3 * 86_400_000; $0.projectId = "p-blog" },
             task("Old shopping list") { $0.deletedAt = now - 2 * 3_600_000; $0.labels = ["home"] },
             task("Draft of the newsletter") { $0.dueDate = day(-5); $0.deletedAt = now - 26 * 86_400_000 },
         ]
         try await model.repository.apply(Snapshot(
-            tasks: tasks, settings: ReminderSettings(timezone: zone, summaryTime: "07:00", reminderMinutes: [0, 15])
+            tasks: tasks, settings: ReminderSettings(timezone: zone, summaryTime: "07:00", reminderMinutes: [0, 15]),
+            projects: projects
         ))
         // The last plan health report, as the server would send it.
         try await model.repository.savePlanHealth([
@@ -276,23 +339,62 @@ public enum ScreenSnapshots {
         try await model.repository.setLabels(call.id, ["home", "tax"])
     }
 
+    /// Draws [view] at [size] into a PNG at [url]; with [sidebar], that is drawn over the view's open sidebar column, and
+    /// in the light appearance the window's title bar and toolbar too (their glass does not draw dark off screen).
     @MainActor
-    static func render<V: View>(_ view: V, _ size: CGSize, _ dark: Bool, _ url: URL) async throws {
-        let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height))
-        hosting.frame = CGRect(origin: .zero, size: size)
-        let window = NSWindow(contentRect: hosting.frame, styleMask: [.titled], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        window.contentView = hosting
-        hosting.layoutSubtreeIfNeeded()
-        try await Task.sleep(nanoseconds: 600_000_000)
-        hosting.layoutSubtreeIfNeeded()
-        hosting.display()
-        guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw SnapshotError.noBitmap }
-        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+    static func render<V: View>(_ view: V, _ size: CGSize, _ dark: Bool, _ url: URL, sidebar: AnyView? = nil) async throws {
+        let (bitmap, column, titleBar) = try await draw(view, size, dark, chrome: sidebar != nil && !dark)
+        if let sidebar, let column {
+            // Under the title bar, as in the window.
+            let below = sidebar.safeAreaInset(edge: .top, spacing: 0) { Color.clear.frame(height: titleBar) }
+            let (side, _, _) = try await draw(below, column.size, dark)
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+            side.draw(in: CGRect(x: column.minX, y: bitmap.size.height - column.maxY, width: column.width, height: column.height))
+            NSGraphicsContext.restoreGraphicsState()
+        }
         guard let png = bitmap.representation(using: .png, properties: [:]) else { throw SnapshotError.noBitmap }
         try png.write(to: url)
+    }
+
+    /// [view] drawn off screen at [size], where its sidebar column is (from the top left) while one is open, and the
+    /// height of the title bar. With [chrome], the window is the app's (title bar and toolbar over the content) and is
+    /// drawn whole.
+    @MainActor
+    private static func draw<V: View>(
+        _ view: V, _ size: CGSize, _ dark: Bool, chrome: Bool = false
+    ) async throws -> (NSBitmapImageRep, CGRect?, CGFloat) {
+        let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height))
+        hosting.frame = CGRect(origin: .zero, size: size)
+        let style: NSWindow.StyleMask = chrome ? [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView] : [.titled]
+        let window = NSWindow(contentRect: hosting.frame, styleMask: style, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        if chrome, #available(macOS 14, *) {
+            window.toolbarStyle = .unified
+            hosting.sceneBridgingOptions = [.toolbars, .title]
+        }
+        window.contentView = hosting
+        let drawn = chrome ? window.contentView?.superview ?? hosting : hosting
+        hosting.layoutSubtreeIfNeeded()
+        try await Task.sleep(nanoseconds: 600_000_000)
+        drawn.layoutSubtreeIfNeeded()
+        drawn.display()
+        guard let bitmap = drawn.bitmapImageRepForCachingDisplay(in: drawn.bounds) else { throw SnapshotError.noBitmap }
+        drawn.cacheDisplay(in: drawn.bounds, to: bitmap)
+        let column = sidebarColumn(in: drawn).map { rect in
+            CGRect(x: rect.minX, y: drawn.isFlipped ? rect.minY : drawn.bounds.height - rect.maxY, width: rect.width, height: rect.height)
+        }
+        let titleBar = chrome ? drawn.bounds.height - window.contentLayoutRect.maxY : 0
         window.close()
+        return (bitmap, column, titleBar)
+    }
+
+    @MainActor
+    private static func sidebarColumn(in drawn: NSView) -> CGRect? {
+        func split(_ view: NSView) -> NSSplitView? { (view as? NSSplitView) ?? view.subviews.lazy.compactMap(split).first }
+        guard let split = split(drawn), let column = split.arrangedSubviews.first, !split.isSubviewCollapsed(column) else { return nil }
+        return column.convert(column.bounds, to: drawn)
     }
 
     enum SnapshotError: Error {

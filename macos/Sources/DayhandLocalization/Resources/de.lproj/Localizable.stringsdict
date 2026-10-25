@@ -338,6 +338,22 @@
 			<string>Alle %lld Jahre</string>
 		</dict>
 	</dict>
+	<key>Its %lld open tasks and the done ones stay; choose where they go.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Seine %lld offene Aufgabe und die erledigten bleiben erhalten; wähle, wohin sie kommen.</string>
+			<key>other</key>
+			<string>Seine %lld offenen Aufgaben und die erledigten bleiben erhalten; wähle, wohin sie kommen.</string>
+		</dict>
+	</dict>
 	<key>Offline: %lld changes wait for the server.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -400,6 +416,22 @@
 			<string>Der Name darf höchstens %lld Zeichen lang sein.</string>
 			<key>other</key>
 			<string>Der Name darf höchstens %lld Zeichen lang sein.</string>
+		</dict>
+	</dict>
+	<key>The note must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Die Notiz darf höchstens %lld Zeichen lang sein.</string>
+			<key>other</key>
+			<string>Die Notiz darf höchstens %lld Zeichen lang sein.</string>
 		</dict>
 	</dict>
 	<key>The title must be 1 to %lld characters.</key>

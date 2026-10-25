@@ -6,6 +6,19 @@ KeyboardShortcuts are MIT, Sparkle is MIT-style). Dayhand is the new name of Hel
 `dayhand://pair` link use it now (the app also opens `helm://pair` links from older versions).
 This version is the basic one (MVP):
 
+- **Main window**: a sidebar on the left (it folds with ⌃⌘S or the toolbar button) and the place picked in it
+  on the right, with the selected task in a panel along the bottom. The sidebar lists **Inbox** (the approval
+  requests and proposals waiting for the owner, read-only), **Today**, **All Tasks**, **No Project**, **Projects**
+  (a dot of the project's colour or its emoji, the name and the number of open tasks, red while some are overdue;
+  drag to reorder, **+** or ⌥⌘N for a new one, a context menu to edit, move, archive or delete one, and the
+  archived ones under **Archived**), **Labels**, **Done and Archived** and **Trash**. The **Go** menu opens each
+  place: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects. The toolbar holds search (title, note and labels, in
+  every list) and **+ Task**. A task dragged onto a project, No Project or Today goes there; **Task → Move to
+  Project…** (⇧⌘M) picks one by typing. The window is at least 820 × 500 points, 1100 × 700 by default.
+- **Lists**: All Tasks, No Project, a project and a label list their open tasks in sections (Overdue, Today,
+  Later with the day, No Day) and the latest done (folded), each task with a second line of its project (outside
+  that project's own list), day, repeat, checklist and labels. Quick add at the top of a project's list adds to
+  that project, without a day.
 - **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first by time) and
   done today (folded). One click ticks a task off; the context menu works on it now, moves it to today or
   tomorrow, archives it or moves it to the trash.
@@ -14,9 +27,11 @@ This version is the basic one (MVP):
   (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
   the field says what was understood; **Keep in title** keeps the words as text. Without a phrase the task is
   for today, as on the phone.
-- **Task details** with editing: title, status, "working on it now" and the resume note, the day and time
-  (a phrase, **Today**, **No day**, **Remove the time**), repeat, reminders, labels, the checklist and the note.
-  Links are shown. A task in the trash is read-only until **Restore**.
+- **Task panel** along the bottom of the main window, with editing: the title, the status, **Work on It Now** and
+  the resume note at the top; **Details** (the day and time from a phrase or **Today**, **Tomorrow**, **No day**,
+  **Remove the time**; reminders and repeat in popovers; labels; the project), the checklist and the note side by
+  side; then what agents set, the history, and archive or trash. Its top edge drags it taller or shorter. Links are
+  shown. A task in the trash is read-only until **Restore**.
 - **Agent** in the details, read-only, when an agent or `dayhand` set any of it: who holds the
   task's claim and until when (or that the claim ran out), **Blocked:** with the reason in red, the acceptance
   criteria with ticks and how many are met, the plan, **Waiting for** with the tasks it depends on ("#12 Send the
@@ -45,11 +60,9 @@ This version is the basic one (MVP):
   cached entries remain available offline. Without cached entries, the details say history is unavailable
   offline; a task created locally says its history starts once it reaches the server. Refresh rules are under
   [How it works](#how-it-works).
-- **Trash** shares the left sidebar with Today: a segmented chooser at the top switches the task list, with no
-  count badges. Deleted tasks are listed most recently deleted first, with the deletion day, the day the task
-  expires from the trash and **Restore**, which also works offline. The server keeps deleted tasks for 30 days
-  before its daily purge. The window stays two-column, at least 720 points wide: the sidebar and the selected
-  task's details, with the update button at the bottom left of the sidebar.
+- **Trash** is a place of the sidebar. Deleted tasks are listed most recently deleted first, with the deletion
+  day, the day the task expires from the trash and **Restore**, which also works offline. The server keeps deleted
+  tasks for 30 days before its daily purge. The update button sits at the bottom left of the sidebar.
 - **Menu bar**: the number of open tasks today (a warning icon when some are overdue), quick add, and today's
   open tasks to tick off without opening the window. Closing the window keeps Dayhand in the menu bar.
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
@@ -147,8 +160,10 @@ separate app identity for those.
 
 ### Projects
 
-Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data and sync (`Project`, `ProjectRules`,
-`ProjectStore`, `ProjectCalls`, `ProjectMerger`, `TaskLists`); the sidebar that shows them comes with the next changes.
+Projects need Dayhand server 0.13.0 or later. Their data and sync are `Project`, `ProjectRules`, `ProjectStore`,
+`ProjectCalls`, `ProjectMerger` and `TaskLists`; the sidebar, the lists and the project editor show them
+([Main window](#dayhand-for-macos)). While the server has none (0.12.x) the sidebar hides them and the status line
+says "Needs backend 0.13.0 or later".
 
 - A task belongs to at most one project or none; labels stay free tags across projects. A project has a name
   (1 to 50 characters on one line, not `none`, unique without regard to case among all projects, archived ones
@@ -162,7 +177,8 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   tasks on the Mac as the server did); the snapshot keeps reconciling. Without a server, offline, or when the call
   gets no answer, it fails with "Requires a connection to the server." and nothing is queued; any other refusal comes
   back in the server's words and nothing changes. A call waits for a running sync round and the next round waits for
-  it, so no snapshot read before a change can undo it.
+  it, so no snapshot read before a change can undo it. The project editor and the deletion dialog stay open until the
+  server has the change and show the failure above their buttons; Move, Archive and Restore show it in an alert.
 - **The offline queue holds task changes (and the settings) only**, appended at the end and sent oldest first, with
   no barriers, gating or waiting conditions. Putting a task into a project (`projectId` in `app:add` and
   `app:update`, `null` takes it out) is such a task change and names only a project the server has confirmed (one
@@ -302,8 +318,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   and a build without the key sends no request. Also the state machine, the `Info.plist` rules, the notes, the
   error texts and the install note. The tests keep Sparkle's settings under one test bundle id and remove them
   afterwards (macOS may leave an empty `io.github.maiarowsky.dayhand.updatetests.plist` behind).
-- **Screens**: `swift run DayhandSnapshots <folder>` draws the two-column Today and Trash windows at 960 and
-  720 points wide, the shared sidebar with its chooser and update button, the details with cached history and
+- **Screens**: `swift run DayhandSnapshots <folder>` draws the main window with Today, a project and All Tasks
+  (a task's panel open) at 1100 and 820 points wide in both appearances, Done and Archived, the archived projects,
+  No Project, a label and the trash, the sidebar with its update button, the project editor, Move to Project and
+  the deletion dialog, the panel with cached history and
   with history unavailable offline, the Agent section (claim, blocked, criteria, plan, waiting for) and a proof,
   the plan health card on Today, the read-only requests and proposals, the repeat and reminder editors (weekly with the reminders from Settings,
   monthly on an nth weekday with a count and custom reminders), the menu bar, quick add, Connect, Settings, Settings → General with the notification settings, Settings → Updates and every
@@ -313,6 +331,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   them is missing from the string catalog. It also lays out the main window in a real window with its title bar
   (wide, narrowest, sidebar closed, light and dark) and fails when the content is taller than the window or quick
   add sits under the title bar and its window buttons.
+- **Sidebar and lists** (`SidebarTests`): the sidebar's counts against the database, a project's list in sections
+  and search, quick add in a project, a task dropped on a place, a server without projects hiding them, project
+  changes without a server saying "Requires a connection to the server." with nothing queued, the panel's height
+  and the project colours.
 - **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
   classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,
   the month choices and counts of the repeat editor in English and Polish, and picker days and times that do not

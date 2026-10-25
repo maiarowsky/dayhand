@@ -44,12 +44,14 @@ struct HistorySection: View {
     let today: String
 
     var body: some View {
-        Section(tr("History")) {
-            if let text = HistoryText.placeholder(history.state, isEmpty: history.entries.isEmpty) {
-                Placeholder(text: text)
-            }
-            ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
-                HistoryRow(entry: entry, today: today, settings: model.settings)
+        PanelGroup(title: tr("History")) {
+            VStack(alignment: .leading, spacing: 10) {
+                if let text = HistoryText.placeholder(history.state, isEmpty: history.entries.isEmpty) {
+                    Placeholder(text: text)
+                }
+                ForEach(Array(history.entries.enumerated()), id: \.offset) { _, entry in
+                    HistoryRow(entry: entry, today: today, settings: model.settings)
+                }
             }
         }
     }

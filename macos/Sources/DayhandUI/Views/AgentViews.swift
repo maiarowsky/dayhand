@@ -28,8 +28,8 @@ struct HealthCard: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.top, 4)
             .sheet(isPresented: $showInbox) {
                 AgentInboxView().environmentObject(model)
             }
@@ -50,14 +50,36 @@ struct AgentInboxView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var load: Load
     private let reads: Bool
+    /// In the main window's Inbox, under its title, rather than in a sheet of its own.
+    private let embedded: Bool
 
     /// [preview] shows a fixed state without asking the server (the snapshot tool).
-    init(preview: Load? = nil) {
+    init(preview: Load? = nil, embedded: Bool = false) {
         _load = State(initialValue: preview ?? .loading)
         reads = preview == nil
+        self.embedded = embedded
     }
 
     var body: some View {
+        if embedded {
+            VStack(spacing: 0) {
+                content.frame(maxWidth: .infinity, maxHeight: .infinity)
+                if reads {
+                    HStack {
+                        Spacer()
+                        Button(tr("Try Again")) { Task { await read() } }.disabled(load == .loading)
+                    }
+                    .padding(.horizontal, Metrics.gutter)
+                    .padding(.bottom, 12)
+                }
+            }
+            .task { if reads { await read() } }
+        } else {
+            sheet
+        }
+    }
+
+    private var sheet: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(tr("Requests and proposals")).font(.title3).bold()

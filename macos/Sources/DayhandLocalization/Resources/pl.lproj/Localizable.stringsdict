@@ -422,6 +422,26 @@
 			<string>Co %lld roku</string>
 		</dict>
 	</dict>
+	<key>Its %lld open tasks and the done ones stay; choose where they go.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Jego %lld otwarte zadania i zadania zrobione zostaną; wybierz, dokąd trafią.</string>
+			<key>many</key>
+			<string>Jego %lld otwartych zadań i zadania zrobione zostaną; wybierz, dokąd trafią.</string>
+			<key>one</key>
+			<string>Jego %lld otwarte zadanie i zadania zrobione zostaną; wybierz, dokąd trafią.</string>
+			<key>other</key>
+			<string>Jego %lld otwartego zadania i zadania zrobione zostaną; wybierz, dokąd trafią.</string>
+		</dict>
+	</dict>
 	<key>Offline: %lld changes wait for the server.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -500,6 +520,26 @@
 			<string>Nazwa może mieć najwyżej %lld znak.</string>
 			<key>other</key>
 			<string>Nazwa może mieć najwyżej %lld znaku.</string>
+		</dict>
+	</dict>
+	<key>The note must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Notatka może mieć najwyżej %lld znaki.</string>
+			<key>many</key>
+			<string>Notatka może mieć najwyżej %lld znaków.</string>
+			<key>one</key>
+			<string>Notatka może mieć najwyżej %lld znak.</string>
+			<key>other</key>
+			<string>Notatka może mieć najwyżej %lld znaku.</string>
 		</dict>
 	</dict>
 	<key>The title must be 1 to %lld characters.</key>

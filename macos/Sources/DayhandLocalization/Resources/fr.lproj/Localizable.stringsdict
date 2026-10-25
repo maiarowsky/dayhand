@@ -338,6 +338,22 @@
 			<string>Tous les %lld ans</string>
 		</dict>
 	</dict>
+	<key>Its %lld open tasks and the done ones stay; choose where they go.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Sa %lld tâche en attente et les tâches terminées sont conservées ; choisissez où elles vont.</string>
+			<key>other</key>
+			<string>Ses %lld tâches en attente et les tâches terminées sont conservées ; choisissez où elles vont.</string>
+		</dict>
+	</dict>
 	<key>Offline: %lld changes wait for the server.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -400,6 +416,22 @@
 			<string>Le nom doit comporter au plus %lld caractère.</string>
 			<key>other</key>
 			<string>Le nom doit comporter au plus %lld caractères.</string>
+		</dict>
+	</dict>
+	<key>The note must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>La note doit compter au plus %lld caractère.</string>
+			<key>other</key>
+			<string>La note doit compter au plus %lld caractères.</string>
 		</dict>
 	</dict>
 	<key>The title must be 1 to %lld characters.</key>

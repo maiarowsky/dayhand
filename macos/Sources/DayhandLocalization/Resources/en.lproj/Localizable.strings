@@ -44,12 +44,16 @@
 	<string>Add</string>
 	<key>Add Task</key>
 	<string>Add Task</string>
+	<key>Add a project…</key>
+	<string>Add a project…</string>
 	<key>Add a task (try: Pay rent fri 9am)</key>
 	<string>Add a task (try: Pay rent fri 9am)</string>
 	<key>Add an item</key>
 	<string>Add an item</string>
 	<key>Add the words as part of the title instead of reading them as a date</key>
 	<string>Add the words as part of the title instead of reading them as a date</string>
+	<key>Add to %@</key>
+	<string>Add to %@</string>
 	<key>Address</key>
 	<string>Address</string>
 	<key>After a number of times</key>
@@ -64,10 +68,14 @@
 	<string>Agent: %@</string>
 	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
 	<string>Agents set these with dayhand or through MCP; this Mac shows them read-only.</string>
+	<key>All Tasks</key>
+	<string>All Tasks</string>
 	<key>All done for today.</key>
 	<string>All done for today.</string>
 	<key>Allow Notifications</key>
 	<string>Allow Notifications</string>
+	<key>Amber</key>
+	<string>Amber</string>
 	<key>Approval requests (%lld)</key>
 	<string>Approval requests (%lld)</string>
 	<key>Approval requests (newest %lld)</key>
@@ -76,6 +84,14 @@
 	<string>Archive</string>
 	<key>Archived</key>
 	<string>Archived</string>
+	<key>Archived (%lld)</key>
+	<string>Archived (%lld)</string>
+	<key>Archived Projects</key>
+	<string>Archived Projects</string>
+	<key>Archived Tasks</key>
+	<string>Archived Tasks</string>
+	<key>Archived project</key>
+	<string>Archived project</string>
 	<key>As in Settings</key>
 	<string>As in Settings</string>
 	<key>As in settings (%@)</key>
@@ -84,10 +100,16 @@
 	<string>Asked by %@</string>
 	<key>At a time of day</key>
 	<string>At a time of day</string>
+	<key>Bakery website</key>
+	<string>Bakery website</string>
 	<key>Before the due time</key>
 	<string>Before the due time</string>
 	<key>Blocked: %@</key>
 	<string>Blocked: %@</string>
+	<key>Blue</key>
+	<string>Blue</string>
+	<key>Brown</key>
+	<string>Brown</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</string>
 	<key>Cancel</key>
@@ -120,8 +142,14 @@
 	<string>Claimed</string>
 	<key>Close</key>
 	<string>Close</string>
+	<key>Close the details</key>
+	<string>Close the details</string>
+	<key>Color</key>
+	<string>Color</string>
 	<key>Connect</key>
 	<string>Connect</string>
+	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
+	<string>Connect a server to see the approval requests and proposals waiting for you.</string>
 	<key>Connect to Server…</key>
 	<string>Connect to Server…</string>
 	<key>Connect to a server to see the requests and proposals.</key>
@@ -144,6 +172,8 @@
 	<string>Created as the next repeat</string>
 	<key>Custom</key>
 	<string>Custom</string>
+	<key>Cyan</key>
+	<string>Cyan</string>
 	<key>Daily</key>
 	<string>Daily</string>
 	<key>Day</key>
@@ -182,8 +212,16 @@
 	<string>Dayhand, nothing left today</string>
 	<key>Default reminders</key>
 	<string>Default reminders</string>
+	<key>Delete Project</key>
+	<string>Delete Project</string>
+	<key>Delete “%@”?</key>
+	<string>Delete “%@”?</string>
 	<key>Deleted %@ · gone after %@</key>
 	<string>Deleted %1$@ · gone after %2$@</string>
+	<key>Delete…</key>
+	<string>Delete…</string>
+	<key>Details</key>
+	<string>Details</string>
 	<key>Disconnect</key>
 	<string>Disconnect</string>
 	<key>Disconnect this Mac?</key>
@@ -196,6 +234,10 @@
 	<string>Done</string>
 	<key>Done (%lld)</key>
 	<string>Done (%lld)</string>
+	<key>Done and Archived</key>
+	<string>Done and Archived</string>
+	<key>Done and archived tasks show here.</key>
+	<string>Done and archived tasks show here.</string>
 	<key>Downloading Dayhand %@…</key>
 	<string>Downloading Dayhand %@…</string>
 	<key>Downloading…</key>
@@ -204,20 +246,38 @@
 	<string>Downloading… %lld%%</string>
 	<key>Due</key>
 	<string>Due</string>
+	<key>Edit Project</key>
+	<string>Edit Project</string>
 	<key>Edited</key>
 	<string>Edited</string>
+	<key>Edit…</key>
+	<string>Edit…</string>
+	<key>Emoji…</key>
+	<string>Emoji…</string>
 	<key>Ends</key>
 	<string>Ends</string>
 	<key>Enter a number from 1 to %lld.</key>
 	<string>Enter a number from 1 to %lld.</string>
 	<key>Every how many</key>
 	<string>Every how many</string>
+	<key>Every task is in a project.</key>
+	<string>Every task is in a project.</string>
 	<key>Frequency</key>
 	<string>Frequency</string>
 	<key>From %@</key>
 	<string>From %@</string>
 	<key>General</key>
 	<string>General</string>
+	<key>Go</key>
+	<string>Go</string>
+	<key>Gray</key>
+	<string>Gray</string>
+	<key>Green</key>
+	<string>Green</string>
+	<key>Hides the done tasks</key>
+	<string>Hides the done tasks</string>
+	<key>Hides the section</key>
+	<string>Hides the section</string>
 	<key>Hides the tasks done today</key>
 	<string>Hides the tasks done today</string>
 	<key>History</key>
@@ -226,18 +286,26 @@
 	<string>History is unavailable offline.</string>
 	<key>How many times</key>
 	<string>How many times</string>
+	<key>Icon</key>
+	<string>Icon</string>
 	<key>In progress</key>
 	<string>In progress</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
 	<string>In the trash. It goes for good 30 days after it was deleted.</string>
+	<key>Inbox</key>
+	<string>Inbox</string>
 	<key>Include preview versions</key>
 	<string>Include preview versions</string>
+	<key>Indigo</key>
+	<string>Indigo</string>
 	<key>Installing Dayhand %@…</key>
 	<string>Installing Dayhand %@…</string>
 	<key>Installing…</key>
 	<string>Installing…</string>
 	<key>It stays in the trash for 30 days.</key>
 	<string>It stays in the trash for 30 days.</string>
+	<key>Its tasks stay; choose where they go.</key>
+	<string>Its tasks stay; choose where they go.</string>
 	<key>Keep in title</key>
 	<string>Keep in title</string>
 	<key>Labels</key>
@@ -270,34 +338,58 @@
 	<string>Monthly</string>
 	<key>Morning summary</key>
 	<string>Morning summary</string>
+	<key>Move Down</key>
+	<string>Move Down</string>
+	<key>Move Up</key>
+	<string>Move Up</string>
+	<key>Move the tasks to</key>
+	<string>Move the tasks to</string>
 	<key>Move the tasks to another project.</key>
 	<string>Move the tasks to another project.</string>
+	<key>Move to Project…</key>
+	<string>Move to Project…</string>
 	<key>Move to Trash</key>
 	<string>Move to Trash</string>
+	<key>Move “%@” to</key>
+	<string>Move “%@” to</string>
 	<key>Move “%@” to the trash?</key>
 	<string>Move “%@” to the trash?</string>
 	<key>Moved on the board</key>
 	<string>Moved on the board</string>
 	<key>Moved to the trash</key>
 	<string>Moved to the trash</string>
+	<key>Name</key>
+	<string>Name</string>
 	<key>Needs backend 0.13.0 or later</key>
 	<string>Needs backend 0.13.0 or later</string>
 	<key>Never</key>
 	<string>Never</string>
-	<key>New Task</key>
-	<string>New Task</string>
+	<key>New Project</key>
+	<string>New Project</string>
+	<key>New Project…</key>
+	<string>New Project…</string>
 	<key>New Task…</key>
 	<string>New Task…</string>
 	<key>New item</key>
 	<string>New item</string>
+	<key>New project (⌥⌘N)</key>
+	<string>New project (⌥⌘N)</string>
 	<key>New task (⌘N, or the quick add shortcut from any app)</key>
 	<string>New task (⌘N, or the quick add shortcut from any app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>New task, e.g. Call the accountant fri 2pm</string>
+	<key>No Day</key>
+	<string>No Day</string>
+	<key>No Project</key>
+	<string>No Project</string>
 	<key>No approval requests are waiting.</key>
 	<string>No approval requests are waiting.</string>
+	<key>No archived projects.</key>
+	<string>No archived projects.</string>
 	<key>No changes recorded yet.</key>
 	<string>No changes recorded yet.</string>
+	<key>No color</key>
+	<string>No color</string>
 	<key>No day</key>
 	<string>No day</string>
 	<key>No day picked: the completion day's weekday.</key>
@@ -306,12 +398,20 @@
 	<string>No day picked: the due date's weekday.</string>
 	<key>No details given</key>
 	<string>No details given</string>
+	<key>No project “%@”</key>
+	<string>No project “%@”</string>
 	<key>No proposals are waiting.</key>
 	<string>No proposals are waiting.</string>
 	<key>No reminders unless a task has its own.</key>
 	<string>No reminders unless a task has its own.</string>
 	<key>No server connected.</key>
 	<string>No server connected.</string>
+	<key>No task matches the search.</key>
+	<string>No task matches the search.</string>
+	<key>No tasks here yet.</key>
+	<string>No tasks here yet.</string>
+	<key>No tasks in this project yet. Add one above, or drag a task onto it in the sidebar.</key>
+	<string>No tasks in this project yet. Add one above, or drag a task onto it in the sidebar.</string>
 	<key>None</key>
 	<string>None</string>
 	<key>Not Now</key>
@@ -334,6 +434,8 @@
 	<string>Nothing else planned for today.</string>
 	<key>Nothing left for today.</key>
 	<string>Nothing left for today.</string>
+	<key>Nothing open</key>
+	<string>Nothing open</string>
 	<key>Nothing planned for today.</key>
 	<string>Nothing planned for today.</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -362,16 +464,24 @@
 	<string>On the due day</string>
 	<key>On these days</key>
 	<string>On these days</string>
+	<key>One emoji, optional</key>
+	<string>One emoji, optional</string>
 	<key>Open Dayhand</key>
 	<string>Open Dayhand</string>
 	<key>Open System Settings</key>
 	<string>Open System Settings</string>
+	<key>Opens the Character Viewer (⌃⌘Space)</key>
+	<string>Opens the Character Viewer (⌃⌘Space)</string>
 	<key>Options: %@</key>
 	<string>Options: %@</string>
+	<key>Orange</key>
+	<string>Orange</string>
 	<key>Overdue (%lld)</key>
 	<string>Overdue (%lld)</string>
 	<key>Pairing code</key>
 	<string>Pairing code</string>
+	<key>Pink</key>
+	<string>Pink</string>
 	<key>Plan</key>
 	<string>Plan</string>
 	<key>Plan: %@</key>
@@ -382,10 +492,20 @@
 	<string>Preparing the update…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Previews come before a release and may have rough edges.</string>
+	<key>Project</key>
+	<string>Project</string>
+	<key>Project actions</key>
+	<string>Project actions</string>
+	<key>Project: %@</key>
+	<string>Project: %@</string>
+	<key>Projects</key>
+	<string>Projects</string>
 	<key>Proof of completion</key>
 	<string>Proof of completion</string>
 	<key>Proposals (%lld)</key>
 	<string>Proposals (%lld)</string>
+	<key>Purple</key>
+	<string>Purple</string>
 	<key>Quick add</key>
 	<string>Quick add</string>
 	<key>Quit</key>
@@ -394,6 +514,8 @@
 	<string>Read-only on this Mac. Decide on the phone, or with dayhand approvals and dayhand proposals.</string>
 	<key>Reading tasks failed: %@</key>
 	<string>Reading tasks failed: %@</string>
+	<key>Red</key>
+	<string>Red</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
 	<string>Released builds are signed and can update themselves; a copy built on this Mac cannot.</string>
 	<key>Reminder day</key>
@@ -410,6 +532,8 @@
 	<string>Remove the time</string>
 	<key>Repeat</key>
 	<string>Repeat</string>
+	<key>Repeats</key>
+	<string>Repeats</string>
 	<key>Requests and proposals</key>
 	<string>Requests and proposals</string>
 	<key>Requires a connection to the server.</key>
@@ -422,20 +546,22 @@
 	<string>Restore %@</string>
 	<key>Restored</key>
 	<string>Restored</string>
+	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day, +project the project.</key>
+	<string>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day, +project the project.</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</string>
 	<key>Revert</key>
 	<string>Revert</string>
 	<key>Review</key>
 	<string>Review</string>
-	<key>Save Note</key>
-	<string>Save Note</string>
+	<key>Save</key>
+	<string>Save</string>
 	<key>Save Reminders</key>
 	<string>Save Reminders</string>
 	<key>Save Repeat</key>
 	<string>Save Repeat</string>
-	<key>Select a task to see its details.</key>
-	<string>Select a task to see its details.</string>
+	<key>Search</key>
+	<string>Search</string>
 	<key>Server</key>
 	<string>Server</string>
 	<key>Server address</key>
@@ -444,8 +570,10 @@
 	<string>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</string>
 	<key>Shortcut from any app:</key>
 	<string>Shortcut from any app:</string>
-	<key>Show</key>
-	<string>Show</string>
+	<key>Shows the done tasks</key>
+	<string>Shows the done tasks</string>
+	<key>Shows the section</key>
+	<string>Shows the section</string>
 	<key>Shows the tasks done today</key>
 	<string>Shows the tasks done today</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
@@ -454,12 +582,16 @@
 	<string>Start with: %@</string>
 	<key>Status</key>
 	<string>Status</string>
+	<key>Status: %@</key>
+	<string>Status: %@</string>
 	<key>Sync Now</key>
 	<string>Sync Now</string>
 	<key>System (%@)</key>
 	<string>System (%@)</string>
 	<key>Task</key>
 	<string>Task</string>
+	<key>Teal</key>
+	<string>Teal</string>
 	<key>That is not a date.</key>
 	<string>That is not a date.</string>
 	<key>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</key>
@@ -496,6 +628,8 @@
 	<string>The icon must be a single emoji.</string>
 	<key>The last day of the month</key>
 	<string>The last day of the month</string>
+	<key>The latest %lld of each</key>
+	<string>The latest %lld of each</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>The list of new versions could not be read. Try again later.</string>
 	<key>The name must be one line.</key>
@@ -542,6 +676,8 @@
 	<string>These ring only when the task has a time.</string>
 	<key>They could not be read: %@</key>
 	<string>They could not be read: %@</string>
+	<key>They take no new tasks; their tasks stay in them.</key>
+	<string>They take no new tasks; their tasks stay in them.</string>
 	<key>This Mac</key>
 	<string>This Mac</string>
 	<key>This version</key>
@@ -574,6 +710,8 @@
 	<string>Try Again</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
 	<string>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</string>
+	<key>Type to filter</key>
+	<string>Type to filter</string>
 	<key>Unarchive</key>
 	<string>Unarchive</string>
 	<key>Untick %@</key>
@@ -600,8 +738,8 @@
 	<string>Waiting for</string>
 	<key>Weekly</key>
 	<string>Weekly</string>
-	<key>When</key>
-	<string>When</string>
+	<key>What the project is about, for you and agents</key>
+	<string>What the project is about, for you and agents</string>
 	<key>Where I stopped</key>
 	<string>Where I stopped</string>
 	<key>Where I stopped: %@</key>
@@ -610,8 +748,6 @@
 	<string>Where I stopped: add a note in the details</string>
 	<key>Work on It Now</key>
 	<string>Work on It Now</string>
-	<key>Working on it now</key>
-	<string>Working on it now</string>
 	<key>Yearly</key>
 	<string>Yearly</string>
 	<key>Yesterday</key>

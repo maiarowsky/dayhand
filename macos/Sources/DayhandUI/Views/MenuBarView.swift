@@ -18,7 +18,7 @@ struct MenuBarView: View {
                 Spacer()
                 Text(summary(s)).font(.caption).foregroundStyle(.secondary)
             }
-            InlineQuickAdd()
+            InlineQuickAdd(place: .today)
             Divider()
             if rows.isEmpty {
                 Text(s.done.isEmpty ? tr("Nothing planned for today.") : tr("All done for today."))

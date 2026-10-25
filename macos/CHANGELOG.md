@@ -15,9 +15,18 @@ latest one below).
   a connection it says "Requires a connection to the server." and nothing is queued. Putting a task into a project
   the server has (`projectId` in `app:add` and `app:update`) works offline through the outbox, and quick add reads
   `+project` (`+strona-piekarni`). Behaviour, limits and the shared cases: [README.md](README.md#projects).
+- **Sidebar** in the main window: Inbox, Today, All Tasks, No Project, the projects (colour or emoji, open count,
+  reorder by dragging, new, edit, archive and delete), Labels, Done and Archived, and Trash, with ⌘1 to ⌘9 in the
+  Go menu (Today, All Tasks, No Project and the first six projects). A task dragged onto a project, No Project or
+  Today goes there; Task → Move to Project… (⇧⌘M) picks one. Without a connection, project changes say "Requires a
+  connection to the server." and nothing is queued.
+- **Lists** of every task, those without a project, a project's and a label's, in sections, with search in the
+  toolbar and quick add into the list's project.
 
 ### Changed
 
+- The main window: the sidebar of places replaces the Today/Trash chooser, and the selected task opens in a panel
+  along the bottom instead of a details column. The window is at least 820 × 500 points.
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
   Migrations v5 to v7 only clean up after development builds of 0.4.0, which queued project changes: v7 drops them
   from the outbox together with the projects the server never confirmed (their tasks stay, without a project).

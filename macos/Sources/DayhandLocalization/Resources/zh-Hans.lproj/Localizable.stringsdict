@@ -296,6 +296,20 @@
 			<string>每 %lld 年</string>
 		</dict>
 	</dict>
+	<key>Its %lld open tasks and the done ones stay; choose where they go.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>其中 %lld 个未完成的任务和已完成的任务都会保留；请选择它们的去处。</string>
+		</dict>
+	</dict>
 	<key>Offline: %lld changes wait for the server.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -350,6 +364,20 @@
 			<string>lld</string>
 			<key>other</key>
 			<string>名称最多 %lld 个字符。</string>
+		</dict>
+	</dict>
+	<key>The note must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>备注最多 %lld 个字符。</string>
 		</dict>
 	</dict>
 	<key>The title must be 1 to %lld characters.</key>

@@ -338,6 +338,22 @@
 			<string>Every %lld years</string>
 		</dict>
 	</dict>
+	<key>Its %lld open tasks and the done ones stay; choose where they go.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Its %lld open task and the done ones stay; choose where they go.</string>
+			<key>other</key>
+			<string>Its %lld open tasks and the done ones stay; choose where they go.</string>
+		</dict>
+	</dict>
 	<key>Offline: %lld changes wait for the server.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -400,6 +416,22 @@
 			<string>The name must be at most %lld character.</string>
 			<key>other</key>
 			<string>The name must be at most %lld characters.</string>
+		</dict>
+	</dict>
+	<key>The note must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>The note must be at most %lld character.</string>
+			<key>other</key>
+			<string>The note must be at most %lld characters.</string>
 		</dict>
 	</dict>
 	<key>The title must be 1 to %lld characters.</key>
