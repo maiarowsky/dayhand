@@ -56,7 +56,10 @@ public enum ProjectRules {
     }
 
     /// One emoji, a flag included, with its modifiers and joiners (`PICTOGRAPH`).
-    private static let pictograph = try! NSRegularExpression(pattern: "\\p{Extended_Pictographic}|[\\x{1F1E6}-\\x{1F1FF}]{2}")
+    private static let emojiComponent = #"(?:\p{Emoji_Modifier_Base}\x{FE0F}?\p{Emoji_Modifier}|\p{Extended_Pictographic}\x{FE0F}?)"#
+    private static let pictograph = try! NSRegularExpression(
+        pattern: #"\A(?:[\x{1F1E6}-\x{1F1FF}]{2}|[#*0-9]\x{FE0F}?\x{20E3}|\x{1F3F4}[\x{E0061}-\x{E007A}]+\x{E007F}|\#(emojiComponent)(?:\x{200D}\#(emojiComponent))*)\z"#
+    )
 
     /**
      * The icon as stored: one emoji (one character on screen, up to 16 UTF-16 code units, no spaces); blank is no icon
@@ -65,7 +68,7 @@ public enum ProjectRules {
     public static func icon(_ input: String) -> String?? {
         let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if value.isEmpty { return .some(nil) }
-        guard value.count == 1, value.jsLength <= maxIcon, !value.unicodeScalars.contains(where: { $0.properties.isWhitespace }),
+        guard value.jsLength <= maxIcon,
               pictograph.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil else { return nil }
         return .some(value)
     }

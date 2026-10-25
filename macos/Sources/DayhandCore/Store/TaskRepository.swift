@@ -582,6 +582,13 @@ extension TaskRepository: OutboxStore {
                 task.serverId = serverId
                 try task.save(db)
             }
+            if op.mutation == Mutations.restore, let localId = op.taskLocalId, let seq = op.seq {
+                for var assignment in try OutboxOp.filter(Column("taskLocalId") == localId && Column("seq") < seq).fetchAll(db)
+                where assignment.isProjectAssignment && assignment.lastError.map(RemoteJSON.refusesTrashedTask) == true {
+                    assignment.lastError = nil
+                    try assignment.update(db)
+                }
+            }
         }
     }
 

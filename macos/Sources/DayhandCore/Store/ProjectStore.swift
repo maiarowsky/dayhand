@@ -368,15 +368,18 @@ enum ProjectOutbox {
 
     private static func prioritizeCreation(_ db: Database, _ localId: String) throws {
         let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
-        guard let creation = pending.first(where: { $0.mutation == Mutations.addProject && $0.clientId == localId }),
-              let creationSeq = creation.seq, let firstSeq = pending.first?.seq else { return }
-        let referencedEarlier = pending.contains { op in
-            let args = JSONValue.decode(op.argsJson)
-            return (op.seq ?? creationSeq) < creationSeq && (args?["projectId"]?.string == localId || args?["moveTasksTo"]?.string == localId)
+        guard let creationIndex = pending.firstIndex(where: { $0.mutation == Mutations.addProject && $0.clientId == localId }),
+              let referenceIndex = pending[..<creationIndex].firstIndex(where: { op in
+                  let args = JSONValue.decode(op.argsJson)
+                  return args?["projectId"]?.string == localId || args?["moveTasksTo"]?.string == localId
+              }) else { return }
+        var creation = pending[creationIndex]
+        _ = try OutboxOp.deleteOne(db, key: creation.seq)
+        for index in (referenceIndex..<creationIndex).reversed() {
+            try db.execute(sql: "UPDATE outbox SET seq = ? WHERE seq = ?", arguments: [pending[index + 1].seq, pending[index].seq])
         }
-        if referencedEarlier {
-            try db.execute(sql: "UPDATE outbox SET seq = ? WHERE seq = ?", arguments: [firstSeq - 1, creationSeq])
-        }
+        creation.seq = pending[referenceIndex].seq
+        try creation.insert(db)
     }
 
     /// [op] without its `projectId`.
