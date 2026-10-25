@@ -32,20 +32,55 @@ def create_project(name):
     base.tap(base.find_button("Save"))
 
 
+def dismiss_project_form():
+    # OK can restore the field's IME. One Back can hide only that keyboard, not the sheet.
+    # Confirm the project-list header is the active window instead of assuming dismissal.
+    for _ in range(4):
+        if any(node.get("content-desc") == "Set order" for node in base.ui_nodes()):
+            return
+        base.shell("input", "keyevent", "KEYCODE_BACK")
+        time.sleep(0.3)
+    raise RuntimeError("Project form/IME did not close after refusing the command")
+
+
 def refused_project(name):
     create_project(name)
     base.find(text="Requires a connection to the server")
     base.tap(base.find_button("OK"))
-    base.shell("input", "keyevent", "KEYCODE_BACK")
+    dismiss_project_form()
     assert not any(p["name"] == name for p in project_list()), "A refused project reached the server"
+    base.log(f"project management refused and form closed: {name}")
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--apk", required=True)
-    parser.add_argument("--shots", required=True)
-    parser.add_argument("--server-url", required=True, help="Local HTTP actions URL as the emulator sees it")
-    args = parser.parse_args()
+def record_result(args, confirmed, title):
+    deadline = time.time() + 90
+    while time.time() < deadline:
+        tasks = json.loads(base.dayhand_cli("list", "--json"))["result"]
+        task = next((t for t in tasks if t["title"] == title), None)
+        if task and task.get("projectId") == confirmed["id"]:
+            projects = project_list()
+            assert not any(p["name"] in {"Unpaired project", "Offline project"} for p in projects)
+            saved = next(p for p in projects if p["id"] == confirmed["id"])
+            assert saved["color"] == "amber" and saved["counts"]["open"] == 1
+            base.screenshot(args.shots, "project-light.png")
+            base.shell("cmd", "uimode", "night", "yes")
+            time.sleep(2)
+            base.screenshot(args.shots, "project-dark.png")
+            base.tap(base.find(desc="Back"))
+            base.find(text=saved["name"])
+            base.screenshot(args.shots, "projects-dark.png")
+            base.shell("cmd", "uimode", "night", "no")
+            time.sleep(2)
+            base.screenshot(args.shots, "projects-light.png")
+            print(json.dumps({"project": saved["name"], "projectId": saved["id"], "task": task["title"],
+                              "taskProjectId": task["projectId"], "open": saved["counts"]["open"]}, ensure_ascii=False))
+            print("E2E PROJECTS PASSED: unpaired/offline management refused; online project -> offline task -> confirmed CLI assignment")
+            return
+        time.sleep(2)
+    raise RuntimeError("The offline task did not reach its confirmed server project")
+
+
+def run(args):
     assert os.environ.get("ANDROID_SERIAL", "").startswith("emulator-"), "Use your own emulator"
     assert urllib.parse.urlsplit(base.env("URL")).hostname in {"localhost", "127.0.0.1"}, "Local backend only"
     Path(args.shots).mkdir(parents=True, exist_ok=True)
@@ -77,31 +112,23 @@ def main():
         base.find(text=title)
     finally:
         base.set_network(True)
-    deadline = time.time() + 90
-    while time.time() < deadline:
-        tasks = json.loads(base.dayhand_cli("list", "--json"))["result"]
-        task = next((t for t in tasks if t["title"] == title), None)
-        if task and task.get("projectId") == confirmed["id"]:
-            projects = project_list()
-            assert not any(p["name"] in {"Unpaired project", "Offline project"} for p in projects)
-            saved = next(p for p in projects if p["id"] == confirmed["id"])
-            assert saved["color"] == "amber" and saved["counts"]["open"] == 1
-            base.screenshot(args.shots, "project-light.png")
-            base.shell("cmd", "uimode", "night", "yes")
-            time.sleep(2)
-            base.screenshot(args.shots, "project-dark.png")
-            base.tap(base.find(desc="Back"))
-            base.find(text=project)
-            base.screenshot(args.shots, "projects-dark.png")
-            base.shell("cmd", "uimode", "night", "no")
-            time.sleep(2)
-            base.screenshot(args.shots, "projects-light.png")
-            print(json.dumps({"project": saved["name"], "projectId": saved["id"], "task": task["title"],
-                              "taskProjectId": task["projectId"], "open": saved["counts"]["open"]}, ensure_ascii=False))
-            print("E2E PROJECTS PASSED: unpaired/offline management refused; online project -> offline task -> confirmed CLI assignment")
-            return
-        time.sleep(2)
-    raise RuntimeError("The offline task did not reach its confirmed server project")
+    record_result(args, confirmed, title)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--apk", required=True)
+    parser.add_argument("--shots", required=True)
+    parser.add_argument("--server-url", required=True, help="Local HTTP actions URL as the emulator sees it")
+    args = parser.parse_args()
+    try:
+        run(args)
+    except Exception:
+        try:
+            base.screenshot(args.shots, "project-e2e-failure.png")
+        except Exception as capture_error:
+            print(f"Diagnostic PNG unavailable: {capture_error}", file=sys.stderr)
+        raise
 
 
 if __name__ == "__main__":
