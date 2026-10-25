@@ -1,0 +1,28 @@
+{
+  "about": "Quick add with +project, case for case for every app (macos/Tests/DayhandCoreTests/ProjectDomainTests.swift reads this file). 'now' is a UTC minute (Thursday 22 October 2026, 10:00 BST); the zone is Europe/London. A +word names a project that is not archived, in any case, a hyphen standing for a space; the first one that names a project sets it and leaves the title. A +word naming none stays in the title and is reported as 'unknown', unless it is a date ('+3d'). 'project' is the project's name, 'date' the day a date phrase at the end sets; an absent field is none.",
+  "timezone": "Europe/London",
+  "now": "2026-10-22T09:00",
+  "projects": [
+    { "name": "Strona piekarni" },
+    { "name": "Dom" },
+    { "name": "e-commerce" },
+    { "name": "Zdrowie" },
+    { "name": "Stary", "archived": true }
+  ],
+  "cases": [
+    { "line": "Zdjęcia do galerii +strona-piekarni", "title": "Zdjęcia do galerii", "project": "Strona piekarni" },
+    { "line": "Zdjęcia do galerii +STRONA-Piekarni", "title": "Zdjęcia do galerii", "project": "Strona piekarni" },
+    { "line": "+dom Odkurzyć", "title": "Odkurzyć", "project": "Dom" },
+    { "line": "Odkurzyć +dom salon", "title": "Odkurzyć salon", "project": "Dom" },
+    { "line": "Checkout +e-commerce", "title": "Checkout", "project": "e-commerce" },
+    { "line": "Wyślij fakturę fri +strona-piekarni", "title": "Wyślij fakturę", "project": "Strona piekarni", "date": "2026-10-23" },
+    { "line": "Wyślij fakturę +strona-piekarni tomorrow", "title": "Wyślij fakturę", "project": "Strona piekarni", "date": "2026-10-23" },
+    { "line": "Lekarz +zdrowie +dom", "title": "Lekarz +dom", "project": "Zdrowie" },
+    { "line": "Kupić mleko +ogrod", "title": "Kupić mleko +ogrod", "unknown": "ogrod" },
+    { "line": "Notatki +stary", "title": "Notatki +stary", "unknown": "stary" },
+    { "line": "Pay rent +3d", "title": "Pay rent", "date": "2026-10-25" },
+    { "line": "Learn C++ +dom", "title": "Learn C++", "project": "Dom" },
+    { "line": "Kupić mleko", "title": "Kupić mleko" },
+    { "line": "+", "title": "+" }
+  ]
+}

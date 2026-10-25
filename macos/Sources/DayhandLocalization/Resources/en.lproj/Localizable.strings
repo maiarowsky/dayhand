@@ -270,6 +270,8 @@
 	<string>Monthly</string>
 	<key>Morning summary</key>
 	<string>Morning summary</string>
+	<key>Move the tasks to another project.</key>
+	<string>Move the tasks to another project.</string>
 	<key>Move to Trash</key>
 	<string>Move to Trash</string>
 	<key>Move “%@” to the trash?</key>
@@ -460,6 +462,8 @@
 	<string>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</string>
 	<key>That is not a time.</key>
 	<string>That is not a time.</string>
+	<key>That project no longer exists.</key>
+	<string>That project no longer exists.</string>
 	<key>That version is older than this one, so it was not installed.</key>
 	<string>That version is older than this one, so it was not installed.</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
@@ -482,10 +486,16 @@
 	<string>The due date</string>
 	<key>The history starts once this task reaches the server.</key>
 	<string>The history starts once this task reaches the server.</string>
+	<key>The icon must be a single emoji.</key>
+	<string>The icon must be a single emoji.</string>
 	<key>The last day of the month</key>
 	<string>The last day of the month</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>The list of new versions could not be read. Try again later.</string>
+	<key>The name must be one line.</key>
+	<string>The name must be one line.</string>
+	<key>The name must not be empty.</key>
+	<string>The name must not be empty.</string>
 	<key>The note is too long.</key>
 	<string>The note is too long.</string>
 	<key>The reminders are not valid.</key>
@@ -520,12 +530,16 @@
 	<string>There are too many checklist items, or one is too long.</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>There are too many labels, or one is too long.</string>
+	<key>There is already a project named “%@”.</key>
+	<string>There is already a project named “%@”.</string>
 	<key>These ring only when the task has a time.</key>
 	<string>These ring only when the task has a time.</string>
 	<key>They could not be read: %@</key>
 	<string>They could not be read: %@</string>
 	<key>This Mac</key>
 	<string>This Mac</string>
+	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
+	<string>This server has no projects. Projects need Dayhand server 0.13.0 or later.</string>
 	<key>This version</key>
 	<string>This version</string>
 	<key>Tick %@</key>
@@ -732,5 +746,9 @@
 	<string>until %@</string>
 	<key>yes</key>
 	<string>yes</string>
+	<key>“%@” is archived; restore it first.</key>
+	<string>“%@” is archived; restore it first.</string>
+	<key>“none” is reserved: it means tasks without a project.</key>
+	<string>“none” is reserved: it means tasks without a project.</string>
 </dict>
 </plist>

@@ -4,6 +4,23 @@ Versions before 0.2.0 are described in the commit history (`git log -- macos`). 
 signed release yet; `scripts/build-app.sh` writes the version (`DAYHAND_VERSION`, by default the
 latest one below).
 
+## 0.4.0 (unreleased)
+
+### Added
+
+- **Projects** in the local database and sync, the groundwork for the project list in the sidebar: each task
+  belongs to at most one project, and projects (name, colour, emoji icon, note, order, archived) are added, edited,
+  archived and deleted offline through the outbox (`app:addProject`, `app:updateProject`, `app:deleteProject`,
+  `projectId` in `app:add` and `app:update`). A project and tasks written in it offline reach the server in order,
+  with the server's project id in each task. Quick add reads `+project` (`+strona-piekarni`). Behaviour, limits and
+  the shared cases: [README.md](README.md#projects).
+
+### Changed
+
+- The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
+- With a server older than 0.13.0 (no projects) the app syncs as before: projects stay off, a project written on the
+  Mac goes and its tasks reach the server without it, and nothing is resent in a loop.
+
 ## 0.3.0 (unreleased)
 
 ### Added

@@ -78,9 +78,10 @@ This version is the basic one (MVP):
 click / quick add ──> TaskRepository: the row and its mutation in the outbox, one SQLite transaction
                                      │                                       (screens update at once)
 SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST /api/mutation, clientId)
-                                 then app:listAll + app:listTrash + app:getSettings (POST /api/query)
-                                 ──> SnapshotMerger (last write wins per field; the settings fields a waiting
-                                     app:updateSettings sets keep their local value) ──> the database
+                                 then app:listAll + app:listTrash + app:getSettings + app:listProjects
+                                 (POST /api/query)
+                                 ──> ProjectMerger, then SnapshotMerger (last write wins per field; the settings
+                                     fields a waiting app:updateSettings sets keep their local value) ──> the database
 rounds: every 15 s, and at once after a local change
 
 plan health: PlanHealthSync reads app:planHealth ──> meta table
@@ -100,7 +101,7 @@ The code is a Swift package with these application and library targets (test tar
 
 | Target | What it holds |
 |---|---|
-| `DayhandCore` | No UI. Model (`TaskItem`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`, `PlanHealthSync`, `AgentInbox`), agent work (`AcceptanceItem`, `TaskProof`, `PlanHealth`, `HealthSummary`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
+| `DayhandCore` | No UI. Model (`TaskItem`, `Project`, `RepeatRule`, …), rules (`HelmDates`, `Recurrence`, `TaskRules`, `todaySections`, `ReminderRules`, `WhenParser`, `QuickAdd`, `ProjectRules`, `TaskLists`, the history entries of `TaskHistory`), the database (`AppDatabase`, `TaskRepository` and `ProjectStore` on GRDB), sync (`OutboxProcessor`, `SnapshotMerger`, `ProjectMerger`, `ConvexRemote`, `SyncEngine`, `TaskHistorySync`, `PlanHealthSync`, `AgentInbox`), agent work (`AcceptanceItem`, `TaskProof`, `PlanHealth`, `HealthSummary`), sign-in (`PairingInput`, `PairingAPI`, `DeviceTokens`, `KeychainCredentialStore`) and `ReminderPlanner`. |
 | `DayhandUpdates` | Updates on Sparkle: the configuration from `Info.plist`, the update state machine, release notes as text, the install note, and `Updater` (Sparkle's user driver). macOS only, so the core stays free of it. |
 | `DayhandLocalization` | The texts: the string catalog `Localizable.xcstrings` (English is the source and the keys), the `.lproj` folders compiled from it, `tr(…)`, choosing the language (`Localization`) and days and times in the region's style (`DateText`). |
 | `DayhandUI` | The SwiftUI app: `AppModel`, the windows and views, the quick add panel, the notifications, the update button and window. |
@@ -121,7 +122,7 @@ into an app JWT for an hour, kept in memory only and fetched again five minutes 
 changes stay. Network errors and `503` keep the token and retry. **Disconnect** forgets the sign-in on the Mac and
 names `dayhand revoke <deviceId>` for the server.
 
-**Live updates** come from polling every 15 seconds while the app runs (three snapshot queries, well under the
+**Live updates** come from polling every 15 seconds while the app runs (four snapshot queries, well under the
 server's limits). Plan health reads are separate, as described above. The official Swift client (`convex-swift`)
 ships its core as a binary Rust framework, so it is not used:
 the app needs only the Convex HTTP API, as the Android app's `HttpTaskRemote` does.
@@ -137,6 +138,36 @@ in the Keychain, preferences (the shortcut, the window, the update settings, the
 `DAYHAND_DATA_DIR=<folder>` selects another database, and `DAYHAND_CREDENTIALS=memory` keeps the sign-in only until
 the app quits. These overrides do not isolate preferences or notifications; the [sync-loop check](#tests) uses a
 separate app identity for those.
+
+### Projects
+
+Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data and sync (`Project`, `ProjectRules`,
+`ProjectStore`, `ProjectMerger`, `TaskLists`); the sidebar that shows them comes with the next changes.
+
+- A task belongs to at most one project or none; labels stay free tags across projects. A project has a name
+  (1 to 50 characters on one line, not `none`, unique without regard to case among all projects, archived ones
+  included), one of 12 colours, an optional icon (one emoji), a note of up to 2,000 characters, a place in the
+  sidebar, and may be archived. There can be at most 200.
+- Each change writes the row and its mutation in one transaction: `app:addProject`, `app:updateProject` with the
+  fields that changed, `app:deleteProject` with `moveTasksTo` another project or `none` (the tasks move on the Mac
+  at once), and `projectId` in `app:add` and `app:update` (`null` takes a task out of its project). A project made
+  offline is named in the outbox by its local id, which is also its `clientId`; each mutation is sent with the
+  server's id once the `addProject` is answered (with the project's name, which the server also accepts, if it
+  never is). A repeating task's next occurrence keeps its project.
+- The snapshot adds `app:listProjects`; projects merge last write wins per field, as tasks do, and a project deleted
+  on the Mac stays hidden until the server has the deletion. Two Macs that make a project of the same name offline
+  end with one: the second `addProject` is refused as a taken name and its row joins the server's project.
+- A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
+  the project, and the task leaves it on the Mac too; a refused project change is undone by the next snapshot.
+- **Older servers (0.12.x)** have no `app:listProjects` ("Could not find public function"). The snapshot then has
+  no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`): its projects go, adding
+  one says "This server has no projects. Projects need Dayhand server 0.13.0 or later.", and task changes are sent
+  without `projectId`. A project change waiting from before is dropped once, never retried. After the server is
+  updated, the next snapshot turns projects on.
+- Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
+  sets the project and leaves the title, the first one only; a `+word` naming none stays in the title and is
+  reported as unknown, unless it is a date (`+3d`). The cases, shared with the other clients:
+  [`Tests/cases/quickadd-project.json`](Tests/cases/quickadd-project.json).
 
 ## Build and run
 
@@ -216,11 +247,22 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   change is sent later, and that a refused one is repaired.
   The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
-- **Against a real local backend** (`LiveBackendTests`, off by default): pairs with a code, adds with a date
-  phrase, works offline, syncs, and checks every change with a fresh client.
+- **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`): the name, icon, note and order rules, quick
+  add's `+project` with the shared cases, the sidebar counts and the task list of a project, the merge (by server
+  id, `clientId`, or a name made on two Macs), migration v4 from a 0.3.0 database without losing a task. Against the
+  fake server: a project and its tasks written offline arrive in order with the server's project id; projects made
+  or changed elsewhere arrive; a task refused for an archived project is sent again without it; a refused project
+  goes and its tasks stay. With the fake server acting as 0.12 (no projects): tasks sync, no project mutation is
+  sent, projects made offline go, their tasks arrive without them and no change waits or repeats.
+- **Against a real local backend** (`LiveBackendTests` and `LiveProjectsTests`, off by default): pairs with a code,
+  adds with a date phrase, works offline, syncs, and checks every change with a fresh client. `LiveProjectsTests`
+  writes a project and its tasks offline and syncs them; `DAYHAND_LIVE_PROJECTS=yes` for a backend with projects
+  (it then also edits, archives and deletes the project), `no` for a 0.12 one. Each test uses its own pairing code.
 
   ```sh
   DAYHAND_LIVE_SITE=http://127.0.0.1:3211 DAYHAND_LIVE_CODE=<code from dayhand pair> swift test --filter LiveBackend
+  DAYHAND_LIVE_SITE=http://127.0.0.1:3211 DAYHAND_LIVE_PROJECTS_CODE=<another code> DAYHAND_LIVE_PROJECTS=yes \
+    swift test --filter LiveProjects
   ```
 
 - **Updates** (`DayhandUpdatesTests`): the real Sparkle reads appcasts from a server on `127.0.0.1` started by the

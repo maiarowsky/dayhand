@@ -31,6 +31,8 @@ public struct RemoteTask: Hashable, Sendable {
     public var blockedReason: String?
     public var claimedBy: String?
     public var claimExpiresAt: Int64?
+    /// The server id of the task's project (backend 0.13.0); nil = no project, or a server without projects.
+    public var projectId: String?
 
     public init(
         id: String, clientId: String? = nil, title: String, note: String? = nil, dueDate: String? = nil,
@@ -39,7 +41,7 @@ public struct RemoteTask: Hashable, Sendable {
         repeat: RepeatRule? = nil, labels: [String] = [], links: [TaskLink] = [], deletedAt: Int64? = nil,
         checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil, ref: Int? = nil,
         acceptance: [AcceptanceItem] = [], plan: String? = nil, proof: TaskProof? = nil, dependsOn: [String] = [],
-        blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil
+        blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil, projectId: String? = nil
     ) {
         self.id = id
         self.clientId = clientId
@@ -68,17 +70,24 @@ public struct RemoteTask: Hashable, Sendable {
         self.blockedReason = blockedReason
         self.claimedBy = claimedBy
         self.claimExpiresAt = claimExpiresAt
+        self.projectId = projectId
     }
 }
 
-/// Every task (the trash included) and the settings, as one poll of the server sees them.
+/**
+ * Every task (the trash included), the settings and the projects, as one poll of the server sees them. [projects] is
+ * nil for a server without projects (backend 0.12.x and earlier), and every project there is, archived ones
+ * included, for one with them.
+ */
 public struct Snapshot: Hashable, Sendable {
     public var tasks: [RemoteTask]
     public var settings: ReminderSettings
+    public var projects: [RemoteProject]?
 
-    public init(tasks: [RemoteTask], settings: ReminderSettings = ReminderSettings()) {
+    public init(tasks: [RemoteTask], settings: ReminderSettings = ReminderSettings(), projects: [RemoteProject]? = nil) {
         self.tasks = tasks
         self.settings = settings
+        self.projects = projects
     }
 }
 
@@ -102,6 +111,8 @@ public enum RemoteJSON {
     public static let queryPlanHealth = "app:planHealth"
     public static let queryApprovals = "app:listApprovals"
     public static let queryProposals = "app:listProposals"
+    /// Since backend 0.13.0: every project, archived ones included, without counts.
+    public static let queryProjects = "app:listProjects"
 
     /// Arguments of [queryTasks]: everything except the trash, done and archived included.
     public static let tasksArgs: JSONValue = ["includeArchived": true, "includeDone": true]
@@ -114,8 +125,58 @@ public enum RemoteJSON {
      * A snapshot from the results of [queryTasks], [queryTrash] and [querySettings]; missing settings take the
      * backend defaults. A task is in only one of the two lists.
      */
-    public static func snapshot(tasks active: JSONValue, trash: JSONValue, settings: JSONValue) -> Snapshot {
-        Snapshot(tasks: tasks(active) + tasks(trash), settings: Self.settings(settings))
+    public static func snapshot(tasks active: JSONValue, trash: JSONValue, settings: JSONValue, projects: JSONValue? = nil) -> Snapshot {
+        Snapshot(tasks: tasks(active) + tasks(trash), settings: Self.settings(settings), projects: projects.map(Self.projects))
+    }
+
+    public static func projects(_ value: JSONValue) -> [RemoteProject] {
+        (value.array ?? []).compactMap(project)
+    }
+
+    public static func project(_ o: JSONValue) -> RemoteProject? {
+        guard let id = o["id"]?.string, let name = o["name"]?.string else { return nil }
+        return RemoteProject(
+            id: id,
+            clientId: o["clientId"]?.string,
+            name: name,
+            color: o["color"]?.string.flatMap(ProjectColor.init(rawValue:)),
+            icon: o["icon"]?.string,
+            note: o["note"]?.string,
+            position: o["position"]?.double ?? 0,
+            archivedAt: o["archivedAt"]?.int64,
+            createdAt: o["createdAt"]?.int64 ?? 0,
+            updatedAt: o["updatedAt"]?.int64 ?? 0
+        )
+    }
+
+    /**
+     * The server does not have the function at all: Convex answers a call to a function it does not know with an
+     * error of the function ("Could not find public function for 'app:listProjects'"), so an app layer older than
+     * the call (projects need backend 0.13.0) is told apart from a refused call by the message.
+     */
+    public static func isMissingFunction(_ message: String) -> Bool {
+        message.contains("Could not find public function")
+    }
+
+    /// A server without projects refused a task change for its `projectId` argument (Convex's argument validator).
+    public static func refusesProjectField(_ message: String) -> Bool {
+        message.contains("extra field `projectId`")
+    }
+
+    /// Why a project change was not sent: the server has no projects (what `isMissingFunction` also reads as such).
+    public static let noProjectsReason = "Could not find public function: the server has no projects"
+
+    /**
+     * The server refused a task change for its project: archived meanwhile ("Project \"Web\" is archived; restore it
+     * first") or gone ("Project \"Web\" not found"), as `projectTarget` in `convex/lib/projectOps.ts` words it.
+     */
+    public static func refusesProject(_ message: String) -> Bool {
+        message.contains("is archived; restore it first") || (message.contains("Project \"") && message.contains("\" not found"))
+    }
+
+    /// `addProject` was refused because a project that is not archived has the name (`checkNameFree`).
+    public static func nameTakenByActiveProject(_ message: String) -> Bool {
+        message.contains("already exists") && !message.contains("already exists (archived)")
     }
 
     public static func settings(_ value: JSONValue) -> ReminderSettings {
@@ -156,7 +217,8 @@ public enum RemoteJSON {
             dependsOn: o["dependsOn"]?.array?.compactMap(\.string) ?? [],
             blockedReason: o["blockedReason"]?.string,
             claimedBy: o["claimedBy"]?["name"]?.string,
-            claimExpiresAt: o["claimExpiresAt"]?.int64
+            claimExpiresAt: o["claimExpiresAt"]?.int64,
+            projectId: o["projectId"]?.string
         )
     }
 

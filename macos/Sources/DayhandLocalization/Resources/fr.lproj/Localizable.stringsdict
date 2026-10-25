@@ -386,6 +386,22 @@
 			<string>Les tâches restent ici %lld jours, puis sont supprimées définitivement.</string>
 		</dict>
 	</dict>
+	<key>The name must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Le nom doit comporter au plus %lld caractère.</string>
+			<key>other</key>
+			<string>Le nom doit comporter au plus %lld caractères.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -416,6 +432,22 @@
 			<string>La corbeille est vide. Les tâches supprimées y restent %lld jour.</string>
 			<key>other</key>
 			<string>La corbeille est vide. Les tâches supprimées y restent %lld jours.</string>
+		</dict>
+	</dict>
+	<key>There can be at most %lld projects, archived ones included.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Il peut y avoir au plus %lld projet, archivés compris.</string>
+			<key>other</key>
+			<string>Il peut y avoir au plus %lld projets, archivés compris.</string>
 		</dict>
 	</dict>
 	<key>oldest open task %lld days old</key>

@@ -386,6 +386,22 @@
 			<string>Tasks stay here for %lld days, then they are deleted for good.</string>
 		</dict>
 	</dict>
+	<key>The name must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>The name must be at most %lld character.</string>
+			<key>other</key>
+			<string>The name must be at most %lld characters.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -416,6 +432,22 @@
 			<string>The trash is empty. Deleted tasks stay here for %lld day.</string>
 			<key>other</key>
 			<string>The trash is empty. Deleted tasks stay here for %lld days.</string>
+		</dict>
+	</dict>
+	<key>There can be at most %lld projects, archived ones included.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>There can be at most %lld project, archived ones included.</string>
+			<key>other</key>
+			<string>There can be at most %lld projects, archived ones included.</string>
 		</dict>
 	</dict>
 	<key>oldest open task %lld days old</key>

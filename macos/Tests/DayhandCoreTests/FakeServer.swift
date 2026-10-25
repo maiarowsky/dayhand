@@ -5,9 +5,11 @@ import Foundation
  * A Dayhand server in memory, behind the same `HTTPTransport` the app uses: `/auth/pair`, `/auth/token`, and the app
  * functions over `/api/mutation` and `/api/query`, with the backend's rules that sync depends on (one now task,
  * `clientId` idempotency, the trash, `updatedAt`, a repeating task's next occurrence on `complete`), each task's
- * change history (`app:getTask`), the settings (`app:updateSettings`) and the agent reads the Mac shows (plan health,
- * approval requests, proposals). It can go offline, lose an answer after applying a change, and revoke the device.
- * No network, no production.
+ * change history (`app:getTask`), the settings (`app:updateSettings`), the agent reads the Mac shows (plan health,
+ * approval requests, proposals) and the projects of backend 0.13.0 (`app:listProjects`, `addProject`, `updateProject`,
+ * `deleteProject`, a task's `projectId`). With [hasProjects] off it is a 0.12.x server, answering as Convex does: a
+ * project function is not found and a `projectId` argument fails the validator. It can go offline, lose an answer
+ * after applying a change, and revoke the device. No network, no production.
  */
 final class FakeServer: HTTPTransport, @unchecked Sendable {
     static let site = "https://fake.convex.site"
@@ -19,6 +21,10 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     private var tasks: [String: JSONValue] = [:]
     private var order: [String] = []
     private var seenClientIds: [String: JSONValue] = [:]
+    private var projects: [String: JSONValue] = [:]
+    private var nextProjectId = 1
+    /// Backend 0.13.0 or later; off, a 0.12.x server without projects.
+    var hasProjects = true
     /// Task id → its history, oldest first, as `taskEvents` holds it.
     private var events: [String: [JSONValue]] = [:]
     private var nextId = 1
@@ -115,6 +121,25 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
 
     var allTasks: [JSONValue] { lock.locked { order.compactMap { tasks[$0] } } }
 
+    /// The projects in menu order.
+    var allProjects: [JSONValue] { lock.locked { sortedProjects() } }
+
+    func project(named name: String) -> JSONValue? { allProjects.first { $0["name"]?.string == name } }
+
+    /// A project made by someone else (another Mac, the phone, `dayhand project add`).
+    @discardableResult
+    func addProjectElsewhere(_ name: String, archived: Bool = false) -> String {
+        lock.locked {
+            let id = addProject(["name": .string(name)])["project"]?["id"]?.string ?? ""
+            if archived { projects[id] = patched(projects[id], ["archivedAt": .of(clock()), "archived": true]) }
+            return id
+        }
+    }
+
+    func editProjectElsewhere(_ id: String, _ fields: [String: JSONValue]) {
+        lock.locked { projects[id] = patched(projects[id], fields) }
+    }
+
     func task(titled title: String) -> JSONValue? { allTasks.first { $0["title"]?.string == title } }
 
     func mutationsSent() -> [String] {
@@ -153,11 +178,17 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         HTTPReply(status: Self.udfFailed, json: ["status": "error", "errorMessage": .string(message)])
     }
 
+    /// What Convex answers (HTTP 200) for a function the deployment does not have.
+    private func missing(_ path: String) -> HTTPReply {
+        HTTPReply(status: 200, json: ["status": "error", "errorMessage": .string("[Request ID: 1] Server Error\nCould not find public function for '\(path)'.\n")])
+    }
+
     private func query(_ path: String, _ args: JSONValue) -> HTTPReply {
         switch path {
         case "app:listAll": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] == nil }))
         case "app:listTrash": return success(.array(order.compactMap { tasks[$0] }.filter { $0["deletedAt"] != nil }))
         case "app:getSettings": return success(settings)
+        case "app:listProjects": return hasProjects ? success(.array(sortedProjects())) : missing(path)
         case "app:planHealth": return success(planHealth)
         case "app:listApprovals": return success(["approvals": .array(approvals)])
         case "app:listProposals": return success(.array(proposals))
@@ -170,9 +201,21 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
 
     private func mutation(_ path: String, _ args: JSONValue) -> HTTPReply {
         if let clientId = args["clientId"]?.string, let earlier = seenClientIds[clientId] { return success(earlier) }
+        if args["projectId"] != nil, ["app:add", "app:update"].contains(path), !hasProjects {
+            return failure("ArgumentValidationError: Object contains extra field `projectId` that is not in the validator.")
+        }
         let value: JSONValue
         switch path {
+        case "app:addProject", "app:updateProject", "app:deleteProject":
+            guard hasProjects else { return missing(path) }
+            switch projectMutation(path, args) {
+            case .success(let result): value = result
+            case .failure(let refusal): return failure(refusal.message)
+            }
         case "app:add":
+            if let ref = args["projectId"]?.string {
+                guard case .success = projectTarget(ref, current: nil) else { return failure(projectRefusal(ref)) }
+            }
             value = add(args)
         case "app:updateSettings":
             var next = settings.object ?? [:]
@@ -184,10 +227,15 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         default:
             guard let id = args["taskId"]?.string, tasks[id] != nil else { return failure("Task not found") }
             if tasks[id]?["deletedAt"] != nil, path != "app:restore" { return failure("Task is in the trash") }
+            var resolved = args.object ?? [:]
+            if let ref = args["projectId"]?.string {
+                guard case .success(let projectId) = projectTarget(ref, current: tasks[id]?["projectId"]?.string) else { return failure(projectRefusal(ref)) }
+                resolved["projectId"] = projectId.map(JSONValue.string) ?? .null
+            }
             switch path {
             case "app:update":
                 change(id, action: "update") { task in
-                    for (key, field) in args.object ?? [:] where key != "taskId" && key != "clientId" {
+                    for (key, field) in resolved where key != "taskId" && key != "clientId" {
                         task[key] = field.isNull ? nil : field
                     }
                 }
@@ -233,6 +281,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         for key in ["note", "dueDate", "dueTime", "clientId", "status", "resumeNote", "repeat", "labels", "links", "checklist", "reminders"] {
             if let value = args[key] { task[key] = value }
         }
+        if let ref = args["projectId"]?.string, case .success(let projectId?) = projectTarget(ref, current: nil) { task["projectId"] = .string(projectId) }
         tasks[id] = .object(task)
         order.append(id)
         record(id, "create", by: ("app", nil), before: nil, after: .object(task))
@@ -245,7 +294,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         guard let done = tasks[id]?.object, let rule = RepeatRule.parse(done["repeat"]) else { return }
         let today = HelmDates.localDate(clock(), settings["timezone"]?.string)
         guard let occurrence = Recurrence.advance(rule, dueDate: done["dueDate"]?.string, today: today) else { return }
-        var next = done.filter { ["title", "note", "dueTime", "labels", "links", "reminders"].contains($0.key) }
+        var next = done.filter { ["title", "note", "dueTime", "labels", "links", "reminders", "projectId"].contains($0.key) }
         next["dueDate"] = .string(occurrence.dueDate)
         next["repeat"] = occurrence.repeat.wire
         next["checklist"] = .array((done["checklist"]?.array ?? []).map { item in
@@ -282,6 +331,101 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         let before = Dictionary(uniqueKeysWithValues: keys.map { ($0, old[$0] ?? .null) })
         let after = Dictionary(uniqueKeysWithValues: keys.map { ($0, task[$0] ?? .null) })
         record(id, action, by: actor, before: .object(before), after: .object(after))
+    }
+
+    // MARK: Projects (backend 0.13.0, convex/lib/projectOps.ts)
+
+    struct Refusal: Error {
+        let message: String
+    }
+
+    private func sortedProjects() -> [JSONValue] {
+        projects.values.sorted { ($0["position"]?.double ?? 0, $0["id"]?.string ?? "") < ($1["position"]?.double ?? 0, $1["id"]?.string ?? "") }
+    }
+
+    private func nameKey(_ name: String) -> String { ProjectRules.nameKey(name) }
+
+    /// A project by id, or by name in any case.
+    private func findProject(_ ref: String) -> JSONValue? {
+        projects[ref] ?? projects.values.first { nameKey($0["name"]?.string ?? "") == nameKey(ref) }
+    }
+
+    /// The project a task goes to: nil for "none"; an archived project takes only the task already in it.
+    private func projectTarget(_ ref: String, current: String?) -> Result<String?, Refusal> {
+        if nameKey(ref) == ProjectRules.noProject { return .success(nil) }
+        guard let project = findProject(ref), let id = project["id"]?.string else { return .failure(Refusal(message: "Project \"\(ref)\" not found")) }
+        if project["archived"]?.bool == true, id != current {
+            return .failure(Refusal(message: "Project \"\(project["name"]?.string ?? "")\" is archived; restore it first"))
+        }
+        return .success(id)
+    }
+
+    private func projectRefusal(_ ref: String) -> String {
+        if case .failure(let refusal) = projectTarget(ref, current: nil) { return refusal.message }
+        return "refused"
+    }
+
+    private func patched(_ project: JSONValue?, _ fields: [String: JSONValue]) -> JSONValue {
+        var next = project?.object ?? [:]
+        for (key, value) in fields { next[key] = value.isNull ? nil : value }
+        next["updatedAt"] = .of(max(clock(), (next["updatedAt"]?.int64 ?? 0) + 1))
+        return .object(next)
+    }
+
+    private func addProject(_ args: JSONValue) -> JSONValue {
+        let id = "prj\(nextProjectId)"
+        nextProjectId += 1
+        let last = projects.values.compactMap { $0["position"]?.double }.max() ?? 0
+        var project: [String: JSONValue] = [
+            "id": .string(id), "name": args["name"] ?? "", "position": .number(max(last, 0) + 1024), "archived": false,
+            "createdAt": .of(clock()), "updatedAt": .of(clock()),
+        ]
+        for key in ["color", "icon", "note", "clientId"] {
+            if let value = args[key] { project[key] = value }
+        }
+        projects[id] = .object(project)
+        return ["project": .object(project), "moved": [], "skipped": []]
+    }
+
+    private func projectMutation(_ path: String, _ args: JSONValue) -> Result<JSONValue, Refusal> {
+        if path == "app:addProject" {
+            let name = args["name"]?.string ?? ""
+            if let taken = projects.values.first(where: { nameKey($0["name"]?.string ?? "") == nameKey(name) }) {
+                let archived = taken["archived"]?.bool == true ? " (archived)" : ""
+                return .failure(Refusal(message: "A project named \"\(taken["name"]?.string ?? "")\" already exists\(archived)"))
+            }
+            return .success(addProject(args))
+        }
+        guard let ref = args["projectId"]?.string, let project = findProject(ref), let id = project["id"]?.string else {
+            return .failure(Refusal(message: "Project \"\(args["projectId"]?.string ?? "")\" not found"))
+        }
+        if path == "app:updateProject" {
+            var fields: [String: JSONValue] = [:]
+            for key in ["name", "color", "icon", "note", "position"] {
+                if let value = args[key] { fields[key] = value }
+            }
+            if let archived = args["archived"]?.bool {
+                fields["archived"] = .bool(archived)
+                fields["archivedAt"] = archived ? .of(clock()) : .null
+            }
+            projects[id] = patched(project, fields)
+            return .success(projects[id] ?? .null)
+        }
+        let moveTo = args["moveTasksTo"]?.string
+        var target: String?
+        if let moveTo {
+            guard case .success(let resolved) = projectTarget(moveTo, current: nil) else { return .failure(Refusal(message: projectRefusal(moveTo))) }
+            target = resolved
+        }
+        let owned = order.filter { tasks[$0]?["projectId"]?.string == id }
+        if !owned.isEmpty, moveTo == nil {
+            return .failure(Refusal(message: "Project \"\(project["name"]?.string ?? "")\" has \(owned.count) tasks: pass moveTasksTo, a project or \"none\""))
+        }
+        for taskId in owned {
+            change(taskId, action: "update") { $0["projectId"] = target.map(JSONValue.string) }
+        }
+        projects[id] = nil
+        return .success(["project": project, "moved": .array(owned.map(JSONValue.string))])
     }
 
     private func record(_ id: String, _ action: String, by actor: (String, String?), before: JSONValue?, after: JSONValue?) {

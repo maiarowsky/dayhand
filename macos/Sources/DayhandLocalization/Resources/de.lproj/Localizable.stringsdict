@@ -386,6 +386,22 @@
 			<string>Aufgaben bleiben hier %lld Tage und werden dann endgültig gelöscht.</string>
 		</dict>
 	</dict>
+	<key>The name must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Der Name darf höchstens %lld Zeichen lang sein.</string>
+			<key>other</key>
+			<string>Der Name darf höchstens %lld Zeichen lang sein.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -416,6 +432,22 @@
 			<string>Der Papierkorb ist leer. Gelöschte Aufgaben bleiben hier %lld Tag.</string>
 			<key>other</key>
 			<string>Der Papierkorb ist leer. Gelöschte Aufgaben bleiben hier %lld Tage.</string>
+		</dict>
+	</dict>
+	<key>There can be at most %lld projects, archived ones included.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>Es ist höchstens %lld Projekt möglich, archivierte eingeschlossen.</string>
+			<key>other</key>
+			<string>Es sind höchstens %lld Projekte möglich, archivierte eingeschlossen.</string>
 		</dict>
 	</dict>
 	<key>oldest open task %lld days old</key>

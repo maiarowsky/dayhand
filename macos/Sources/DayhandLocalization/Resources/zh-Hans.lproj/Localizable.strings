@@ -270,6 +270,8 @@
 	<string>每月</string>
 	<key>Morning summary</key>
 	<string>早间摘要</string>
+	<key>Move the tasks to another project.</key>
+	<string>请将任务移到其他项目。</string>
 	<key>Move to Trash</key>
 	<string>移到废纸篓</string>
 	<key>Move “%@” to the trash?</key>
@@ -460,6 +462,8 @@
 	<string>这不是服务器地址。格式类似 https://&lt;name&gt;.convex.site。</string>
 	<key>That is not a time.</key>
 	<string>这不是时间。</string>
+	<key>That project no longer exists.</key>
+	<string>该项目已不存在。</string>
 	<key>That version is older than this one, so it was not installed.</key>
 	<string>该版本比当前版本旧，因此没有安装。</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
@@ -482,10 +486,16 @@
 	<string>截止日期</string>
 	<key>The history starts once this task reaches the server.</key>
 	<string>任务同步到服务器后才开始记录历史。</string>
+	<key>The icon must be a single emoji.</key>
+	<string>图标必须是单个表情符号。</string>
 	<key>The last day of the month</key>
 	<string>每月最后一天</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>无法读取新版本列表。请稍后重试。</string>
+	<key>The name must be one line.</key>
+	<string>名称只能有一行。</string>
+	<key>The name must not be empty.</key>
+	<string>名称不能为空。</string>
 	<key>The note is too long.</key>
 	<string>备注太长。</string>
 	<key>The reminders are not valid.</key>
@@ -520,12 +530,16 @@
 	<string>清单项目太多，或某个项目太长。</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>标签太多，或某个标签太长。</string>
+	<key>There is already a project named “%@”.</key>
+	<string>已有名为“%@”的项目。</string>
 	<key>These ring only when the task has a time.</key>
 	<string>仅当任务设有时间时才会提醒。</string>
 	<key>They could not be read: %@</key>
 	<string>无法读取：%@</string>
 	<key>This Mac</key>
 	<string>这台 Mac</string>
+	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
+	<string>此服务器不支持项目。项目需要 Dayhand 服务器 0.13.0 或更高版本。</string>
 	<key>This version</key>
 	<string>当前版本</string>
 	<key>Tick %@</key>
@@ -732,5 +746,9 @@
 	<string>直到 %@</string>
 	<key>yes</key>
 	<string>是</string>
+	<key>“%@” is archived; restore it first.</key>
+	<string>“%@”已归档，请先恢复。</string>
+	<key>“none” is reserved: it means tasks without a project.</key>
+	<string>“none” 为保留名称，表示没有项目的任务。</string>
 </dict>
 </plist>

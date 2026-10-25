@@ -482,6 +482,26 @@
 			<string>Zadania zostają tu przez %lld dnia, potem znikają na zawsze.</string>
 		</dict>
 	</dict>
+	<key>The name must be at most %lld characters.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Nazwa może mieć najwyżej %lld znaki.</string>
+			<key>many</key>
+			<string>Nazwa może mieć najwyżej %lld znaków.</string>
+			<key>one</key>
+			<string>Nazwa może mieć najwyżej %lld znak.</string>
+			<key>other</key>
+			<string>Nazwa może mieć najwyżej %lld znaku.</string>
+		</dict>
+	</dict>
 	<key>The title must be 1 to %lld characters.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -520,6 +540,26 @@
 			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dzień.</string>
 			<key>other</key>
 			<string>Kosz jest pusty. Usunięte zadania zostają tu przez %lld dnia.</string>
+		</dict>
+	</dict>
+	<key>There can be at most %lld projects, archived ones included.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>Mogą być najwyżej %lld projekty, łącznie z zarchiwizowanymi.</string>
+			<key>many</key>
+			<string>Może być najwyżej %lld projektów, łącznie z zarchiwizowanymi.</string>
+			<key>one</key>
+			<string>Może być najwyżej %lld projekt, łącznie z zarchiwizowanymi.</string>
+			<key>other</key>
+			<string>Może być najwyżej %lld projektu, łącznie z zarchiwizowanymi.</string>
 		</dict>
 	</dict>
 	<key>oldest open task %lld days old</key>

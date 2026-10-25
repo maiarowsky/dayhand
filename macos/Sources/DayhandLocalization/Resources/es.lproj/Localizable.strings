@@ -270,6 +270,8 @@
 	<string>Cada mes</string>
 	<key>Morning summary</key>
 	<string>Resumen matinal</string>
+	<key>Move the tasks to another project.</key>
+	<string>Mueve las tareas a otro proyecto.</string>
 	<key>Move to Trash</key>
 	<string>Mover a la papelera</string>
 	<key>Move “%@” to the trash?</key>
@@ -460,6 +462,8 @@
 	<string>Eso no es una dirección de servidor. Tiene esta forma: https://&lt;name&gt;.convex.site.</string>
 	<key>That is not a time.</key>
 	<string>Eso no es una hora.</string>
+	<key>That project no longer exists.</key>
+	<string>Ese proyecto ya no existe.</string>
 	<key>That version is older than this one, so it was not installed.</key>
 	<string>Esa versión es más antigua que esta, así que no se instaló.</string>
 	<key>The Keychain could not be read, so Dayhand starts without a server.</key>
@@ -482,10 +486,16 @@
 	<string>La fecha de vencimiento</string>
 	<key>The history starts once this task reaches the server.</key>
 	<string>El historial empieza cuando esta tarea llega al servidor.</string>
+	<key>The icon must be a single emoji.</key>
+	<string>El icono debe ser un solo emoji.</string>
 	<key>The last day of the month</key>
 	<string>El último día del mes</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>No se pudo leer la lista de versiones nuevas. Inténtalo más tarde.</string>
+	<key>The name must be one line.</key>
+	<string>El nombre debe ocupar una sola línea.</string>
+	<key>The name must not be empty.</key>
+	<string>El nombre no puede estar vacío.</string>
 	<key>The note is too long.</key>
 	<string>La nota es demasiado larga.</string>
 	<key>The reminders are not valid.</key>
@@ -520,12 +530,16 @@
 	<string>Hay demasiados elementos en la lista o alguno es demasiado largo.</string>
 	<key>There are too many labels, or one is too long.</key>
 	<string>Hay demasiadas etiquetas o alguna es demasiado larga.</string>
+	<key>There is already a project named “%@”.</key>
+	<string>Ya existe un proyecto llamado «%@».</string>
 	<key>These ring only when the task has a time.</key>
 	<string>Solo suenan si la tarea tiene hora.</string>
 	<key>They could not be read: %@</key>
 	<string>No se pudieron leer: %@</string>
 	<key>This Mac</key>
 	<string>Este Mac</string>
+	<key>This server has no projects. Projects need Dayhand server 0.13.0 or later.</key>
+	<string>Este servidor no tiene proyectos. Los proyectos necesitan el servidor de Dayhand 0.13.0 o posterior.</string>
 	<key>This version</key>
 	<string>Esta versión</string>
 	<key>Tick %@</key>
@@ -732,5 +746,9 @@
 	<string>hasta el %@</string>
 	<key>yes</key>
 	<string>sí</string>
+	<key>“%@” is archived; restore it first.</key>
+	<string>«%@» está archivado; restáuralo primero.</string>
+	<key>“none” is reserved: it means tasks without a project.</key>
+	<string>«none» está reservado: significa tareas sin proyecto.</string>
 </dict>
 </plist>
