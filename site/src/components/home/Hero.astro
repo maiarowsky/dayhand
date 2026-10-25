@@ -1,5 +1,5 @@
 ---
-// The first screen: what Dayhand is, that it is free, the two ways in, and the apps themselves.
+// The first screen: what Dayhand is, that it is free, the first step on the command line, and the apps themselves.
 import Screenshot from "../Screenshot.astro";
 import { DOCS_PATH } from "../../site";
 import macLight from "../../assets/screens/mac-today-light.webp";
@@ -13,12 +13,19 @@ import phoneDark from "../../assets/screens/android-today-dark.webp";
     <a class="pill" href="#open-source">Free and open source <span>Apache-2.0</span></a>
     <h1 id="hero-title">A day plan for one-person businesses and the AI agents that work for them.</h1>
     <p class="lead">
-      Tasks, a calendar and reminders on your phone, your Mac and your Linux desktop, offline first. Your agents plan
-      and finish work over MCP or the command line and ask you before a risky step, on a server you run yourself.
+      Tasks, a calendar and reminders on your phone, your Mac and your Linux desktop. Your AI agents work on the same
+      plan under rules you set, and ask you before a risky step.
     </p>
     <div class="actions">
-      <a class="button primary" href="#download">Download</a>
+      <a class="button primary" href="#get-dayhand">Get started</a>
       <a class="button" href={DOCS_PATH}>Read the docs</a>
+    </div>
+    <div class="quickstart">
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that install the command line and start your own server"><code>npm i -g dayhand
+dayhand server start</code></pre>
+      <a class="more" href={`${DOCS_PATH}getting-started/`}>
+        Quick start, about 10 minutes <span aria-hidden="true">→</span>
+      </a>
     </div>
     <ul class="reassure" role="list">
       <li>Free to run yourself</li>
@@ -46,6 +53,6 @@ import phoneDark from "../../assets/screens/android-today-dark.webp";
       eager
       alt="Dayhand for Android showing the same Today: a card that sums up the plan, with one overdue task, one approval request, one blocked task and one proposal, then the overdue invoices, the task being worked on now and the tasks for today with their times."
     />
-    <figcaption class="showcase-caption">Dayhand for macOS and Android, with the same made-up plan.</figcaption>
+    <figcaption class="showcase-caption">The real Dayhand for macOS and Android, on the same sample plan.</figcaption>
   </figure>
 </section>

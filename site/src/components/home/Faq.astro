@@ -1,6 +1,6 @@
 ---
 // Short answers to what people ask before they install. Native details elements, so it works without scripts.
-import { DOCS_PATH, repoFile } from "../../site";
+import { DOCS_PATH } from "../../site";
 ---
 
 <section id="faq" aria-labelledby="faq-title">
@@ -11,7 +11,7 @@ import { DOCS_PATH, repoFile } from "../../site";
       <p>
         Yes. Every app, the server and the command line are free, with no trial. A server on your computer costs
         nothing, and so does a server on Convex's Free plan; its limits are in the
-        <a href={repoFile("docs/deploy.md")}>deployment guide</a>. The one paid option planned is
+        <a href={`${DOCS_PATH}deploy/`}>deployment guide</a>. The one paid option planned is
         <a href="#dayhand-cloud">Dayhand Cloud</a>, a server we run for you for $5 a month; it is not open yet.
       </p>
     </details>
@@ -48,6 +48,16 @@ import { DOCS_PATH, repoFile } from "../../site";
       </p>
     </details>
     <details>
+      <summary>How is this different from a to-do app with an MCP connector?</summary>
+      <p>
+        Agents do the work in Dayhand, not only read the list. An agent claims a task, so no other agent can change it
+        while it works; it asks you on your phone before a step that cannot be undone; and a task with acceptance
+        criteria is done only when they are met and the agent says what it did. A policy per agent key allows, asks for
+        or denies each tool, every change in a task's history is signed with who made it, and the plan lives on a
+        server you run yourself.
+      </p>
+    </details>
+    <details>
       <summary>Can an agent do something I did not allow?</summary>
       <p>
         Inside Dayhand, a policy per agent key allows, asks for or denies each tool, risky steps wait for your answer,
@@ -80,15 +90,6 @@ import { DOCS_PATH, repoFile } from "../../site";
       <summary>Can I see my tasks in Google Calendar?</summary>
       <p>
         Yes, through a read-only calendar feed that any calendar app can subscribe to. Changes are made in Dayhand.
-      </p>
-    </details>
-    <details>
-      <summary>Why do some names still say helm?</summary>
-      <p>
-        Dayhand was called Helm until backend 0.9.0 and CLI 0.10.0, and the repository moved from
-        <code>maiarowsky/helm</code> to <code>maiarowsky/dayhand</code>; old links redirect. The old <code>hlm</code>
-        command still works with a warning, and a few names stored in data stay as they were:
-        <a href={repoFile("docs/rename.md")}>what changed</a>.
       </p>
     </details>
     <details>

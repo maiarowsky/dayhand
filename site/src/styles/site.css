@@ -191,6 +191,9 @@ h3 { font-size: var(--step-1); }
   font-size: var(--step--1);
 }
 .reassure li::before { content: "✓ "; color: var(--ok); }
+/* The first step under the buttons: the two commands of the Quick start, then the link to it. */
+.quickstart { display: grid; gap: var(--space-xs); max-inline-size: 28rem; }
+.quickstart .more { justify-self: start; font-weight: 600; }
 
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-s); }
 .button {
@@ -372,7 +375,7 @@ pre.code {
 .downloads .card .meta, .downloads .card .later { color: var(--muted); }
 .card.ios { background: transparent; border-style: dashed; }
 /* A command and its Copy button share one low row; a long command wraps at its spaces instead of hiding. */
-.downloads .code-wrap {
+:is(.downloads, .quickstart) .code-wrap {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   column-gap: var(--space-2xs);
@@ -380,11 +383,11 @@ pre.code {
   border-radius: var(--radius-inner);
   background: var(--code-bg);
 }
-.downloads .code-wrap pre { padding-block-start: var(--space-xs); background: none; white-space: pre-wrap; }
+:is(.downloads, .quickstart) .code-wrap pre { padding-block-start: var(--space-xs); background: none; white-space: pre-wrap; }
 @supports (text-indent: 2ch hanging each-line) {
-  .downloads .code-wrap pre { text-indent: 2ch hanging each-line; }
+  :is(.downloads, .quickstart) .code-wrap pre { text-indent: 2ch hanging each-line; }
 }
-.downloads .copy { position: relative; inset: auto; line-height: 1.4; }
+:is(.downloads, .quickstart) .copy { position: relative; inset: auto; line-height: 1.4; }
 /* Short names in a sentence keep the line height of the text around them. */
 :is(.downloads, .status) :not(pre) > code { line-height: 1; }
 
