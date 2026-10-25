@@ -27,9 +27,14 @@ export type ProjectList = { result: Project[]; noProject: { open: number; overdu
 
 export const projectKey = (name: string) => name.trim().normalize("NFC").toLowerCase();
 export const projectToken = (name: string) => name.replace(/\s+/g, "-");
-export const findProject = (projects: Project[], ref: string) => projects.find((p) => p.id === ref || projectKey(p.name) === projectKey(ref));
+export const findProject = (projects: Project[], ref: string) => projects.find((p) => p.id === ref) ?? projects.find((p) => projectKey(p.name) === projectKey(ref));
 /** Quick add accepts a hyphen in place of a space, never creates from an unknown token. */
-export const tokenProject = (projects: Project[], token: string) => projects.find((p) => !p.archived && projectKey(projectToken(p.name)) === projectKey(token));
+export function tokenProject(projects: Project[], token: string): Project | undefined {
+  const exact = findProject(projects, token);
+  if (exact) return exact.archived ? undefined : exact;
+  const matches = projects.filter((p) => !p.archived && projectKey(projectToken(p.name)) === projectKey(token));
+  return matches.length === 1 ? matches[0] : undefined;
+}
 
 export async function requireProjects(ctx: RunContext): Promise<void> {
   if (!isCompatible((await (await ctx.client()).initialize()).version, PROJECT_MIN_SERVER_VERSION)) throw usageError(PROJECT_NEEDS);

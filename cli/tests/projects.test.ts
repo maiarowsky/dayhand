@@ -129,7 +129,7 @@ describe("projects", () => {
     expect(titles(await dayhandJson(key, ["list", "-p", "none"]))).toEqual(["Menu", "Loose"]);
   });
 
-  test("Backlog creates only an explicit missing project; previews create nothing and config is just a hint", async () => {
+  test("Backlog creates only an explicit missing project and previews create nothing", async () => {
     const { key } = await newUser();
     const dir = folder("Shop");
     const preview = await dayhand(key, ["backlog", "import", dir, "--project", "Shop", "--dry-run", "--json"]);
@@ -148,9 +148,25 @@ describe("projects", () => {
     const fresh = await newUser();
     const unassigned = await dayhand(fresh.key, ["backlog", "import", dir, "--json"]);
     expect(unassigned.code).toBe(0);
-    expect(JSON.parse(unassigned.stderr.trim())).toMatchObject({ warning: { code: "backlog_project", message: expect.stringContaining('add --project "Shop"') } });
+    expect(unassigned.stderr).toBe("");
     expect(await names(fresh.key)).toEqual([]);
     expect((await dayhandJson(fresh.key, ["list", "-p", "none"])).total).toBe(1);
+  });
+
+  test("project IDs outrank another project's name in both reordering and Backlog assignment", async () => {
+    const { key } = await newUser();
+    const original = (await dayhandJson(key, ["project", "add", "Original"])).project;
+    const shadow = (await dayhandJson(key, ["project", "add", original.id])).project;
+    await dayhandJson(key, ["project", "add", "Third"]);
+    await dayhandJson(key, ["project", "edit", shadow.id, "--first"]);
+    await dayhandJson(key, ["project", "edit", "Third", "--before", original.id]);
+    expect(await names(key)).toEqual([original.id, "Third", "Original"]);
+    await dayhandJson(key, ["project", "edit", original.id, "--before", shadow.id]);
+    expect(await names(key)).toEqual(["Original", original.id, "Third"]);
+    await dayhandJson(key, ["project", "edit", shadow.id, "--first"]);
+    expect((await dayhandJson(key, ["backlog", "import", folder(), "--project", original.id])).created).toBe(1);
+    expect(titles(await dayhandJson(key, ["list", "-p", original.id]))).toEqual(["Imported menu"]);
+    expect(titles(await dayhandJson(key, ["list", "-p", shadow.id]))).toEqual([]);
   });
 
   test("ICS and JSON imports use the fallback project only for tasks without one in the file", async () => {
@@ -184,6 +200,8 @@ describe("projects", () => {
     expect(active.stdout.trim().split("\n")).toEqual(["Strona piekarni", "none", ":4"]);
     const ordered = await dayhand(key, ["__complete", "project", "edit", "Strona piekarni", "--before", ""]);
     expect(ordered.stdout.trim().split("\n")).toEqual(["Strona piekarni", "Old", ":4"]);
+    const exported = await dayhand(key, ["__complete", "backlog", "export", "--project", ""]);
+    expect(exported.stdout.trim().split("\n")).toEqual(["Strona piekarni", ":4"]);
   });
 
   test("human names cost one catalog call per command, JSON and default plain cost none", async () => {
@@ -214,6 +232,8 @@ describe("projects", () => {
   test("TUI quick add and / +project work through the live controller", async () => {
     const { key } = await newUser();
     const project = (await dayhandJson(key, ["project", "add", "Strona piekarni"])).project;
+    await dayhandJson(key, ["project", "add", "Strona piekarni extra"]);
+    await dayhandJson(key, ["add", "Prefix", "-p", "Strona piekarni extra"]);
     await dayhandJson(key, ["add", "Loose"]);
     const ui = new Controller({ api: makeApi(new DayhandClient({ url: helm().siteUrl, key })), view: "today", columns: 120, rows: 24 });
     try {
@@ -225,11 +245,32 @@ describe("projects", () => {
       ui.key("/"); ui.paste("+strona-piekarni"); ui.key("enter");
       expect(rowsText(ui.frame().rows)).toContain("Menu");
       expect(rowsText(ui.frame().rows)).not.toContain("Loose");
+      expect(rowsText(ui.frame().rows)).not.toContain("Prefix");
       ui.key("/"); ui.key("C-u"); ui.key("esc");
       ui.key("a"); ui.paste("Keep +unknown");
       expect(rowsText(ui.frame().rows)).toContain("? +unknown");
       ui.key("enter"); await ui.idle();
       expect(titles(await dayhandJson(key, ["list", "-p", "none"]))).toContain("Keep +unknown");
+    } finally { ui.stop(); }
+  });
+
+  test("live quick add prefers a canonical name and preserves ambiguous shorthand without assignment", async () => {
+    const { key } = await newUser();
+    for (const name of ["Web shop", "Web-shop", "Blue sky", "Blue  sky"]) await dayhandJson(key, ["project", "add", name]);
+    const ui = new Controller({ api: makeApi(new DayhandClient({ url: helm().siteUrl, key })), view: "today", columns: 120, rows: 24 });
+    try {
+      await ui.refresh();
+      ui.key("a"); ui.paste("Exact +WEB-shop"); ui.key("enter"); await ui.idle();
+      expect(titles(await dayhandJson(key, ["list", "-p", "Web-shop"]))).toEqual(["Exact"]);
+      expect(titles(await dayhandJson(key, ["list", "-p", "Web shop"]))).toEqual([]);
+      ui.key("a"); ui.paste("Ambiguous +Blue-sky");
+      expect(rowsText(ui.frame().rows)).toContain("? +Blue-sky");
+      ui.key("enter"); await ui.idle();
+      await dayhandJson(key, ["project", "archive", "Web-shop"]);
+      await ui.refresh();
+      ui.key("a"); ui.paste("Archived +Web-shop"); ui.key("enter"); await ui.idle();
+      expect(titles(await dayhandJson(key, ["list", "-p", "none"]))).toEqual(["Ambiguous +Blue-sky", "Archived +Web-shop"]);
+      expect(titles(await dayhandJson(key, ["list", "-p", "Web shop"]))).toEqual([]);
     } finally { ui.stop(); }
   });
 });

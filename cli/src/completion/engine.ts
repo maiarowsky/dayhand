@@ -95,7 +95,7 @@ export async function complete(words: string[], sources: Sources): Promise<Compl
     else if (!command) return { candidates: [], directive: NO_FILES };
     else positional++;
   }
-  if (pending) return optionValues(pending, current, sources);
+  if (pending) return optionValues(pending, current, sources, command);
   if (current.startsWith("-")) return filtered(current, optionCandidates(command));
   if (!command) return filtered(current, topLevel(sources.aliases));
   const candidates = positional === 0 && command.subcommands ? command.subcommands.map(describe) : [];
@@ -145,7 +145,7 @@ function commaList(current: string, values: readonly string[]): Completion {
   return filtered(current, candidates, NO_FILES | NO_SPACE);
 }
 
-async function optionValues(option: OptSpec, current: string, sources: Sources): Promise<Completion> {
+async function optionValues(option: OptSpec, current: string, sources: Sources, command: CommandSpec | undefined): Promise<Completion> {
   if (option.choices) return filtered(current, words(option.choices));
   switch (longName(option)) {
     case "--due":
@@ -154,7 +154,7 @@ async function optionValues(option: OptSpec, current: string, sources: Sources):
       return filtered(current, words(DATE_WORDS));
     case "--project":
     case "--move-tasks-to":
-      return filtered(current, words([...(await sources.hints()).projects?.filter((p) => !p.archived).map((p) => p.name) ?? [], "none"]));
+      return filtered(current, words([...(await sources.hints()).projects?.filter((p) => !p.archived).map((p) => p.name) ?? [], ...(command?.tools.includes("export_backlog") ? [] : ["none"])]));
     case "--before":
     case "--after":
       return filtered(current, words((await sources.hints()).projects?.map((p) => p.name) ?? []));

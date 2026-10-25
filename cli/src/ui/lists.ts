@@ -14,7 +14,7 @@ export type Day = { date: string; isToday: boolean; tasks: Task[] };
 export function matches(task: Task, filter: string): boolean {
   const tokens = filter.trim().split(/\s+/);
   const projects = tokens.filter((token) => token.startsWith("+"));
-  const projectMatches = projects.every((token) => projectKey(token) === "+none" ? !task.projectId : task.project !== undefined && projectKey(projectToken(task.project)).includes(projectKey(token.slice(1))));
+  const projectMatches = projects.every((token) => task.project !== undefined && projectKey(projectToken(task.project)) === projectKey(token.slice(1)));
   if (!projectMatches) return false;
   const needle = tokens.filter((token) => !token.startsWith("+")).join(" ").toLowerCase();
   if (!needle) return true;

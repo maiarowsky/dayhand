@@ -13,10 +13,10 @@ Projects need backend 0.13.0 or later; other features keep their previous minimu
   when deleting a project with tasks. Assigning several tasks requires confirmation.
 - `-p, --project` on add, edit, list, board and today; `edit --clear-project`.
 - `--project` on imports and Backlog.md import/export. Backlog import creates a missing named
-  project only when explicitly requested; config.yml alone only supplies a hint.
+  project only when explicitly requested.
 - `--fields project,projectId`, human `+Project` markers and project-name completion.
 - `dayhand ui` quick add recognizes `+project` (hyphens may replace spaces); unknown tokens stay
-  in the title. The `/` filter accepts `+project` and `+none`.
+  in the title. The `/` filter accepts an exact `+project` token in any case.
 
 ### Unchanged
 

@@ -25,23 +25,23 @@ async function list(ctx: RunContext, _args: unknown, opts: Opts): Promise<Outcom
 
 /** --before/--after use the middle between neighbours; first/last leave a normal step. */
 async function position(ctx: RunContext, ref: string, opts: Opts): Promise<number | undefined> {
-  const selected = ["before", "after", "first", "last"].filter((key) => opts[key] !== undefined);
-  if (selected.length > 1) throw usageError("Use only one of --before, --after, --first or --last");
-  if (!selected.length) return undefined;
   const projects = (await tool<ProjectList>(ctx, "list_projects", { includeArchived: true })).result;
   const current = findProject(projects, ref);
-  if (!current) throw new CliError("not_found", `Project "${ref}" not found`);
+  if (!current) return undefined;
   const others = projects.filter((p) => p.id !== current.id);
-  if (!others.length) return 0;
-  if (opts.first) return others[0]!.position - POSITION_STEP;
-  if (opts.last) return others.at(-1)!.position + POSITION_STEP;
+  if (opts.first) return others.length ? others[0]!.position - POSITION_STEP : 0;
+  if (opts.last) return others.length ? others.at(-1)!.position + POSITION_STEP : 0;
   const targetRef = (opts.before ?? opts.after) as string;
   const target = findProject(projects, targetRef);
   if (!target) throw new CliError("not_found", `Project "${targetRef}" not found`);
   if (target.id === current.id) throw usageError("Cannot move a project relative to itself");
   const index = others.findIndex((p) => p.id === target.id);
   const neighbour = others[index + (opts.before ? -1 : 1)];
-  return neighbour ? target.position / 2 + neighbour.position / 2 : target.position + (opts.before ? -POSITION_STEP : POSITION_STEP);
+  const placed = neighbour ? target.position / 2 + neighbour.position / 2 : target.position + (opts.before ? -POSITION_STEP : POSITION_STEP);
+  if (neighbour && (placed <= Math.min(target.position, neighbour.position) || placed >= Math.max(target.position, neighbour.position))) {
+    throw usageError("Cannot reorder projects: no representable position remains between these neighbours");
+  }
+  return placed;
 }
 
 function metadata(opts: Opts): Record<string, unknown> {
@@ -101,9 +101,11 @@ const commands: CommandSpec[] = [
     ], tools: ["update_project", "list_projects"], examples: ["dayhand project edit Home --first", 'dayhand project edit Home --name "New home" --clear-icon'],
     run: async (ctx, args, opts) => {
       const input = metadata(opts);
-      const placed = await position(ctx, args.project as string, opts);
+      const selected = ["before", "after", "first", "last"].filter((key) => opts[key] !== undefined);
+      if (selected.length > 1) throw usageError("Use only one of --before, --after, --first or --last");
+      if (!Object.keys(input).length && !selected.length) throw usageError("Nothing to change: give at least one option");
+      const placed = selected.length ? await position(ctx, args.project as string, opts) : undefined;
       if (placed !== undefined) input.position = placed;
-      if (!Object.keys(input).length) throw usageError("Nothing to change: give at least one option");
       const value = await tool<Project>(ctx, "update_project", { projectId: args.project, ...input, clientId: ctx.clientId() });
       return { value, view: { kind: "text", text: `Updated ${line(value)}` } };
     },

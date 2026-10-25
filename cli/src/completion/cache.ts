@@ -24,7 +24,8 @@ export async function taskHints(io: Io, cacheDir: string, configDir: string, con
   try {
     const quiet = () => {};
     const connection = await resolveConnection(flags, io.env, config, quiet, credentialStores(io.env, configDir, quiet));
-    const file = path.join(cacheDir, `tasks-${createHash("sha256").update(connection.url).digest("hex").slice(0, 16)}.json`);
+    const digest = createHash("sha256").update(JSON.stringify([connection.url, connection.key])).digest("hex");
+    const file = path.join(cacheDir, `tasks-${digest}.json`);
     const cached = read(file);
     if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS && Date.now() >= cached.fetchedAt) return cached;
     const client = new DayhandClient(connection, io.fetch, undefined, FETCH_TIMEOUT_MS);

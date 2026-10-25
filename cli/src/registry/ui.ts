@@ -15,7 +15,7 @@ export const uiCommands: CommandSpec[] = [
     name: "ui",
     summary: "Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)",
     description:
-      "Quick add recognizes +project (hyphens may replace spaces) and #labels; unknown +tokens stay in the title. The / filter accepts +project or +none. Projects need backend 0.13.0. " +
+      "Quick add recognizes +project (hyphens may replace spaces) and #labels; unknown +tokens stay in the title. The / filter accepts an exact +project token in any case. Projects need backend 0.13.0. " +
       "Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. " +
       "q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES " +
       `or LANG, overridden by DAYHAND_LANG or --lang) when it is one of ${LANGUAGES.join(", ")}, else English; ` +

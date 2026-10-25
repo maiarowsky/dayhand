@@ -1,20 +1,6 @@
 // A Backlog folder names a project, but only an explicit --project assigns it.
 import { findProject, projectKey, readProjects, requireProjects, type Project } from "../projects.js";
 import type { RunContext } from "../registry/types.js";
-import type { BacklogFile } from "./folder.js";
-
-/** Same single-line scalars that Backlog config files normally use; hints only. */
-export function configProject(files: BacklogFile[]): string | undefined {
-  const config = files.find((file) => /^(backlog\.)?config\.yml$/i.test(file.path));
-  const raw = /^project_name:\s*(.+)$/m.exec(config?.content ?? "")?.[1]?.trim();
-  if (!raw) return undefined;
-  if (raw.startsWith('"')) {
-    try { const value: unknown = JSON.parse(raw); return typeof value === "string" ? value : undefined; }
-    catch { return undefined; }
-  }
-  if (raw.startsWith("'") && raw.endsWith("'")) return raw.slice(1, -1).replace(/''/g, "'");
-  return raw.replace(/\s+#.*$/, "").trim() || undefined;
-}
 
 export async function backlogProject(ctx: RunContext, name: string): Promise<{ projectId?: string; preview?: string }> {
   await requireProjects(ctx);

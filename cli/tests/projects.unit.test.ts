@@ -1,5 +1,4 @@
 import { describe, expect, test } from "vitest";
-import { configProject } from "../src/backlog/project.js";
 import { findProject, withProjectNames, type Project } from "../src/projects.js";
 import type { Task } from "../src/render/model.js";
 import { matches } from "../src/ui/lists.js";
@@ -27,6 +26,26 @@ describe("quick add projects", () => {
     expect(parseQuickAdd("Menu +missing", context, projects)).not.toHaveProperty("projectId");
     expect(parseQuickAdd('"Menu +Café"', context, projects)).not.toHaveProperty("projectId");
   });
+
+  test.each([false, true])("IDs and canonical names outrank aliases regardless of order (reversed: %s)", (reversed) => {
+    const catalog = [project("web", "Web shop"), project("hyphen", "Web-shop"), project("shadow", "web")];
+    const ordered = reversed ? [...catalog].reverse() : catalog;
+    expect(findProject(ordered, "web")?.id).toBe("web");
+    expect(findProject(ordered, "WEB")?.id).toBe("shadow");
+    expect(parseQuickAdd("Menu +web", context, ordered)).toMatchObject({ title: "Menu", projectId: "web" });
+    expect(parseQuickAdd("Menu +WEB-shop", context, ordered)).toMatchObject({ title: "Menu", projectId: "hyphen" });
+    expect(parseQuickAdd("Menu +WEB-shop", context, ordered.filter((p) => p.id !== "hyphen"))).toMatchObject({ title: "Menu", projectId: "web" });
+  });
+
+  test.each([false, true])("ambiguous aliases and archived exact matches never select another project (reversed: %s)", (reversed) => {
+    const catalog = [project("one", "Blue sky"), project("two", "Blue  sky"), project("web", "Web shop"), project("old", "Web-shop", true)];
+    const ordered = reversed ? [...catalog].reverse() : catalog;
+    for (const token of ["Blue-sky", "Web-shop", "old"]) {
+      const parsed = parseQuickAdd(`Menu +${token}`, context, ordered);
+      expect(parsed).toMatchObject({ title: `Menu +${token}`, unknownProjects: [`+${token}`] });
+      expect(parsed).not.toHaveProperty("projectId");
+    }
+  });
 });
 
 test("project name decoration is immutable, works in nested results, and enables + filters", () => {
@@ -37,13 +56,15 @@ test("project name decoration is immutable, works in nested results, and enables
   expect(value.results[0]!.task).not.toHaveProperty("project");
   expect(matches(decorated.results[0]!.task, "+STRONA-piekarni #web")).toBe(true);
   expect(matches(decorated.results[0]!.task, "+Café")).toBe(false);
-  expect(matches(decorated.results[0]!.task, "+none")).toBe(false);
-  expect(matches({ ...task, projectId: undefined }, "+none")).toBe(true);
 });
 
-test("config project is a hint read from normal scalar spellings", () => {
-  for (const [scalar, name] of [['"A: B"', "A: B"], ["'Owner''s shop'", "Owner's shop"], ["Shop # comment", "Shop"]]) {
-    expect(configProject([{ path: "config.yml", content: `project_name: ${scalar}\n` }])).toBe(name);
+test("project filters match complete tokens in any case and preserve ordinary text search", () => {
+  const task: Task = { id: "task", title: "Menu", ref: 42, status: "todo", isNow: false, labels: ["web"], links: [], note: "Bakery", createdAt: 0, updatedAt: 0 };
+  for (const [name, expected] of [["Home", true], ["HOME", true], ["Home-office", false], ["My Home", false]] as const) {
+    const named = { ...task, projectId: name, project: name };
+    expect(matches(named, "+hOmE")).toBe(expected);
+    expect(matches(named, "+hOmE #web")).toBe(expected);
   }
-  expect(configProject([{ path: "tasks/task.md", content: "project_name: Not a config" }])).toBeUndefined();
+  expect(matches(task, "+Home")).toBe(false);
+  for (const filter of ["menu", "BAKERY", "#WEB", "#42", ""]) expect(matches(task, filter)).toBe(true);
 });

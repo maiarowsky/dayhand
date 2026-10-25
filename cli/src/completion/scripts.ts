@@ -8,15 +8,17 @@ export type Shell = (typeof SHELLS)[number];
 
 const bash = `# dayhand completion for bash (also for dh). Load it with: source <(dayhand completion bash)
 _dayhand_complete() {
-  local IFS=$'\\n' line directive candidate
-  local -a lines
+  local line directive candidate
+  local -a lines=()
   COMPREPLY=()
   # Readline can replace only a suffix inside an existing quote/expansion.
   # Do not splice a whole escaped candidate into that partial shell context.
   case \${COMP_WORDS[COMP_CWORD]} in
     *"'"*|*'"'*|*'\\'*|*'\`'*|*'$'*|*'('*|*')'*) return 0 ;;
   esac
-  lines=($(dayhand __complete "\${COMP_WORDS[@]:1:COMP_CWORD}" 2>/dev/null)) || return 0
+  while IFS= read -r line; do
+    lines+=("$line")
+  done < <(dayhand __complete "\${COMP_WORDS[@]:1:COMP_CWORD}" 2>/dev/null)
   [[ \${#lines[@]} -eq 0 ]] && return 0
   directive=\${lines[\${#lines[@]}-1]#:}
   unset 'lines[\${#lines[@]}-1]'

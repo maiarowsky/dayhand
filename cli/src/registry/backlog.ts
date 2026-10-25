@@ -3,7 +3,7 @@
 // server reads and writes the format (import_backlog, export_backlog); these
 // commands move the files between the folder and the server.
 import { FILE_CHARS, IMPORT_BYTES, IMPORT_FILES, readFolder, writeFolder, type BacklogFile } from "../backlog/folder.js";
-import { backlogProject, configProject } from "../backlog/project.js";
+import { backlogProject } from "../backlog/project.js";
 import { requireProjects } from "../projects.js";
 import { CliError, usageError } from "../core/exit.js";
 import { tool } from "./ops.js";
@@ -58,7 +58,7 @@ const importCommand: CommandSpec = {
     "A selected directory with its own config is the root; otherwise root discovery walks up reserved folder names only, stopping at the first non-reserved directory and using only its config. Statuses map to the nearest of todo, doing and done; unrecognized embedded or negated status words stay todo with a warning. Drafts become proposals; docs, decisions and milestones are skipped. " +
     "Each task's source is {kind: backlog-md, ref: <id>}, so importing the folder again brings only new files. " +
     "Files without an id are skipped. Under an ask policy, one approval allows exactly this one call, as for other tools; repeat the unchanged folder with --approval after the owner allows it. " +
-    "--project names the destination and creates it if missing; without the option, config.yml only supplies a hint. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. " +
+    "--project names the destination and creates it if missing. With a new project, --dry-run validates its creation and the files separately, without assigning a preview id. " +
     `--dry-run asks the server what would happen without storing anything. ${NEEDS}`,
   args: [{ name: "dir", description: "The backlog folder (backlog/, or one of its folders such as backlog/tasks)", required: true }],
   options: [{ flags: "--project <name>", description: "Assign new tasks to this project, creating it if missing (backend 0.13.0)" }],
@@ -76,10 +76,6 @@ const importCommand: CommandSpec = {
     const tooLong = files.find((file) => file.content.length > FILE_CHARS);
     if (tooLong) throw usageError(`${tooLong.path} is longer than ${FILE_CHARS} characters; shorten the file before importing`);
     const destination = opts.project === undefined ? {} : await backlogProject(ctx, opts.project as string);
-    if (opts.project === undefined) {
-      const name = configProject(files);
-      if (name) ctx.out.warn({ code: "backlog_project", message: `config.yml names project ${JSON.stringify(name)}; add --project ${JSON.stringify(name)} to assign it` });
-    }
     const value = await importFiles(ctx, files, destination.projectId);
     if (destination.preview) ctx.out.warn({ code: "backlog_project_preview", message: `Would create project ${JSON.stringify(destination.preview)} and assign the new tasks to it; files were previewed without a project` });
     return { value, view: { kind: "text", text: importText(value) } };

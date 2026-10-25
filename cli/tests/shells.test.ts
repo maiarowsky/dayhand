@@ -1,7 +1,7 @@
 // The completion scripts in the real shells that are installed (bash, zsh,
 // PowerShell, fish), with `dayhand` on the PATH, against the real local backend.
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -57,6 +57,21 @@ describe.skipIf(!has("bash"))("bash", () => {
     expect(statSync(join(cacheDir, cached[0]!)).mode & 0o777).toBe(0o600);
     await dayhandJson(key, ["add", "Third"]);
     expect(bash(["dayhand", "done", ""], key)).toEqual(["now", "1", "2"]); // still the cached list
+  });
+
+  test("wildcard project names survive candidate loading even when paths match them", async () => {
+    const { key } = await newUser();
+    for (const name of ["cli*", "cli?", "cli[123]"]) await dayhandJson(key, ["project", "add", name]);
+    const cwd = mkdtempSync(join(dir, "glob-"));
+    for (const name of ["cli", "cli1", "cli2"]) mkdirSync(join(cwd, name));
+    const script = [
+      `cd '${cwd}'`,
+      "source <(dayhand completion bash)",
+      "COMP_WORDS=(dayhand add Menu -p cli); COMP_CWORD=4",
+      "_dayhand_complete",
+      "printf '%s\\n' \"${COMPREPLY[@]}\"",
+    ].join("\n");
+    expect(run("bash", ["-c", script], key, join(cwd, "cache"))).toEqual(["cli\\*", "cli\\?", "cli\\[123\\]"]);
   });
 });
 
