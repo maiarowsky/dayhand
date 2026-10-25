@@ -136,9 +136,21 @@ class TaskRepository(
                 )
             }
             db.tasks().upsert(listOfNotNull(done.copy(repeat = null), next))
+            val completedBy = newId()
             enqueue(Mutations.UPDATE, localId, buildJsonObject { put("repeat", JsonNull) }, now = now)
-            enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now)
-            next?.let { enqueue(Mutations.ADD, it.localId, addArgs(it), clientId = it.localId, now = now, projectLocalId = it.projectLocalId) }
+            enqueue(Mutations.COMPLETE, localId, JsonObject(emptyMap()), now = now, clientId = completedBy)
+            next?.let { occurrence ->
+                val args = buildJsonObject {
+                    addArgs(occurrence).forEach { (key, value) -> put(key, value) }
+                    if (occurrence.projectLocalId != null) {
+                        // These local-only references become app:add.repeatedFrom after the parent was sent.
+                        put("repeatParentLocalId", localId)
+                        put("repeatCompletedBy", completedBy)
+                        put("repeatCompletedOn", today)
+                    }
+                }
+                enqueue(Mutations.ADD, occurrence.localId, args, clientId = occurrence.localId, now = now, projectLocalId = occurrence.projectLocalId)
+            }
             true
         }
         if (changed) onOutboxChanged()

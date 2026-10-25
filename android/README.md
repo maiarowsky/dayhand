@@ -107,7 +107,8 @@ scope. A project's **+** preselects it in quick add; archived projects cannot re
 The same project picker (with search above eight active projects and New project in place) is in
 quick add's More options, task details and the menus on Today, Board and the calendar's day sheet.
 Project dots meet 3:1 on the surfaces of every palette; the name remains readable text, never
-colour alone. Backend 0.13.0 or later is required for project synchronization.
+colour alone. Deploy backend **0.13.2 or later before Android 0.12.0**: it confirms offline
+repeat restoration without opening an archived project.
 
 **Calendar**: the week on an hour grid, or one day, switched by two text tabs (**Week** / **Day**).
 The week always shows Monday to Sunday; a swipe or the arrows turn it (in the day view the arrows go
@@ -343,6 +344,11 @@ Convex subscription (app:listAll, app:listTrash, app:listProjects, app:getSettin
   resolved only when sending. A same-name project made by another device is linked to the local
   row after a confirmed lookup, preserving task references. Sample projects never leave the phone;
   removing them clears an own task's sample-project assignment, not the task.
+  A locally calculated repeat carries the parent's local id, its completion operation id and the
+  phone's completion day. At send time these become `app:add.repeatedFrom`: backend 0.13.2 checks
+  the repeat-clear and completion history, the next date/rule and the same project, deduplicates
+  by clientId, and permits that one inherited occurrence even in an archived project. A refused
+  or not-yet-resolved local occurrence stays in the outbox with its later edits, never erased.
 - **Reads**: while the app is open, the official Convex client (`dev.convex:android-convexmobile`)
   keeps a live subscription and every snapshot is merged into Room. Both directions sit behind
   `TaskRemote` (`TaskFeed` + `MutationSender`), so the Convex client can be replaced by plain

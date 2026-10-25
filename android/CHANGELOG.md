@@ -18,7 +18,10 @@ called Helm until 0.9.0.
   strings are in the eight app languages; the sample plan now has projects instead of project-like labels.
 - Room schema 6 with AutoMigration(5,6), project snapshots and ordered offline project/task
   creation. Same-name creations from two devices link to the existing project. Repeating tasks
-  made on the phone inherit their project; backup files preserve projects and their assignments.
+  made on the phone inherit their project; backend 0.13.2 confirms their parent completion so
+  an archived project stays archived. A refused local occurrence stays queued instead of losing
+  its row and edits. **Deploy backend 0.13.2 before Android 0.12.0.** Backup files preserve projects
+  and their assignments.
 - JVM/Robolectric coverage for the real Room migration, Compose screens/pickers and the project
   outbox; an opt-in real-local-backend integration test, shared quick-add project cases and
   `scripts/e2e-projects.py` for one emulator run with light/dark screenshots.

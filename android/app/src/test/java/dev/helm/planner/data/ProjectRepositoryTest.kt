@@ -129,6 +129,28 @@ class ProjectRepositoryTest {
         assertTrue(db.projects().all().isEmpty())
     }
 
+    @Test fun refusedLocalOccurrenceKeepsItsRowAndAllLaterEdits() = runBlocking {
+        val project = repository.projectStore.add("Archived")
+        val parent = repository.add("Repeat", "2026-10-23", null, null, project.localId)
+        repository.setRepeat(parent.localId, RepeatRule(RepeatEvery.DAY))
+        repository.projectStore.archive(project.localId, true)
+        repository.complete(parent.localId)
+        val next = db.tasks().all().single { it.localId != parent.localId }
+        repository.rename(next.localId, "Keep my edit")
+        val sender = MutationSender { mutation, args ->
+            when {
+                "repeatedFrom" in args -> SendResult.Rejected("An older backend does not accept the proof")
+                mutation == Mutations.ADD_PROJECT -> SendResult.Applied(Json.parseToJsonElement("""{"project":{"id":"project"}}"""))
+                else -> SendResult.Applied(buildJsonObject { put("id", "parent") })
+            }
+        }
+        assertEquals(DrainResult.RETRY_LATER, OutboxProcessor(RoomOutboxStore(db), sender).drain())
+        assertEquals(2, db.tasks().all().size)
+        assertEquals("Keep my edit", db.tasks().byLocalId(next.localId)?.title)
+        assertEquals(listOf(Mutations.ADD, Mutations.UPDATE), db.outbox().all().map { it.mutation })
+        assertEquals(1, db.outbox().all().first().attempts)
+    }
+
     @Test fun refusedProjectNeverDeletesItsUnsentTasks() = runBlocking {
         val project = repository.projectStore.add("Home")
         val task = repository.add("Keep this", null, null, null, project.localId)

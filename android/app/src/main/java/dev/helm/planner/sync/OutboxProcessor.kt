@@ -48,6 +48,10 @@ class OutboxProcessor(
             val op = store.next() ?: return DrainResult.DONE
             val args = argsFor(op)
             if (args == null) {
+                if (op.mutation == Mutations.ADD && "repeatParentLocalId" in Json.parseToJsonElement(op.argsJson).jsonObject) {
+                    store.recordFailure(op, "local repeat parent not sent yet")
+                    return DrainResult.RETRY_LATER
+                }
                 store.reject(op, "task never reached the server")
                 return@repeat
             }
@@ -55,7 +59,11 @@ class OutboxProcessor(
                 is SendResult.Applied -> store.acknowledge(op, result.value)
                 is SendResult.Rejected -> {
                     // Two devices may create the same name offline. Only a confirmed name match repairs that conflict.
-                    if (op.mutation == Mutations.ADD_PROJECT && result.code == "invalid_argument") {
+                    if (op.mutation == Mutations.ADD && "repeatedFrom" in args) {
+                        // An old backend or a changed parent must not erase a locally created occurrence and its edits.
+                        store.recordFailure(op, result.code ?: "local repeat not accepted")
+                        return DrainResult.RETRY_LATER
+                    } else if (op.mutation == Mutations.ADD_PROJECT && result.code == "invalid_argument") {
                         when (val projects = queries?.query(dev.helm.planner.data.remote.RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap()))) {
                             is SendResult.Applied -> {
                                 val name = (args["name"] as? JsonPrimitive)?.content.orEmpty()
@@ -101,6 +109,18 @@ class OutboxProcessor(
         if (target != null) {
             val serverId = store.projectServerIdOf(target) ?: return null
             args = JsonObject(args - "moveTasksToLocalId" + ("moveTasksTo" to JsonPrimitive(serverId)))
+        }
+        val parentLocalId = (args["repeatParentLocalId"] as? JsonPrimitive)?.content
+        if (parentLocalId != null) {
+            val parentId = store.serverIdOf(parentLocalId) ?: return null
+            val completedBy = args["repeatCompletedBy"] ?: return null
+            val completedOn = args["repeatCompletedOn"] ?: return null
+            args = JsonObject(args - setOf("repeatParentLocalId", "repeatCompletedBy", "repeatCompletedOn") +
+                ("repeatedFrom" to kotlinx.serialization.json.buildJsonObject {
+                    put("taskId", JsonPrimitive(parentId))
+                    put("completedBy", completedBy)
+                    put("completedOn", completedOn)
+                }))
         }
         val localId = op.taskLocalId
         if (localId == null || op.mutation == Mutations.ADD) return args

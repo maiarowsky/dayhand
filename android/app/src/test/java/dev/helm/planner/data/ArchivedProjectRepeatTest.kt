@@ -7,12 +7,24 @@ import dev.helm.planner.data.local.HelmDatabase
 import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.RepeatRule
 import dev.helm.planner.data.remote.HttpTaskRemote
+import dev.helm.planner.data.remote.MutationSender
+import dev.helm.planner.data.remote.RemoteJson
+import dev.helm.planner.data.remote.SendResult
+import dev.helm.planner.sync.DrainResult
 import dev.helm.planner.sync.OutboxProcessor
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import dev.helm.planner.sync.RoomOutboxStore
 import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,9 +51,37 @@ class ArchivedProjectRepeatTest {
             repo.projectStore.archive(p.localId, true)
             repo.complete(t.localId)
             assertEquals("The next occurrence exists on the phone", 2, db.tasks().all().size)
+            val next = db.tasks().all().single { it.localId != t.localId }
+            repo.rename(next.localId, "Edited before reconnect")
             val remote = HttpTaskRemote(url, requireNotNull(token))
-            OutboxProcessor(RoomOutboxStore(db), remote).drain()
+            var lost = false
+            val sent = mutableListOf<JsonObject>()
+            val sender = MutationSender { path, args ->
+                sent += args
+                val result = remote.send(path, args)
+                if (!lost && "repeatedFrom" in args && result is SendResult.Applied) {
+                    lost = true
+                    SendResult.Failed("simulated lost reply after the real backend applied the occurrence")
+                } else result
+            }
+            val processor = OutboxProcessor(RoomOutboxStore(db), sender, queries = remote)
+            assertEquals(DrainResult.RETRY_LATER, processor.drain())
             assertEquals("The next occurrence must not disappear while reconnecting", 2, db.tasks().all().size)
+            assertEquals(DrainResult.DONE, processor.drain())
+            assertTrue(lost)
+            assertTrue(db.outbox().all().isEmpty())
+            val value = remote.query(RemoteJson.QUERY_TASKS, buildJsonObject { put("includeDone", true); put("includeArchived", true) }) as SendResult.Applied
+            val tasks = RemoteJson.tasks(value.value).filter { it.clientId in setOf(t.localId, next.localId) }
+            assertEquals(2, tasks.size)
+            val child = tasks.single { it.clientId == next.localId }
+            assertEquals("Edited before reconnect", child.title)
+            assertEquals(db.projects().byLocalId(p.localId)?.serverId, child.projectId)
+            val projects = RemoteJson.projects((remote.query(RemoteJson.QUERY_PROJECTS, JsonObject(emptyMap())) as SendResult.Applied).value)
+            assertNotNull(projects.single { it.serverId == child.projectId }.archivedAt)
+            val proof = sent.first { "repeatedFrom" in it }
+            assertEquals(db.tasks().byLocalId(t.localId)?.serverId, proof.getValue("repeatedFrom").jsonObject.getValue("taskId").jsonPrimitive.content)
+            assertFalse(proof.containsKey("repeatParentLocalId"))
+            assertFalse(sent.any { it["archived"]?.jsonPrimitive?.content == "false" })
         } finally { db.close() }
     }
 }
