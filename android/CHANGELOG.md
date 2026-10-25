@@ -3,6 +3,26 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.12.0 (unreleased)
+
+### Added
+
+- A fourth bottom-bar tab, **Projects**: projects and labels with open/overdue counts, No project,
+  an archive and Trash. Projects have a unique name, one of twelve colours, an optional emoji
+  and a note; edit, reorder (drag or accessible up/down controls), archive and delete with a task
+  destination. Labels can become projects on request, without moving already assigned tasks.
+- Each project has **List / Board**, and its add button preselects the project. One searchable
+  picker serves quick add, task details, Today and Board menus and the calendar day sheet.
+  `+Project-name` in quick add recognizes existing active projects; unknown tokens stay text.
+- Project dots on Today and Board, contrast-tested across all sixteen palettes. All project
+  strings are in the eight app languages; the sample plan now has projects instead of project-like labels.
+- Room schema 6 with AutoMigration(5,6), project snapshots and ordered offline project/task
+  creation. Same-name creations from two devices link to the existing project. Repeating tasks
+  made on the phone inherit their project; backup files preserve projects and their assignments.
+- JVM/Robolectric coverage for the real Room migration, Compose screens/pickers and the project
+  outbox; an opt-in real-local-backend integration test, shared quick-add project cases and
+  `scripts/e2e-projects.py` for one emulator run with light/dark screenshots.
+
 ## 0.11.0 (unreleased)
 
 ### Added
