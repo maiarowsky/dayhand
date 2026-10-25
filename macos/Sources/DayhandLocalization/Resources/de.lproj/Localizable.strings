@@ -44,12 +44,16 @@
 	<string>Hinzufügen</string>
 	<key>Add Task</key>
 	<string>Aufgabe hinzufügen</string>
+	<key>Add a project…</key>
+	<string>Projekt hinzufügen …</string>
 	<key>Add a task (try: Pay rent fri 9am)</key>
 	<string>Aufgabe hinzufügen (z. B. Miete zahlen fri 9am)</string>
 	<key>Add an item</key>
 	<string>Punkt hinzufügen</string>
 	<key>Add the words as part of the title instead of reading them as a date</key>
 	<string>Die Wörter in den Titel übernehmen, statt sie als Datum zu lesen</string>
+	<key>Add to %@</key>
+	<string>Zu %@ hinzufügen</string>
 	<key>Address</key>
 	<string>Adresse</string>
 	<key>After a number of times</key>
@@ -64,10 +68,14 @@
 	<string>Agent: %@</string>
 	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
 	<string>Agenten setzen diese Angaben mit dayhand oder über MCP; dieser Mac zeigt sie nur an.</string>
+	<key>All Tasks</key>
+	<string>Alle Aufgaben</string>
 	<key>All done for today.</key>
 	<string>Für heute ist alles erledigt.</string>
 	<key>Allow Notifications</key>
 	<string>Mitteilungen erlauben</string>
+	<key>Amber</key>
+	<string>Bernstein</string>
 	<key>Approval requests (%lld)</key>
 	<string>Genehmigungsanfragen (%lld)</string>
 	<key>Approval requests (newest %lld)</key>
@@ -76,6 +84,14 @@
 	<string>Archivieren</string>
 	<key>Archived</key>
 	<string>Archiviert</string>
+	<key>Archived (%lld)</key>
+	<string>Archiviert (%lld)</string>
+	<key>Archived Projects</key>
+	<string>Archivierte Projekte</string>
+	<key>Archived Tasks</key>
+	<string>Archivierte Aufgaben</string>
+	<key>Archived project</key>
+	<string>Archiviertes Projekt</string>
 	<key>As in Settings</key>
 	<string>Wie in Einstellungen</string>
 	<key>As in settings (%@)</key>
@@ -84,10 +100,16 @@
 	<string>Angefragt von %@</string>
 	<key>At a time of day</key>
 	<string>Zu einer Uhrzeit</string>
+	<key>Bakery website</key>
+	<string>Website der Bäckerei</string>
 	<key>Before the due time</key>
 	<string>Vor dem Fälligkeitszeitpunkt</string>
 	<key>Blocked: %@</key>
 	<string>Blockiert: %@</string>
+	<key>Blue</key>
+	<string>Blau</string>
+	<key>Brown</key>
+	<string>Braun</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>Gebaut mit GRDB.swift (MIT), KeyboardShortcuts (MIT) und Sparkle (MIT).</string>
 	<key>Cancel</key>
@@ -120,8 +142,14 @@
 	<string>Übernommen</string>
 	<key>Close</key>
 	<string>Schließen</string>
+	<key>Close the details</key>
+	<string>Details schließen</string>
+	<key>Color</key>
+	<string>Farbe</string>
 	<key>Connect</key>
 	<string>Verbinden</string>
+	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
+	<string>Verbinde einen Server, um die Freigabeanfragen und Vorschläge zu sehen, die auf dich warten.</string>
 	<key>Connect to Server…</key>
 	<string>Mit Server verbinden …</string>
 	<key>Connect to a server to see the requests and proposals.</key>
@@ -144,6 +172,8 @@
 	<string>Als nächste Wiederholung erstellt</string>
 	<key>Custom</key>
 	<string>Eigene</string>
+	<key>Cyan</key>
+	<string>Cyan</string>
 	<key>Daily</key>
 	<string>Täglich</string>
 	<key>Day</key>
@@ -182,8 +212,16 @@
 	<string>Dayhand, für heute nichts mehr</string>
 	<key>Default reminders</key>
 	<string>Standarderinnerungen</string>
+	<key>Delete Project</key>
+	<string>Projekt löschen</string>
+	<key>Delete “%@”?</key>
+	<string>„%@“ löschen?</string>
 	<key>Deleted %@ · gone after %@</key>
 	<string>Gelöscht: %1$@ · endgültig weg nach %2$@</string>
+	<key>Delete…</key>
+	<string>Löschen …</string>
+	<key>Details</key>
+	<string>Details</string>
 	<key>Disconnect</key>
 	<string>Trennen</string>
 	<key>Disconnect this Mac?</key>
@@ -196,6 +234,10 @@
 	<string>Erledigt</string>
 	<key>Done (%lld)</key>
 	<string>Erledigt (%lld)</string>
+	<key>Done and Archived</key>
+	<string>Erledigt und archiviert</string>
+	<key>Done and archived tasks show here.</key>
+	<string>Erledigte und archivierte Aufgaben erscheinen hier.</string>
 	<key>Downloading Dayhand %@…</key>
 	<string>Dayhand %@ wird geladen …</string>
 	<key>Downloading…</key>
@@ -204,20 +246,38 @@
 	<string>Laden … %lld %%</string>
 	<key>Due</key>
 	<string>Fällig</string>
+	<key>Edit Project</key>
+	<string>Projekt bearbeiten</string>
 	<key>Edited</key>
 	<string>Bearbeitet</string>
+	<key>Edit…</key>
+	<string>Bearbeiten …</string>
+	<key>Emoji…</key>
+	<string>Emoji …</string>
 	<key>Ends</key>
 	<string>Endet</string>
 	<key>Enter a number from 1 to %lld.</key>
 	<string>Gib eine Zahl von 1 bis %lld ein.</string>
 	<key>Every how many</key>
 	<string>Wie oft</string>
+	<key>Every task is in a project.</key>
+	<string>Jede Aufgabe ist in einem Projekt.</string>
 	<key>Frequency</key>
 	<string>Häufigkeit</string>
 	<key>From %@</key>
 	<string>Von %@</string>
 	<key>General</key>
 	<string>Allgemein</string>
+	<key>Go</key>
+	<string>Gehe zu</string>
+	<key>Gray</key>
+	<string>Grau</string>
+	<key>Green</key>
+	<string>Grün</string>
+	<key>Hides the done tasks</key>
+	<string>Blendet die erledigten Aufgaben aus</string>
+	<key>Hides the section</key>
+	<string>Blendet den Abschnitt aus</string>
 	<key>Hides the tasks done today</key>
 	<string>Blendet die heute erledigten Aufgaben aus</string>
 	<key>History</key>
@@ -226,18 +286,26 @@
 	<string>Der Verlauf ist offline nicht verfügbar.</string>
 	<key>How many times</key>
 	<string>Wie oft insgesamt</string>
+	<key>Icon</key>
+	<string>Symbol</string>
 	<key>In progress</key>
 	<string>In Arbeit</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
 	<string>Im Papierkorb. 30 Tage nach dem Löschen ist sie endgültig weg.</string>
+	<key>Inbox</key>
+	<string>Eingang</string>
 	<key>Include preview versions</key>
 	<string>Vorabversionen einbeziehen</string>
+	<key>Indigo</key>
+	<string>Indigo</string>
 	<key>Installing Dayhand %@…</key>
 	<string>Dayhand %@ wird installiert …</string>
 	<key>Installing…</key>
 	<string>Installieren …</string>
 	<key>It stays in the trash for 30 days.</key>
 	<string>Sie bleibt 30 Tage im Papierkorb.</string>
+	<key>Its tasks stay; choose where they go.</key>
+	<string>Seine Aufgaben bleiben erhalten; wähle, wohin sie kommen.</string>
 	<key>Keep in title</key>
 	<string>Im Titel lassen</string>
 	<key>Labels</key>
@@ -270,34 +338,58 @@
 	<string>Monatlich</string>
 	<key>Morning summary</key>
 	<string>Morgenübersicht</string>
+	<key>Move Down</key>
+	<string>Nach unten</string>
+	<key>Move Up</key>
+	<string>Nach oben</string>
+	<key>Move the tasks to</key>
+	<string>Aufgaben verschieben nach</string>
 	<key>Move the tasks to another project.</key>
 	<string>Verschiebe die Aufgaben in ein anderes Projekt.</string>
+	<key>Move to Project…</key>
+	<string>In Projekt verschieben …</string>
 	<key>Move to Trash</key>
 	<string>In den Papierkorb</string>
+	<key>Move “%@” to</key>
+	<string>„%@“ verschieben nach</string>
 	<key>Move “%@” to the trash?</key>
 	<string>„%@“ in den Papierkorb legen?</string>
 	<key>Moved on the board</key>
 	<string>Auf dem Board verschoben</string>
 	<key>Moved to the trash</key>
 	<string>In den Papierkorb verschoben</string>
+	<key>Name</key>
+	<string>Name</string>
 	<key>Needs backend 0.13.0 or later</key>
 	<string>Benötigt Backend 0.13.0 oder neuer</string>
 	<key>Never</key>
 	<string>Nie</string>
-	<key>New Task</key>
-	<string>Neue Aufgabe</string>
+	<key>New Project</key>
+	<string>Neues Projekt</string>
+	<key>New Project…</key>
+	<string>Neues Projekt …</string>
 	<key>New Task…</key>
 	<string>Neue Aufgabe …</string>
 	<key>New item</key>
 	<string>Neuer Punkt</string>
+	<key>New project (⌥⌘N)</key>
+	<string>Neues Projekt (⌥⌘N)</string>
 	<key>New task (⌘N, or the quick add shortcut from any app)</key>
 	<string>Neue Aufgabe (⌘N oder das Kürzel für Schnell hinzufügen aus jeder App)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Neue Aufgabe, z. B. Steuerberater anrufen fri 2pm</string>
+	<key>No Day</key>
+	<string>Ohne Tag</string>
+	<key>No Project</key>
+	<string>Ohne Projekt</string>
 	<key>No approval requests are waiting.</key>
 	<string>Keine Genehmigungsanfrage wartet.</string>
+	<key>No archived projects.</key>
+	<string>Keine archivierten Projekte.</string>
 	<key>No changes recorded yet.</key>
 	<string>Noch keine Änderungen erfasst.</string>
+	<key>No color</key>
+	<string>Keine Farbe</string>
 	<key>No day</key>
 	<string>Kein Tag</string>
 	<key>No day picked: the completion day's weekday.</key>
@@ -306,12 +398,20 @@
 	<string>Kein Tag gewählt: der Wochentag des Fälligkeitsdatums.</string>
 	<key>No details given</key>
 	<string>Keine Angaben</string>
+	<key>No project “%@”</key>
+	<string>Kein Projekt „%@“</string>
 	<key>No proposals are waiting.</key>
 	<string>Kein Vorschlag wartet.</string>
 	<key>No reminders unless a task has its own.</key>
 	<string>Keine Erinnerungen, außer eine Aufgabe hat eigene.</string>
 	<key>No server connected.</key>
 	<string>Kein Server verbunden.</string>
+	<key>No task matches the search.</key>
+	<string>Keine Aufgabe passt zur Suche.</string>
+	<key>No tasks here yet.</key>
+	<string>Hier gibt es noch keine Aufgaben.</string>
+	<key>No tasks in this project yet. Add one above, or drag a task onto it in the sidebar.</key>
+	<string>In diesem Projekt gibt es noch keine Aufgaben. Füge oben eine hinzu oder zieh eine Aufgabe in der Seitenleiste darauf.</string>
 	<key>None</key>
 	<string>Keine</string>
 	<key>Not Now</key>
@@ -334,6 +434,8 @@
 	<string>Für heute ist sonst nichts geplant.</string>
 	<key>Nothing left for today.</key>
 	<string>Für heute ist nichts mehr übrig.</string>
+	<key>Nothing open</key>
+	<string>Nichts offen</string>
 	<key>Nothing planned for today.</key>
 	<string>Für heute ist nichts geplant.</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -362,16 +464,24 @@
 	<string>Am Fälligkeitstag</string>
 	<key>On these days</key>
 	<string>An diesen Tagen</string>
+	<key>One emoji, optional</key>
+	<string>Ein Emoji, optional</string>
 	<key>Open Dayhand</key>
 	<string>Dayhand öffnen</string>
 	<key>Open System Settings</key>
 	<string>Systemeinstellungen öffnen</string>
+	<key>Opens the Character Viewer (⌃⌘Space)</key>
+	<string>Öffnet die Zeichenübersicht (⌃⌘Leertaste)</string>
 	<key>Options: %@</key>
 	<string>Optionen: %@</string>
+	<key>Orange</key>
+	<string>Orange</string>
 	<key>Overdue (%lld)</key>
 	<string>Überfällig (%lld)</string>
 	<key>Pairing code</key>
 	<string>Kopplungscode</string>
+	<key>Pink</key>
+	<string>Rosa</string>
 	<key>Plan</key>
 	<string>Plan</string>
 	<key>Plan: %@</key>
@@ -382,10 +492,20 @@
 	<string>Update wird vorbereitet …</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Vorabversionen erscheinen vor einem Release und können Ecken und Kanten haben.</string>
+	<key>Project</key>
+	<string>Projekt</string>
+	<key>Project actions</key>
+	<string>Projektaktionen</string>
+	<key>Project: %@</key>
+	<string>Projekt: %@</string>
+	<key>Projects</key>
+	<string>Projekte</string>
 	<key>Proof of completion</key>
 	<string>Nachweis der Erledigung</string>
 	<key>Proposals (%lld)</key>
 	<string>Vorschläge (%lld)</string>
+	<key>Purple</key>
+	<string>Lila</string>
 	<key>Quick add</key>
 	<string>Schnell hinzufügen</string>
 	<key>Quit</key>
@@ -394,6 +514,8 @@
 	<string>Auf diesem Mac nur zum Lesen. Entscheide auf dem Telefon oder mit dayhand approvals und dayhand proposals.</string>
 	<key>Reading tasks failed: %@</key>
 	<string>Die Aufgaben konnten nicht gelesen werden: %@</string>
+	<key>Red</key>
+	<string>Rot</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
 	<string>Veröffentlichte Builds sind signiert und können sich selbst aktualisieren; eine auf diesem Mac gebaute Kopie nicht.</string>
 	<key>Reminder day</key>
@@ -410,6 +532,8 @@
 	<string>Uhrzeit entfernen</string>
 	<key>Repeat</key>
 	<string>Wiederholen</string>
+	<key>Repeats</key>
+	<string>Wiederholt sich</string>
 	<key>Requests and proposals</key>
 	<string>Anfragen und Vorschläge</string>
 	<key>Requires a connection to the server.</key>
@@ -422,20 +546,22 @@
 	<string>Wiederherstellen: %@</string>
 	<key>Restored</key>
 	<string>Wiederhergestellt</string>
+	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day, +project the project.</key>
+	<string>Return fügt sie für heute hinzu; ein Datum am Ende (tomorrow 9am, fri, 23 oct) legt den Tag fest, +projekt das Projekt.</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return fügt sie für heute hinzu; ein Datum am Ende, auf Englisch (tomorrow 9am, fri, 23 oct), legt den Tag fest.</string>
 	<key>Revert</key>
 	<string>Zurücksetzen</string>
 	<key>Review</key>
 	<string>Prüfen</string>
-	<key>Save Note</key>
-	<string>Notiz sichern</string>
+	<key>Save</key>
+	<string>Sichern</string>
 	<key>Save Reminders</key>
 	<string>Erinnerungen sichern</string>
 	<key>Save Repeat</key>
 	<string>Wiederholung sichern</string>
-	<key>Select a task to see its details.</key>
-	<string>Wähle eine Aufgabe, um ihre Details zu sehen.</string>
+	<key>Search</key>
+	<string>Suchen</string>
 	<key>Server</key>
 	<string>Server</string>
 	<key>Server address</key>
@@ -444,8 +570,10 @@
 	<string>Über den Server mit dem Telefon, dayhand und Agenten geteilt. Eine Änderung hier wartet auf diesem Mac, bis der Server sie hat.</string>
 	<key>Shortcut from any app:</key>
 	<string>Kürzel aus jeder App:</string>
-	<key>Show</key>
-	<string>Anzeigen</string>
+	<key>Shows the done tasks</key>
+	<string>Zeigt die erledigten Aufgaben</string>
+	<key>Shows the section</key>
+	<string>Blendet den Abschnitt ein</string>
 	<key>Shows the tasks done today</key>
 	<string>Zeigt die heute erledigten Aufgaben</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
@@ -454,12 +582,16 @@
 	<string>Beginne mit: %@</string>
 	<key>Status</key>
 	<string>Status</string>
+	<key>Status: %@</key>
+	<string>Status: %@</string>
 	<key>Sync Now</key>
 	<string>Jetzt synchronisieren</string>
 	<key>System (%@)</key>
 	<string>System (%@)</string>
 	<key>Task</key>
 	<string>Aufgabe</string>
+	<key>Teal</key>
+	<string>Petrol</string>
 	<key>That is not a date.</key>
 	<string>Das ist kein Datum.</string>
 	<key>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</key>
@@ -496,6 +628,8 @@
 	<string>Das Symbol muss ein einzelnes Emoji sein.</string>
 	<key>The last day of the month</key>
 	<string>Letzter Tag des Monats</string>
+	<key>The latest %lld of each</key>
+	<string>Jeweils die letzten %lld</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>Die Liste neuer Versionen konnte nicht gelesen werden. Versuch es später noch einmal.</string>
 	<key>The name must be one line.</key>
@@ -542,6 +676,8 @@
 	<string>Diese erinnern nur, wenn die Aufgabe eine Uhrzeit hat.</string>
 	<key>They could not be read: %@</key>
 	<string>Sie konnten nicht gelesen werden: %@</string>
+	<key>They take no new tasks; their tasks stay in them.</key>
+	<string>Sie nehmen keine neuen Aufgaben an; ihre Aufgaben bleiben darin.</string>
 	<key>This Mac</key>
 	<string>Dieser Mac</string>
 	<key>This version</key>
@@ -574,6 +710,8 @@
 	<string>Erneut versuchen</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
 	<string>Gib einen Titel ein und am Ende einen Tag oder eine Uhrzeit auf Englisch: „Call the accountant fri 2pm“, „Pay rent the 1st“, „Plan next week“.</string>
+	<key>Type to filter</key>
+	<string>Tippen zum Filtern</string>
 	<key>Unarchive</key>
 	<string>Aus dem Archiv holen</string>
 	<key>Untick %@</key>
@@ -600,8 +738,8 @@
 	<string>Wartet auf</string>
 	<key>Weekly</key>
 	<string>Wöchentlich</string>
-	<key>When</key>
-	<string>Wann</string>
+	<key>What the project is about, for you and agents</key>
+	<string>Worum es im Projekt geht, für dich und Agenten</string>
 	<key>Where I stopped</key>
 	<string>Wo ich aufgehört habe</string>
 	<key>Where I stopped: %@</key>
@@ -610,8 +748,6 @@
 	<string>Wo ich aufgehört habe: Notiz in den Details hinzufügen</string>
 	<key>Work on It Now</key>
 	<string>Jetzt daran arbeiten</string>
-	<key>Working on it now</key>
-	<string>Ich arbeite gerade daran</string>
 	<key>Yearly</key>
 	<string>Jährlich</string>
 	<key>Yesterday</key>

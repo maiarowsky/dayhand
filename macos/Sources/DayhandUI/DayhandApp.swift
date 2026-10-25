@@ -23,12 +23,12 @@ public struct DayhandApp: App {
             MainWindow()
                 .environmentObject(model)
                 .environmentObject(updater)
-                .frame(minWidth: 720, minHeight: 460)
+                .frame(minWidth: 820, minHeight: 500)
                 // Drawn again in a new language, with dates in its locale.
                 .id(model.language)
                 .environment(\.locale, Localization.current.locale)
         }
-        .defaultSize(width: 960, height: 640)
+        .defaultSize(width: 1100, height: 700)
         .commands {
             CommandGroup(after: .appInfo) {
                 Button(tr("Check for Updates…")) {
@@ -37,10 +37,24 @@ public struct DayhandApp: App {
                 }
             }
             CommandGroup(replacing: .newItem) {
-                Button(tr("New Task…")) { QuickAddPanel.shared.show() }
+                Button(tr("New Task…")) { QuickAddPanel.shared.show(place: model.place) }
                     .keyboardShortcut("n")
             }
+            SidebarCommands()
+            CommandMenu(tr("Go")) { GoCommands().environmentObject(model) }
             CommandMenu(tr("Task")) {
+                Button(tr("Move to Project…")) {
+                    if let id = model.selection { model.movingTask = TaskPick(id: id) }
+                }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
+                .disabled(model.selection == nil || !model.showsProjects)
+                Button(tr("New Project…")) {
+                    model.showMainWindow()
+                    model.projectEditor = ProjectEditorRequest()
+                }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+                .disabled(!model.showsProjects)
+                Divider()
                 Button(tr("Sync Now")) { Task { await model.syncNow() } }
                     .keyboardShortcut("r")
                     .disabled(model.credential == nil)
@@ -64,6 +78,35 @@ public struct DayhandApp: App {
                 .id(model.language)
                 .environment(\.locale, Localization.current.locale)
         }
+    }
+}
+
+/// The Go menu: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects, and the other places.
+struct GoCommands: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        go(.today, tr("Today"), key: "1")
+        go(.all, tr("All Tasks"), key: "2")
+        if model.showsProjects {
+            go(.noProject, tr("No Project"), key: "3")
+            ForEach(Array(model.shortcutProjects.enumerated()), id: \.element.localId) { index, project in
+                go(.project(project.localId), project.name, key: KeyEquivalent(Character(String(index + 4))))
+            }
+        }
+        Divider()
+        go(.inbox, tr("Inbox"))
+        go(.done, tr("Done and Archived"))
+        go(.trash, tr("Trash"))
+    }
+
+    @ViewBuilder
+    private func go(_ place: Place, _ title: String, key: KeyEquivalent? = nil) -> some View {
+        let button = Button(title) {
+            model.showMainWindow()
+            model.show(place)
+        }
+        if let key { button.keyboardShortcut(key, modifiers: .command) } else { button }
     }
 }
 
@@ -115,10 +158,12 @@ final class QuickAddPanel {
         if let panel, panel.isVisible { close() } else { show() }
     }
 
-    func show() {
+    /// Opens the panel; a task typed without a day or project takes them from [place] (Today from other apps).
+    func show(place: Place = .today) {
         let panel = panel ?? makePanel()
         self.panel = panel
-        panel.contentView = NSHostingView(rootView: QuickAddView(onDone: { [weak self] in self?.close() }).environmentObject(AppModel.shared))
+        let view = QuickAddView(place: place, onDone: { [weak self] in self?.close() })
+        panel.contentView = NSHostingView(rootView: view.environmentObject(AppModel.shared))
         panel.center()
         if let frame = panel.screen?.visibleFrame {
             panel.setFrameOrigin(NSPoint(x: frame.midX - panel.frame.width / 2, y: frame.minY + frame.height * 0.66))

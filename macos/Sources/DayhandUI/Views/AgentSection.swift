@@ -3,7 +3,7 @@ import DayhandLocalization
 import SwiftUI
 
 /**
- * The details' read-only Agent section: who holds the task's claim and until when, the acceptance
+ * The task panel's read-only Agent part: who holds the task's claim and until when, the acceptance
  * criteria with ticks, the plan, the proof of completion, the tasks it waits for and why it is blocked. Agents and
  * `dayhand` set these; the snapshot brings them and the database keeps them offline.
  */
@@ -14,7 +14,7 @@ struct AgentSection: View {
 
     var body: some View {
         if task.hasAgentWork {
-            Section(tr("Agent")) {
+            PanelGroup(title: tr("Agent")) {
                 if let claim = AgentSectionText.claim(task, now: Clock.nowMs(), today: today, timezone: model.settings.timezone) {
                     Label(claim, systemImage: "person.badge.clock").foregroundStyle(Color.orange)
                 }

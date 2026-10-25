@@ -44,12 +44,16 @@
 	<string>追加</string>
 	<key>Add Task</key>
 	<string>タスクを追加</string>
+	<key>Add a project…</key>
+	<string>プロジェクトを追加…</string>
 	<key>Add a task (try: Pay rent fri 9am)</key>
 	<string>タスクを追加（例：家賃を払う fri 9am）</string>
 	<key>Add an item</key>
 	<string>項目を追加</string>
 	<key>Add the words as part of the title instead of reading them as a date</key>
 	<string>日付として読まずにタイトルの一部にします</string>
+	<key>Add to %@</key>
+	<string>%@ に追加</string>
 	<key>Address</key>
 	<string>アドレス</string>
 	<key>After a number of times</key>
@@ -64,10 +68,14 @@
 	<string>エージェント：%@</string>
 	<key>Agents set these with dayhand or through MCP; this Mac shows them read-only.</key>
 	<string>これらはエージェントが dayhand または MCP で設定します。このMacでは閲覧のみです。</string>
+	<key>All Tasks</key>
+	<string>すべてのタスク</string>
 	<key>All done for today.</key>
 	<string>今日の分はすべて完了しました。</string>
 	<key>Allow Notifications</key>
 	<string>通知を許可</string>
+	<key>Amber</key>
+	<string>琥珀</string>
 	<key>Approval requests (%lld)</key>
 	<string>承認リクエスト（%lld）</string>
 	<key>Approval requests (newest %lld)</key>
@@ -76,6 +84,14 @@
 	<string>アーカイブ</string>
 	<key>Archived</key>
 	<string>アーカイブ</string>
+	<key>Archived (%lld)</key>
+	<string>アーカイブ済み（%lld）</string>
+	<key>Archived Projects</key>
+	<string>アーカイブしたプロジェクト</string>
+	<key>Archived Tasks</key>
+	<string>アーカイブしたタスク</string>
+	<key>Archived project</key>
+	<string>アーカイブしたプロジェクト</string>
 	<key>As in Settings</key>
 	<string>設定どおり</string>
 	<key>As in settings (%@)</key>
@@ -84,10 +100,16 @@
 	<string>依頼元：%@</string>
 	<key>At a time of day</key>
 	<string>指定の時刻</string>
+	<key>Bakery website</key>
+	<string>パン屋のサイト</string>
 	<key>Before the due time</key>
 	<string>期限の時刻の前</string>
 	<key>Blocked: %@</key>
 	<string>ブロック中：%@</string>
+	<key>Blue</key>
+	<string>青</string>
+	<key>Brown</key>
+	<string>茶色</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
 	<string>GRDB.swift（MIT）、KeyboardShortcuts（MIT）、Sparkle（MIT）を使用しています。</string>
 	<key>Cancel</key>
@@ -120,8 +142,14 @@
 	<string>担当を取得</string>
 	<key>Close</key>
 	<string>閉じる</string>
+	<key>Close the details</key>
+	<string>詳細を閉じる</string>
+	<key>Color</key>
+	<string>色</string>
 	<key>Connect</key>
 	<string>接続</string>
+	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
+	<string>サーバーに接続すると、あなたを待っている承認リクエストと提案が表示されます。</string>
 	<key>Connect to Server…</key>
 	<string>サーバーに接続…</string>
 	<key>Connect to a server to see the requests and proposals.</key>
@@ -144,6 +172,8 @@
 	<string>次の繰り返しとして作成</string>
 	<key>Custom</key>
 	<string>カスタム</string>
+	<key>Cyan</key>
+	<string>シアン</string>
 	<key>Daily</key>
 	<string>毎日</string>
 	<key>Day</key>
@@ -182,8 +212,16 @@
 	<string>Dayhand、今日の残りはありません</string>
 	<key>Default reminders</key>
 	<string>デフォルトのリマインダー</string>
+	<key>Delete Project</key>
+	<string>プロジェクトを削除</string>
+	<key>Delete “%@”?</key>
+	<string>「%@」を削除しますか？</string>
 	<key>Deleted %@ · gone after %@</key>
 	<string>%1$@に削除 · %2$@以降に消去</string>
+	<key>Delete…</key>
+	<string>削除…</string>
+	<key>Details</key>
+	<string>詳細</string>
 	<key>Disconnect</key>
 	<string>接続を解除</string>
 	<key>Disconnect this Mac?</key>
@@ -196,6 +234,10 @@
 	<string>完了</string>
 	<key>Done (%lld)</key>
 	<string>完了 (%lld)</string>
+	<key>Done and Archived</key>
+	<string>完了とアーカイブ</string>
+	<key>Done and archived tasks show here.</key>
+	<string>完了したタスクとアーカイブしたタスクがここに表示されます。</string>
 	<key>Downloading Dayhand %@…</key>
 	<string>Dayhand %@ をダウンロード中…</string>
 	<key>Downloading…</key>
@@ -204,20 +246,38 @@
 	<string>ダウンロード中… %lld%%</string>
 	<key>Due</key>
 	<string>期限</string>
+	<key>Edit Project</key>
+	<string>プロジェクトを編集</string>
 	<key>Edited</key>
 	<string>編集</string>
+	<key>Edit…</key>
+	<string>編集…</string>
+	<key>Emoji…</key>
+	<string>絵文字…</string>
 	<key>Ends</key>
 	<string>終了</string>
 	<key>Enter a number from 1 to %lld.</key>
 	<string>1〜%lldの数を入力してください。</string>
 	<key>Every how many</key>
 	<string>間隔</string>
+	<key>Every task is in a project.</key>
+	<string>すべてのタスクがプロジェクトに入っています。</string>
 	<key>Frequency</key>
 	<string>頻度</string>
 	<key>From %@</key>
 	<string>提案元：%@</string>
 	<key>General</key>
 	<string>一般</string>
+	<key>Go</key>
+	<string>移動</string>
+	<key>Gray</key>
+	<string>グレー</string>
+	<key>Green</key>
+	<string>緑</string>
+	<key>Hides the done tasks</key>
+	<string>完了したタスクを隠します</string>
+	<key>Hides the section</key>
+	<string>セクションを隠します</string>
 	<key>Hides the tasks done today</key>
 	<string>今日完了したタスクを隠します</string>
 	<key>History</key>
@@ -226,18 +286,26 @@
 	<string>オフラインでは履歴を表示できません。</string>
 	<key>How many times</key>
 	<string>回数</string>
+	<key>Icon</key>
+	<string>アイコン</string>
 	<key>In progress</key>
 	<string>進行中</string>
 	<key>In the trash. It goes for good 30 days after it was deleted.</key>
 	<string>ゴミ箱にあります。削除から30日後に完全に消えます。</string>
+	<key>Inbox</key>
+	<string>受信箱</string>
 	<key>Include preview versions</key>
 	<string>プレビュー版を含める</string>
+	<key>Indigo</key>
+	<string>インディゴ</string>
 	<key>Installing Dayhand %@…</key>
 	<string>Dayhand %@ をインストール中…</string>
 	<key>Installing…</key>
 	<string>インストール中…</string>
 	<key>It stays in the trash for 30 days.</key>
 	<string>ゴミ箱に30日間残ります。</string>
+	<key>Its tasks stay; choose where they go.</key>
+	<string>タスクは残ります。移動先を選んでください。</string>
 	<key>Keep in title</key>
 	<string>タイトルに残す</string>
 	<key>Labels</key>
@@ -270,34 +338,58 @@
 	<string>毎月</string>
 	<key>Morning summary</key>
 	<string>朝のまとめ</string>
+	<key>Move Down</key>
+	<string>下へ移動</string>
+	<key>Move Up</key>
+	<string>上へ移動</string>
+	<key>Move the tasks to</key>
+	<string>タスクの移動先</string>
 	<key>Move the tasks to another project.</key>
 	<string>タスクを別のプロジェクトに移動してください。</string>
+	<key>Move to Project…</key>
+	<string>プロジェクトへ移動…</string>
 	<key>Move to Trash</key>
 	<string>ゴミ箱に入れる</string>
+	<key>Move “%@” to</key>
+	<string>「%@」の移動先</string>
 	<key>Move “%@” to the trash?</key>
 	<string>「%@」をゴミ箱に入れますか？</string>
 	<key>Moved on the board</key>
 	<string>ボード上で移動</string>
 	<key>Moved to the trash</key>
 	<string>ゴミ箱に移動</string>
+	<key>Name</key>
+	<string>名前</string>
 	<key>Needs backend 0.13.0 or later</key>
 	<string>バックエンド 0.13.0 以降が必要です</string>
 	<key>Never</key>
 	<string>なし</string>
-	<key>New Task</key>
-	<string>新規タスク</string>
+	<key>New Project</key>
+	<string>新規プロジェクト</string>
+	<key>New Project…</key>
+	<string>新規プロジェクト…</string>
 	<key>New Task…</key>
 	<string>新規タスク…</string>
 	<key>New item</key>
 	<string>新しい項目</string>
+	<key>New project (⌥⌘N)</key>
+	<string>新規プロジェクト（⌥⌘N）</string>
 	<key>New task (⌘N, or the quick add shortcut from any app)</key>
 	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
+	<key>No Day</key>
+	<string>日付なし</string>
+	<key>No Project</key>
+	<string>プロジェクトなし</string>
 	<key>No approval requests are waiting.</key>
 	<string>待機中の承認リクエストはありません。</string>
+	<key>No archived projects.</key>
+	<string>アーカイブしたプロジェクトはありません。</string>
 	<key>No changes recorded yet.</key>
 	<string>まだ変更の記録はありません。</string>
+	<key>No color</key>
+	<string>色なし</string>
 	<key>No day</key>
 	<string>日付なし</string>
 	<key>No day picked: the completion day's weekday.</key>
@@ -306,12 +398,20 @@
 	<string>曜日を選ばない場合は期限日の曜日になります。</string>
 	<key>No details given</key>
 	<string>詳細はありません</string>
+	<key>No project “%@”</key>
+	<string>プロジェクト「%@」はありません</string>
 	<key>No proposals are waiting.</key>
 	<string>待機中の提案はありません。</string>
 	<key>No reminders unless a task has its own.</key>
 	<string>タスクに独自の設定がない限り、リマインダーはありません。</string>
 	<key>No server connected.</key>
 	<string>サーバーが接続されていません。</string>
+	<key>No task matches the search.</key>
+	<string>検索に一致するタスクはありません。</string>
+	<key>No tasks here yet.</key>
+	<string>まだタスクはありません。</string>
+	<key>No tasks in this project yet. Add one above, or drag a task onto it in the sidebar.</key>
+	<string>このプロジェクトにはまだタスクがありません。上で追加するか、サイドバーのプロジェクトにタスクをドラッグしてください。</string>
 	<key>None</key>
 	<string>なし</string>
 	<key>Not Now</key>
@@ -334,6 +434,8 @@
 	<string>今日はほかに予定がありません。</string>
 	<key>Nothing left for today.</key>
 	<string>今日やることは残っていません。</string>
+	<key>Nothing open</key>
+	<string>未完了なし</string>
 	<key>Nothing planned for today.</key>
 	<string>今日の予定はありません。</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -362,18 +464,26 @@
 	<string>期限日</string>
 	<key>On these days</key>
 	<string>曜日</string>
+	<key>One emoji, optional</key>
+	<string>絵文字1つ（任意）</string>
 	<key>Open Dayhand</key>
 	<string>Dayhand を開く</string>
 	<key>Open System Settings</key>
 	<string>システム設定を開く</string>
+	<key>Opens the Character Viewer (⌃⌘Space)</key>
+	<string>文字ビューアを開きます（⌃⌘スペース）</string>
 	<key>Options: %@</key>
 	<string>選択肢：%@</string>
+	<key>Orange</key>
+	<string>オレンジ</string>
 	<key>Overdue (%lld)</key>
 	<string>期限切れ (%lld)</string>
 	<key>Pairing code</key>
 	<string>ペアリングコード</string>
+	<key>Pink</key>
+	<string>ピンク</string>
 	<key>Plan</key>
-	<string>計画</string>
+	<string>プラン</string>
 	<key>Plan: %@</key>
 	<string>プラン：%@</string>
 	<key>Plan: nothing needs a look.</key>
@@ -382,10 +492,20 @@
 	<string>アップデートを準備中…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>プレビュー版はリリース前の版で、未完成な部分があるかもしれません。</string>
+	<key>Project</key>
+	<string>プロジェクト</string>
+	<key>Project actions</key>
+	<string>プロジェクトの操作</string>
+	<key>Project: %@</key>
+	<string>プロジェクト：%@</string>
+	<key>Projects</key>
+	<string>プロジェクト</string>
 	<key>Proof of completion</key>
 	<string>完了の証拠</string>
 	<key>Proposals (%lld)</key>
 	<string>提案（%lld）</string>
+	<key>Purple</key>
+	<string>紫</string>
 	<key>Quick add</key>
 	<string>クイック追加</string>
 	<key>Quit</key>
@@ -394,6 +514,8 @@
 	<string>このMacでは閲覧のみです。判断はスマートフォン、または dayhand approvals と dayhand proposals で行ってください。</string>
 	<key>Reading tasks failed: %@</key>
 	<string>タスクを読み込めませんでした：%@</string>
+	<key>Red</key>
+	<string>赤</string>
 	<key>Released builds are signed and can update themselves; a copy built on this Mac cannot.</key>
 	<string>公開版は署名されており自動でアップデートできます。この Mac でビルドしたコピーはできません。</string>
 	<key>Reminder day</key>
@@ -410,6 +532,8 @@
 	<string>時刻を削除</string>
 	<key>Repeat</key>
 	<string>繰り返し</string>
+	<key>Repeats</key>
+	<string>繰り返し</string>
 	<key>Requests and proposals</key>
 	<string>リクエストと提案</string>
 	<key>Requires a connection to the server.</key>
@@ -422,20 +546,22 @@
 	<string>元に戻す：%@</string>
 	<key>Restored</key>
 	<string>復元</string>
+	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day, +project the project.</key>
+	<string>Returnで今日のタスクとして追加します。末尾の日付（tomorrow 9am、fri、23 oct）で日が、+プロジェクト名でプロジェクトが決まります。</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日になります。</string>
 	<key>Revert</key>
 	<string>元に戻す</string>
 	<key>Review</key>
 	<string>確認する</string>
-	<key>Save Note</key>
-	<string>メモを保存</string>
+	<key>Save</key>
+	<string>保存</string>
 	<key>Save Reminders</key>
 	<string>通知を保存</string>
 	<key>Save Repeat</key>
 	<string>繰り返しを保存</string>
-	<key>Select a task to see its details.</key>
-	<string>タスクを選ぶと詳細が表示されます。</string>
+	<key>Search</key>
+	<string>検索</string>
 	<key>Server</key>
 	<string>サーバー</string>
 	<key>Server address</key>
@@ -444,8 +570,10 @@
 	<string>サーバーを通じてスマートフォン、dayhand、エージェントと共有されます。ここでの変更は、サーバーに届くまでこのMacで待機します。</string>
 	<key>Shortcut from any app:</key>
 	<string>どのアプリからでも使えるショートカット：</string>
-	<key>Show</key>
-	<string>表示</string>
+	<key>Shows the done tasks</key>
+	<string>完了したタスクを表示します</string>
+	<key>Shows the section</key>
+	<string>セクションを表示します</string>
 	<key>Shows the tasks done today</key>
 	<string>今日完了したタスクを表示します</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
@@ -454,12 +582,16 @@
 	<string>まずはこれから：%@</string>
 	<key>Status</key>
 	<string>状態</string>
+	<key>Status: %@</key>
+	<string>ステータス：%@</string>
 	<key>Sync Now</key>
 	<string>今すぐ同期</string>
 	<key>System (%@)</key>
 	<string>システム（%@）</string>
 	<key>Task</key>
 	<string>タスク</string>
+	<key>Teal</key>
+	<string>ティール</string>
 	<key>That is not a date.</key>
 	<string>日付ではありません。</string>
 	<key>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</key>
@@ -496,6 +628,8 @@
 	<string>アイコンは絵文字1つにしてください。</string>
 	<key>The last day of the month</key>
 	<string>月末</string>
+	<key>The latest %lld of each</key>
+	<string>それぞれ最新 %lld 件</string>
 	<key>The list of new versions could not be read. Try again later.</key>
 	<string>新しいバージョンの一覧を読み取れませんでした。後でもう一度お試しください。</string>
 	<key>The name must be one line.</key>
@@ -542,6 +676,8 @@
 	<string>タスクに時刻があるときだけ通知します。</string>
 	<key>They could not be read: %@</key>
 	<string>読み込めませんでした：%@</string>
+	<key>They take no new tasks; their tasks stay in them.</key>
+	<string>新しいタスクは追加できません。既存のタスクはそのまま残ります。</string>
 	<key>This Mac</key>
 	<string>この Mac</string>
 	<key>This version</key>
@@ -574,6 +710,8 @@
 	<string>再試行</string>
 	<key>Type a title and, at its end, a day or time in English: “Call the accountant fri 2pm”, “Pay rent the 1st”, “Plan next week”.</key>
 	<string>タイトルの最後に英語で日付や時刻を書きます：「Call the accountant fri 2pm」「Pay rent the 1st」「Plan next week」。</string>
+	<key>Type to filter</key>
+	<string>入力して絞り込み</string>
 	<key>Unarchive</key>
 	<string>アーカイブ解除</string>
 	<key>Untick %@</key>
@@ -600,8 +738,8 @@
 	<string>先に完了が必要なタスク</string>
 	<key>Weekly</key>
 	<string>毎週</string>
-	<key>When</key>
-	<string>日時</string>
+	<key>What the project is about, for you and agents</key>
+	<string>このプロジェクトの内容（あなたとエージェント向け）</string>
 	<key>Where I stopped</key>
 	<string>中断したところ</string>
 	<key>Where I stopped: %@</key>
@@ -610,8 +748,6 @@
 	<string>中断したところ：詳細でメモを追加</string>
 	<key>Work on It Now</key>
 	<string>いま取り組む</string>
-	<key>Working on it now</key>
-	<string>いま取り組み中</string>
 	<key>Yearly</key>
 	<string>毎年</string>
 	<key>Yesterday</key>

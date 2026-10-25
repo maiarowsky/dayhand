@@ -6,8 +6,8 @@ import os
 import SwiftUI
 
 /**
- * The app's state on the main thread: the tasks from the local database, the Today sections computed from them,
- * the server connection and the user's actions. Every action goes through
+ * The app's state on the main thread: the tasks and projects from the local database, the Today sections and the
+ * sidebar's counts computed from them, the server connection and the user's actions. Every action goes through
  * `TaskRepository`, which changes the row and queues the server mutation together, so nothing waits for the network.
  */
 @MainActor
@@ -21,7 +21,6 @@ final class AppModel: ObservableObject {
     /// The tasks in the trash, the most recently deleted first.
     @Published private(set) var trash: [TaskItem] = []
     @Published private(set) var pending = 0
-    @Published private(set) var projectSupport: ProjectSupport = .unknown
     @Published private(set) var status: SyncStatus = .notConnected {
         didSet {
             if Self.historyRecovered(from: oldValue, to: status) { historyRefreshRevision += 1 }
@@ -34,9 +33,34 @@ final class AppModel: ObservableObject {
     /// The last plan health report from the server, kept offline; nil hides the card above Today.
     @Published private(set) var health: PlanHealth?
     @Published private(set) var credential: DeviceCredential?
+    /// The projects, archived ones included, in the sidebar's order (`AppModel+Projects.swift`).
+    @Published private(set) var projects: [Project] = []
+    /// Whether the server has projects; a server without them (0.12.x) hides them.
+    @Published private(set) var projectSupport: ProjectSupport = .unknown
+    /// The numbers next to the sidebar's places.
+    @Published private(set) var counts: SidebarCounts = .empty
+    /// The tasks of the place picked in the sidebar in sections, for the places that list them (`Place.filter`).
+    @Published private(set) var list: TaskListSections = .empty
+    /// What is typed in the toolbar's search field; it narrows every list.
+    @Published var search = "" {
+        didSet { if search != oldValue { recompute() } }
+    }
     @Published var selection: String?
-    /// The place picked in the sidebar.
-    @Published var place: Place = .today
+    /// The place picked in the sidebar (`show(_:)` changes it).
+    @Published private(set) var place: Place = .today
+    /// Whether the sidebar shows its Projects and Labels sections open, as last left.
+    @Published var projectsExpanded: Bool {
+        didSet { defaults.set(projectsExpanded, forKey: Keys.projectsExpanded) }
+    }
+    @Published var labelsExpanded: Bool {
+        didSet { defaults.set(labelsExpanded, forKey: Keys.labelsExpanded) }
+    }
+    /// The project editor sheet, open for a new project or one to edit.
+    @Published var projectEditor: ProjectEditorRequest?
+    /// The task whose project is being picked (Move to Project…, ⇧⌘M).
+    @Published var movingTask: TaskPick?
+    /// The project whose deletion asks where its tasks go.
+    @Published var deletingProject: ProjectPick?
     @Published var showConnect = false
     @Published var connectPrefill: PairingLink?
     @Published var alert: String?
@@ -49,6 +73,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var language: String
 
     let repository: TaskRepository
+    let defaults: UserDefaults
     let history: TaskHistorySync
     let healthSync: PlanHealthSync
     let notifications: NotificationScheduler?
@@ -56,9 +81,9 @@ final class AppModel: ObservableObject {
     var openMainWindow: (() -> Void)?
 
     private let credentials: CredentialStore
-    private let defaults: UserDefaults
     private let engineBox = EngineBox()
-    private var engine: SyncEngine?
+    /// The connected server's sync engine; nil without a pairing.
+    private(set) var engine: SyncEngine?
     private var clockTimer: Timer?
     private var planTask: Task<Void, Never>?
     private var healthTask: Task<Void, Never>?
@@ -70,6 +95,8 @@ final class AppModel: ObservableObject {
         static let useOffline = "useOffline"
         static let lastServer = "lastServerUrl"
         static let language = "language"
+        static let projectsExpanded = "sidebarProjectsExpanded"
+        static let labelsExpanded = "sidebarLabelsExpanded"
         /// macOS's own per-app language, which the menus that come with AppKit follow from the next start.
         static let appleLanguages = "AppleLanguages"
     }
@@ -92,6 +119,8 @@ final class AppModel: ObservableObject {
         launchLanguage = language
         notifications = environment.notifications ? NotificationScheduler() : nil
         useOffline = environment.defaults.bool(forKey: Keys.useOffline)
+        projectsExpanded = environment.defaults.object(forKey: Keys.projectsExpanded) as? Bool ?? true
+        labelsExpanded = environment.defaults.object(forKey: Keys.labelsExpanded) as? Bool ?? true
         observe()
         clockTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             Task { @MainActor in AppModel.shared.recompute() }
@@ -132,10 +161,21 @@ final class AppModel: ObservableObject {
             for try await count in repository.observePendingCount() { self?.pending = count }
         }
         Task { @MainActor [weak self] in
-            for try await support in repository.observeProjectSupport() { self?.projectSupport = support }
+            for try await health in repository.observePlanHealth() { self?.health = health }
         }
         Task { @MainActor [weak self] in
-            for try await health in repository.observePlanHealth() { self?.health = health }
+            for try await projects in repository.observeProjects() {
+                self?.projects = projects
+                self?.leaveGonePlace()
+                self?.recompute()
+            }
+        }
+        Task { @MainActor [weak self] in
+            for try await support in repository.observeProjectSupport() {
+                self?.projectSupport = support
+                self?.leaveGonePlace()
+                self?.recompute()
+            }
         }
         Task { @MainActor [weak self] in
             for try await settings in repository.observeSettings() {
@@ -146,12 +186,29 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// A project deleted elsewhere, or projects gone with an older server, leave its place for Today.
+    private func leaveGonePlace() {
+        switch place {
+        case .project(let id) where !showsProjects || project(id) == nil: show(.today)
+        case .noProject, .archivedProjects: if !showsProjects { show(.today) }
+        default: break
+        }
+    }
+
     /// Called on changes and every 30 seconds; publish even equal sections for midnight labels and cached claim expiry.
     func recompute() {
         objectWillChange.send()
-        let next = todaySections(tasks, nowMs: Clock.nowMs(), timezone: settings.timezone)
+        let now = Clock.nowMs()
+        let next = todaySections(tasks, nowMs: now, timezone: settings.timezone)
         if next != sections { sections = next }
-        let deleted = tasks.filter(\.inTrash).sorted { ($0.deletedAt ?? 0) > ($1.deletedAt ?? 0) }
+        let nextCounts = sidebarCounts(tasks, projects: showsProjects ? projects : [], today: next.date)
+        if nextCounts != counts { counts = nextCounts }
+        let shown = search.isEmpty ? tasks : tasks.filter(matchesSearch)
+        let nextList = place.filter.map {
+            taskListSections(shown, filter: $0, projects: showsProjects ? projectIds : [], nowMs: now, timezone: settings.timezone)
+        } ?? .empty
+        if nextList != list { list = nextList }
+        let deleted = shown.filter(\.inTrash).sorted { ($0.deletedAt ?? 0) > ($1.deletedAt ?? 0) }
         if deleted != trash { trash = deleted }
     }
 
@@ -204,16 +261,25 @@ final class AppModel: ObservableObject {
 
     // MARK: Actions
 
-    /// Adds a task from one line of quick add: a date phrase at its end sets the day and time, otherwise today.
+    /**
+     * Adds a task from one line of quick add: a date phrase at its end sets the day and time, otherwise the day of
+     * [place] (today on Today, none in the other lists); a `+project` word sets the project, otherwise the project of
+     * [place].
+     */
     @discardableResult
-    func quickAdd(_ line: String, readPhrase: Bool = true) -> Bool {
-        let input = readPhrase
-            ? QuickAdd.parse(line, now: Clock.nowMs(), timezone: settings.timezone)
-            : QuickAddInput(title: line.trimmingCharacters(in: .whitespacesAndNewlines), when: nil, phrase: nil)
+    func quickAdd(_ line: String, readPhrase: Bool = true, in place: Place = .today) -> Bool {
+        let input = parseQuickAdd(line, readPhrase: readPhrase)
         guard TaskRules.title(input.title) != nil else { return false }
-        let date = input.when?.date ?? today
-        run { try await $0.add(title: input.title, dueDate: date, dueTime: input.when?.time) }
+        let context = QuickAddContext(place, today: today)
+        let date = input.when?.date ?? context.date
+        let project = input.projectLocalId ?? (showsProjects ? context.project : nil)
+        run { try await $0.add(title: input.title, dueDate: date, dueTime: input.when?.time, projectLocalId: project) }
         return true
+    }
+
+    /// One line of quick add as it will be added; without [readPhrase] the date words stay in the title.
+    func parseQuickAdd(_ line: String, readPhrase: Bool) -> QuickAddInput {
+        QuickAdd.parse(line, now: Clock.nowMs(), timezone: settings.timezone, projects: showsProjects ? projects : [], readDate: readPhrase)
     }
 
     func toggleDone(_ task: TaskItem) {
@@ -228,11 +294,14 @@ final class AppModel: ObservableObject {
         run { try await $0.reschedule(id, to: tomorrow) }
     }
 
-    /// Opens a place of the sidebar; a selected task that is not there is let go.
+    /// Opens a place of the sidebar; a selected task that is not there is let go. A project opens its section.
     func show(_ place: Place) {
         guard place != self.place else { return }
         self.place = place
-        if let id = selection, let task = task(id), task.inTrash != (place == .trash) { selection = nil }
+        recompute()
+        if case .project = place { projectsExpanded = true }
+        if case .label = place { labelsExpanded = true }
+        if let id = selection, let task = task(id), !place.lists(task, projects: projectIds) { selection = nil }
     }
 
     func setNow(_ id: String) { run { try await $0.setNow(id) } }
@@ -261,15 +330,39 @@ final class AppModel: ObservableObject {
         return true
     }
 
-    private func run(_ action: @escaping @Sendable (TaskRepository) async throws -> Void) {
+    /**
+     * A project change, made on the server at once (`ProjectCalls.swift`), with a failure in the alert: without a
+     * connected server, or when it cannot be reached, the change needs a connection and nothing is queued.
+     */
+    func runOnServer(_ action: @escaping @Sendable (SyncEngine) async throws -> Void) {
+        guard let engine else {
+            alert = Self.needsConnection
+            return
+        }
+        Task { @MainActor [weak self] in
+            do {
+                try await action(engine)
+            } catch {
+                self?.alert = Self.failure(error)
+            }
+        }
+    }
+
+    static var needsConnection: String { tr("Requires a connection to the server.") }
+
+    /// What the user is told when a change fails.
+    static func failure(_ error: Error) -> String {
+        if case RepositoryError.invalid(let message) = error { return message }
+        return tr("The change could not be saved: \(String(describing: error))")
+    }
+
+    func run(_ action: @escaping @Sendable (TaskRepository) async throws -> Void) {
         let repository = repository
         Task { @MainActor [weak self] in
             do {
                 try await action(repository)
-            } catch RepositoryError.invalid(let message) {
-                self?.alert = message
             } catch {
-                self?.alert = tr("The change could not be saved: \(String(describing: error))")
+                self?.alert = Self.failure(error)
             }
         }
     }
@@ -486,9 +579,49 @@ final class EngineBox: @unchecked Sendable {
     }
 }
 
-/// The places of the main window's sidebar.
+/**
+ * The places of the main window's sidebar: the inbox (approval requests and proposals waiting for the owner), Today,
+ * every task, the tasks without a project, a project, a label, the archived projects, the done and archived tasks,
+ * and the trash.
+ */
 enum Place: Hashable {
-    case today, trash
+    case inbox, today, all, noProject, project(String), label(String), archivedProjects, done, trash
+
+    /// The tasks a list place shows in sections; nil for the places with their own views.
+    var filter: TaskFilter? {
+        switch self {
+        case .all: return .all
+        case .noProject: return .noProject
+        case .project(let id): return .project(id)
+        case .label(let label): return .label(label)
+        case .inbox, .today, .archivedProjects, .done, .trash: return nil
+        }
+    }
+
+    /// The task list the place shows (the inbox and the archived projects list no tasks).
+    func lists(_ task: TaskItem, projects: Set<String>) -> Bool {
+        switch self {
+        case .trash: return task.inTrash
+        case .done: return !task.inTrash && (task.status == .done || task.archivedAt != nil)
+        case .today: return task.isActive
+        case .inbox, .archivedProjects: return false
+        case .all, .noProject, .project, .label: return task.isActive && filter?.matches(task, projects: projects) == true
+        }
+    }
+}
+
+/// What quick add takes from the place it is typed in: the day (today on Today) and the project.
+struct QuickAddContext: Equatable {
+    let date: String?
+    let project: String?
+
+    init(_ place: Place, today: String) {
+        switch place {
+        case .inbox, .today, .archivedProjects, .done, .trash: date = today
+        case .all, .noProject, .project, .label: date = nil
+        }
+        if case .project(let id) = place { project = id } else { project = nil }
+    }
 }
 
 /// Where the model keeps things: the database file, the sign-in and the preferences.
