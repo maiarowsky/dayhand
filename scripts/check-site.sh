@@ -10,6 +10,7 @@
 #   Open Graph tags and a place in sitemap.xml, and any other page says noindex; 404.html and robots.txt exist;
 # - images: what one page loads at the widest srcset candidates, for one colour scheme, stays within a budget;
 # - the documentation search index: every entry points at a page and a section that exist;
+# - the waitlist form's privacy line gives a mailto address for removal;
 # - static CSS/JS lint: CSS url() paths, no @import, outline: none or transition: all, and no server URL
 #   literals in scripts. These pattern scans do not observe browser network behaviour.
 #
@@ -328,6 +329,13 @@ if os.path.isdir(os.path.join(DIST, "docs")):
             problem(search_index, n, f"{entry['u']} is not a page of this site")
         elif target[1] and target[1] not in pages[target[0]][0].ids:
             problem(search_index, n, f'{entry["u"]}: no id "{target[1]}"')
+
+# The waitlist form promises a way to have an address removed: its privacy line must give a mailto address.
+home = os.path.join(DIST, "index.html")
+if home in pages and "data-waitlist" in pages[home][1]:
+    privacy = re.search(r'id="waitlist-privacy"[^>]*>(.*?)</p>', pages[home][1], re.S)
+    if not privacy or not re.search(r'href="mailto:[^"@\s]+@[^"@\s]+\.[^"@\s]+"', privacy.group(1)):
+        problem(home, 1, "the waitlist privacy line gives no mailto address for removal")
 
 sitemap = os.path.join(DIST, "sitemap.xml")
 robots = os.path.join(DIST, "robots.txt")

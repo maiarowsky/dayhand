@@ -93,9 +93,9 @@ owns dayhand.dev:
 npm run deploy   # checks scripts/check-release.mjs, builds, then wrangler deploy
 ```
 
-`npm run deploy` stops while `CONTACT_EMAIL` in `site/src/site.ts` is empty: the waitlist promises a way
-to have an address removed, and that constant is the address the page gives for it. Set it to the
-address the owner chooses; nothing else on the page changes.
+`npm run deploy` stops when `CONTACT_EMAIL` in `site/src/site.ts` is not a valid address: the waitlist
+promises a way to have an address removed, and that constant (`hello@dayhand.dev`) is the address the page
+gives for it.
 
 `site/wrangler.toml` holds no account id and no secrets; the account comes from `wrangler login`.
 
@@ -109,8 +109,12 @@ away a filled-in hidden field (answered as if accepted, stored nowhere), a form 
 seconds after the page opened, another site's origin, and more than five tries from one client address
 in ten minutes (counted in `waitlist_rate` under a SHA-256 hash of the address).
 
-Before the first deploy with the waitlist, create the database once and apply its migration
-(`site/migrations/`):
+Before the first deploy with the waitlist, set up mail for `hello@dayhand.dev`, the address the form gives
+for removal: in the Cloudflare dashboard, Email Routing for dayhand.dev, add a custom address
+`hello@dayhand.dev` that forwards to the owner's mailbox. Cloudflare sends a confirmation email to that
+mailbox, and the owner must confirm it before anything is forwarded.
+
+Then create the database once and apply its migration (`site/migrations/`):
 
 ```sh
 cd site
