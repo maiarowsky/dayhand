@@ -110,17 +110,11 @@ for removal: in the Cloudflare dashboard, Email Routing for dayhand.dev, add a c
 `hello@dayhand.dev` that forwards to the owner's mailbox. Cloudflare sends a confirmation email to that
 mailbox, and the owner must confirm it before anything is forwarded.
 
-Then create the database once and apply its migration (`site/migrations/`):
+The database `dayhand-waitlist` already exists; its `database_id` is under `[[d1_databases]]` in
+`site/wrangler.toml` (an id, not a secret). Apply any new migration in `site/migrations/` before deploying:
 
 ```sh
 cd site
-wrangler d1 create dayhand-waitlist   # prints the database_id
-```
-
-Add that id under `[[d1_databases]]` in `site/wrangler.toml` as `database_id = "<id>"` (an id, not a
-secret), then:
-
-```sh
 wrangler d1 migrations apply dayhand-waitlist --remote
 npm run build && wrangler deploy
 ```
