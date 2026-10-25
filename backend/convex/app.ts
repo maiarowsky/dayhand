@@ -13,6 +13,7 @@ import {
   revokeConnection as revokeConnectionOp,
 } from "./oauthOwner";
 import { args } from "./lib/args";
+import { offlineRepeatValidator } from "./lib/offlineRepeat";
 import { fail, type Identity } from "./lib/core";
 import { exportPlan as exportPlanOp } from "./lib/exportPlan";
 import { scopeValidator } from "./lib/oauthConfig";
@@ -56,7 +57,11 @@ async function appUser(ctx: AuthCtx): Promise<Identity> {
   return { userId: identity.tokenIdentifier, actor: "app" };
 }
 
-export const add = mutation({ args: args.add, handler: async (ctx, a) => addTask(ctx, await appUser(ctx), a) });
+// 0.13.2: app-only proof for a locally calculated occurrence; not part of add_task or REST POST /tasks.
+export const add = mutation({
+  args: { ...args.add, repeatedFrom: v.optional(offlineRepeatValidator) },
+  handler: async (ctx, { repeatedFrom, ...a }) => addTask(ctx, await appUser(ctx), a, repeatedFrom),
+});
 export const update = mutation({
   args: args.update,
   handler: async (ctx, a) => updateTask(ctx, await appUser(ctx), a),

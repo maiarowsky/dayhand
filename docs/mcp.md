@@ -560,6 +560,7 @@ works with any 0.x from 0.3 on.
 
 | Version | Changes |
 |---|---|
+| 0.13.2 | App-only restoration of a confirmed local repeat into its parent's project, including an archived project; no change to `add_task` or REST task creation. Deploy before Android 0.12.0. |
 | 0.13.1 | [Project tools](#projects): `list_projects`, `add_project`, `update_project`, owner-only `delete_project`; [REST project routes](api.md#projects); `dayhand://projects`, active projects in `agent_brief`, project output schemas; OpenAPI documents `POST /import`'s `projectId` |
 | 0.13.0 | [Project selectors](#projects), [export fields](#export-formats) and [Backlog.md targeting](backlog-md.md#using-it); [backend project support and client availability](architecture.md#projects) |
 | 0.12.0 | Phase guides and Backlog.md ([agent-work.md](agent-work.md#9-phase-guides-and-the-agent-brief), [backlog-md.md](backlog-md.md)): resources `dayhand://workflow/intake`, `dayhand://workflow/execution` and `dayhand://workflow/finalization`; `agent_brief`; `import_backlog` and `export_backlog` (source kind `backlog-md`) |

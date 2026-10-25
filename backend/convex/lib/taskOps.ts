@@ -30,6 +30,7 @@ import {
 import { checkAcceptance, checkClaim, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
 import { localDate } from "./dates";
 import { projectTarget } from "./projectOps";
+import { confirmOfflineRepeat, type OfflineRepeat } from "./offlineRepeat";
 import { addSource, checkRequestedBy, checkReturnTo, checkSource, notProposal, sendReturn, taskOfSource } from "./proposals";
 import { advance } from "./repeat";
 import type { Status } from "./validators";
@@ -49,7 +50,7 @@ function writable(task: Doc<"tasks">, identity: Identity) {
   return task;
 }
 
-export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<"add">) {
+export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<"add">, offlineRepeat?: OfflineRepeat) {
   const clientId = checkClientId(input.clientId);
   if (clientId !== undefined) {
     const existing = await ctx.db
@@ -69,6 +70,10 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
   const dueDate = input.dueDate === undefined ? undefined : checkDueDate(input.dueDate, today);
   const dueTime = input.dueTime === undefined ? undefined : checkDueTime(input.dueTime);
   checkSchedule(dueDate, dueTime);
+  const repeat = input.repeat === undefined ? undefined : checkRepeat(input.repeat, timezone);
+  const projectId = offlineRepeat
+    ? await confirmOfflineRepeat(ctx, identity, offlineRepeat, { ...input, clientId, dueDate, repeat })
+    : input.projectId === undefined ? undefined : await projectTarget(ctx, identity.userId, input.projectId);
   const now = Date.now();
   const fields = {
     title: checkTitle(input.title),
@@ -78,7 +83,7 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     status: input.status ?? ("todo" as Status),
     isNow: false,
     resumeNote: input.resumeNote === undefined ? undefined : checkText("resumeNote", input.resumeNote),
-    repeat: input.repeat === undefined ? undefined : checkRepeat(input.repeat, timezone),
+    repeat,
     labels: checkLabels(input.labels ?? []),
     links: checkLinks(input.links ?? []),
     checklist: input.checklist === undefined ? undefined : checkChecklist(input.checklist),
@@ -91,7 +96,7 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     source,
     requestedBy: checkRequestedBy(identity, input.requestedBy, input.proposal === true),
     returnTo: input.returnTo === undefined ? undefined : await checkReturnTo(ctx, identity.userId, input.returnTo),
-    projectId: input.projectId === undefined ? undefined : await projectTarget(ctx, identity.userId, input.projectId),
+    projectId,
     createdAt: now,
     updatedAt: now,
     clientId,
@@ -101,7 +106,13 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
   const taskId = await ctx.db.insert("tasks", { userId: identity.userId, ref, ...fields });
   if (source) await addSource(ctx, identity.userId, source, taskId);
   const { createdAt, updatedAt, ...snapshot } = fields;
-  await recordEvent(ctx, identity, { taskId, action: "create", after: snapshot, clientId });
+  // The same repeat history shape as server-side completion also reserves this completion's one successor.
+  await recordEvent(ctx, identity, {
+    taskId,
+    action: offlineRepeat ? "repeat" : "create",
+    after: offlineRepeat ? { ...snapshot, repeatedFrom: offlineRepeat.taskId } : snapshot,
+    clientId: offlineRepeat?.completedBy ?? clientId,
+  });
   return toTask((await ctx.db.get(taskId))!);
 }
 
