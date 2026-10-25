@@ -27,7 +27,7 @@ struct MainWindow: View {
                             .pickerStyle(.segmented)
                             .labelsHidden()
                             .fixedSize()
-                            .help(tr("Board or list (⌃⌘1, ⌃⌘2)"))
+                            .help(tr("Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)"))
                         }
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -86,6 +86,14 @@ struct PlaceContent: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
+        if model.viewMode == .plan && model.placeHasViews {
+            PlanView()
+        } else {
+            place
+        }
+    }
+
+    @ViewBuilder private var place: some View {
         switch model.place {
         case .inbox: InboxPlace()
         case .today: TodayView()

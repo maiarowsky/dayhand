@@ -2,22 +2,24 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// How the main area shows the tasks of a place: a board of status columns or a list in sections.
+/// How the main area shows the tasks of a place: a board of status columns, the week's plan, or a list in sections.
 enum ViewMode: String, CaseIterable {
-    case board, list
+    case board, plan, list
 
     var title: String {
         switch self {
         case .board: return tr("Board")
+        case .plan: return tr("Plan")
         case .list: return tr("List")
         }
     }
 
-    /// ⌃⌘1, ⌃⌘2 in the View menu.
+    /// ⌃⌘1, ⌃⌘2, ⌃⌘3 in the View menu.
     var key: KeyEquivalent {
         switch self {
         case .board: return "1"
-        case .list: return "2"
+        case .plan: return "2"
+        case .list: return "3"
         }
     }
 }

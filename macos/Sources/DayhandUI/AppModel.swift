@@ -48,7 +48,7 @@ final class AppModel: ObservableObject {
     @Published var selection: String?
     /// The place picked in the sidebar (`show(_:)` changes it).
     @Published private(set) var place: Place = .today
-    /// Board or list, as last picked in the toolbar.
+    /// Board, plan or list, as last picked in the toolbar.
     @Published var viewMode: ViewMode {
         didSet { defaults.set(viewMode.rawValue, forKey: Keys.viewMode) }
     }

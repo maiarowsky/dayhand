@@ -94,12 +94,27 @@ public enum ScreenSnapshots {
                 try await render(window(), narrow, dark, png("board-\(name)-820\(suffix)"), sidebar: sidebar())
             }
         }
+        // The week's plan with the drawer (nothing selected) and with a task open.
+        model.viewMode = .plan
+        for (name, place, _) in places {
+            model.show(place)
+            model.selection = nil
+            for dark in [false, true] {
+                let suffix = dark ? "-dark" : ""
+                try await render(window(), wide, dark, png("plan-\(name)-1100\(suffix)"), sidebar: sidebar())
+                if name != "all" { try await render(window(), narrow, dark, png("plan-\(name)-820\(suffix)"), sidebar: sidebar()) }
+            }
+        }
+        if let call = task("Call the accountant") {
+            try await render(PlanTaskPopover(task: call, close: {}).environmentObject(model), CGSize(width: 300, height: 260), false, png("plan-popover"))
+        }
         model.show(.today)
         model.selection = task("Call the accountant")?.localId
         var layoutProblems: [String] = []
         for mode in ViewMode.allCases {
             model.viewMode = mode
-            layoutProblems += try await WindowLayoutCheck.run(window()).map { "\(mode.rawValue): \($0)" }
+            // The plan has no quick add field of its own (+ Task in the toolbar adds).
+            layoutProblems += try await WindowLayoutCheck.run(window(), quickAdd: mode != .plan).map { "\(mode.rawValue): \($0)" }
         }
         if !layoutProblems.isEmpty { throw SnapshotError.layout(layoutProblems) }
         for dark in [false, true] {

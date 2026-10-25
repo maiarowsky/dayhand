@@ -110,8 +110,8 @@
 	<string>Blau</string>
 	<key>Board</key>
 	<string>Board</string>
-	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
-	<string>Board oder Liste (⌃⌘1, ⌃⌘2)</string>
+	<key>Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)</key>
+	<string>Board, Plan oder Liste (⌃⌘1, ⌃⌘2, ⌃⌘3)</string>
 	<key>Brown</key>
 	<string>Braun</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -248,6 +248,8 @@
 	<string>Laden …</string>
 	<key>Downloading… %lld%%</key>
 	<string>Laden … %lld %%</string>
+	<key>Drag to the calendar</key>
+	<string>In den Kalender ziehen</string>
 	<key>Due</key>
 	<string>Fällig</string>
 	<key>Edit Project</key>
@@ -266,6 +268,8 @@
 	<string>Wie oft</string>
 	<key>Every task is in a project.</key>
 	<string>Jede Aufgabe ist in einem Projekt.</string>
+	<key>Fold the tasks</key>
+	<string>Aufgaben einklappen</string>
 	<key>Frequency</key>
 	<string>Häufigkeit</string>
 	<key>From %@</key>
@@ -386,6 +390,8 @@
 	<string>Neue Aufgabe (⌘N oder das Kürzel für Schnell hinzufügen aus jeder App)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Neue Aufgabe, z. B. Steuerberater anrufen fri 2pm</string>
+	<key>Next week</key>
+	<string>Nächste Woche</string>
 	<key>No Day</key>
 	<string>Ohne Tag</string>
 	<key>No Project</key>
@@ -478,6 +484,8 @@
 	<string>Dayhand öffnen</string>
 	<key>Open System Settings</key>
 	<string>Systemeinstellungen öffnen</string>
+	<key>Open Task</key>
+	<string>Aufgabe öffnen</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Öffnet die Zeichenübersicht (⌃⌘Leertaste)</string>
 	<key>Options: %@</key>
@@ -500,6 +508,8 @@
 	<string>Update wird vorbereitet …</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Vorabversionen erscheinen vor einem Release und können Ecken und Kanten haben.</string>
+	<key>Previous week</key>
+	<string>Vorherige Woche</string>
 	<key>Project</key>
 	<string>Projekt</string>
 	<key>Project actions</key>
@@ -598,6 +608,8 @@
 	<string>System (%@)</string>
 	<key>Task</key>
 	<string>Aufgabe</string>
+	<key>Tasks</key>
+	<string>Aufgaben</string>
 	<key>Teal</key>
 	<string>Petrol</string>
 	<key>That is not a date.</key>
@@ -688,6 +700,8 @@
 	<string>Sie nehmen keine neuen Aufgaben an; ihre Aufgaben bleiben darin.</string>
 	<key>This Mac</key>
 	<string>Dieser Mac</string>
+	<key>This Week</key>
+	<string>Diese Woche</string>
 	<key>This version</key>
 	<string>Diese Version</string>
 	<key>Tick %@</key>
@@ -722,6 +736,8 @@
 	<string>Tippen zum Filtern</string>
 	<key>Unarchive</key>
 	<string>Aus dem Archiv holen</string>
+	<key>Unfold the tasks</key>
+	<string>Aufgaben ausklappen</string>
 	<key>Untick %@</key>
 	<string>Haken entfernen: %@</string>
 	<key>Update and Relaunch</key>

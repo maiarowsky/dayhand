@@ -110,8 +110,8 @@
 	<string>Niebieski</string>
 	<key>Board</key>
 	<string>Tablica</string>
-	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
-	<string>Tablica albo lista (⌃⌘1, ⌃⌘2)</string>
+	<key>Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)</key>
+	<string>Tablica, plan albo lista (⌃⌘1, ⌃⌘2, ⌃⌘3)</string>
 	<key>Brown</key>
 	<string>Brązowy</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -248,6 +248,8 @@
 	<string>Pobieranie…</string>
 	<key>Downloading… %lld%%</key>
 	<string>Pobieranie… %lld%%</string>
+	<key>Drag to the calendar</key>
+	<string>Przeciągnij do kalendarza</string>
 	<key>Due</key>
 	<string>Termin</string>
 	<key>Edit Project</key>
@@ -266,6 +268,8 @@
 	<string>Co ile</string>
 	<key>Every task is in a project.</key>
 	<string>Każde zadanie jest w jakimś projekcie.</string>
+	<key>Fold the tasks</key>
+	<string>Zwiń zadania</string>
 	<key>Frequency</key>
 	<string>Częstotliwość</string>
 	<key>From %@</key>
@@ -386,6 +390,8 @@
 	<string>Nowe zadanie (⌘N albo skrót szybkiego dodawania z dowolnej aplikacji)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Nowe zadanie, np. Zadzwoń do księgowej fri 2pm</string>
+	<key>Next week</key>
+	<string>Następny tydzień</string>
 	<key>No Day</key>
 	<string>Bez dnia</string>
 	<key>No Project</key>
@@ -478,6 +484,8 @@
 	<string>Otwórz Dayhand</string>
 	<key>Open System Settings</key>
 	<string>Otwórz Ustawienia systemowe</string>
+	<key>Open Task</key>
+	<string>Otwórz zadanie</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Otwiera przeglądarkę znaków (⌃⌘Spacja)</string>
 	<key>Options: %@</key>
@@ -500,6 +508,8 @@
 	<string>Przygotowywanie uaktualnienia…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Wersje zapoznawcze pojawiają się przed wydaniem i mogą być niedopracowane.</string>
+	<key>Previous week</key>
+	<string>Poprzedni tydzień</string>
 	<key>Project</key>
 	<string>Projekt</string>
 	<key>Project actions</key>
@@ -598,6 +608,8 @@
 	<string>Systemowy (%@)</string>
 	<key>Task</key>
 	<string>Zadanie</string>
+	<key>Tasks</key>
+	<string>Zadania</string>
 	<key>Teal</key>
 	<string>Morski</string>
 	<key>That is not a date.</key>
@@ -688,6 +700,8 @@
 	<string>Nie przyjmują nowych zadań; ich zadania w nich zostają.</string>
 	<key>This Mac</key>
 	<string>Ten Mac</string>
+	<key>This Week</key>
+	<string>Ten tydzień</string>
 	<key>This version</key>
 	<string>Ta wersja</string>
 	<key>Tick %@</key>
@@ -722,6 +736,8 @@
 	<string>Wpisz, aby zawęzić</string>
 	<key>Unarchive</key>
 	<string>Przywróć z archiwum</string>
+	<key>Unfold the tasks</key>
+	<string>Rozwiń zadania</string>
 	<key>Untick %@</key>
 	<string>Cofnij odhaczenie: %@</string>
 	<key>Update and Relaunch</key>

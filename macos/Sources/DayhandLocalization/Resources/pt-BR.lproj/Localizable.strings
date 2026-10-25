@@ -110,8 +110,8 @@
 	<string>Azul</string>
 	<key>Board</key>
 	<string>Quadro</string>
-	<key>Board or list (⌃⌘1, ⌃⌘2)</key>
-	<string>Quadro ou lista (⌃⌘1, ⌃⌘2)</string>
+	<key>Board, plan or list (⌃⌘1, ⌃⌘2, ⌃⌘3)</key>
+	<string>Quadro, plano ou lista (⌃⌘1, ⌃⌘2, ⌃⌘3)</string>
 	<key>Brown</key>
 	<string>Marrom</string>
 	<key>Built with GRDB.swift (MIT), KeyboardShortcuts (MIT) and Sparkle (MIT).</key>
@@ -248,6 +248,8 @@
 	<string>Baixando…</string>
 	<key>Downloading… %lld%%</key>
 	<string>Baixando… %lld%%</string>
+	<key>Drag to the calendar</key>
+	<string>Arraste para o calendário</string>
 	<key>Due</key>
 	<string>Prazo</string>
 	<key>Edit Project</key>
@@ -266,6 +268,8 @@
 	<string>A cada quantos</string>
 	<key>Every task is in a project.</key>
 	<string>Todas as tarefas estão em um projeto.</string>
+	<key>Fold the tasks</key>
+	<string>Recolher as tarefas</string>
 	<key>Frequency</key>
 	<string>Frequência</string>
 	<key>From %@</key>
@@ -386,6 +390,8 @@
 	<string>Nova tarefa (⌘N ou o atalho de adição rápida em qualquer app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Nova tarefa, por ex. Ligar para o contador fri 2pm</string>
+	<key>Next week</key>
+	<string>Próxima semana</string>
 	<key>No Day</key>
 	<string>Sem dia</string>
 	<key>No Project</key>
@@ -478,6 +484,8 @@
 	<string>Abrir o Dayhand</string>
 	<key>Open System Settings</key>
 	<string>Abrir Ajustes do Sistema</string>
+	<key>Open Task</key>
+	<string>Abrir tarefa</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Abre o Visualizador de Caracteres (⌃⌘Espaço)</string>
 	<key>Options: %@</key>
@@ -500,6 +508,8 @@
 	<string>Preparando a atualização…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>As prévias chegam antes de uma versão e podem ter arestas.</string>
+	<key>Previous week</key>
+	<string>Semana anterior</string>
 	<key>Project</key>
 	<string>Projeto</string>
 	<key>Project actions</key>
@@ -598,6 +608,8 @@
 	<string>Sistema (%@)</string>
 	<key>Task</key>
 	<string>Tarefa</string>
+	<key>Tasks</key>
+	<string>Tarefas</string>
 	<key>Teal</key>
 	<string>Verde-azulado</string>
 	<key>That is not a date.</key>
@@ -688,6 +700,8 @@
 	<string>Não recebem novas tarefas; as tarefas deles continuam neles.</string>
 	<key>This Mac</key>
 	<string>Este Mac</string>
+	<key>This Week</key>
+	<string>Esta semana</string>
 	<key>This version</key>
 	<string>Esta versão</string>
 	<key>Tick %@</key>
@@ -722,6 +736,8 @@
 	<string>Digite para filtrar</string>
 	<key>Unarchive</key>
 	<string>Desarquivar</string>
+	<key>Unfold the tasks</key>
+	<string>Expandir as tarefas</string>
 	<key>Untick %@</key>
 	<string>Desmarcar: %@</string>
 	<key>Update and Relaunch</key>
