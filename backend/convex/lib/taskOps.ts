@@ -29,6 +29,7 @@ import {
 } from "./core";
 import { checkAcceptance, checkClaim, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
 import { localDate } from "./dates";
+import { projectTarget } from "./projectOps";
 import { addSource, checkRequestedBy, checkReturnTo, checkSource, notProposal, sendReturn, taskOfSource } from "./proposals";
 import { advance } from "./repeat";
 import type { Status } from "./validators";
@@ -90,6 +91,7 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     source,
     requestedBy: checkRequestedBy(identity, input.requestedBy, input.proposal === true),
     returnTo: input.returnTo === undefined ? undefined : await checkReturnTo(ctx, identity.userId, input.returnTo),
+    projectId: input.projectId === undefined ? undefined : await projectTarget(ctx, identity.userId, input.projectId),
     createdAt: now,
     updatedAt: now,
     clientId,
@@ -131,6 +133,9 @@ export async function updateTask(ctx: MutationCtx, identity: Identity, input: Ar
   if (input.blockedReason !== undefined) {
     patch.blockedReason = input.blockedReason === null ? undefined : checkLongText("blockedReason", input.blockedReason);
   }
+  if (input.projectId !== undefined) {
+    patch.projectId = input.projectId === null ? undefined : await projectTarget(ctx, identity.userId, input.projectId, task.projectId);
+  }
   checkSchedule(
     "dueDate" in patch ? patch.dueDate : task.dueDate,
     "dueTime" in patch ? patch.dueTime : task.dueTime,
@@ -158,8 +163,8 @@ async function clearNow(ctx: MutationCtx, identity: Identity, exceptId?: Id<"tas
  * agent completing a task with acceptance criteria needs them all met and a
  * proof summary (lib/agentWork.ts). A repeating task gets its next
  * occurrence, unless its series has ended (`until`, `count`): same title,
- * note, labels, links, reminders and plan, the checklist and the criteria
- * unticked, counted on per the rule (lib/repeat.ts).
+ * note, labels, links, reminders, plan and project, the checklist and the
+ * criteria unticked, counted on per the rule (lib/repeat.ts).
  */
 export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">) {
   const replayed = await replay(ctx, identity.userId, input.clientId);
@@ -201,6 +206,7 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     reminders: task.reminders,
     acceptance: task.acceptance?.map((item) => ({ ...item, met: false })),
     plan: task.plan,
+    projectId: task.projectId,
     createdAt: now,
     updatedAt: now,
   };

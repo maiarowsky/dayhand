@@ -2,11 +2,12 @@
 // from completion, until/count, London's clock changes, and the promise that
 // listing a series ahead gives the dates completing it would create.
 import { describe, expect, test } from "vitest";
+import { internal } from "../convex/_generated/api";
 import { localDate } from "../convex/lib/dates";
 import { advance, monthDayIn, nthWeekdayIn, occurrences, validateRepeat } from "../convex/lib/repeat";
 import { parseRRule } from "../convex/lib/rrule";
 import type { RepeatRule } from "../convex/lib/validators";
-import { utc } from "./helpers";
+import { asUser, newUserId, utc } from "./helpers";
 
 const monthly = (extra: Partial<RepeatRule> = {}): RepeatRule => ({ every: "month", interval: 1, ...extra });
 const year = { from: "2026-01-01", to: "2031-12-31" };
@@ -246,5 +247,20 @@ describe("validation", () => {
   test("valid rules", () => {
     expect(validateRepeat(monthly({ monthDay: -1, from: "completion", until: "2027-01-01" }))).toBeNull();
     expect(validateRepeat(monthly({ weekdayOfMonth: { nth: -1, weekday: 5 }, count: 12 }))).toBeNull();
+  });
+});
+
+describe("the next occurrence and projects (0.13.0)", () => {
+  test("the next occurrence of a repeating task keeps its project, also once the project is archived", async () => {
+    const user = asUser(newUserId());
+    const { project }: any = await user.mutation(internal.ops.addProject, { name: "Health" });
+    const task: any = await user.mutation(internal.ops.add, { title: "Gym", dueDate: "2026-10-20", repeat: { every: "week", interval: 1 }, projectId: "health" });
+    const first: any = await user.mutation(internal.ops.complete, { taskId: task.id });
+    expect(first.next).toMatchObject({ title: "Gym", dueDate: "2026-10-27", projectId: project.id });
+    await user.mutation(internal.ops.updateProject, { projectId: project.id, archived: true });
+    const second: any = await user.mutation(internal.ops.complete, { taskId: first.next.id });
+    expect(second.next).toMatchObject({ dueDate: "2026-11-03", projectId: project.id });
+    const loose: any = await user.mutation(internal.ops.add, { title: "Water plants", dueDate: "2026-10-20", repeat: { every: "day", interval: 1 } });
+    expect(((await user.mutation(internal.ops.complete, { taskId: loose.id })) as any).next).not.toHaveProperty("projectId");
   });
 });

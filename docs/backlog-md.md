@@ -39,6 +39,17 @@ folder to retain this context when task files are grouped in other, non-reserved
 Relative file paths ignore `.` and empty segments before classification, so `./drafts/task.md`
 and `drafts/task.md` have the same proposal state.
 
+Since backend 0.13.0, MCP and REST also accept an optional `projectId`: in the `import_backlog`
+arguments or `POST /api/v1/import/backlog` body, it assigns every new task to that destination
+using the [task project selector rules](mcp.md#projects). Tasks imported before are skipped and
+stay where they are. `export_backlog` arguments and `GET /api/v1/export/backlog` query parameters
+are `prefix`, `includeArchived` and `projectId`; the last selects one project by id or name,
+including an archived project, and sets `config.yml`'s `project_name` to its name. Dependencies on
+tasks outside the selected project are left out and counted in `notes`. Without `projectId`,
+export includes the whole plan and uses `Dayhand export` as the configuration's project name.
+A configuration's `project_name` does not create a Dayhand project on import. These selectors are
+not CLI flags yet; for project creation and client availability see [architecture](architecture.md#projects).
+
 ## The file format
 
 A task file is Markdown with a YAML header between two `---` lines:

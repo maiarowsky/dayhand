@@ -1,11 +1,14 @@
 // Data migrations, run by the deployment admin after a deploy that needs them
-// (steps in docs/deploy.md). Each is idempotent: it only fills what is missing.
+// (steps in docs/deploy.md). Each is idempotent: it only fills what is missing,
+// or (projectsToLabels) only takes away what is still there.
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { nextTaskRef } from "./lib/core";
 
 const BATCH = 200;
+const MAX_LABELS = 20;
 
 /**
  * 0.3.0: gives every task without a number the next number of its user, oldest
@@ -77,15 +80,69 @@ export const backfillEventSeqs = internalMutation({
   },
 });
 
-/** What the migrations still have to do; every number is 0 when they are complete. */
+/**
+ * 0.13.0, before rolling back to 0.12.x (docs/deploy.md): projects become labels
+ * again. Every task in a project gets a label with the project's name, when it
+ * has room for one more (20 at most; the others are listed in noRoom), and
+ * loses its projectId; once no task has one, the projects are deleted. Nothing
+ * enters the history. Runs in batches and schedules itself; `projects` marks
+ * the last part, when only projects are left to delete.
+ */
+export const projectsToLabels = internalMutation({
+  args: { cursor: v.optional(v.union(v.string(), v.null())), projects: v.optional(v.boolean()) },
+  handler: async (ctx, { cursor, projects }) => {
+    let relabeled = 0;
+    let cleared = 0;
+    const noRoom: { taskId: Id<"tasks">; ref: number | null; project: string }[] = [];
+    if (!projects) {
+      const page = await ctx.db.query("tasks").paginate({ numItems: BATCH, cursor: cursor ?? null });
+      const names = new Map<string, string | null>();
+      for (const task of page.page) {
+        if (task.projectId === undefined) continue;
+        if (!names.has(task.projectId)) names.set(task.projectId, (await ctx.db.get(task.projectId))?.name ?? null);
+        const name = names.get(task.projectId) ?? null;
+        const wanted = name !== null && !task.labels.includes(name);
+        const room = task.labels.length < MAX_LABELS;
+        if (wanted && !room) {
+          noRoom.push({ taskId: task._id, ref: task.ref ?? null, project: name });
+          // Batches after the first run on their own: the deployment's logs keep what they could not carry over.
+          console.warn(`Task #${task.ref ?? task._id} already has ${MAX_LABELS} labels; project "${name}" was not added as a label`);
+        }
+        await ctx.db.patch(task._id, { projectId: undefined, ...(wanted && room ? { labels: [...task.labels, name] } : {}) });
+        if (wanted && room) relabeled++;
+        cleared++;
+      }
+      if (!page.isDone) {
+        await ctx.scheduler.runAfter(0, internal.migrations.projectsToLabels, { cursor: page.continueCursor });
+        return { relabeled, cleared, noRoom, projectsDeleted: 0, done: false };
+      }
+    }
+    const batch = await ctx.db.query("projects").take(BATCH);
+    for (const project of batch) await ctx.db.delete(project._id);
+    const done = batch.length < BATCH;
+    if (!done) await ctx.scheduler.runAfter(0, internal.migrations.projectsToLabels, { projects: true });
+    return { relabeled, cleared, noRoom, projectsDeleted: batch.length, done };
+  },
+});
+
+/**
+ * Backfill counts reach 0 when complete; tasksWithProject and projects instead
+ * count live project data. Their rollback completion requirements are owned by
+ * docs/deploy.md#upgrading-to-0130.
+ */
 export const status = internalQuery({
   args: {},
   handler: async (ctx) => {
     let tasksWithoutRef = 0;
-    for await (const task of ctx.db.query("tasks")) if (task.ref === undefined) tasksWithoutRef++;
+    let tasksWithProject = 0;
+    for await (const task of ctx.db.query("tasks")) {
+      if (task.ref === undefined) tasksWithoutRef++;
+      if (task.projectId !== undefined) tasksWithProject++;
+    }
     const keysWithoutKind = (await ctx.db.query("apiKeys").collect()).filter((k) => k.kind === undefined).length;
     let taskEventsWithoutSeq = 0;
     for await (const event of ctx.db.query("taskEvents")) if (event.taskId !== undefined && event.seq === undefined) taskEventsWithoutSeq++;
-    return { tasksWithoutRef, keysWithoutKind, taskEventsWithoutSeq };
+    const projects = (await ctx.db.query("projects").collect()).length;
+    return { tasksWithoutRef, keysWithoutKind, taskEventsWithoutSeq, tasksWithProject, projects };
   },
 });

@@ -1,7 +1,7 @@
 // Export of the whole plan as Markdown and JSON.
 import { expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
-import { appClient, asUser, callTool, createKey, mcpClient, newUserId, utc } from "./helpers";
+import { appClient, asUser, callTool, createKey, mcpClient, newUserId, rest, utc } from "./helpers";
 
 test("Markdown export groups the plan into readable sections", async () => {
   const user = asUser(newUserId());
@@ -52,4 +52,48 @@ test("export through MCP returns Markdown text, and through the app the same con
   expect(json.content.tasks.map((t: any) => t.title)).toEqual(["Shared"]);
   const fromApp = await app.query(api.app.exportPlan, { format: "json" });
   expect(fromApp.content).toMatchObject({ tasks: json.content.tasks });
+});
+
+test("exports carry projects; a JSON export imported elsewhere makes them again by name (0.13.0)", async () => {
+  const source = asUser(newUserId());
+  await source.mutation(internal.ops.addProject, { name: "Strona piekarni", color: "amber", icon: "🥐", note: "Site and menu" });
+  await source.mutation(internal.ops.addProject, { name: "Old" });
+  await source.mutation(internal.ops.addProject, { name: "Empty" });
+  await source.mutation(internal.ops.add, { title: "Menu", dueDate: "2026-10-22", labels: ["web"], projectId: "Strona piekarni" });
+  await source.mutation(internal.ops.add, { title: "Old thing", projectId: "Old" });
+  await source.mutation(internal.ops.add, { title: "Loose" });
+  await source.mutation(internal.ops.updateProject, { projectId: "Old", archived: true });
+
+  const markdown: any = await source.query(internal.ops.exportPlan, { format: "markdown", at: utc("2026-10-22T10:00") });
+  expect(markdown.content).toContain("- [ ] 2026-10-22 Menu +Strona-piekarni #web");
+  const { content }: any = await source.query(internal.ops.exportPlan, { format: "json" });
+  expect(content.version).toBe(1);
+  expect(content.projects.map((p: any) => [p.name, p.archived])).toEqual([
+    ["Strona piekarni", false],
+    ["Old", true],
+    ["Empty", false],
+  ]);
+
+  // Into an empty account: the projects come back by name, with color, icon, note and archive.
+  const emptyId = newUserId();
+  const intoEmpty = await rest(await createKey(emptyId, "cli", "cli"), "POST", "/import", { body: { content: JSON.stringify(content) } });
+  expect(intoEmpty.status).toBe(200);
+  const made: any = await asUser(emptyId).query(internal.ops.listProjects, { includeArchived: true });
+  expect(made.result.map((p: any) => ({ name: p.name, color: p.color, icon: p.icon, note: p.note, archived: p.archived }))).toEqual([
+    { name: "Strona piekarni", color: "amber", icon: "🥐", note: "Site and menu", archived: false },
+    { name: "Old", archived: true },
+    { name: "Empty", archived: false },
+  ]);
+  const projectOf = (tasks: any[], title: string) => made.result.find((p: any) => p.id === tasks.find((t) => t.title === title).projectId)?.name ?? null;
+  const tasks: any[] = await asUser(emptyId).query(internal.ops.listAll, { includeArchived: true });
+  expect(["Menu", "Old thing", "Loose"].map((title) => projectOf(tasks, title))).toEqual(["Strona piekarni", "Old", null]);
+
+  // Into an account that has the project already, in another case: no second one.
+  const otherId = newUserId();
+  const existing: any = (await asUser(otherId).mutation(internal.ops.addProject, { name: "strona PIEKARNI" })).project;
+  expect((await rest(await createKey(otherId, "cli", "cli"), "POST", "/import", { body: { content: JSON.stringify(content) } })).status).toBe(200);
+  const other: any = await asUser(otherId).query(internal.ops.listProjects, { includeArchived: true });
+  expect(other.result.map((p: any) => p.name)).toEqual(["strona PIEKARNI", "Old", "Empty"]);
+  const menu = ((await asUser(otherId).query(internal.ops.listAll, {})) as any[]).find((t) => t.title === "Menu");
+  expect(menu.projectId).toBe(existing.id);
 });

@@ -114,10 +114,8 @@ export async function rejectProposal(ctx: MutationCtx, identity: Identity, input
 const union = <T>(a: T[], b: T[], key: (item: T) => string) => [...new Map([...a, ...b].map((item) => [key(item), item])).values()];
 
 /**
- * merge_proposal: the proposal is folded into a task already in the plan. The
- * task gets its note (after a line naming it), links, labels, sources and
- * return webhooks; the proposal goes to the trash with mergedInto. Its return
- * webhooks hear "merged" now and "completed" when that task is done.
+ * merge_proposal follows docs/agent-work.md#7-the-proposal-inbox. Its return
+ * webhooks hear "merged" now and "completed" when the target task is done.
  */
 export async function mergeProposal(ctx: MutationCtx, identity: Identity, input: Args<"mergeProposal">) {
   ownerOnly(identity, "merge proposals");
@@ -150,6 +148,11 @@ export async function mergeProposal(ctx: MutationCtx, identity: Identity, input:
   const returnTo = union(into.returnTo ?? [], from.returnTo ?? [], (id) => id);
   if (returnTo.length) patch.returnTo = returnTo;
   if (into.source === undefined && from.source !== undefined) patch.source = from.source;
+  // Inheritance must not move a task into an archived or missing project.
+  if (into.projectId === undefined && from.projectId !== undefined) {
+    const project = await ctx.db.get(from.projectId);
+    if (project && project.userId === identity.userId && project.archivedAt === undefined) patch.projectId = project._id;
+  }
   const target = await patchTask(ctx, identity, into, "update", patch, input.clientId);
   const sources = await ctx.db
     .query("taskSources")

@@ -4,7 +4,7 @@
 // in the file, so importing the same file again skips what is already here.
 // A task that fails its checks is reported and the others are imported.
 import { ConvexError, v, type Infer } from "convex/values";
-import type { Doc } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx } from "../_generated/server";
 import {
   checkChecklist,
@@ -25,9 +25,11 @@ import {
   type Identity,
 } from "./core";
 import { localDate } from "./dates";
+import { allProjects, insertProject, nameKeyOf, projectNamed, projectTarget } from "./projectOps";
 import {
   checklistInputValidator,
   linkValidator,
+  projectColorValidator,
   reminderValidator,
   repeatInputValidator,
   statusValidator,
@@ -54,15 +56,28 @@ export const importItemValidator = v.object({
   reminders: v.optional(v.array(reminderValidator)),
   completedAt: v.optional(v.number()),
   archivedAt: v.optional(v.number()),
+  // Since 0.13.0: the name of the task's project in the file.
+  project: v.optional(v.string()),
 });
 export type ImportTask = Infer<typeof importItemValidator>;
 
-export const importArgs = { items: v.array(importItemValidator) };
+// Since 0.13.0: a project of the file, made when the plan has none of that name.
+export const importProjectValidator = v.object({
+  name: v.string(),
+  color: v.optional(projectColorValidator),
+  icon: v.optional(v.string()),
+  note: v.optional(v.string()),
+  archived: v.optional(v.boolean()),
+});
+export type ImportProject = Infer<typeof importProjectValidator>;
+
+// projectId: the project of every task the file puts in none.
+export const importArgs = { items: v.array(importItemValidator), projects: v.optional(v.array(importProjectValidator)), projectId: v.optional(v.string()) };
 
 type Outcome = {
   created: ReturnType<typeof toTask>[];
   skipped: { title: string; reason: string }[];
-  failed: { title: string; message: string }[];
+  failed: { title: string; message: string; projectKey?: string }[];
 };
 
 /** The task's fields as add_task would store them, or a domain error. */
@@ -114,12 +129,43 @@ async function alreadyHere(ctx: MutationCtx, userId: string, item: ImportTask, c
   return original && original.userId === userId ? "the task itself is here (same id)" : null;
 }
 
-export async function importTasks(ctx: MutationCtx, identity: Identity, input: { items: ImportTask[] }) {
+/** Makes the file's projects the plan has no project of that name for (any case), in the file's order. */
+async function addMissingProjects(ctx: MutationCtx, identity: Identity, projects: ImportProject[], outcome: Outcome) {
+  let catalog = await allProjects(ctx, identity.userId);
+  for (const project of projects) {
+    if (catalog.some((existing) => existing.nameKey === nameKeyOf(project.name))) continue;
+    try {
+      const projectId = await insertProject(ctx, identity, project, catalog);
+      catalog = [...catalog, (await ctx.db.get(projectId))!];
+    } catch (error) {
+      if (!(error instanceof ConvexError)) throw error;
+      outcome.failed.push({ title: `Project "${project.name}"`, message: (error.data as { message: string }).message, projectKey: nameKeyOf(project.name) });
+    }
+  }
+}
+
+function projectsByName(ctx: MutationCtx, identity: Identity) {
+  const found = new Map<string, Id<"projects">>();
+  return async (name: string): Promise<Id<"projects">> => {
+    const key = nameKeyOf(name);
+    const known = found.get(key);
+    if (known) return known;
+    const project = await projectNamed(ctx, identity.userId, name);
+    if (!project) fail("not_found", `Project "${name}" could not be imported`);
+    found.set(key, project._id);
+    return project._id;
+  };
+}
+
+export async function importTasks(ctx: MutationCtx, identity: Identity, input: { items: ImportTask[]; projects?: ImportProject[]; projectId?: string }) {
   if (input.items.length > IMPORT_BATCH) fail("invalid_argument", `at most ${IMPORT_BATCH} tasks per call`);
+  const fallback = input.projectId === undefined ? undefined : await projectTarget(ctx, identity.userId, input.projectId);
   const { timezone } = await loadSettings(ctx, identity.userId);
   const now = Date.now();
   const today = localDate(now, timezone);
   const outcome: Outcome = { created: [], skipped: [], failed: [] };
+  await addMissingProjects(ctx, identity, input.projects ?? [], outcome);
+  const projectOf = projectsByName(ctx, identity);
   for (const item of input.items) {
     const clientId = `import:${item.key}`;
     if (item.key === "" || clientId.length > 128) fail("invalid_argument", "key must be 1 to 120 characters");
@@ -130,7 +176,7 @@ export async function importTasks(ctx: MutationCtx, identity: Identity, input: {
     }
     let fields;
     try {
-      fields = checkedFields(item, timezone, today, now);
+      fields = { ...checkedFields(item, timezone, today, now), projectId: item.project === undefined ? fallback : await projectOf(item.project) };
     } catch (error) {
       if (!(error instanceof ConvexError)) throw error;
       outcome.failed.push({ title: item.title, message: (error.data as { message: string }).message });

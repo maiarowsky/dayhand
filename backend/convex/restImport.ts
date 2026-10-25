@@ -16,12 +16,15 @@ import type { RestHandler } from "./rest";
 export const MAX_IMPORT = 2000;
 const KEY_LENGTH = 40;
 
-type BatchOutcome = { created: Record<string, unknown>[]; skipped: { title: string; reason: string }[]; failed: { title: string; message: string }[] };
+type BatchOutcome = { created: Record<string, unknown>[]; skipped: { title: string; reason: string }[]; failed: { title: string; message: string; projectKey?: string }[] };
 
 export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) => {
-  const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format");
+  const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format" && name !== "projectId");
   if (extra.length) throw new RestInputError(`Unknown field ${extra.join(", ")}; send { "content": "<file>", "format": "auto" }`);
   if (typeof body.content !== "string" || body.content.trim() === "") throw new RestInputError("content must be the file's text");
+  // Since 0.13.0: the project (id or name) of every task the file puts in none.
+  if (body.projectId !== undefined && typeof body.projectId !== "string") throw new RestInputError("projectId must be a project id or name");
+  const projectId = body.projectId as string | undefined;
   const requested: string = DEPRECATED_FORMATS[body.format as string] ?? body.format ?? "auto";
   if (requested !== "auto" && !IMPORT_FORMATS.includes(requested as ImportFormat)) {
     throw new RestInputError(`format must be auto, ${IMPORT_FORMATS.join(", ")}`);
@@ -44,11 +47,18 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
     ordered.map(async ({ source, ...task }) => ({ ...task, key: (await sha256Hex(`${KEY_NAME[format]}:${source}`)).slice(0, KEY_LENGTH) })),
   );
   const total: BatchOutcome = { created: [], skipped: [], failed: [] };
-  for (let start = 0; start < items.length; start += IMPORT_BATCH) {
+  const failedProjects = new Set<string>();
+  for (let start = 0; start < Math.max(items.length, 1); start += IMPORT_BATCH) {
     const batch = items.slice(start, start + IMPORT_BATCH);
     let outcome: BatchOutcome;
     try {
-      outcome = await ctx.runMutation(internal.ops.importTasks as FunctionReference<"mutation", "internal">, { ...identity, items: batch, dryRun });
+      outcome = await ctx.runMutation(internal.ops.importTasks as FunctionReference<"mutation", "internal">, {
+        ...identity,
+        items: batch,
+        ...((start === 0 || dryRun) && parsed.projects ? { projects: parsed.projects } : {}),
+        ...(projectId === undefined ? {} : { projectId }),
+        dryRun,
+      });
     } catch (error) {
       const preview = dryRunResult(error);
       if (!preview) throw error;
@@ -56,7 +66,10 @@ export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) =
     }
     total.created.push(...outcome.created);
     total.skipped.push(...outcome.skipped);
-    total.failed.push(...outcome.failed);
+    for (const { projectKey, ...failure } of outcome.failed) {
+      if (projectKey === undefined || !failedProjects.has(projectKey)) total.failed.push(failure);
+      if (projectKey !== undefined) failedProjects.add(projectKey);
+    }
   }
   return {
     body: {

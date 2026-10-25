@@ -50,6 +50,7 @@ import type * as lib_oauthRules from "../lib/oauthRules.js";
 import type * as lib_openapi from "../lib/openapi.js";
 import type * as lib_outputSchemas from "../lib/outputSchemas.js";
 import type * as lib_problem from "../lib/problem.js";
+import type * as lib_projectOps from "../lib/projectOps.js";
 import type * as lib_proposals from "../lib/proposals.js";
 import type * as lib_repeat from "../lib/repeat.js";
 import type * as lib_restRoutes from "../lib/restRoutes.js";
@@ -125,6 +126,7 @@ declare const fullApi: ApiFromModules<{
   "lib/openapi": typeof lib_openapi;
   "lib/outputSchemas": typeof lib_outputSchemas;
   "lib/problem": typeof lib_problem;
+  "lib/projectOps": typeof lib_projectOps;
   "lib/proposals": typeof lib_proposals;
   "lib/repeat": typeof lib_repeat;
   "lib/restRoutes": typeof lib_restRoutes;

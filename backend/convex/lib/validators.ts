@@ -141,3 +141,11 @@ export type PolicyRule = Infer<typeof policyRuleValidator>;
 // source makes at most one task per user (taskSources).
 export const taskSourceValidator = v.object({ kind: v.string(), ref: v.string(), url: v.optional(v.string()) });
 export type TaskSource = Infer<typeof taskSourceValidator>;
+
+// ---- Since 0.13.0: projects (lib/projectOps.ts) ----
+
+// A project's color is a named token, not a hex value: each app maps the token
+// to a shade that reads well in its light and dark palettes. No color = neutral.
+export const PROJECT_COLORS = ["red", "orange", "amber", "green", "teal", "cyan", "blue", "indigo", "purple", "pink", "brown", "gray"] as const;
+export type ProjectColor = (typeof PROJECT_COLORS)[number];
+export const projectColorValidator = v.union(...PROJECT_COLORS.map((color) => v.literal(color)));

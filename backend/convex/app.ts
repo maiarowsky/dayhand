@@ -22,6 +22,7 @@ import { getAgentControls as getAgentControlsOp, setAgentsPaused, setToolPolicy 
 import { decideApproval as decideApprovalOp, listApprovals as listApprovalsOp } from "./lib/approvals";
 import { planHealth as planHealthOp } from "./lib/health";
 import { TOOLS } from "./lib/mcpTools";
+import { addProject as addProjectOp, allProjects, deleteProject as deleteProjectOp, toProject, updateProject as updateProjectOp } from "./lib/projectOps";
 import {
   acceptProposal as acceptProposalOp,
   listProposals as listProposalsOp,
@@ -130,6 +131,25 @@ export const mergeProposal = mutation({
 export const rejectProposal = mutation({
   args: args.rejectProposal,
   handler: async (ctx, a) => rejectProposalOp(ctx, await appUser(ctx), a),
+});
+
+// Projects (since 0.13.0, lib/projectOps.ts). The app gets every project, archived
+// ones included, without counts: it counts its tasks itself, also offline.
+export const listProjects = query({
+  args: {},
+  handler: async (ctx) => (await allProjects(ctx, (await appUser(ctx)).userId)).map(toProject),
+});
+export const addProject = mutation({
+  args: args.addProject,
+  handler: async (ctx, a) => addProjectOp(ctx, await appUser(ctx), a),
+});
+export const updateProject = mutation({
+  args: args.updateProject,
+  handler: async (ctx, a) => updateProjectOp(ctx, await appUser(ctx), a),
+});
+export const deleteProject = mutation({
+  args: args.deleteProject,
+  handler: async (ctx, a) => deleteProjectOp(ctx, await appUser(ctx), a),
 });
 
 // The plan health report (docs/agent-work.md#8-the-plan-health-report).

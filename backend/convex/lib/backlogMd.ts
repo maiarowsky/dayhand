@@ -293,11 +293,11 @@ export function writeTask(task: TaskFile): BacklogFile {
   return { path: pathOf(task), content: `${[header, "", ...body].join("\n").trimEnd()}\n` };
 }
 
-/** The project's config.yml for a folder Dayhand wrote. */
-export function writeConfig(prefix: string, labels: string[]): BacklogFile {
+/** The project's config.yml for a folder Dayhand wrote; project_name is the exported project's (since 0.13.0). */
+export function writeConfig(prefix: string, labels: string[], projectName = "Dayhand export"): BacklogFile {
   const flow = (items: string[]) => `[${items.map((item) => `'${item.replace(/'/g, "''")}'`).join(", ")}]`;
   const content = [
-    `project_name: ${yamlScalar("Dayhand export")}`,
+    `project_name: ${yamlScalar(projectName)}`,
     `default_status: ${yamlScalar(DEFAULT_STATUSES[0]!)}`,
     `statuses: ${flow(DEFAULT_STATUSES)}`,
     `labels: ${flow(labels)}`,

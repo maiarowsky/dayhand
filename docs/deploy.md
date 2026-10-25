@@ -317,6 +317,43 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.13.0
+
+0.13.0 adds [backend project support](architecture.md#projects). There is no new status, error
+code, secret or webhook event, and no forward migration: existing tasks and labels stay as they
+are. For task selectors see [MCP](mcp.md#projects); transfer rules are in
+[JSON import](api.md#import) and [Backlog.md](backlog-md.md#using-it).
+
+1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.13.0.zip`.
+2. Deploy: `dayhand server deploy` (or `npx convex deploy`).
+3. Check: `dayhand version` shows server 0.13.0.
+
+Older clients keep working: they ignore the field they do not know, and their changes send only
+what changed, so they never take a task out of its project.
+
+Rollback: 0.12.x's schema does not know `projectId`, so Convex refuses to deploy it while any task
+has one ("Object contains extra field `projectId`"). Turn the projects back into labels first.
+Every writer must be stopped: the apps, agents, REST and MCP clients. Keep them stopped from
+before starting `migrations:projectsToLabels` until 0.12.x is fully deployed, inclusive.
+
+1. `npx convex run migrations:projectsToLabels`: every task in a project gets a label with the
+   project's name and loses its `projectId`, then the projects are deleted. A task that already
+   has 20 labels keeps them and loses only the project; the deployment's logs name each one
+   (`npx convex logs`). Nothing enters the history. It works in batches and schedules itself.
+2. Wait until `npx convex run migrations:status` shows `tasksWithProject: 0` and `projects: 0`.
+   The starting call's `done` describes only its own batch, not the scheduled run: with more than
+   200 tasks, even a repeated scan that changes nothing starts with `done: false`.
+3. After it finishes, run `npx convex run migrations:projectsToLabels '{"projects":true}'` to
+   repeat only the project-deletion phase. Never use this argument before step 2: it skips the
+   task scan. Require `done: true`, `cleared: 0` and `projectsDeleted: 0`, then check
+   `migrations:status` again for `tasksWithProject: 0` and `projects: 0`. If either check fails,
+   repeat from step 1, keeping every writer stopped.
+4. Only then deploy 0.12.x. Keep every writer stopped until this deployment has finished.
+
+To go back to exactly the state before the upgrade instead, restore the snapshot from step 1,
+`npx convex import --replace-all dayhand-before-0.13.0.zip` (this also drops every change made
+since), then deploy 0.12.x.
+
 ## Upgrading to 0.12.0
 
 0.12.0 adds the phase guides `dayhand://workflow/intake`, `/execution` and `/finalization`, the
@@ -554,9 +591,10 @@ find them) and old keys count as `agent` keys.
 
    Run it right away: tasks added between the deploy and the migration get numbers first, so
    older tasks get the numbers after them. Both migrations are idempotent and can be run again.
-3. Check that nothing is left: `npx convex run migrations:status` must print
-   `{ "keysWithoutKind": 0, "tasksWithoutRef": 0 }`. If `tasksWithoutRef` is not 0 yet, the
-   scheduled batches are still running; check again after a few seconds.
+3. Check that nothing is left: `npx convex run migrations:status` must show
+   `keysWithoutKind: 0` and `tasksWithoutRef: 0` (later backends return additional counters).
+   If `tasksWithoutRef` is not 0 yet, the scheduled batches are still running; check again after
+   a few seconds.
 4. If the key the user types commands with is a CLI key, make a new one with
    `"kind": "cli"` (see [mcp.md](mcp.md#keys-and-actors)), switch the CLI to it and revoke the
    old one, so the history shows `cli` instead of `agent: <name>`. Kinds cannot be changed on
