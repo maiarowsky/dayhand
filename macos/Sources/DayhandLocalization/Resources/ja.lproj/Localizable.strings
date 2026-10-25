@@ -412,6 +412,8 @@
 	<string>繰り返し</string>
 	<key>Requests and proposals</key>
 	<string>リクエストと提案</string>
+	<key>Requires a connection to the server.</key>
+	<string>サーバーへの接続が必要です。</string>
 	<key>Restart Dayhand</key>
 	<string>Dayhand を再起動</string>
 	<key>Restore</key>
@@ -464,6 +466,8 @@
 	<string>サーバーアドレスではありません。https://&lt;name&gt;.convex.site の形式です。</string>
 	<key>That is not a time.</key>
 	<string>時刻ではありません。</string>
+	<key>That project is not on the server yet.</key>
+	<string>そのプロジェクトはまだサーバーにありません。</string>
 	<key>That project no longer exists.</key>
 	<string>そのプロジェクトはもうありません。</string>
 	<key>That version is older than this one, so it was not installed.</key>

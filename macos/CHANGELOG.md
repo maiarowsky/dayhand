@@ -9,27 +9,30 @@ latest one below).
 ### Added
 
 - **Projects** in the local database and sync, the groundwork for the project list in the sidebar: each task
-  belongs to at most one project, and projects (name, colour, emoji icon, note, order, archived) are added, edited,
-  archived and deleted offline through the outbox (`app:addProject`, `app:updateProject`, `app:deleteProject`,
-  `projectId` in `app:add` and `app:update`). A project and tasks written in it offline reach the server in order,
-  with the server's project id in each task. Quick add reads `+project` (`+strona-piekarni`). Behaviour, limits and
-  the shared cases: [README.md](README.md#projects).
+  belongs to at most one project. Managing projects (name, colour, emoji icon, note, order, archive, and deletion
+  with the tasks moved to another project or out of any) is online only: each change is made on the server at once
+  (`app:addProject`, `app:updateProject`, `app:deleteProject`) and its answer written on the Mac. Without a server or
+  a connection it says "Requires a connection to the server." and nothing is queued. Putting a task into a project
+  the server has (`projectId` in `app:add` and `app:update`) works offline through the outbox, and quick add reads
+  `+project` (`+strona-piekarni`). Behaviour, limits and the shared cases: [README.md](README.md#projects).
 
 ### Changed
 
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
-  Legacy migrations v5/v6 remove obsolete name-join metadata. Projects match only by server id or `clientId`; refused creations never adopt another device's
-  same-named project. The offline queue is append-only: deletion of an unsent project sends both its creation and
-  deletion in action order. No cancellation optimization, operation redirection, payload rewriting or reordering
-  changes other queued actions, including after a real server refusal.
-- With a server older than 0.13.0 (no projects), local projects, pending operations and task memberships wait for
-  an upgrade. Tasks and notes still sync without `projectId`, with no project retry loop or blocked task changes.
-  The localized status says "Needs backend 0.13.0 or later". Once a snapshot confirms project support, the queue
-  resumes with the server's project ids. Only explicit references to unconfirmed local project creations wait
-  for creation acknowledgement or refusal; task state changes have no extra task, lifecycle or focus gates.
-  Real trash refusals use ordinary rejection handling, with no retained assignment replay after restoration.
-  Older-server task creations retain their original queue entries until their memberships can be sent. A purged
-  task's deferred memberships are retired without discarding other pending edits, followed by normal task cleanup.
+  Migrations v5 to v7 only clean up after development builds of 0.4.0, which queued project changes: v7 drops them
+  from the outbox together with the projects the server never confirmed (their tasks stay, without a project).
+- The offline queue holds task changes (and the settings) only, appended at the end and sent oldest first, with no
+  barriers or waiting conditions. A task goes only into a project the server has confirmed. When the server refuses an
+  assignment because the project was archived or deleted on another device, the task stays, the assignment is taken
+  off and the refusal shows as other refusals do. Projects match only by server id or `clientId`, never by name.
+- With a server older than 0.13.0 (no projects) nothing on the Mac is lost: tasks keep syncing, sent without
+  `projectId`, with no retry loop. Project changes and new assignments say "Needs backend 0.13.0 or later",
+  localized, as does the status line.
+
+### Known limitations
+
+- A repeating task can lose its project when the project is archived on another device or the server is older
+  (0.12.x): its next occurrence comes without a project. The task itself is never lost.
 
 ## 0.3.0 (unreleased)
 

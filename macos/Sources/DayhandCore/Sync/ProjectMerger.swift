@@ -1,23 +1,18 @@
 import Foundation
 
-/// Groups of project fields that one kind of change touches.
-public enum ProjectField: CaseIterable, Hashable, Sendable {
-    case name, color, icon, note, position, archived
-}
-
 public struct ProjectMergePlan: Hashable, Sendable {
     public let upserts: [Project]
     public let deletes: [String]
 }
 
 /**
- * Merges the server's projects into the local rows the way `SnapshotMerger` merges tasks: a field changed by a change
- * still in the outbox keeps its local value, every other field takes the value of a newer server copy, and a project
- * missing from the server goes unless it still has changes waiting or is too fresh.
+ * Merges the server's projects into the local rows. Projects are changed on the server directly (`SyncEngine`'s
+ * project calls), never queued, so the server's copy always wins: a newer server copy replaces the row, and a project
+ * missing from the server was deleted there and goes. Rows meet their server copy by server id or `clientId` only,
+ * never by name.
  */
 public enum ProjectMerger {
-    public static func merge(local: [Project], pending: [OutboxOp], remote: [RemoteProject], nowMs: Int64) -> ProjectMergePlan {
-        let dirty = DirtyProjects(pending, projects: local)
+    public static func merge(local: [Project], remote: [RemoteProject]) -> ProjectMergePlan {
         var byServerId: [String: Project] = [:]
         var byClientId: [String: Project] = [:]
         for project in local {
@@ -29,28 +24,18 @@ public enum ProjectMerger {
         for r in remote {
             let row = byServerId[r.id] ?? r.clientId.flatMap { byClientId[$0] }
             if let row { seen.insert(row.localId) }
-            // Deleted here, the deletion still on its way: the row stays hidden as it is.
-            if var row, row.removing {
-                if row.serverId != r.id {
-                    row.serverId = r.id
-                    upserts.append(row)
-                }
-                continue
-            }
             if let row, row.serverId == r.id, let known = row.serverUpdatedAt, r.updatedAt <= known { continue }
-            let merged = mergeRow(row, r, row.map { dirty.fields($0.localId) } ?? [])
+            let merged = Self.row(row, r)
             if merged != row { upserts.append(merged) }
         }
-        let deletes = local
-            .filter { !seen.contains($0.localId) && !dirty.hasChanges($0.localId) }
-            .filter { $0.serverUpdatedAt != nil || $0.removing || nowMs - $0.updatedAt > SnapshotMerger.unseenGraceMs }
-            .map(\.localId)
+        let deletes = local.filter { !seen.contains($0.localId) }.map(\.localId)
         return ProjectMergePlan(upserts: upserts, deletes: deletes)
     }
 
-    private static func mergeRow(_ row: Project?, _ r: RemoteProject, _ keepLocal: Set<ProjectField>) -> Project {
-        var project = Project(
-            localId: row?.localId ?? r.clientId ?? r.id,
+    /// The server's copy [r] as the row [existing] (which keeps its `localId`), or as a new row.
+    static func row(_ existing: Project?, _ r: RemoteProject) -> Project {
+        Project(
+            localId: existing?.localId ?? r.clientId ?? r.id,
             serverId: r.id,
             clientId: r.clientId,
             name: r.name,
@@ -63,99 +48,31 @@ public enum ProjectMerger {
             updatedAt: r.updatedAt,
             serverUpdatedAt: r.updatedAt
         )
-        guard let row, !keepLocal.isEmpty else { return project }
-        project = preserving(keepLocal, from: row, in: project)
-        project.updatedAt = max(row.updatedAt, r.updatedAt)
-        return project
-    }
-
-    static func preserving(_ keepLocal: Set<ProjectField>, from row: Project, in base: Project) -> Project {
-        var project = base
-        if keepLocal.contains(.name) { project.name = row.name }
-        if keepLocal.contains(.color) { project.color = row.color }
-        if keepLocal.contains(.icon) { project.icon = row.icon }
-        if keepLocal.contains(.note) { project.note = row.note }
-        if keepLocal.contains(.position) { project.position = row.position }
-        if keepLocal.contains(.archived) { project.archivedAt = row.archivedAt }
-        return project
-    }
-}
-
-/// Which fields of which projects have changes still waiting in the outbox, by the project's `localId`.
-struct DirtyProjects {
-    private var byProject: [String: Set<ProjectField>] = [:]
-
-    init(_ pending: [OutboxOp], projects: [Project] = []) {
-        let identities = ProjectMapping(projects: projects, pending: [])
-        for op in pending where Mutations.projectChanges.contains(op.mutation) {
-            let args = JSONValue.decode(op.argsJson)?.object ?? [:]
-            switch op.mutation {
-            case Mutations.addProject:
-                byProject[op.clientId] = Set(ProjectField.allCases)
-            case Mutations.updateProject:
-                guard let id = identities.localId(args["projectId"]?.string) else { continue }
-                byProject[id, default: []].formUnion(Self.fields(Set(args.keys)))
-            default:
-                guard let id = identities.localId(args["projectId"]?.string) else { continue }
-                byProject[id] = Set(ProjectField.allCases)
-            }
-        }
-    }
-
-    func hasChanges(_ localId: String) -> Bool { byProject[localId] != nil }
-
-    func fields(_ localId: String) -> Set<ProjectField> { byProject[localId] ?? [] }
-
-    private static func fields(_ keys: Set<String>) -> Set<ProjectField> {
-        var fields = Set<ProjectField>()
-        if keys.contains("name") { fields.insert(.name) }
-        if keys.contains("color") { fields.insert(.color) }
-        if keys.contains("icon") { fields.insert(.icon) }
-        if keys.contains("note") { fields.insert(.note) }
-        if keys.contains("position") { fields.insert(.position) }
-        if keys.contains("archived") { fields.insert(.archived) }
-        return fields
     }
 }
 
 /**
  * How a task's server `projectId` reads on this Mac: the `localId` of the project with that server id (the server id
- * itself for a project not merged yet, which is the `localId` it gets when it arrives). A project whose deletion is
- * still in the outbox reads as the project that deletion moves its tasks to, as the server will have it.
+ * itself for a project not merged yet, which is the `localId` it gets when it arrives).
  */
 public struct ProjectMapping: Sendable {
-    private var localIdByReference: [String: String] = [:]
-    private var movedTo: [String: String?] = [:]
+    private var localIdByServerId: [String: String] = [:]
 
+    /// The tasks keep their local project: the snapshot comes from a server without projects.
     let preservesLocalMembership: Bool
 
     public init(preservingLocalMembership: Bool = false) {
         preservesLocalMembership = preservingLocalMembership
     }
 
-    public init(projects: [Project], pending: [OutboxOp]) {
+    public init(projects: [Project]) {
         preservesLocalMembership = false
         for project in projects {
-            localIdByReference[project.localId] = project.localId
-            if let id = project.serverId { localIdByReference[id] = project.localId }
-            if let id = project.clientId { localIdByReference[id] = project.localId }
-        }
-        for op in pending where op.mutation == Mutations.deleteProject {
-            guard let args = JSONValue.decode(op.argsJson), let id = args["projectId"]?.string else { continue }
-            let source = localIdByReference[id] ?? id
-            let target = args["moveTasksTo"]?.string
-            movedTo[source] = .some(target == ProjectRules.noProject ? nil : target.map { localIdByReference[$0] ?? $0 })
+            if let id = project.serverId { localIdByServerId[id] = project.localId }
         }
     }
 
     public func localId(_ serverId: String?) -> String? {
-        guard let serverId else { return nil }
-        var local = localIdByReference[serverId] ?? serverId
-        var visited = Set<String>()
-        while let moved = movedTo[local] {
-            guard visited.insert(local).inserted, let moved else { return nil }
-            local = moved
-        }
-        return local
+        serverId.map { localIdByServerId[$0] ?? $0 }
     }
 }

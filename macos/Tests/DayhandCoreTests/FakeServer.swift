@@ -482,27 +482,3 @@ actor RestoringTaskTransport: HTTPTransport {
         return reply
     }
 }
-
-actor PausedProjectTransport: HTTPTransport {
-    private let server: FakeServer
-    private var didPause = false
-    private var continuation: CheckedContinuation<Void, Never>?
-
-    init(_ server: FakeServer) { self.server = server }
-
-    var isPaused: Bool { continuation != nil }
-
-    func post(_ url: URL, json: Data, bearer: String?) async throws -> HTTPReply {
-        let reply = try await server.post(url, json: json, bearer: bearer)
-        if !didPause, JSONValue.decode(json)?["path"]?.string == Mutations.addProject {
-            didPause = true
-            await withCheckedContinuation { continuation = $0 }
-        }
-        return reply
-    }
-
-    func release() {
-        continuation?.resume()
-        continuation = nil
-    }
-}

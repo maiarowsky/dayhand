@@ -412,6 +412,8 @@
 	<string>重复</string>
 	<key>Requests and proposals</key>
 	<string>请求和提议</string>
+	<key>Requires a connection to the server.</key>
+	<string>需要连接到服务器。</string>
 	<key>Restart Dayhand</key>
 	<string>重新启动 Dayhand</string>
 	<key>Restore</key>
@@ -464,6 +466,8 @@
 	<string>这不是服务器地址。格式类似 https://&lt;name&gt;.convex.site。</string>
 	<key>That is not a time.</key>
 	<string>这不是时间。</string>
+	<key>That project is not on the server yet.</key>
+	<string>该项目还不在服务器上。</string>
 	<key>That project no longer exists.</key>
 	<string>该项目已不存在。</string>
 	<key>That version is older than this one, so it was not installed.</key>

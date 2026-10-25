@@ -14314,6 +14314,60 @@
         }
       }
     },
+    "Requires a connection to the server." : {
+      "comment" : "Error when a project is created, changed or deleted without a server connection; project changes are never queued",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erfordert eine Verbindung zum Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requires a connection to the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requiere conexión con el servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nécessite une connexion au serveur."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーへの接続が必要です。"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wymaga połączenia z serwerem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requer conexão com o servidor."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要连接到服务器。"
+          }
+        }
+      }
+    },
     "Restart Dayhand" : {
       "comment" : "Button",
       "extractionState" : "manual",
@@ -16013,6 +16067,60 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "这不是时间。"
+          }
+        }
+      }
+    },
+    "That project is not on the server yet." : {
+      "comment" : "Error when a task is moved into a project the server has not confirmed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Projekt ist noch nicht auf dem Server."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That project is not on the server yet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese proyecto todavía no está en el servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce projet n’est pas encore sur le serveur."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "そのプロジェクトはまだサーバーにありません。"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tego projektu nie ma jeszcze na serwerze."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse projeto ainda não está no servidor."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该项目还不在服务器上。"
           }
         }
       }
@@ -18670,7 +18778,7 @@
       }
     },
     "Needs backend 0.13.0 or later" : {
-      "comment" : "Project support status while local project changes wait for a backend upgrade",
+      "comment" : "Status and error when the server has no projects (older than backend 0.13.0)",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {

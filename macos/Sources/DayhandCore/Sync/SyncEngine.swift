@@ -15,21 +15,23 @@ public enum SyncStatus: Hashable, Sendable {
  * Keeps the local database and the server in step while the app runs, one round at a time: send the outbox in order
  * (`OutboxProcessor`), then read the whole plan and merge it (`SnapshotMerger`). Rounds run every [pollInterval]
  * (the "live" view of changes made elsewhere) and at once after every local change ([poke]). Sending and reading
- * never overlap, so a snapshot is always taken after the changes before it were sent.
+ * never overlap, so a snapshot is always taken after the changes before it were sent. The project calls
+ * (`ProjectCalls.swift`) take turns with the rounds the same way, so no snapshot straddles a project change.
  */
 public actor SyncEngine {
     /// Polling every 15 seconds stays far under the server's limits (docs/architecture.md) and feels live enough.
     public static let defaultPollInterval: Duration = .seconds(15)
 
-    private let repository: TaskRepository
-    private let sender: MutationSender
+    let repository: TaskRepository
+    let sender: MutationSender
     private let source: SnapshotSource
     private let pollInterval: Duration
     private let onStatus: @Sendable (SyncStatus) -> Void
     private let signal = Signal()
     private var loop: Task<Void, Never>?
-    private var roundInProgress = false
-    private var roundWaiters: [CheckedContinuation<Void, Never>] = []
+    /// A round or a project call is running.
+    private var busy = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
 
     public init(
         repository: TaskRepository, sender: MutationSender, source: SnapshotSource,
@@ -67,20 +69,27 @@ public actor SyncEngine {
     /// One round: the outbox, then a snapshot. Also callable directly (tests, "Sync now").
     @discardableResult
     public func round() async -> SyncStatus {
-        if roundInProgress {
-            await withCheckedContinuation { roundWaiters.append($0) }
-        }
-        roundInProgress = true
-        defer {
-            if roundWaiters.isEmpty {
-                roundInProgress = false
-            } else {
-                roundWaiters.removeFirst().resume()
-            }
-        }
+        await takeTurn()
+        defer { passTurn() }
         let status = await sendAndRead()
         onStatus(status)
         return status
+    }
+
+    /// Waits until no round or project call runs, then runs alone until [passTurn]; the waiting ones go in order.
+    func takeTurn() async {
+        if busy {
+            await withCheckedContinuation { waiters.append($0) }
+        }
+        busy = true
+    }
+
+    func passTurn() {
+        if waiters.isEmpty {
+            busy = false
+        } else {
+            waiters.removeFirst().resume()
+        }
     }
 
     private func sendAndRead() async -> SyncStatus {

@@ -10,14 +10,15 @@ public enum RepositoryError: Error, Hashable, Sendable {
 /**
  * Every user action changes the local row and appends its server mutation to the outbox in one transaction, as the
  * Android app's `TaskRepository`, so the screen updates at once and the change cannot be lost or sent without being
- * shown. [onOutboxChanged] wakes the sync engine.
+ * shown. [onOutboxChanged] wakes the sync engine. Project management is the exception: it is online only, through
+ * `SyncEngine`'s project calls (`ProjectCalls.swift`).
  */
 public final class TaskRepository: Sendable {
     public let database: AppDatabase
     let clock: @Sendable () -> Int64
     let newId: @Sendable () -> String
     let onOutboxChanged: @Sendable () -> Void
-    let localTimezone: @Sendable () -> String
+    private let localTimezone: @Sendable () -> String
     private let repeatsOnMac: @Sendable () -> Bool
 
     /// [repeatsOnMac] is true only while the Mac has no server; the Mac then creates the next occurrence locally.
@@ -322,29 +323,10 @@ public final class TaskRepository: Sendable {
     public func apply(_ snapshot: Snapshot) async throws {
         let now = clock()
         let zone = localTimezone()
-        try await writer.write { [self] db in
-            let serverIds = Set(snapshot.tasks.map(\.id))
-            if snapshot.projects != nil, try Meta.projectSupport(db) != .unsupported {
-                let created = Set(snapshot.tasks.compactMap(\.clientId))
-                for op in try OutboxOp.fetchAll(db) where op.mutation == Mutations.add && op.isProjectAssignment && created.contains(op.clientId) {
-                    if let id = op.taskLocalId, try TaskItem.fetchOne(db, key: id)?.serverId == nil {
-                        _ = try OutboxOp.deleteOne(db, key: op.seq)
-                    }
-                }
-            }
-            try Self.retireMissingMemberships(db, serverIds: serverIds)
-            if snapshot.projects != nil, try Meta.projectSupport(db) == .unsupported {
-                let pending = try OutboxOp.fetchAll(db)
-                let assigned = Set(pending.filter { JSONValue.decode($0.argsJson)?["projectId"] != nil }.compactMap(\.taskLocalId))
-                for task in try TaskItem.fetchAll(db) where task.projectLocalId != nil && !assigned.contains(task.localId) {
-                    if let serverId = task.serverId, !serverIds.contains(serverId) { continue }
-                    var op = makeOp(Mutations.update, task.localId, ["projectId": .of(task.projectLocalId)], now: now)
-                    try op.insert(db)
-                }
-            }
-            let projects = try ProjectOutbox.apply(db, snapshot.projects, nowMs: now)
-            let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
+        try await writer.write { db in
+            let projects = try ProjectSync.apply(db, snapshot.projects)
             let local = try TaskItem.fetchAll(db)
+            let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
             let plan = SnapshotMerger.merge(local: local, pending: pending, remote: snapshot.tasks, nowMs: now, projects: projects)
             for task in plan.upserts { try task.save(db) }
             if !plan.deletes.isEmpty { _ = try TaskItem.deleteAll(db, keys: plan.deletes) }
@@ -352,15 +334,6 @@ public final class TaskRepository: Sendable {
             try db.execute(sql: "DELETE FROM taskEvent WHERE taskServerId NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)")
             let mine = try Meta.settings(db, localTimezone: zone)
             try Meta.write(db, SnapshotMerger.settings(local: mine, pending: pending, remote: snapshot.settings))
-        }
-    }
-
-    private static func retireMissingMemberships(_ db: Database, serverIds: Set<String>) throws {
-        let pending = Dictionary(grouping: try OutboxOp.fetchAll(db), by: \.taskLocalId)
-        for task in try TaskItem.fetchAll(db) {
-            guard let serverId = task.serverId, !serverIds.contains(serverId),
-                  let ops = pending[task.localId] else { continue }
-            for op in ops where op.isProjectAssignment { _ = try OutboxOp.deleteOne(db, key: op.seq) }
         }
     }
 
@@ -447,7 +420,7 @@ public final class TaskRepository: Sendable {
 
     // MARK: Helpers
 
-    func edit(
+    private func edit(
         _ localId: String, _ mutation: String, _ args: [String: JSONValue] = [:],
         change: @escaping @Sendable (inout TaskItem, Int64) -> Void
     ) async throws {
@@ -538,29 +511,8 @@ public final class TaskRepository: Sendable {
 // MARK: - Outbox store
 
 extension TaskRepository: OutboxStore {
-    public func next(markSending: Bool = false) async throws -> OutboxOp? {
-        try await writer.write { db in
-            let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
-            let unsupported = try Meta.projectSupport(db) == .unsupported
-            let creatingProjects = Set(pending.filter { $0.mutation == Mutations.addProject }.map(\.clientId))
-            for var op in pending {
-                if unsupported {
-                    let task = try op.taskLocalId.flatMap { try TaskItem.fetchOne(db, key: $0) }
-                    let uploadedCreation = op.mutation == Mutations.add && task?.serverId != nil && op.isProjectAssignment
-                    if op.waitsForProjects || uploadedCreation { continue }
-                } else if op.taskLocalId != nil, let ref = JSONValue.decode(op.argsJson)?["projectId"]?.string,
-                          let project = try ProjectOutbox.find(db, ref), project.serverId == nil,
-                          creatingProjects.contains(project.localId) {
-                    continue
-                }
-                if markSending {
-                    op.attempts += 1
-                    try op.update(db)
-                }
-                return op
-            }
-            return nil
-        }
+    public func next() async throws -> OutboxOp? {
+        try await writer.read { db in try OutboxOp.order(Column("seq")).fetchOne(db) }
     }
 
     public func serverIdOf(_ taskLocalId: String) async throws -> String? {
@@ -568,7 +520,7 @@ extension TaskRepository: OutboxStore {
     }
 
     public func projectRef(_ localId: String) async throws -> String? {
-        try await writer.read { db in try ProjectOutbox.ref(db, localId) }
+        try await writer.read { db in try Project.fetchOne(db, key: localId)?.serverId }
     }
 
     public func projectSupport() async throws -> ProjectSupport {
@@ -577,10 +529,7 @@ extension TaskRepository: OutboxStore {
 
     public func acknowledge(_ op: OutboxOp, value: JSONValue) async throws {
         try await writer.write { db in
-            guard let op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
-            let deferredCreation = try Meta.projectSupport(db) == .unsupported && op.mutation == Mutations.add && op.isProjectAssignment
-            if !deferredCreation { _ = try OutboxOp.deleteOne(db, key: op.seq) }
-            try ProjectOutbox.acknowledge(db, op, value: value)
+            _ = try OutboxOp.deleteOne(db, key: op.seq)
             if op.mutation == Mutations.add, let localId = op.taskLocalId, let serverId = value["id"]?.string,
                var task = try TaskItem.fetchOne(db, key: localId) {
                 task.serverId = serverId
@@ -592,9 +541,8 @@ extension TaskRepository: OutboxStore {
     public func reject(_ op: OutboxOp, reason: String) async throws {
         try await writer.write { db in
             guard let op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
-            // A refusal about projects keeps the task's change (sent again without its project) or undoes the
-            // project's own change; see `ProjectOutbox.refused`.
-            if try ProjectOutbox.refused(db, op, reason: reason) { return }
+            // A task change refused for its project stays and goes again without it; see `ProjectSync.refused`.
+            if try ProjectSync.refused(db, op, reason: reason) { return }
             _ = try OutboxOp.deleteOne(db, key: op.seq)
             guard let localId = op.taskLocalId else { return }
             let creating = try op.mutation == Mutations.add && TaskItem.fetchOne(db, key: localId)?.serverId == nil
@@ -628,7 +576,7 @@ extension TaskRepository: OutboxStore {
     public func recordFailure(_ op: OutboxOp, reason: String) async throws {
         try await writer.write { db in
             try db.execute(
-                sql: "UPDATE outbox SET lastError = ? WHERE seq = ?",
+                sql: "UPDATE outbox SET attempts = attempts + 1, lastError = ? WHERE seq = ?",
                 arguments: [reason, op.seq]
             )
         }

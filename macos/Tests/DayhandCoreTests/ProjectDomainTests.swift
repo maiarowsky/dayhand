@@ -187,144 +187,100 @@ struct TaskListTests {
     }
 }
 
-/// The server's projects merged into the rows, as tasks are.
+/// The server's projects merged into the rows: projects are never queued, so the server's copy wins.
 struct ProjectMergerTests {
-    @Test func newProjectsArriveAndNewerServerCopiesWinWhereNothingWaits() {
+    @Test func newProjectsArriveAndNewerServerCopiesWin() {
         let local = [project("p1", "Dom") { $0.serverUpdatedAt = 1; $0.updatedAt = 1 }]
         let remote = [
             RemoteProject(id: "p1", name: "Dom i ogród", color: .green, position: 10, createdAt: 0, updatedAt: 2),
             RemoteProject(id: "p2", name: "Praca", icon: "💼", position: 20, createdAt: 0, updatedAt: 2),
         ]
-        let plan = ProjectMerger.merge(local: local, pending: [], remote: remote, nowMs: 100)
+        let plan = ProjectMerger.merge(local: local, remote: remote)
         #expect(plan.upserts.map(\.name) == ["Dom i ogród", "Praca"])
         #expect(plan.upserts[0].color == .green && plan.upserts[1].localId == "p2" && plan.upserts[1].serverUpdatedAt == 2)
         #expect(plan.deletes.isEmpty)
     }
 
-    @Test func aWaitingRenameKeepsItsNameAndAProjectGoneFromTheServerGoes() {
-        let local = [project("p1", "Mine") { $0.serverUpdatedAt = 1 }, project("p2", "Deleted elsewhere") { $0.serverUpdatedAt = 1 }]
-        let rename = OutboxOp(opId: "o1", mutation: Mutations.updateProject, argsJson: #"{"projectId":"p1","name":"Mine","clientId":"o1"}"#, taskLocalId: nil, clientId: "o1", createdAt: 1)
-        let remote = [RemoteProject(id: "p1", name: "Theirs", color: .red, position: 5, createdAt: 0, updatedAt: 9)]
-        let plan = ProjectMerger.merge(local: local, pending: [rename], remote: remote, nowMs: 100)
-        #expect(plan.upserts.first?.name == "Mine")
-        #expect(plan.upserts.first?.color == .red)
+    @Test func anOlderServerCopyChangesNothingAndAProjectGoneFromTheServerGoes() {
+        let local = [project("p1", "Mine") { $0.serverUpdatedAt = 5 }, project("p2", "Deleted elsewhere") { $0.serverUpdatedAt = 1 }]
+        let remote = [RemoteProject(id: "p1", name: "Older", color: .red, position: 5, createdAt: 0, updatedAt: 4)]
+        let plan = ProjectMerger.merge(local: local, remote: remote)
+        #expect(plan.upserts.isEmpty)
         #expect(plan.deletes == ["p2"])
     }
 
-    @Test func aProjectMadeHereMeetsItsServerCopyByClientIdAndAFreshOneWaits() {
-        let mine = Project(localId: "c1", clientId: "c1", name: "Dom", position: 1024, createdAt: 90, updatedAt: 90)
-        let fresh = Project(localId: "c2", clientId: "c2", name: "Fresh", position: 2048, createdAt: 95, updatedAt: 95)
-        let remote = [RemoteProject(id: "s1", clientId: "c1", name: "Dom", position: 1024, createdAt: 91, updatedAt: 91)]
-        let plan = ProjectMerger.merge(local: [mine, fresh], pending: [], remote: remote, nowMs: 100)
-        #expect(plan.upserts.map(\.localId) == ["c1"])
-        #expect(plan.upserts.first?.serverId == "s1")
+    @Test func aProjectMeetsItsServerCopyByServerIdOrClientIdNeverByName() {
+        let mine = Project(localId: "c1", serverId: "s1", clientId: "c1", name: "Dom", position: 1024, createdAt: 90, updatedAt: 90, serverUpdatedAt: 90)
+        let answerLost = RemoteProject(id: "s2", clientId: "c2", name: "Made here", position: 2048, createdAt: 95, updatedAt: 95)
+        let theirs = RemoteProject(id: "s3", clientId: "other-mac", name: "dom", position: 3072, createdAt: 96, updatedAt: 96)
+        let renamed = RemoteProject(id: "s1", clientId: "c1", name: "Dom 2", position: 1024, createdAt: 90, updatedAt: 97)
+        let plan = ProjectMerger.merge(local: [mine], remote: [renamed, answerLost, theirs])
+        #expect(plan.upserts.map(\.localId) == ["c1", "c2", "other-mac"])
+        #expect(plan.upserts.map(\.serverId) == ["s1", "s2", "s3"])
+        #expect(plan.upserts[0].name == "Dom 2")
         #expect(plan.deletes.isEmpty)
-    }
-
-    @Test(arguments: [false, true]) func aRefusedCreationNeverJoinsAnUnrelatedProject(archived: Bool) async throws {
-        let repo = TaskRepository(database: try AppDatabase.inMemory())
-        let mine = try await repo.addProject(name: "dom")
-        let creation = try #require(try await repo.next())
-        try await repo.reject(creation, reason: "A project named \"Dom\" already exists")
-        let remote = RemoteProject(id: "s9", clientId: "other-mac", name: "Dom", position: 1024, archivedAt: archived ? 3 : nil, createdAt: 50, updatedAt: 50)
-        try await repo.apply(Snapshot(tasks: [], projects: [remote]))
-        let local = try #require(try await repo.projects().first)
-        #expect(local.localId != mine.localId && local.serverId == "s9")
-        #expect(local.name == "Dom" && local.isArchived == archived)
-        #expect(try await repo.projects().count == 1)
-    }
-
-    @Test func aProjectBeingDeletedStaysHiddenAndItsTasksReadAsMoved() {
-        let removing = project("p1", "Dom") { $0.removing = true; $0.serverUpdatedAt = 1 }
-        let delete = OutboxOp(opId: "o1", mutation: Mutations.deleteProject, argsJson: #"{"projectId":"p1","moveTasksTo":"p2","clientId":"o1"}"#, taskLocalId: nil, clientId: "o1", createdAt: 1)
-        let remote = [RemoteProject(id: "p1", name: "Dom", position: 1, createdAt: 0, updatedAt: 5)]
-        let plan = ProjectMerger.merge(local: [removing], pending: [delete], remote: remote, nowMs: 100)
-        #expect(plan.upserts.isEmpty && plan.deletes.isEmpty)
-        let mapping = ProjectMapping(projects: [removing, project("p2", "Praca")], pending: [delete])
-        #expect(mapping.localId("p1") == "p2")
-        #expect(mapping.localId("p2") == "p2")
-        #expect(mapping.localId("not merged yet") == "not merged yet")
-        #expect(mapping.localId(nil) == nil)
-        let toNone = OutboxOp(opId: "o2", mutation: Mutations.deleteProject, argsJson: #"{"projectId":"p1","moveTasksTo":"none","clientId":"o2"}"#, taskLocalId: nil, clientId: "o2", createdAt: 1)
-        #expect(ProjectMapping(projects: [removing], pending: [toNone]).localId("p1") == nil)
-    }
-
-    @Test(arguments: [false, true]) func pendingDeletionChainsResolveToTheFinalMembership(toNone: Bool) {
-        let projects = [
-            project("a", "A") { $0.serverId = "server-a"; $0.removing = true },
-            project("b", "B") { $0.serverId = "server-b"; $0.removing = true },
-            project("c", "C") { $0.serverId = "server-c" },
-        ]
-        let first = OutboxOp(opId: "1", mutation: Mutations.deleteProject, argsJson: #"{"projectId":"a","moveTasksTo":"b"}"#, taskLocalId: nil, clientId: "1", createdAt: 1)
-        let second = OutboxOp(opId: "2", mutation: Mutations.deleteProject, argsJson: JSONValue.object(["projectId": "b", "moveTasksTo": .string(toNone ? "none" : "c")]).encoded(), taskLocalId: nil, clientId: "2", createdAt: 2)
-        let expected: String? = toNone ? nil : "c"
-        for pending in [[first, second], [second, first]] {
-            let mapping = ProjectMapping(projects: projects, pending: pending)
-            #expect(mapping.localId("server-a") == expected)
-            #expect(mapping.localId("a") == expected)
-            #expect(mapping.localId("server-b") == expected)
-            let local = task("t") { $0.serverId = "s1"; $0.serverUpdatedAt = 1; $0.projectLocalId = expected }
-            let remote = RemoteTask(id: "s1", title: "newer", createdAt: 0, updatedAt: 2, projectId: "server-a")
-            let plan = SnapshotMerger.merge(local: [local], pending: pending, remote: [remote], nowMs: 10, projects: mapping)
-            #expect(plan.upserts.first?.title == "newer")
-            #expect(plan.upserts.first?.projectLocalId == expected)
-        }
+        #expect(ProjectMerger.merge(local: [mine], remote: [theirs]).deletes == ["c1"])
     }
 
     @Test func aTasksProjectReadsAsTheLocalProjectAndAWaitingMoveKeepsIt() {
         let local = task("t") { $0.serverId = "s1"; $0.serverUpdatedAt = 1; $0.projectLocalId = "c1" }
         let mine = Project(localId: "c1", serverId: "srvP1", clientId: "c1", name: "Dom", position: 1, createdAt: 0, updatedAt: 0)
-        let mapping = ProjectMapping(projects: [mine], pending: [])
+        let mapping = ProjectMapping(projects: [mine])
+        #expect(mapping.localId("srvP1") == "c1")
+        #expect(mapping.localId("not merged yet") == "not merged yet")
+        #expect(mapping.localId(nil) == nil)
         let remote = RemoteTask(id: "s1", title: "t", createdAt: 0, updatedAt: 2, projectId: "srvP1")
         #expect(SnapshotMerger.merge(local: [local], pending: [], remote: [remote], nowMs: 10, projects: mapping).upserts.first?.projectLocalId == "c1")
         let elsewhere = RemoteTask(id: "s1", title: "t", createdAt: 0, updatedAt: 3)
         #expect(SnapshotMerger.merge(local: [local], pending: [], remote: [elsewhere], nowMs: 10, projects: mapping).upserts.first?.projectLocalId == nil)
         let move = OutboxOp(opId: "o1", mutation: Mutations.update, argsJson: #"{"projectId":"c1","clientId":"o1"}"#, taskLocalId: "t", clientId: "o1", createdAt: 1)
         #expect(SnapshotMerger.merge(local: [local], pending: [move], remote: [elsewhere], nowMs: 10, projects: mapping).upserts.first?.projectLocalId == "c1")
+        var refused = move
+        refused.lastError = "Project \"Dom\" not found"
+        #expect(SnapshotMerger.merge(local: [local], pending: [refused], remote: [elsewhere], nowMs: 10, projects: mapping).upserts.first?.projectLocalId == nil)
+        let oldServer = ProjectMapping(preservingLocalMembership: true)
+        #expect(SnapshotMerger.merge(local: [local], pending: [], remote: [elsewhere], nowMs: 10, projects: oldServer).upserts.first?.projectLocalId == "c1")
     }
 }
 
-/// The database of 0.3.0 (migrations v1 to v3) moves on to projects (v4) without losing a task.
+/// The database of 0.3.0 (migrations v1 to v3) moves on to projects (v4) without losing a task, and a development
+/// build of 0.4.0 (v4 to v6) drops the project changes it queued (v7).
 struct ProjectMigrationTests {
-    @Test func obsoleteNameJoinMetadataCannotRebindARefusedCreation() async throws {
+    @Test func aDevelopmentDatabaseDropsItsQueuedProjectChangesButNoTask() async throws {
         let queue = try DatabaseQueue()
-        try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v5")
+        try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v6")
         try await queue.write { db in
             try db.execute(sql: """
-                INSERT INTO project (localId, clientId, name, position, createdAt, updatedAt, joinName)
-                VALUES ('refused', 'refused', 'Local edit', 1024, 1, 1, 'Dom')
+                INSERT INTO project (localId, serverId, clientId, name, position, createdAt, updatedAt, serverUpdatedAt, removing)
+                VALUES ('confirmed', 's1', 'confirmed', 'Local edit', 1024, 1, 1, 5, 1),
+                       ('unsent', NULL, 'unsent', 'Unsent', 2048, 1, 1, NULL, 0)
                 """)
-            let t = TaskItem(localId: "t", title: "Keep", note: "Keep note", createdAt: 1, updatedAt: 1, projectLocalId: "refused")
-            try t.save(db)
-            var add = OutboxOp(opId: "t", mutation: Mutations.add, argsJson: #"{"title":"Keep","note":"Keep note","projectId":"refused","clientId":"t"}"#, taskLocalId: "t", clientId: "t", createdAt: 1)
-            try add.insert(db)
+            for (id, project) in [("t1", "unsent"), ("t2", "confirmed")] {
+                try TaskItem(localId: id, serverId: "srv-\(id)", title: id, createdAt: 1, updatedAt: 1, serverUpdatedAt: 5, projectLocalId: project).save(db)
+            }
+            let ops: [(String, String, String?)] = [
+                (Mutations.addProject, #"{"name":"Unsent","clientId":"unsent"}"#, nil),
+                (Mutations.update, #"{"title":"Kept","clientId":"o2"}"#, "t2"),
+                (Mutations.updateProject, #"{"projectId":"confirmed","name":"Local edit","clientId":"o3"}"#, nil),
+                (Mutations.deleteProject, #"{"projectId":"confirmed","moveTasksTo":"none","clientId":"o4"}"#, nil),
+            ]
+            for (index, (mutation, args, task)) in ops.enumerated() {
+                var op = OutboxOp(opId: "o\(index + 1)", mutation: mutation, argsJson: args, taskLocalId: task, clientId: "o\(index + 1)", createdAt: 1)
+                try op.insert(db)
+            }
         }
         let repo = TaskRepository(database: try AppDatabase(queue))
-        try await repo.apply(Snapshot(tasks: [], projects: [RemoteProject(id: "other", name: "Dom", position: 1024, createdAt: 1, updatedAt: 1)]))
-        #expect(try await repo.projects().map(\.localId) == ["other"])
-        #expect(try await repo.task("t")?.note == "Keep note")
-        #expect(try await repo.task("t")?.projectLocalId == nil)
-        #expect(JSONValue.decode(try #require(try await repo.next()).argsJson)?["projectId"] == "refused")
-    }
-
-    @Test func olderPendingCreationsRemainUncertainUntilASnapshotResolvesThem() async throws {
-        let queue = try DatabaseQueue()
-        try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v4")
-        try await queue.write { db in
-            try db.execute(sql: """
-                INSERT INTO project (localId, clientId, name, position, createdAt, updatedAt)
-                VALUES ('mine', 'mine', 'Dom', 1024, 1, 1)
-                """)
-            var add = OutboxOp(opId: "mine", mutation: Mutations.addProject, argsJson: #"{"name":"Dom","clientId":"mine"}"#, taskLocalId: nil, clientId: "mine", createdAt: 1)
-            try add.insert(db)
-        }
-        let repo = TaskRepository(database: try AppDatabase(queue))
-        try await repo.deleteProject("mine", moveTasksTo: nil)
-        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.addProject, Mutations.deleteProject])
-        try await repo.apply(Snapshot(tasks: [], projects: [RemoteProject(id: "server", clientId: "mine", name: "Dom", position: 1024, createdAt: 1, updatedAt: 1)]))
-        #expect(try await repo.projectRef("mine") == "server")
-        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.deleteProject])
-        #expect(try await repo.projects().isEmpty)
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.update])
+        #expect(try await repo.projects().map(\.localId) == ["confirmed"])
+        #expect(try await repo.projects().first?.serverUpdatedAt == nil)
+        #expect(try await repo.task("t1")?.projectLocalId == nil)
+        #expect(try await repo.task("t1")?.serverUpdatedAt == nil)
+        #expect(try await repo.task("t2")?.projectLocalId == "confirmed")
+        let columns = try await queue.read { db in try db.columns(in: "project").map(\.name) }
+        #expect(!columns.contains("removing"))
+        // The next snapshot brings the server's copy back, the deletion that never reached it included.
+        try await repo.apply(Snapshot(tasks: [], projects: [RemoteProject(id: "s1", name: "Server name", position: 1024, createdAt: 1, updatedAt: 5)]))
+        #expect(try await repo.projects().map(\.name) == ["Server name"])
     }
 
     @Test func theMigrationKeepsEveryTaskAndAddsProjects() async throws {
@@ -357,7 +313,7 @@ struct ProjectMigrationTests {
         #expect(try await repo.projects().map(\.name) == ["Dom"])
         #expect(try await repo.projectSupport() == .supported)
         let columns = try await queue.read { db in try db.columns(in: "project").map(\.name) }
-        #expect(Set(["localId", "serverId", "name", "color", "icon", "note", "position", "archivedAt", "removing"]).isSubset(of: Set(columns)))
+        #expect(Set(["localId", "serverId", "clientId", "name", "color", "icon", "note", "position", "archivedAt"]).isSubset(of: Set(columns)))
     }
 }
 

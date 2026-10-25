@@ -11,8 +11,9 @@ public enum ProjectColor: String, Sendable, Codable, CaseIterable {
  * A project as the screens see it (backend 0.13.0, `convex/lib/projectOps.ts`): a flat list in the order of
  * [position], with an archive. A task is in at most one project; labels stay free tags across projects.
  *
- * [localId] is stable from the moment the project exists on this Mac: the `clientId` of the `addProject` mutation for
- * projects made here, the server id for projects made elsewhere, as a task's.
+ * Every project here is one the server has (it has a [serverId]): projects are made, changed and deleted on the server
+ * directly, online only (`SyncEngine`'s project calls). [localId] is the `clientId` of the `addProject` call for
+ * projects made here and the server id for projects made elsewhere, as a task's.
  */
 public struct Project: Hashable, Sendable, Identifiable {
     public var localId: String
@@ -29,16 +30,13 @@ public struct Project: Hashable, Sendable, Identifiable {
     public var archivedAt: Int64?
     public var createdAt: Int64
     public var updatedAt: Int64
-    /// `updatedAt` of the last server copy merged into this row; nil until the server has it.
+    /// `updatedAt` of the last server copy written into this row.
     public var serverUpdatedAt: Int64?
-    /// Deleted on this Mac; the row stays, hidden, until the server has the deletion, so the deletion can still name
-    /// the project by its server id.
-    public var removing: Bool
 
     public init(
         localId: String, serverId: String? = nil, clientId: String? = nil, name: String, color: ProjectColor? = nil,
         icon: String? = nil, note: String? = nil, position: Double, archivedAt: Int64? = nil, createdAt: Int64,
-        updatedAt: Int64, serverUpdatedAt: Int64? = nil, removing: Bool = false
+        updatedAt: Int64, serverUpdatedAt: Int64? = nil
     ) {
         self.localId = localId
         self.serverId = serverId
@@ -52,7 +50,6 @@ public struct Project: Hashable, Sendable, Identifiable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.serverUpdatedAt = serverUpdatedAt
-        self.removing = removing
     }
 
     public var id: String { localId }
@@ -97,9 +94,10 @@ public struct RemoteProject: Hashable, Sendable {
 }
 
 /**
- * Whether the connected server has projects (backend 0.13.0 or later). Unknown until a snapshot has said so (no
- * server yet, or not reached yet): projects can then be made on this Mac and wait in the outbox. A server without
- * projects (0.12.x) leaves them waiting; changes about projects never reach it, and tasks keep everything else.
+ * Whether the connected server has projects (backend 0.13.0 or later), as the last snapshot or project call said;
+ * unknown before either (no server yet, or not reached yet). With a server without projects (0.12.x) the projects
+ * already here stay, project changes and new assignments are refused with [requirement], and task changes are sent
+ * without their project.
  */
 public enum ProjectSupport: String, Hashable, Sendable {
     case unknown, supported, unsupported

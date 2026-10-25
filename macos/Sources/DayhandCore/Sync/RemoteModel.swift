@@ -163,9 +163,6 @@ public enum RemoteJSON {
         message.contains("extra field `projectId`")
     }
 
-    /// Why a project change was not sent: the server has no projects (what `isMissingFunction` also reads as such).
-    public static let noProjectsReason = "Could not find public function: the server has no projects"
-
     /**
      * The server refused a task change for its project: archived meanwhile ("Project \"Web\" is archived; restore it
      * first") or gone ("Project \"Web\" not found"), as `projectTarget` in `convex/lib/projectOps.ts` words it.

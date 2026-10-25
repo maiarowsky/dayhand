@@ -55,7 +55,8 @@ This version is the basic one (MVP):
 - **Connect** with a code from `dayhand pair`, typed or from a `dayhand://pair?…` link, or a `helm://pair?…` one from older versions (the app
   registers both schemes). **Not now** keeps everything on the Mac until a server is connected.
 - **Offline first**: every change is in the local database and the outbox at once; the screens never wait for
-  the network. Changes are sent in order when the server can be reached.
+  the network. Changes are sent in order when the server can be reached. Managing projects is the exception: it
+  needs the server ([Projects](#projects)).
 - **Reminders and the morning summary** as macOS notifications, worked out on the Mac from the local database
   with the Android app's rules, in the time zone of the server settings (this Mac's until a server has sent them). A
   reminder's **Done** completes the task. Settings → General → **Notifications** changes the **Morning summary**
@@ -80,9 +81,14 @@ click / quick add ──> TaskRepository: the row and its mutation in the outbox
 SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST /api/mutation, clientId)
                                  then app:listAll + app:listTrash + app:getSettings + app:listProjects
                                  (POST /api/query)
-                                 ──> ProjectMerger, then SnapshotMerger (last write wins per field; the settings
-                                     fields a waiting app:updateSettings sets keep their local value) ──> the database
+                                 ──> ProjectMerger (the server's projects win), then SnapshotMerger (last write
+                                     wins per field; the settings fields a waiting app:updateSettings sets keep their
+                                     local value) ──> the database
 rounds: every 15 s, and at once after a local change
+
+project editor ──> SyncEngine project call, never during a round: app:addProject, app:updateProject or
+                   app:deleteProject at once ──> the server's answer into the database
+                   (no server or no answer: "Requires a connection to the server.", nothing queued)
 
 plan health: PlanHealthSync reads app:planHealth ──> meta table
 Review: AgentInbox reads app:listApprovals + app:listProposals
@@ -142,48 +148,46 @@ separate app identity for those.
 ### Projects
 
 Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data and sync (`Project`, `ProjectRules`,
-`ProjectStore`, `ProjectMerger`, `TaskLists`); the sidebar that shows them comes with the next changes.
+`ProjectStore`, `ProjectCalls`, `ProjectMerger`, `TaskLists`); the sidebar that shows them comes with the next changes.
 
 - A task belongs to at most one project or none; labels stay free tags across projects. A project has a name
   (1 to 50 characters on one line, not `none`, unique without regard to case among all projects, archived ones
   included), one of 12 colours, an optional icon (one emoji), a note of up to 2,000 characters, a place in the
   sidebar, and may be archived. There can be at most 200.
-- Each change writes the row and its mutation in one transaction: `app:addProject`, `app:updateProject` with the
-  fields that changed, `app:deleteProject` with `moveTasksTo` another project or `none` (the tasks move on the Mac
-  at once), and `projectId` in `app:add` and `app:update` (`null` takes a task out of its project). A project made
-  offline is named in the outbox by its local id, which is also its `clientId`; each mutation is sent with the
-  server's id once the `addProject` is answered. The queue is append-only: every action appends its own mutation,
-  and queued payloads and sequence numbers are never rewritten, redirected or reordered. Deleting even an unsent
-  project appends its deletion after its creation; both reach the server. Deletion and its destination resolve only
-  by identity, never by name. A repeating task's next occurrence keeps its project.
-- The snapshot adds `app:listProjects`; projects merge last write wins per field, as tasks do, and a project deleted
-  on the Mac stays hidden until the server has the deletion. Project identity matches only by server id or
-  `clientId`, never by name. A refused creation leaves the Mac without changing any other queued intent. Later
-  operations are processed in their original order against that refusal; no deletion or assignment is redirected
-  to another project. Tasks and notes survive, and another device's same-named project is untouched. Binding an
-  acknowledged id resolves cached references without rewriting queued payloads and preserves their latest edits. A snapshot-confirmed creation takes the server's fields
-  except those changed by later queued edits. Legacy migrations v5/v6 remove obsolete name-join metadata and
-  apply normal refusal handling to those unbound creations without changing other queued operations.
-- A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
-  the project; the next snapshot restores authoritative membership unless a later assignment is waiting. Missing
-  local references follow the same reconciliation. A refused project edit cannot unhide a later queued deletion.
+- **Managing projects is online only.** Creating, editing (name, colour, icon, note), moving, archiving or restoring
+  and deleting a project are calls to the server made at once: `SyncEngine.addProject`, `updateProject`,
+  `moveProject`, `setArchived` and `deleteProject` send `app:addProject`, `app:updateProject` with the fields that
+  changed, or `app:deleteProject` with `moveTasksTo` another project or `none`. Each change is checked on the Mac
+  first (the rules above), and the server's answer is written into the local database at once (a deletion moves the
+  tasks on the Mac as the server did); the snapshot keeps reconciling. Without a server, offline, or when the call
+  gets no answer, it fails with "Requires a connection to the server." and nothing is queued; any other refusal comes
+  back in the server's words and nothing changes. A call waits for a running sync round and the next round waits for
+  it, so no snapshot read before a change can undo it.
+- **The offline queue holds task changes (and the settings) only**, appended at the end and sent oldest first, with
+  no barriers, gating or waiting conditions. Putting a task into a project (`projectId` in `app:add` and
+  `app:update`, `null` takes it out) is such a task change and names only a project the server has confirmed (one
+  with a server id); any other target is refused at once ("That project is not on the server yet."). The outbox
+  names the project by its local id and sends its server id. A repeating task's next occurrence made on the Mac keeps
+  its project.
+- The snapshot adds `app:listProjects`. Nothing about a project waits in the queue, so the server's copy wins and a
+  project missing from the server goes. Projects match only by server id or `clientId`, never by name.
+- A refusal never loses a task: when the server refuses an assignment because the project was archived or deleted on
+  another device, the task stays and leaves the project on the Mac (unless a later change moves it), so the refusal
+  shows as any refused change does, by undoing it; the reason is kept in the change's `lastError` while the change
+  is sent again once, without the project. The next snapshot shows where the server has the task.
 - **Older servers (0.12.x)** have no `app:listProjects` ("Could not find public function"). The snapshot then has
-  no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`). Local projects and task
-  memberships stay. Project operations and membership changes wait for a server with projects, without blocking
-  other task changes or retrying in a loop. Tasks, including their notes, sync without `projectId`; their memberships
-  stay in their original queue entries. Once the task exists remotely, its deferred membership is sent as an update
-  using the entry's stable operation id, without rewriting its stored creation. The status reads "Needs backend
-  0.13.0 or later", localized in all eight languages. Once an upgraded server supplies projects in a snapshot, waiting operations resume in order on the
-  next round, using the server's project ids. The only task dependency is an explicit reference to an unconfirmed
-  local project creation: it waits for that creation's acknowledgement or refusal, then uses the server id or is
-  sent without the refused project. Task state changes (trash, restore, archive, now and completion), clears and
-  unrelated operations have no task-state or focus barriers. A real trash refusal follows ordinary rejection
-  handling and is not retained or replayed after restoration. If the server purges a known task, suspended
-  memberships are retired without discarding other pending edits, which wait
-  for their own server responses. The task and its cached history then leave the Mac; unsent task creations stay.
-- Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
-  sets the project and leaves the title, the first one only; an exact trimmed, NFC, case-insensitive name wins
-  over the hyphen-as-space alias. A `+word` naming none stays in the title and is
+  no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`): project calls and new
+  assignments say "Needs backend 0.13.0 or later", localized in all eight languages, as does the status line. Nothing
+  on the Mac is destroyed: the projects already here and the tasks' memberships stay. Tasks keep syncing; a task
+  change that names a project goes without `projectId` (refused once for it, then sent without it from the start),
+  with no retry loop and nothing waiting.
+- **Known limitation:** a repeating task can lose its project when the project is archived on another device or the
+  server is older (0.12.x): its next occurrence comes without a project. The task itself is never lost.
+- Development builds of 0.4.0 queued project changes; migration v7 drops them from the outbox together with the
+  projects the server never confirmed (their tasks stay, without a project).
+- Quick add: a `+word` naming a project the server has that is not archived (any case, a hyphen for a space:
+  `+strona-piekarni`) sets the project and leaves the title, the first one only; an exact trimmed, NFC,
+  case-insensitive name wins over the hyphen-as-space alias. A `+word` naming none stays in the title and is
   reported as unknown, unless it is a date (`+3d`). The cases, shared with the other clients:
   [`Tests/cases/quickadd-project.json`](Tests/cases/quickadd-project.json).
 
@@ -265,20 +269,23 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   change is sent later, and that a refused one is repaired.
   The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
-- **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`): the name, icon, note and order rules, quick
-  add's `+project` with the shared cases, the sidebar counts and the task list of a project, the merge (by server
-  id or `clientId`, never a shared name), migrations from a 0.3.0 database without losing a task. Against the
-  fake server: a project and its tasks written offline arrive in order with the server's project id; projects made
-  or changed elsewhere arrive; a task refused for an archived project is sent again without it; a refused project
-  goes and its tasks stay. Deletion chains resolve to their final destination, rejected assignments preserve later
-  moves, append-only action order across offline project creation/deletion and name reuse, and real refusals
-  never redirect operations to another device's same-named project. With the fake server
-  acting as 0.12 (no projects): tasks and notes sync while projects and memberships wait locally, without repeated
-  mutations or blocking other changes; upgrading resumes the queue and uploads memberships.
+- **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`, `ProjectTrashRefusalTests.swift`): the name,
+  icon, note and order rules, quick add's `+project` with the shared cases, the sidebar counts and the task list of a
+  project, the merge (by server id or `clientId`, never a shared name; the server's copy wins), migrations from a
+  0.3.0 database without losing a task and from a development build of 0.4.0 (v7). Against the fake server: without
+  a connection every project call fails and queues nothing; creating, editing, moving, archiving and deleting (the
+  tasks moved to a project or out of any) act on the server at once and the rows follow; a project call waits for a
+  running round; a refusal comes back in the server's words; tasks put offline into a confirmed project arrive with
+  its server id, while a project the server has not confirmed is refused on the Mac; a refused assignment leaves
+  the task without the project; the queue goes strictly in order (trash, restore, archive and now never wait). With
+  the fake server acting as 0.12 (no projects): project calls report the requirement, tasks sync without
+  `projectId`, nothing on the Mac is lost and nothing is retried.
 - **Against a real local backend** (`LiveBackendTests` and `LiveProjectsTests`, off by default): pairs with a code,
   adds with a date phrase, works offline, syncs, and checks every change with a fresh client. `LiveProjectsTests`
-  writes a project and its tasks offline and syncs them; `DAYHAND_LIVE_PROJECTS=yes` for a backend with projects
-  (it then also edits, archives and deletes the project), `no` for a 0.12 one. Each test uses its own pairing code.
+  with `DAYHAND_LIVE_PROJECTS=yes` (a backend with projects) makes, edits, archives and deletes a project online,
+  checks that project calls fail offline without queuing anything, and puts tasks into the project offline, then
+  syncs them; `no` (a 0.12 backend) checks that project calls report the requirement and tasks still sync. Each test
+  uses its own pairing code.
 
   ```sh
   DAYHAND_LIVE_SITE=http://127.0.0.1:3211 DAYHAND_LIVE_CODE=<code from dayhand pair> swift test --filter LiveBackend

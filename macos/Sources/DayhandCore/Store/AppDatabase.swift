@@ -98,7 +98,7 @@ public final class AppDatabase: Sendable {
             try db.execute(sql: "UPDATE task SET serverUpdatedAt = NULL")
         }
         // 0.4.0: projects (backend 0.13.0) and the project of each task, by the project's localId. Rows from before
-        // have no project; [removing] keeps a project deleted on this Mac until the server has the deletion.
+        // have no project. v5 to v7 only clean up after development builds of 0.4.0, which queued project changes.
         migrator.registerMigration("v4") { db in
             try db.create(table: "project") { t in
                 t.primaryKey("localId", .text)
@@ -124,10 +124,20 @@ public final class AppDatabase: Sendable {
             try db.alter(table: "project") { t in t.add(column: "joinName", .text) }
         }
         migrator.registerMigration("v6") { db in
-            for project in try Project.filter(Column("joinName") != nil && Column("serverId") == nil).fetchAll(db) {
-                try ProjectOutbox.discardRefusedCreation(db, project.localId)
-            }
             try db.execute(sql: "ALTER TABLE project DROP COLUMN joinName")
+        }
+        // Project management is online only: project changes leave the outbox, and so do projects the server never
+        // confirmed (their tasks stay, without a project). The other projects take the server's copy at the next
+        // snapshot, which also brings back a deletion that never reached the server.
+        migrator.registerMigration("v7") { db in
+            try db.execute(sql: "DELETE FROM outbox WHERE mutation IN (?, ?, ?)", arguments: [Mutations.addProject, Mutations.updateProject, Mutations.deleteProject])
+            try db.execute(sql: """
+                UPDATE task SET projectLocalId = NULL, serverUpdatedAt = NULL
+                WHERE projectLocalId IN (SELECT localId FROM project WHERE serverId IS NULL)
+                """)
+            try db.execute(sql: "DELETE FROM project WHERE serverId IS NULL")
+            try db.execute(sql: "UPDATE project SET serverUpdatedAt = NULL")
+            try db.execute(sql: "ALTER TABLE project DROP COLUMN removing")
         }
         return migrator
     }
@@ -223,8 +233,7 @@ extension Project: FetchableRecord, PersistableRecord {
             archivedAt: row["archivedAt"],
             createdAt: row["createdAt"],
             updatedAt: row["updatedAt"],
-            serverUpdatedAt: row["serverUpdatedAt"],
-            removing: row["removing"]
+            serverUpdatedAt: row["serverUpdatedAt"]
         )
     }
 
@@ -241,7 +250,6 @@ extension Project: FetchableRecord, PersistableRecord {
         container["createdAt"] = createdAt
         container["updatedAt"] = updatedAt
         container["serverUpdatedAt"] = serverUpdatedAt
-        container["removing"] = removing
     }
 }
 
@@ -276,11 +284,11 @@ extension TaskEvent: FetchableRecord, PersistableRecord {
  * answered, so they survive the app being quit and the Mac restarting.
  *
  * [argsJson] holds the mutation arguments without `taskId`: the task is named by [taskLocalId] and its server id is
- * filled in at send time, because a task created offline has none yet. Projects are named the same way: `projectId`
- * and `moveTasksTo` in [argsJson] hold a project's `localId` (or "none"), swapped for its server id when sent. An
- * `addProject` names its project by [clientId], which is the project's `localId`. [clientId] is also inside
- * [argsJson]; the backend applies an operation with a known `clientId` only once, so resending after a lost answer is
- * safe.
+ * filled in at send time, because a task created offline has none yet. A task's project is named the same way:
+ * `projectId` in [argsJson] holds the `localId` of a project the server has, swapped for its server id when sent.
+ * Only task changes and settings are queued; projects are changed on the server directly (`SyncEngine`). [clientId]
+ * is also inside [argsJson]; the backend applies an operation with a known `clientId` only once, so resending after a
+ * lost answer is safe.
  */
 public struct OutboxOp: Hashable, Sendable, FetchableRecord, MutablePersistableRecord, Codable {
     public static let databaseTableName = "outbox"
@@ -311,22 +319,13 @@ public struct OutboxOp: Hashable, Sendable, FetchableRecord, MutablePersistableR
         self.lastError = lastError
     }
 
-    public var waitsForProjects: Bool {
-        Mutations.projectChanges.contains(mutation) || (mutation != Mutations.add && isProjectAssignment)
-    }
-
-    public var isProjectAssignment: Bool {
-        guard let args = JSONValue.decode(argsJson)?.object else { return false }
-        if mutation == Mutations.add { return args["projectId"] != nil }
-        return mutation == Mutations.update && Set(args.keys).subtracting(["clientId"]) == ["projectId"]
-    }
-
     public mutating func didInsert(_ inserted: InsertionSuccess) {
         seq = inserted.rowID
     }
 }
 
-/// Mutations of the app layer (`backend/convex/app.ts`) that the outbox sends.
+/// Mutations of the app layer (`backend/convex/app.ts`): the outbox sends the task changes and the settings, the
+/// project calls of `SyncEngine` the project changes.
 public enum Mutations {
     public static let add = "app:add"
     public static let complete = "app:complete"
@@ -338,13 +337,10 @@ public enum Mutations {
     public static let softDelete = "app:softDelete"
     public static let restore = "app:restore"
     public static let updateSettings = "app:updateSettings"
-    // Since backend 0.13.0.
+    // Since backend 0.13.0; never queued.
     public static let addProject = "app:addProject"
     public static let updateProject = "app:updateProject"
     public static let deleteProject = "app:deleteProject"
-
-    /// The changes of a project itself, which a server without projects does not have.
-    public static let projectChanges: Set<String> = [addProject, updateProject, deleteProject]
 }
 
 /// How list and object fields of a task are stored in columns: JSON, as the backend sends them.

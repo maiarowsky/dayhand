@@ -27,10 +27,10 @@ public struct QuickAddInput: Hashable, Sendable {
  * phrase wins and at least one word stays as the title, so "Plan next week" is "Plan" next Monday but a line that is
  * only a date ("tomorrow") stays a title. Without a phrase the line is the title and the day is the caller's default.
  *
- * A `+word` anywhere in the line names a project that is not archived, in any case, a hyphen standing for a space:
- * "+strona-piekarni" is the project "Strona piekarni". The first such word sets the project and leaves the title; a
- * `+word` that names no project (and is not a date like "+3d") stays in the title, and quick add never makes a project
- * from a typo.
+ * A `+word` anywhere in the line names a project the server has that is not archived, in any case, a hyphen standing
+ * for a space: "+strona-piekarni" is the project "Strona piekarni". The first such word sets the project and leaves
+ * the title; a `+word` that names no project (and is not a date like "+3d") stays in the title, and quick add never
+ * makes a project from a typo.
  */
 public enum QuickAdd {
     /// The longest phrase in the grammar has six words ("the 23rd of october 2027 9am").
@@ -64,7 +64,7 @@ public enum QuickAdd {
     /// The line without the first `+word` that names one of the active [projects], that project, and the first
     /// `+word` naming none.
     static func takeProject(_ line: String, projects: [Project], now: Int64, timezone: String) -> (rest: String, project: String?, unknown: String?) {
-        let active = projects.filter { !$0.isArchived && !$0.removing }
+        let active = projects.filter { !$0.isArchived && $0.serverId != nil }
         var unknown: String?
         for range in wordRanges(line) {
             let word = String(line[range])

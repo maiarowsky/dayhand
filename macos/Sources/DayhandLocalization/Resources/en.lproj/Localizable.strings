@@ -412,6 +412,8 @@
 	<string>Repeat</string>
 	<key>Requests and proposals</key>
 	<string>Requests and proposals</string>
+	<key>Requires a connection to the server.</key>
+	<string>Requires a connection to the server.</string>
 	<key>Restart Dayhand</key>
 	<string>Restart Dayhand</string>
 	<key>Restore</key>
@@ -464,6 +466,8 @@
 	<string>That is not a server address. It looks like https://&lt;name&gt;.convex.site.</string>
 	<key>That is not a time.</key>
 	<string>That is not a time.</string>
+	<key>That project is not on the server yet.</key>
+	<string>That project is not on the server yet.</string>
 	<key>That project no longer exists.</key>
 	<string>That project no longer exists.</string>
 	<key>That version is older than this one, so it was not installed.</key>
