@@ -70,9 +70,25 @@ struct BoardTests {
         let (bakery, _) = try await seeded(model)
         model.show(.project(bakery))
         let invoice = try #require(model.tasks.first { $0.title == "Invoice" })
-        model.setStatus(invoice.localId, .doing)
+        #expect(!model.drop(invoice.localId, onColumn: .todo))
+        #expect(!model.drop("unknown", onColumn: .doing))
+        #expect(model.drop(invoice.localId, onColumn: .doing))
         try await eventually { model.board.doing.map(\.title).sorted() == ["Invoice", "Photos"] }
         #expect(model.board.todo.isEmpty)
+    }
+
+    @Test func theDoneColumnCountsEveryDoneTaskThoughItShowsTheLatest() async throws {
+        let model = try makeModel()
+        let now = Clock.nowMs()
+        let limit = TaskListSections.doneLimit
+        let tasks = (0...limit).map {
+            RemoteTask(id: "d\($0)", title: "Done \($0)", status: "done", completedAt: now, createdAt: now, updatedAt: now)
+        }
+        try await model.repository.apply(Snapshot(tasks: tasks, settings: ReminderSettings(timezone: "Europe/Warsaw")))
+        try await eventually { model.tasks.count == limit + 1 }
+        model.show(.all)
+        #expect(model.board.done.count == limit)
+        #expect(model.board.count(.done) == limit + 1)
     }
 
     @Test func anArchivedProjectsPlaceTakesNoNewTasks() async throws {

@@ -27,6 +27,8 @@ struct BoardColumns: Equatable {
     var todo: [TaskItem] = []
     var doing: [TaskItem] = []
     var done: [TaskItem] = []
+    /// All the done tasks of the place, though the column shows only the latest.
+    var doneCount = 0
 
     func tasks(_ status: TaskStatus) -> [TaskItem] {
         switch status {
@@ -36,11 +38,16 @@ struct BoardColumns: Equatable {
         }
     }
 
+    func count(_ status: TaskStatus) -> Int {
+        status == .done ? doneCount : tasks(status).count
+    }
+
     /// The open tasks in the order of the list (overdue, today, later, no day) and the latest done.
-    init(open: [TaskItem], done: [TaskItem]) {
+    init(open: [TaskItem], done: [TaskItem], doneCount: Int) {
         todo = open.filter { $0.status == .todo }
         doing = open.filter { $0.status == .doing }
         self.done = done
+        self.doneCount = doneCount
     }
 
     init() {}
@@ -51,14 +58,22 @@ extension AppModel {
     var board: BoardColumns {
         switch place {
         case .today:
-            let s = sections
-            let open = (s.overdue + (s.now.map { [$0] } ?? []) + s.today).filter(matchesSearch)
-            return BoardColumns(open: open, done: s.done.filter(matchesSearch))
+            let s = searchedToday
+            return BoardColumns(open: s.overdue + (s.now.map { [$0] } ?? []) + s.today, done: s.done, doneCount: s.done.count)
         case .all, .noProject, .project, .label:
-            return BoardColumns(open: list.overdue + list.today + list.later + list.noDay, done: list.done)
+            return BoardColumns(
+                open: list.overdue + list.today + list.later + list.noDay, done: list.done, doneCount: list.doneCount
+            )
         case .inbox, .archivedProjects, .done, .trash:
             return BoardColumns()
         }
+    }
+
+    /// Moves a task dropped on the board's [status] column there; false when it is unknown or already in it.
+    func drop(_ taskId: String, onColumn status: TaskStatus) -> Bool {
+        guard let task = task(taskId), task.status != status else { return false }
+        setStatus(taskId, status)
+        return true
     }
 
     /// Whether the place shows tasks that the board and the list can both show.
@@ -79,7 +94,7 @@ struct BoardView: View {
         let board = model.board
         HStack(alignment: .top, spacing: 14) {
             ForEach([TaskStatus.todo, .doing, .done], id: \.self) { status in
-                BoardColumn(status: status, tasks: board.tasks(status))
+                BoardColumn(status: status, tasks: board.tasks(status), count: board.count(status))
             }
         }
         // The columns' own inset, so their cards line up with quick add and the lists.
@@ -94,6 +109,7 @@ struct BoardColumn: View {
     @EnvironmentObject private var model: AppModel
     let status: TaskStatus
     let tasks: [TaskItem]
+    let count: Int
     @State private var targeted = false
 
     static let inset: CGFloat = 8
@@ -105,7 +121,7 @@ struct BoardColumn: View {
                     .foregroundStyle(StatusStyle.color(status))
                     .accessibilityHidden(true)
                 Text(StatusStyle.name(status)).font(.headline)
-                CountPill(count: tasks.count, tint: StatusStyle.color(status))
+                CountPill(count: count, tint: StatusStyle.color(status))
                 Spacer()
             }
             .padding(.horizontal, 4)
@@ -126,12 +142,11 @@ struct BoardColumn: View {
                 .fill(targeted ? Color.accentColor.opacity(0.08) : Color.clear)
         )
         .dropDestination(for: String.self) { items, _ in
-            guard let id = items.lazy.compactMap(TaskDrag.localId).first, let task = model.task(id), task.status != status else { return false }
-            model.setStatus(id, status)
-            return true
+            guard let id = items.lazy.compactMap(TaskDrag.localId).first else { return false }
+            return model.drop(id, onColumn: status)
         } isTargeted: { targeted = $0 }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(StatusStyle.name(status)), \(tasks.count)")
+        .accessibilityLabel("\(StatusStyle.name(status)), \(count)")
     }
 }
 
@@ -152,11 +167,6 @@ struct TaskCard: View {
                     .foregroundStyle(task.status == .done ? .secondary : .primary)
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                        .accessibilityHidden(true)
-                }
                 Menu { TaskMenu(task: task) } label: { Image(systemName: "ellipsis") }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.hidden)
