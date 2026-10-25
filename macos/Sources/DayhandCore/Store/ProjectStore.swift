@@ -361,25 +361,35 @@ enum ProjectOutbox {
                 try rewrite(db, op, args.merging(["moveTasksTo": .string(target ?? ProjectRules.noProject)]) { $1 })
             }
         }
-        if let target { try prioritizeCreation(db, target) }
+        if let target { try deferReferences(db, untilCreationOf: target) }
         try db.execute(sql: "UPDATE task SET projectLocalId = ? WHERE projectLocalId = ?", arguments: [target, localId])
         _ = try Project.deleteOne(db, key: localId)
     }
 
-    private static func prioritizeCreation(_ db: Database, _ localId: String) throws {
+    private static func deferReferences(_ db: Database, untilCreationOf localId: String) throws {
         let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
         guard let creationIndex = pending.firstIndex(where: { $0.mutation == Mutations.addProject && $0.clientId == localId }),
-              let referenceIndex = pending[..<creationIndex].firstIndex(where: { op in
-                  let args = JSONValue.decode(op.argsJson)
-                  return args?["projectId"]?.string == localId || args?["moveTasksTo"]?.string == localId
-              }) else { return }
-        var creation = pending[creationIndex]
-        _ = try OutboxOp.deleteOne(db, key: creation.seq)
-        for index in (referenceIndex..<creationIndex).reversed() {
-            try db.execute(sql: "UPDATE outbox SET seq = ? WHERE seq = ?", arguments: [pending[index + 1].seq, pending[index].seq])
+              let creationSeq = pending[creationIndex].seq else { return }
+        var waitingTasks = Set<String>()
+        var waitingNow = false
+        let deferred = pending[..<creationIndex].filter { op in
+            guard op.taskLocalId != nil || op.mutation == Mutations.deleteProject || op.mutation == Mutations.setNow else { return false }
+            let args = JSONValue.decode(op.argsJson)
+            let references = args?["projectId"]?.string == localId || args?["moveTasksTo"]?.string == localId
+            guard references || op.taskLocalId.map(waitingTasks.contains) == true || (waitingNow && op.mutation == Mutations.setNow) else { return false }
+            if let taskId = op.taskLocalId { waitingTasks.insert(taskId) }
+            if op.mutation == Mutations.setNow { waitingNow = true }
+            return true
         }
-        creation.seq = pending[referenceIndex].seq
-        try creation.insert(db)
+        guard !deferred.isEmpty else { return }
+        for op in deferred { _ = try OutboxOp.deleteOne(db, key: op.seq) }
+        for op in pending.suffix(from: creationIndex + 1).reversed() {
+            try db.execute(sql: "UPDATE outbox SET seq = seq + ? WHERE seq = ?", arguments: [deferred.count, op.seq])
+        }
+        for (index, var op) in deferred.enumerated() {
+            op.seq = creationSeq + Int64(index) + 1
+            try op.insert(db)
+        }
     }
 
     /// [op] without its `projectId`.
