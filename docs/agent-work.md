@@ -372,13 +372,10 @@ tools to use:
   proof (a failed check recorded as failed), the owner's yes before a last step that needs it, or
   hand the task back with a note.
 
-`agent_brief` (`dayhand prime --json`, `GET /api/v1/brief`) is the start of a session in one
-read: every field of `list_today`, then whether agents are paused and the caller's own tool
-policies, the claims in force and those that ran out (each marked `mine` when the caller holds
-it), the approval requests waiting and the owner's decisions on the caller's requests in the last
-day, the first tasks ready to work on, and `nextSteps`: sentences, most pressing first, such as
-"You hold #12 … until 14:30: renew_claim while you work …". `dayhand prime` prints the same as
-text before the rules of the road.
+`agent_brief` (`dayhand prime --json`, `GET /api/v1/brief`) starts a session in one read,
+with context from the caller's side and suggested next steps. The
+[agent brief reference](mcp.md#agent-brief-agent_brief) defines its fields, including projects.
+`dayhand prime` prints a text summary before the rules of the road.
 
 Decisions:
 

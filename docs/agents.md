@@ -25,11 +25,8 @@ dayhand key revoke <keyId>
 Dayhand returns the key only this once; save the captured `$AGENT_KEY` in a password manager so you
 can set it again in a later shell. The examples use `jq` to read JSON responses.
 
-| Scope | The key may |
-|---|---|
-| `read` (the default of `dayhand key create`) | read the plan: Today, lists, tasks, history, the activity log |
-| `write` | also change tasks and settings |
-| `full` | also manage keys, webhooks, devices, connections and the calendar feed; `dayhand key create` never makes one |
+The [key scope reference](mcp.md#keys-and-actors) defines what `read`, `write` and `full` permit.
+`dayhand key create` defaults to `read` and never creates a `full` key.
 
 A key made with `dayhand key create` expires after 90 days unless `--expires` says otherwise (`12w`, `1y`,
 a date, `never`), never outlives the key that made it, and stops when that key is revoked. Each key may
@@ -63,18 +60,15 @@ do next ([for scripts](terminal.md#for-scripts)). Two helpers:
 
 ## What the agent sees
 
-Over MCP your server offers 32 tools, three resources with two resource templates, and four prompts
-([the full list](mcp.md#tools)):
+Over MCP your server offers:
 
-- **Tools** for everything the apps do: add, update, complete, reschedule, archive, delete and restore
-  tasks; Today, search, the board and the trash; the activity log, claims, approval requests, proposals
-  and the health report. Tools that only you may use (deciding approvals, pausing agents, policies,
-  accepting proposals) are left out of an agent's list.
-- **Resources**: `dayhand://today`, `dayhand://activity` and `dayhand://guide`, a short text on how an agent
-  should work with Dayhand; the templates `dayhand://activity{?since}` and `dayhand://tasks/{ref}` read the
-  log from a cursor and one task with its history.
-- **Prompts**: `plan_day`, `weekly_review`, `triage_overdue` and `plan_health`, each of which asks the agent
-  to go through the plan with you and ask before changing anything.
+- **Tools** to work on the plan, including [projects](mcp.md#projects). The
+  [tool catalog](mcp.md#tools) lists them and marks the owner's tools, which agents cannot see or call.
+- **Resources** for context without a tool call, including the
+  [phase guides](agent-work.md#9-phase-guides-and-the-agent-brief). The
+  [resource catalog](mcp.md#resources) lists their URIs and templates.
+- **Prompts** for going through the plan with you and asking before changing anything; see the
+  [prompt catalog](mcp.md#prompts).
 
 Every change takes `dryRun: true` to check it without saving, and a `clientId` so that a retry is never
 applied twice ([dry runs](mcp.md#dry-runs)).

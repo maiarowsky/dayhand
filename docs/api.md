@@ -31,8 +31,8 @@ import). The OpenAPI document gives it per operation as `x-dayhand-scope`; a key
 dayhand key create n8n --scope read --expires 90d
 ```
 
-Changes are recorded in the task history like changes made through MCP: `agent: <key name>`
-for an agent key, `cli` for a CLI key.
+Changes use the same [actors as MCP](mcp.md#keys-and-actors).
+See [project history](architecture.md#projects) for changes to the catalog itself.
 
 ## Routes
 

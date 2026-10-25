@@ -531,7 +531,7 @@ Since 0.8.0 a key also has a **scope** and may **expire**:
 | Scope | On `/mcp` | REST `/api/v1` ([api.md](api.md)) | Account: keys, webhooks, devices, connections, calendar feed |
 |---|---|---|---|
 | `read` | only the reading tools (`tools/list` shows only them; a change gets `403 insufficient_scope`) | `GET` routes | no (`403`) |
-| `write` | every tool | every task and settings route | no (`403`) |
+| `write` | every tool | [routes marked read or write](api.md#routes) | no (`403`) |
 | `full` | every tool | everything | yes |
 
 Keys without a scope (every key made before 0.8.0) are `full` keys; nothing changes for them.
