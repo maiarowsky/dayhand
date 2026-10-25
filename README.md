@@ -1,6 +1,6 @@
 # ✋ Dayhand — a day plan with a spare pair of hands
 
-[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/releases) [![npm](https://img.shields.io/badge/npm-not%20published%20yet-lightgrey?style=flat)](docs/release.md) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/dayhand?style=flat)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/stargazers) [![Release](https://img.shields.io/github/v/release/maiarowsky/dayhand?style=flat)](https://github.com/maiarowsky/dayhand/releases) [![npm](https://img.shields.io/npm/v/dayhand?style=flat)](https://www.npmjs.com/package/dayhand) [![Works with 2 agents](https://img.shields.io/badge/works%20with-2%20agents-blueviolet?style=flat)](docs/badges.md#agents) [![License](https://img.shields.io/github/license/maiarowsky/dayhand?style=flat)](LICENSE)
 
 Dayhand is a task list and day plan for people who run a business on their own, and for the AI
 agents that work for them. Your phone keeps the plan offline with a calendar and reminders; a
@@ -36,8 +36,6 @@ TODAY
 | Android 8.0+ | build it yourself ([On the phone](#on-the-phone)); a signed APK on GitHub Releases is prepared, no release is published yet |
 | Dayhand for macOS | build it from a checkout ([On the Mac](#on-the-mac)) |
 | Dayhand for Linux | build it from a checkout ([On Linux](#on-linux)) |
-
-> **npm and Homebrew: available after the first release.** Nothing is published yet; until then, build `dayhand` from a checkout ([Development](#development)).
 
 ```sh
 npm i -g dayhand
@@ -253,8 +251,8 @@ docs/      architecture, MCP, REST API, webhooks, OAuth, calendar feed, pairing,
 site/      dayhand.dev: the landing page and the docs from docs/, an Astro site built into site/dist; check it with scripts/check-site.sh --build
 ```
 
-To run `dayhand` from this checkout instead of the npm package (also the way to get it before the
-first release), build it and link it onto your PATH; `npm unlink -g dayhand` removes the link:
+To run `dayhand` from this checkout instead of the npm package, build it and link it onto your
+PATH; `npm unlink -g dayhand` removes the link:
 
 ```sh
 (cd cli && npm ci --ignore-scripts && npm run build && npm link)

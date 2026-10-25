@@ -6,8 +6,8 @@ versions; `dayhand version` checks the server's `serverInfo.version` against
 `MIN_SERVER_VERSION` in `cli/src/core/version.ts` (same major, not older than the minimum).
 
 The CLI goes to npm as `dayhand` (`npm i -g dayhand`) and to the Homebrew tap `maiarowsky/tap`
-(`brew install maiarowsky/tap/dayhand`). Everything needed to publish is in the repository, and
-**nothing publishes yet**:
+(`brew install maiarowsky/tap/dayhand`). Everything needed to publish is in the repository. The first
+version was published by hand, and **nothing publishes by itself yet**:
 
 | File | What it does | Off until |
 |---|---|---|
@@ -26,7 +26,8 @@ Done in the repository: the package is named `dayhand` (free on npm: `npm view d
 on 2026-10-24), it is no longer private, and `repository`, `homepage` and `bugs` point to the public
 repository `maiarowsky/dayhand`, which provenance checks. `node scripts/check-release.mjs
 dayhand-v<version>` in `cli/` passes. The commands stay `dayhand` and `dh` (the `bin` field, which
-also keeps `hlm` until 1.0).
+also keeps `hlm` until 1.0). Steps 3, 6 and 7 below are done (0.14.0 on npm and in the tap); until
+steps 1, 2, 4 and 5 are done too, every release is published by hand.
 
 Each step below changes something outside this repository or makes it public, so each needs the
 maintainer's explicit go-ahead.
@@ -117,10 +118,10 @@ The release badge is already live and updates when a release exists. Once `npm v
 `brew install maiarowsky/tap/dayhand` work, one small commit switches the install pages from
 “available after the first release” to available:
 
-- [ ] `README.md`: delete the quoted line “**npm and Homebrew: available after the first release.** …”
+- [x] `README.md`: delete the quoted line “**npm and Homebrew: available after the first release.** …”
   under the Install table, and switch the npm badge as described in [badges.md](badges.md).
-- [ ] `docs/install.md`: delete the same quoted line under the table.
-- [ ] `docs/README.md`: in “What exists and what is planned”, move npm and Homebrew to *Today*.
-- [ ] `docs/contributing.md`: drop “nothing is published yet” from Releases.
-- [ ] [badges.md](badges.md): the npm row becomes live.
-- [ ] `site/index.html` (dayhand.dev): the same commands in its install section.
+- [x] `docs/install.md`: delete the same quoted line under the table.
+- [x] `docs/README.md`: in “What exists and what is planned”, move npm and Homebrew to *Today*.
+- [x] `docs/contributing.md`: drop “nothing is published yet” from Releases.
+- [x] [badges.md](badges.md): the npm row becomes live.
+- [x] `site/index.html` (dayhand.dev): the same commands in its install section.

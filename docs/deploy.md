@@ -17,9 +17,9 @@ npm i -g dayhand
 dayhand server deploy
 ```
 
-`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; before the
-first release, from source: [Install](install.md)). The package carries the server it deploys, the
-`backend/` folder of this repository, so there is nothing to clone. Because the installed package
+`npm i -g dayhand` installs the command line (or `brew install maiarowsky/tap/dayhand`; every way:
+[Install](install.md)). The package carries the server it deploys, the `backend/` folder of this
+repository, so there is nothing to clone. Because the installed package
 folder may be read-only (a Homebrew keg, a global npm prefix), `dayhand server` runs the setup from a
 copy of that backend in your user data folder: `~/Library/Application Support/dayhand-data/backend/<version>`
 on macOS, `${XDG_DATA_HOME:-$HOME/.local/share}/dayhand-data/backend/<version>` on Linux

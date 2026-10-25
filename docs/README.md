@@ -62,12 +62,13 @@ repository as `docs/*.md`. They describe what is in the `main` branch, not a pub
 
 ## What exists and what is planned
 
-Everything in these pages can be built and run from the source today. Nothing is published as a
-package or a signed download yet ([Install](install.md) says when that changes):
+Everything in these pages can be built and run from the source today. The command line is published
+on npm and Homebrew; the apps have no package or signed download yet ([Install](install.md) says when
+that changes):
 
 | Piece | Today | Planned |
 |---|---|---|
-| `dayhand` CLI and `dayhand ui` | build from source (macOS, Linux, Windows) | `npm i -g dayhand` and `brew install maiarowsky/tap/dayhand`, after the first release |
+| `dayhand` CLI and `dayhand ui` | `npm i -g dayhand` (macOS, Linux, Windows) or `brew install maiarowsky/tap/dayhand` (macOS, Linux); also builds from source | |
 | Android app | build it yourself | a signed APK on GitHub Releases and Google Play, coming soon |
 | Dayhand for macOS | build from source, runs on the Mac that built it | a signed, notarized download with updates, coming soon |
 | Dayhand for Linux | Arch Linux and Omarchy package built from the repository; CMake elsewhere | no AUR package yet |
