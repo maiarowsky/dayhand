@@ -107,7 +107,7 @@ struct SidebarTests {
 
     @Test func todayNarrowedByASearchShowsNothingWhenNothingMatches() async throws {
         let model = try makeModel()
-        _ = try await seeded(model)
+        let (bakery, _) = try await seeded(model)
         #expect(model.searchedToday.today.map(\.title) == ["Milk"])
         model.search = "xyz"
         #expect(!model.sections.isEmpty)
@@ -122,6 +122,10 @@ struct SidebarTests {
         model.moveToTrash(milk.localId)
         try await eventually { model.sections.today.isEmpty }
         #expect(model.todayPlaceholder == "Nothing else planned for today.")
+        model.search = "  "
+        #expect(!model.isSearching && model.todayPlaceholder == "Nothing else planned for today.")
+        model.show(.project(bakery))
+        #expect(model.list.overdue.map(\.title) == ["Invoice"] && model.list.noDay.map(\.title) == ["Photos"])
     }
 
     @Test func aTaskDroppedOnAProjectMovesThereAndOnNoProjectLeavesIt() async throws {

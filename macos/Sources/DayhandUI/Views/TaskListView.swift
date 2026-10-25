@@ -20,7 +20,7 @@ struct TaskListView: View {
                     .padding(.vertical, 8)
             }
             if s.isEmpty {
-                PlaceEmpty(icon: "checklist", text: model.search.isEmpty ? emptyText : tr("No task matches the search."))
+                PlaceEmpty(icon: "checklist", text: model.isSearching ? tr("No task matches the search.") : emptyText)
             } else {
                 List(selection: $model.selection) {
                     if !s.overdue.isEmpty {
@@ -102,7 +102,7 @@ struct DoneView: View {
         VStack(spacing: 0) {
             PlaceHeader(title: tr("Done and Archived"), subtitle: tr("The latest \(TaskListSections.doneLimit) of each"))
             if lists.done.isEmpty && lists.archived.isEmpty {
-                PlaceEmpty(icon: "checkmark.circle", text: model.search.isEmpty ? tr("Done and archived tasks show here.") : tr("No task matches the search."))
+                PlaceEmpty(icon: "checkmark.circle", text: model.isSearching ? tr("No task matches the search.") : tr("Done and archived tasks show here."))
             } else {
                 List(selection: $model.selection) {
                     if !lists.done.isEmpty {

@@ -16,10 +16,10 @@ struct TodayView: View {
                 .padding(.horizontal, Metrics.gutter)
                 .padding(.vertical, 8)
             if s.isEmpty && s.done.isEmpty {
-                if model.search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    EmptyToday()
-                } else {
+                if model.isSearching {
                     PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
+                } else {
+                    EmptyToday()
                 }
             } else {
                 List(selection: $model.selection) {

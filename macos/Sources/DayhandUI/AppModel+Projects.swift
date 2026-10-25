@@ -44,9 +44,14 @@ extension AppModel {
 
     static let projectShortcuts = 6
 
+    /// Whether something besides spaces is typed in the search field, so the lists may hide tasks.
+    var isSearching: Bool { !searchQuery.isEmpty }
+
+    private var searchQuery: String { search.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     /// Whether [task] matches what is typed in the search field (title, note or labels; case and accents ignored).
     func matchesSearch(_ task: TaskItem) -> Bool {
-        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = searchQuery
         guard !query.isEmpty else { return true }
         let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
         return task.title.range(of: query, options: options) != nil
@@ -59,7 +64,7 @@ extension AppModel {
 
     /// The line in Today's section when it lists no task; none while a search may be hiding them.
     var todayPlaceholder: String? {
-        guard search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, sections.today.isEmpty else { return nil }
+        guard !isSearching, sections.today.isEmpty else { return nil }
         return sections.overdue.isEmpty && sections.now == nil ? tr("Nothing left for today.") : tr("Nothing else planned for today.")
     }
 

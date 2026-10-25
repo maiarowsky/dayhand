@@ -203,7 +203,7 @@ final class AppModel: ObservableObject {
         if next != sections { sections = next }
         let nextCounts = sidebarCounts(tasks, projects: showsProjects ? projects : [], today: next.date)
         if nextCounts != counts { counts = nextCounts }
-        let shown = search.isEmpty ? tasks : tasks.filter(matchesSearch)
+        let shown = isSearching ? tasks.filter(matchesSearch) : tasks
         let nextList = place.filter.map {
             taskListSections(shown, filter: $0, projects: showsProjects ? projectIds : [], nowMs: now, timezone: settings.timezone)
         } ?? .empty
