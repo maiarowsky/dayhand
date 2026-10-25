@@ -52,7 +52,7 @@ struct LiveProjectsTests {
             #expect(try await repo.task(inIt.localId)?.projectLocalId == bakery.localId)
             #expect(try await repo.task(typed.localId)?.projectLocalId == bakery.localId)
             let waiting = try await repo.pendingOps()
-            #expect(waiting.count == 3 && waiting.allSatisfy(\.waitsForProjects))
+            #expect(waiting.count == 3 && waiting.allSatisfy { $0.waitsForProjects || $0.isProjectAssignment })
             #expect(try await repo.next() == nil)
             guard case .synced = await engine.round() else { Issue.record("expected synced again"); return }
             #expect(try await repo.pendingOps() == waiting)

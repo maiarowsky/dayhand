@@ -4,7 +4,7 @@ import Testing
 
 extension ProjectSyncTests {
     @Test(arguments: ["add", "move", "edit", "source", "destination"], [false, true])
-    func acknowledgedIdentityRetargetsCachedReferencesWithoutNameMatching(action: String, acknowledge: Bool) async throws {
+    func acknowledgedIdentityResolvesCachedReferencesWithoutRewritingThem(action: String, acknowledge: Bool) async throws {
         let (repo, engine) = try setUp()
         let mine = try await repo.addProject(name: "Dom")
         let q = server.addProjectElsewhere("Q")
@@ -35,6 +35,7 @@ extension ProjectSyncTests {
         }
         server.editElsewhere(inside, ["note": "New server copy"])
         server.editElsewhere(outside, ["note": "New server copy"])
+        let original = try await repo.pendingOps().dropFirst().map { ($0.seq, $0.argsJson) }
         if acknowledge {
             #expect(try await OutboxProcessor(store: repo, sender: remote(), maxOps: 1).drain() == .moreLeft)
         } else {
@@ -45,10 +46,8 @@ extension ProjectSyncTests {
         server.failNextMutation = true
         guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
         let pending = try await repo.pendingOps()
-        #expect(pending.allSatisfy {
-            let args = JSONValue.decode($0.argsJson)
-            return args?["projectId"]?.string != cached && args?["moveTasksTo"]?.string != cached
-        })
+        #expect(pending.map(\.seq) == original.map(\.0))
+        #expect(pending.map(\.argsJson) == original.map(\.1))
         let expected = action == "source" ? q : mine.localId
         #expect(try await repo.task(taskId)?.projectLocalId == expected)
         if action == "source" {
@@ -294,7 +293,7 @@ extension ProjectSyncTests {
         #expect(try await repo.pendingOps().contains { $0.taskLocalId == unsent.localId && $0.mutation == Mutations.add })
     }
 
-    @Test func missingTasksWithOtherPendingEditsAreNotTreatedAsDeferredOnly() async throws {
+    @Test func purgedMembershipsRetireWithoutDiscardingOtherPendingTaskEdits() async throws {
         let (repo, engine) = try setUp()
         let p = server.addProjectElsewhere("P")
         let t = server.addElsewhere("T")
@@ -309,7 +308,7 @@ extension ProjectSyncTests {
         let knownTaskIds = try await repo.allTasks().compactMap(\.serverId)
         try await repo.apply(try await remote().snapshot(knownTaskIds: knownTaskIds).get())
         #expect(try await repo.task(t)?.note == "Other pending edit")
-        #expect(try await repo.pendingOps() == pending)
+        #expect(try await repo.pendingOps() == pending.filter { !$0.isProjectAssignment })
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(try await repo.task(t) == nil)
         #expect(try await repo.pendingOps().isEmpty)
@@ -350,7 +349,8 @@ extension ProjectSyncTests {
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(try await repo.next() == nil)
         let retained = try #require(try await repo.pendingOps().first)
-        #expect(JSONValue.decode(retained.argsJson)?["projectId"] == .string(c))
+        #expect(JSONValue.decode(retained.argsJson)?["projectId"] == .string(b))
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.update, Mutations.deleteProject])
         try await repo.restore(t)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         #expect(server.task(titled: "T")?["projectId"] == .string(c))

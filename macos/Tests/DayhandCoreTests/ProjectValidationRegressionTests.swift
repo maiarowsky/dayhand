@@ -3,162 +3,159 @@ import Testing
 @testable import DayhandCore
 
 extension ProjectSyncTests {
-    @Test(arguments: [Mutations.deleteProject, Mutations.add, Mutations.update])
-    func retargetingDoesNotPromoteCreationAheadOfEarlierRenamesAndAdditions(mutation: String) async throws {
-        let (repo, engine) = try setUp()
-        let old = server.addProjectElsewhere("C")
-        let a = server.addProjectElsewhere("A")
-        let t = server.addElsewhere("T")
-        server.editElsewhere(t, ["projectId": .string(a)])
-        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        try await repo.updateProject(old, name: "Renamed", color: nil, icon: "", note: "")
-        let earlier = try await repo.addProject(name: "Earlier")
-        let b = try await repo.addProject(name: "B")
-        let taskId: String
-        switch mutation {
-        case Mutations.deleteProject:
-            taskId = t
-            try await repo.deleteProject(a, moveTasksTo: b.localId)
-        case Mutations.add:
-            taskId = try await repo.add(title: "New", dueDate: nil, dueTime: nil, projectLocalId: b.localId).localId
-            try await repo.setNote(taskId, "After creation")
-        default:
-            taskId = t
-            try await repo.setProject(t, b.localId)
-        }
-        let c = try await repo.addProject(name: "C")
-        try await repo.deleteProject(b.localId, moveTasksTo: c.localId)
-        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        let replacement = try #require(server.project(named: "C"))
-        #expect(server.allProjects.first { $0["id"]?.string == old }?["name"] == "Renamed")
-        #expect(try #require(server.project(named: "Earlier")?["position"]?.double) < #require(replacement["position"]?.double))
-        #expect(try await repo.projects().contains { $0.localId == earlier.localId })
-        #expect(try await repo.task(taskId)?.projectLocalId == c.localId)
-        #expect(server.task(titled: mutation == Mutations.add ? "New" : "T")?["projectId"] == replacement["id"])
-        #expect(try await repo.pendingOps().isEmpty)
-        let mutations = sent()
-        let renamed = try #require(mutations.firstIndex { $0.0 == Mutations.updateProject && $0.1["name"] == "Renamed" })
-        let created = try #require(mutations.firstIndex { $0.0 == Mutations.addProject && $0.1["name"] == "C" })
-        let referenced = try #require(mutations.firstIndex { $0.1["projectId"] == replacement["id"] || $0.1["moveTasksTo"] == replacement["id"] })
-        #expect(renamed < created && created < referenced)
-    }
-
-    @Test(arguments: [(Mutations.update, false), (Mutations.update, true), (Mutations.deleteProject, false), (Mutations.deleteProject, true)], [false, true])
-    func retargetingDefersReferencesPastInterveningRenamesAndAdditions(scenario: (String, Bool), unrelated: Bool) async throws {
-        let (mutation, refused) = scenario
-        let (repo, engine) = try setUp()
-        let old = server.addProjectElsewhere("C")
-        let a = server.addProjectElsewhere("A")
-        let t = server.addElsewhere("T")
-        server.editElsewhere(t, ["projectId": .string(a)])
-        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        let b = try await repo.addProject(name: "B")
-        if refused {
-            _ = try await repo.next(markSending: true)
-            server.addProjectElsewhere("B")
-        }
-        if mutation == Mutations.deleteProject { try await repo.deleteProject(a, moveTasksTo: b.localId) }
-        else { try await repo.setProject(t, b.localId) }
-        try await repo.updateProject(old, name: "Renamed", color: nil, icon: "", note: "")
-        if unrelated { try await repo.addProject(name: "Middle") }
-        let c = try await repo.addProject(name: "C")
-        let fixed = try await repo.pendingOps().filter {
-            ($0.mutation == Mutations.addProject && $0.clientId != b.localId) || $0.mutation == Mutations.updateProject
-        }
-        try await repo.deleteProject(b.localId, moveTasksTo: c.localId)
-        if refused {
-            #expect(try await OutboxProcessor(store: repo, sender: remote(), maxOps: 1).drain() == .moreLeft)
-        }
-        let pending = try await repo.pendingOps()
-        #expect(pending.filter { $0.mutation == Mutations.addProject || $0.mutation == Mutations.updateProject } == fixed)
-        let creation = try #require(pending.firstIndex { $0.mutation == Mutations.addProject && $0.clientId == c.localId })
-        #expect(pending[creation + 1].mutation == mutation)
-        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        let replacement = try #require(server.project(named: "C"))
-        #expect(server.allProjects.first { $0["id"]?.string == old }?["name"] == "Renamed")
-        #expect(server.task(titled: "T")?["projectId"] == replacement["id"])
-        #expect(try await repo.task(t)?.projectLocalId == c.localId)
-        #expect(try await repo.pendingOps().isEmpty)
-        let sentProjects = sent().filter {
-            (Mutations.projectChanges.contains($0.0) && $0.0 != Mutations.deleteProject) && $0.1["clientId"] != .string(b.localId)
-        }
-        #expect(sentProjects.map { $0.1["clientId"]?.string } == fixed.map { Optional($0.clientId) })
-        if unrelated {
-            #expect(try #require(server.project(named: "Middle")?["position"]?.double) < #require(replacement["position"]?.double))
-        }
-    }
-
-    @Test func retargetingPreservesServerPositionsOfUnrelatedAdditionsBeforeAndAfterTheDestination() async throws {
+    @Test(arguments: [false, true], [false, true])
+    func offlineDeletionPreservesRenamesOnEitherSideOfAnEarlierAssignment(renameFirst: Bool, unrelated: Bool) async throws {
         let (repo, engine) = try setUp()
         let old = server.addProjectElsewhere("C")
         let t = server.addElsewhere("T")
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        try await repo.addProject(name: "Earlier")
+        if renameFirst { try await repo.updateProject(old, name: "Renamed", color: nil, icon: "", note: "") }
         let b = try await repo.addProject(name: "B")
         try await repo.setProject(t, b.localId)
-        try await repo.addProject(name: "Middle")
-        try await repo.updateProject(old, name: "Renamed", color: nil, icon: "", note: "")
-        let c = try await repo.addProject(name: "C")
+        if !renameFirst { try await repo.updateProject(old, name: "Renamed", color: nil, icon: "", note: "") }
+        if unrelated { try await repo.addProject(name: "Middle") }
+        let c = try await repo.addProject(name: "C", note: "Replacement note")
         try await repo.addProject(name: "Later")
         let before = try await repo.pendingOps()
-        let projectOrder = before.filter { Mutations.projectChanges.contains($0.mutation) && $0.clientId != b.localId }.map(\.opId)
         try await repo.deleteProject(b.localId, moveTasksTo: c.localId)
         let pending = try await repo.pendingOps()
-        #expect(pending.filter { Mutations.projectChanges.contains($0.mutation) }.map(\.opId) == projectOrder)
-        #expect(pending.first { $0.clientId == c.localId } == before.first { $0.clientId == c.localId })
+        #expect(Array(pending.dropLast()) == before)
+        #expect(pending.last?.mutation == Mutations.deleteProject)
+        #expect(JSONValue.decode(try #require(pending.last).argsJson)?["moveTasksTo"] == .string(c.localId))
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(server.allProjects.compactMap { $0["name"]?.string } == ["Renamed", "Earlier", "Middle", "C", "Later"])
-        #expect(server.allProjects.compactMap { $0["position"]?.double } == (1...5).map { Double($0) * ProjectRules.positionStep })
-        #expect(server.task(titled: "T")?["projectId"] == server.project(named: "C")?["id"])
+        let replacement = try #require(server.project(named: "C"))
+        #expect(replacement["note"] == "Replacement note")
+        #expect(server.allProjects.first { $0["id"]?.string == old }?["name"] == "Renamed")
+        #expect(server.project(named: "B") == nil)
+        #expect(server.task(titled: "T")?["projectId"] == replacement["id"])
+        #expect(replacement["position"]?.double == Double(unrelated ? 4 : 3) * ProjectRules.positionStep)
+        #expect(server.project(named: "Later")?["position"]?.double == Double(unrelated ? 5 : 4) * ProjectRules.positionStep)
+        if unrelated { #expect(server.project(named: "Middle")?["position"]?.double == 3 * ProjectRules.positionStep) }
+        #expect(sent().compactMap { $0.1["clientId"]?.string } == pending.map(\.clientId))
         #expect(try await repo.pendingOps().isEmpty)
     }
 
     @Test(arguments: [false, true])
-    func deferredTaskCreationKeepsEditsTrashRestoreCompletionAndNowChangesOrdered(refused: Bool) async throws {
+    func deletingThroughAnOfflineProjectFreesTheSourceNameBeforeItsReplacement(rename: Bool) async throws {
         let (repo, engine) = try setUp()
-        let old = server.addProjectElsewhere("C")
-        let other = server.addElsewhere("Unrelated")
+        let a = server.addProjectElsewhere("A")
+        let other = server.addProjectElsewhere("Other")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(a)])
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
         let b = try await repo.addProject(name: "B")
-        if refused {
-            _ = try await repo.next(markSending: true)
-            server.addProjectElsewhere("B")
-        }
-        let t = try await repo.add(title: "T", dueDate: "2026-10-22", dueTime: nil, projectLocalId: b.localId)
-        try await repo.setNote(t.localId, "Before destination")
-        try await repo.setNote(other, "Independent edit")
-        try await repo.moveToTrash(t.localId)
-        try await repo.restore(t.localId)
-        try await repo.setNow(t.localId)
-        try await repo.setNow(other)
-        try await repo.setRepeat(t.localId, RepeatRule(every: .day))
-        try await repo.complete(t.localId)
-        try await repo.updateProject(old, name: "Renamed", color: nil, icon: "", note: "")
+        try await repo.deleteProject(a, moveTasksTo: b.localId)
+        if rename { try await repo.updateProject(other, name: "A", color: nil, icon: "", note: "Saved note") }
+        else { try await repo.addProject(name: "A", note: "Saved note") }
         let c = try await repo.addProject(name: "C")
         let before = try await repo.pendingOps()
-        let taskOrder = before.filter { $0.taskLocalId == t.localId }.map(\.opId)
-        let independent = try #require(before.first { JSONValue.decode($0.argsJson)?["note"] == "Independent edit" })
         try await repo.deleteProject(b.localId, moveTasksTo: c.localId)
-        if refused {
-            #expect(try await OutboxProcessor(store: repo, sender: remote(), maxOps: 1).drain() == .moreLeft)
-        }
         let pending = try await repo.pendingOps()
-        #expect(Array(pending.filter { $0.taskLocalId == t.localId }.prefix(taskOrder.count)).map(\.opId) == taskOrder)
-        #expect(pending.first { $0.opId == independent.opId } == independent)
+        #expect(Array(pending.dropLast()) == before)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        let projectId = try #require(server.project(named: "C")?["id"])
-        let occurrences = server.allTasks.filter { $0["title"] == "T" }
-        #expect(occurrences.count == 2 && occurrences.allSatisfy { $0["projectId"] == projectId })
-        #expect(try await repo.task(t.localId)?.status == .done)
-        #expect(try await repo.task(t.localId)?.inTrash == false)
-        #expect(try await repo.task(t.localId)?.note == "Before destination")
-        #expect(server.task(titled: "Unrelated")?["note"] == "Independent edit")
-        #expect(server.task(titled: "Unrelated")?["isNow"] == true)
+        let replacement = try #require(server.project(named: "A"))
+        #expect(replacement["id"]?.string != a && replacement["note"] == "Saved note")
+        #expect(server.project(named: "B") == nil)
+        #expect(server.task(titled: "T")?["projectId"] == server.project(named: "C")?["id"])
+        #expect(try await repo.task(t)?.projectLocalId == c.localId)
+        #expect(sent().compactMap { $0.1["clientId"]?.string } == pending.map(\.clientId))
         #expect(try await repo.pendingOps().isEmpty)
-        let mutations = sent()
-        let edited = try #require(mutations.firstIndex { $0.1["note"] == "Independent edit" })
-        let created = try #require(mutations.firstIndex { $0.0 == Mutations.addProject && $0.1["name"] == "C" })
-        #expect(edited < created)
+    }
+
+    @Test func eachOfflineActionOnlyAppendsItsOwnOperation() async throws {
+        let (repo, engine) = try setUp()
+        let b = try await repo.addProject(name: "B")
+        let t = try await repo.add(title: "T", dueDate: nil, dueTime: nil, projectLocalId: b.localId)
+        let first = try await repo.pendingOps()
+        try await repo.setNote(t.localId, "Task note")
+        let c = try await repo.addProject(name: "C")
+        #expect(Array(try await repo.pendingOps().prefix(first.count)) == first)
+        try await repo.updateProject(c.localId, name: "Destination", color: nil, icon: "", note: "Destination note")
+        let beforeDeletion = try await repo.pendingOps()
+        try await repo.deleteProject(b.localId, moveTasksTo: c.localId)
+        #expect(Array(try await repo.pendingOps().dropLast()) == beforeDeletion)
+        let beforeReplacement = try await repo.pendingOps()
+        try await repo.addProject(name: "B", note: "New B note")
+        let pending = try await repo.pendingOps()
+        #expect(Array(pending.dropLast()) == beforeReplacement)
+        #expect(pending.map(\.mutation) == [Mutations.addProject, Mutations.add, Mutations.update, Mutations.addProject, Mutations.updateProject, Mutations.deleteProject, Mutations.addProject])
+        #expect(JSONValue.decode(pending[1].argsJson)?["projectId"] == .string(b.localId))
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(sent().compactMap { $0.1["clientId"]?.string } == pending.map(\.clientId))
+        #expect(server.project(named: "B")?["note"] == "New B note")
+        #expect(server.task(titled: "T")?["projectId"] == server.project(named: "Destination")?["id"])
+        #expect(server.task(titled: "T")?["note"] == "Task note")
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func aRealCreationRefusalLeavesEveryOtherQueuedIntentUntouched() async throws {
+        let (repo, engine) = try setUp()
+        let b = try await repo.addProject(name: "B")
+        let t = try await repo.add(title: "T", dueDate: nil, dueTime: nil, note: "Keep note", projectLocalId: b.localId)
+        let c = try await repo.addProject(name: "C")
+        try await repo.deleteProject(b.localId, moveTasksTo: c.localId)
+        let before = try await repo.pendingOps()
+        let theirs = server.addProjectElsewhere("B")
+        #expect(try await OutboxProcessor(store: repo, sender: remote(), maxOps: 1).drain() == .moreLeft)
+        #expect(try await repo.pendingOps() == Array(before.dropFirst()))
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.project(named: "B")?["id"] == .string(theirs))
+        #expect(server.task(titled: "T")?["note"] == "Keep note")
+        #expect(server.task(titled: "T")?["projectId"] == nil)
+        #expect(try await repo.task(t.localId)?.projectLocalId == nil)
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test(arguments: ["assign", "clear", "complete", "now"])
+    func remoteRestorationCannotLetLaterTaskChangesOvertakeARetainedMembership(action: String) async throws {
+        let transport = RestoreAfterMembershipRefusalTransport(server)
+        let (repo, engine) = try setUp(transport: transport)
+        let a = server.addProjectElsewhere("A")
+        let b = server.addProjectElsewhere("B")
+        let c = server.addProjectElsewhere("C")
+        let t = server.addElsewhere("T", dueDate: "2026-10-22")
+        server.editElsewhere(t, ["projectId": .string(a), "repeat": RepeatRule(every: .day).wire])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.setProject(t, b)
+        if action == "complete" { try await repo.complete(t) }
+        else if action == "now" { try await repo.setNow(t) }
+        else { try await repo.setProject(t, action == "clear" ? nil : c) }
+        let original = try await repo.pendingOps()
+        let unrelated = try await repo.add(title: "Unrelated", dueDate: nil, dueTime: nil)
+        server.editElsewhere(t, ["deletedAt": .of(clock.now)])
+        await transport.restoreAfterRefusal(t)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(unrelated.localId)?.serverId != nil)
+        #expect(try await repo.pendingOps().map(\.argsJson) == original.map(\.argsJson))
+        #expect(sent().filter { $0.1["taskId"] == .string(t) }.count == 1)
+        for _ in 0..<2 {
+            guard case .synced = await engine.round() else { Issue.record("expected synced after restore"); return }
+        }
+        let expected = action == "clear" ? nil : (action == "assign" ? c : b)
+        #expect(server.task(titled: "T")?["projectId"]?.string == expected)
+        #expect(try await repo.task(t)?.projectLocalId == expected)
+        if action == "complete" {
+            #expect(server.allTasks.filter { $0["title"] == "T" }.allSatisfy { $0["projectId"] == .string(b) })
+            #expect(server.allTasks.filter { $0["title"] == "T" }.count == 2)
+        }
+        #expect(try await repo.pendingOps().isEmpty)
+    }
+
+    @Test func aSupportedSnapshotAcknowledgesCreationWithoutReplayingItsOldMembership() async throws {
+        let (repo, engine) = try setUp()
+        let a = server.addProjectElsewhere("A")
+        let b = server.addProjectElsewhere("B")
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let t = try await repo.add(title: "T", dueDate: nil, dueTime: nil, projectLocalId: a)
+        server.loseNextAnswer = true
+        #expect(try await OutboxProcessor(store: repo, sender: remote()).drain() == .retryLater)
+        let id = try #require(server.task(titled: "T")?["id"]?.string)
+        server.editElsewhere(id, ["projectId": .string(b)])
+        try await repo.apply(try await remote().snapshot().get())
+        #expect(try await repo.pendingOps().isEmpty)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(server.task(titled: "T")?["projectId"] == .string(b))
+        #expect(try await repo.task(t.localId)?.projectLocalId == b)
     }
 
     @Test(arguments: ["1️⃣", "#\u{20E3}", "👩🏽‍💻", "🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}"])
@@ -182,5 +179,24 @@ extension ProjectSyncTests {
         #expect(server.project(named: "Created")?["icon"] == .string(icon))
         #expect(try await repo.projects().first { $0.localId == created.localId }?.icon == icon)
         #expect(try await repo.pendingOps().isEmpty)
+    }
+}
+
+private actor RestoreAfterMembershipRefusalTransport: HTTPTransport {
+    let server: FakeServer
+    private var taskId: String?
+
+    init(_ server: FakeServer) { self.server = server }
+
+    func restoreAfterRefusal(_ id: String) { taskId = id }
+
+    func post(_ url: URL, json: Data, bearer: String?) async throws -> HTTPReply {
+        let reply = try await server.post(url, json: json, bearer: bearer)
+        if let id = taskId, JSONValue.decode(json)?["args"]?.array?.first?["taskId"] == .string(id),
+           JSONValue.decode(reply.body)?["errorMessage"]?.string.map(RemoteJSON.refusesTrashedTask) == true {
+            taskId = nil
+            server.editElsewhere(id, ["deletedAt": .null])
+        }
+        return reply
     }
 }

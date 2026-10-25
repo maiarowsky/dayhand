@@ -304,7 +304,7 @@ struct ProjectMigrationTests {
         #expect(try await repo.projects().map(\.localId) == ["other"])
         #expect(try await repo.task("t")?.note == "Keep note")
         #expect(try await repo.task("t")?.projectLocalId == nil)
-        #expect(JSONValue.decode(try #require(try await repo.next()).argsJson)?["projectId"] == nil)
+        #expect(JSONValue.decode(try #require(try await repo.next()).argsJson)?["projectId"] == "refused")
     }
 
     @Test func olderPendingCreationsRemainUncertainUntilASnapshotResolvesThem() async throws {

@@ -122,7 +122,6 @@ public final class AppDatabase: Sendable {
         }
         migrator.registerMigration("v5") { db in
             try db.alter(table: "project") { t in t.add(column: "joinName", .text) }
-            try db.execute(sql: "UPDATE outbox SET attempts = MAX(attempts, 1) WHERE mutation = ?", arguments: [Mutations.addProject])
         }
         migrator.registerMigration("v6") { db in
             for project in try Project.filter(Column("joinName") != nil && Column("serverId") == nil).fetchAll(db) {
@@ -313,12 +312,13 @@ public struct OutboxOp: Hashable, Sendable, FetchableRecord, MutablePersistableR
     }
 
     public var waitsForProjects: Bool {
-        Mutations.projectChanges.contains(mutation) || isProjectAssignment
+        Mutations.projectChanges.contains(mutation) || (mutation != Mutations.add && isProjectAssignment)
     }
 
     public var isProjectAssignment: Bool {
-        guard mutation == Mutations.update, let args = JSONValue.decode(argsJson)?.object else { return false }
-        return Set(args.keys).subtracting(["clientId"]) == ["projectId"]
+        guard let args = JSONValue.decode(argsJson)?.object else { return false }
+        if mutation == Mutations.add { return args["projectId"] != nil }
+        return mutation == Mutations.update && Set(args.keys).subtracting(["clientId"]) == ["projectId"]
     }
 
     public mutating func didInsert(_ inserted: InsertionSuccess) {

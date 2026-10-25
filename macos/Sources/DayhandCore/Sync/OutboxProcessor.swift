@@ -41,14 +41,15 @@ public struct OutboxProcessor: Sendable {
     public func drain() async throws -> DrainResult {
         for _ in 0..<maxOps {
             guard let op = try await store.next(markSending: true) else { return .done }
+            let mutation: String
             let args: JSONValue
             switch try await argsFor(op) {
-            case .send(let ready): args = ready
+            case .send(let path, let ready): mutation = path; args = ready
             case .refuse(let reason):
                 try await store.reject(op, reason: reason)
                 continue
             }
-            switch await sender.send(mutation: op.mutation, args: args) {
+            switch await sender.send(mutation: mutation, args: args) {
             case .applied(let value):
                 try await store.acknowledge(op, value: value)
             case .rejected(let message):
@@ -66,7 +67,7 @@ public struct OutboxProcessor: Sendable {
 
     /// The arguments as sent, or why the change cannot be sent at all.
     enum Prepared {
-        case send(JSONValue)
+        case send(String, JSONValue)
         case refuse(String)
     }
 
@@ -74,11 +75,20 @@ public struct OutboxProcessor: Sendable {
     /// server ids of the projects they name.
     private func argsFor(_ op: OutboxOp) async throws -> Prepared {
         guard case .object(var args) = JSONValue.decode(op.argsJson) else { return .refuse("unreadable change") }
+        let serverId: String?
+        if let localId = op.taskLocalId { serverId = try await store.serverIdOf(localId) }
+        else { serverId = nil }
+        var mutation = op.mutation
+        if mutation == Mutations.add, let serverId, let project = args["projectId"] {
+            mutation = Mutations.update
+            args = ["taskId": .string(serverId), "projectId": project, "clientId": .string(op.opId)]
+        }
+        if op.lastError.map(RemoteJSON.refusesProject) == true { args.removeValue(forKey: "projectId") }
         if let reason = try await resolveProjects(op, &args) { return .refuse(reason) }
-        guard let localId = op.taskLocalId, op.mutation != Mutations.add else { return .send(.object(args)) }
-        guard let serverId = try await store.serverIdOf(localId) else { return .refuse("task never reached the server") }
+        guard op.taskLocalId != nil, mutation != Mutations.add else { return .send(mutation, .object(args)) }
+        guard let serverId else { return .refuse("task never reached the server") }
         args["taskId"] = .string(serverId)
-        return .send(.object(args))
+        return .send(mutation, .object(args))
     }
 
     /**

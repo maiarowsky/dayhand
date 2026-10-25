@@ -152,18 +152,18 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   fields that changed, `app:deleteProject` with `moveTasksTo` another project or `none` (the tasks move on the Mac
   at once), and `projectId` in `app:add` and `app:update` (`null` takes a task out of its project). A project made
   offline is named in the outbox by its local id, which is also its `clientId`; each mutation is sent with the
-  server's id once the `addProject` is answered. Deletion and its destination never resolve by name; a local
-  project cancels its creation only when it provably never left the Mac. An in-flight or unacknowledged creation
-  keeps its deletion queued until an answer or snapshot resolves its original `clientId`. Cancellation preserves
-  task moves and sends a destination's creation before any retargeted reference. A repeating task's next
-  occurrence keeps its project.
+  server's id once the `addProject` is answered. The queue is append-only: every action appends its own mutation,
+  and queued payloads and sequence numbers are never rewritten, redirected or reordered. Deleting even an unsent
+  project appends its deletion after its creation; both reach the server. Deletion and its destination resolve only
+  by identity, never by name. A repeating task's next occurrence keeps its project.
 - The snapshot adds `app:listProjects`; projects merge last write wins per field, as tasks do, and a project deleted
   on the Mac stays hidden until the server has the deletion. Project identity matches only by server id or
-  `clientId`, never by name. A refused creation is removed with its queued project edits; its tasks and notes stay
-  without that project, and another device's same-named project is untouched. Binding an acknowledged id retargets
-  cached references and preserves their latest edits. A snapshot-confirmed creation takes the server's fields
-  except those changed by later queued edits. Migration v5 treats older pending creations as uncertain; v6 removes
-  obsolete name-join metadata and applies normal refusal handling to those unbound creations.
+  `clientId`, never by name. A refused creation leaves the Mac without changing any other queued intent. Later
+  operations are processed in their original order against that refusal; no deletion or assignment is redirected
+  to another project. Tasks and notes survive, and another device's same-named project is untouched. Binding an
+  acknowledged id resolves cached references without rewriting queued payloads and preserves their latest edits. A snapshot-confirmed creation takes the server's fields
+  except those changed by later queued edits. Legacy migrations v5/v6 remove obsolete name-join metadata and
+  apply normal refusal handling to those unbound creations without changing other queued operations.
 - A refusal never loses a task: a task change refused because its project is archived or gone is sent again without
   the project; the next snapshot restores authoritative membership unless a later assignment is waiting. Missing
   local references follow the same reconciliation. A refused project edit cannot unhide a later queued deletion.
@@ -171,12 +171,15 @@ Projects need Dayhand server 0.13.0 or later. This part of 0.4.0 is their data a
   no projects and the Mac notes that the server has none (`ProjectSupport.unsupported`). Local projects and task
   memberships stay. Project operations and membership changes wait for a server with projects, without blocking
   other task changes or retrying in a loop. Tasks, including their notes, sync without `projectId`; their memberships
-  stay queued with fresh mutation ids. The status reads "Needs backend 0.13.0 or later", localized in all eight
-  languages. Once an upgraded server supplies projects in a snapshot, waiting operations resume in order on the
+  stay in their original queue entries. Once the task exists remotely, its deferred membership is sent as an update
+  using the entry's stable operation id, without rewriting its stored creation. The status reads "Needs backend
+  0.13.0 or later", localized in all eight languages. Once an upgraded server supplies projects in a snapshot, waiting operations resume in order on the
   next round, using the server's project ids. Ordinary assignments retain their queue order before trash,
   archival, deletion and completion. Only membership refused because the task is in the trash waits for
-  restoration, without blocking unrelated changes. If the server purges a known task, deferred-only memberships
-  are retired so the task and its cached history can leave the Mac; unsent task creations stay.
+  restoration. Later changes to that task and subsequent project operations wait behind it; restoration and
+  unrelated tasks can still sync, so a remote restore cannot let a newer assignment overtake an older one. If the
+  server purges a known task, deferred memberships are retired without discarding other pending edits, which wait
+  for their own server responses. The task and its cached history then leave the Mac; unsent task creations stay.
 - Quick add: a `+word` naming a project that is not archived (any case, a hyphen for a space: `+strona-piekarni`)
   sets the project and leaves the title, the first one only; an exact trimmed, NFC, case-insensitive name wins
   over the hyphen-as-space alias. A `+word` naming none stays in the title and is
@@ -267,7 +270,8 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   fake server: a project and its tasks written offline arrive in order with the server's project id; projects made
   or changed elsewhere arrive; a task refused for an archived project is sent again without it; a refused project
   goes and its tasks stay. Deletion chains resolve to their final destination, rejected assignments preserve later
-  moves, and cancelling an offline project cannot delete another device's same-named project. With the fake server
+  moves, append-only action order across offline project creation/deletion and name reuse, and real refusals
+  never redirect operations to another device's same-named project. With the fake server
   acting as 0.12 (no projects): tasks and notes sync while projects and memberships wait locally, without repeated
   mutations or blocking other changes; upgrading resumes the queue and uploads memberships.
 - **Against a real local backend** (`LiveBackendTests` and `LiveProjectsTests`, off by default): pairs with a code,

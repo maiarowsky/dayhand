@@ -28,7 +28,8 @@ public enum SnapshotMerger {
     public static func merge(
         local: [TaskItem], pending: [OutboxOp], remote: [RemoteTask], nowMs: Int64, projects: ProjectMapping = ProjectMapping()
     ) -> MergePlan {
-        let dirty = DirtyFields(pending)
+        let knownTasks = Set(local.filter { $0.serverId != nil }.map(\.localId))
+        let dirty = DirtyFields(pending, knownTasks: knownTasks)
         var byServerId: [String: TaskItem] = [:]
         var byClientId: [String: TaskItem] = [:]
         for task in local {
@@ -127,11 +128,14 @@ public struct DirtyFields: Sendable {
     /// `setNow` moves the "now" flag off every other task too.
     private var nowEverywhere = false
 
-    public init(_ pending: [OutboxOp]) {
+    public init(_ pending: [OutboxOp], knownTasks: Set<String> = []) {
         for op in pending {
             if op.mutation == Mutations.setNow { nowEverywhere = true }
             guard let localId = op.taskLocalId else { continue }
-            byTask[localId, default: []].formUnion(DirtyFields.fields(of: op))
+            var fields: Set<Field> = op.mutation == Mutations.add && op.isProjectAssignment && knownTasks.contains(localId)
+                ? [.project] : DirtyFields.fields(of: op)
+            if op.lastError.map(RemoteJSON.refusesProject) == true { fields.remove(.project) }
+            byTask[localId, default: []].formUnion(fields)
         }
     }
 

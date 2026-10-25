@@ -105,27 +105,17 @@ extension TaskRepository {
     public func deleteProject(_ localId: String, moveTasksTo target: String?) async throws {
         let now = clock()
         let op = makeOp(Mutations.deleteProject, nil, ["projectId": .string(localId), "moveTasksTo": .string(target ?? ProjectRules.noProject)], now: now)
-        let changed = try await writer.write { [self] db -> Bool in
+        let changed = try await writer.write { db -> Bool in
             try Self.requireProjects(db)
             guard var project = try Project.fetchOne(db, key: localId), !project.removing else { return false }
             if let target {
                 guard target != localId else { throw RepositoryError.invalid(tr("Move the tasks to another project.")) }
                 try Self.checkTarget(db, target)
             }
-            let creation = try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == localId).fetchOne(db)
-            let cancelCreation = project.serverId == nil && creation?.attempts == 0
             for var task in try TaskItem.filter(Column("projectLocalId") == localId).fetchAll(db) {
                 task.projectLocalId = target
                 task.updatedAt = now
                 try task.save(db)
-                if cancelCreation {
-                    var assignment = makeOp(Mutations.update, task.localId, ["projectId": .of(target)], now: now)
-                    try assignment.insert(db)
-                }
-            }
-            if cancelCreation {
-                try ProjectOutbox.drop(db, localId, moveTasksTo: target)
-                return true
             }
             project.removing = true
             project.updatedAt = now
@@ -230,9 +220,13 @@ private struct ProjectInput: Sendable {
  */
 enum ProjectOutbox {
     static func ref(_ db: Database, _ localId: String) throws -> String? {
-        guard let project = try Project.fetchOne(db, key: localId) else { return nil }
+        guard let project = try find(db, localId) else { return nil }
         if let serverId = project.serverId { return serverId }
-        return try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == localId).fetchOne(db)?.clientId
+        return try OutboxOp.filter(Column("mutation") == Mutations.addProject && Column("clientId") == project.localId).fetchOne(db)?.clientId
+    }
+
+    static func find(_ db: Database, _ id: String) throws -> Project? {
+        try Project.filter(Column("localId") == id || Column("serverId") == id || Column("clientId") == id).fetchOne(db)
     }
 
     /// A project made here gets its server id; a project deleted here goes once the server has the deletion.
@@ -245,32 +239,27 @@ enum ProjectOutbox {
             try bind(db, localId, serverId: serverId)
         case Mutations.deleteProject:
             guard let args = JSONValue.decode(op.argsJson), let id = args["projectId"]?.string else { return }
-            let target = args["moveTasksTo"]?.string
-            try drop(db, id, moveTasksTo: target == ProjectRules.noProject ? nil : target)
+            if let project = try find(db, id) { _ = try Project.deleteOne(db, key: project.localId) }
         default:
             break
         }
     }
 
     private static func bind(_ db: Database, _ localId: String, serverId: String) throws {
-        guard var project = try Project.fetchOne(db, key: localId) else { return }
-        for other in try Project.filter(Column("serverId") == serverId && Column("localId") != localId).fetchAll(db) {
+        guard var project = try find(db, localId) else { return }
+        for other in try Project.filter(Column("serverId") == serverId && Column("localId") != project.localId).fetchAll(db) {
             var keepOther = Set<ProjectField>()
             for op in try OutboxOp.order(Column("seq")).fetchAll(db) {
-                guard var args = JSONValue.decode(op.argsJson)?.object else { continue }
                 if op.mutation == Mutations.updateProject {
                     let dirty = DirtyProjects([op])
                     keepOther.formUnion(dirty.fields(other.localId))
-                    keepOther.subtract(dirty.fields(localId))
+                    keepOther.subtract(dirty.fields(project.localId))
                 }
-                let references = ["projectId", "moveTasksTo"].filter { args[$0]?.string == other.localId }
-                for key in references { args[key] = .string(localId) }
-                if !references.isEmpty { try rewrite(db, op, args) }
             }
             project = ProjectMerger.preserving(keepOther, from: other, in: project)
             project.removing = project.removing || other.removing
             project.updatedAt = max(project.updatedAt, other.updatedAt)
-            try db.execute(sql: "UPDATE task SET projectLocalId = ? WHERE projectLocalId = ?", arguments: [localId, other.localId])
+            try db.execute(sql: "UPDATE task SET projectLocalId = ? WHERE projectLocalId = ?", arguments: [project.localId, other.localId])
             _ = try Project.deleteOne(db, key: other.localId)
         }
         project.serverId = serverId
@@ -301,7 +290,7 @@ enum ProjectOutbox {
             return true
         }
         if carriesProject, RemoteJSON.refusesProject(reason) {
-            try withoutProject(db, op)
+            try db.execute(sql: "UPDATE outbox SET lastError = ? WHERE seq = ?", arguments: [reason, op.seq])
             if let localId = op.taskLocalId, var task = try TaskItem.fetchOne(db, key: localId) {
                 let later = try OutboxOp.filter(Column("taskLocalId") == localId && Column("seq") > (op.seq ?? 0)).fetchAll(db)
                 let hasLaterAssignment = later.contains { JSONValue.decode($0.argsJson)?["projectId"] != nil }
@@ -319,7 +308,7 @@ enum ProjectOutbox {
             try discardRefusedCreation(db, op.clientId)
             return true
         }
-        guard let id = JSONValue.decode(op.argsJson)?["projectId"]?.string, var project = try Project.fetchOne(db, key: id) else { return true }
+        guard let id = JSONValue.decode(op.argsJson)?["projectId"]?.string, var project = try find(db, id) else { return true }
         project.serverUpdatedAt = nil
         if op.mutation == Mutations.deleteProject {
             project.removing = try OutboxOp.filter(Column("mutation") == Mutations.deleteProject).fetchAll(db)
@@ -331,10 +320,8 @@ enum ProjectOutbox {
     }
 
     static func discardRefusedCreation(_ db: Database, _ localId: String) throws {
-        let deletion = try OutboxOp.filter(Column("mutation") == Mutations.deleteProject).fetchAll(db)
-            .first { JSONValue.decode($0.argsJson)?["projectId"]?.string == localId }
-        let target = deletion.flatMap { JSONValue.decode($0.argsJson)?["moveTasksTo"]?.string }
-        try drop(db, localId, moveTasksTo: target == ProjectRules.noProject ? nil : target)
+        try db.execute(sql: "UPDATE task SET projectLocalId = NULL, serverUpdatedAt = NULL WHERE projectLocalId = ?", arguments: [localId])
+        _ = try Project.deleteOne(db, key: localId)
     }
 
     static func suspend(_ db: Database) throws {
@@ -342,65 +329,6 @@ enum ProjectOutbox {
         for op in try OutboxOp.fetchAll(db) where op.waitsForProjects && op.lastError != nil {
             try db.execute(sql: "UPDATE outbox SET lastError = NULL WHERE seq = ?", arguments: [op.seq])
         }
-    }
-
-    /// A project that never existed on the server leaves this Mac, with its own changes; changes naming it stay
-    /// without it.
-    static func drop(_ db: Database, _ localId: String, moveTasksTo target: String? = nil) throws {
-        for op in try OutboxOp.fetchAll(db) {
-            let args = JSONValue.decode(op.argsJson)?.object ?? [:]
-            if Mutations.projectChanges.contains(op.mutation), op.clientId == localId || args["projectId"]?.string == localId {
-                _ = try OutboxOp.deleteOne(db, key: op.seq)
-            } else if args["projectId"]?.string == localId {
-                if target != nil || op.mutation != Mutations.add {
-                    try rewrite(db, op, args.merging(["projectId": .of(target)]) { $1 })
-                } else {
-                    try withoutProject(db, op)
-                }
-            } else if args["moveTasksTo"]?.string == localId {
-                try rewrite(db, op, args.merging(["moveTasksTo": .string(target ?? ProjectRules.noProject)]) { $1 })
-            }
-        }
-        if let target { try deferReferences(db, untilCreationOf: target) }
-        try db.execute(sql: "UPDATE task SET projectLocalId = ? WHERE projectLocalId = ?", arguments: [target, localId])
-        _ = try Project.deleteOne(db, key: localId)
-    }
-
-    private static func deferReferences(_ db: Database, untilCreationOf localId: String) throws {
-        let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
-        guard let creationIndex = pending.firstIndex(where: { $0.mutation == Mutations.addProject && $0.clientId == localId }),
-              let creationSeq = pending[creationIndex].seq else { return }
-        var waitingTasks = Set<String>()
-        var waitingNow = false
-        let deferred = pending[..<creationIndex].filter { op in
-            guard op.taskLocalId != nil || op.mutation == Mutations.deleteProject || op.mutation == Mutations.setNow else { return false }
-            let args = JSONValue.decode(op.argsJson)
-            let references = args?["projectId"]?.string == localId || args?["moveTasksTo"]?.string == localId
-            guard references || op.taskLocalId.map(waitingTasks.contains) == true || (waitingNow && op.mutation == Mutations.setNow) else { return false }
-            if let taskId = op.taskLocalId { waitingTasks.insert(taskId) }
-            if op.mutation == Mutations.setNow { waitingNow = true }
-            return true
-        }
-        guard !deferred.isEmpty else { return }
-        for op in deferred { _ = try OutboxOp.deleteOne(db, key: op.seq) }
-        for op in pending.suffix(from: creationIndex + 1).reversed() {
-            try db.execute(sql: "UPDATE outbox SET seq = seq + ? WHERE seq = ?", arguments: [deferred.count, op.seq])
-        }
-        for (index, var op) in deferred.enumerated() {
-            op.seq = creationSeq + Int64(index) + 1
-            try op.insert(db)
-        }
-    }
-
-    /// [op] without its `projectId`.
-    private static func withoutProject(_ db: Database, _ op: OutboxOp) throws {
-        guard var args = JSONValue.decode(op.argsJson)?.object, args["projectId"] != nil else { return }
-        args.removeValue(forKey: "projectId")
-        try rewrite(db, op, args)
-    }
-
-    private static func rewrite(_ db: Database, _ op: OutboxOp, _ args: [String: JSONValue]) throws {
-        try db.execute(sql: "UPDATE outbox SET argsJson = ? WHERE seq = ?", arguments: [JSONValue.object(args).encoded(), op.seq])
     }
 
     /**

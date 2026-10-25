@@ -17,7 +17,7 @@ public struct ProjectMergePlan: Hashable, Sendable {
  */
 public enum ProjectMerger {
     public static func merge(local: [Project], pending: [OutboxOp], remote: [RemoteProject], nowMs: Int64) -> ProjectMergePlan {
-        let dirty = DirtyProjects(pending)
+        let dirty = DirtyProjects(pending, projects: local)
         var byServerId: [String: Project] = [:]
         var byClientId: [String: Project] = [:]
         for project in local {
@@ -85,17 +85,18 @@ public enum ProjectMerger {
 struct DirtyProjects {
     private var byProject: [String: Set<ProjectField>] = [:]
 
-    init(_ pending: [OutboxOp]) {
+    init(_ pending: [OutboxOp], projects: [Project] = []) {
+        let identities = ProjectMapping(projects: projects, pending: [])
         for op in pending where Mutations.projectChanges.contains(op.mutation) {
             let args = JSONValue.decode(op.argsJson)?.object ?? [:]
             switch op.mutation {
             case Mutations.addProject:
                 byProject[op.clientId] = Set(ProjectField.allCases)
             case Mutations.updateProject:
-                guard let id = args["projectId"]?.string else { continue }
+                guard let id = identities.localId(args["projectId"]?.string) else { continue }
                 byProject[id, default: []].formUnion(Self.fields(Set(args.keys)))
             default:
-                guard let id = args["projectId"]?.string else { continue }
+                guard let id = identities.localId(args["projectId"]?.string) else { continue }
                 byProject[id] = Set(ProjectField.allCases)
             }
         }
@@ -123,7 +124,7 @@ struct DirtyProjects {
  * still in the outbox reads as the project that deletion moves its tasks to, as the server will have it.
  */
 public struct ProjectMapping: Sendable {
-    private var localIdByServerId: [String: String] = [:]
+    private var localIdByReference: [String: String] = [:]
     private var movedTo: [String: String?] = [:]
 
     let preservesLocalMembership: Bool
@@ -135,18 +136,21 @@ public struct ProjectMapping: Sendable {
     public init(projects: [Project], pending: [OutboxOp]) {
         preservesLocalMembership = false
         for project in projects {
-            if let id = project.serverId { localIdByServerId[id] = project.localId }
+            localIdByReference[project.localId] = project.localId
+            if let id = project.serverId { localIdByReference[id] = project.localId }
+            if let id = project.clientId { localIdByReference[id] = project.localId }
         }
         for op in pending where op.mutation == Mutations.deleteProject {
             guard let args = JSONValue.decode(op.argsJson), let id = args["projectId"]?.string else { continue }
+            let source = localIdByReference[id] ?? id
             let target = args["moveTasksTo"]?.string
-            movedTo[id] = .some(target == ProjectRules.noProject ? nil : target)
+            movedTo[source] = .some(target == ProjectRules.noProject ? nil : target.map { localIdByReference[$0] ?? $0 })
         }
     }
 
     public func localId(_ serverId: String?) -> String? {
         guard let serverId else { return nil }
-        var local = localIdByServerId[serverId] ?? serverId
+        var local = localIdByReference[serverId] ?? serverId
         var visited = Set<String>()
         while let moved = movedTo[local] {
             guard visited.insert(local).inserted, let moved else { return nil }
