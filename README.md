@@ -145,8 +145,9 @@ mkdir -p ~/.claude/skills && cp -R docs/skills/dayhand ~/.claude/skills/
 The Android app starts without any server: under **On this phone only** choose **Start with an
 empty plan**, or **Try with sample data** (one tap removes it). Today with quick add (a date
 phrase at the end sets the day: `Call the accountant fri 2pm`), the week
-and day calendar, the board, task details with repeats, checklists and reminders, the morning
-summary and a backup file (**Settings → Data → Backup**) all work there. Without a server the
+and day calendar, the board, the Projects tab, task details with repeats, checklists and reminders, the morning
+summary and a backup file (**Settings → Data → Backup**) all work there; making and changing
+projects needs a server ([projects and labels](docs/projects.md)). Without a server the
 plan lives only on the phone: Android backups are off for Dayhand, so keep a backup file.
 
 To sync the phone, the CLI and your agents, connect it to your own server: **Settings → Server →
@@ -201,7 +202,8 @@ to choose); everything scripts and agents read stays English.
 
 ## On the Mac
 
-Dayhand for macOS has Today, quick add from the menu bar or a global shortcut, reminders and the
+Dayhand for macOS has Today, projects and lists in a sidebar (each as a list, a board or a week plan),
+quick add from the menu bar or a global shortcut, reminders and the
 morning summary (its time and default reminders set in Settings), the trash and each task's change history,
 repeat and reminder editors, a plan health card and read-only agent work in the details, and offline editing.
 Repeating tasks create their next occurrence locally only without a server; a paired Mac without network waits

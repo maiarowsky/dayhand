@@ -26,6 +26,7 @@ export const SECTIONS: DocsSection[] = [
   {
     title: "Apps",
     pages: [
+      { src: "projects.md", nav: "Projects and labels" },
       { src: "android.md", nav: "Android" },
       { src: "macos-app.md", nav: "macOS" },
       { src: "linux.md", nav: "Linux and Omarchy" },

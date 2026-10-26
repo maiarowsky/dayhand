@@ -7,6 +7,8 @@ import boardLight from "../../assets/screens/android-board-light.webp";
 import boardDark from "../../assets/screens/android-board-dark.webp";
 import calendarLight from "../../assets/screens/android-calendar-light.webp";
 import calendarDark from "../../assets/screens/android-calendar-dark.webp";
+import macLight from "../../assets/screens/mac-projects-light.webp";
+import macDark from "../../assets/screens/mac-projects-dark.webp";
 
 const phoneSizes = "(min-width: 60rem) 17rem, 72vw";
 const phoneWidths = [300, 600, 900];
@@ -55,14 +57,32 @@ const phoneWidths = [300, 600, 900];
     </figure>
   </div>
 
+  <div class="row wide">
+    <div class="row-text">
+      <h3>Projects on the Mac</h3>
+      <p>
+        The sidebar lists your projects with their open tasks, red when one is late, next to your labels. Each project
+        is a list, a board or a week plan; drag a task onto a project to move it there.
+      </p>
+    </div>
+    <Screenshot
+      class="window"
+      light={macLight}
+      dark={macDark}
+      widths={[700, 1080, 1600, 2160]}
+      sizes="(min-width: 72rem) 70rem, calc(100vw - 2rem)"
+      alt="Dayhand for macOS. The sidebar lists Today, All Tasks, No Project, the projects Bakery website, Home, Dayhand and Health with their open counts, and the labels. Today shows a plan health card, one overdue task, Send the invoice to Anna in the project Bakery website, and the task being worked on now, Write the project brief. The panel below shows Call the accountant, due today at 14:00, in the project Home."
+    />
+  </div>
+
   <dl class="platforms">
     <div>
       <dt>Android</dt>
-      <dd>Today, the week and day calendar, the board, repeats, checklists, reminders and approvals. Starts without any server.</dd>
+      <dd>Today, the week and day calendar, the board, projects, repeats, checklists, reminders and approvals. Starts without any server.</dd>
     </div>
     <div>
       <dt>macOS</dt>
-      <dd>Today, quick add from the menu bar or a global shortcut, reminders, the morning summary, the trash and each task's history.</dd>
+      <dd>Projects and lists in a sidebar, each as a list, a board or a week plan; quick add from the menu bar or a global shortcut, reminders, the morning summary and each task's history.</dd>
     </div>
     <div>
       <dt>Linux</dt>

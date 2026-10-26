@@ -25,6 +25,23 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
 7. **Change applies at once.** The appearance is a `StateFlow`; saving it redraws the whole app without a restart and
    it is read synchronously at start, so the first frame has the right colours.
 
+## Project colours
+
+A project's colour is one of twelve named tokens the server stores: `red`, `orange`, `amber`, `green`, `teal`,
+`cyan`, `blue`, `indigo`, `purple`, `pink`, `brown` and `gray` (`PROJECT_COLORS` in
+`backend/convex/lib/validators.ts`), or none. The server never stores a hex value, so each app picks shades that
+suit its own backgrounds.
+
+- **Contrast of 3:1.** A project's dot is a graphic, so it needs at least 3:1 against what it sits on (WCAG
+  1.4.11). Android starts from a light and a dark base shade for each token (`ui/theme/ProjectColors.kt`) and
+  moves it towards the palette's text colour until it reaches 3.1:1 on `surface`, `background`, `accentSoft` and
+  `surfaceRaised`; `PaletteContrastTest` checks every token on every palette. The Mac app has one shade for the
+  light and one for the dark appearance (`macos/Sources/DayhandUI/ProjectColors.swift`), checked against the
+  window and the cards in both by `SidebarTests`. A project without a colour, and on Android an archived one,
+  gets an outline instead of a filled dot.
+- **Never colour alone.** The project's name is always written next to its dot or emoji, and screen readers
+  read the name, not the colour. The dot colour is never used for text.
+
 ## Mussh → Dayhand
 
 | Mussh (Android) | Dayhand | Notes |
