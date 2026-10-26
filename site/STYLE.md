@@ -90,7 +90,7 @@ Android app ran on an emulator with the demo-mode status bar. App screens have l
 `<picture>` swaps by `prefers-color-scheme`; the notification uses the same light capture in both themes.
 The Mac projects screen (`mac-projects-*`) is drawn from the app's own views by `swift run DayhandSnapshots`,
 on its built-in sample plan and with no server; the light file is cropped to the dark one's frame, which has no
-toolbar. The Android Projects tab (`android-projects-*`) comes from `android/scripts/e2e-projects.py`.
+toolbar.
 
 The files in `src/assets/screens/` are lossless WebP at capture resolution, except for the notification,
 which is cropped to its card. The build makes smaller WebP files at the widths each place asks for, with

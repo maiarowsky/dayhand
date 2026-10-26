@@ -1,8 +1,9 @@
 # Projects and labels
 
 This page explains how projects and labels differ, how to turn a label you used as a project into a real
-one, and what colours, icons, the archive and deletion do. Projects need Dayhand server 0.13.0 or later;
-labels work everywhere.
+one, and what colours, icons, the archive and deletion do. Projects in the apps need Dayhand server 0.13.0
+or later; the `dayhand project` commands, the MCP project tools and the REST project routes need 0.13.1.
+Labels work everywhere.
 
 ## Projects or labels?
 
@@ -132,5 +133,6 @@ never leave the phone.
 - **No ETag for projects** over REST: when two clients change one project, the last write wins.
 - **No sub-projects or areas**, and no colours for labels.
 - **The Linux app** does not show projects, and the **Mac app** cannot make a project from a label.
-- **Versions**: projects need server 0.13.0 or later; Android 0.12.0 needs server 0.13.2. Going back to
+- **Versions**: projects in the apps need server 0.13.0 or later, and the `dayhand project` commands, the
+  MCP project tools and the REST project routes need 0.13.1; Android 0.12.0 needs server 0.13.2. Going back to
   server 0.12 first turns every project into a label ([Upgrading to 0.13.0](deploy.md#upgrading-to-0130)).

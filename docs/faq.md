@@ -43,7 +43,8 @@ Both. A project is what a task is part of, such as a client or your website: a t
 none, and each project has a colour, an emoji, a note for your agents and its own list in the apps. Labels
 are free tags across projects, such as `phone` or `waiting`, up to 20 on a task. If you used labels as
 projects before, `dayhand project add Home --from-label home` makes one from a label, or long-press the
-label on Android. Projects need server 0.13.0 or later: [Projects and labels](projects.md).
+label on Android. Projects in the apps need server 0.13.0 or later, and `dayhand project`, the MCP
+project tools and the REST project routes need 0.13.1: [Projects and labels](projects.md).
 
 ### Can I see my tasks in Google Calendar or Apple Calendar?
 
