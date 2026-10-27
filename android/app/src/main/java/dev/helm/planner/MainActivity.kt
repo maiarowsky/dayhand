@@ -38,9 +38,6 @@ import dev.helm.planner.ui.projects.ProjectsViewModel
 import dev.helm.planner.ui.projects.ProjectsScreen
 import dev.helm.planner.ui.projects.ProjectViewModel
 import dev.helm.planner.ui.projects.ProjectScreen
-import dev.helm.planner.ui.threads.ThreadScreen
-import dev.helm.planner.ui.threads.ThreadsScreen
-import dev.helm.planner.ui.threads.ThreadsViewModel
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.components.ProjectFolderIcon
 import dev.helm.planner.ui.agents.AgentsRoute
@@ -135,9 +132,6 @@ private object Route {
     const val PROJECTS = "projects"
     const val PROJECT = "project/"
     const val LABEL = "label/"
-    const val THREADS = "threads"
-    const val THREAD = "thread/"
-    fun thread(localId: String) = THREAD + localId
     fun project(localId: String?) = PROJECT + (localId ?: "none")
     fun label(name: String) = LABEL + android.net.Uri.encode(name)
 
@@ -258,19 +252,7 @@ private fun HelmRoot(
             val model = viewModel(key = "projects-list") { ProjectsViewModel(container.repository, container.settings) }
             val state by model.state.collectAsStateWithLifecycle()
             state?.let { ProjectsScreen(it, { id -> open(Route.project(id)) }, { name -> open(Route.label(name)) },
-                onTrash = { open(Route.TRASH) }, onSettings = { open(Route.SETTINGS) }, bottomBar = tabs, onThreads = { open(Route.THREADS) }) }
-        }
-        route == Route.THREADS -> {
-            val model = viewModel(key = "threads") { ThreadsViewModel(container.repository) }
-            val state by model.state.collectAsStateWithLifecycle()
-            state?.let { ThreadsScreen(it, onThread = { id -> open(Route.thread(id)) }, onBack = back, bottomBar = { MainTabs(Route.PROJECTS, selectTab) }) }
-        }
-        route.startsWith(Route.THREAD) -> {
-            val localId = route.removePrefix(Route.THREAD)
-            val model = viewModel(key = "threads") { ThreadsViewModel(container.repository) }
-            val state by model.state.collectAsStateWithLifecycle()
-            state?.let { s -> ThreadScreen(s.tasks.firstOrNull { it.localId == localId }, s.now,
-                onClose = { id -> model.close(id); back() }, onOpenTask = { id -> open(Route.task(id)) }, onBack = back) }
+                onTrash = { open(Route.TRASH) }, onSettings = { open(Route.SETTINGS) }, bottomBar = tabs) }
         }
         route.startsWith(Route.PROJECT) || route.startsWith(Route.LABEL) -> {
             val projectId = route.takeIf { it.startsWith(Route.PROJECT) }?.removePrefix(Route.PROJECT)?.takeUnless { it == "none" }

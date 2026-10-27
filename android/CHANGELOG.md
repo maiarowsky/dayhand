@@ -3,25 +3,11 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
-## 0.13.0 (unreleased)
+## 0.13.1 (unreleased)
 
-### Added
+### Removed
 
-- **Threads**, a row at the top of the Projects tab once a task carries the label `wątek`: the open
-  threads an assistant keeps for you, in three groups, **To confirm** (the title starts with
-  `DO POTWIERDZENIA:`), **Waiting for you** (the note's `Co od Ciebie:` line asks for something, neither
-  empty nor starting with "nic") and **In progress**. Each row shows the topic without `Wątek:` and
-  `DO POTWIERDZENIA:`, the first sentence of `Stan teraz:` (of `Podsumowanie:` when it is to confirm)
-  and how long ago the task last changed; the header and the row in Projects count what is to confirm
-  or waiting for you.
-- A thread's details split the note into Summary, Current state, What was done, What we need from you
-  and How to check, with links that open; a note in another format is shown as it is. **Got it, close
-  the thread** (prominent when the thread is to confirm) asks once more and then completes the task as
-  usual, also offline. **Open the task** goes to the full task details.
-- The note format is read by `domain/Threads.kt`, a pure function with JVM tests (title prefixes, the
-  four lines, missing lines, Polish letters in any case and in decomposed form, multi-line values,
-  notes without the format); Robolectric tests for the groups, the details and the two-step close.
-  No schema change; strings in the eight app languages.
+- The Threads view (the label `wątek` is a normal label again).
 
 ## 0.12.0 (unreleased)
 

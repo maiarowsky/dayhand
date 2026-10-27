@@ -97,16 +97,6 @@ its **+** adds a task to it.
 
 The rules, and how projects differ from labels: [Projects and labels](projects.md).
 
-### Threads
-
-If an assistant keeps your open topics as tasks with the label `wątek` (titled `Wątek: <topic>`, with
-the note lines `Stan teraz:`, `Co zrobiono:`, `Co od Ciebie:` and `Jak sprawdzić:`), **Threads** at the
-top of the Projects tab lists them in three groups: **To confirm** (the assistant renamed it
-`DO POTWIERDZENIA: <topic>` and added a `Podsumowanie:`), **Waiting for you** (`Co od Ciebie:` asks you
-for something) and **In progress**, each with the first sentence of its state and how long ago it
-changed. Tap one to read its note in sections, with links that open. **Got it, close the thread**, then
-**Close thread** in the question that follows, marks the task done; nothing closes on a single tap.
-
 ## Task details
 
 Tap a task to open it. You can change its title, status, the now flag and its note, the day with an
