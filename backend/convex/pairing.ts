@@ -1,7 +1,7 @@
 // HTTP endpoints of phone pairing (protocol: docs/pairing.md).
 //   POST /auth/pair            pairing code -> device token (unauthenticated, rate limited)
 //   POST /auth/token           device token -> app JWT, ES256, one hour
-//   POST /devices/pairing-code create a pairing code   (personal API key)
+//   POST /devices/pairing-code create a pairing code   (the owner's cli key; an agent key gets 403)
 //   GET  /devices              list paired devices     (personal API key)
 //   POST /devices/revoke       revoke a device         (personal API key)
 // Failures never say whether a code or token existed, was used, expired or revoked.

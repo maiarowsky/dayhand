@@ -93,9 +93,9 @@ dayhand revoke <deviceId>
 They call `POST /devices/pairing-code`, `GET /devices` and `POST /devices/revoke`
 (`{ "deviceId": … }`) with `Authorization: Bearer <personal API key>` (scope full, since 0.8.0). Only the
 owner's key (`cli`) can create a pairing code: a paired phone acts as the app, so an `agent` key gets
-`403 forbidden`, whatever its scope. Pairing codes and revocations are recorded in the history under the key's kind and name (`cli`, or
-`agent: <name>`; see [mcp.md](mcp.md#keys-and-actors)). The deployment admin can do the same
-without an API key:
+`403 forbidden`, whatever its scope. Pairing codes and revocations are recorded in the history under
+the key's kind and name (`cli`, or `agent: <name>`; see [mcp.md](mcp.md#keys-and-actors)). The
+deployment admin can do the same without an API key:
 
 ```sh
 npx convex run devices:createPairingCode '{"userId":"<issuer>|owner","actor":"app"}'
