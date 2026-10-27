@@ -520,8 +520,12 @@ that ([deploy.md](deploy.md#upgrading-to-030)). A new key is an `agent` key unle
 
 ```sh
 npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"macbook","kind":"cli"}'
-npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"claude-code"}'
+npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"claude-code","scope":"write"}'
 ```
+
+Give an agent a `write` key, as above: a key without a scope is `full`, and a `full` key also manages the
+account (devices, connections, the calendar feed, other keys). Pairing a phone is the owner's alone: an
+`agent` key gets `403 forbidden` for a pairing code, whatever its scope.
 
 The app does the same with `app.createApiKey({ name, kind })`; `app.listApiKeys` returns each
 key's `kind`.
@@ -549,7 +553,8 @@ key through `POST /api/v1/keys` (`dayhand key create`). A key made that way can 
 works: revoking the parent stops it too ([api.md](api.md#api-keys)).
 
 Phone pairing is not an MCP tool either. The CLI pairs phones through separate endpoints
-(`/devices/*`, see [pairing.md](pairing.md)) that accept the same API key.
+(`/devices/*`, see [pairing.md](pairing.md)) that accept the same API key; only the owner's key (`cli`)
+creates pairing codes.
 
 ## Versions
 

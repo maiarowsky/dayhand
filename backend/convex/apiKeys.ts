@@ -9,7 +9,7 @@ import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type QueryCtx } from "./_generated/server";
 import { args } from "./lib/args";
-import { fail, identityOf, recordEvent } from "./lib/core";
+import { fail, identityOf, ownerOnly, recordEvent } from "./lib/core";
 import { randomBase64url, sha256Hex } from "./lib/secrets";
 import { identityFields as identityArgs, keyKindValidator, keyScopeValidator, type KeyKind, type KeyScope } from "./lib/validators";
 
@@ -76,6 +76,8 @@ export const insert = internalMutation({
     const parentKeyId = input.keyId;
     if (parentKeyId !== undefined) {
       if (scope === "full") fail("invalid_argument", "A key created with an API key can only have scope read or write");
+      // A cli key is the owner (ownerOnly); an agent key must not mint one and so reach the owner's tools.
+      if (kind === "cli") ownerOnly(identityOf(input), "create a cli key");
       const parent = await ctx.db.get(parentKeyId);
       if (parent?.expiresAt !== undefined && (input.expiresAt === undefined || input.expiresAt > parent.expiresAt)) {
         fail("invalid_argument", "The new key must expire no later than the key that creates it");

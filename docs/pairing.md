@@ -91,10 +91,11 @@ dayhand revoke <deviceId>
 ```
 
 They call `POST /devices/pairing-code`, `GET /devices` and `POST /devices/revoke`
-(`{ "deviceId": … }`) with `Authorization: Bearer <personal API key>` (scope full, since 0.8.0). Pairing codes and
-revocations are recorded in the history under the key's kind and name (`cli`, or
-`agent: <name>`; see [mcp.md](mcp.md#keys-and-actors)). The deployment admin can do the same
-without an API key:
+(`{ "deviceId": … }`) with `Authorization: Bearer <personal API key>` (scope full, since 0.8.0). Only the
+owner's key (`cli`) can create a pairing code: a paired phone acts as the app, so an `agent` key gets
+`403 forbidden`, whatever its scope. Pairing codes and revocations are recorded in the history under
+the key's kind and name (`cli`, or `agent: <name>`; see [mcp.md](mcp.md#keys-and-actors)). The
+deployment admin can do the same without an API key:
 
 ```sh
 npx convex run devices:createPairingCode '{"userId":"<issuer>|owner","actor":"app"}'
@@ -121,5 +122,5 @@ the phone's JWT gives exactly that identity. A key of another user gets an error
 - Error answers never tell whether a code or token existed, was used, expired or revoked.
 - The signing key (`DAYHAND_JWT_PRIVATE_JWK`) lives only in the deployment environment and is
   never returned. See [deploy.md](deploy.md).
-- A personal API key can pair a device, and that device keeps working after the key is
-  revoked. If a key may have leaked, revoke it and check `dayhand devices` as well.
+- The owner's key (`cli`) can pair a device (an `agent` key cannot), and that device keeps working
+  after the key is revoked. If a key may have leaked, revoke it and check `dayhand devices` as well.

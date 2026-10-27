@@ -252,14 +252,15 @@ describe("validation", () => {
 
 describe("the next occurrence and projects (0.13.0)", () => {
   test("the next occurrence of a repeating task keeps its project, also once the project is archived", async () => {
+    // Due dates in the future: completed today, the series steps from its due date, whatever day the test runs.
     const user = asUser(newUserId());
     const { project }: any = await user.mutation(internal.ops.addProject, { name: "Health" });
-    const task: any = await user.mutation(internal.ops.add, { title: "Gym", dueDate: "2026-10-20", repeat: { every: "week", interval: 1 }, projectId: "health" });
+    const task: any = await user.mutation(internal.ops.add, { title: "Gym", dueDate: "2036-10-20", repeat: { every: "week", interval: 1 }, projectId: "health" });
     const first: any = await user.mutation(internal.ops.complete, { taskId: task.id });
-    expect(first.next).toMatchObject({ title: "Gym", dueDate: "2026-10-27", projectId: project.id });
+    expect(first.next).toMatchObject({ title: "Gym", dueDate: "2036-10-27", projectId: project.id });
     await user.mutation(internal.ops.updateProject, { projectId: project.id, archived: true });
     const second: any = await user.mutation(internal.ops.complete, { taskId: first.next.id });
-    expect(second.next).toMatchObject({ dueDate: "2026-11-03", projectId: project.id });
+    expect(second.next).toMatchObject({ dueDate: "2036-11-03", projectId: project.id });
     const loose: any = await user.mutation(internal.ops.add, { title: "Water plants", dueDate: "2026-10-20", repeat: { every: "day", interval: 1 } });
     expect(((await user.mutation(internal.ops.complete, { taskId: loose.id })) as any).next).not.toHaveProperty("projectId");
   });

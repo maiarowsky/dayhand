@@ -201,4 +201,15 @@ describe("REST API: API keys", () => {
     await rest(key, "DELETE", `/keys/${parentId}`);
     expectProblem(await rest(expiring.body.key, "GET", "/today"), 401, "unauthenticated");
   });
+
+  test("an agent key cannot mint a cli key, so it never gets the owner's tools; a cli key can", async () => {
+    const { userId, key } = await owner();
+    expectProblem(await rest(key, "POST", "/keys", { body: { name: "owner", kind: "cli", scope: "write" } }), 403, "forbidden");
+    expect((await rest(key, "GET", "/keys")).body.keys).toHaveLength(1);
+
+    const cli = await createKey(userId, "terminal", "cli");
+    const created = await rest(cli, "POST", "/keys", { body: { name: "script", kind: "cli", scope: "write" } });
+    expect(created.status).toBe(201);
+    expect(created.body).toMatchObject({ kind: "cli", scope: "write" });
+  });
 });

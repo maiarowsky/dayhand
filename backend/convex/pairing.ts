@@ -1,7 +1,7 @@
 // HTTP endpoints of phone pairing (protocol: docs/pairing.md).
 //   POST /auth/pair            pairing code -> device token (unauthenticated, rate limited)
 //   POST /auth/token           device token -> app JWT, ES256, one hour
-//   POST /devices/pairing-code create a pairing code   (personal API key)
+//   POST /devices/pairing-code create a pairing code   (the owner's cli key; an agent key gets 403)
 //   GET  /devices              list paired devices     (personal API key)
 //   POST /devices/revoke       revoke a device         (personal API key)
 // Failures never say whether a code or token existed, was used, expired or revoked.
@@ -123,6 +123,19 @@ export async function accountOwner(ctx: ActionCtx, request: Request): Promise<Ke
   return owner;
 }
 
+/**
+ * The owner of a full key for a change to the account, or the answer that refuses it: while the
+ * owner has paused agents, an agent key changes nothing here either (as on /api/v1, rest.ts).
+ */
+export async function accountChanger(ctx: ActionCtx, request: Request): Promise<KeyOwner | Response> {
+  const owner = await accountOwner(ctx, request);
+  if (owner instanceof Response || owner.kind !== "agent") return owner;
+  if (await ctx.runQuery(internal.ops.agentsPaused, { userId: owner.userId })) {
+    return errorResponse(403, "agents_paused", "The owner has paused all agents: reading works, changes are refused until they resume agents");
+  }
+  return owner;
+}
+
 /** The key's identity for the domain: its owner, its kind as the actor, and the key itself. */
 export const keyIdentity = (owner: KeyOwner) => ({
   userId: owner.userId,
@@ -134,15 +147,15 @@ export const keyIdentity = (owner: KeyOwner) => ({
 export const unauthorized = () =>
   errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="dayhand"' });
 
-/** Domain errors as 400/404 with their message; anything else is rethrown. */
+/** Domain errors as 400/403/404 with their message; anything else is rethrown. */
 export function domainError(error: unknown) {
   if (!(error instanceof ConvexError)) throw error;
   const { code, message } = error.data as { code: string; message: string };
-  return errorResponse(code === "not_found" ? 404 : 400, code, message);
+  return errorResponse(code === "not_found" ? 404 : code === "forbidden" ? 403 : 400, code, message);
 }
 
 export const createCode = httpAction(async (ctx, request) => {
-  const owner = await accountOwner(ctx, request);
+  const owner = await accountChanger(ctx, request);
   if (owner instanceof Response) return owner;
   try {
     const created = await ctx.runAction(internal.devices.createPairingCode, {
@@ -162,7 +175,7 @@ export const listDevices = httpAction(async (ctx, request) => {
 });
 
 export const revokeDevice = httpAction(async (ctx, request) => {
-  const owner = await accountOwner(ctx, request);
+  const owner = await accountChanger(ctx, request);
   if (owner instanceof Response) return owner;
   const body = await readJsonBody(request);
   if (!body || typeof body.deviceId !== "string") {

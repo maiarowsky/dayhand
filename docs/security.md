@@ -85,8 +85,8 @@ programs running as you.
 
 - Give every agent and integration its own key, with the smallest scope and an expiry. Revoke it when it is
   no longer used (`dayhand key list`, `dayhand key revoke`).
-- A key can pair a phone, and the phone keeps working after the key is revoked: when a key may have
-  leaked, revoke it and also check `dayhand devices`.
+- Only the owner's key (`cli`) or the app can pair a phone, never an `agent` key; the phone keeps working
+  after the key is revoked: when a `cli` key may have leaked, revoke it and also check `dayhand devices`.
 - Lost a phone or a laptop: `dayhand revoke <deviceId>`. Its app token still works for up to an hour.
 - Treat the calendar address like a password. If it was shared, make a new one (`dayhand calendar rotate`).
 - Keep the copy of the app-signing key in a password manager, or delete it; the deployment holds the one in
