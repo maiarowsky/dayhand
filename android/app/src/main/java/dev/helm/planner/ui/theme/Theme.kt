@@ -11,6 +11,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 
 val LocalPalette = staticCompositionLocalOf { Palettes.DefaultDark }
 val LocalHelmType = staticCompositionLocalOf { HelmType(HelmFont.Default.family) }
@@ -35,7 +36,9 @@ fun HelmTheme(
     content: @Composable () -> Unit,
 ) {
     val palette = appearance.palette(systemDark)
-    val type = remember(appearance.font) { HelmType(appearance.font.family) }
+    val type = remember(appearance.font) {
+        HelmType(appearance.font.family, if (appearance.font.monospace) FontFamily.Default else appearance.font.family)
+    }
     CompositionLocalProvider(LocalPalette provides palette, LocalHelmType provides type) {
         MaterialTheme(
             colorScheme = colorScheme(palette),

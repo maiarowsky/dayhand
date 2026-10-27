@@ -99,7 +99,15 @@
     <string name="detail_due">Fecha límite</string>
     <string name="detail_no_due">Sin fecha límite</string>
     <string name="detail_repeat">Repetir</string>
-    <string name="detail_labels">Etiquetas y proyectos</string>
+    <string name="detail_labels">Etiquetas</string>
+    <string name="project_picker_empty">Todavía no tienes proyectos. Crea el primero y la tarea quedará asignada a él.</string>
+    <string name="projects_empty">Todavía no tienes proyectos. Un proyecto agrupa tareas, por ejemplo Casa o Trabajo.</string>
+    <string name="labels_note">Las etiquetas son marcas libres en las tareas, independientes de los proyectos. Toca una para ver sus tareas, mantenla pulsada para convertirla en proyecto.</string>
+    <string name="detail_repeat_reminders">Repetición y recordatorios</string>
+    <string name="title_show_all">Ver el título completo</string>
+    <string name="title_show_less">Ver menos</string>
+    <string name="section_expanded">Desplegado</string>
+    <string name="section_collapsed">Plegado</string>
     <string name="detail_links">Enlaces</string>
     <string name="detail_history">Historial de cambios</string>
     <string name="detail_archived">Archivada. Restáurala para volver a verla en Hoy y en el tablero.</string>

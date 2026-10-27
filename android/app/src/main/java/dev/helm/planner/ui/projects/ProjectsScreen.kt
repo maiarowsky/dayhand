@@ -33,6 +33,7 @@ import dev.helm.planner.ui.components.LineIcon
 import dev.helm.planner.ui.components.ListGroup
 import dev.helm.planner.ui.components.ListNote
 import dev.helm.planner.ui.components.ListRow
+import dev.helm.planner.ui.components.PrimaryButton
 import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.helmType
@@ -48,6 +49,7 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
     var archived by rememberSaveable { mutableStateOf(false) }
     var managingId by rememberSaveable { mutableStateOf<String?>(null) }
     var fromLabel by rememberSaveable { mutableStateOf<String?>(null) }
+    var showLabels by rememberSaveable { mutableStateOf(false) }
     val active = state.projects.filter { it.selectable }
     val archive = state.projects.filter { it.archived }
     val labels = state.tasks.filter { it.isActive }.flatMap { it.labels }.distinct().sorted()
@@ -55,10 +57,14 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
         LargeHeader(stringResource(R.string.projects_title)) {
             HeaderIconButton(Icons.Filled.Add, stringResource(R.string.project_new), { adding = true }, Modifier.testTag("projects-new"))
             Box {
-                HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.project_reorder), { menu = true })
+                HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, stringResource(R.string.projects_title)), { menu = true },
+                    Modifier.testTag("projects-menu"))
                 HelmMenu(menu, { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.project_reorder), style = helmType.body, color = palette.text) },
                         onClick = { menu = false; ordering = !ordering })
+                    // Labels are kept and still filter tasks, but they are not projects: they live behind this menu.
+                    if (labels.isNotEmpty()) DropdownMenuItem(text = { Text(stringResource(R.string.detail_labels), style = helmType.body, color = palette.text) },
+                        onClick = { menu = false; showLabels = true }, modifier = Modifier.testTag("projects-labels"))
                 }
             }
             HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), onSettings)
@@ -83,10 +89,10 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
                     leadingContent = { ProjectMark(null) }, valueColor = if (counts.overdue > 0) palette.danger else palette.textMuted,
                     note = stringResource(R.string.project_counts, counts.open, counts.overdue), onClick = { onProject(null) })
             }))
-            if (labels.isNotEmpty()) ListGroup(stringResource(R.string.detail_labels), labels.map { label -> @Composable {
-                ListRow("# $label", "project-label-$label", value = projectCounts(state.tasks.filter { label in it.labels }, state.today).open.toString(),
-                    onClick = { onLabel(label) }, onLongClick = { fromLabel = label }, longClickLabel = stringResource(R.string.project_from_label))
-            } })
+            if (active.isEmpty()) Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.testTag("projects-empty")) {
+                Text(stringResource(R.string.projects_empty), style = helmType.valueSmall, color = palette.text, modifier = Modifier.padding(horizontal = 4.dp))
+                PrimaryButton(stringResource(R.string.project_new), { adding = true }, icon = Icons.Filled.Add, modifier = Modifier.testTag("projects-empty-new"))
+            }
             ListGroup(null, listOf({
                 ListRow(stringResource(R.string.project_archived, archive.size), "projects-archive", icon = LineIcon.Folder, onClick = { archived = !archived })
             }, {
@@ -102,4 +108,6 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
     if (adding) ProjectEditSheet(onDismiss = { adding = false })
     state.projects.firstOrNull { it.localId == managingId }?.let { ProjectManagement(it, onDismiss = { managingId = null }) }
     fromLabel?.let { ProjectEditSheet(fromLabel = it, onDismiss = { fromLabel = null }) }
+    if (showLabels) LabelsSheet(labels, { label -> projectCounts(state.tasks.filter { label in it.labels }, state.today).open },
+        onDismiss = { showLabels = false }, onLabel = { showLabels = false; onLabel(it) }, onConvert = { showLabels = false; fromLabel = it })
 }

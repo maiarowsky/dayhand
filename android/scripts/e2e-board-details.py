@@ -177,7 +177,7 @@ def main():
 
     # Details: rename, label, link, time.
     tap(find(text=title))
-    find(text="Labels and projects")
+    find(text="Labels")
     tap(find(text=title))
     edit_text()
     # The dialog opens focused with the cursor after the title.
@@ -201,6 +201,8 @@ def main():
     tap(button("Allow"))
     log("notification permission asked for the first timed task, allowed")
 
+    # Links are folded while the task has none.
+    tap(find_scrolling(text="LINKS"))
     tap(find_scrolling(text="Add link"))
     tap(edit_text())
     type_text("https://example.com/plan")

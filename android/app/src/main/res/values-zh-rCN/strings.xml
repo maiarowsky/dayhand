@@ -93,7 +93,15 @@
     <string name="detail_due">截止日期</string>
     <string name="detail_no_due">无截止日期</string>
     <string name="detail_repeat">重复</string>
-    <string name="detail_labels">标签和项目</string>
+    <string name="detail_labels">标签</string>
+    <string name="project_picker_empty">你还没有项目。创建第一个项目，任务就会分配到其中。</string>
+    <string name="projects_empty">你还没有项目。项目用于归类任务，例如“家”或“工作”。</string>
+    <string name="labels_note">标签是任务上的自由标记，与项目无关。点按标签查看其任务，长按可将其转为项目。</string>
+    <string name="detail_repeat_reminders">重复和提醒</string>
+    <string name="title_show_all">显示完整标题</string>
+    <string name="title_show_less">收起</string>
+    <string name="section_expanded">已展开</string>
+    <string name="section_collapsed">已收起</string>
     <string name="detail_links">链接</string>
     <string name="detail_history">更改历史</string>
     <string name="detail_archived">已归档。恢复后会重新出现在“今天”和看板上。</string>

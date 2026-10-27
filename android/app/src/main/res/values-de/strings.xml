@@ -96,7 +96,15 @@
     <string name="detail_due">Fällig</string>
     <string name="detail_no_due">Kein Fälligkeitstag</string>
     <string name="detail_repeat">Wiederholung</string>
-    <string name="detail_labels">Labels und Projekte</string>
+    <string name="detail_labels">Labels</string>
+    <string name="project_picker_empty">Du hast noch keine Projekte. Lege das erste an, und die Aufgabe wird ihm zugeordnet.</string>
+    <string name="projects_empty">Du hast noch keine Projekte. Ein Projekt fasst Aufgaben zusammen, zum Beispiel Zuhause oder Arbeit.</string>
+    <string name="labels_note">Labels sind freie Markierungen an Aufgaben, unabhängig von Projekten. Tippe auf eines, um seine Aufgaben zu sehen, halte es gedrückt, um daraus ein Projekt zu machen.</string>
+    <string name="detail_repeat_reminders">Wiederholung und Erinnerungen</string>
+    <string name="title_show_all">Ganzen Titel zeigen</string>
+    <string name="title_show_less">Weniger zeigen</string>
+    <string name="section_expanded">Aufgeklappt</string>
+    <string name="section_collapsed">Zugeklappt</string>
     <string name="detail_links">Links</string>
     <string name="detail_history">Änderungsverlauf</string>
     <string name="detail_archived">Archiviert. Stelle die Aufgabe wieder her, damit sie wieder unter Heute und auf dem Board erscheint.</string>

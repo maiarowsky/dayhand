@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -31,7 +30,6 @@ import dev.helm.planner.ui.common.dayLabel
 import dev.helm.planner.ui.common.reminderLabel
 import dev.helm.planner.ui.common.repeatLabel
 import dev.helm.planner.ui.common.statusLabel
-import dev.helm.planner.ui.components.CardSection
 import dev.helm.planner.ui.components.Pill
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
@@ -47,11 +45,11 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 
-/** Who changed what and when, newest first; changes still in the outbox are counted, not listed. */
+/** Who changed what and when, newest first, folded until asked for; changes still in the outbox are counted, not listed. */
 @Composable
 fun HistorySection(state: TaskDetailUiState.Ready) {
     val today = LocalDate.parse(state.today)
-    CardSection(stringResource(R.string.detail_history), Modifier.testTag(TaskDetailTags.HISTORY)) {
+    FoldingSection(stringResource(R.string.detail_history), tag = TaskDetailTags.HISTORY, initiallyExpanded = false) {
         if (state.pendingChanges > 0) Placeholder(pluralStringResource(R.plurals.history_pending, state.pendingChanges, state.pendingChanges))
         when (state.historyState) {
             HistoryState.NOT_ON_SERVER_YET -> Placeholder(stringResource(R.string.history_not_on_server))

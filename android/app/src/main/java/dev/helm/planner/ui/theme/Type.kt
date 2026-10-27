@@ -10,9 +10,10 @@ import androidx.compose.ui.unit.sp
 /**
  * The Mussh type scale in the chosen font. Sizes are in sp, so they follow the system font size; layouts that hold
  * text use minimum heights, never fixed ones. [label] stays monospace in every font, like Mussh's "01 — FLEET".
+ * [reading] is the font for values and longer text: the chosen one, or the phone's sans-serif when that is monospace.
  */
 @Immutable
-class HelmType(val family: FontFamily) {
+class HelmType(val family: FontFamily, val reading: FontFamily = family) {
     /** Title of a top-level screen ("Today"). */
     val headline = TextStyle(fontFamily = family, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold)
 
@@ -25,6 +26,10 @@ class HelmType(val family: FontFamily) {
     val bodyStrong = body.copy(fontWeight = FontWeight.SemiBold)
     val small = TextStyle(fontFamily = family, fontSize = 13.sp, lineHeight = 18.sp)
     val smallStrong = small.copy(fontWeight = FontWeight.SemiBold)
+
+    /** A field's value on a details screen, and notes and descriptions there: larger than [body], never monospace. */
+    val value = TextStyle(fontFamily = reading, fontSize = 17.sp, lineHeight = 24.sp)
+    val valueSmall = TextStyle(fontFamily = reading, fontSize = 15.sp, lineHeight = 21.sp)
 
     /** Upper-case section labels. */
     val label = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium)

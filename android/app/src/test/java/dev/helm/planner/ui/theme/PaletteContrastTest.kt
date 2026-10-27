@@ -49,6 +49,14 @@ class PaletteContrastTest {
     }
 
     @Test
+    fun taskDetailsChoicesAndActionsAreReadable() {
+        // Unchosen statuses and the task's labels sit on the raised colour; actions on the soft accent or danger fill.
+        assertContrast(4.5, "text on surfaceRaised", { it.text }, { it.surfaceRaised })
+        assertContrast(4.5, "danger on dangerSoft", { it.danger }, { it.dangerSoft })
+        assertContrast(3.0, "muted icon on surfaceRaised", { it.textMuted }, { it.surfaceRaised })
+    }
+
+    @Test
     fun everyProjectDotMeetsThreeToOneOnEveryPalette() {
         dev.helm.planner.domain.ProjectRules.colors.forEach { token ->
             Palettes.all.forEach { p ->
