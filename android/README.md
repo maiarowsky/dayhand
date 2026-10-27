@@ -546,6 +546,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # backup file (write, read, the server's export), sample plan, another server,
                                             # agents (answers, requests, proposals, the switch, tool policies and their refusals,
                                             # the health card, new requests)
+                                            # threads (the note format, the groups, the details and the two-step close)
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,
