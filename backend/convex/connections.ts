@@ -5,7 +5,7 @@
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 import { errorResponse, json, readJsonBody } from "./lib/http";
-import { accountOwner, domainError, keyIdentity } from "./pairing";
+import { accountChanger, accountOwner, domainError, keyIdentity } from "./pairing";
 
 export const listConnections = httpAction(async (ctx, request) => {
   const owner = await accountOwner(ctx, request);
@@ -14,7 +14,7 @@ export const listConnections = httpAction(async (ctx, request) => {
 });
 
 export const revokeConnection = httpAction(async (ctx, request) => {
-  const owner = await accountOwner(ctx, request);
+  const owner = await accountChanger(ctx, request);
   if (owner instanceof Response) return owner;
   const body = await readJsonBody(request);
   if (!body || typeof body.connectionId !== "string") {

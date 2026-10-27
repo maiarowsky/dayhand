@@ -231,8 +231,9 @@ and the answer comes from another device, maybe hours later. The webhook follows
 
 **Pause agents** (Settings → Agents on the phone, `dayhand agents pause`, `pause_agents`) is one
 switch. While it is on, every change by an `agent` key or an agent connection (OAuth) is refused
-with `agents_paused`, including dry runs, approval requests and the account routes of the REST
-API (keys, webhooks, import); reads keep working, so an agent can still see what is going on and
+with `agents_paused`, including dry runs, approval requests, the account routes of the REST
+API (keys, webhooks, import) and the account endpoints outside it (pairing codes, revoking devices
+and connections, the calendar feed); reads keep working, so an agent can still see what is going on and
 tell the user. Switching it off lets them change things again. The owner's own changes, from the
 app and from `cli` keys, are never refused.
 

@@ -173,6 +173,21 @@ describe("phone pairing", () => {
     expect((await post("/auth/token", { deviceToken: paired.deviceToken })).status).toBe(200);
   });
 
+  test("while agents are paused an agent key cannot pair a phone or change the account, a cli key can", async () => {
+    const { userId, key: agent } = await owner();
+    const cli = await createKey(userId, "terminal", "cli");
+    await admin().mutation(internal.ops.pauseAgents, { userId, actor: "app", paused: true });
+    const paused = { status: 403, body: { error: "agents_paused" } };
+    expect(await devices(agent, "POST", "/devices/pairing-code")).toMatchObject(paused);
+    expect(await devices(agent, "POST", "/devices/revoke", { deviceId: "nope" })).toMatchObject(paused);
+    expect(await devices(agent, "POST", "/connections/revoke", { connectionId: "nope" })).toMatchObject(paused);
+    for (const path of ["/calendar/feed", "/calendar/feed/rotate", "/calendar/feed/revoke"]) {
+      expect(await devices(agent, "POST", path)).toMatchObject(paused);
+    }
+    expect((await devices(agent, "GET", "/devices")).status).toBe(200);
+    expect((await devices(cli, "POST", "/devices/pairing-code")).status).toBe(201);
+  });
+
   test("device management needs an API key; a key of a non-app user cannot pair", async () => {
     const anonymous = await fetch(`${helm().siteUrl}/devices`);
     expect(anonymous.status).toBe(401);
