@@ -520,8 +520,11 @@ that ([deploy.md](deploy.md#upgrading-to-030)). A new key is an `agent` key unle
 
 ```sh
 npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"macbook","kind":"cli"}'
-npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"claude-code"}'
+npx convex run apiKeys:create '{"userId":"<issuer>|owner","actor":"app","name":"claude-code","scope":"write"}'
 ```
+
+Give an agent a `write` key, as above: a key without a scope is `full`, and a `full` key also manages the
+account (devices, connections, the calendar feed, other keys), pairing a phone included.
 
 The app does the same with `app.createApiKey({ name, kind })`; `app.listApiKeys` returns each
 key's `kind`.
