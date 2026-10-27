@@ -350,9 +350,10 @@ export class Controller {
     this.changes = this.changes.then(async () => {
       try {
         const done = await runChange(effect, context);
-        this.say(done.text, "ok");
+        // The message comes with the refreshed screen, so a key pressed on seeing it acts on what it says.
         await this.refresh();
         if (done.select) this.select(done.select);
+        this.say(done.text, "ok");
       } catch (error) {
         const failure = error instanceof Throttled ? error : toCliError(error);
         this.say(failure instanceof Throttled ? failure.message : changeError(failure), "error");

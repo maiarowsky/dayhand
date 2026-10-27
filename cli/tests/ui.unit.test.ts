@@ -526,6 +526,35 @@ describe("controller", () => {
     ui.stop();
   });
 
+  test("a change's message shows only with the refreshed list, so the next key acts on what it says", async () => {
+    const waiting: (() => void)[] = [];
+    const { api, state } = fakeApi(view, {
+      // Today answers only when the test lets it, after the projects, as a slower read would.
+      today: () => new Promise((resolve) => waiting.push(() => resolve(state.view))),
+    });
+    const answerToday = async () => {
+      while (waiting.length === 0) await new Promise((resolve) => setTimeout(resolve, 1));
+      waiting.shift()!();
+    };
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    const first = ui.refresh();
+    await answerToday();
+    await first;
+    const stale: string[] = [];
+    ui.subscribe(() => {
+      const text = rowsText(ui.frame().rows);
+      if (text.includes("to the trash · u undoes") && text.includes("OVERDUE (1)")) stale.push(text);
+    });
+    ui.key("d");
+    state.view = { ...view, overdue: [] };
+    ui.key("y");
+    await answerToday();
+    await ui.idle();
+    expect(rowsText(ui.frame().rows)).toContain("to the trash · u undoes");
+    expect(stale).toEqual([]);
+    ui.stop();
+  });
+
   test("the cursor follows its task when a refresh moves it; a too small terminal says so", async () => {
     const { api, state } = fakeApi(view);
     const ui = new Controller({ api, view: "today", now: () => NOW, columns: 80, rows: 16 });
