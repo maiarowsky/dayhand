@@ -236,7 +236,8 @@ A full key manages keys for integrations:
 
 A key created this way has scope `read` (the default) or `write`, never `full`; it expires no
 later than the key that created it, and it works only while that key works. So a key can never
-outlive its parent's revocation, and an integration can never mint keys of its own.
+outlive its parent's revocation, and an integration can never mint keys of its own. Only the owner's
+key (`cli`) may create a `cli` key; an `agent` key asking for `"kind": "cli"` gets `403 forbidden`.
 `dayhand key list`, `dayhand key create` and `dayhand key revoke` use these routes.
 
 ## Import
