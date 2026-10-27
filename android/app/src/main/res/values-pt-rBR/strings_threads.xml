@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Threads: tasks labelled “wątek” that an assistant keeps (domain/Threads.kt). -->
+    <string name="threads_title">Tópicos</string>
+    <string name="threads_attention">Para você: %1$d</string>
+    <string name="threads_row_note">A confirmar: %1$d · Esperando você: %2$d</string>
+    <string name="thread_group_confirm">A confirmar</string>
+    <string name="thread_group_waiting">Esperando você</string>
+    <string name="thread_group_progress">Em andamento</string>
+    <string name="threads_empty">Nenhum tópico aberto. Um tópico é uma tarefa com a etiqueta “wątek”.</string>
+    <string name="thread_age_now">agora</string>
+    <string name="thread_age_minutes">%1$d min</string>
+    <string name="thread_age_hours">%1$d h</string>
+    <string name="thread_age_days">%1$d d</string>
+    <string name="thread_last_change">Última alteração: %1$s</string>
+    <string name="thread_field_state">Situação atual</string>
+    <string name="thread_field_done">O que foi feito</string>
+    <string name="thread_field_ask">O que precisamos de você</string>
+    <string name="thread_field_check">Como verificar</string>
+    <string name="thread_field_summary">Resumo</string>
+    <string name="thread_field_empty">Nada escrito</string>
+    <string name="thread_note">Nota</string>
+    <string name="thread_no_note">Sem nota</string>
+    <string name="thread_close">Entendi, fechar o tópico</string>
+    <string name="thread_close_title">Fechar este tópico?</string>
+    <string name="thread_close_body">“%1$s” será marcada como concluída. Feche só quando entender o que foi feito.</string>
+    <string name="thread_close_confirm">Fechar tópico</string>
+    <string name="thread_open_task">Abrir a tarefa</string>
+    <string name="thread_closed">Este tópico está fechado.</string>
+</resources>

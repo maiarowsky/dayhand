@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Threads: tasks labelled “wątek” that an assistant keeps (domain/Threads.kt). -->
+    <string name="threads_title">Threads</string>
+    <string name="threads_attention">For you: %1$d</string>
+    <string name="threads_row_note">To confirm: %1$d · Waiting for you: %2$d</string>
+    <string name="thread_group_confirm">To confirm</string>
+    <string name="thread_group_waiting">Waiting for you</string>
+    <string name="thread_group_progress">In progress</string>
+    <string name="threads_empty">No open threads. A thread is a task with the label “wątek”.</string>
+    <string name="thread_age_now">now</string>
+    <string name="thread_age_minutes">%1$d min</string>
+    <string name="thread_age_hours">%1$d h</string>
+    <string name="thread_age_days">%1$d d</string>
+    <string name="thread_last_change">Last change: %1$s</string>
+    <string name="thread_field_state">Current state</string>
+    <string name="thread_field_done">What was done</string>
+    <string name="thread_field_ask">What we need from you</string>
+    <string name="thread_field_check">How to check</string>
+    <string name="thread_field_summary">Summary</string>
+    <string name="thread_field_empty">Nothing written</string>
+    <string name="thread_note">Note</string>
+    <string name="thread_no_note">No note</string>
+    <string name="thread_close">Got it, close the thread</string>
+    <string name="thread_close_title">Close this thread?</string>
+    <string name="thread_close_body">“%1$s” will be marked done. Close it only when you understand what was done.</string>
+    <string name="thread_close_confirm">Close thread</string>
+    <string name="thread_open_task">Open the task</string>
+    <string name="thread_closed">This thread is closed.</string>
+</resources>

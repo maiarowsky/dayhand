@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Threads: tasks labelled “wątek” that an assistant keeps (domain/Threads.kt). -->
+    <string name="threads_title">Fils</string>
+    <string name="threads_attention">Pour vous : %1$d</string>
+    <string name="threads_row_note">À confirmer : %1$d · Vous attend : %2$d</string>
+    <string name="thread_group_confirm">À confirmer</string>
+    <string name="thread_group_waiting">Vous attend</string>
+    <string name="thread_group_progress">En cours</string>
+    <string name="threads_empty">Aucun fil ouvert. Un fil est une tâche avec l’étiquette « wątek ».</string>
+    <string name="thread_age_now">maintenant</string>
+    <string name="thread_age_minutes">%1$d min</string>
+    <string name="thread_age_hours">%1$d h</string>
+    <string name="thread_age_days">%1$d j</string>
+    <string name="thread_last_change">Dernière modification : %1$s</string>
+    <string name="thread_field_state">État actuel</string>
+    <string name="thread_field_done">Ce qui a été fait</string>
+    <string name="thread_field_ask">Ce qu’il nous faut de vous</string>
+    <string name="thread_field_check">Comment vérifier</string>
+    <string name="thread_field_summary">Résumé</string>
+    <string name="thread_field_empty">Rien d’écrit</string>
+    <string name="thread_note">Note</string>
+    <string name="thread_no_note">Aucune note</string>
+    <string name="thread_close">Compris, fermer le fil</string>
+    <string name="thread_close_title">Fermer ce fil ?</string>
+    <string name="thread_close_body">« %1$s » sera marquée comme faite. Fermez-le seulement quand vous comprenez ce qui a été fait.</string>
+    <string name="thread_close_confirm">Fermer le fil</string>
+    <string name="thread_open_task">Ouvrir la tâche</string>
+    <string name="thread_closed">Ce fil est fermé.</string>
+</resources>

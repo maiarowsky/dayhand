@@ -1,7 +1,7 @@
 # Dayhand for Android
 
 Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **calendar**
-(week and day), the **board**, **projects**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
+(week and day), the **board**, **projects** with **threads**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
 on the phone, has the **Settings** screen, connects to a server by **pairing** with a one-time
 code from `dayhand pair`, approves and disconnects **agent connections** such as the Claude app, and
 turns on the read-only **calendar address** for Google and Apple Calendar.
@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.12.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.13.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
@@ -103,6 +103,16 @@ from moved tasks; tasks already in a project stay where they are. Creating, edit
 reordering, deleting and converting a label require a server connection (also when unpaired).
 They execute on the server, not through the offline queue; without a connection the app says
 **Requires a connection to the server** and keeps the current project unchanged.
+
+**Threads** (`ui/threads/`, `domain/Threads.kt`): once a task carries the label `wątek`, a row at
+the top of Projects opens the threads an assistant keeps as ordinary tasks, titled `Wątek: <topic>`
+with a note in the lines `Stan teraz:`, `Co zrobiono:`, `Co od Ciebie:` and `Jak sprawdzić:`, and
+retitled `DO POTWIERDZENIA: <topic>` with a `Podsumowanie:` line when the work is done. Three groups,
+To confirm, Waiting for you (the `Co od Ciebie:` line is neither empty nor "nic…") and In progress, each
+latest change first; the header counts the first two. The details show the note in sections with
+links that open, or as it is when it has another format. **Got it, close the thread** asks once more,
+then completes the task through the ordinary outbox. The keys are matched in Polish in any app
+language; nothing about how the tasks are written changes.
 
 A project, No project or a label opens its task list: Overdue, Today, Later, No day and the fifty
 latest Done (collapsed). In a real project, **List / Board** switches to the existing board

@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Project
+import dev.helm.planner.domain.Threads
 import dev.helm.planner.domain.projectCounts
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmMenu
@@ -40,7 +41,7 @@ import dev.helm.planner.ui.theme.palette
 
 @Composable
 fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel: (String) -> Unit,
-                   onTrash: () -> Unit, onSettings: () -> Unit, bottomBar: @Composable () -> Unit = {}) {
+                   onTrash: () -> Unit, onSettings: () -> Unit, bottomBar: @Composable () -> Unit = {}, onThreads: (() -> Unit)? = null) {
     val context = LocalProjects.current
     var adding by rememberSaveable { mutableStateOf(false) }
     var menu by rememberSaveable { mutableStateOf(false) }
@@ -51,6 +52,9 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
     val active = state.projects.filter { it.selectable }
     val archive = state.projects.filter { it.archived }
     val labels = state.tasks.filter { it.isActive }.flatMap { it.labels }.distinct().sorted()
+    // Threads appear once a task carries the label, and stay while any is open or done on the phone.
+    val threads = Threads.groups(state.tasks)
+    val hasThreads = onThreads != null && state.tasks.any { !it.inTrash && Threads.isThread(it) }
     Scaffold(containerColor = palette.background, bottomBar = bottomBar, topBar = {
         LargeHeader(stringResource(R.string.projects_title)) {
             HeaderIconButton(Icons.Filled.Add, stringResource(R.string.project_new), { adding = true }, Modifier.testTag("projects-new"))
@@ -69,6 +73,11 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
             verticalArrangement = Arrangement.spacedBy(HelmDimens.sectionGap)) {
             if (context.failed) ListNote(stringResource(R.string.project_failed))
             if (ordering) TextAction(stringResource(R.string.project_reorder_done), { ordering = false })
+            if (hasThreads) ListGroup(null, listOf {
+                ListRow(stringResource(R.string.threads_title), "projects-threads", icon = LineIcon.List, value = threads.attention.toString(),
+                    note = stringResource(R.string.threads_row_note, threads.toConfirm.size, threads.waiting.size),
+                    valueColor = if (threads.attention > 0) palette.accent else palette.textMuted, onClick = { onThreads?.invoke() })
+            })
             ListGroup(null, active.map { project -> @Composable {
                 val counts = projectCounts(state.tasks.filter { it.projectId == project.localId }, state.today)
                 ListRow(project.name, "project-row-${project.localId}", value = counts.open.toString(),
