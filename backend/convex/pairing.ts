@@ -147,11 +147,11 @@ export const keyIdentity = (owner: KeyOwner) => ({
 export const unauthorized = () =>
   errorResponse(401, "invalid_token", "Missing, invalid or revoked API key", { "WWW-Authenticate": 'Bearer realm="dayhand"' });
 
-/** Domain errors as 400/404 with their message; anything else is rethrown. */
+/** Domain errors as 400/403/404 with their message; anything else is rethrown. */
 export function domainError(error: unknown) {
   if (!(error instanceof ConvexError)) throw error;
   const { code, message } = error.data as { code: string; message: string };
-  return errorResponse(code === "not_found" ? 404 : 400, code, message);
+  return errorResponse(code === "not_found" ? 404 : code === "forbidden" ? 403 : 400, code, message);
 }
 
 export const createCode = httpAction(async (ctx, request) => {

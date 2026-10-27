@@ -235,7 +235,8 @@ with `agents_paused`, including dry runs, approval requests, the account routes 
 API (keys, webhooks, import) and the account endpoints outside it (pairing codes, revoking devices
 and connections, the calendar feed); reads keep working, so an agent can still see what is going on and
 tell the user. Switching it off lets them change things again. The owner's own changes, from the
-app and from `cli` keys, are never refused.
+app and from `cli` keys, are never refused. Pairing a device is the owner's alone even while agents
+run: a paired phone acts as the app, so an `agent` key asking for a pairing code gets `forbidden`.
 
 Each **agent key** can also have a **policy**: for a tool that changes the plan, or for `"*"`
 (every such tool without its own rule), `allow` (the default), `ask` or `deny`

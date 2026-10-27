@@ -7,7 +7,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { internalAction, internalMutation, internalQuery, type MutationCtx } from "./_generated/server";
 import { appSubject } from "./lib/appToken";
-import { fail, identityOf, recordEvent } from "./lib/core";
+import { fail, identityOf, ownerOnly, recordEvent } from "./lib/core";
 import { serverEnv } from "./lib/env";
 import { formatPairingCode, newPairingCode, parsePairingCode, sha256Hex, timingSafeEqual } from "./lib/secrets";
 import { identityFields as identityArgs } from "./lib/validators";
@@ -32,6 +32,7 @@ export function checkDeviceName(name: string): string {
 export const createPairingCode = internalAction({
   args: { ...identityArgs, createdBy: v.optional(v.string()), ttlMs: v.optional(v.number()) },
   handler: async (ctx, input): Promise<{ code: string; expiresAt: number }> => {
+    ownerOnly(identityOf(input), "create pairing codes");
     const ttlMs = Math.min(Math.max(input.ttlMs ?? PAIRING_CODE_TTL_MS, 1), PAIRING_CODE_TTL_MS);
     // A new selector rarely collides with an active code; draw again if it does.
     for (let attempt = 0; attempt < 5; attempt++) {

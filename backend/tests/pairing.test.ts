@@ -26,11 +26,11 @@ async function post(path: string, body: unknown) {
   return { status: response.status, headers: response.headers, body: await response.json() };
 }
 
-/** An app user (issuer|subject) with a personal API key. */
+/** An app user (issuer|subject) with the owner's API key (cli). */
 async function owner() {
   const subject = randomUUID();
   const userId = `${helm().issuer}|${subject}`;
-  return { subject, userId, key: await createKey(userId, "cli") };
+  return { subject, userId, key: await createKey(userId, "cli", "cli") };
 }
 
 async function pairingCode(key: string): Promise<string> {
@@ -173,9 +173,17 @@ describe("phone pairing", () => {
     expect((await post("/auth/token", { deviceToken: paired.deviceToken })).status).toBe(200);
   });
 
+  test("an agent key cannot pair a phone, even with scope full and agents not paused; a cli key can", async () => {
+    const { userId, key: cli } = await owner();
+    const agent = await createKey(userId, "claude-code", "agent");
+    expect(await devices(agent, "POST", "/devices/pairing-code")).toMatchObject({ status: 403, body: { error: "forbidden" } });
+    expect((await devices(agent, "GET", "/devices")).status).toBe(200);
+    expect((await devices(cli, "POST", "/devices/pairing-code")).status).toBe(201);
+  });
+
   test("while agents are paused an agent key cannot pair a phone or change the account, a cli key can", async () => {
-    const { userId, key: agent } = await owner();
-    const cli = await createKey(userId, "terminal", "cli");
+    const { userId, key: cli } = await owner();
+    const agent = await createKey(userId, "claude-code", "agent");
     await admin().mutation(internal.ops.pauseAgents, { userId, actor: "app", paused: true });
     const paused = { status: 403, body: { error: "agents_paused" } };
     expect(await devices(agent, "POST", "/devices/pairing-code")).toMatchObject(paused);
@@ -194,8 +202,8 @@ describe("phone pairing", () => {
     const noKey = await fetch(`${helm().siteUrl}/devices/pairing-code`, { method: "POST" });
     expect(noKey.status).toBe(401);
 
-    const agentOnly = await createKey(`elsewhere|${randomUUID()}`);
-    const refused = await devices(agentOnly, "POST", "/devices/pairing-code");
+    const notAppUser = await createKey(`elsewhere|${randomUUID()}`, "terminal", "cli");
+    const refused = await devices(notAppUser, "POST", "/devices/pairing-code");
     expect(refused).toMatchObject({ status: 400, body: { error_description: expect.stringMatching(/cannot sign in to the app/) } });
   });
 });

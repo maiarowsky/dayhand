@@ -151,17 +151,17 @@ export class Controller {
     this.emit();
   }
 
-  /** What is on screen, again: the settings until they are known, the view, the open task. */
-  async refresh(): Promise<void> {
+  /** What is on screen, again: the settings until they are known, the view, the open task; `fresh` reads after any read already running. */
+  async refresh(fresh = false): Promise<void> {
     if (this.stopped || this.conn.state === "rejected") return;
     if (!this.timezone) {
       await this.load("settings", () => this.options.api.settings(), (s) => this.setZone(s.timezone));
       if (!this.timezone) return;
     }
-    const jobs = [this.loadView(this.ui.view), this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }))];
+    const jobs = [this.loadView(this.ui.view, fresh), this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }), fresh)];
     if (this.ui.detail) {
       const id = this.ui.detail.taskId;
-      jobs.push(this.load(`task:${id}`, () => this.options.api.task(id), (detail) => (this.data = { ...this.data, detail })));
+      jobs.push(this.load(`task:${id}`, () => this.options.api.task(id), (detail) => (this.data = { ...this.data, detail }), fresh));
     }
     await Promise.all(jobs);
   }
@@ -176,31 +176,31 @@ export class Controller {
     this.ui = { ...this.ui, weekStart: weekStart(today), cursor: { ...this.ui.cursor, weekDay: isoWeekday(today) - 1 } };
   }
 
-  private loadView(view: ViewName): Promise<void> {
+  private loadView(view: ViewName, fresh: boolean): Promise<void> {
     const { api } = this.options;
     switch (view) {
       case "today":
         return this.load("today", async () => {
           const [today, health] = await Promise.all([api.today(), api.health().catch(() => undefined)]);
           return { today, health };
-        }, (value) => (this.data = { ...this.data, ...value }));
+        }, (value) => (this.data = { ...this.data, ...value }), fresh);
       case "agents":
-        return this.load("agents", () => api.agents(), (agents) => (this.data = { ...this.data, agents }));
+        return this.load("agents", () => api.agents(), (agents) => (this.data = { ...this.data, agents }), fresh);
       case "board":
-        return this.load("board", () => api.board(), (board) => (this.data = { ...this.data, board }));
+        return this.load("board", () => api.board(), (board) => (this.data = { ...this.data, board }), fresh);
       case "week": {
         const start = this.ui.weekStart;
-        return this.load(`week:${start}`, () => api.week(start), (tasks) => (this.data = { ...this.data, week: { start, tasks } }));
+        return this.load(`week:${start}`, () => api.week(start), (tasks) => (this.data = { ...this.data, week: { start, tasks } }), fresh);
       }
       case "trash":
-        return this.load("trash", () => api.trash(), (trash) => (this.data = { ...this.data, trash }));
+        return this.load("trash", () => api.trash(), (trash) => (this.data = { ...this.data, trash }), fresh);
     }
   }
 
-  /** One read, never two of the same at once; the cursor stays on its task. */
-  private load<T>(key: string, get: () => Promise<T>, put: (value: T) => void): Promise<void> {
+  /** One read, never two of the same at once (a fresh one reads again after it); the cursor stays on its task. */
+  private load<T>(key: string, get: () => Promise<T>, put: (value: T) => void, fresh = false): Promise<void> {
     const running = this.inflight.get(key);
-    if (running) return running;
+    if (running) return fresh ? running.then(() => this.load(key, get, put)) : running;
     const job = (async () => {
       try {
         const value = await get();
@@ -351,7 +351,7 @@ export class Controller {
       try {
         const done = await runChange(effect, context);
         // The message comes with the refreshed screen, so a key pressed on seeing it acts on what it says.
-        await this.refresh();
+        await this.refresh(true);
         if (done.select) this.select(done.select);
         this.say(done.text, "ok");
       } catch (error) {

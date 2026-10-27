@@ -555,6 +555,42 @@ describe("controller", () => {
     ui.stop();
   });
 
+  test("a change's message waits for a read that started before the change, and then for a fresh read", async () => {
+    let holding = false;
+    let release: (() => void) | undefined;
+    const { api, state } = fakeApi(view, {
+      // A held read answers with the list as it was when it started, as a read before the change would.
+      today: () => {
+        const value = state.view;
+        if (!holding) return Promise.resolve(value);
+        holding = false;
+        return new Promise((resolve) => (release = () => resolve(value)));
+      },
+    });
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    await ui.refresh();
+    const stale: string[] = [];
+    ui.subscribe(() => {
+      const text = rowsText(ui.frame().rows);
+      if (text.includes("to the trash · u undoes") && text.includes("OVERDUE (1)")) stale.push(text);
+    });
+    ui.key("d");
+    holding = true;
+    const inflight = ui.refresh();
+    state.view = { ...view, overdue: [] };
+    ui.key("y");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(state.changes).toHaveLength(1);
+    release!();
+    await inflight;
+    await ui.idle();
+    const text = rowsText(ui.frame().rows);
+    expect(text).toContain("to the trash · u undoes");
+    expect(text).not.toContain("OVERDUE (1)");
+    expect(stale).toEqual([]);
+    ui.stop();
+  });
+
   test("the cursor follows its task when a refresh moves it; a too small terminal says so", async () => {
     const { api, state } = fakeApi(view);
     const ui = new Controller({ api, view: "today", now: () => NOW, columns: 80, rows: 16 });
