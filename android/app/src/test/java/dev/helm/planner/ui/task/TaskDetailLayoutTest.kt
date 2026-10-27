@@ -3,6 +3,9 @@ package dev.helm.planner.ui.task
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertCountEquals
@@ -73,6 +76,18 @@ class TaskDetailLayoutTest {
         val whole = compose.onNodeWithTag(TaskDetailTags.TITLE).getBoundsInRoot().let { it.bottom - it.top }
         assertTrue("unfolded title is $whole", whole > folded)
         compose.onNodeWithText("Show less").assertIsDisplayed()
+    }
+
+    @Test fun aTaskWithoutLabelsKeepsLabelsFoldedOutOfTheTopCard() {
+        show(task.copy(labels = emptyList()))
+        compose.onNode(hasText("Labels") and hasAnyAncestor(hasTestTag(TaskDetailTags.SUMMARY))).assertDoesNotExist()
+        compose.onNodeWithTag(TaskDetailTags.LABELS).assertDoesNotExist()
+        compose.onNodeWithText("Add label").assertDoesNotExist()
+        compose.onNodeWithText("No labels").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("${TaskDetailTags.LABELS_SECTION}-header").performScrollTo().performClick()
+        compose.onNode(hasText("Add label") and hasAnyAncestor(hasTestTag(TaskDetailTags.LABELS_SECTION)))
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test fun shortTitleHasNoUnfoldButton() {

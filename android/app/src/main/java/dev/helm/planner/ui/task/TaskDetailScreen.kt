@@ -79,6 +79,7 @@ object TaskDetailTags {
     const val SUMMARY = "detail-summary"
     const val SCHEDULE = "detail-schedule"
     const val LINKS_SECTION = "detail-links-section"
+    const val LABELS_SECTION = "detail-labels-section"
     const val NOTE = "detail-note"
     const val DUE = "detail-due"
     const val REPEAT = "detail-repeat"
@@ -126,7 +127,8 @@ fun TaskDetailScreen(state: TaskDetailUiState, actions: TaskDetailActions, modif
 
 /**
  * Top to bottom: the title (two lines, unfolded on request), one card with what is read most (status, due, project,
- * labels), the note, an agent's work, then folding sections for repeat and reminders, the checklist, links and history.
+ * and labels when the task has any), the note, an agent's work, then folding sections for repeat and reminders, the
+ * checklist, labels when there are none, links and history.
  */
 @Composable
 private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailActions) {
@@ -141,8 +143,11 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
         DueField(task, today, editable, actions)
         FieldDivider()
         ProjectField(task, editable)
-        FieldDivider()
-        LabelsField(task, state.knownLabels, editable, actions)
+        if (task.labels.isNotEmpty()) {
+            FieldDivider()
+            FieldLabel(stringResource(R.string.detail_labels))
+            LabelsField(task, state.knownLabels, editable, actions)
+        }
     }
     HelmCard { NoteSection(task, editable, actions) }
     AgentWorkSection(task, state.dependencies, System.currentTimeMillis(), state.timezone, editable, actions)
@@ -160,6 +165,16 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
         RemindersRow(task, state.defaultReminders, editable, actions)
     }
     ChecklistSection(task, editable, actions)
+    if (task.labels.isEmpty()) {
+        FoldingSection(
+            stringResource(R.string.detail_labels),
+            tag = TaskDetailTags.LABELS_SECTION,
+            initiallyExpanded = false,
+            summary = stringResource(R.string.no_labels),
+        ) {
+            LabelsField(task, state.knownLabels, editable, actions)
+        }
+    }
     LinksSection(task, editable, actions)
     HistorySection(state)
     if (editable) {
@@ -293,7 +308,7 @@ private fun DueField(task: Task, today: LocalDate, editable: Boolean, actions: T
     var pickingDay by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     val p = palette
-    val overdue = task.dueDate != null && task.status != TaskStatus.DONE && LocalDate.parse(task.dueDate) < today
+    val overdue = HelmDates.isOverdue(task, today.toString())
     // Name and day are read as one.
     Column(Modifier.semantics(mergeDescendants = true) {}.testTag(TaskDetailTags.DUE), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         FieldLabel(stringResource(R.string.detail_due))
@@ -392,7 +407,6 @@ private fun RepeatSection(task: Task, today: LocalDate, editable: Boolean, actio
 @Composable
 private fun LabelsField(task: Task, known: List<String>, editable: Boolean, actions: TaskDetailActions) {
     var adding by rememberSaveable { mutableStateOf(false) }
-    FieldLabel(stringResource(R.string.detail_labels))
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),

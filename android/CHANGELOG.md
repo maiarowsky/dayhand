@@ -19,8 +19,9 @@ called Helm until 0.9.0.
 ### Changed
 
 - Task details are easier to read on a phone: a two-line title with **Show the whole title**, one
-  card with status, due day, project and labels at the top, the note under it, and folded
-  sections for repeat and reminders, an empty checklist, links and history. Field names are
+  card with status, due day, project and the task's labels (when it has any) at the top, the note
+  under it, and folded sections for repeat and reminders, an empty checklist, labels when there
+  are none, links and history. Field names are
   smaller and muted, values larger; values and notes use the phone's sans-serif when the app font
   is monospaced. The chosen status is filled with the accent, and actions (pick a day, add a label,
   move to the trash) are filled pills with an icon whose text keeps 4.5:1 in all sixteen palettes.

@@ -162,9 +162,9 @@ trash.
 optional time, repeat, reminders, a checklist, labels, links (http/https only; no files in version 1)
 and the note. **Project** uses the shared picker to assign or clear the task's single project;
 labels remain free tags across projects. The title takes at most two lines (**Show the whole title**
-unfolds it); status, due day, project and labels share one card at the top, readable without
-scrolling on a 360 × 780 dp phone; the note follows; repeat and reminders, an empty checklist,
-links when there are none and the history are folded under headers that show their value. Field
+unfolds it); status, due day, project and the task's labels (when it has any) share one card at
+the top, readable without scrolling on a 360 × 780 dp phone; the note follows; repeat and
+reminders, an empty checklist, labels and links when there are none and the history are folded under headers that show their value. Field
 names are small and muted, values larger in the text colour, and values and notes use the phone's
 sans-serif when the app font is monospaced. The chosen status is filled with the accent; actions
 are filled pills with an icon.

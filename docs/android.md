@@ -107,9 +107,9 @@ Tap a task to open it. You can change its title, status, the now flag and its no
 optional time, the repeat, reminders, a checklist, labels and links (http and https only).
 
 The title shows two lines, with **Show the whole title** when it is longer. One card under it holds what
-you read most: the status, the due day (red once it has passed) with buttons to change it, the project and
-the labels. The note follows. **Repeat and reminders**, an empty checklist, links when there are none and
-**Change history** are folded, each with its current value in the header; tap a header to open it. Values
+you read most: the status, the due day (red once it has passed) with buttons to change it, the project and,
+when the task has any, its labels. The note follows. **Repeat and reminders**, an empty checklist, **Labels**
+and links when there are none (open **Labels** to add one) and **Change history** are folded, each with its current value in the header; tap a header to open it. Values
 and notes are set in the phone's own font even when the app font is the monospaced one.
 
 - **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on a day of
