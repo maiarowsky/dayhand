@@ -103,14 +103,20 @@ class TaskDetailScreenTest {
         compose.setContent { HelmTheme { TaskDetailScreen(ui, actions) } }
     }
 
+    /** Opens a folded section (repeat and reminders, an empty checklist, history). */
+    private fun unfold(tag: String) {
+        compose.onNodeWithTag("$tag-header").performScrollTo().performClick()
+    }
+
     @Test
     fun showsEveryFieldOfTheTask() {
         show()
         compose.onNodeWithTag(TaskDetailTags.TITLE).assertTextContains("Call the accountant").assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.DUE).assertTextContains(text(R.string.day_and_time, text(R.string.day_tomorrow), "09:30"))
-        compose.onNodeWithTag(TaskDetailTags.REPEAT).assertTextContains(context.resources.getQuantityString(R.plurals.repeat_days, 1, 1), substring = true)
-        compose.onNodeWithContentDescription(text(R.string.remove_label, "Dayhand")).assertIsDisplayed()
-        compose.onNodeWithText("Spec").assertHeightIsAtLeast(48.dp)
+        unfold(TaskDetailTags.SCHEDULE)
+        compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().assertTextContains(context.resources.getQuantityString(R.plurals.repeat_days, 1, 1), substring = true)
+        compose.onNodeWithContentDescription(text(R.string.remove_label, "Dayhand")).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Spec").performScrollTo().assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().assertTextContains("Ask about VAT", substring = true)
     }
 
@@ -211,6 +217,7 @@ class TaskDetailScreenTest {
         show(actions = actions)
         compose.onNodeWithTag(TaskDetailTags.status(TaskStatus.DOING)).assertHeightIsAtLeast(48.dp).performClick()
 
+        unfold(TaskDetailTags.SCHEDULE)
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.every(RepeatEvery.WEEK)).performClick()
         compose.onNodeWithTag(EditorTags.weekday(1)).assertHeightIsAtLeast(48.dp).performClick()
@@ -247,7 +254,7 @@ class TaskDetailScreenTest {
         show(task.copy(checklist = items), actions)
         compose.onNodeWithText(text(R.string.checklist_title_progress, text(R.string.detail_checklist), 1, 2), ignoreCase = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(ChecklistTags.check(0)).assertIsOn()
-        compose.onNodeWithTag(ChecklistTags.check(1)).assertIsOff().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag(ChecklistTags.check(1)).performScrollTo().assertIsOff().assertHeightIsAtLeast(48.dp).performClick()
 
         compose.onNodeWithTag(ChecklistTags.ADD).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.SAVE).assertIsNotEnabled()
@@ -269,8 +276,9 @@ class TaskDetailScreenTest {
     @Test
     fun aTaskWithoutAChecklistOffersToStartOne() {
         show(task.copy(checklist = emptyList()))
-        compose.onNodeWithText(text(R.string.checklist_empty)).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag(ChecklistTags.ADD).assertIsDisplayed()
+        compose.onNodeWithText(text(R.string.checklist_empty), substring = true).performScrollTo().assertIsDisplayed()
+        unfold(ChecklistTags.FOLD)
+        compose.onNodeWithTag(ChecklistTags.ADD).performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -278,6 +286,7 @@ class TaskDetailScreenTest {
         val actions = Recorder()
         // 30 Oct 2026 is the last Friday of October.
         show(task.copy(dueDate = "2026-10-30", repeat = null), actions)
+        unfold(TaskDetailTags.SCHEDULE)
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.every(RepeatEvery.MONTH)).performClick()
         compose.onNodeWithTag(EditorTags.month("last")).assertIsDisplayed()
@@ -297,6 +306,7 @@ class TaskDetailScreenTest {
     fun repeatSummaryShowsTheMonthPatternAndTheEnd() {
         val rule = RepeatRule(RepeatEvery.MONTH, monthDay = -1, until = "2026-12-31")
         show(task.copy(repeat = rule))
+        unfold(TaskDetailTags.SCHEDULE)
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo()
             .assertTextContains(text(R.string.repeat_label_last_day), substring = true)
     }
@@ -305,6 +315,7 @@ class TaskDetailScreenTest {
     fun remindersFollowSettingsUntilTheTaskGetsItsOwn() {
         val actions = Recorder()
         show(actions = actions)
+        unfold(TaskDetailTags.SCHEDULE)
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo()
             .assertTextContains(text(R.string.reminders_default_value, ""), substring = true)
             .performClick()
@@ -327,12 +338,14 @@ class TaskDetailScreenTest {
     @Test
     fun ownRemindersAreListedOnTheRow() {
         show(task.copy(reminders = listOf(TaskReminder.at("18:00", 1))))
+        unfold(TaskDetailTags.SCHEDULE)
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().assertTextContains("18:00", substring = true)
     }
 
     @Test
     fun historySaysWhoChangedWhat() {
         show(pending = 1)
+        unfold(TaskDetailTags.HISTORY)
         compose.onNodeWithTag(TaskDetailTags.HISTORY).performScrollTo()
         compose.onNodeWithText(text(R.string.actor_agent)).assertExists()
         compose.onNodeWithText(text(R.string.actor_app)).assertExists()
@@ -343,6 +356,7 @@ class TaskDetailScreenTest {
     @Test
     fun offlineHistoryIsMarkedAsTheLastCopy() {
         show(state = HistoryState.CACHED)
+        unfold(TaskDetailTags.HISTORY)
         compose.onNodeWithText(text(R.string.history_cached)).performScrollTo().assertIsDisplayed()
     }
 

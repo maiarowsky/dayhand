@@ -45,7 +45,8 @@ dayhand project add Home --from-label home --dry-run
 dayhand project add Home --from-label home
 ```
 
-On Android, long-press the label under **Projects** and choose **Make a project from label**. Agents
+On Android, open **Projects → ⋮ → Labels**, long-press the label and choose **Make a project from
+label**. Agents
 use `add_project` with `fromLabel`. The Mac app has no such command yet.
 
 - Every task with exactly that label and no project moves into the new project, whether it is open, done,

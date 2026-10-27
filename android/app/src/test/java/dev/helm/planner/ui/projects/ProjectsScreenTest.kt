@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -19,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
 import dev.helm.planner.data.local.Project
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.domain.HelmDates
@@ -61,17 +63,40 @@ class ProjectsScreenTest {
         }
     }
 
-    @Test fun projectsListHasCountsNoProjectLabelsArchiveAndTrash() {
+    @Test fun projectsListHasCountsNoProjectArchiveAndTrashButNoLabels() {
         var opened: String? = "none"
         compose.setContent { Host { ProjectsScreen(ProjectsUiState(projects, listOf(task, task.copy(localId = "loose", projectId = null)), "2026-10-23", "UTC", 0),
             onProject = { opened = it }, onLabel = {}, onTrash = {}, onSettings = {}) } }
         compose.onNodeWithTag("project-row-home").assertTextContains("1", substring = true).performClick()
         assertEquals("home", opened)
         compose.onNodeWithTag("project-row-none").assertTextContains("1", substring = true)
-        compose.onNodeWithTag("project-label-phone").assertIsDisplayed()
+        compose.onNodeWithTag("project-label-phone").assertDoesNotExist()
+        compose.onNodeWithTag("projects-empty").assertDoesNotExist()
         compose.onNodeWithTag("projects-archive").performScrollTo().performClick()
         compose.onNodeWithTag("project-archived-old").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("projects-trash").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun withoutProjectsTheScreenSaysSoAndOffersTheFirstOne() {
+        val loose = task.copy(projectId = null)
+        compose.setContent { Host { ProjectsScreen(ProjectsUiState(emptyList(), listOf(loose), "2026-10-23", "UTC", 0),
+            onProject = {}, onLabel = {}, onTrash = {}, onSettings = {}) } }
+        compose.onNodeWithTag("project-row-none").assertIsDisplayed()
+        compose.onNodeWithText("You have no projects yet. A project groups tasks, for example Home or Work.").assertIsDisplayed()
+        compose.onNodeWithTag("projects-empty-new").assertIsDisplayed().performClick()
+        compose.onNodeWithTag("project-name").assertExists()
+        compose.onAllNodesWithText("Labels", substring = true).assertCountEquals(0)
+    }
+
+    @Test fun labelsSheetFromTheMenuFiltersAndOffersConversion() {
+        var label: String? = null
+        compose.setContent { Host { ProjectsScreen(ProjectsUiState(emptyList(), listOf(task.copy(projectId = null)), "2026-10-23", "UTC", 0),
+            onProject = {}, onLabel = { label = it }, onTrash = {}, onSettings = {}) } }
+        compose.onNodeWithTag("projects-menu").performClick()
+        compose.onNodeWithTag("projects-labels").performClick()
+        compose.onNodeWithTag("labels-sheet").assertExists()
+        compose.onNodeWithTag("project-label-phone").assertTextContains("# phone").performClick()
+        assertEquals("phone", label)
     }
 
     @Test fun projectSwitchesBetweenListAndFilteredBoardAndFabKeepsProject() {
@@ -183,6 +208,31 @@ class ProjectsScreenTest {
         } }
         compose.onNodeWithTag("project-picker-new").performClick()
         compose.onNodeWithText("Requires a connection to the server").assertExists()
+    }
+
+    @Test fun pickerWithoutProjectsExplainsAndAssignsTheFirstOne() {
+        var made: Project? = null
+        val actions = object : ProjectActions {
+            override fun create(draft: ProjectDraft, onCreated: (Project) -> Unit) { onCreated(project.copy(localId = "first", name = draft.name).also { made = it }) }
+        }
+        compose.setContent { CompositionLocalProvider(LocalProjects provides ProjectUiContext(emptyList(), actions)) {
+            HelmTheme { ProjectPickerSheet(null, {}, { picked = it }) }
+        } }
+        compose.onNodeWithTag("project-pick-none").assertIsDisplayed()
+        compose.onNodeWithText("You have no projects yet. Create the first one and the task will be assigned to it.").assertIsDisplayed()
+        compose.onNodeWithTag("project-picker-new").assertHeightIsAtLeast(56.dp).performClick()
+        compose.onNodeWithTag("project-picker-name").performTextInput("Work")
+        compose.onNodeWithTag("project-picker-save").performClick()
+        assertEquals("Work", made?.name)
+        assertEquals("first", picked)
+    }
+
+    @Test fun pickerWithProjectsHasNoEmptyNote() {
+        compose.setContent { CompositionLocalProvider(LocalProjects provides ProjectUiContext(projects)) {
+            HelmTheme { ProjectPickerSheet(null, {}, {}) }
+        } }
+        compose.onNodeWithTag("project-picker-empty").assertDoesNotExist()
+        compose.onNodeWithTag("project-picker-new").assertHeightIsAtLeast(48.dp)
     }
 
     @Test fun pickerCreatesAProjectInPlace() {

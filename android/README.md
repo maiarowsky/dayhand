@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.13.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.13.2 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
@@ -91,14 +91,15 @@ report, and without a server it is not shown.
 Tapping a task opens its details. The bar at the bottom switches between Today (where the app
 opens), the calendar, the board and **Projects**.
 
-**Projects**: a flat, manually ordered list with open and overdue counts, **No project**, labels,
-**Archived** and **Trash**. A project has a unique name (1–50 characters, case-insensitive, including
+**Projects**: a flat, manually ordered list with open and overdue counts, **No project**,
+**Archived** and **Trash**; with no project yet, a sentence and a **New project** button under No
+project. Labels are not in this list (they are not projects): **⋮ → Labels** lists them. A project has a unique name (1–50 characters, case-insensitive, including
 archived projects; `none` is reserved), one of twelve named colours, an optional single emoji and
 a note. Add with **+**; long-press a project to edit, archive or delete it. **Set order** exposes drag
 handles and Move up/down buttons and screen-reader actions. Archiving optionally archives the open
 tasks too; otherwise its tasks stay in Today, Calendar and Board with a neutral marker. Deleting
 keeps every task, including those in the trash, and asks for a destination (another project or No
-project). Long-press a label for **Make a project from label**, optionally removing that label only
+project). Long-press a label in **⋮ → Labels** for **Make a project from label**, optionally removing that label only
 from moved tasks; tasks already in a project stay where they are. Creating, editing, archiving,
 reordering, deleting and converting a label require a server connection (also when unpaired).
 They execute on the server, not through the offline queue; without a connection the app says
@@ -110,6 +111,8 @@ filtered to that project; labels and No project offer only the list. A project's
 it in quick add; archived projects and unpaired demo projects cannot receive new tasks.
 The same project picker (with search above eight active projects and New project in place) is in
 quick add's More options, task details and the menus on Today, Board and the calendar's day sheet.
+With no project to offer it says so and makes **New project** a full button; the new project is
+assigned at once.
 Project dots meet 3:1 on the surfaces of every palette; the name remains readable text, never
 colour alone. Deploy backend **0.13.2 or later before Android 0.12.0**: it confirms offline
 repeat restoration without opening an archived project.
@@ -158,7 +161,13 @@ trash.
 **Task details**: title, status (and "Work on it now" with the resume note), due day with an
 optional time, repeat, reminders, a checklist, labels, links (http/https only; no files in version 1)
 and the note. **Project** uses the shared picker to assign or clear the task's single project;
-labels remain free tags across projects.
+labels remain free tags across projects. The title takes at most two lines (**Show the whole title**
+unfolds it); status, due day, project and the task's labels (when it has any) share one card at
+the top, readable without scrolling on a 360 × 780 dp phone; the note follows; repeat and
+reminders, an empty checklist, labels and links when there are none and the history are folded under headers that show their value. Field
+names are small and muted, values larger in the text colour, and values and notes use the phone's
+sans-serif when the app font is monospaced. The chosen status is filled with the accent; actions
+are filled pills with an icon.
 Since 0.9.1 it also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
 completed with, read-only (backend 0.10.0, [agent-work.md](../docs/agent-work.md)). The owner's own
 changes always go through. Since 0.11.0 the **Agent** card shows "agent: \<name\> works until

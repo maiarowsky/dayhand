@@ -79,10 +79,11 @@ opens the trash.
 
 ## Projects
 
-The **Projects** tab lists your projects in your order, each with its colour, its emoji and the number of
-open and overdue tasks, then **No project**, your labels, **Archived** and **Trash**. Tap one for its
-tasks: overdue, today, later, without a day and the latest done. A project also has **List / Board**, and
-its **+** adds a task to it.
+The **Projects** tab lists only projects: yours in your order, each with its colour, its emoji and the
+number of open and overdue tasks, then **No project**, **Archived** and **Trash**. Without any project
+yet, a sentence under **No project** says so, with a **New project** button. Tap a project for its tasks:
+overdue, today, later, without a day and the latest done. A project also has **List / Board**, and its
+**+** adds a task to it.
 
 - **+** at the top makes a project: a name, one of twelve colours, an optional emoji and a note on what
   it is about. Long-press a project to edit, archive or delete it; **Set order** shows handles to drag
@@ -90,8 +91,11 @@ its **+** adds a task to it.
 - **Archive** keeps the project's tasks where they are, in Today, the calendar and the board; a switch
   archives its open tasks too. **Delete** asks where its tasks go, to another project or to No project;
   no task is deleted.
-- Long-press a label for **Make a project from label**: its tasks without a project move into the new
-  project, and you choose whether the label comes off them.
+- Your labels are under **⋮ → Labels**: tap one for its tasks, or long-press it for **Make a project from
+  label**: its tasks without a project move into the new project, and you choose whether the label comes
+  off them.
+- The project picker (task details, quick add, a task's menu) lists the projects you can assign. With
+  none yet, it says so and offers **New project**; the project you make there is assigned at once.
 - Managing projects needs your server: offline, or without a server, the app says **Requires a connection
   to the server** and changes nothing. Putting a task into a project works offline.
 
@@ -102,6 +106,12 @@ The rules, and how projects differ from labels: [Projects and labels](projects.m
 Tap a task to open it. You can change its title, status, the now flag and its note, the day with an
 optional time, the repeat, reminders, a checklist, labels and links (http and https only).
 
+The title shows two lines, with **Show the whole title** when it is longer. One card under it holds what
+you read most: the status, the due day (red once it has passed) with buttons to change it, the project and,
+when the task has any, its labels. The note follows. **Repeat and reminders**, an empty checklist, **Labels**
+and links when there are none (open **Labels** to add one) and **Change history** are folded, each with its current value in the header; tap a header to open it. Values
+and notes are set in the phone's own font even when the app font is the monospaced one.
+
 - **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on a day of
   the month, the last day, or an nth weekday ("the 2nd Tuesday", "the last Friday"); counted from the
   due date or from the day you complete it; ending never, on a day or after a number of times. A day
@@ -110,7 +120,7 @@ optional time, the repeat, reminders, a checklist, labels and links (http and ht
   a repeating task starts with every item unticked.
 - **Reminders**: the defaults from Settings, none, or the task's own: minutes before the due time, or
   a time on the due day or days before (at most five).
-- **Labels and projects**: labels are free tags; **Project** picks the task's one project, or none
+- **Project** picks the task's one project, or none; **Labels** are free tags
   ([Projects and labels](projects.md)).
 - **Move to trash** keeps the task for 30 days. A task in the trash is read only until you restore it.
 - **Change history** lists who changed what, newest first: you in the app, you with `dayhand`, or an

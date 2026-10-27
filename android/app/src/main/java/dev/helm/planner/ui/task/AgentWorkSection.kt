@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,7 +25,6 @@ import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.AgentWork.DependencyState
 import dev.helm.planner.ui.components.CardSection
 import dev.helm.planner.ui.components.HelmDialog
-import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
@@ -110,11 +111,11 @@ private fun ClaimRow(task: Task, claim: AgentWork.Claim, editable: Boolean, acti
         modifier = Modifier.testTag(AgentWorkTags.CLAIM),
     )
     if (editable) {
-        SecondaryButton(
+        DetailAction(
             stringResource(R.string.release_claim),
-            onClick = { confirming = true },
-            color = palette.accent,
-            modifier = Modifier.testTag(AgentWorkTags.RELEASE),
+            { confirming = true },
+            Icons.Filled.Close,
+            Modifier.testTag(AgentWorkTags.RELEASE),
         )
     }
     if (confirming) {

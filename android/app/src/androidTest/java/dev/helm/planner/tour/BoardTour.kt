@@ -114,8 +114,10 @@ class BoardTour {
     fun details() {
         show { TaskDetailScreen(detail(detailTask), object : TaskDetailActions {}) }
         shot("12-details")
+        compose.onNodeWithTag("${TaskDetailTags.HISTORY}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.TRASH).performScrollTo()
         shot("13-details-history")
+        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         shot("14-dialog-repeat")
     }
@@ -126,6 +128,7 @@ class BoardTour {
         show { TaskDetailScreen(detail(monthly), object : TaskDetailActions {}) }
         compose.onNodeWithTag(ChecklistTags.SECTION).performScrollTo()
         shot("17-details-checklist")
+        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         shot("18-dialog-repeat-month")
         compose.onNodeWithTag(EditorTags.END_COUNT).performScrollTo()
@@ -135,6 +138,7 @@ class BoardTour {
     @Test
     fun detailsReminders() {
         show { TaskDetailScreen(detail(detailTask), object : TaskDetailActions {}) }
+        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().performClick()
         shot("20-dialog-reminders")
     }

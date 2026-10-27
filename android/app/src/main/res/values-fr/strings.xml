@@ -99,7 +99,15 @@
     <string name="detail_due">Échéance</string>
     <string name="detail_no_due">Sans échéance</string>
     <string name="detail_repeat">Répétition</string>
-    <string name="detail_labels">Étiquettes et projets</string>
+    <string name="detail_labels">Étiquettes</string>
+    <string name="project_picker_empty">Vous n\'avez pas encore de projet. Créez le premier, la tâche y sera rattachée.</string>
+    <string name="projects_empty">Vous n\'avez pas encore de projet. Un projet regroupe des tâches, par exemple Maison ou Travail.</string>
+    <string name="labels_note">Les étiquettes sont des marques libres sur les tâches, indépendantes des projets. Touchez-en une pour voir ses tâches, maintenez-la pour en faire un projet.</string>
+    <string name="detail_repeat_reminders">Répétition et rappels</string>
+    <string name="title_show_all">Afficher tout le titre</string>
+    <string name="title_show_less">Réduire</string>
+    <string name="section_expanded">Déplié</string>
+    <string name="section_collapsed">Replié</string>
     <string name="detail_links">Liens</string>
     <string name="detail_history">Historique des modifications</string>
     <string name="detail_archived">Archivée. Restaurez-la pour la revoir dans Aujourd\'hui et sur le tableau.</string>

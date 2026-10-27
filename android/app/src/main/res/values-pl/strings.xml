@@ -102,7 +102,15 @@
     <string name="detail_due">Termin</string>
     <string name="detail_no_due">Bez terminu</string>
     <string name="detail_repeat">Powtarzanie</string>
-    <string name="detail_labels">Etykiety i projekty</string>
+    <string name="detail_labels">Etykiety</string>
+    <string name="project_picker_empty">Nie masz jeszcze projektów. Utwórz pierwszy, a zadanie zostanie do niego przypisane.</string>
+    <string name="projects_empty">Nie masz jeszcze projektów. Projekt grupuje zadania, na przykład Dom albo Praca.</string>
+    <string name="labels_note">Etykiety to dowolne znaczniki zadań, niezależne od projektów. Dotknij etykiety, żeby zobaczyć jej zadania, przytrzymaj ją, żeby zrobić z niej projekt.</string>
+    <string name="detail_repeat_reminders">Powtarzanie i przypomnienia</string>
+    <string name="title_show_all">Pokaż cały tytuł</string>
+    <string name="title_show_less">Zwiń</string>
+    <string name="section_expanded">Rozwinięte</string>
+    <string name="section_collapsed">Zwinięte</string>
     <string name="detail_links">Linki</string>
     <string name="detail_history">Historia zmian</string>
     <string name="detail_archived">Zarchiwizowane. Przywróć, żeby znów było na Dzisiaj i na tablicy.</string>

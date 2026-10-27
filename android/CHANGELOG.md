@@ -3,6 +3,29 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.13.2 (unreleased)
+
+### Fixed
+
+- The project picker on an account without projects showed only **No project** and a plain
+  **New project** text, which read as if an existing task could not be put into a project. It now
+  says there are no projects yet, and **New project** is a full button; the project made there is
+  assigned to the task at once (task details, quick add and the task menus share the picker).
+- **Projects** mixed labels into the list under "Labels and projects", so labels looked like
+  projects. The tab now lists only projects, with a sentence and **New project** when there are
+  none; labels moved to **⋮ → Labels** (filtering by a label and making a project from it work as
+  before). The details section is called **Labels**.
+
+### Changed
+
+- Task details are easier to read on a phone: a two-line title with **Show the whole title**, one
+  card with status, due day, project and the task's labels (when it has any) at the top, the note
+  under it, and folded sections for repeat and reminders, an empty checklist, labels when there
+  are none, links and history. Field names are
+  smaller and muted, values larger; values and notes use the phone's sans-serif when the app font
+  is monospaced. The chosen status is filled with the accent, and actions (pick a day, add a label,
+  move to the trash) are filled pills with an icon whose text keeps 4.5:1 in all sixteen palettes.
+
 ## 0.13.1 (unreleased)
 
 ### Removed

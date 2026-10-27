@@ -32,8 +32,6 @@ import dev.helm.planner.R
 import dev.helm.planner.data.local.ChecklistItem
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.domain.TaskRules
-import dev.helm.planner.ui.components.CardSection
-import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.components.helmCheckboxColors
 import dev.helm.planner.ui.theme.HelmDimens
@@ -42,6 +40,7 @@ import dev.helm.planner.ui.theme.palette
 
 object ChecklistTags {
     const val SECTION = "detail-checklist"
+    const val FOLD = "detail-checklist-section"
     const val ADD = "detail-checklist-add"
     fun check(index: Int) = "detail-checklist-check-$index"
     fun item(index: Int) = "detail-checklist-item-$index"
@@ -49,7 +48,7 @@ object ChecklistTags {
 
 /**
  * The checklist: one row per item with its checkbox, in order. Tapping the box ticks the item; tapping its text opens
- * it to rename, move or remove. "2 of 5 done" sits in the section title.
+ * it to rename, move or remove. "2 of 5 done" sits in the section title; the section is folded while it is empty.
  */
 @Composable
 internal fun ChecklistSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
@@ -61,19 +60,23 @@ internal fun ChecklistSection(task: Task, editable: Boolean, actions: TaskDetail
     } else {
         stringResource(R.string.checklist_title_progress, stringResource(R.string.detail_checklist), items.count { it.done }, items.size)
     }
-    CardSection(title) {
+    FoldingSection(
+        title,
+        tag = ChecklistTags.FOLD,
+        initiallyExpanded = items.isNotEmpty(),
+        summary = if (items.isEmpty()) stringResource(R.string.checklist_empty) else null,
+    ) {
         Column(Modifier.testTag(ChecklistTags.SECTION)) {
             items.forEachIndexed { index, item ->
                 ChecklistRow(index, item, editable, onToggle = { actions.toggleItem(task.localId, item.id) }, onOpen = { editing = item.id })
             }
             if (items.isEmpty()) Placeholder(stringResource(R.string.checklist_empty))
             if (editable && items.size < TaskRules.MAX_CHECKLIST) {
-                SecondaryButton(
+                DetailAction(
                     stringResource(R.string.checklist_add),
-                    onClick = { adding = true },
-                    color = palette.accent,
-                    icon = Icons.Filled.Add,
-                    modifier = Modifier
+                    { adding = true },
+                    Icons.Filled.Add,
+                    Modifier
                         .padding(top = 8.dp)
                         .testTag(ChecklistTags.ADD),
                 )
@@ -125,7 +128,7 @@ private fun ChecklistRow(index: Int, item: ChecklistItem, editable: Boolean, onT
         }
         Text(
             item.title,
-            style = helmType.body,
+            style = helmType.valueSmall,
             color = if (item.done) p.textMuted else p.text,
             textDecoration = if (item.done) TextDecoration.LineThrough else null,
             modifier = Modifier

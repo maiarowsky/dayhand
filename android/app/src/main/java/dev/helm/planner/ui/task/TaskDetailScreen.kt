@@ -21,11 +21,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,7 +41,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
@@ -48,16 +53,14 @@ import dev.helm.planner.ui.common.dayLabel
 import dev.helm.planner.ui.common.dueLabel
 import dev.helm.planner.ui.common.repeatLabel
 import dev.helm.planner.ui.common.statusLabel
-import dev.helm.planner.ui.components.ActionChip
-import dev.helm.planner.ui.components.CardSection
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmCard
-import dev.helm.planner.ui.components.HelmChip
 import dev.helm.planner.ui.components.PrimaryButton
 import dev.helm.planner.ui.components.ScreenHeader
-import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.components.SwitchRow
+import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.projects.LocalProjects
+import dev.helm.planner.ui.projects.ProjectMark
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
@@ -72,6 +75,11 @@ import java.time.temporal.ChronoUnit
 
 object TaskDetailTags {
     const val TITLE = "detail-title"
+    const val TITLE_MORE = "detail-title-more"
+    const val SUMMARY = "detail-summary"
+    const val SCHEDULE = "detail-schedule"
+    const val LINKS_SECTION = "detail-links-section"
+    const val LABELS_SECTION = "detail-labels-section"
     const val NOTE = "detail-note"
     const val DUE = "detail-due"
     const val REPEAT = "detail-repeat"
@@ -117,6 +125,11 @@ fun TaskDetailScreen(state: TaskDetailUiState, actions: TaskDetailActions, modif
     }
 }
 
+/**
+ * Top to bottom: the title (two lines, unfolded on request), one card with what is read most (status, due, project,
+ * and labels when the task has any), the note, an agent's work, then folding sections for repeat and reminders, the
+ * checklist, labels when there are none, links and history.
+ */
 @Composable
 private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailActions) {
     val task = state.task
@@ -124,34 +137,55 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
     val editable = !task.inTrash
     if (task.inTrash || task.archivedAt != null) RestoreBanner(task, today, state.timezone, actions)
     TitleSection(task, editable, actions)
-    StatusSection(task, editable, actions)
+    HelmCard(Modifier.testTag(TaskDetailTags.SUMMARY), contentPadding = 16.dp) {
+        StatusField(task, editable, actions)
+        FieldDivider()
+        DueField(task, today, editable, actions)
+        FieldDivider()
+        ProjectField(task, editable)
+        if (task.labels.isNotEmpty()) {
+            FieldDivider()
+            FieldLabel(stringResource(R.string.detail_labels))
+            LabelsField(task, state.knownLabels, editable, actions)
+        }
+    }
+    HelmCard { NoteSection(task, editable, actions) }
     AgentWorkSection(task, state.dependencies, System.currentTimeMillis(), state.timezone, editable, actions)
-    CardSection(stringResource(R.string.detail_due)) {
-        DueSection(task, today, editable, actions)
+    FoldingSection(
+        stringResource(R.string.detail_repeat_reminders),
+        tag = TaskDetailTags.SCHEDULE,
+        initiallyExpanded = false,
+        summary = listOf(
+            task.repeat?.let { repeatLabel(it) } ?: stringResource(R.string.repeat_none),
+            remindersSummary(task.reminders, state.defaultReminders),
+        ).joinToString(" · "),
+    ) {
         RepeatSection(task, today, editable, actions)
+        FieldDivider()
         RemindersRow(task, state.defaultReminders, editable, actions)
     }
-    val projects = LocalProjects.current
-    CardSection(stringResource(R.string.project_label)) {
-        ValueRow(stringResource(R.string.project_label), projects.projects.firstOrNull { it.localId == task.projectId }?.name
-            ?: stringResource(R.string.project_no_project), placeholder = task.projectId == null,
-            editLabel = stringResource(R.string.project_move), enabled = editable, onClick = { projects.pickTask(task) },
-            modifier = Modifier.testTag("detail-project"))
-    }
     ChecklistSection(task, editable, actions)
-    LabelsSection(task, state.knownLabels, editable, actions)
+    if (task.labels.isEmpty()) {
+        FoldingSection(
+            stringResource(R.string.detail_labels),
+            tag = TaskDetailTags.LABELS_SECTION,
+            initiallyExpanded = false,
+            summary = stringResource(R.string.no_labels),
+        ) {
+            LabelsField(task, state.knownLabels, editable, actions)
+        }
+    }
     LinksSection(task, editable, actions)
-    HelmCard { NoteSection(task, editable, actions) }
     HistorySection(state)
     if (editable) {
-        SecondaryButton(
+        DetailAction(
             stringResource(R.string.move_to_trash),
-            onClick = { actions.moveToTrash(task.localId) },
-            color = palette.danger,
-            icon = Icons.Filled.Delete,
-            modifier = Modifier
+            { actions.moveToTrash(task.localId) },
+            Icons.Filled.Delete,
+            Modifier
                 .padding(top = 12.dp)
                 .testTag(TaskDetailTags.TRASH),
+            danger = true,
         )
     }
 }
@@ -175,21 +209,37 @@ private fun RestoreBanner(task: Task, today: LocalDate, timezone: String, action
     }
 }
 
+/** The task's title in at most two lines; longer ones end in "…" with a button to show it whole. Tap it to rename. */
 @Composable
 private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
-    Text(
-        task.title,
-        style = helmType.screenTitle,
-        color = palette.text,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = HelmDimens.touchTarget)
-            .clip(HelmShapes.field)
-            .clickable(enabled = editable, onClickLabel = stringResource(R.string.edit_title)) { editing = true }
-            .padding(horizontal = 4.dp, vertical = 8.dp)
-            .testTag(TaskDetailTags.TITLE),
-    )
+    var whole by rememberSaveable { mutableStateOf(false) }
+    var cut by remember { mutableStateOf(false) }
+    Column {
+        Text(
+            task.title,
+            style = helmType.title.copy(fontSize = 20.sp, lineHeight = 26.sp),
+            color = palette.text,
+            maxLines = if (whole) Int.MAX_VALUE else TITLE_LINES,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { if (!whole) cut = it.hasVisualOverflow },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = HelmDimens.touchTarget)
+                .clip(HelmShapes.field)
+                .clickable(enabled = editable, onClickLabel = stringResource(R.string.edit_title)) { editing = true }
+                .padding(horizontal = 4.dp, vertical = 8.dp)
+                .semantics { heading() }
+                .testTag(TaskDetailTags.TITLE),
+        )
+        if (cut || whole) {
+            TextAction(
+                stringResource(if (whole) R.string.title_show_less else R.string.title_show_all),
+                { whole = !whole },
+                modifier = Modifier.testTag(TaskDetailTags.TITLE_MORE),
+            )
+        }
+    }
     if (editing) {
         TextEditDialog(
             title = stringResource(R.string.edit_title),
@@ -206,31 +256,26 @@ private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActio
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StatusSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
-    CardSection(stringResource(R.string.detail_status)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TaskStatus.entries.forEach { status ->
-                HelmChip(
-                    statusLabel(status),
-                    selected = task.status == status,
-                    onClick = { actions.move(task.localId, status) },
-                    enabled = editable,
-                    modifier = Modifier.testTag(TaskDetailTags.status(status)),
-                )
-            }
-        }
-        if (task.status != TaskStatus.DONE) {
-            SwitchRow(
-                stringResource(R.string.set_now),
-                checked = task.isNow,
-                onChange = { on -> if (on) actions.setNow(task.localId) else actions.clearNow() },
-                enabled = editable,
-            )
-        }
-        if (task.isNow) ResumeRow(task, editable, actions)
+private fun StatusField(task: Task, editable: Boolean, actions: TaskDetailActions) {
+    FieldLabel(stringResource(R.string.detail_status))
+    SegmentedChoice(
+        TaskStatus.entries,
+        task.status,
+        label = { statusLabel(it) },
+        tag = TaskDetailTags::status,
+        enabled = editable,
+        onSelect = { actions.move(task.localId, it) },
+    )
+    if (task.status != TaskStatus.DONE) {
+        SwitchRow(
+            stringResource(R.string.set_now),
+            checked = task.isNow,
+            onChange = { on -> if (on) actions.setNow(task.localId) else actions.clearNow() },
+            enabled = editable,
+        )
     }
+    if (task.isNow) ResumeRow(task, editable, actions)
 }
 
 @Composable
@@ -256,29 +301,40 @@ private fun ResumeRow(task: Task, editable: Boolean, actions: TaskDetailActions)
     }
 }
 
+/** The due day (red when it has passed) and the changes to it as buttons: pick a day, add or remove the time, clear it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DueSection(task: Task, today: LocalDate, editable: Boolean, actions: TaskDetailActions) {
+private fun DueField(task: Task, today: LocalDate, editable: Boolean, actions: TaskDetailActions) {
     var pickingDay by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
-    Text(
-        dueLabel(task, today) ?: stringResource(R.string.detail_no_due),
-        style = helmType.bodyStrong,
-        color = if (task.dueDate == null) palette.textMuted else palette.text,
-        modifier = Modifier.testTag(TaskDetailTags.DUE),
-    )
+    val p = palette
+    val overdue = HelmDates.isOverdue(task, today.toString())
+    // Name and day are read as one.
+    Column(Modifier.semantics(mergeDescendants = true) {}.testTag(TaskDetailTags.DUE), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        FieldLabel(stringResource(R.string.detail_due))
+        Text(
+            dueLabel(task, today) ?: stringResource(R.string.detail_no_due),
+            style = helmType.value,
+            color = when {
+                task.dueDate == null -> p.textMuted
+                overdue -> p.danger
+                else -> p.text
+            },
+        )
+    }
     if (editable) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionChip(stringResource(R.string.pick_day), onClick = { pickingDay = true })
+            DetailAction(stringResource(R.string.pick_day), { pickingDay = true }, Icons.Filled.DateRange)
             if (task.dueDate != null) {
-                ActionChip(
+                DetailAction(
                     stringResource(if (task.dueTime == null) R.string.add_time else R.string.change_time),
-                    onClick = { pickingTime = true },
+                    { pickingTime = true },
+                    if (task.dueTime == null) Icons.Filled.Add else Icons.Filled.Edit,
                 )
                 if (task.dueTime != null) {
-                    ActionChip(stringResource(R.string.remove_time), onClick = { actions.setDue(task.localId, task.dueDate, null) })
+                    DetailAction(stringResource(R.string.remove_time), { actions.setDue(task.localId, task.dueDate, null) }, Icons.Filled.Close)
                 }
-                ActionChip(stringResource(R.string.remove_due), onClick = { actions.setDue(task.localId, null, null) })
+                DetailAction(stringResource(R.string.remove_due), { actions.setDue(task.localId, null, null) }, Icons.Filled.Close)
             }
         }
     }
@@ -302,6 +358,23 @@ private fun DueSection(task: Task, today: LocalDate, editable: Boolean, actions:
             },
         )
     }
+}
+
+/** The one project row: its dot and name, or "No project"; a tap opens the shared picker. */
+@Composable
+private fun ProjectField(task: Task, editable: Boolean) {
+    val projects = LocalProjects.current
+    val project = projects.projects.firstOrNull { it.localId == task.projectId }
+    ValueRow(
+        stringResource(R.string.project_label),
+        project?.name ?: stringResource(R.string.project_no_project),
+        placeholder = project == null,
+        editLabel = stringResource(R.string.project_move),
+        enabled = editable,
+        onClick = { projects.pickTask(task) },
+        leading = project?.let { { ProjectMark(it) } },
+        modifier = Modifier.testTag("detail-project"),
+    )
 }
 
 @Composable
@@ -332,30 +405,28 @@ private fun RepeatSection(task: Task, today: LocalDate, editable: Boolean, actio
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun LabelsSection(task: Task, known: List<String>, editable: Boolean, actions: TaskDetailActions) {
+private fun LabelsField(task: Task, known: List<String>, editable: Boolean, actions: TaskDetailActions) {
     var adding by rememberSaveable { mutableStateOf(false) }
-    CardSection(stringResource(R.string.detail_labels)) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.testTag(TaskDetailTags.LABELS),
-        ) {
-            task.labels.forEach { label ->
-                val removeText = stringResource(R.string.remove_label, label)
-                ActionChip(
-                    label,
-                    onClick = { actions.setLabels(task.localId, task.labels - label) },
-                    enabled = editable,
-                    trailingIcon = if (editable) Icons.Filled.Close else null,
-                    modifier = Modifier.semantics { contentDescription = removeText },
-                )
-            }
-            if (editable) {
-                ActionChip(stringResource(R.string.add_label), onClick = { adding = true }, icon = Icons.Filled.Add)
-            }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.testTag(TaskDetailTags.LABELS),
+    ) {
+        task.labels.forEach { label ->
+            val removeText = stringResource(R.string.remove_label, label)
+            LabelChip(
+                label,
+                enabled = editable,
+                removeLabel = removeText,
+                onRemove = { actions.setLabels(task.localId, task.labels - label) },
+                modifier = if (editable) Modifier.semantics { contentDescription = removeText } else Modifier,
+            )
         }
-        if (task.labels.isEmpty() && !editable) Placeholder(stringResource(R.string.no_labels))
+        if (editable) {
+            DetailAction(stringResource(R.string.add_label), { adding = true }, Icons.Filled.Add)
+        }
     }
+    if (task.labels.isEmpty() && !editable) Placeholder(stringResource(R.string.no_labels))
     if (adding) {
         LabelDialog(
             current = task.labels,
@@ -374,7 +445,12 @@ private fun LinksSection(task: Task, editable: Boolean, actions: TaskDetailActio
     var adding by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
     val p = palette
-    CardSection(stringResource(R.string.detail_links)) {
+    FoldingSection(
+        stringResource(R.string.detail_links),
+        tag = TaskDetailTags.LINKS_SECTION,
+        initiallyExpanded = task.links.isNotEmpty(),
+        summary = if (task.links.isEmpty()) stringResource(R.string.no_links) else task.links.size.toString(),
+    ) {
         Column(Modifier.testTag(TaskDetailTags.LINKS)) {
             task.links.forEach { link ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -385,7 +461,7 @@ private fun LinksSection(task: Task, editable: Boolean, actions: TaskDetailActio
                             .clickable(onClickLabel = stringResource(R.string.open_link)) { uriHandler.openUri(link.url) }
                             .padding(vertical = 8.dp),
                     ) {
-                        Text(link.title ?: link.url, style = helmType.bodyStrong, color = p.accent)
+                        Text(link.title ?: link.url, style = helmType.value, color = p.accent)
                         if (link.title != null) Text(link.url, style = helmType.small, color = p.textMuted)
                     }
                     if (editable) {
@@ -400,13 +476,7 @@ private fun LinksSection(task: Task, editable: Boolean, actions: TaskDetailActio
             }
             if (task.links.isEmpty()) Placeholder(stringResource(R.string.no_links))
             if (editable && task.links.size < TaskRules.MAX_LINKS) {
-                SecondaryButton(
-                    stringResource(R.string.add_link),
-                    onClick = { adding = true },
-                    color = p.accent,
-                    icon = Icons.Filled.Add,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+                DetailAction(stringResource(R.string.add_link), { adding = true }, Icons.Filled.Add, Modifier.padding(top = 8.dp))
             }
         }
     }
@@ -449,33 +519,4 @@ private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailAction
     }
 }
 
-/** A labelled value inside a card that opens its editor when tapped. */
-@Composable
-internal fun ValueRow(
-    label: String,
-    value: String,
-    placeholder: Boolean,
-    editLabel: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val p = palette
-    Column(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = HelmDimens.touchTarget)
-            .clip(HelmShapes.field)
-            .clickable(enabled = enabled, onClickLabel = editLabel, onClick = onClick)
-            .padding(vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(label, style = helmType.smallStrong, color = p.textMuted, modifier = Modifier.semantics { heading() })
-        Text(value, style = helmType.body, color = if (placeholder) p.textMuted else p.text)
-    }
-}
-
-@Composable
-internal fun Placeholder(text: String) {
-    Text(text, style = helmType.small, color = palette.textMuted, modifier = Modifier.padding(vertical = 4.dp))
-}
+private const val TITLE_LINES = 2
