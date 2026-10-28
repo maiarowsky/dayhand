@@ -16,15 +16,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
-import dev.helm.planner.data.local.Project
 import dev.helm.planner.domain.projectCounts
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmMenu
@@ -40,7 +39,7 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
 @Composable
-fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel: (String) -> Unit,
+fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit,
                    onTrash: () -> Unit, onSettings: () -> Unit, bottomBar: @Composable () -> Unit = {}) {
     val context = LocalProjects.current
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -48,11 +47,8 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
     var ordering by rememberSaveable { mutableStateOf(false) }
     var archived by rememberSaveable { mutableStateOf(false) }
     var managingId by rememberSaveable { mutableStateOf<String?>(null) }
-    var fromLabel by rememberSaveable { mutableStateOf<String?>(null) }
-    var showLabels by rememberSaveable { mutableStateOf(false) }
     val active = state.projects.filter { it.selectable }
     val archive = state.projects.filter { it.archived }
-    val labels = state.tasks.filter { it.isActive }.flatMap { it.labels }.distinct().sorted()
     Scaffold(containerColor = palette.background, bottomBar = bottomBar, topBar = {
         LargeHeader(stringResource(R.string.projects_title)) {
             HeaderIconButton(Icons.Filled.Add, stringResource(R.string.project_new), { adding = true }, Modifier.testTag("projects-new"))
@@ -62,9 +58,6 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
                 HelmMenu(menu, { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.project_reorder), style = helmType.body, color = palette.text) },
                         onClick = { menu = false; ordering = !ordering })
-                    // Labels are kept and still filter tasks, but they are not projects: they live behind this menu.
-                    if (labels.isNotEmpty()) DropdownMenuItem(text = { Text(stringResource(R.string.detail_labels), style = helmType.body, color = palette.text) },
-                        onClick = { menu = false; showLabels = true }, modifier = Modifier.testTag("projects-labels"))
                 }
             }
             HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), onSettings)
@@ -107,7 +100,4 @@ fun ProjectsScreen(state: ProjectsUiState, onProject: (String?) -> Unit, onLabel
     }
     if (adding) ProjectEditSheet(onDismiss = { adding = false })
     state.projects.firstOrNull { it.localId == managingId }?.let { ProjectManagement(it, onDismiss = { managingId = null }) }
-    fromLabel?.let { ProjectEditSheet(fromLabel = it, onDismiss = { fromLabel = null }) }
-    if (showLabels) LabelsSheet(labels, { label -> projectCounts(state.tasks.filter { label in it.labels }, state.today).open },
-        onDismiss = { showLabels = false }, onLabel = { showLabels = false; onLabel(it) }, onConvert = { showLabels = false; fromLabel = it })
 }

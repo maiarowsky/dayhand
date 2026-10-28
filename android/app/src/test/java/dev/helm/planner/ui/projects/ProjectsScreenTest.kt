@@ -49,7 +49,7 @@ class ProjectsScreenTest {
     @get:Rule val compose = createComposeRule()
     private val project = Project("home", serverId = "home", name = "Home", color = "amber", position = 0.0, createdAt = 0, updatedAt = 0)
     private val archived = project.copy(localId = "old", name = "Old", archivedAt = 1)
-    private val task = Task("task", title = "Milk", projectId = "home", dueDate = "2026-10-22", labels = listOf("phone"), createdAt = 0, updatedAt = 0)
+    private val task = Task("task", title = "Milk", projectId = "home", dueDate = "2026-10-22", createdAt = 0, updatedAt = 0)
     private val projects = listOf(project, archived)
     private var picked: String? = "not-picked"
 
@@ -63,14 +63,13 @@ class ProjectsScreenTest {
         }
     }
 
-    @Test fun projectsListHasCountsNoProjectArchiveAndTrashButNoLabels() {
+    @Test fun projectsListHasCountsNoProjectArchiveAndTrash() {
         var opened: String? = "none"
         compose.setContent { Host { ProjectsScreen(ProjectsUiState(projects, listOf(task, task.copy(localId = "loose", projectId = null)), "2026-10-23", "UTC", 0),
-            onProject = { opened = it }, onLabel = {}, onTrash = {}, onSettings = {}) } }
+            onProject = { opened = it }, onTrash = {}, onSettings = {}) } }
         compose.onNodeWithTag("project-row-home").assertTextContains("1", substring = true).performClick()
         assertEquals("home", opened)
         compose.onNodeWithTag("project-row-none").assertTextContains("1", substring = true)
-        compose.onNodeWithTag("project-label-phone").assertDoesNotExist()
         compose.onNodeWithTag("projects-empty").assertDoesNotExist()
         compose.onNodeWithTag("projects-archive").performScrollTo().performClick()
         compose.onNodeWithTag("project-archived-old").performScrollTo().assertIsDisplayed()
@@ -80,7 +79,7 @@ class ProjectsScreenTest {
     @Test fun withoutProjectsTheScreenSaysSoAndOffersTheFirstOne() {
         val loose = task.copy(projectId = null)
         compose.setContent { Host { ProjectsScreen(ProjectsUiState(emptyList(), listOf(loose), "2026-10-23", "UTC", 0),
-            onProject = {}, onLabel = {}, onTrash = {}, onSettings = {}) } }
+            onProject = {}, onTrash = {}, onSettings = {}) } }
         compose.onNodeWithTag("project-row-none").assertIsDisplayed()
         compose.onNodeWithText("You have no projects yet. A project groups tasks, for example Home or Work.").assertIsDisplayed()
         compose.onNodeWithTag("projects-empty-new").assertIsDisplayed().performClick()
@@ -88,23 +87,12 @@ class ProjectsScreenTest {
         compose.onAllNodesWithText("Labels", substring = true).assertCountEquals(0)
     }
 
-    @Test fun labelsSheetFromTheMenuFiltersAndOffersConversion() {
-        var label: String? = null
-        compose.setContent { Host { ProjectsScreen(ProjectsUiState(emptyList(), listOf(task.copy(projectId = null)), "2026-10-23", "UTC", 0),
-            onProject = {}, onLabel = { label = it }, onTrash = {}, onSettings = {}) } }
-        compose.onNodeWithTag("projects-menu").performClick()
-        compose.onNodeWithTag("projects-labels").performClick()
-        compose.onNodeWithTag("labels-sheet").assertExists()
-        compose.onNodeWithTag("project-label-phone").assertTextContains("# phone").performClick()
-        assertEquals("phone", label)
-    }
-
     @Test fun projectSwitchesBetweenListAndFilteredBoardAndFabKeepsProject() {
         var added: String? = null
         val actions = object : TodayActions {
             override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) { added = "$title:$projectId" }
         }
-        compose.setContent { Host { ProjectScreen(ProjectUiState(project, "home", null, listOf(task), "2026-10-23", "UTC"), actions, object : BoardActions {}, {}) } }
+        compose.setContent { Host { ProjectScreen(ProjectUiState(project, "home", listOf(task), "2026-10-23", "UTC"), actions, object : BoardActions {}, {}) } }
         compose.onNodeWithTag("project-task-list").assertIsDisplayed()
         compose.onNodeWithTag("project-board-tab").performClick()
         compose.onNodeWithTag(BoardTags.card("task")).assertIsDisplayed()
@@ -128,7 +116,7 @@ class ProjectsScreenTest {
     }
 
     @Test fun detailsUseTheSamePickerAndCanClearTheProject() {
-        val state = TaskDetailUiState.Ready(task, "2026-10-23", HelmDates.DEFAULT_TIMEZONE, emptyList(), HistoryState.FRESH, 0, emptyList(), emptyList())
+        val state = TaskDetailUiState.Ready(task, "2026-10-23", HelmDates.DEFAULT_TIMEZONE, emptyList(), HistoryState.FRESH, 0, emptyList())
         compose.setContent { Host { TaskDetailScreen(state, object : TaskDetailActions {}) } }
         compose.onNodeWithTag("detail-project").performScrollTo().performClick()
         compose.onNodeWithTag("project-pick-none").performClick()
@@ -161,13 +149,10 @@ class ProjectsScreenTest {
         assertNull(picked)
     }
 
-    @Test fun labelAndNoProjectScopesNeverOfferABoard() {
-        var label by mutableStateOf<String?>("phone")
-        compose.setContent { Host { ProjectScreen(ProjectUiState(null, null, label, listOf(task), "2026-10-23", "UTC"),
+    @Test fun theNoProjectScopeNeverOffersABoard() {
+        compose.setContent { Host { ProjectScreen(ProjectUiState(null, null, listOf(task.copy(projectId = null)), "2026-10-23", "UTC"),
             object : TodayActions {}, object : BoardActions {}, {}) } }
         compose.onNodeWithTag("project-list-tab").assertDoesNotExist()
-        compose.onNodeWithTag("project-board-tab").assertDoesNotExist()
-        compose.runOnIdle { label = null }
         compose.onNodeWithTag("project-board-tab").assertDoesNotExist()
         compose.onNodeWithTag("project-task-list").assertIsDisplayed()
     }
@@ -220,7 +205,7 @@ class ProjectsScreenTest {
         } }
         compose.onNodeWithTag("project-pick-none").assertIsDisplayed()
         compose.onNodeWithText("You have no projects yet. Create the first one and the task will be assigned to it.").assertIsDisplayed()
-        compose.onNodeWithTag("project-picker-new").assertHeightIsAtLeast(56.dp).performClick()
+        compose.onNodeWithTag("project-picker-new").assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithTag("project-picker-name").performTextInput("Work")
         compose.onNodeWithTag("project-picker-save").performClick()
         assertEquals("Work", made?.name)

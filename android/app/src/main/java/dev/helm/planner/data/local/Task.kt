@@ -190,8 +190,6 @@ data class Task(
     /** `updatedAt` of the last server copy merged into this row; null until the server has it. */
     val serverUpdatedAt: Long? = null,
     val repeat: RepeatRule? = null,
-    /** Free tags across projects. */
-    @ColumnInfo(defaultValue = "[]") val labels: List<String> = emptyList(),
     @ColumnInfo(defaultValue = "[]") val links: List<TaskLink> = emptyList(),
     /** In the trash since then; the server purges it 30 days later unless restored. */
     val deletedAt: Long? = null,

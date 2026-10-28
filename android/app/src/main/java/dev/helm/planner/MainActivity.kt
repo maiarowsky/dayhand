@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.helm.planner.auth.PairingInput
@@ -131,9 +132,7 @@ private object Route {
     const val AGENTS = "agents"
     const val PROJECTS = "projects"
     const val PROJECT = "project/"
-    const val LABEL = "label/"
     fun project(localId: String?) = PROJECT + (localId ?: "none")
-    fun label(name: String) = LABEL + android.net.Uri.encode(name)
 
     /** Connect shown by itself at the first start without a server (with "Not now"). */
     const val FIRST_CONNECT = "first-connect"
@@ -190,7 +189,7 @@ private fun HelmRoot(
     when {
         route == Route.TODAY -> {
             val viewModel = viewModel {
-                TodayViewModel(container.repository, container.settings, container.network, container.liveSync)
+                TodayViewModel(container.repository, container.settings, container.network, container.liveSync, savedState = createSavedStateHandle())
             }
             val actions = remember(viewModel) {
                 object : TodayActions by viewModel {
@@ -251,13 +250,12 @@ private fun HelmRoot(
         route == Route.PROJECTS -> {
             val model = viewModel(key = "projects-list") { ProjectsViewModel(container.repository, container.settings) }
             val state by model.state.collectAsStateWithLifecycle()
-            state?.let { ProjectsScreen(it, { id -> open(Route.project(id)) }, { name -> open(Route.label(name)) },
+            state?.let { ProjectsScreen(it, { id -> open(Route.project(id)) },
                 onTrash = { open(Route.TRASH) }, onSettings = { open(Route.SETTINGS) }, bottomBar = tabs) }
         }
-        route.startsWith(Route.PROJECT) || route.startsWith(Route.LABEL) -> {
-            val projectId = route.takeIf { it.startsWith(Route.PROJECT) }?.removePrefix(Route.PROJECT)?.takeUnless { it == "none" }
-            val label = route.takeIf { it.startsWith(Route.LABEL) }?.removePrefix(Route.LABEL)?.let(android.net.Uri::decode)
-            val model = viewModel(key = "project-screen-$route") { ProjectViewModel(container.repository, container.settings, projectId, label) }
+        route.startsWith(Route.PROJECT) -> {
+            val projectId = route.removePrefix(Route.PROJECT).takeUnless { it == "none" }
+            val model = viewModel(key = "project-screen-$route") { ProjectViewModel(container.repository, container.settings, projectId) }
             val state by model.state.collectAsStateWithLifecycle()
             val todayActions = remember(model) { object : TodayActions by model.todayActions {
                 override fun openTask(localId: String) = open(Route.task(localId))

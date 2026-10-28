@@ -45,7 +45,6 @@ class TaskDetailTour {
         note = "Zainstaluj wersję z ostatniego wydania, przejdź przez Dzisiaj, kalendarz i tablicę, a potem sprawdź " +
             "przypomnienia po restarcie telefonu. Zapisz każdy błąd z krokami, które go wywołują.",
         dueDate = "2026-10-26",
-        labels = listOf("telefon", "wydanie"),
         createdAt = 0,
         updatedAt = 0,
     )
@@ -72,8 +71,7 @@ class TaskDetailTour {
 
     @Test
     fun detailsPickerAndProjects() {
-        val state = TaskDetailUiState.Ready(task, today, "Europe/Warsaw", emptyList(), HistoryState.FRESH, 0, task.labels,
-            defaultReminders = listOf(0))
+        val state = TaskDetailUiState.Ready(task, today, "Europe/Warsaw", emptyList(), HistoryState.FRESH, 0, defaultReminders = listOf(0))
         show { TaskDetailScreen(state, object : TaskDetailActions {}) }
         shot("detail-top")
         compose.onNodeWithTag(TaskDetailTags.TRASH).performScrollTo()
@@ -84,8 +82,8 @@ class TaskDetailTour {
 
     @Test
     fun projectsWithoutProjects() {
-        val tasks = listOf(task, task.copy(localId = "second", labels = listOf("dom")), task.copy(localId = "third", labels = emptyList()))
-        show { ProjectsScreen(ProjectsUiState(emptyList(), tasks, today, "Europe/Warsaw", 0), {}, {}, {}, {}) }
+        val tasks = listOf(task, task.copy(localId = "second"), task.copy(localId = "third"))
+        show { ProjectsScreen(ProjectsUiState(emptyList(), tasks, today, "Europe/Warsaw", 0), {}, {}, {}) }
         shot("projects-empty")
     }
 }

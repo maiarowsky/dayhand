@@ -2,12 +2,17 @@ package dev.helm.planner.tour
 
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
@@ -18,6 +23,7 @@ import dev.helm.planner.auth.ConnectError
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.domain.TodaySections
+import dev.helm.planner.domain.daySections
 import dev.helm.planner.settings.AppLanguage
 import dev.helm.planner.settings.AppSettings
 import dev.helm.planner.settings.BackendConfig
@@ -42,6 +48,7 @@ import dev.helm.planner.ui.today.TodayUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * Screenshots of every screen with fixed sample data, for the before/after comparison in the task report. It asserts
@@ -95,6 +102,46 @@ class ScreenTour {
         compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag(TodayTags.DONE))
         compose.onNodeWithTag(TodayTags.DONE).performClick()
         shot("02-today-done-open")
+    }
+
+    /** The arrows' day after, and a task caught in the moment it is ticked off (the clock paused mid-way). */
+    @Test
+    fun todayOtherDayAndTickOff() {
+        val now = Instant.parse("2026-10-22T10:00:00Z").toEpochMilli()
+        val tasks = mutableStateOf(
+            listOf(
+                task("t1", "Zadzwonić do dentysty", "2026-10-22", "09:30"),
+                task("t2", "Przejrzeć pull request", "2026-10-22"),
+                task("t3", "Kupić chleb", "2026-10-22"),
+                task("w1", "Odebrać paczkę", "2026-10-23", "17:00"),
+                task("w2", "Oddać książki do biblioteki", "2026-10-23"),
+            ),
+        )
+        val shown = mutableIntStateOf(0)
+        val actions = object : TodayActions {
+            override fun showDay(offset: Int) {
+                shown.intValue = offset
+            }
+
+            override fun complete(localId: String) {
+                tasks.value = tasks.value.map { if (it.localId == localId) it.copy(status = TaskStatus.DONE, completedAt = now) else it }
+            }
+        }
+        show {
+            val state = TodayUiState(daySections(tasks.value, now, "UTC", shown.intValue), ConnectionStatus.LOCAL, 0, timezone = "UTC", dayOffset = shown.intValue)
+            TodayScreen(state, actions, now = { now })
+        }
+        compose.onNodeWithTag(TodayTags.NEXT_DAY).performClick()
+        shot("21-today-tomorrow")
+        compose.onNodeWithTag(TodayTags.PREVIOUS_DAY).performClick()
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        // A touch cannot be injected while the clock is paused; the click action does the same.
+        compose.onNodeWithContentDescription(context.getString(R.string.complete_task, "Kupić chleb")).performSemanticsAction(SemanticsActions.OnClick)
+        compose.mainClock.advanceTimeBy(250)
+        shoot(compose.activity, config, "22-today-ticking")
+        compose.mainClock.autoAdvance = true
+        shot("23-today-ticked")
     }
 
     @Test

@@ -93,11 +93,8 @@
     <string name="detail_due">截止日期</string>
     <string name="detail_no_due">无截止日期</string>
     <string name="detail_repeat">重复</string>
-    <string name="detail_labels">标签</string>
     <string name="project_picker_empty">你还没有项目。创建第一个项目，任务就会分配到其中。</string>
     <string name="projects_empty">你还没有项目。项目用于归类任务，例如“家”或“工作”。</string>
-    <string name="labels_note">标签是任务上的自由标记，与项目无关。点按标签查看其任务，长按可将其转为项目。</string>
-    <string name="detail_repeat_reminders">重复和提醒</string>
     <string name="title_show_all">显示完整标题</string>
     <string name="title_show_less">收起</string>
     <string name="note_show_all">显示完整备注</string>
@@ -140,18 +137,10 @@
     <plurals name="repeat_years">
         <item quantity="other">每 %1$d 年</item>
     </plurals>
-    <string name="add_label">添加标签</string>
-    <string name="remove_label">移除标签：%1$s</string>
-    <string name="label_name">标签</string>
-    <plurals name="labels_full">
-        <item quantity="other">最多 %1$d 个标签</item>
-    </plurals>
-    <string name="labels_in_use">已使用</string>
     <string name="add_link">添加链接</string>
     <string name="open_link">打开链接</string>
     <string name="remove_link">移除链接：%1$s</string>
     <string name="no_links">无链接</string>
-    <string name="no_labels">无标签</string>
     <string name="link_url">地址</string>
     <string name="link_title">标题（可选）</string>
     <string name="link_invalid">请输入以 http:// 或 https:// 开头的完整地址</string>
@@ -378,4 +367,15 @@
     <plurals name="blocked_waiting_on">
         <item quantity="other">等待 %d 项任务</item>
     </plurals>
+    <string name="change_status">更改状态</string>
+    <string name="detail_more">更多</string>
+    <string name="history_show_all">显示全部历史（%1$d）</string>
+    <string name="day_title_tomorrow">明天</string>
+    <string name="day_title_yesterday">昨天</string>
+    <string name="day_back_to_today">回到今天</string>
+    <string name="day_previous">前一天</string>
+    <string name="day_next">后一天</string>
+    <string name="empty_day">这一天没有计划。</string>
+    <string name="section_day_tasks">计划</string>
+    <string name="change_due">更改截止日期</string>
 </resources>

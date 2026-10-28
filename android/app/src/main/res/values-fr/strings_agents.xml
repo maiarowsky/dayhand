@@ -54,7 +54,7 @@
     <string name="agents_accept">Accepter</string>
     <string name="agents_accept_note">Elle devient une tâche de votre plan et apparaît dans Aujourd\'hui à son échéance.</string>
     <string name="agents_merge">Fusionner avec une tâche</string>
-    <string name="agents_merge_note">Sa note, ses liens et ses étiquettes rejoignent une tâche existante.</string>
+    <string name="agents_merge_note">Sa note et ses liens rejoignent une tâche existante.</string>
     <string name="agents_reject">Rejeter</string>
     <string name="agents_reject_title">Rejeter « %1$s » ?</string>
     <string name="agents_reason_label">Pourquoi (facultatif, renvoyé à sa source)</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">Rechercher une tâche</string>
     <string name="agents_merge_none">Aucune tâche ouverte ne correspond.</string>
     <string name="agents_merge_confirm_title">Fusionner avec « %1$s » ?</string>
-    <string name="agents_merge_confirm_text">La proposition va à la corbeille ; sa note, ses liens et ses étiquettes rejoignent cette tâche.</string>
+    <string name="agents_merge_confirm_text">La proposition va à la corbeille ; sa note et ses liens rejoignent cette tâche.</string>
     <string name="agents_merge_confirm">Fusionner</string>
     <string name="agents_accepted">Acceptée : c\'est désormais une tâche de votre plan.</string>
     <string name="agents_merged">Fusionnée.</string>

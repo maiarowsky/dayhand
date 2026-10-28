@@ -28,7 +28,6 @@ object HelmShapes {
 /** Spacing and touch sizes. Every tappable element is at least [touchTarget] in both directions. */
 object HelmDimens {
     val touchTarget = 48.dp
-    val primaryButtonHeight = 56.dp
     val screenMargin = 20.dp
     val cardPadding = 18.dp
     val sectionGap = 12.dp
@@ -40,4 +39,18 @@ object HelmDimens {
     val lineIcon = 22.dp
     val iconSize = 24.dp
     val iconTile = 48.dp
+}
+
+/**
+ * One shape for every button and action, copied from Mussh's Send button (`chat/InputBar.kt`, `SendButton`): fully
+ * round, filled, with no outline, [height] high (Mussh's `SEND_CIRCLE`) inside a [touchTarget] that a tap and a
+ * screen reader use; a disabled button keeps the shape on the raised card colour with faint text, as Send does with
+ * nothing to send. Only the shape is Mussh's: the fills come from the Dayhand palette.
+ */
+object HelmButtonShape {
+    val shape = CircleShape
+    val height = 34.dp
+    val touchTarget = 48.dp
+    val horizontalPadding = 14.dp
+    val iconSize = 18.dp
 }

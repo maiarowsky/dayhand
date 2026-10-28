@@ -102,11 +102,8 @@
     <string name="detail_due">Termin</string>
     <string name="detail_no_due">Bez terminu</string>
     <string name="detail_repeat">Powtarzanie</string>
-    <string name="detail_labels">Etykiety</string>
     <string name="project_picker_empty">Nie masz jeszcze projektów. Utwórz pierwszy, a zadanie zostanie do niego przypisane.</string>
     <string name="projects_empty">Nie masz jeszcze projektów. Projekt grupuje zadania, na przykład Dom albo Praca.</string>
-    <string name="labels_note">Etykiety to dowolne znaczniki zadań, niezależne od projektów. Dotknij etykiety, żeby zobaczyć jej zadania, przytrzymaj ją, żeby zrobić z niej projekt.</string>
-    <string name="detail_repeat_reminders">Powtarzanie i przypomnienia</string>
     <string name="title_show_all">Pokaż cały tytuł</string>
     <string name="title_show_less">Zwiń</string>
     <string name="note_show_all">Pokaż całą notatkę</string>
@@ -164,21 +161,10 @@
         <item quantity="many">Co %1$d lat</item>
         <item quantity="other">Co %1$d roku</item>
     </plurals>
-    <string name="add_label">Dodaj etykietę</string>
-    <string name="remove_label">Usuń etykietę: %1$s</string>
-    <string name="label_name">Etykieta</string>
-    <plurals name="labels_full">
-        <item quantity="one">Najwyżej %1$d etykieta</item>
-        <item quantity="few">Najwyżej %1$d etykiety</item>
-        <item quantity="many">Najwyżej %1$d etykiet</item>
-        <item quantity="other">Najwyżej %1$d etykiety</item>
-    </plurals>
-    <string name="labels_in_use">W użyciu</string>
     <string name="add_link">Dodaj link</string>
     <string name="open_link">Otwórz link</string>
     <string name="remove_link">Usuń link: %1$s</string>
     <string name="no_links">Brak linków</string>
-    <string name="no_labels">Brak etykiet</string>
     <string name="link_url">Adres</string>
     <string name="link_title">Tytuł (opcjonalnie)</string>
     <string name="link_invalid">Wpisz pełny adres http:// lub https://</string>
@@ -441,4 +427,15 @@
         <item quantity="many">Czeka na %d zadań</item>
         <item quantity="other">Czeka na %d zadania</item>
     </plurals>
+    <string name="change_status">Zmień status</string>
+    <string name="detail_more">Więcej</string>
+    <string name="history_show_all">Pokaż całą historię (%1$d)</string>
+    <string name="day_title_tomorrow">Jutro</string>
+    <string name="day_title_yesterday">Wczoraj</string>
+    <string name="day_back_to_today">Wróć do dziś</string>
+    <string name="day_previous">Poprzedni dzień</string>
+    <string name="day_next">Następny dzień</string>
+    <string name="empty_day">Na ten dzień nic nie zaplanowano.</string>
+    <string name="section_day_tasks">Zaplanowane</string>
+    <string name="change_due">Zmień termin</string>
 </resources>

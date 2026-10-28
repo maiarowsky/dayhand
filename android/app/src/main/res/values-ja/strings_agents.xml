@@ -54,7 +54,7 @@
     <string name="agents_accept">採用</string>
     <string name="agents_accept_note">プランのタスクになり、期日になると「今日」に表示されます。</string>
     <string name="agents_merge">既存のタスクに統合</string>
-    <string name="agents_merge_note">メモ、リンク、ラベルが既存のタスクに追加されます。</string>
+    <string name="agents_merge_note">メモとリンクが既存のタスクに追加されます。</string>
     <string name="agents_reject">却下</string>
     <string name="agents_reject_title">「%1$s」を却下しますか？</string>
     <string name="agents_reason_label">理由（任意、提案元に送られます）</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">タスクを検索</string>
     <string name="agents_merge_none">一致する未完了のタスクはありません。</string>
     <string name="agents_merge_confirm_title">「%1$s」に統合しますか？</string>
-    <string name="agents_merge_confirm_text">提案はゴミ箱に移動し、メモ、リンク、ラベルはこのタスクに追加されます。</string>
+    <string name="agents_merge_confirm_text">提案はゴミ箱に移動し、メモとリンクはこのタスクに追加されます。</string>
     <string name="agents_merge_confirm">統合</string>
     <string name="agents_accepted">採用しました。プランのタスクになりました。</string>
     <string name="agents_merged">統合しました。</string>

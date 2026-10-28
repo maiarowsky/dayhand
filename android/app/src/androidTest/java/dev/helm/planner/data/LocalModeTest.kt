@@ -144,7 +144,7 @@ class LocalModeTest {
         val repository = repository()
         val existing = repository.add("Already here", null, null, null)
         val backup = listOf(
-            BackupTask(id = "b1", title = "In progress", status = TaskStatus.DOING, labels = listOf("Work"), checklist = listOf(ChecklistItem("c", "One"))),
+            BackupTask(id = "b1", title = "In progress", status = TaskStatus.DOING, checklist = listOf(ChecklistItem("c", "One"))),
             BackupTask(id = "b2", title = "Done weekly", status = TaskStatus.DONE, completedAt = 500, repeat = RepeatRule(RepeatEvery.WEEK)),
             BackupTask(id = "b3", title = "Archived", archivedAt = 600),
             BackupTask(id = existing.localId, title = "Already here"),
@@ -178,7 +178,6 @@ class LocalModeTest {
     fun aBackupOfThePhoneRestoresOnAnotherPhone() = runTest {
         val repository = repository()
         val task = repository.add("Call the dentist", "2026-10-24", "09:30", "Ask about Friday")
-        repository.setLabels(task.localId, listOf("Health"))
         repository.setRepeat(task.localId, RepeatRule(RepeatEvery.MONTH, monthDay = -1))
         val file = PlanBackup.write(repository.backupSnapshot().tasks, BackupSettings("Europe/Warsaw", "05:00", listOf(0)), clock)
 
@@ -188,7 +187,6 @@ class LocalModeTest {
             assertEquals(RestoreResult(1, 0), TaskRepository(other, clock = { clock }).restore(read.tasks))
             val restored = other.tasks().all().single()
             assertEquals(task.localId, restored.localId)
-            assertEquals(listOf("Health"), restored.labels)
             assertEquals(RepeatRule(RepeatEvery.MONTH, monthDay = -1), restored.repeat)
             assertEquals("Ask about Friday", restored.note)
             assertEquals(Mutations.ADD, other.outbox().all().single().mutation)

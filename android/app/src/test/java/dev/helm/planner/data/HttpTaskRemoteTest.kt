@@ -98,7 +98,7 @@ class HttpTaskRemoteTest {
         val (active, trashed) = snapshot.tasks
         assertEquals(1761130000000L, active.updatedAt)
         assertEquals(1_700_000_000_000L, active.createdAt)
-        assertEquals(listOf("home"), active.labels)
+        // The server still sends labels (`"labels":["home"]`); the phone reads the task and leaves them out.
         assertEquals(listOf(TaskLink("https://a.pl", "A")), active.links)
         assertEquals(RepeatRule(RepeatEvery.WEEK, 2, listOf(1, 5)), active.repeat)
         assertEquals(null, active.deletedAt)

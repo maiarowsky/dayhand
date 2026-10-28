@@ -99,11 +99,8 @@
     <string name="detail_due">Fecha límite</string>
     <string name="detail_no_due">Sin fecha límite</string>
     <string name="detail_repeat">Repetir</string>
-    <string name="detail_labels">Etiquetas</string>
     <string name="project_picker_empty">Todavía no tienes proyectos. Crea el primero y la tarea quedará asignada a él.</string>
     <string name="projects_empty">Todavía no tienes proyectos. Un proyecto agrupa tareas, por ejemplo Casa o Trabajo.</string>
-    <string name="labels_note">Las etiquetas son marcas libres en las tareas, independientes de los proyectos. Toca una para ver sus tareas, mantenla pulsada para convertirla en proyecto.</string>
-    <string name="detail_repeat_reminders">Repetición y recordatorios</string>
     <string name="title_show_all">Ver el título completo</string>
     <string name="title_show_less">Ver menos</string>
     <string name="note_show_all">Mostrar toda la nota</string>
@@ -156,20 +153,10 @@
         <item quantity="many">Cada %1$d años</item>
         <item quantity="other">Cada %1$d años</item>
     </plurals>
-    <string name="add_label">Añadir etiqueta</string>
-    <string name="remove_label">Quitar etiqueta: %1$s</string>
-    <string name="label_name">Etiqueta</string>
-    <plurals name="labels_full">
-        <item quantity="one">Como máximo %1$d etiqueta</item>
-        <item quantity="many">Como máximo %1$d etiquetas</item>
-        <item quantity="other">Como máximo %1$d etiquetas</item>
-    </plurals>
-    <string name="labels_in_use">En uso</string>
     <string name="add_link">Añadir enlace</string>
     <string name="open_link">Abrir enlace</string>
     <string name="remove_link">Quitar enlace: %1$s</string>
     <string name="no_links">Sin enlaces</string>
-    <string name="no_labels">Sin etiquetas</string>
     <string name="link_url">Dirección</string>
     <string name="link_title">Título (opcional)</string>
     <string name="link_invalid">Escribe una dirección completa con http:// o https://</string>
@@ -420,4 +407,15 @@
         <item quantity="many">Espera a %d tareas</item>
         <item quantity="other">Espera a %d tareas</item>
     </plurals>
+    <string name="change_status">Cambiar estado</string>
+    <string name="detail_more">Más</string>
+    <string name="history_show_all">Ver todo el historial (%1$d)</string>
+    <string name="day_title_tomorrow">Mañana</string>
+    <string name="day_title_yesterday">Ayer</string>
+    <string name="day_back_to_today">Volver a hoy</string>
+    <string name="day_previous">Día anterior</string>
+    <string name="day_next">Día siguiente</string>
+    <string name="empty_day">No hay nada planeado para este día.</string>
+    <string name="section_day_tasks">Planeado</string>
+    <string name="change_due">Cambiar fecha límite</string>
 </resources>

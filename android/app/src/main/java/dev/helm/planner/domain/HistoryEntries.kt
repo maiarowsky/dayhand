@@ -30,7 +30,6 @@ enum class HistoryField(val wire: String) {
     DUE_DATE("dueDate"),
     DUE_TIME("dueTime"),
     REPEAT("repeat"),
-    LABELS("labels"),
     LINKS("links"),
     CHECKLIST("checklist"),
     REMINDERS("reminders"),

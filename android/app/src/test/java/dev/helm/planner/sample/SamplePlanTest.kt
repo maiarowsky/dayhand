@@ -27,7 +27,6 @@ class SamplePlanTest {
         assertEquals(tasks.size, tasks.map { it.localId }.distinct().size)
         for (task in tasks) {
             assertNotNull(task.title, TaskRules.title(task.title))
-            assertNotNull(task.title, TaskRules.labels(task.labels))
             assertNotNull(task.title, TaskRules.checklist(task.checklist))
             task.repeat?.let { assertTrue(task.title, TaskRules.isValid(it)) }
             task.reminders?.let { assertNotNull(task.title, TaskRules.reminders(it)) }
@@ -93,7 +92,6 @@ class SamplePlanTest {
         assertEquals(listOf("MILK", "EGGS", "BREAD", "COFFEE"), groceries.checklist.map { it.title })
         val projects = SamplePlan.projects(now) { it.name }
         assertEquals("HOME", projects.single { it.localId == groceries.projectId }.name)
-        assertTrue(groceries.labels.isEmpty())
         assertEquals(1, groceries.checklist.count { it.done })
     }
 }

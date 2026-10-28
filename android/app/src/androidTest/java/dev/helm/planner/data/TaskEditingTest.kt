@@ -108,15 +108,11 @@ class TaskEditingTest {
         repository.setRepeat(a.localId, null)
         assertEquals(JsonNull, lastArgs()["repeat"])
 
-        repository.setLabels(a.localId, listOf(" Dayhand", "home", "Dayhand"))
-        assertEquals(listOf("Dayhand", "home"), lastArgs().getValue("labels").jsonArray.map { it.jsonPrimitive.content })
-
         repository.setLinks(a.localId, listOf(TaskLink("https://example.com", "Spec")))
         val link = lastArgs().getValue("links").jsonArray.single().jsonObject
         assertEquals("https://example.com", link.getValue("url").jsonPrimitive.content)
 
         row = db.tasks().byLocalId(a.localId)!!
-        assertEquals(listOf("Dayhand", "home"), row.labels)
         assertEquals(listOf(TaskLink("https://example.com", "Spec")), row.links)
         assertTrue(db.outbox().all().drop(1).all { it.mutation == Mutations.UPDATE })
     }
@@ -258,12 +254,11 @@ class TaskEditingTest {
         val trashed = RemoteTask(
             id = "s1", clientId = null, title = "Old", note = null, dueDate = null, dueTime = null, status = "todo",
             isNow = false, resumeNote = null, completedAt = null, archivedAt = null, createdAt = 1, updatedAt = 5,
-            labels = listOf("home"), deletedAt = 4,
+            deletedAt = 4,
         )
         repository.applySnapshot(RemoteEvent.Snapshot(listOf(trashed), "Europe/Warsaw"))
         val row = db.tasks().byLocalId("s1")!!
         assertEquals(4L, row.deletedAt)
-        assertEquals(listOf("home"), row.labels)
 
         repository.saveHistory("s1", listOf(RemoteHistoryEntry(9, "agent", "delete", null, """{"deletedAt":4}""")))
         repository.saveHistory("s1", listOf(RemoteHistoryEntry(9, "agent", "delete", null, """{"deletedAt":4}""")))

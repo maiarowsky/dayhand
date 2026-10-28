@@ -54,7 +54,7 @@
     <string name="agents_accept">Przyjmij</string>
     <string name="agents_accept_note">Stanie się zadaniem Twojego planu i pojawi się w widoku Dziś w swoim terminie.</string>
     <string name="agents_merge">Połącz z zadaniem</string>
-    <string name="agents_merge_note">Jej notatka, linki i etykiety dołączą do zadania, które już masz.</string>
+    <string name="agents_merge_note">Jej notatka i linki dołączą do zadania, które już masz.</string>
     <string name="agents_reject">Odrzuć</string>
     <string name="agents_reject_title">Odrzucić „%1$s”?</string>
     <string name="agents_reason_label">Dlaczego (opcjonalnie, trafi do źródła)</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">Znajdź zadanie</string>
     <string name="agents_merge_none">Żadne otwarte zadanie nie pasuje.</string>
     <string name="agents_merge_confirm_title">Połączyć z „%1$s”?</string>
-    <string name="agents_merge_confirm_text">Propozycja trafi do kosza; jej notatka, linki i etykiety dołączą do tego zadania.</string>
+    <string name="agents_merge_confirm_text">Propozycja trafi do kosza; jej notatka i linki dołączą do tego zadania.</string>
     <string name="agents_merge_confirm">Połącz</string>
     <string name="agents_accepted">Przyjęto: to teraz zadanie Twojego planu.</string>
     <string name="agents_merged">Połączono.</string>

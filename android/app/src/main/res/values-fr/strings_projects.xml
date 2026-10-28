@@ -23,8 +23,6 @@
     <string name="project_reorder">Modifier l’ordre</string>
     <string name="project_reorder_done">Terminer le tri</string>
     <string name="project_reorder_handle">Déplacer le projet : %1$s</string>
-    <string name="project_from_label">Créer un projet à partir du tag</string>
-    <string name="project_remove_label">Retirer le tag des tâches déplacées</string>
     <string name="project_archive_title">Archiver le projet ?</string>
     <string name="project_archive_hint">Les tâches restent dans Aujourd’hui, Calendrier et Tableau, sauf si vous les archivez aussi.</string>
     <string name="project_archive_tasks">Archiver aussi les tâches en cours</string>

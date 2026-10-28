@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
 /** Groups of task fields that one kind of change touches. */
-enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LABELS, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM, PROJECT }
+enum class Field { TITLE, NOTE, DUE, STATUS, NOW, RESUME, ARCHIVED, REPEAT, LINKS, DELETED, CHECKLIST, REMINDERS, CLAIM, PROJECT }
 
 data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
 
@@ -70,7 +70,6 @@ object SnapshotMerger {
             updatedAt = r.updatedAt,
             serverUpdatedAt = r.updatedAt,
             repeat = r.repeat,
-            labels = r.labels,
             links = r.links,
             deletedAt = r.deletedAt,
             checklist = r.checklist,
@@ -95,7 +94,6 @@ object SnapshotMerger {
         if (Field.RESUME in keepLocal) task = task.copy(resumeNote = row.resumeNote)
         if (Field.ARCHIVED in keepLocal) task = task.copy(archivedAt = row.archivedAt)
         if (Field.REPEAT in keepLocal) task = task.copy(repeat = row.repeat)
-        if (Field.LABELS in keepLocal) task = task.copy(labels = row.labels)
         if (Field.LINKS in keepLocal) task = task.copy(links = row.links)
         if (Field.DELETED in keepLocal) task = task.copy(deletedAt = row.deletedAt)
         if (Field.CHECKLIST in keepLocal) task = task.copy(checklist = row.checklist)
@@ -155,7 +153,6 @@ class DirtyFields private constructor(
                 if ("dueDate" in keys || "dueTime" in keys) add(Field.DUE)
                 if ("resumeNote" in keys) add(Field.RESUME)
                 if ("repeat" in keys) add(Field.REPEAT)
-                if ("labels" in keys) add(Field.LABELS)
                 if ("links" in keys) add(Field.LINKS)
                 if ("checklist" in keys) add(Field.CHECKLIST)
                 if ("reminders" in keys) add(Field.REMINDERS)

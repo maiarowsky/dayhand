@@ -98,11 +98,8 @@
     <string name="detail_due">Due</string>
     <string name="detail_no_due">No due day</string>
     <string name="detail_repeat">Repeat</string>
-    <string name="detail_labels">Labels</string>
     <string name="project_picker_empty">You have no projects yet. Create the first one and the task will be assigned to it.</string>
     <string name="projects_empty">You have no projects yet. A project groups tasks, for example Home or Work.</string>
-    <string name="labels_note">Labels are free tags on tasks, separate from projects. Tap one to see its tasks, hold it to turn it into a project.</string>
-    <string name="detail_repeat_reminders">Repeat and reminders</string>
     <string name="title_show_all">Show the whole title</string>
     <string name="title_show_less">Show less</string>
     <string name="note_show_all">Show the whole note</string>
@@ -150,19 +147,10 @@
         <item quantity="one">Every year</item>
         <item quantity="other">Every %1$d years</item>
     </plurals>
-    <string name="add_label">Add label</string>
-    <string name="remove_label">Remove label: %1$s</string>
-    <string name="label_name">Label</string>
-    <plurals name="labels_full">
-        <item quantity="one">At most %1$d label</item>
-        <item quantity="other">At most %1$d labels</item>
-    </plurals>
-    <string name="labels_in_use">In use</string>
     <string name="add_link">Add link</string>
     <string name="open_link">Open link</string>
     <string name="remove_link">Remove link: %1$s</string>
     <string name="no_links">No links</string>
-    <string name="no_labels">No labels</string>
     <string name="link_url">Address</string>
     <string name="link_title">Title (optional)</string>
     <string name="link_invalid">Enter a full http:// or https:// address</string>
@@ -421,4 +409,15 @@
         <item quantity="one">Waiting for %d task</item>
         <item quantity="other">Waiting for %d tasks</item>
     </plurals>
+    <string name="change_status">Change status</string>
+    <string name="detail_more">More</string>
+    <string name="history_show_all">Show the whole history (%1$d)</string>
+    <string name="day_title_tomorrow">Tomorrow</string>
+    <string name="day_title_yesterday">Yesterday</string>
+    <string name="day_back_to_today">Back to today</string>
+    <string name="day_previous">Previous day</string>
+    <string name="day_next">Next day</string>
+    <string name="empty_day">Nothing planned for this day.</string>
+    <string name="section_day_tasks">Planned</string>
+    <string name="change_due">Change due day</string>
 </resources>

@@ -39,7 +39,6 @@ class ProjectRepositoryTest {
         val before = db.projects().all()
         val actions: List<suspend () -> Unit> = listOf(
             { repository.projectStore.add("New") },
-            { repository.projectStore.add("Label", fromLabel = "phone", removeLabel = true) },
             { repository.projectStore.update(p.localId, "Edited", "red", "🥐", "Private") },
             { repository.projectStore.archive(p.localId, true, true) },
             { repository.projectStore.move(p.localId, 1) },
@@ -279,5 +278,15 @@ class ProjectRepositoryTest {
         val snapshot = repository.backupSnapshot()
         assertEquals(listOf(p), snapshot.projects)
         assertEquals(p.serverId, snapshot.tasks.single().projectId)
+    }
+
+    @Test fun noTaskCommandCarriesLabels() = runBlocking {
+        val task = repository.add("Water the plants", "2026-10-23", null, "Every morning")
+        repository.setRepeat(task.localId, RepeatRule(RepeatEvery.DAY))
+        // Done, a repeating task comes back as its next occurrence, which is added too.
+        repository.complete(task.localId)
+        val commands = db.outbox().all()
+        assertTrue(commands.map { it.mutation }.containsAll(listOf(Mutations.ADD, Mutations.UPDATE)))
+        commands.forEach { assertFalse(it.argsJson, "labels" in Json.parseToJsonElement(it.argsJson).jsonObject) }
     }
 }

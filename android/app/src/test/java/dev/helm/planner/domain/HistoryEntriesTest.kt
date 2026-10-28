@@ -35,10 +35,10 @@ class HistoryEntriesTest {
     }
 
     @Test
-    fun `creation shows the fields it set and timestamps are left out`() {
+    fun `creation shows the fields it set, and neither timestamps nor labels from before they were removed`() {
         val entry = historyEntry(event("app", "create", null, """{"title":"A","labels":["home"],"isNow":false,"deletedAt":7}"""))
         assertEquals(Actor.APP, entry.actor)
-        assertEquals(listOf(HistoryField.TITLE, HistoryField.LABELS), entry.changes.map { it.field })
+        assertEquals(listOf(HistoryField.TITLE), entry.changes.map { it.field })
     }
 
     @Test

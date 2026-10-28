@@ -16,9 +16,9 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -40,47 +40,36 @@ import dev.helm.planner.ui.theme.palette
 
 object ChecklistTags {
     const val SECTION = "detail-checklist"
-    const val FOLD = "detail-checklist-section"
     const val ADD = "detail-checklist-add"
     fun check(index: Int) = "detail-checklist-check-$index"
     fun item(index: Int) = "detail-checklist-item-$index"
 }
 
+/** "Checklist 2/5", or just "Checklist" while it is empty. */
+@Composable
+internal fun checklistTitle(items: List<ChecklistItem>): String = if (items.isEmpty()) {
+    stringResource(R.string.detail_checklist)
+} else {
+    stringResource(R.string.checklist_title_progress, stringResource(R.string.detail_checklist), items.count { it.done }, items.size)
+}
+
 /**
- * The checklist: one row per item with its checkbox, in order. Tapping the box ticks the item; tapping its text opens
- * it to rename, move or remove. "2 of 5 done" sits in the section title; the section is folded while it is empty.
+ * The checklist under its name with "2/5": one row per item with its checkbox, in order. Tapping the box ticks the
+ * item; tapping its text opens it to rename, move or remove.
  */
 @Composable
-internal fun ChecklistSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
+internal fun ChecklistField(task: Task, editable: Boolean, actions: TaskDetailActions) {
     var adding by rememberSaveable { mutableStateOf(false) }
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     val items = task.checklist
-    val title = if (items.isEmpty()) {
-        stringResource(R.string.detail_checklist)
-    } else {
-        stringResource(R.string.checklist_title_progress, stringResource(R.string.detail_checklist), items.count { it.done }, items.size)
-    }
-    FoldingSection(
-        title,
-        tag = ChecklistTags.FOLD,
-        initiallyExpanded = items.isNotEmpty(),
-        summary = if (items.isEmpty()) stringResource(R.string.checklist_empty) else null,
-    ) {
-        Column(Modifier.testTag(ChecklistTags.SECTION)) {
-            items.forEachIndexed { index, item ->
-                ChecklistRow(index, item, editable, onToggle = { actions.toggleItem(task.localId, item.id) }, onOpen = { editing = item.id })
-            }
-            if (items.isEmpty()) Placeholder(stringResource(R.string.checklist_empty))
-            if (editable && items.size < TaskRules.MAX_CHECKLIST) {
-                DetailAction(
-                    stringResource(R.string.checklist_add),
-                    { adding = true },
-                    Icons.Filled.Add,
-                    Modifier
-                        .padding(top = 8.dp)
-                        .testTag(ChecklistTags.ADD),
-                )
-            }
+    Column(Modifier.testTag(ChecklistTags.SECTION)) {
+        FieldLabel(checklistTitle(items))
+        items.forEachIndexed { index, item ->
+            ChecklistRow(index, item, editable, onToggle = { actions.toggleItem(task.localId, item.id) }, onOpen = { editing = item.id })
+        }
+        if (items.isEmpty() && !editable) Placeholder(stringResource(R.string.checklist_empty))
+        if (editable && items.size < TaskRules.MAX_CHECKLIST) {
+            DetailAction(stringResource(R.string.checklist_add), { adding = true }, Icons.Filled.Add, Modifier.testTag(ChecklistTags.ADD))
         }
     }
     if (adding) {

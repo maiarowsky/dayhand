@@ -49,9 +49,9 @@ class TaskDetailViewModel(
 
     private val pending = selected.flatMapLatest { id -> id?.let(repository::pendingChangesFor) ?: flowOf(0) }
 
-    /** Every label in use, and the tasks by server id (to name the tasks this one waits for). */
+    /** The tasks by server id (to name the tasks this one waits for). */
     private val others = repository.tasks.map { tasks ->
-        Others(tasks.flatMap { it.labels }.distinct().sortedBy { it.lowercase() }, tasks.filter { it.serverId != null }.associateBy { it.serverId!! })
+        Others(tasks.filter { it.serverId != null }.associateBy { it.serverId!! })
     }
 
     private val today = combine(settings.settings, minuteTicks(clock)) { s, now -> Today(s.timezone, HelmDates.localDate(now, s.timezone), s.reminderMinutes) }
@@ -62,7 +62,7 @@ class TaskDetailViewModel(
                 TaskDetailUiState.Missing(selected.value.orEmpty())
             } else {
                 TaskDetailUiState.Ready(
-                    task, day.date, day.zone, history, historyState, pending, others.labels, day.reminders,
+                    task, day.date, day.zone, history, historyState, pending, day.reminders,
                     dependencies = AgentWork.dependencies(task, others.byServerId),
                 )
             }
@@ -70,7 +70,7 @@ class TaskDetailViewModel(
 
     private data class Today(val zone: String, val date: String, val reminders: List<Int>)
 
-    private data class Others(val labels: List<String>, val byServerId: Map<String, Task>)
+    private data class Others(val byServerId: Map<String, Task>)
 
     init {
         // Fetch the server's history when the task is opened and whenever a newer server copy arrives.
@@ -91,7 +91,6 @@ class TaskDetailViewModel(
     override fun setNote(localId: String, note: String) = launch { repository.setNote(localId, note) }
     override fun setDue(localId: String, date: String?, time: String?) = launch { repository.setDue(localId, date, time) }
     override fun setRepeat(localId: String, rule: RepeatRule?) = launch { repository.setRepeat(localId, rule) }
-    override fun setLabels(localId: String, labels: List<String>) = launch { repository.setLabels(localId, labels) }
     override fun setLinks(localId: String, links: List<TaskLink>) = launch { repository.setLinks(localId, links) }
     override fun setReminders(localId: String, reminders: List<TaskReminder>?) = launch { repository.setReminders(localId, reminders) }
     override fun toggleItem(localId: String, itemId: String) = launch { repository.toggleItem(localId, itemId) }

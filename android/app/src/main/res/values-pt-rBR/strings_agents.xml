@@ -54,7 +54,7 @@
     <string name="agents_accept">Aceitar</string>
     <string name="agents_accept_note">Ela vira uma tarefa do seu plano e aparece em Hoje no prazo.</string>
     <string name="agents_merge">Mesclar com uma tarefa</string>
-    <string name="agents_merge_note">A nota, os links e as etiquetas dela vão para uma tarefa que você já tem.</string>
+    <string name="agents_merge_note">A nota e os links dela vão para uma tarefa que você já tem.</string>
     <string name="agents_reject">Rejeitar</string>
     <string name="agents_reject_title">Rejeitar “%1$s”?</string>
     <string name="agents_reason_label">Motivo (opcional, enviado de volta à origem)</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">Encontrar uma tarefa</string>
     <string name="agents_merge_none">Nenhuma tarefa aberta corresponde.</string>
     <string name="agents_merge_confirm_title">Mesclar com “%1$s”?</string>
-    <string name="agents_merge_confirm_text">A proposta vai para a lixeira; a nota, os links e as etiquetas dela vão para esta tarefa.</string>
+    <string name="agents_merge_confirm_text">A proposta vai para a lixeira; a nota e os links dela vão para esta tarefa.</string>
     <string name="agents_merge_confirm">Mesclar</string>
     <string name="agents_accepted">Aceita: agora é uma tarefa do seu plano.</string>
     <string name="agents_merged">Mesclada.</string>

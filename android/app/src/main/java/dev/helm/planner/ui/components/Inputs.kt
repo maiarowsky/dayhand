@@ -2,7 +2,6 @@ package dev.helm.planner.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -162,38 +160,6 @@ fun HelmChip(
             },
             textAlign = TextAlign.Center,
         )
-    }
-}
-
-/**
- * A chip that does something (pick a day, add or remove a label): an outlined pill, at least 48 dp high, with an
- * optional [icon] before the text and [trailingIcon] after it. [clickLabel] tells a screen reader what a tap does.
- */
-@Composable
-fun ActionChip(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    icon: ImageVector? = null,
-    trailingIcon: ImageVector? = null,
-    clickLabel: String? = null,
-) {
-    val p = palette
-    val tint = if (enabled) p.accent else p.textFaint
-    Row(
-        modifier
-            .heightIn(min = HelmDimens.touchTarget)
-            .clip(HelmShapes.pill)
-            .border(1.dp, p.border, HelmShapes.pill)
-            .clickable(enabled = enabled, onClickLabel = clickLabel, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        icon?.let { Icon(it, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp)) }
-        Text(text, style = helmType.smallStrong, color = if (enabled) p.text else p.textMuted)
-        trailingIcon?.let { Icon(it, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(18.dp)) }
     }
 }
 

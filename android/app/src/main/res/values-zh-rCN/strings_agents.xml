@@ -54,7 +54,7 @@
     <string name="agents_accept">接受</string>
     <string name="agents_accept_note">它会成为你计划中的任务，到期时显示在“今天”中。</string>
     <string name="agents_merge">合并到任务</string>
-    <string name="agents_merge_note">它的备注、链接和标签会并入你已有的任务。</string>
+    <string name="agents_merge_note">它的备注和链接会并入你已有的任务。</string>
     <string name="agents_reject">拒绝</string>
     <string name="agents_reject_title">拒绝“%1$s”？</string>
     <string name="agents_reason_label">原因（可选，会发回给来源）</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">查找任务</string>
     <string name="agents_merge_none">没有匹配的未完成任务。</string>
     <string name="agents_merge_confirm_title">合并到“%1$s”？</string>
-    <string name="agents_merge_confirm_text">该提议会移到回收站；它的备注、链接和标签会并入这个任务。</string>
+    <string name="agents_merge_confirm_text">该提议会移到回收站；它的备注和链接会并入这个任务。</string>
     <string name="agents_merge_confirm">合并</string>
     <string name="agents_accepted">已接受：它现在是你计划中的任务了。</string>
     <string name="agents_merged">已合并。</string>

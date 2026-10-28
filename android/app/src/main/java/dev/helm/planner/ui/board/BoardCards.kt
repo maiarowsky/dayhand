@@ -1,13 +1,10 @@
 package dev.helm.planner.ui.board
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -20,14 +17,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -124,8 +120,7 @@ fun NowBoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: Boar
     }
 }
 
-/** Title (with "⛔" before it when [blocked]), the due day (red when overdue) and the labels. */
-@OptIn(ExperimentalLayoutApi::class)
+/** Title (with "⛔" before it when [blocked]), the due day (red when overdue) and the project. */
 @Composable
 fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Boolean = false, blocked: AgentWork.Blocked? = null) {
     Column(modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -147,25 +142,7 @@ fun CardContent(task: Task, today: LocalDate, modifier: Modifier, emphasized: Bo
             )
         }
         ProjectBadge(task)
-        if (task.labels.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                task.labels.forEach { LabelTag(it) }
-            }
-        }
     }
-}
-
-/** A task label: the secondary colour on its own 16 % tint, small badge corners. */
-@Composable
-fun LabelTag(label: String, color: Color = palette.secondary) {
-    Text(
-        label,
-        style = helmType.smallStrong,
-        color = color,
-        modifier = Modifier
-            .background(color.copy(alpha = 0.16f), HelmShapes.badge)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-    )
 }
 
 /** Moves without dragging: one menu per card, every other column plus "now". */

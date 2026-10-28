@@ -12,6 +12,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import dev.helm.planner.R
+import dev.helm.planner.ui.components.ButtonTone
 import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.theme.palette
 import java.time.Instant
@@ -31,7 +32,7 @@ fun DayPickerDialog(initial: LocalDate, onDismiss: () -> Unit, onPick: (LocalDat
         onDismissRequest = onDismiss,
         colors = colors,
         confirmButton = {
-            TextAction(stringResource(R.string.ok), onClick = {
+            TextAction(stringResource(R.string.ok), tone = ButtonTone.Accent, onClick = {
                 state.selectedDateMillis?.let { onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
                     ?: onDismiss()
             })
@@ -61,7 +62,7 @@ fun TimePickerDialog(initial: LocalTime, onDismiss: () -> Unit, onPick: (String)
                 ),
             )
         },
-        confirmButton = { TextAction(stringResource(R.string.ok), onClick = { onPick(LocalTime.of(state.hour, state.minute).toString()) }) },
+        confirmButton = { TextAction(stringResource(R.string.ok), tone = ButtonTone.Accent, onClick = { onPick(LocalTime.of(state.hour, state.minute).toString()) }) },
         dismissButton = { TextAction(stringResource(R.string.cancel), onClick = onDismiss, color = p.textMuted) },
     )
 }

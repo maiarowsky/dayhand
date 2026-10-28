@@ -40,7 +40,6 @@ class PlanBackupTest {
         createdAt = 100,
         updatedAt = 200,
         repeat = RepeatRule(RepeatEvery.WEEK, weekdays = listOf(1, 3)),
-        labels = listOf("Work"),
         links = listOf(TaskLink("https://example.com/doc", "Draft")),
         checklist = listOf(ChecklistItem("c1", "Goal", done = true), ChecklistItem("c2", "Cost")),
         reminders = listOf(TaskReminder.before(15), TaskReminder.at("18:00", daysBefore = 1)),
@@ -58,8 +57,9 @@ class PlanBackupTest {
         assertEquals(setOf("timezone", "summaryTime", "defaultReminderMinutes"), root.getValue("settings").jsonObject.keys)
         assertEquals(JsonArray(emptyList()), root.getValue("events"))
         val task = root.getValue("tasks").jsonArray.single().jsonObject
-        // task.schema.json requires these.
-        for (key in listOf("id", "title", "status", "isNow", "labels", "links", "createdAt", "updatedAt")) assertTrue(key, key in task)
+        // task.schema.json requires these; labels are gone from Dayhand and are not written.
+        for (key in listOf("id", "title", "status", "isNow", "links", "createdAt", "updatedAt")) assertTrue(key, key in task)
+        assertFalse("labels" in task)
         assertEquals("local-1", task.getValue("id").jsonPrimitive.content)
         assertEquals("doing", task.getValue("status").jsonPrimitive.content)
         assertEquals(1, task.getValue("repeat").jsonObject.getValue("interval").jsonPrimitive.int)
@@ -101,7 +101,6 @@ class PlanBackupTest {
                 status = TaskStatus.DOING,
                 resumeNote = full.resumeNote,
                 repeat = full.repeat,
-                labels = full.labels,
                 links = full.links,
                 checklist = full.checklist,
                 reminders = full.reminders,
@@ -118,7 +117,7 @@ class PlanBackupTest {
         // What app:exportPlan returns (numbers as doubles, as Convex sends them) and what dayhand export writes.
         val content = """
             {"version":1.0,"exportedAt":1.7E12,"settings":{"timezone":"Europe/London","summaryTime":"05:00","defaultReminderMinutes":[0.0]},
-             "tasks":[{"id":"jd7x","ref":4.0,"title":"From the server","status":"todo","isNow":false,"labels":[],"links":[],
+             "tasks":[{"id":"jd7x","ref":4.0,"title":"From the server","status":"todo","isNow":false,"labels":["from-before"],"links":[],
                        "repeat":{"every":"month","interval":1.0,"monthDay":-1.0},"rrule":"FREQ=MONTHLY;BYMONTHDAY=-1",
                        "createdAt":1.0,"updatedAt":2.0}],
              "events":[{"action":"create"}]}

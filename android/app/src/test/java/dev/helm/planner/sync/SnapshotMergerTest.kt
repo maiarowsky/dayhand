@@ -146,31 +146,28 @@ class SnapshotMergerTest {
     }
 
     @Test
-    fun `repeat, labels, links and the trash come from the server`() {
+    fun `repeat, links and the trash come from the server`() {
         val server = remote("s1", 10) {
             copy(
                 repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)),
-                labels = listOf("home", "Dayhand"),
                 links = listOf(TaskLink("https://example.com", "Spec")),
                 deletedAt = 7,
             )
         }
         val task = SnapshotMerger.merge(emptyList(), emptyList(), listOf(server), now).upserts.single()
         assertEquals(RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), task.repeat)
-        assertEquals(listOf("home", "Dayhand"), task.labels)
         assertEquals(listOf(TaskLink("https://example.com", "Spec")), task.links)
         assertEquals(7L, task.deletedAt)
     }
 
     @Test
-    fun `a waiting label change keeps the labels local and only them`() {
-        val local = row("a", "s1", 10) { copy(labels = listOf("mine"), title = "Old") }
-        val server = remote("s1", 20) { copy(labels = listOf("agent"), title = "Renamed", links = listOf(TaskLink("https://a.pl"))) }
-        val pending = op(Mutations.UPDATE, "a", """{"labels":["mine"],"clientId":"c"}""")
+    fun `a waiting link change keeps the links local and only them`() {
+        val local = row("a", "s1", 10) { copy(links = listOf(TaskLink("https://mine.example")), title = "Old") }
+        val server = remote("s1", 20) { copy(title = "Renamed", links = listOf(TaskLink("https://agent.example"))) }
+        val pending = op(Mutations.UPDATE, "a", """{"links":[{"url":"https://mine.example"}],"clientId":"c"}""")
         val merged = SnapshotMerger.merge(listOf(local), listOf(pending), listOf(server), now).upserts.single()
-        assertEquals(listOf("mine"), merged.labels)
+        assertEquals(listOf(TaskLink("https://mine.example")), merged.links)
         assertEquals("Renamed", merged.title)
-        assertEquals(listOf(TaskLink("https://a.pl")), merged.links)
     }
 
     @Test

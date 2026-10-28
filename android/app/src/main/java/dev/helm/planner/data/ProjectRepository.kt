@@ -37,15 +37,13 @@ class ProjectRepository(
     /** Pairing clears the old owner and saves new credentials without an in-flight project reply repopulating it. */
     suspend fun <T> withOwnerChange(block: suspend () -> T): T = commands.withLock { block() }
 
-    suspend fun add(name: String, color: String? = null, icon: String? = null, note: String? = null,
-                    fromLabel: String? = null, removeLabel: Boolean = false): Project = command { server ->
+    suspend fun add(name: String, color: String? = null, icon: String? = null, note: String? = null): Project = command { server ->
         validate(name, color, icon, note)
         val result = send(server, ADD, buildJsonObject {
             put("name", requireNotNull(ProjectRules.name(name)))
             color?.let { put("color", it) }
             icon?.trim()?.takeIf { it.isNotEmpty() }?.let { put("icon", it) }
             note?.takeIf { it.isNotBlank() }?.let { put("note", it) }
-            fromLabel?.let { put("fromLabel", it); put("removeLabel", removeLabel) }
         }) as JsonObject
         val project = parse(requireNotNull(result["project"]))
         db.projects().upsert(listOf(project))

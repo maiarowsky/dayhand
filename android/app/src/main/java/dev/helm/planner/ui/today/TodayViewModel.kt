@@ -1,10 +1,11 @@
 package dev.helm.planner.ui.today
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.helm.planner.data.TaskRepository
 import dev.helm.planner.domain.AgentWork
-import dev.helm.planner.domain.todaySections
+import dev.helm.planner.domain.daySections
 import dev.helm.planner.sample.SamplePlan
 import dev.helm.planner.settings.SettingsStore
 import dev.helm.planner.sync.LiveSync
@@ -21,24 +22,29 @@ class TodayViewModel(
     settings: SettingsStore,
     network: NetworkMonitor,
     liveSync: LiveSync,
+    /** Keeps the day shown across a screen rotation and the app being restarted by the system. */
+    private val savedState: SavedStateHandle,
     clock: () -> Long = System::currentTimeMillis,
 ) : ViewModel(), TodayActions {
 
+    private val dayOffset = savedState.getStateFlow(DAY_OFFSET, 0)
+
     val state: StateFlow<TodayUiState?> =
         combine(
-            repository.tasks,
+            combine(repository.tasks, dayOffset, ::Pair),
             settings.settings,
             minuteTicks(clock),
             connectionStatus(settings.settings, network.online, liveSync.state),
             repository.pendingChanges,
-        ) { tasks, s, now, c, pending ->
+        ) { (tasks, offset), s, now, c, pending ->
             TodayUiState(
-                todaySections(tasks, now, s.timezone),
+                daySections(tasks, now, s.timezone, offset),
                 c,
                 pending,
                 sample = tasks.any { SamplePlan.isSample(it.localId) },
                 timezone = s.timezone,
                 blocked = AgentWork.blockedTasks(tasks),
+                dayOffset = offset,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
@@ -52,6 +58,9 @@ class TodayViewModel(
     override fun add(title: String, dueDate: String?, dueTime: String?, note: String?, projectId: String?) =
         launch { repository.add(title, dueDate, dueTime, note, projectId) }
     override fun removeSample() = launch { repository.removeSample() }
+    override fun showDay(offset: Int) {
+        savedState[DAY_OFFSET] = offset
+    }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
@@ -59,5 +68,6 @@ class TodayViewModel(
 
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
+        const val DAY_OFFSET = "dayOffset"
     }
 }

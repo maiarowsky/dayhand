@@ -46,14 +46,12 @@ class ProjectsTest {
 
     @Test fun projectScopesResolveDependenciesBeforeFiltering() {
         val dependency = task("dependency").copy(serverId = "dep-server", projectId = "other")
-        val waiting = task("waiting").copy(projectId = "home", labels = listOf("phone"), dependsOn = listOf("dep-server"))
+        val waiting = task("waiting").copy(projectId = "home", dependsOn = listOf("dep-server"))
         val tasks = listOf(dependency, waiting)
-        val projectState = dev.helm.planner.ui.projects.projectUiState(tasks, emptyList(), "home", null, "2026-10-23", "UTC")
+        val projectState = dev.helm.planner.ui.projects.projectUiState(tasks, emptyList(), "home", "2026-10-23", "UTC")
         assertEquals(listOf(waiting), projectState.tasks)
         assertEquals(1, projectState.blocked[waiting.localId]?.waitingOn)
-        val labelState = dev.helm.planner.ui.projects.projectUiState(tasks, emptyList(), null, "phone", "2026-10-23", "UTC")
-        assertEquals(1, labelState.blocked[waiting.localId]?.waitingOn)
-        val noProject = dev.helm.planner.ui.projects.projectUiState(listOf(dependency, waiting.copy(projectId = null)), emptyList(), null, null, "2026-10-23", "UTC")
+        val noProject = dev.helm.planner.ui.projects.projectUiState(listOf(dependency, waiting.copy(projectId = null)), emptyList(), null, "2026-10-23", "UTC")
         assertEquals(1, noProject.blocked[waiting.localId]?.waitingOn)
     }
 

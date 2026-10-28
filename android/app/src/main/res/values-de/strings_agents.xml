@@ -54,7 +54,7 @@
     <string name="agents_accept">Annehmen</string>
     <string name="agents_accept_note">Wird zu einer Aufgabe in deinem Plan und erscheint unter Heute, sobald sie fällig ist.</string>
     <string name="agents_merge">Mit Aufgabe zusammenführen</string>
-    <string name="agents_merge_note">Notiz, Links und Labels kommen zu einer Aufgabe hinzu, die du schon hast.</string>
+    <string name="agents_merge_note">Notiz und Links kommen zu einer Aufgabe hinzu, die du schon hast.</string>
     <string name="agents_reject">Ablehnen</string>
     <string name="agents_reject_title">„%1$s“ ablehnen?</string>
     <string name="agents_reason_label">Grund (optional, geht zurück an die Quelle)</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">Aufgabe suchen</string>
     <string name="agents_merge_none">Keine offene Aufgabe passt.</string>
     <string name="agents_merge_confirm_title">Mit „%1$s“ zusammenführen?</string>
-    <string name="agents_merge_confirm_text">Der Vorschlag kommt in den Papierkorb; Notiz, Links und Labels kommen zu dieser Aufgabe hinzu.</string>
+    <string name="agents_merge_confirm_text">Der Vorschlag kommt in den Papierkorb; Notiz und Links kommen zu dieser Aufgabe hinzu.</string>
     <string name="agents_merge_confirm">Zusammenführen</string>
     <string name="agents_accepted">Angenommen: Das ist jetzt eine Aufgabe in deinem Plan.</string>
     <string name="agents_merged">Zusammengeführt.</string>

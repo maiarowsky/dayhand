@@ -1,6 +1,8 @@
 package dev.helm.planner.ui.today
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -19,6 +23,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,13 +36,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
+import dev.helm.planner.ui.components.ButtonTone
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.HelmButton
 import dev.helm.planner.ui.components.HelmFab
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
@@ -46,6 +54,7 @@ import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 object TodayTags {
     const val STATUS = "status"
@@ -56,9 +65,16 @@ object TodayTags {
     const val TODAY = "today"
     const val DONE = "done"
     const val FAB = "add"
+    const val PREVIOUS_DAY = "day-previous"
+    const val NEXT_DAY = "day-next"
+    fun row(localId: String) = "row-$localId"
 }
 
-/** The Today screen: overdue, the one "now" task, today's tasks, then done (collapsed). */
+/**
+ * The Today screen: overdue, the one "now" task, today's tasks, then done (collapsed). The arrows in the header show
+ * the day before or after, with its open tasks and the ones done on it; a tap on the header of another day comes
+ * back to today.
+ */
 @Composable
 fun TodayScreen(
     state: TodayUiState,
@@ -72,36 +88,70 @@ fun TodayScreen(
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
-    val locale = appLocale()
-    val date = LocalDate.parse(state.sections.date)
+    val today = LocalDate.parse(state.today)
+    val shown = LocalDate.parse(state.sections.date)
     Scaffold(
         modifier = modifier,
         containerColor = p.background,
-        topBar = {
-            LargeHeader(
-                title = stringResource(R.string.today_title),
-                subtitle = date.format(dateFormat("EEEEdMMMM", locale)),
-            ) {
-                HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
-            }
-        },
+        topBar = { DayHeader(state.dayOffset, shown, today, actions) },
         bottomBar = bottomBar,
         floatingActionButton = {
             HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(TodayTags.FAB))
         },
     ) { padding ->
-        TodayList(state, actions, date, PaddingValues(bottom = 96.dp), Modifier.padding(padding), header, onAdd = { adding = true })
+        TodayList(state, actions, today, PaddingValues(bottom = 96.dp), Modifier.padding(padding), header, onAdd = { adding = true })
     }
     if (adding) {
         QuickAddSheet(
             timezone = state.timezone,
             now = now,
+            defaultDay = state.sections.date.takeIf { state.dayOffset != 0 },
             onDismiss = { adding = false },
             onSave = { title, day, time, note, project ->
                 actions.add(title, day, time, note, project)
                 adding = false
             },
         )
+    }
+}
+
+/**
+ * "Today", "Tomorrow", "Yesterday" or the weekday, the full date under it, and the arrows to the day before and after
+ * (each a 48 dp button with its name for a screen reader). On another day than today the title goes back to today.
+ */
+@Composable
+private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: TodayActions) {
+    val p = palette
+    val locale = appLocale()
+    val title = when (offset) {
+        0 -> stringResource(R.string.today_title)
+        1 -> stringResource(R.string.day_title_tomorrow)
+        -1 -> stringResource(R.string.day_title_yesterday)
+        else -> shown.format(DateTimeFormatter.ofPattern("EEEE", locale)).replaceFirstChar { it.titlecase(locale) }
+    }
+    LargeHeader(
+        title = title,
+        subtitle = shown.format(dateFormat(if (shown.year == today.year) "EEEEdMMMM" else "yEEEEdMMMM", locale)),
+        onTitleClick = if (offset != 0) ({ actions.showDay(0) }) else null,
+        titleClickLabel = stringResource(R.string.day_back_to_today),
+    ) {
+        HelmButton(
+            null,
+            { actions.showDay(offset - 1) },
+            Modifier.testTag(TodayTags.PREVIOUS_DAY),
+            tone = ButtonTone.Quiet,
+            icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            description = stringResource(R.string.day_previous),
+        )
+        HelmButton(
+            null,
+            { actions.showDay(offset + 1) },
+            Modifier.testTag(TodayTags.NEXT_DAY),
+            tone = ButtonTone.Quiet,
+            icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            description = stringResource(R.string.day_next),
+        )
+        HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
     }
 }
 
@@ -135,12 +185,19 @@ private fun TodayItems(
     val p = palette
     var doneExpanded by rememberSaveable { mutableStateOf(false) }
     val sections = state.sections
+    val leaving = rememberLeavingTasks()
+    // A ticked-off task stays a moment where it was (LeavingTasks); the rows under it then move up.
+    val overdue = leaving.withLeaving(TodayTags.OVERDUE, sections.overdue)
+    val todays = leaving.withLeaving(TodayTags.TODAY, sections.today)
+    val nowTask = sections.now ?: leaving.leaving(TodayTags.NOW)
+    val moving = if (leaving.reducedMotion) null else tween<IntOffset>(MOVE_MS)
+    CompositionLocalProvider(LocalLeavingTasks provides leaving) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding) {
-        if (sections.isEmpty) {
+        if (overdue.isEmpty() && nowTask == null && todays.isEmpty()) {
             item {
                 EmptyState(
                     icon = Icons.Filled.CheckCircle,
-                    title = stringResource(R.string.empty_today),
+                    title = stringResource(if (state.dayOffset == 0) R.string.empty_today else R.string.empty_day),
                     action = stringResource(R.string.add_task),
                     actionIcon = Icons.Filled.Add,
                     onAction = onAdd,
@@ -148,23 +205,44 @@ private fun TodayItems(
                 )
             }
         }
-        if (sections.overdue.isNotEmpty()) {
-            item {
+        if (overdue.isNotEmpty()) {
+            item(key = TodayTags.OVERDUE) {
                 SectionHeader(stringResource(R.string.section_overdue, sections.overdue.size), Modifier.testTag(TodayTags.OVERDUE), p.danger)
             }
-            items(sections.overdue, key = { it.localId }) { OverdueRow(it, today, actions, state.blocked[it.localId]) }
+            val rowActions = actions.keepingTicked(leaving, TodayTags.OVERDUE, overdue)
+            items(overdue, key = { it.localId }) {
+                Box(Modifier.animateItem(fadeInSpec = null, placementSpec = moving, fadeOutSpec = null)) {
+                    OverdueRow(it, today, rowActions, state.blocked[it.localId])
+                }
+            }
         }
-        sections.now?.let { now -> item(key = "now:${now.localId}") { NowCard(now, today, actions, state.blocked[now.localId]) } }
-        if (sections.today.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.section_today), Modifier.testTag(TodayTags.TODAY)) }
-            items(sections.today, key = { it.localId }) { TodayRow(it, today, actions, state.blocked[it.localId]) }
+        nowTask?.let { now ->
+            item(key = "now:${now.localId}") {
+                NowCard(now, today, actions.keepingTicked(leaving, TodayTags.NOW, listOf(now)), state.blocked[now.localId])
+            }
+        }
+        if (todays.isNotEmpty()) {
+            item(key = TodayTags.TODAY) {
+                val title = if (state.dayOffset == 0) stringResource(R.string.section_today) else stringResource(R.string.section_day_tasks)
+                SectionHeader(title, Modifier.testTag(TodayTags.TODAY))
+            }
+            val rowActions = actions.keepingTicked(leaving, TodayTags.TODAY, todays)
+            items(todays, key = { it.localId }) {
+                Box(Modifier.animateItem(fadeInSpec = null, placementSpec = moving, fadeOutSpec = null)) {
+                    TodayRow(it, today, rowActions, state.blocked[it.localId])
+                }
+            }
         }
         if (sections.done.isNotEmpty()) {
-            item { DoneHeader(sections.done.size, doneExpanded) { doneExpanded = !doneExpanded } }
-            if (doneExpanded) items(sections.done, key = { it.localId }) { DoneRow(it, actions) }
+            item(key = TodayTags.DONE) { DoneHeader(sections.done.size, doneExpanded) { doneExpanded = !doneExpanded } }
+            if (doneExpanded) items(sections.done, key = { "done:${it.localId}" }) { DoneRow(it, actions) }
         }
     }
+    }
 }
+
+/** How long the rows under a ticked-off task take to move up into its place. */
+private const val MOVE_MS = 160
 
 @Composable
 private fun SectionHeader(text: String, modifier: Modifier = Modifier, color: Color = palette.accent) {

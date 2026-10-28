@@ -85,6 +85,8 @@ fun QuickAddSheet(
     onSave: (title: String, dueDate: String, dueTime: String?, note: String?, projectId: String?) -> Unit,
     now: () -> Long = System::currentTimeMillis,
     defaultProjectId: String? = null,
+    /** The day a task without a date phrase is due on: today unless the user is looking at another day. */
+    defaultDay: String? = null,
 ) {
     val projects = LocalProjects.current.projects
     var projectId by rememberSaveable { mutableStateOf(defaultProjectId) }
@@ -92,7 +94,7 @@ fun QuickAddSheet(
     var pickingProject by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
-    var day by rememberSaveable { mutableStateOf<String?>(null) }
+    var day by rememberSaveable { mutableStateOf(defaultDay) }
     var time by rememberSaveable { mutableStateOf<String?>(null) }
     // A day or time picked under "More options" wins over a phrase in the title.
     var picked by rememberSaveable { mutableStateOf(false) }

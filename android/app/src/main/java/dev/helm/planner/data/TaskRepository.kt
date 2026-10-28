@@ -130,7 +130,6 @@ class TaskRepository(
                     dueDate = occurrence.dueDate,
                     dueTime = task.dueTime,
                     repeat = occurrence.repeat,
-                    labels = task.labels,
                     links = task.links,
                     checklist = task.checklist.map { it.copy(done = false) },
                     reminders = task.reminders,
@@ -267,14 +266,6 @@ class TaskRepository(
             enqueue(Mutations.UPDATE, localId, buildJsonObject { put("projectId", projectId.orNull()) }, now = now)
         }
         onOutboxChanged()
-    }
-
-    /** Sets free tags across projects, cleaned as the backend cleans them. */
-    suspend fun setLabels(localId: String, labels: List<String>) {
-        val clean = requireNotNull(TaskRules.labels(labels)) { "too many or too long labels" }
-        edit(localId, Mutations.UPDATE, { put("labels", JsonArray(clean.map(::JsonPrimitive))) }) { task, _ ->
-            task.copy(labels = clean)
-        }
     }
 
     suspend fun setLinks(localId: String, links: List<TaskLink>) {
@@ -450,7 +441,6 @@ class TaskRepository(
                     createdAt = now,
                     updatedAt = now,
                     repeat = item.repeat.takeUnless { done },
-                    labels = item.labels,
                     links = item.links,
                     checklist = item.checklist,
                     reminders = item.reminders,
@@ -531,7 +521,6 @@ class TaskRepository(
         if (task.status == TaskStatus.DOING) put("status", TaskStatus.DOING.wire)
         task.resumeNote?.let { put("resumeNote", it) }
         task.repeat?.let { put("repeat", FieldJson.wireRepeat(it)) }
-        if (task.labels.isNotEmpty()) put("labels", JsonArray(task.labels.map(::JsonPrimitive)))
         if (task.links.isNotEmpty()) put("links", JsonArray(task.links.map { Json.encodeToJsonElement(TaskLink.serializer(), it) }))
         if (task.checklist.isNotEmpty()) put("checklist", FieldJson.wireChecklist(task.checklist))
         task.reminders?.let { put("reminders", FieldJson.wireReminders(it)) }

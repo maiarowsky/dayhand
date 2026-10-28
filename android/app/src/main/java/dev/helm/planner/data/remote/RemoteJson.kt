@@ -86,7 +86,6 @@ object RemoteJson {
         createdAt = o.long("createdAt") ?: 0,
         updatedAt = o.long("updatedAt") ?: 0,
         repeat = o["repeat"]?.let(RepeatRule::parse),
-        labels = (o["labels"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.content },
         links = (o["links"] as? JsonArray).orEmpty().mapNotNull { decodeOrNull(TaskLink.serializer(), it) },
         deletedAt = o.long("deletedAt"),
         checklist = (o["checklist"] as? JsonArray).orEmpty().mapNotNull { decodeOrNull(ChecklistItem.serializer(), it) },

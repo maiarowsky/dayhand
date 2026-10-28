@@ -11,15 +11,15 @@ import kotlinx.serialization.json.JsonElement
 /** How list and object fields of a task are stored in Room columns: JSON, as the backend sends them. */
 internal object FieldJson {
     private val json = Json { ignoreUnknownKeys = true }
-    private val labelList: KSerializer<List<String>> = ListSerializer(String.serializer())
+    private val stringList: KSerializer<List<String>> = ListSerializer(String.serializer())
     private val linkList: KSerializer<List<TaskLink>> = ListSerializer(TaskLink.serializer())
     private val checklistList: KSerializer<List<ChecklistItem>> = ListSerializer(ChecklistItem.serializer())
     private val reminderList: KSerializer<List<TaskReminder>> = ListSerializer(TaskReminder.serializer())
     private val acceptanceList: KSerializer<List<AcceptanceItem>> = ListSerializer(AcceptanceItem.serializer())
 
-    fun encodeLabels(labels: List<String>): String = json.encodeToString(labelList, labels)
+    fun encodeStrings(values: List<String>): String = json.encodeToString(stringList, values)
 
-    fun decodeLabels(value: String): List<String> = decode(value, labelList) ?: emptyList()
+    fun decodeStrings(value: String): List<String> = decode(value, stringList) ?: emptyList()
 
     fun encodeLinks(links: List<TaskLink>): String = json.encodeToString(linkList, links)
 

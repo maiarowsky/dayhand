@@ -3,10 +3,8 @@ package dev.helm.planner.ui.task
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -15,7 +13,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.data.local.Task
-import dev.helm.planner.data.local.TaskStatus
 import dev.helm.planner.sync.HistoryState
 import dev.helm.planner.ui.theme.Appearance
 import dev.helm.planner.ui.theme.HelmFont
@@ -39,18 +36,17 @@ class TaskDetailLayoutTest {
         title = "Test the new version of the app on the phone before the release goes out on Tuesday morning, then report",
         note = "Install it, go through Today, the calendar and the board, then check the reminders after a restart.",
         dueDate = "2026-10-26",
-        labels = listOf("phone", "release"),
         createdAt = 0,
         updatedAt = 0,
     )
 
     private fun show(task: Task = this.task, font: HelmFont = HelmFont.Default) {
-        val state = TaskDetailUiState.Ready(task, "2026-10-27", "UTC", emptyList(), HistoryState.FRESH, 0, task.labels, listOf(0))
+        val state = TaskDetailUiState.Ready(task, "2026-10-27", "UTC", emptyList(), HistoryState.FRESH, 0, listOf(0))
         compose.setContent { HelmTheme(Appearance(font = font)) { TaskDetailScreen(state, object : TaskDetailActions {}) } }
     }
 
     private fun assertFirstScreen() {
-        listOf(TaskDetailTags.status(TaskStatus.TODO), TaskDetailTags.DUE, "detail-project", TaskDetailTags.LABELS).forEach { tag ->
+        listOf(TaskDetailTags.STATUS, TaskDetailTags.DUE, TaskDetailTags.PROJECT, TaskDetailTags.MORE).forEach { tag ->
             compose.onNodeWithTag(tag).assertIsDisplayed()
             // The test window has no status or navigation bar; a phone keeps about 48 dp for them.
             val bottom = compose.onNodeWithTag(tag).getBoundsInRoot().bottom
@@ -58,7 +54,7 @@ class TaskDetailLayoutTest {
         }
     }
 
-    @Test fun statusDueProjectAndLabelsAreOnTheFirstScreen() {
+    @Test fun statusDueProjectAndTheRestAreOnTheFirstScreen() {
         show()
         assertFirstScreen()
     }
@@ -78,35 +74,24 @@ class TaskDetailLayoutTest {
         compose.onNodeWithText("Show less").assertIsDisplayed()
     }
 
-    @Test fun aTaskWithoutLabelsKeepsLabelsFoldedOutOfTheTopCard() {
-        show(task.copy(labels = emptyList()))
-        compose.onNode(hasText("Labels") and hasAnyAncestor(hasTestTag(TaskDetailTags.SUMMARY))).assertDoesNotExist()
-        compose.onNodeWithTag(TaskDetailTags.LABELS).assertDoesNotExist()
-        compose.onNodeWithText("Add label").assertDoesNotExist()
-        compose.onNodeWithText("No labels").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("${TaskDetailTags.LABELS_SECTION}-header").performScrollTo().performClick()
-        compose.onNode(hasText("Add label") and hasAnyAncestor(hasTestTag(TaskDetailTags.LABELS_SECTION)))
-            .performScrollTo()
-            .assertIsDisplayed()
-    }
-
     @Test fun shortTitleHasNoUnfoldButton() {
         show(task.copy(title = "Milk"))
         compose.onNodeWithTag(TaskDetailTags.TITLE_MORE).assertDoesNotExist()
     }
 
-    @Test fun oneProjectRowAndOneLabelsSectionNamedLabels() {
+    @Test fun oneProjectChipAndNoLabelsAnywhere() {
         show()
-        compose.onAllNodesWithText("Labels and projects").assertCountEquals(0)
-        compose.onAllNodesWithText("Labels").assertCountEquals(1)
-        compose.onAllNodesWithText("Project").assertCountEquals(1)
+        compose.onAllNodesWithText("Label", substring = true).assertCountEquals(0)
+        compose.onAllNodesWithContentDescription("Project: No project").assertCountEquals(1)
+        compose.onNodeWithTag(TaskDetailTags.MORE).performClick()
+        compose.onAllNodesWithText("Label", substring = true).assertCountEquals(0)
     }
 
     @Test fun repeatAndRemindersFoldWithTheirValuesInTheHeader() {
         show()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).assertDoesNotExist()
         compose.onNodeWithText("Does not repeat", substring = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
+        compose.onNodeWithTag(TaskDetailTags.MORE).performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().assertIsDisplayed()
     }

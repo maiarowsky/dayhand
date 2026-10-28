@@ -75,26 +75,17 @@ class ProjectBackendTest {
         } finally { db.close() }
     }
 
-    @Test fun labelConversionUsesServerResultAndDuplicateNameCannotPretendToSucceed() = runBlocking {
+    @Test fun aDuplicateNameCannotPretendToSucceedAndDeletingMovesTasksEvenInTheTrash() = runBlocking {
         val remote = remote()
         val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), HelmDatabase::class.java).build()
         try {
             val repo = TaskRepository(db, projectRemote = { remote })
-            val label = name("tag")
             val other = repo.projectStore.add(name("Other"))
-            val loose = repo.add("Loose", null, null, null)
-            val assigned = repo.add("Assigned", null, null, null, other.localId)
-            repo.setLabels(loose.localId, listOf(label))
-            repo.setLabels(assigned.localId, listOf(label))
-            val p = repo.projectStore.add(name("Converted"), fromLabel = label, removeLabel = true)
-            assertEquals(p.serverId, db.tasks().byLocalId(loose.localId)?.projectId)
-            assertTrue(db.tasks().byLocalId(loose.localId)!!.labels.isEmpty())
-            assertEquals(other.serverId, db.tasks().byLocalId(assigned.localId)?.projectId)
-            assertEquals(listOf(label), db.tasks().byLocalId(assigned.localId)?.labels)
+            val p = repo.projectStore.add(name("Converted"))
+            val loose = repo.add("Loose", null, null, null, p.localId)
             val count = db.projects().all().size
-            try { repo.projectStore.add(p.name.uppercase(), fromLabel = label); fail() } catch (_: IllegalArgumentException) { }
+            try { repo.projectStore.add(p.name.uppercase()); fail() } catch (_: IllegalArgumentException) { }
             assertEquals(count, db.projects().all().size)
-            assertTrue(db.outbox().all().isEmpty())
             repo.moveToTrash(loose.localId)
             repo.projectStore.delete(p.localId, other.localId)
             val trash = RemoteJson.tasks(applied(remote.query(RemoteJson.QUERY_TRASH, JsonObject(emptyMap()))))

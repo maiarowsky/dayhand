@@ -11,11 +11,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -110,7 +110,7 @@ class TaskDetailCompactTest {
                 LocalDensity provides Density(density.density, scale),
                 LocalProjects provides ProjectUiContext(listOf(project)),
             ) {
-                val state = TaskDetailUiState.Ready(shown.value, TODAY, "UTC", history, HistoryState.FRESH, 0, emptyList(), listOf(0))
+                val state = TaskDetailUiState.Ready(shown.value, TODAY, "UTC", history, HistoryState.FRESH, 0, listOf(0))
                 HelmTheme(Appearance(font = font)) { TaskDetailScreen(state, actions) }
             }
         }
@@ -127,7 +127,7 @@ class TaskDetailCompactTest {
     /** From the top of the card with the status to the end of the project row. */
     private fun statusToProject(font: HelmFont): Dp {
         show(font)
-        return bounds("detail-project").bottom - bounds(TaskDetailTags.SUMMARY).top
+        return bounds(TaskDetailTags.PROJECT).bottom - bounds(TaskDetailTags.SUMMARY).top
     }
 
     @Test fun statusToProjectIsAThirdLowerThanBeforeInTheDefaultFont() {
@@ -142,7 +142,7 @@ class TaskDetailCompactTest {
 
     @Test fun titleStatusDueProjectAndTheStartOfTheNoteAreOnTheFirstScreen() {
         show(HelmFont.Mono)
-        listOf(TaskDetailTags.TITLE, TaskDetailTags.status(TaskStatus.DONE), TaskDetailTags.DUE, "detail-project").forEach { tag ->
+        listOf(TaskDetailTags.TITLE, TaskDetailTags.STATUS, TaskDetailTags.DUE, TaskDetailTags.PROJECT).forEach { tag ->
             compose.onNodeWithTag(tag).assertIsDisplayed()
             assertTrue("$tag ends below the first screen", bounds(tag).bottom <= FIRST_SCREEN)
         }
@@ -150,23 +150,24 @@ class TaskDetailCompactTest {
         assertTrue("the note starts at ${bounds(TaskDetailTags.NOTE).top}", bounds(TaskDetailTags.NOTE).top + 64.dp <= FIRST_SCREEN)
     }
 
-    @Test fun theProofIsShortTextUnderTheStatusInTheTopCard() {
+    @Test fun theProofIsNamedInTheFoldedRowAndShortTextInsideTheTopCard() {
         show()
-        compose.onNode(hasTestTag(AgentWorkTags.PROOF) and hasAnyAncestor(hasTestTag(TaskDetailTags.SUMMARY))).assertIsDisplayed()
+        compose.onNodeWithTag(AgentWorkTags.PROOF).assertDoesNotExist()
+        compose.onNodeWithTag(TaskDetailTags.MORE).assertTextContains(text(R.string.detail_proof), substring = true).performClick()
+        compose.onNode(hasTestTag(AgentWorkTags.PROOF) and hasAnyAncestor(hasTestTag(TaskDetailTags.SUMMARY))).performScrollTo().assertIsDisplayed()
         val proof = bounds(AgentWorkTags.PROOF)
-        assertTrue("the proof is below the status", proof.top >= bounds(TaskDetailTags.status(TaskStatus.DONE)).bottom)
-        assertTrue("the proof is above the due day", proof.bottom <= bounds(TaskDetailTags.DUE).top)
         assertTrue("the proof is ${proof.bottom - proof.top} high", proof.bottom - proof.top <= 40.dp)
     }
 
-    @Test fun theDueDayAndItsActionsShareOneRow() {
+    @Test fun theStatusAndTheDueDayShareOneRowAndTheDueMenuChangesEverything() {
         show()
+        val status = bounds(TaskDetailTags.STATUS)
         val day = bounds(TaskDetailTags.DUE)
-        val time = compose.onNodeWithText(text(R.string.add_time)).getBoundsInRoot()
-        val clear = compose.onNodeWithContentDescription(text(R.string.remove_due)).getBoundsInRoot()
-        assertEquals(day.top.value, time.top.value, 1f)
-        assertEquals(day.top.value, clear.top.value, 1f)
-        assertTrue("the cross is ${clear.bottom - clear.top} high", clear.bottom - clear.top >= 48.dp)
+        assertEquals(status.top.value, day.top.value, 1f)
+        listOf(status, day).forEach { assertTrue("a chip is ${it.bottom - it.top} high", it.bottom - it.top >= 48.dp) }
+        compose.onNodeWithTag(TaskDetailTags.DUE).performClick()
+        listOf(TaskDetailTags.DUE_DAY, TaskDetailTags.TIME, TaskDetailTags.DUE_CLEAR).forEach { compose.onNodeWithTag(it).assertIsDisplayed() }
+        compose.onNodeWithTag(TaskDetailTags.TIME).assertTextContains(text(R.string.add_time))
     }
 
     @Test fun aLongNoteFoldsAndUnfoldsWithAnyChangeOneTapAway() {
@@ -209,12 +210,13 @@ class TaskDetailCompactTest {
         assertEquals(listOf("Krótko.", ""), saved)
     }
 
-    @Test fun historyIsFoldedUnderItsNameAlone() {
+    @Test fun historyIsRightUnderTheNoteWithItsThreeEntriesShown() {
         show()
-        val header = compose.onNodeWithTag("${TaskDetailTags.HISTORY}-header").performScrollTo().assertIsDisplayed()
-        val texts = header.fetchSemanticsNode().config[SemanticsProperties.Text].map { it.text }
-        assertEquals(listOf(text(R.string.detail_history).uppercase()), texts.map { it.uppercase() })
-        compose.onNodeWithTag(TaskDetailTags.HISTORY).assertDoesNotExist()
+        val history = compose.onNodeWithTag(TaskDetailTags.HISTORY).performScrollTo().assertIsDisplayed().getBoundsInRoot()
+        // Between them only "Show the whole note" and the history's name.
+        assertTrue("the history starts ${history.top - bounds(TaskDetailTags.NOTE).bottom} under the note", history.top - bounds(TaskDetailTags.NOTE).bottom <= 80.dp)
+        compose.onNodeWithText(text(R.string.action_create)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag(TaskDetailTags.HISTORY_MORE).assertDoesNotExist()
     }
 
     @Test fun theNoteEditorUsesTheWholeWidthWithTheCursorAfterTheText() {

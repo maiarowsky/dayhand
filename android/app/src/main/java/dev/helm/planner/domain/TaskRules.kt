@@ -20,8 +20,6 @@ object TaskRules {
     const val MAX_TITLE = 500
     const val MAX_NOTE = 20_000
     const val MAX_RESUME_NOTE = 2_000
-    const val MAX_LABEL = 50
-    const val MAX_LABELS = 20
     const val MAX_LINKS = 20
     const val MAX_URL = 2_048
     const val MAX_REPEAT_INTERVAL = 366
@@ -33,13 +31,6 @@ object TaskRules {
 
     /** A trimmed, non-empty title within the limit, or null. */
     fun title(input: String): String? = input.trim().takeIf { it.isNotEmpty() && it.length <= MAX_TITLE }
-
-    /** Trimmed, without blanks and duplicates, as the backend stores them; null when over a limit. */
-    fun labels(input: List<String>): List<String>? {
-        val cleaned = input.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
-        if (cleaned.size > MAX_LABELS || cleaned.any { it.length > MAX_LABEL }) return null
-        return cleaned
-    }
 
     /** True for an absolute http(s) address the backend accepts. */
     fun isLinkUrl(url: String): Boolean {

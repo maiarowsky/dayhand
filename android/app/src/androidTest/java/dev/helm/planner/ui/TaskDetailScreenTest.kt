@@ -1,6 +1,7 @@
 package dev.helm.planner.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasNoClickAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -64,7 +66,7 @@ class TaskDetailScreenTest {
     private val task = Task(
         localId = "a", serverId = "s1", title = "Call the accountant", note = "Ask about VAT",
         dueDate = "2026-10-23", dueTime = "09:30", status = TaskStatus.TODO,
-        repeat = RepeatRule(RepeatEvery.DAY), labels = listOf("Dayhand"),
+        repeat = RepeatRule(RepeatEvery.DAY),
         links = listOf(TaskLink("https://example.com", "Spec")), createdAt = 0, updatedAt = 0,
     )
 
@@ -77,7 +79,6 @@ class TaskDetailScreenTest {
         val calls = mutableListOf<String>()
         override fun rename(localId: String, title: String) { calls += "rename:$title" }
         override fun setRepeat(localId: String, rule: RepeatRule?) { calls += "repeat:$rule" }
-        override fun setLabels(localId: String, labels: List<String>) { calls += "labels:$labels" }
         override fun setLinks(localId: String, links: List<TaskLink>) { calls += "links:${links.map { it.url }}" }
         override fun setDue(localId: String, date: String?, time: String?) { calls += "due:$date:$time" }
         override fun move(localId: String, status: TaskStatus) { calls += "move:${status.wire}" }
@@ -99,13 +100,13 @@ class TaskDetailScreenTest {
         pending: Int = 0,
         dependencies: List<AgentWork.Dependency> = emptyList(),
     ) {
-        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf("Dayhand", "home"), listOf(0, 30), dependencies)
+        val ui = TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, state, pending, listOf(0, 30), dependencies)
         compose.setContent { HelmTheme { TaskDetailScreen(ui, actions) } }
     }
 
-    /** Opens a folded section (repeat and reminders, an empty checklist, history). */
-    private fun unfold(tag: String) {
-        compose.onNodeWithTag("$tag-header").performScrollTo().performClick()
+    /** Opens the folded row under the status with the rest of the fields (repeat, reminders, checklist, links). */
+    private fun openMore() {
+        compose.onNodeWithTag(TaskDetailTags.MORE).performScrollTo().performClick()
     }
 
     @Test
@@ -113,9 +114,8 @@ class TaskDetailScreenTest {
         show()
         compose.onNodeWithTag(TaskDetailTags.TITLE).assertTextContains("Call the accountant").assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.DUE).assertTextContains(text(R.string.day_and_time, text(R.string.day_tomorrow), "09:30"))
-        unfold(TaskDetailTags.SCHEDULE)
+        openMore()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().assertTextContains(context.resources.getQuantityString(R.plurals.repeat_days, 1, 1), substring = true)
-        compose.onNodeWithContentDescription(text(R.string.remove_label, "Dayhand")).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Spec").performScrollTo().assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().assertTextContains("Ask about VAT", substring = true)
     }
@@ -137,8 +137,10 @@ class TaskDetailScreenTest {
         compose.onNodeWithTag(AgentWorkTags.criterion(0)).performScrollTo().assertTextContains("CSV opens", substring = true)
         compose.onNodeWithTag(AgentWorkTags.criterion(1)).assertTextContains("Docs updated", substring = true)
         compose.onNodeWithText(text(R.string.acceptance_title_progress, text(R.string.detail_acceptance), 1, 2), ignoreCase = true).performScrollTo().assertIsDisplayed()
-        // The proof is short text under the status, in the top card.
-        compose.onNodeWithTag(AgentWorkTags.PROOF).assertIsDisplayed()
+        // The proof is short text in the top card's More row, which names it while folded.
+        compose.onNodeWithTag(TaskDetailTags.MORE).assertTextContains(text(R.string.detail_proof), substring = true)
+        openMore()
+        compose.onNodeWithTag(AgentWorkTags.PROOF).performScrollTo().assertIsDisplayed()
             .assertTextContains("${text(R.string.detail_proof)}: Export shipped", substring = true)
             .assertTextContains("${text(R.string.proof_check_fail)}  lint", substring = true)
     }
@@ -213,20 +215,18 @@ class TaskDetailScreenTest {
     }
 
     @Test
-    fun repeatLabelsLinksAndStatusAreEditable() {
+    fun repeatLinksStatusAndDueAreEditable() {
         val actions = Recorder()
         show(actions = actions)
+        compose.onNodeWithTag(TaskDetailTags.STATUS).assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithTag(TaskDetailTags.status(TaskStatus.DOING)).assertHeightIsAtLeast(48.dp).performClick()
 
-        unfold(TaskDetailTags.SCHEDULE)
+        openMore()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.every(RepeatEvery.WEEK)).performClick()
         compose.onNodeWithTag(EditorTags.weekday(1)).assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithTag(EditorTags.weekday(4)).performClick()
         compose.onNodeWithTag(EditorTags.SAVE).performClick()
-
-        compose.onNodeWithText(text(R.string.add_label)).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
-        compose.onNodeWithText("home").performClick()
 
         compose.onNodeWithText(text(R.string.add_link)).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.URL).performTextInput("example.org")
@@ -234,13 +234,13 @@ class TaskDetailScreenTest {
         compose.onNodeWithTag(EditorTags.URL).performTextReplacement("https://example.org/plan")
         compose.onNodeWithTag(EditorTags.SAVE).performClick()
 
-        compose.onNodeWithContentDescription(text(R.string.remove_due)).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag(TaskDetailTags.DUE).performScrollTo().performClick()
+        compose.onNodeWithTag(TaskDetailTags.DUE_CLEAR).assertHeightIsAtLeast(48.dp).performClick()
 
         assertEquals(
             listOf(
                 "move:doing",
                 "repeat:${RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4))}",
-                "labels:[Dayhand, home]",
                 "links:[https://example.com, https://example.org/plan]",
                 "due:null:null",
             ),
@@ -253,6 +253,7 @@ class TaskDetailScreenTest {
         val actions = Recorder()
         val items = listOf(ChecklistItem("c1", "Milk", done = true), ChecklistItem("c2", "Bread"))
         show(task.copy(checklist = items), actions)
+        openMore()
         compose.onNodeWithText(text(R.string.checklist_title_progress, text(R.string.detail_checklist), 1, 2), ignoreCase = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(ChecklistTags.check(0)).assertIsOn()
         compose.onNodeWithTag(ChecklistTags.check(1)).performScrollTo().assertIsOff().assertHeightIsAtLeast(48.dp).performClick()
@@ -277,8 +278,9 @@ class TaskDetailScreenTest {
     @Test
     fun aTaskWithoutAChecklistOffersToStartOne() {
         show(task.copy(checklist = emptyList()))
-        compose.onNodeWithText(text(R.string.checklist_empty), substring = true).performScrollTo().assertIsDisplayed()
-        unfold(ChecklistTags.FOLD)
+        openMore()
+        // An editable empty checklist is just its Add button; "No items yet" is for a task that cannot change.
+        compose.onNodeWithText(text(R.string.checklist_empty), substring = true).assertDoesNotExist()
         compose.onNodeWithTag(ChecklistTags.ADD).performScrollTo().assertIsDisplayed()
     }
 
@@ -287,7 +289,7 @@ class TaskDetailScreenTest {
         val actions = Recorder()
         // 30 Oct 2026 is the last Friday of October.
         show(task.copy(dueDate = "2026-10-30", repeat = null), actions)
-        unfold(TaskDetailTags.SCHEDULE)
+        openMore()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.every(RepeatEvery.MONTH)).performClick()
         compose.onNodeWithTag(EditorTags.month("last")).assertIsDisplayed()
@@ -307,7 +309,7 @@ class TaskDetailScreenTest {
     fun repeatSummaryShowsTheMonthPatternAndTheEnd() {
         val rule = RepeatRule(RepeatEvery.MONTH, monthDay = -1, until = "2026-12-31")
         show(task.copy(repeat = rule))
-        unfold(TaskDetailTags.SCHEDULE)
+        openMore()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo()
             .assertTextContains(text(R.string.repeat_label_last_day), substring = true)
     }
@@ -316,7 +318,7 @@ class TaskDetailScreenTest {
     fun remindersFollowSettingsUntilTheTaskGetsItsOwn() {
         val actions = Recorder()
         show(actions = actions)
-        unfold(TaskDetailTags.SCHEDULE)
+        openMore()
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo()
             .assertTextContains(text(R.string.reminders_default_value, ""), substring = true)
             .performClick()
@@ -339,14 +341,13 @@ class TaskDetailScreenTest {
     @Test
     fun ownRemindersAreListedOnTheRow() {
         show(task.copy(reminders = listOf(TaskReminder.at("18:00", 1))))
-        unfold(TaskDetailTags.SCHEDULE)
+        openMore()
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().assertTextContains("18:00", substring = true)
     }
 
     @Test
     fun historySaysWhoChangedWhat() {
         show(pending = 1)
-        unfold(TaskDetailTags.HISTORY)
         compose.onNodeWithTag(TaskDetailTags.HISTORY).performScrollTo()
         compose.onNodeWithText(text(R.string.actor_agent)).assertExists()
         compose.onNodeWithText(text(R.string.actor_app)).assertExists()
@@ -357,7 +358,6 @@ class TaskDetailScreenTest {
     @Test
     fun offlineHistoryIsMarkedAsTheLastCopy() {
         show(state = HistoryState.CACHED)
-        unfold(TaskDetailTags.HISTORY)
         compose.onNodeWithText(text(R.string.history_cached)).performScrollTo().assertIsDisplayed()
     }
 
@@ -375,7 +375,7 @@ class TaskDetailScreenTest {
         show(task.copy(deletedAt = System.currentTimeMillis()), trashed)
         compose.onNodeWithTag(TaskDetailTags.TRASH_BANNER).assertIsDisplayed()
         compose.onNodeWithTag(TaskDetailTags.TRASH).assertDoesNotExist()
-        compose.onNodeWithText(text(R.string.add_label)).assertDoesNotExist()
+        compose.onNodeWithTag(TaskDetailTags.STATUS).assert(hasNoClickAction())
         compose.onNodeWithTag(TaskDetailTags.RESTORE).assertHeightIsAtLeast(48.dp).performClick()
         assertEquals(listOf("restore"), trashed.calls)
     }

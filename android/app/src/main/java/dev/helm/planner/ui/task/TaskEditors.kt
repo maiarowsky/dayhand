@@ -1,26 +1,23 @@
 package dev.helm.planner.ui.task
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,29 +28,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
-import androidx.core.view.WindowCompat
 import dev.helm.planner.R
 import dev.helm.planner.data.local.RepeatEvery
 import dev.helm.planner.data.local.TaskLink
 import dev.helm.planner.domain.TaskRules
-import dev.helm.planner.ui.components.ActionChip
+import dev.helm.planner.ui.components.ButtonTone
 import dev.helm.planner.ui.components.HelmDialog
 import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.TextAction
@@ -68,6 +58,7 @@ object EditorTags {
     const val URL = "editor-url"
     const val LINK_TITLE = "editor-link-title"
     const val SAVE = "editor-save"
+    const val CANCEL = "editor-cancel"
     const val INTERVAL = "editor-interval"
     const val COUNT = "editor-count"
     const val FROM_DUE = "editor-from-due"
@@ -144,10 +135,13 @@ fun TextEditDialog(
 }
 
 /**
- * A long text (the note) on a whole screen, so it is written at the phone's width in the reading font and size the
- * details show it in. Cancel, the title and Save stay in a bar on top, above the keyboard; the field takes the rest
- * and scrolls. It opens with the cursor after the text. Back cancels like Cancel: nothing is saved without Save.
+ * A long text (the note) in a sheet from the bottom of the screen: the phone's whole width, about nine tenths of its
+ * height, with its handle, and the reading font and size the details show the note in. Cancel, the title and Save
+ * stay in a bar on top, above the keyboard; the field takes the rest and scrolls. It opens with the cursor after the
+ * text. Back cancels like Cancel: nothing is saved without Save. A tap above the sheet does nothing, and once the
+ * text is changed the sheet cannot be dragged away either, so no edit is lost by accident.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LongTextEditor(title: String, initial: String, maxLength: Int, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -155,34 +149,39 @@ fun LongTextEditor(title: String, initial: String, maxLength: Int, onDismiss: ()
     }
     val focus = remember { FocusRequester() }
     val p = palette
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        DialogBars(light = p.light)
+    val changed = field.text != initial
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetGesturesEnabled = !changed,
+        containerColor = p.surface,
+        contentColor = p.text,
+        shape = HelmShapes.sheet,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = p.border) },
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = true, shouldDismissOnClickOutside = false),
+        modifier = Modifier.testTag(EditorTags.LONG_TEXT),
+    ) {
         LaunchedEffect(Unit) { focus.requestFocus() }
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(p.background)
-                // The keyboard is part of safeDrawing: the field ends above it and the bar never moves.
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .testTag(EditorTags.LONG_TEXT),
-        ) {
+        // The sheet keeps itself above the keyboard (its content insets include it), so the bar never moves.
+        Column(Modifier.fillMaxWidth().fillMaxHeight(SHEET_HEIGHT)) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextAction(stringResource(R.string.cancel), onDismiss, color = p.textMuted)
+                TextAction(stringResource(R.string.cancel), onDismiss, color = p.textMuted, modifier = Modifier.testTag(EditorTags.CANCEL))
                 Text(
                     title,
                     style = helmType.title,
                     color = p.text,
-                    maxLines = 1,
+                    // Two lines with large text, so the name is never cut between Cancel and Save.
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f).semantics { heading() },
+                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp).semantics { heading() },
                 )
-                TextAction(stringResource(R.string.save), { onSave(field.text) }, modifier = Modifier.testTag(EditorTags.SAVE))
+                TextAction(stringResource(R.string.save), { onSave(field.text) }, tone = ButtonTone.Accent, modifier = Modifier.testTag(EditorTags.SAVE))
             }
-            HorizontalDivider(thickness = 1.dp, color = p.border)
+            HorizontalDivider(thickness = 1.dp, color = p.border, modifier = Modifier.padding(top = 4.dp))
             BasicTextField(
                 value = field,
                 onValueChange = { if (it.text.length <= maxLength) field = it },
@@ -202,57 +201,6 @@ fun LongTextEditor(title: String, initial: String, maxLength: Int, onDismiss: ()
                     .focusRequester(focus)
                     .testTag(EditorTags.FIELD),
             )
-        }
-    }
-}
-
-/** Status and navigation bar icons that stay readable on a full-screen dialog in this palette. */
-@Composable
-private fun DialogBars(light: Boolean) {
-    val view = LocalView.current
-    val window = (view.parent as? DialogWindowProvider)?.window ?: return
-    SideEffect {
-        WindowCompat.getInsetsController(window, view).apply {
-            isAppearanceLightStatusBars = light
-            isAppearanceLightNavigationBars = light
-        }
-    }
-}
-
-/** A new label (or project): type one or pick one already in use. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun LabelDialog(current: List<String>, suggestions: List<String>, onDismiss: () -> Unit, onAdd: (String) -> Unit) {
-    var text by rememberSaveable { mutableStateOf("") }
-    val clean = text.trim()
-    val full = current.size >= TaskRules.MAX_LABELS
-    val valid = clean.isNotEmpty() && clean.length <= TaskRules.MAX_LABEL && !full
-    HelmDialog(
-        title = stringResource(R.string.add_label),
-        onDismiss = onDismiss,
-        confirm = stringResource(R.string.add),
-        onConfirm = { onAdd(clean) },
-        dismiss = stringResource(R.string.cancel),
-        confirmEnabled = valid,
-        confirmTag = EditorTags.SAVE,
-    ) {
-        Column {
-            HelmTextField(
-                value = text,
-                onValueChange = { if (it.length <= TaskRules.MAX_LABEL) text = it },
-                singleLine = true,
-                label = stringResource(R.string.label_name),
-                supportingText = if (full) pluralStringResource(R.plurals.labels_full, TaskRules.MAX_LABELS, TaskRules.MAX_LABELS) else null,
-                isError = full,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                modifier = Modifier.testTag(EditorTags.FIELD),
-            )
-            if (suggestions.isNotEmpty() && !full) {
-                Text(stringResource(R.string.labels_in_use), style = helmType.smallStrong, color = palette.textMuted, modifier = Modifier.padding(vertical = 8.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    suggestions.take(MAX_SUGGESTIONS).forEach { label -> ActionChip(label, onClick = { onAdd(label) }) }
-                }
-            }
         }
     }
 }
@@ -298,7 +246,8 @@ fun LinkDialog(onDismiss: () -> Unit, onAdd: (TaskLink) -> Unit) {
     }
 }
 
-private const val MAX_SUGGESTIONS = 12
-
 /** Side margin of the long-text editor: the field keeps over 90 % of a 360 dp phone. */
 private val EDITOR_MARGIN = 16.dp
+
+/** The note's sheet takes this much of the screen's height (less the keyboard while it is open). */
+private const val SHEET_HEIGHT = 0.9f
