@@ -54,8 +54,8 @@ late and amber when you are asked for something; **Review** opens the agents pag
 
 The button at the bottom opens one title field. A date phrase at the end sets the day and time:
 "Call the accountant fri 2pm" is "Call the accountant" on the coming Friday at 14:00. Without a
-phrase, the task is for today. A grey line under the field says what will happen; **Keep in title**
-keeps the words as text. **More options** adds a day, a time and a note.
+phrase, the task is for today, or for the day shown on Today. A grey line under the field says what
+will happen; **Keep in title** keeps the words as text. **More options** adds a day, a time and a note.
 
 The phrases are English in every language of the app, the same as `dayhand add --due`: `today`,
 `tomorrow 9am`, `fri`, `next mon`, `in 3 days`, `23 oct`, `2026-10-23`, `2pm`. The full list:

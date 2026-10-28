@@ -224,9 +224,9 @@ phrases are English, the grammar of `dayhand add --due` (`today`, `tomorrow 9am`
 server's time zone, or the phone's on this phone only. The longest phrase at the end wins and at
 least one word stays the title, so a title that is only "tomorrow" stays a title. A grey line under
 the field says what will happen: "Friday 23 Oct, 14:00 · from “fri 2pm”", or "No date phrase:
-today"; **Keep in title** keeps the words as text, until the title changes. "More options" adds the
-day, a time and a note; a day or time picked there wins over the phrase, which then stays in the
-title. The grammar is ported from `cli/src/when/parse.ts` (`domain/When.kt`, `domain/QuickAdd.kt`),
+today" (or the day shown on Today); **Keep in title** keeps the words as text, until the title
+changes. "More options" adds the day, a time and a note; a day or time picked there wins over the
+phrase, which then stays in the title. The grammar is ported from `cli/src/when/parse.ts` (`domain/When.kt`, `domain/QuickAdd.kt`),
 and `WhenParserTest` runs every case of `linux/tests/cases/when.json`, shared with the CLI, macOS
 and Linux. A known `+Project-name` token sets the project, case-insensitively (hyphens stand for
 spaces); it works before or after the date phrase. Unknown or archived names remain in the title
