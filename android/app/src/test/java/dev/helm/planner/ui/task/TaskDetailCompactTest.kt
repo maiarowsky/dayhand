@@ -180,6 +180,23 @@ class TaskDetailCompactTest {
         compose.onNodeWithTag(EditorTags.LONG_TEXT).assertIsDisplayed()
     }
 
+    @Test fun theRoundedNoteBlockCutsNoLetterInItsCorners() {
+        show()
+        val block = bounds(TaskDetailTags.NOTE)
+        val label = compose.onNodeWithText(text(R.string.quick_add_note), useUnmergedTree = true).getBoundsInRoot()
+        val body = compose.onNodeWithText(note, useUnmergedTree = true).getBoundsInRoot()
+        // The block is clipped to a 14 dp rounded rectangle: the label starts in its top corner, the last folded
+        // line in its bottom one.
+        assertInsideCorner("the label", label.left - block.left, label.top - block.top)
+        assertInsideCorner("the last line", body.left - block.left, block.bottom - body.bottom)
+    }
+
+    private fun assertInsideCorner(what: String, x: Dp, y: Dp) {
+        val dx = (NOTE_CORNER - x).coerceAtLeast(0.dp).value
+        val dy = (NOTE_CORNER - y).coerceAtLeast(0.dp).value
+        assertTrue("$what is $x from the side and $y from the edge", dx * dx + dy * dy <= NOTE_CORNER.value * NOTE_CORNER.value)
+    }
+
     @Test fun anUnfoldedNoteEditedShortOrEmptyLeavesNoFoldButton() {
         show()
         compose.onNodeWithTag(TaskDetailTags.NOTE_MORE).performScrollTo().performClick()
@@ -234,6 +251,7 @@ class TaskDetailCompactTest {
     private companion object {
         const val TODAY = "2026-10-27"
         val SCREEN_WIDTH = 360.dp
+        val NOTE_CORNER = 14.dp
 
         /** The test window has no status or navigation bar; a phone keeps about 48 dp for them. */
         val FIRST_SCREEN = 780.dp - 48.dp

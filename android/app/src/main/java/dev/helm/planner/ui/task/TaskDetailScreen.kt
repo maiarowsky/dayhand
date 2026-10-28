@@ -158,7 +158,7 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
             LabelsField(task, state.knownLabels, editable, actions)
         }
     }
-    HelmCard(contentPadding = CARD_PADDING) { NoteSection(task, editable, actions) }
+    HelmCard(contentPadding = CARD_PADDING - NOTE_INSET) { NoteSection(task, editable, actions) }
     AgentWorkSection(task, state.dependencies, System.currentTimeMillis(), state.timezone, editable, actions)
     FoldingSection(
         stringResource(R.string.detail_repeat_reminders),
@@ -530,9 +530,10 @@ private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailAction
         Modifier
             .fillMaxWidth()
             .heightIn(min = HelmDimens.touchTarget)
+            .testTag(TaskDetailTags.NOTE)
             .clip(HelmShapes.field)
             .clickable(enabled = editable, onClickLabel = stringResource(R.string.edit_note), role = Role.Button) { editing = true }
-            .testTag(TaskDetailTags.NOTE),
+            .padding(NOTE_INSET),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -595,4 +596,7 @@ private val PARAGRAPH_GAP = 8.sp
 private const val GAP_MARK = "\u200B"
 private val DETAIL_GAP = 8.dp
 private val CARD_PADDING = 12.dp
+
+/** Keeps the note's letters clear of the rounded corners of its tappable block; its card is that much tighter. */
+private val NOTE_INSET = 6.dp
 
