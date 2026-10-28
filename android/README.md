@@ -557,7 +557,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
 ## Tests
 
 ```sh
-./gradlew :app:testDebugUnitTest            # JVM + Robolectric: projects, Room 5→6, Compose project/picker flows; dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
+./gradlew :app:testDebugUnitTest            # JVM + Robolectric: projects, Room 5→6→7, Compose project/picker flows; dates, repeat dates, Today, calendar days, board, rules, history, reminders, outbox, merge,
                                             # HTTP, export, pairing input, /auth/pair and /auth/token, token refresh,
                                             # agent connections (answers, code input, approval flow), calendar address,
                                             # backup file (write, read, the server's export), sample plan, another server,
