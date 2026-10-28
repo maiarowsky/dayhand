@@ -46,6 +46,7 @@
     <string name="quick_add_example">e.g. Call the accountant fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s · from “%2$s”</string>
     <string name="quick_add_no_phrase">No date phrase: today</string>
+    <string name="quick_add_no_phrase_on">No date phrase: %1$s</string>
     <string name="quick_add_from_options">From More options: %1$s</string>
     <string name="quick_add_keep_in_title">Keep in title</string>
     <string name="quick_add_keep_in_title_hint">Add the words as part of the title instead of reading them as a date</string>

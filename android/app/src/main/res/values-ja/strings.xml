@@ -44,6 +44,7 @@
     <string name="quick_add_example">例：税理士に電話 fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s・「%2$s」から</string>
     <string name="quick_add_no_phrase">日付の指定なし：今日</string>
+    <string name="quick_add_no_phrase_on">日付の指定なし：%1$s</string>
     <string name="quick_add_from_options">「その他のオプション」から：%1$s</string>
     <string name="quick_add_keep_in_title">タイトルに残す</string>
     <string name="quick_add_keep_in_title_hint">日付として読まずにタイトルの一部にします</string>

@@ -123,6 +123,17 @@ class TodayDaysTest {
         assertEquals(listOf<String?>("2026-10-23"), added)
     }
 
+    @Test fun quickAddOpenedOnAnotherDayNamesThatDayUnderTheTitle() {
+        show()
+        compose.onNodeWithTag(TodayTags.NEXT_DAY).performClick()
+        compose.onNodeWithTag(TodayTags.FAB).performClick()
+        compose.onNodeWithTag(QuickAddTags.TITLE).performTextInput("Buy bread")
+        compose.onNodeWithTag(QuickAddTags.WHEN)
+            .assertTextContains("No date phrase: ", substring = true)
+            .assertTextContains("Friday", substring = true)
+            .assertTextContains("23", substring = true)
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test fun theDayShownIsKeptWhenTheScreenIsMadeAgain() = runBlocking {
         Dispatchers.setMain(UnconfinedTestDispatcher())

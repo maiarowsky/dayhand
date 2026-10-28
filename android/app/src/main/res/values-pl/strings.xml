@@ -44,6 +44,7 @@
     <string name="quick_add_example">np. Zadzwoń do księgowej fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s · z „%2$s”</string>
     <string name="quick_add_no_phrase">Bez frazy daty: na dziś</string>
+    <string name="quick_add_no_phrase_on">Bez frazy daty: %1$s</string>
     <string name="quick_add_from_options">Z „Więcej opcji”: %1$s</string>
     <string name="quick_add_keep_in_title">Zostaw w tytule</string>
     <string name="quick_add_keep_in_title_hint">Dodaj te słowa do tytułu, zamiast czytać je jako datę</string>

@@ -44,6 +44,7 @@
     <string name="quick_add_example">por ex. Ligar para o contador fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s · de “%2$s”</string>
     <string name="quick_add_no_phrase">Sem data no texto: hoje</string>
+    <string name="quick_add_no_phrase_on">Sem data no texto: %1$s</string>
     <string name="quick_add_from_options">De “Mais opções”: %1$s</string>
     <string name="quick_add_keep_in_title">Manter no título</string>
     <string name="quick_add_keep_in_title_hint">Adicionar as palavras ao título em vez de lê-las como data</string>

@@ -44,6 +44,7 @@
     <string name="quick_add_example">par ex. Appeler le comptable fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s · d\'après « %2$s »</string>
     <string name="quick_add_no_phrase">Pas de date dans le texte : aujourd\'hui</string>
+    <string name="quick_add_no_phrase_on">Pas de date dans le texte : %1$s</string>
     <string name="quick_add_from_options">D\'après « Plus d\'options » : %1$s</string>
     <string name="quick_add_keep_in_title">Garder dans le titre</string>
     <string name="quick_add_keep_in_title_hint">Ajouter ces mots au titre au lieu de les lire comme une date</string>

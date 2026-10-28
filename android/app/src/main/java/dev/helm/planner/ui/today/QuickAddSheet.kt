@@ -241,8 +241,8 @@ fun QuickAddSheet(
 }
 
 /**
- * What the task will get, under the title: "Friday 30 Oct, 14:00 · from “fri 2pm”", "No date phrase: today", or the
- * day and time picked under "More options". Read out when it changes.
+ * What the task will get, under the title: "Friday 30 Oct, 14:00 · from “fri 2pm”", "No date phrase: today" (or the
+ * day shown on Today), or the day and time picked under "More options". Read out when it changes.
  */
 @Composable
 private fun WhenLine(today: LocalDate, read: QuickAddInput?, picked: Boolean, day: String, time: String?) {
@@ -250,6 +250,7 @@ private fun WhenLine(today: LocalDate, read: QuickAddInput?, picked: Boolean, da
     val text = when {
         read != null && due != null -> stringResource(R.string.quick_add_from_phrase, whenLabel(due.date, due.time, today), read.phrase.orEmpty())
         picked -> stringResource(R.string.quick_add_from_options, whenLabel(day, time, today))
+        day != today.toString() -> stringResource(R.string.quick_add_no_phrase_on, whenLabel(day, time, today))
         else -> stringResource(R.string.quick_add_no_phrase)
     }
     Text(
