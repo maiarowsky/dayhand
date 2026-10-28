@@ -3,6 +3,7 @@ package dev.helm.planner.ui.task
 import android.app.Application
 import androidx.annotation.StringRes
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -95,9 +97,12 @@ class TaskDetailCompactTest {
     private fun text(@StringRes id: Int) = context.getString(id)
 
     private fun show(font: HelmFont = HelmFont.Default, scale: Float = 1f) {
-        val state = TaskDetailUiState.Ready(task, TODAY, "UTC", history, HistoryState.FRESH, 0, emptyList(), listOf(0))
+        val shown = mutableStateOf(task)
         val actions = object : TaskDetailActions {
-            override fun setNote(localId: String, note: String) { saved += note }
+            override fun setNote(localId: String, note: String) {
+                saved += note
+                shown.value = shown.value.copy(note = note.ifBlank { null })
+            }
         }
         compose.setContent {
             val density = LocalDensity.current
@@ -105,6 +110,7 @@ class TaskDetailCompactTest {
                 LocalDensity provides Density(density.density, scale),
                 LocalProjects provides ProjectUiContext(listOf(project)),
             ) {
+                val state = TaskDetailUiState.Ready(shown.value, TODAY, "UTC", history, HistoryState.FRESH, 0, emptyList(), listOf(0))
                 HelmTheme(Appearance(font = font)) { TaskDetailScreen(state, actions) }
             }
         }
@@ -172,6 +178,18 @@ class TaskDetailCompactTest {
         compose.onNodeWithText(text(R.string.title_show_less)).performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().performClick()
         compose.onNodeWithTag(EditorTags.LONG_TEXT).assertIsDisplayed()
+    }
+
+    @Test fun anUnfoldedNoteEditedShortOrEmptyLeavesNoFoldButton() {
+        show()
+        compose.onNodeWithTag(TaskDetailTags.NOTE_MORE).performScrollTo().performClick()
+        listOf("Krótko.", "").forEach { short ->
+            compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().performClick()
+            compose.onNodeWithTag(EditorTags.FIELD).performTextReplacement(short)
+            compose.onNodeWithTag(EditorTags.SAVE).performClick()
+            compose.onNodeWithTag(TaskDetailTags.NOTE_MORE).assertDoesNotExist()
+        }
+        assertEquals(listOf("Krótko.", ""), saved)
     }
 
     @Test fun historyIsFoldedUnderItsNameAlone() {

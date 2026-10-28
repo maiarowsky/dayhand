@@ -222,8 +222,8 @@ private fun RestoreBanner(task: Task, today: LocalDate, timezone: String, action
 @Composable
 private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
-    var whole by rememberSaveable { mutableStateOf(false) }
-    var cut by remember { mutableStateOf(false) }
+    var whole by rememberSaveable(task.title) { mutableStateOf(false) }
+    var cut by remember(task.title) { mutableStateOf(false) }
     Column {
         Text(
             task.title,
@@ -522,10 +522,10 @@ private fun LinksSection(task: Task, editable: Boolean, actions: TaskDetailActio
 @Composable
 private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
-    var whole by rememberSaveable { mutableStateOf(false) }
-    var cut by remember { mutableStateOf(false) }
-    val p = palette
     val note = task.note
+    var whole by rememberSaveable(note) { mutableStateOf(false) }
+    var cut by remember(note) { mutableStateOf(false) }
+    val p = palette
     Column(
         Modifier
             .fillMaxWidth()
