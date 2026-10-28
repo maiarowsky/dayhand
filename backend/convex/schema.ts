@@ -41,7 +41,10 @@ export default defineSchema({
     // "Where I stopped / next step".
     resumeNote: v.optional(v.string()),
     repeat: v.optional(repeatValidator),
-    labels: v.array(v.string()),
+    // Until 0.13.x free tags. Since 0.14.0 a task has no labels: nothing writes
+    // them and migrations:dropLabels removes the stored ones. Optional only until
+    // that migration has run, then deleted (docs/deploy.md#upgrading-to-0140).
+    labels: v.optional(v.array(v.string())),
     links: v.array(linkValidator),
     // Since 0.5.0, optional so older tasks stay valid. Absent = no checklist.
     checklist: v.optional(v.array(checklistItemValidator)),
@@ -96,8 +99,7 @@ export default defineSchema({
     .index("by_deletedAt", ["deletedAt"]),
 
   // Since 0.13.0: the user's projects (lib/projectOps.ts). A task is in at most
-  // one project (tasks.projectId); labels stay free tags across projects. The
-  // list is flat, in the order of `position`, with an archive.
+  // one project (tasks.projectId). The list is flat, in the order of `position`, with an archive.
   projects: defineTable({
     userId: v.string(),
     name: v.string(),

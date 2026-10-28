@@ -9,6 +9,9 @@
 #include <QSqlQuery>
 #include <QVariant>
 
+#include <iterator>
+#include <span>
+
 using namespace Qt::StringLiterals;
 
 namespace dayhand {
@@ -32,6 +35,15 @@ const char *const schemaV1[] = {
     "CREATE INDEX outbox_taskLocalId ON outbox (taskLocalId)",
     "CREATE TABLE meta (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)",
 };
+
+// Task labels were removed from Dayhand together with their data; only projects remain.
+const char *const schemaV2[] = {
+    "ALTER TABLE task DROP COLUMN labels",
+};
+
+/// Step N takes a database at version N - 1 to version N; a new change is a new step, past steps are never rewritten.
+const std::span<const char *const> schemaSteps[] = {schemaV1, schemaV2};
+static_assert(std::size(schemaSteps) == Database::schemaVersion);
 
 QSqlQuery run(const QSqlDatabase &db, const QString &sql, const QVariantList &binds = {})
 {
@@ -120,8 +132,10 @@ void Database::migrate()
     if (current >= schemaVersion)
         return;
     Transaction transaction(*this);
-    for (const char *statement : schemaV1)
-        run(db, QString::fromLatin1(statement));
+    for (int step = current; step < schemaVersion; ++step) {
+        for (const char *statement : schemaSteps[step])
+            run(db, QString::fromLatin1(statement));
+    }
     run(db, u"PRAGMA user_version = %1"_s.arg(schemaVersion));
     transaction.commit();
 }

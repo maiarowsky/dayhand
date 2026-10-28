@@ -2,8 +2,8 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// A task in a list: a box to tick it off, its title, a line with its project, day, repeat, checklist and labels, and
-/// a menu of its moves. It can be dragged onto a project, No Project or Today in the sidebar.
+/// A task in a list: a box to tick it off, its title, a line with its project, day, repeat and checklist, and a menu of
+/// its moves. It can be dragged onto a project, No Project or Today in the sidebar.
 struct TaskRow: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
@@ -38,7 +38,7 @@ struct TaskRow: View {
     }
 }
 
-/// The second line of a task: its project (a dot of its color, or its emoji), day, repeat, checklist and labels.
+/// The second line of a task: its project (a dot of its color, or its emoji), day, repeat and checklist.
 struct TaskMeta: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
@@ -49,7 +49,7 @@ struct TaskMeta: View {
     var body: some View {
         let project = model.projectLine(task)
         let day = showsDay || overdue ? Formatting.due(task, today: today) : nil
-        if project != nil || day != nil || task.repeat != nil || !task.checklist.isEmpty || !task.labels.isEmpty {
+        if project != nil || day != nil || task.repeat != nil || !task.checklist.isEmpty {
             HStack(spacing: 10) {
                 if let project {
                     HStack(spacing: 4) {
@@ -66,7 +66,6 @@ struct TaskMeta: View {
                 if !task.checklist.isEmpty {
                     Meta(icon: "checklist", text: "\(task.checklist.filter(\.done).count)/\(task.checklist.count)")
                 }
-                ForEach(task.labels, id: \.self) { Text("#\($0)").lineLimit(1) }
             }
             .font(.caption)
             .foregroundStyle(.secondary)

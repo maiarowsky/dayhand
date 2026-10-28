@@ -25,7 +25,6 @@ export type BacklogTask = {
   id: string;
   title: string;
   status?: string;
-  labels: string[];
   dependencies: string[];
   references: string[];
   description?: string;
@@ -152,7 +151,7 @@ const text = (value: FrontValue | undefined): string | undefined => (typeof valu
 const list = (value: FrontValue | undefined): string[] => (Array.isArray(value) ? value : typeof value === "string" && value.trim() !== "" ? [value] : []);
 
 /** Header keys Dayhand reads; any other key with a value is reported as left out. */
-const READ_KEYS = new Set(["id", "title", "status", "labels", "dependencies", "references", "created_date", "updated_date", "ordinal"]);
+const READ_KEYS = new Set(["id", "title", "status", "dependencies", "references", "created_date", "updated_date", "ordinal"]);
 
 /** One task file, or a BacklogFormatError saying why it is not one. */
 export function readTask(file: BacklogFile): BacklogTask {
@@ -178,7 +177,6 @@ export function readTask(file: BacklogFile): BacklogTask {
     id,
     title,
     status: text(front.status)?.trim() || undefined,
-    labels: list(front.labels),
     dependencies: list(front.dependencies).map((d) => d.trim()).filter(Boolean),
     references: list(front.references),
     acceptance: [],
@@ -224,7 +222,6 @@ export type TaskFile = {
   place: "task" | "draft" | "archived" | "archived-draft";
   title: string;
   status: string;
-  labels: string[];
   dependencies: string[];
   references: string[];
   created: string;
@@ -276,7 +273,7 @@ export function writeTask(task: TaskFile): BacklogFile {
     ["assignee", []],
     ["created_date", task.created],
     ["updated_date", task.updated],
-    ["labels", task.labels],
+    ["labels", []],
     ["dependencies", task.dependencies],
     ["references", task.references.length > 0 ? task.references : undefined],
   ]);
@@ -294,13 +291,13 @@ export function writeTask(task: TaskFile): BacklogFile {
 }
 
 /** The project's config.yml for a folder Dayhand wrote; project_name is the exported project's (since 0.13.0). */
-export function writeConfig(prefix: string, labels: string[], projectName = "Dayhand export"): BacklogFile {
+export function writeConfig(prefix: string, projectName = "Dayhand export"): BacklogFile {
   const flow = (items: string[]) => `[${items.map((item) => `'${item.replace(/'/g, "''")}'`).join(", ")}]`;
   const content = [
     `project_name: ${yamlScalar(projectName)}`,
     `default_status: ${yamlScalar(DEFAULT_STATUSES[0]!)}`,
     `statuses: ${flow(DEFAULT_STATUSES)}`,
-    `labels: ${flow(labels)}`,
+    "labels: []",
     "date_format: yyyy-mm-dd hh:mm",
     `task_prefix: ${yamlScalar(prefix.toLowerCase())}`,
     "",

@@ -208,12 +208,6 @@ public final class TaskRepository: Sendable {
         try await edit(localId, Mutations.reschedule, ["dueDate": .string(date)]) { task, _ in task.dueDate = date }
     }
 
-    /// Sets the labels, cleaned as the backend cleans them.
-    public func setLabels(_ localId: String, _ labels: [String]) async throws {
-        guard let clean = TaskRules.labels(labels) else { throw RepositoryError.invalid(tr("There are too many labels, or one is too long.")) }
-        try await edit(localId, Mutations.update, ["labels": .array(clean.map(JSONValue.string))]) { task, _ in task.labels = clean }
-    }
-
     /// Sets the repeat rule; nil stops repeating.
     public func setRepeat(_ localId: String, _ rule: RepeatRule?) async throws {
         if let rule, !TaskRules.isValid(rule) { throw RepositoryError.invalid(tr("The repeat rule is not valid.")) }
@@ -471,7 +465,7 @@ public final class TaskRepository: Sendable {
         let id = Self.nextOccurrencePrefix(task.localId) + newId()
         return TaskItem(
             localId: id, clientId: id, title: task.title, note: task.note, dueDate: occurrence.dueDate,
-            dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat, labels: task.labels,
+            dueTime: task.dueTime, createdAt: now, updatedAt: now, repeat: occurrence.repeat,
             links: task.links, checklist: task.checklist.map { ChecklistItem(id: $0.id, title: $0.title) },
             reminders: task.reminders, projectLocalId: task.projectLocalId
         )
@@ -484,7 +478,6 @@ public final class TaskRepository: Sendable {
         if let dueDate = task.dueDate { args["dueDate"] = .string(dueDate) }
         if let dueTime = task.dueTime { args["dueTime"] = .string(dueTime) }
         if let rule = task.repeat { args["repeat"] = rule.wire }
-        if !task.labels.isEmpty { args["labels"] = .array(task.labels.map(JSONValue.string)) }
         if !task.links.isEmpty { args["links"] = .array(task.links.map(\.wire)) }
         if !task.checklist.isEmpty { args["checklist"] = .array(task.checklist.map(\.wire)) }
         if let reminders = task.reminders { args["reminders"] = .array(reminders.map(\.wire)) }

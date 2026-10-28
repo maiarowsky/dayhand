@@ -156,7 +156,10 @@ describe("project tools", () => {
     expect(tools.add_project.inputSchema.required).toEqual(["name"]);
     expect(tools.add_project.inputSchema.properties.color.enum).toHaveLength(12);
     expect(tools.update_project.inputSchema.properties.color.anyOf).toEqual([expect.objectContaining({ enum: expect.any(Array) }), { type: "null" }]);
-    expect(tools.add_task.inputSchema.properties.labels.description).toBe("Free tags across projects; a task's project is projectId.");
+    // Labels are gone (0.14.0): still accepted from older clients, but no schema offers them.
+    for (const name of ["add_task", "update_task", "list_all"]) expect(tools[name].inputSchema.properties, name).not.toHaveProperty("labels");
+    expect(tools.add_project.inputSchema.properties).not.toHaveProperty("fromLabel");
+    expect(tools.add_project.inputSchema.properties).not.toHaveProperty("removeLabel");
     for (const name of ["add_task", "update_task", "list_all", "list_today", "board", "import_backlog", "export_backlog"]) {
       expect(tools[name].inputSchema.properties.projectId.description, name).toMatch(/project/);
     }
@@ -218,20 +221,20 @@ describe("project tools", () => {
     const client = await mcpClient(await createKey(newUserId(), "laptop", "cli"));
     const call = await checkedCalls(client);
     expect(await call("list_projects")).toEqual({ result: [], noProject: { open: 0, overdue: 0 } });
-    await call("add_task", { title: "Fix the oven", labels: ["bakery"], dueDate: "2020-01-02" });
-    await call("add_task", { title: "Menu photos", labels: ["bakery"], dueDate: "today" });
+    await call("add_task", { title: "Fix the oven", dueDate: "2020-01-02" });
+    await call("add_task", { title: "Menu photos", dueDate: "today" });
     const home = await call("add_project", { name: "Home", color: "green", icon: "🏠", note: "The flat", clientId: "p-home" });
     expect(home).toEqual({
       project: expect.objectContaining({ name: "Home", color: "green", icon: "🏠", note: "The flat", position: 1024, archived: false, clientId: "p-home" }),
-      moved: [],
-      skipped: [],
     });
     expect((await call("update_task", { taskId: "#2", projectId: "home" })).projectId).toBe(home.project.id);
 
-    const preview = await call("add_project", { name: "Bakery", fromLabel: "bakery", dryRun: true });
-    expect(preview).toMatchObject({ project: { name: "Bakery" }, moved: [{ ref: 1 }], skipped: [{ ref: 2, projectId: home.project.id, reason: "already in a project" }], dryRun: true });
+    const preview = await call("add_project", { name: "Bakery", dryRun: true });
+    expect(preview).toEqual({ project: expect.objectContaining({ name: "Bakery" }), dryRun: true });
+    // fromLabel and removeLabel from a client older than 0.14.0 are accepted and ignored.
     const bakery = await call("add_project", { name: "Bakery", fromLabel: "bakery", removeLabel: true });
-    expect(bakery.moved).toEqual([{ id: expect.any(String), ref: 1 }]);
+    expect(bakery).toEqual({ project: expect.objectContaining({ name: "Bakery" }) });
+    await call("update_task", { taskId: "#1", projectId: "Bakery" });
     const listed = await call("list_projects");
     expect(listed.result.map((p: any) => [p.name, p.counts])).toEqual([
       ["Home", { open: 1, overdue: 0, dueToday: 1, done: 0 }],

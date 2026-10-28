@@ -16,7 +16,6 @@ public struct RemoteTask: Hashable, Sendable {
     public var createdAt: Int64
     public var updatedAt: Int64
     public var `repeat`: RepeatRule?
-    public var labels: [String]
     public var links: [TaskLink]
     public var deletedAt: Int64?
     public var checklist: [ChecklistItem]
@@ -38,7 +37,7 @@ public struct RemoteTask: Hashable, Sendable {
         id: String, clientId: String? = nil, title: String, note: String? = nil, dueDate: String? = nil,
         dueTime: String? = nil, status: String = "todo", isNow: Bool = false, resumeNote: String? = nil,
         completedAt: Int64? = nil, archivedAt: Int64? = nil, createdAt: Int64, updatedAt: Int64,
-        repeat: RepeatRule? = nil, labels: [String] = [], links: [TaskLink] = [], deletedAt: Int64? = nil,
+        repeat: RepeatRule? = nil, links: [TaskLink] = [], deletedAt: Int64? = nil,
         checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil, ref: Int? = nil,
         acceptance: [AcceptanceItem] = [], plan: String? = nil, proof: TaskProof? = nil, dependsOn: [String] = [],
         blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil, projectId: String? = nil
@@ -57,7 +56,6 @@ public struct RemoteTask: Hashable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.repeat = `repeat`
-        self.labels = labels
         self.links = links
         self.deletedAt = deletedAt
         self.checklist = checklist
@@ -197,7 +195,6 @@ public enum RemoteJSON {
             createdAt: o["createdAt"]?.int64 ?? 0,
             updatedAt: o["updatedAt"]?.int64 ?? 0,
             repeat: RepeatRule.parse(o["repeat"]),
-            labels: o["labels"]?.array?.compactMap(\.string) ?? [],
             links: o["links"]?.array?.compactMap(TaskLink.parse) ?? [],
             deletedAt: o["deletedAt"]?.int64,
             checklist: o["checklist"]?.array?.compactMap(ChecklistItem.parse) ?? [],

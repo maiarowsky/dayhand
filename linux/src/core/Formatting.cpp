@@ -185,8 +185,6 @@ QString detailLine(const TaskItem &task, const QString &today, bool overdue)
         const auto done = std::count_if(task.checklist.begin(), task.checklist.end(), [](const auto &i) { return i.done; });
         parts.append(u"%1/%2"_s.arg(done).arg(task.checklist.size()));
     }
-    for (const QString &label : task.labels)
-        parts.append(u'#' + label);
     return parts.join(u"  "_s);
 }
 

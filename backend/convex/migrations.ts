@@ -1,14 +1,13 @@
 // Data migrations, run by the deployment admin after a deploy that needs them
 // (steps in docs/deploy.md). Each is idempotent: it only fills what is missing,
-// or (projectsToLabels) only takes away what is still there.
+// or (dropLabels) only takes away what is still there.
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
 import { internalMutation, internalQuery } from "./_generated/server";
-import { nextTaskRef } from "./lib/core";
+import { nextTaskRef, withoutLabelFields } from "./lib/core";
+import { RETIRED_FIELDS } from "./lib/args";
 
 const BATCH = 200;
-const MAX_LABELS = 20;
 
 /**
  * 0.3.0: gives every task without a number the next number of its user, oldest
@@ -80,69 +79,103 @@ export const backfillEventSeqs = internalMutation({
   },
 });
 
+// ---- 0.14.0: labels are gone (docs/deploy.md#upgrading-to-0140) ----
+
+const cursorArg = v.optional(v.union(v.string(), v.null()));
+
 /**
- * 0.13.0, before rolling back to 0.12.x (docs/deploy.md): projects become labels
- * again. Every task in a project gets a label with the project's name, when it
- * has room for one more (20 at most; the others are listed in noRoom), and
- * loses its projectId; once no task has one, the projects are deleted. Nothing
- * enters the history. Runs in batches and schedules itself; `projects` marks
- * the last part, when only projects are left to delete.
+ * 0.14.0, before dropLabels: one page of the stored labels, for the backup that
+ * scripts/labels-backup.mjs writes. Only tasks with at least one label.
  */
-export const projectsToLabels = internalMutation({
-  args: { cursor: v.optional(v.union(v.string(), v.null())), projects: v.optional(v.boolean()) },
-  handler: async (ctx, { cursor, projects }) => {
-    let relabeled = 0;
-    let cleared = 0;
-    const noRoom: { taskId: Id<"tasks">; ref: number | null; project: string }[] = [];
-    if (!projects) {
+export const exportLabels = internalQuery({
+  args: { cursor: cursorArg },
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db.query("tasks").paginate({ numItems: BATCH, cursor: cursor ?? null });
+    const items = page.page
+      .filter((task) => (task.labels ?? []).length > 0)
+      .map((task) => ({ taskId: task._id, userId: task.userId, ref: task.ref ?? null, labels: task.labels! }));
+    return { items, cursor: page.continueCursor, done: page.isDone };
+  },
+});
+
+/** Whether a history entry's before or after holds labels, or add_project's fromLabel and removeLabel. */
+const hasLabels = (change: Record<string, unknown> | undefined) =>
+  change !== undefined && Object.keys(change).some((name) => RETIRED_FIELDS.has(name));
+
+/** A history entry's before or after without its labels; undefined when nothing else was in it. */
+function withoutLabels(change: Record<string, unknown> | undefined) {
+  if (!hasLabels(change)) return { value: change, changed: false };
+  const rest = withoutLabelFields(change!);
+  return { value: Object.keys(rest).length > 0 ? rest : undefined, changed: true };
+}
+
+/**
+ * 0.14.0: removes the stored labels. First every task loses its `labels` field
+ * (its updatedAt stays, as nothing a client shows changes), then (`events`)
+ * every history entry loses `labels` (and a projectAdd entry `fromLabel` and
+ * `removeLabel`) from its before and after; an entry that
+ * recorded only a label change is deleted. Nothing enters the history. Runs in
+ * batches and schedules itself until both parts are done.
+ */
+export const dropLabels = internalMutation({
+  args: { cursor: cursorArg, events: v.optional(v.boolean()) },
+  handler: async (ctx, { cursor, events }) => {
+    if (!events) {
       const page = await ctx.db.query("tasks").paginate({ numItems: BATCH, cursor: cursor ?? null });
-      const names = new Map<string, string | null>();
+      let tasksCleared = 0;
       for (const task of page.page) {
-        if (task.projectId === undefined) continue;
-        if (!names.has(task.projectId)) names.set(task.projectId, (await ctx.db.get(task.projectId))?.name ?? null);
-        const name = names.get(task.projectId) ?? null;
-        const wanted = name !== null && !task.labels.includes(name);
-        const room = task.labels.length < MAX_LABELS;
-        if (wanted && !room) {
-          noRoom.push({ taskId: task._id, ref: task.ref ?? null, project: name });
-          // Batches after the first run on their own: the deployment's logs keep what they could not carry over.
-          console.warn(`Task #${task.ref ?? task._id} already has ${MAX_LABELS} labels; project "${name}" was not added as a label`);
-        }
-        await ctx.db.patch(task._id, { projectId: undefined, ...(wanted && room ? { labels: [...task.labels, name] } : {}) });
-        if (wanted && room) relabeled++;
-        cleared++;
+        if (task.labels === undefined) continue;
+        await ctx.db.patch(task._id, { labels: undefined });
+        tasksCleared++;
       }
-      if (!page.isDone) {
-        await ctx.scheduler.runAfter(0, internal.migrations.projectsToLabels, { cursor: page.continueCursor });
-        return { relabeled, cleared, noRoom, projectsDeleted: 0, done: false };
-      }
+      const next = page.isDone ? { events: true } : { cursor: page.continueCursor };
+      await ctx.scheduler.runAfter(0, internal.migrations.dropLabels, next);
+      return { tasksCleared, eventsCleared: 0, eventsDeleted: 0, done: false };
     }
-    const batch = await ctx.db.query("projects").take(BATCH);
-    for (const project of batch) await ctx.db.delete(project._id);
-    const done = batch.length < BATCH;
-    if (!done) await ctx.scheduler.runAfter(0, internal.migrations.projectsToLabels, { projects: true });
-    return { relabeled, cleared, noRoom, projectsDeleted: batch.length, done };
+    const page = await ctx.db.query("taskEvents").paginate({ numItems: BATCH, cursor: cursor ?? null });
+    let eventsCleared = 0;
+    let eventsDeleted = 0;
+    for (const event of page.page) {
+      const before = withoutLabels(event.before);
+      const after = withoutLabels(event.after);
+      if (!before.changed && !after.changed) continue;
+      if (before.value === undefined && after.value === undefined) {
+        await ctx.db.delete(event._id);
+        eventsDeleted++;
+        continue;
+      }
+      await ctx.db.patch(event._id, { before: before.value, after: after.value });
+      eventsCleared++;
+    }
+    if (!page.isDone) await ctx.scheduler.runAfter(0, internal.migrations.dropLabels, { cursor: page.continueCursor, events: true });
+    return { tasksCleared: 0, eventsCleared, eventsDeleted, done: page.isDone };
   },
 });
 
 /**
  * Backfill counts reach 0 when complete; tasksWithProject and projects instead
- * count live project data. Their rollback completion requirements are owned by
- * docs/deploy.md#upgrading-to-0130.
+ * count live project data. tasksWithLabels and taskEventsWithLabels reach 0 when
+ * dropLabels is complete (docs/deploy.md#upgrading-to-0140).
  */
 export const status = internalQuery({
   args: {},
   handler: async (ctx) => {
     let tasksWithoutRef = 0;
     let tasksWithProject = 0;
+    let tasksWithLabels = 0;
     for await (const task of ctx.db.query("tasks")) {
       if (task.ref === undefined) tasksWithoutRef++;
       if (task.projectId !== undefined) tasksWithProject++;
+      if (task.labels !== undefined) tasksWithLabels++;
     }
     const keysWithoutKind = (await ctx.db.query("apiKeys").collect()).filter((k) => k.kind === undefined).length;
     let taskEventsWithoutSeq = 0;
-    for await (const event of ctx.db.query("taskEvents")) if (event.taskId !== undefined && event.seq === undefined) taskEventsWithoutSeq++;
+    let taskEventsWithLabels = 0;
+    for await (const event of ctx.db.query("taskEvents")) {
+      if (event.taskId !== undefined && event.seq === undefined) taskEventsWithoutSeq++;
+      if (hasLabels(event.before) || hasLabels(event.after)) taskEventsWithLabels++;
+    }
     const projects = (await ctx.db.query("projects").collect()).length;
-    return { tasksWithoutRef, keysWithoutKind, taskEventsWithoutSeq, tasksWithProject, projects };
+    return { tasksWithoutRef, keysWithoutKind, taskEventsWithoutSeq, tasksWithProject, projects, tasksWithLabels, taskEventsWithLabels };
   },
 });

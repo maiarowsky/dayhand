@@ -97,7 +97,7 @@ struct PlaceContent: View {
         switch model.place {
         case .inbox: InboxPlace()
         case .today: TodayView()
-        case .all, .noProject, .project, .label: TaskListView()
+        case .all, .noProject, .project: TaskListView()
         case .archivedProjects: ArchivedProjectsView()
         case .done: DoneView()
         case .trash: TrashView()
@@ -115,7 +115,6 @@ enum PlaceText {
         case .all: return tr("All Tasks")
         case .noProject: return tr("No Project")
         case .project(let id): return model.project(id)?.name ?? tr("Project")
-        case .label(let label): return "#\(label)"
         case .archivedProjects: return tr("Archived Projects")
         case .done: return tr("Done and Archived")
         case .trash: return tr("Trash")

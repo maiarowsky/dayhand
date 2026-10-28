@@ -121,12 +121,11 @@ describe("the proposal inbox", () => {
   test("merging folds a proposal into a task already in the plan", async () => {
     const { app, userId, agent, hookId, webhookId } = await inbox();
     const cli = await mcpClient(await createKey(userId, "laptop", "cli"));
-    const existing = await callTool(cli, "add_task", { title: "Speed up checkout", note: "Profile the payment step.", labels: ["shop"] });
+    const existing = await callTool(cli, "add_task", { title: "Speed up checkout", note: "Profile the payment step." });
     const proposed = await callTool(agent, "add_task", {
       title: "Checkout p95 above 3 s",
       note: "Alert fired 4 times today.",
       links: [{ url: "https://grafana.example.com/d/checkout", title: "Dashboard" }],
-      labels: ["alerts"],
       proposal: true,
       source: ALERT,
       returnTo: webhookId,
@@ -135,7 +134,6 @@ describe("the proposal inbox", () => {
     expect(result.task).toMatchObject({
       id: existing.id,
       note: `Profile the payment step.\n\nMerged from #${proposed.ref}: Checkout p95 above 3 s\n\nAlert fired 4 times today.`,
-      labels: ["shop", "alerts"],
       links: [{ url: "https://grafana.example.com/d/checkout", title: "Dashboard" }],
       source: ALERT,
       returnTo: [webhookId],
@@ -197,7 +195,6 @@ describe("the plan health report", () => {
         title: "Stale claim",
         status: "todo",
         isNow: false,
-        labels: [],
         links: [],
         claimedBy: { name: "old agent" },
         claimExpiresAt: Date.now() - 60_000,
@@ -271,7 +268,7 @@ describe("proposals and projects (0.13.0)", () => {
     const now = Date.now();
     await importRows("tasks", [{
       userId, ref: 900, title: "Dangling proposal", proposedAt: now, projectId: project.id,
-      status: "todo", isNow: false, labels: [], links: [], createdAt: now, updatedAt: now,
+      status: "todo", isNow: false, links: [], createdAt: now, updatedAt: now,
     }]);
     const [proposed]: any[] = await app.query(api.app.listProposals, {});
     const loose: any = await app.mutation(api.app.add, { title: "Loose" });

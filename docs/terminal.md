@@ -50,7 +50,7 @@ The keys most people need:
 | `Space` or `x` | Done or not done |
 | `s` | Start (doing) or stop (to do) |
 | `n`, `N` | Make it the now task with a resume note; clear the now task |
-| `e`, `E` | Edit title, day, labels and resume note; title and note in `$EDITOR` |
+| `e`, `E` | Edit title, day and resume note; title and note in `$EDITOR` |
 | `m` | Move: `tomorrow`, `fri 9am`, `none` |
 | `d`, `u`, `r` | To the trash (asks first), undo, restore |
 | `/` | Narrow the task list ([filter syntax](cli.md#topic-ui)) |
@@ -59,8 +59,8 @@ The keys most people need:
 The full list is `?` in the app, `dayhand help ui` and [the reference](cli.md#topic-ui). The layout and
 keys follow vim and lazygit.
 
-- **Quick add** (`a`) previews the line before `Enter` adds it. Date phrases, labels and project tokens
-  follow [the quick-add rules](cli.md#topic-ui).
+- **Quick add** (`a`) previews the line before `Enter` adds it. Date phrases and project tokens follow
+  [the quick-add rules](cli.md#topic-ui).
 - **The mouse** selects and scrolls. Mouse reporting stops the terminal's own text selection: hold
   `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`.
 - **Refresh**: what is on screen is read again every 12 seconds (`--interval 10` to `300`), within the

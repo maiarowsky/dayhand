@@ -61,7 +61,7 @@ test.skipIf(!hasLegacySource)("all project commands explain the minimum backend;
   expect(added.code, added.stderr).toBe(0);
   const cases = [
     ["project"], ["project", "list", "--archived"], ["project", "add", "Home"],
-    ["project", "add", "Home", "--from-label", "home", "--dry-run"],
+    ["project", "add", "Home", "--dry-run"],
     ["project", "edit", "Home", "--note", "Context"], ["project", "archive", "Home"],
     ["project", "unarchive", "Home"], ["project", "rm", "Home", "--move-tasks-to", "none"],
     ["project", "assign", "none", "1"], ["list", "-p", "none"], ["today", "-p", "Home"],

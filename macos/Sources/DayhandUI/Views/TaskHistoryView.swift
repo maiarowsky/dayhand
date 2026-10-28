@@ -163,7 +163,6 @@ enum HistoryText {
         case .dueDate: return tr("Day")
         case .dueTime: return tr("Time")
         case .repeat: return tr("Repeat")
-        case .labels: return tr("Labels")
         case .links: return tr("Links")
         case .checklist: return tr("Checklist")
         case .reminders: return tr("Reminders")
@@ -184,7 +183,6 @@ enum HistoryText {
         case .dueDate: text = value.string.flatMap { CivilDate($0) == nil ? nil : Formatting.day($0, today: today) }
         case .dueTime: text = value.string.map(DateText.time)
         case .repeat: text = RepeatRule.parse(value).map(Formatting.repeatRule)
-        case .labels: text = value.array.map { $0.compactMap(\.string).joined(separator: DateText.listSeparator) }
         case .links: text = value.array.map { $0.compactMap(TaskLink.parse).map { $0.title ?? $0.url }.joined(separator: DateText.listSeparator) }
         case .checklist:
             text = value.array.map { items in

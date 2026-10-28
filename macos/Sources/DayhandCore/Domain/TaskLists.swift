@@ -1,8 +1,8 @@
 import Foundation
 
-/// Which tasks a list of the sidebar shows: every task, one project's, those without a project, or one label's.
+/// Which tasks a list of the sidebar shows: every task, one project's or those without a project.
 public enum TaskFilter: Hashable, Sendable {
-    case all, noProject, project(String), label(String)
+    case all, noProject, project(String)
 
     /**
      * Whether [task] belongs to the list. [projects] are the `localId`s of the projects this Mac has: a task naming
@@ -13,7 +13,6 @@ public enum TaskFilter: Hashable, Sendable {
         case .all: return true
         case .noProject: return task.projectIn(projects) == nil
         case .project(let id): return task.projectLocalId == id && projects.contains(id)
-        case .label(let label): return task.labels.contains(label)
         }
     }
 }
@@ -82,15 +81,11 @@ public struct SidebarCounts: Hashable, Sendable {
     public var noProject = Count()
     /// By project `localId`, archived projects included; a project without open tasks is absent.
     public var projects: [String: Count] = [:]
-    public var labels: [String: Count] = [:]
-    /// The labels on active tasks, done ones included, in alphabetical order.
-    public var labelNames: [String] = []
     public var archivedProjects = 0
 
     public init() {}
 
     public func project(_ localId: String) -> Count { projects[localId] ?? Count() }
-    public func label(_ name: String) -> Count { labels[name] ?? Count() }
 
     public static let empty = SidebarCounts()
 }
@@ -98,10 +93,7 @@ public struct SidebarCounts: Hashable, Sendable {
 public func sidebarCounts(_ tasks: [TaskItem], projects: [Project], today: String) -> SidebarCounts {
     var counts = SidebarCounts()
     let known = Set(projects.map(\.localId))
-    var names = Set<String>()
-    for task in tasks where task.isActive {
-        names.formUnion(task.labels)
-        guard task.status != .done else { continue }
+    for task in tasks where task.isActive && task.status != .done {
         let overdue = HelmDates.isOverdue(task, today: today) ? 1 : 0
         func add(_ count: inout SidebarCounts.Count) {
             count.open += 1
@@ -109,9 +101,7 @@ public func sidebarCounts(_ tasks: [TaskItem], projects: [Project], today: Strin
         }
         add(&counts.all)
         if let project = task.projectIn(known) { add(&counts.projects[project, default: SidebarCounts.Count()]) } else { add(&counts.noProject) }
-        for label in Set(task.labels) { add(&counts.labels[label, default: SidebarCounts.Count()]) }
     }
-    counts.labelNames = names.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     counts.archivedProjects = projects.filter(\.isArchived).count
     return counts
 }

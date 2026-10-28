@@ -5,7 +5,7 @@ import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
 import { isReady } from "./agentWork";
-import { fail, loadSettings, toTask, type Identity } from "./core";
+import { fail, loadSettings, refuseLabelFilter, toTask, type Identity } from "./core";
 import { isOverdue, localDate, resolveDate } from "./dates";
 import { projectFilter } from "./projectOps";
 
@@ -73,7 +73,6 @@ function checkQuery(query: string | undefined): string | undefined {
  * tasks count. `ready` looks the dependencies up among the user's tasks.
  */
 function matcher(input: Args, today: string, byId: Map<string, Doc<"tasks">>) {
-  const wanted = (input.labels ?? []).map((l) => l.trim()).filter((l) => l !== "");
   const needle = checkQuery(input.query);
   const before = checkDay("dueBefore", input.dueBefore, today);
   const after = checkDay("dueAfter", input.dueAfter, today);
@@ -85,17 +84,17 @@ function matcher(input: Args, today: string, byId: Map<string, Doc<"tasks">>) {
     (t.proposedAt !== undefined) === proposed &&
     (input.includeArchived || t.archivedAt === undefined) &&
     (statuses ? statuses.includes(t.status) : input.includeDone !== false || t.status !== "done") &&
-    wanted.every((label) => t.labels.includes(label)) &&
     (input.overdue === undefined || isOverdue(t, today) === input.overdue) &&
     (input.ready === undefined || isReady(t, byId) === input.ready) &&
     (before === undefined || (t.dueDate !== undefined && t.dueDate < before)) &&
     (after === undefined || (t.dueDate !== undefined && t.dueDate > after)) &&
     (needle === undefined ||
-      [t.title, t.note, t.resumeNote, ...t.labels].some((text) => text?.toLowerCase().includes(needle)));
+      [t.title, t.note, t.resumeNote].some((text) => text?.toLowerCase().includes(needle)));
 }
 
 /** One page of matching tasks, oldest due first; `total` counts every match. */
 export async function findTasks(ctx: QueryCtx, identity: Identity, input: Args) {
+  refuseLabelFilter(input.labels);
   const at = input.at ?? Date.now();
   const today = localDate(at, (await loadSettings(ctx, identity.userId)).timezone);
   const limit = checkLimit(input.limit);

@@ -9,7 +9,7 @@ public enum ProjectColor: String, Sendable, Codable, CaseIterable {
 
 /**
  * A project as the screens see it (backend 0.13.0, `convex/lib/projectOps.ts`): a flat list in the order of
- * [position], with an archive. A task is in at most one project; labels stay free tags across projects.
+ * [position], with an archive. A task is in at most one project.
  *
  * Every project here is one the server has (it has a [serverId]): projects are made, changed and deleted on the server
  * directly, online only (`SyncEngine`'s project calls). [localId] is the `clientId` of the `addProject` call for

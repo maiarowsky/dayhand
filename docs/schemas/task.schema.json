@@ -9,7 +9,6 @@
     "title",
     "status",
     "isNow",
-    "labels",
     "links",
     "createdAt",
     "updatedAt"
@@ -124,13 +123,6 @@
     "rrule": {
       "type": "string",
       "description": "The repeat rule as an RFC 5545 RRULE value, e.g. FREQ=WEEKLY;BYDAY=MO,TH; only on repeating tasks"
-    },
-    "labels": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Free tags across projects; the task's project is projectId"
     },
     "projectId": {
       "type": "string",

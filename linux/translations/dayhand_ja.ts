@@ -585,10 +585,6 @@
         <translation>時刻を削除</translation>
     </message>
     <message>
-        <source>Labels (comma-separated)</source>
-        <translation>ラベル（カンマ区切り）</translation>
-    </message>
-    <message>
         <source>Checklist</source>
         <translation>チェックリスト</translation>
     </message>
@@ -646,10 +642,6 @@
     <message>
         <source>The note is too long.</source>
         <translation>メモが長すぎます。</translation>
-    </message>
-    <message>
-        <source>Use up to 20 labels, at most 50 characters each.</source>
-        <translation>ラベルは20個まで、各50文字以内にしてください。</translation>
     </message>
     <message>
         <source>Use up to 100 checklist items, at most 500 characters each.</source>

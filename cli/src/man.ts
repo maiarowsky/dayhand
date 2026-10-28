@@ -72,7 +72,7 @@ export function renderMan(): string {
     ...block(
       [
         "dayhand login --url https://<deployment>.convex.site",
-        'dayhand add Call the accountant --due "fri 2pm" -l home',
+        'dayhand add Call the accountant --due "fri 2pm" -p Home',
         "dayhand list --due-before eow --json",
         "dayhand done 42",
         "dayhand pair",

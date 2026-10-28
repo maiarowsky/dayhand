@@ -122,7 +122,7 @@ public enum ScreenSnapshots {
         }
         try await renderPanels(model, folder)
         try await renderProjectSheets(model, folder)
-        for (name, place) in [("done", Place.done), ("archived-projects", .archivedProjects), ("no-project", .noProject), ("label", .label("home"))] {
+        for (name, place) in [("done", Place.done), ("archived-projects", .archivedProjects), ("no-project", .noProject)] {
             model.show(place)
             model.selection = nil
             try await render(window(), wide, false, png(name), sidebar: sidebar())
@@ -272,7 +272,7 @@ public enum ScreenSnapshots {
             RemoteProject(id: "p-blog", name: "Old blog", color: .gray, position: 5120, archivedAt: now - 86_400_000, createdAt: now, updatedAt: now),
         ]
         let tasks = [
-            task("Send the invoice to Anna") { $0.dueDate = day(-2); $0.labels = ["work"]; $0.projectId = "p-bakery" },
+            task("Send the invoice to Anna") { $0.dueDate = day(-2); $0.projectId = "p-bakery" },
             task("Write the project brief") {
                 $0.projectId = "p-dayhand"
                 $0.status = "doing"
@@ -282,7 +282,6 @@ public enum ScreenSnapshots {
             task("Call the accountant") {
                 $0.projectId = "p-home"
                 $0.dueTime = "14:00"
-                $0.labels = ["home"]
                 $0.note = "Ask about the VAT return and the new invoice numbering."
                 $0.reminders = [.before(30), .at("09:00")]
             },
@@ -295,13 +294,12 @@ public enum ScreenSnapshots {
                     ChecklistItem(id: "c3", title: "Write the review"),
                 ]
             },
-            task("Buy milk") { $0.labels = ["home"] },
+            task("Buy milk"),
             // Agent work as `dayhand` and an agent set it: claimed for an hour, two of three criteria met, waiting for
             // the overdue invoice, blocked and with a plan.
             task("Ship the release notes") {
                 $0.projectId = "p-dayhand"
                 $0.status = "doing"
-                $0.labels = ["work"]
                 $0.claimedBy = "claude"
                 $0.claimExpiresAt = now + 3_600_000
                 $0.acceptance = [
@@ -333,7 +331,7 @@ public enum ScreenSnapshots {
             },
             task("Idea for a blog post") { $0.dueDate = nil },
             task("Archive the old posts") { $0.archivedAt = now - 3 * 86_400_000; $0.projectId = "p-blog" },
-            task("Old shopping list") { $0.deletedAt = now - 2 * 3_600_000; $0.labels = ["home"] },
+            task("Old shopping list") { $0.deletedAt = now - 2 * 3_600_000 },
             task("Draft of the newsletter") { $0.dueDate = day(-5); $0.deletedAt = now - 26 * 86_400_000 },
         ]
         try await model.repository.apply(Snapshot(
@@ -363,10 +361,9 @@ public enum ScreenSnapshots {
             ),
             TaskEvent(
                 taskServerId: call.id, at: now - 3 * 60 * minute, actor: "cli", action: "create",
-                afterJson: JSONValue.object(["title": "Call the accountant", "dueDate": .string(day(-1)), "dueTime": "11:00", "isNow": false, "labels": ["home"]]).encoded()
+                afterJson: JSONValue.object(["title": "Call the accountant", "dueDate": .string(day(-1)), "dueTime": "11:00", "isNow": false]).encoded()
             ),
         ])
-        try await model.repository.setLabels(call.id, ["home", "tax"])
     }
 
     /// Draws [view] at [size] into a PNG at [url]; with [sidebar], that is drawn over the view's open sidebar column, and

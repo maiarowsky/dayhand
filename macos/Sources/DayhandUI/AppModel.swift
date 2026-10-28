@@ -52,12 +52,9 @@ final class AppModel: ObservableObject {
     @Published var viewMode: ViewMode {
         didSet { defaults.set(viewMode.rawValue, forKey: Keys.viewMode) }
     }
-    /// Whether the sidebar shows its Projects and Labels sections open, as last left.
+    /// Whether the sidebar shows its Projects section open, as last left.
     @Published var projectsExpanded: Bool {
         didSet { defaults.set(projectsExpanded, forKey: Keys.projectsExpanded) }
-    }
-    @Published var labelsExpanded: Bool {
-        didSet { defaults.set(labelsExpanded, forKey: Keys.labelsExpanded) }
     }
     /// The project editor sheet, open for a new project or one to edit.
     @Published var projectEditor: ProjectEditorRequest?
@@ -100,7 +97,6 @@ final class AppModel: ObservableObject {
         static let lastServer = "lastServerUrl"
         static let language = "language"
         static let projectsExpanded = "sidebarProjectsExpanded"
-        static let labelsExpanded = "sidebarLabelsExpanded"
         static let viewMode = "viewMode"
         /// macOS's own per-app language, which the menus that come with AppKit follow from the next start.
         static let appleLanguages = "AppleLanguages"
@@ -125,7 +121,6 @@ final class AppModel: ObservableObject {
         notifications = environment.notifications ? NotificationScheduler() : nil
         useOffline = environment.defaults.bool(forKey: Keys.useOffline)
         projectsExpanded = environment.defaults.object(forKey: Keys.projectsExpanded) as? Bool ?? true
-        labelsExpanded = environment.defaults.object(forKey: Keys.labelsExpanded) as? Bool ?? true
         viewMode = environment.defaults.string(forKey: Keys.viewMode).flatMap(ViewMode.init) ?? .list
         observe()
         clockTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
@@ -311,7 +306,6 @@ final class AppModel: ObservableObject {
         self.place = place
         recompute()
         if case .project = place { projectsExpanded = true }
-        if case .label = place { labelsExpanded = true }
         if let id = selection, let task = task(id), !place.lists(task, projects: projectIds) { selection = nil }
     }
 
@@ -321,7 +315,6 @@ final class AppModel: ObservableObject {
     func rename(_ id: String, _ title: String) { run { try await $0.rename(id, to: title) } }
     func setNote(_ id: String, _ note: String) { run { try await $0.setNote(id, note) } }
     func setResumeNote(_ id: String, _ note: String) { run { try await $0.setResumeNote(id, note) } }
-    func setLabels(_ id: String, _ labels: [String]) { run { try await $0.setLabels(id, labels) } }
     func setDue(_ id: String, date: String?, time: String?) { run { try await $0.setDue(id, date: date, time: time) } }
     func setRepeat(_ id: String, _ rule: RepeatRule?) { run { try await $0.setRepeat(id, rule) } }
     func setReminders(_ id: String, _ reminders: [TaskReminder]?) { run { try await $0.setReminders(id, reminders) } }
@@ -592,11 +585,11 @@ final class EngineBox: @unchecked Sendable {
 
 /**
  * The places of the main window's sidebar: the inbox (approval requests and proposals waiting for the owner), Today,
- * every task, the tasks without a project, a project, a label, the archived projects, the done and archived tasks,
+ * every task, the tasks without a project, a project, the archived projects, the done and archived tasks,
  * and the trash.
  */
 enum Place: Hashable {
-    case inbox, today, all, noProject, project(String), label(String), archivedProjects, done, trash
+    case inbox, today, all, noProject, project(String), archivedProjects, done, trash
 
     /// The tasks a list place shows in sections; nil for the places with their own views.
     var filter: TaskFilter? {
@@ -604,7 +597,6 @@ enum Place: Hashable {
         case .all: return .all
         case .noProject: return .noProject
         case .project(let id): return .project(id)
-        case .label(let label): return .label(label)
         case .inbox, .today, .archivedProjects, .done, .trash: return nil
         }
     }
@@ -616,7 +608,7 @@ enum Place: Hashable {
         case .done: return !task.inTrash && (task.status == .done || task.archivedAt != nil)
         case .today: return task.isActive
         case .inbox, .archivedProjects: return false
-        case .all, .noProject, .project, .label: return task.isActive && filter?.matches(task, projects: projects) == true
+        case .all, .noProject, .project: return task.isActive && filter?.matches(task, projects: projects) == true
         }
     }
 }
@@ -629,7 +621,7 @@ struct QuickAddContext: Equatable {
     init(_ place: Place, today: String, projects: [Project]) {
         switch place {
         case .inbox, .today, .archivedProjects, .done, .trash: date = today
-        case .all, .noProject, .project, .label: date = nil
+        case .all, .noProject, .project: date = nil
         }
         if case .project(let id) = place, projects.contains(where: { $0.localId == id && !$0.isArchived }) {
             project = id

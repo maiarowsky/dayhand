@@ -101,7 +101,7 @@ describe("dayhand webhook", () => {
 describe("dayhand import", () => {
   test("an export imported into an empty account gives the same plan; --dry-run stores nothing; again imports nothing", async () => {
     const source = await newUser();
-    await dayhand(source.key, ["add", "Dentist", "--due", "2026-11-03", "--time", "15:30", "--label", "health"]);
+    await dayhand(source.key, ["add", "Dentist", "--due", "2026-11-03", "--time", "15:30"]);
     await dayhand(source.key, ["add", "Read a book", "--note", "the long one"]);
     await dayhand(source.key, ["add", "Bins", "--due", "2026-11-02", "--every", "week"]);
     await dayhand(source.key, ["done", "2", "--yes"]);

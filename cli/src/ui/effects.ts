@@ -61,7 +61,6 @@ export async function runChange(effect: Change, ctx: EffectContext): Promise<Don
       const due = parsed.due === undefined ? { date: effect.date } : parsed.due;
       if (due) input.dueDate = due.date;
       if (due?.time) input.dueTime = due.time;
-      if (parsed.labels.length) input.labels = parsed.labels;
       if (parsed.projectId) input.projectId = parsed.projectId;
       if (effect.status) input.status = effect.status;
       const task = await api.change<Task>("add_task", input);
@@ -142,7 +141,6 @@ async function edit(task: Task, changes: Partial<Record<EditKey, string>>, ctx: 
       input.dueTime = due.time ?? null;
     }
   }
-  if (changes.labels !== undefined) input.labels = [...new Set(changes.labels.split(/[,\s]+/).map((l) => l.replace(/^#/, "")).filter(Boolean))];
   if (changes.resumeNote !== undefined) input.resumeNote = changes.resumeNote || null;
   const updated = await ctx.api.change<Task>("update_task", input);
   return { text: t("done.saved", { task: label(updated) }), select: updated.id };

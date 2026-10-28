@@ -216,18 +216,17 @@ private slots:
 
     void anUpdateKeepsOnlyItsOwnFieldsLocal()
     {
-        const TaskItem local = row(u"a"_s, u"s1"_s, 10, [](TaskItem &t) { t.resumeNote = u"page 4"_s; t.labels = {u"mine"_s}; });
+        const TaskItem local = row(u"a"_s, u"s1"_s, 10, [](TaskItem &t) { t.resumeNote = u"page 4"_s; });
         const RemoteTask server = remote(u"s1"_s, 20, [](RemoteTask &r) {
             r.resumeNote = u"page 3"_s;
             r.title = u"New title"_s;
-            r.labels = {u"agent"_s};
             r.note = u"agent note"_s;
         });
+        // The labels update was queued by an older version of the app: it keeps no field local.
         const QList<OutboxOp> pending{op(Mutations::update, u"a"_s, uR"({"resumeNote":"page 4","clientId":"c"})"_s),
                                       op(Mutations::update, u"a"_s, uR"({"labels":["mine"],"clientId":"d"})"_s, u"op2"_s)};
         const TaskItem merged = single(SnapshotMerger::merge({local}, pending, {server}, now));
         QCOMPARE(merged.resumeNote, u"page 4"_s);
-        QCOMPARE(merged.labels, QStringList{u"mine"_s});
         QCOMPARE(merged.title, u"New title"_s);
         QCOMPARE(merged.note, u"agent note"_s);
     }
@@ -243,21 +242,19 @@ private slots:
         QCOMPARE(plan.deletes, (QStringList{u"gone"_s, u"orphan"_s}));
     }
 
-    void repeatLabelsLinksChecklistRemindersAndTheTrashComeFromTheServer()
+    void repeatLinksChecklistRemindersAndTheTrashComeFromTheServer()
     {
         const RemoteTask server = remote(u"s1"_s, 10, [](RemoteTask &r) {
             RepeatRule rule;
             rule.every = RepeatEvery::Week;
             rule.weekdays = QList<int>{1, 4};
             r.repeat = rule;
-            r.labels = {u"home"_s, u"Helm"_s};
             r.links = {TaskLink{u"https://example.com"_s, u"Spec"_s}};
             r.checklist = {ChecklistItem{u"c1"_s, u"Milk"_s, false}};
             r.deletedAt = 7;
         });
         const TaskItem t = single(SnapshotMerger::merge({}, {}, {server}, now));
         QCOMPARE(t.repeat->weekdays, (QList<int>{1, 4}));
-        QCOMPARE(t.labels, (QStringList{u"home"_s, u"Helm"_s}));
         QCOMPARE(t.links.first().title, u"Spec"_s);
         QCOMPARE(t.checklist.size(), 1);
         QCOMPARE(t.deletedAt, 7);

@@ -35,7 +35,7 @@ struct SidebarTests {
             RemoteProject(id: "p3", name: "Old", position: 3, archivedAt: now, createdAt: now, updatedAt: now),
         ]
         let tasks = [
-            RemoteTask(id: "t1", title: "Invoice", dueDate: HelmDates.addDays(today, -1), createdAt: now, updatedAt: now, labels: ["work"], projectId: "p1"),
+            RemoteTask(id: "t1", title: "Invoice", dueDate: HelmDates.addDays(today, -1), createdAt: now, updatedAt: now, projectId: "p1"),
             RemoteTask(id: "t2", title: "Photos", createdAt: now, updatedAt: now, projectId: "p1"),
             RemoteTask(id: "t3", title: "Milk", dueDate: today, createdAt: now, updatedAt: now),
         ]

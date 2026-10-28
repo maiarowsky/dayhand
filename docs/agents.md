@@ -171,8 +171,8 @@ dayhand proposals merge 43 --into 12
 dayhand proposals reject 44 --reason "not now"
 ```
 
-- **Accept**: it joins the plan as it is. **Merge**: an open task gets its note, links and labels, and the
-  proposal goes to the trash. **Reject**: it goes to the trash, restorable for 30 days.
+- **Accept**: it joins the plan as it is. **Merge**: an open task gets its note and links, and the proposal
+  goes to the trash. **Reject**: it goes to the trash, restorable for 30 days.
 - **One source, one task.** A task with a `--source` (a kind and a reference, such as an alert id) is made
   once: adding it again returns the same task, also after it was rejected or merged. A repeating alert
   does not fill your inbox.

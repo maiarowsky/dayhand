@@ -1,23 +1,21 @@
 // Projects (since 0.13.0): a flat list of the user's projects in the order of
 // `position`, with an archive. A task is in at most one project
-// (tasks.projectId); labels stay free tags across projects. A project is named
-// by its id or by its name in any case, as a task is by its id or "#42"; in
-// filters and as a target "none" means no project. Changes of a project are
+// (tasks.projectId). A project is named by its id or by its name in any case,
+// as a task is by its id or "#42"; in filters and as a target "none" means no
+// project. Changes of a project are
 // recorded in history without a task (projectAdd, projectUpdate,
 // projectDelete), as settings are; moving a task is an ordinary change of the
 // task ("update"), with its history entry and task.updated webhook.
-import { ConvexError, type ObjectType } from "convex/values";
+import type { ObjectType } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
-import { checkClaim } from "./agentWork";
 import type { args } from "./args";
-import { appliedOperation, checkClientId, checkLabels, diff, fail, loadSettings, ownerOnly, patchTask, recordEvent, type Identity } from "./core";
+import { appliedOperation, checkClientId, diff, fail, loadSettings, ownerOnly, patchTask, recordEvent, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
 import type { ProjectColor } from "./validators";
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
 
-/** Names are as long as labels, so a label always fits as a name and back (projectsToLabels). */
 export const PROJECT_LIMITS = { name: 50, note: 2_000, icon: 16, projects: 200, move: 1_000, position: 1e15 };
 /** Distance between the positions of projects added at the end. */
 export const POSITION_STEP = 1024;
@@ -173,7 +171,6 @@ export async function countedProjects(ctx: QueryCtx, userId: string, tasks: read
 // ---- Changes ----
 
 type TaskRef = { id: Id<"tasks">; ref: number | null };
-type SkippedTask = TaskRef & { projectId?: Id<"projects">; reason: string };
 
 const refOf = (task: Doc<"tasks">): TaskRef => ({ id: task._id, ref: task.ref ?? null });
 
@@ -198,44 +195,6 @@ async function projectOf(ctx: QueryCtx, event: Doc<"taskEvents">): Promise<Doc<"
   const project = id ? await ctx.db.get(id) : null;
   if (!project) fail("not_found", "Project of this operation no longer exists");
   return project;
-}
-
-/**
- * Moves the label's tasks that have no project into the project, and takes the
- * label off them with removeLabel. Tasks already in a project stay and are
- * listed as skipped, as are tasks another agent holds a claim on.
- */
-async function moveLabel(ctx: MutationCtx, identity: Identity, label: string, projectId: Id<"projects">, removeLabel: boolean, clientId?: string) {
-  const tasks = (
-    await ctx.db
-      .query("tasks")
-      .withIndex("by_user", (q) => q.eq("userId", identity.userId))
-      .collect()
-  ).filter((t) => t.labels.includes(label));
-  const skipped: SkippedTask[] = [];
-  const moving: Doc<"tasks">[] = [];
-  for (const task of tasks) {
-    if (task.projectId !== undefined) {
-      skipped.push({ ...refOf(task), projectId: task.projectId, reason: "already in a project" });
-      continue;
-    }
-    try {
-      checkClaim(task, identity);
-    } catch (error) {
-      if (!(error instanceof ConvexError)) throw error;
-      skipped.push({ ...refOf(task), reason: (error.data as { message: string }).message });
-      continue;
-    }
-    moving.push(task);
-  }
-  if (moving.length > PROJECT_LIMITS.move) {
-    fail("invalid_argument", `Label "${label}" is on ${moving.length} tasks without a project; at most ${PROJECT_LIMITS.move} move at once`);
-  }
-  for (const task of moving) {
-    const patch: Partial<Doc<"tasks">> = removeLabel ? { projectId, labels: task.labels.filter((l) => l !== label) } : { projectId };
-    await patchTask(ctx, identity, task, "update", patch, clientId);
-  }
-  return { moved: moving.map(refOf), skipped };
 }
 
 export type NewProject = { name: string; color?: ProjectColor; icon?: string; note?: string; position?: number; archived?: boolean };
@@ -264,9 +223,8 @@ export async function insertProject(ctx: MutationCtx, identity: Identity, input:
 }
 
 /**
- * add_project: a new project at the end of the menu (or at `position`). With
- * fromLabel the label's tasks without a project move into it (moveLabel).
- * Idempotent by clientId: a retry returns the project and the tasks it moved.
+ * add_project: a new project at the end of the menu (or at `position`).
+ * Idempotent by clientId: a retry returns the project.
  */
 export async function addProject(ctx: MutationCtx, identity: Identity, input: Args<"addProject">) {
   const clientId = checkClientId(input.clientId);
@@ -275,17 +233,13 @@ export async function addProject(ctx: MutationCtx, identity: Identity, input: Ar
       .query("projects")
       .withIndex("by_user_clientId", (q) => q.eq("userId", identity.userId).eq("clientId", clientId))
       .first();
-    if (existing) return { project: toProject(existing), moved: await movedBy(ctx, identity.userId, clientId), skipped: [] as SkippedTask[] };
+    if (existing) return { project: toProject(existing) };
     if (await appliedOperation(ctx, identity.userId, clientId)) fail("not_found", "Project of this operation no longer exists");
   }
-  const label = input.fromLabel === undefined ? undefined : checkLabels([input.fromLabel])[0];
-  if (input.fromLabel !== undefined && label === undefined) fail("invalid_argument", "fromLabel must not be empty");
-  if (input.removeLabel && label === undefined) fail("invalid_argument", "removeLabel needs fromLabel");
+  // fromLabel and removeLabel (before 0.14.0) are accepted and ignored.
   const { name, color, icon, note, position } = input;
-  const from = label === undefined ? {} : { fromLabel: label, removeLabel: input.removeLabel === true };
-  const projectId = await insertProject(ctx, identity, { name, color, icon, note, position }, await allProjects(ctx, identity.userId), clientId, from);
-  const { moved, skipped } = label === undefined ? { moved: [], skipped: [] } : await moveLabel(ctx, identity, label, projectId, input.removeLabel === true, clientId);
-  return { project: toProject((await ctx.db.get(projectId))!), moved, skipped };
+  const projectId = await insertProject(ctx, identity, { name, color, icon, note, position }, await allProjects(ctx, identity.userId), clientId);
+  return { project: toProject((await ctx.db.get(projectId))!) };
 }
 
 /** update_project: name, color, icon, note (null clears), position, archived. Idempotent. */

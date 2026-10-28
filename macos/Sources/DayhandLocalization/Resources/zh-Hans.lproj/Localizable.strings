@@ -316,8 +316,6 @@
 	<string>其中的任务会保留；请选择它们的去处。</string>
 	<key>Keep in title</key>
 	<string>保留在标题中</string>
-	<key>Labels</key>
-	<string>标签</string>
 	<key>Language</key>
 	<string>语言</string>
 	<key>Last checked %@.</key>
@@ -688,8 +686,6 @@
 	<string>更新已取消。</string>
 	<key>There are too many checklist items, or one is too long.</key>
 	<string>清单项目太多，或某个项目太长。</string>
-	<key>There are too many labels, or one is too long.</key>
-	<string>标签太多，或某个标签太长。</string>
 	<key>There is already a project named “%@”.</key>
 	<string>已有名为“%@”的项目。</string>
 	<key>These ring only when the task has a time.</key>
@@ -804,8 +800,6 @@
 	<string>未通过</string>
 	<key>from “%@”</key>
 	<string>来自“%@”</string>
-	<key>home, work</key>
-	<string>家, 工作</string>
 	<key>next step</key>
 	<string>下一步</string>
 	<key>no</key>

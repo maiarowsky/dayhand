@@ -6,7 +6,6 @@ import Foundation
  * is sent to the server (project changes are never queued): a name, icon or note the server would refuse is not sent.
  */
 public enum ProjectRules {
-    /// As long as a label, so a label always fits as a name and back.
     public static let maxName = 50
     public static let maxNote = 2_000
     public static let maxIcon = 16

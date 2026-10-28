@@ -323,6 +323,49 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.14.0
+
+0.14.0 removes labels: a task has only its project ([Projects](projects.md)). Tasks, history entries and
+the JSON export no longer carry `labels`, `list_all` and the search no longer look at them, the calendar
+feed has no `CATEGORIES`, and `add_project` returns only `{ project }`. Clients from before 0.14.0 are not
+refused when they write: `labels` in `add_task`, `update_task` and the app's `app:add` and `app:update`,
+and `fromLabel` and `removeLabel` in `add_project`, are accepted and ignored, over MCP, REST and the app
+alike. A `labels` filter is refused instead, so an old script never acts on every task: `list_all`
+(`GET /tasks?labels=`) and `app:listAll` answer `invalid_argument` "labels were removed in 0.14.0".
+Webhook payloads lose the field too.
+
+The labels stored before stay in the database, unseen, until `migrations:dropLabels` removes them; the
+schema keeps `labels` optional until then. It needs no new configuration.
+
+Order of the clients: Android, the Mac and Linux apps neither need the field nor fail without it, in either
+order. The `dayhand` CLI before the release that drops labels prints tables with them and fails on tasks
+without them (its `--json` output works, except with `--label`, which the server refuses): update the
+CLI before or with the server. The new CLI works with
+older servers.
+
+1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.14.0.zip`. It is the only
+   backup of the labels in the history.
+2. Deploy: `dayhand server deploy` (or `npx convex deploy`). Check: `dayhand version` shows server 0.14.0.
+3. Back up the labels to a new file outside the repository, from the backend folder (with the same
+   `--env-file` as `npx convex export`, if you use one):
+   ```sh
+   node scripts/labels-backup.mjs export "<backup-folder>/dayhand-labels-before-0.14.0.json"
+   ```
+   It prints how many labels of how many tasks it wrote, and never overwrites a file.
+4. Remove them: `npx convex run migrations:dropLabels`. It works in batches and schedules itself, tasks
+   first, then the history; a history entry that recorded only a label change is deleted, and a project's
+   entry loses `fromLabel` and `removeLabel`. A task's
+   `updatedAt` stays, so nothing syncs again. The first call answers `done: false` whatever the size.
+5. Wait until `npx convex run migrations:status` shows `tasksWithLabels: 0` and `taskEventsWithLabels: 0`.
+   Running `dropLabels` again is harmless.
+
+Once you will not roll back, a later release deletes the `labels` line from `convex/schema.ts`;
+Convex accepts that deploy only when no task has the field (step 5).
+
+Rollback: restore the snapshot from step 1, `npx convex import --replace-all dayhand-before-0.14.0.zip`
+(this drops every change made since), then deploy 0.13.x. The labels file from step 3 stays as the record
+of the labels.
+
 ## Upgrading to 0.13.2
 
 0.13.2 lets the app restore a locally calculated repeat into its parent's project, including an
@@ -337,13 +380,13 @@ to 0.13.1 makes Android 0.12.0 keep such occurrences in its outbox until 0.13.2 
 the result schemas. It changes no stored schema and needs no migration or new configuration.
 Agents may add and update projects by default; the owner's pause and tool policies still apply.
 Deleting projects requires a `cli` key. Rolling back to 0.13.0 only removes these interfaces;
-rolling back to 0.12.x still requires the project-to-label migration below.
+rolling back to 0.12.x still requires the project-to-label migration below, which 0.13.x has.
 
 ## Upgrading to 0.13.0
 
 0.13.0 adds [backend project support](architecture.md#projects). There is no new status, error
 code, secret or webhook event, and no forward migration: existing tasks and labels stay as they
-are. For task selectors see [MCP](mcp.md#projects); transfer rules are in
+are (0.14.0 later removes labels). For task selectors see [MCP](mcp.md#projects); transfer rules are in
 [JSON import](api.md#import) and [Backlog.md](backlog-md.md#using-it).
 
 1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.13.0.zip`.
@@ -354,7 +397,8 @@ Older clients keep working: they ignore the field they do not know, and their ch
 what changed, so they never take a task out of its project.
 
 Rollback: 0.12.x's schema does not know `projectId`, so Convex refuses to deploy it while any task
-has one ("Object contains extra field `projectId`"). Turn the projects back into labels first.
+has one ("Object contains extra field `projectId`"). Turn the projects back into labels first, with
+0.13.x deployed (0.14.0 no longer has `migrations:projectsToLabels`; roll it back as above first).
 Every writer must be stopped: the apps, agents, REST and MCP clients. Keep them stopped from
 before starting `migrations:projectsToLabels` until 0.12.x is fully deployed, inclusive.
 

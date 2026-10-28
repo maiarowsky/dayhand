@@ -59,7 +59,7 @@ export function renderSkill(): string {
     "# Retry after exit 5 without creating a duplicate",
     'dayhand add "Book the dentist" --client-id dentist-2026-10-22 --json',
     "",
-    "# Projects are distinct from labels; names or ids work as references",
+    "# A task is in at most one project; names or ids work as references",
     "dayhand project list --json",
     'dayhand add "Write the menu" -p "Strona piekarni" --json',
     "dayhand list -p none --json",

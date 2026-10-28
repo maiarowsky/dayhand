@@ -26,8 +26,6 @@ Pane {
         let changed = loadedId !== task.id
         if (changed || !titleField.activeFocus)
             titleField.text = task.title
-        if (changed || !labelsField.activeFocus)
-            labelsField.text = task.labels
         if (changed || !resumeField.activeFocus)
             resumeField.text = task.resumeNote
         if (changed || !noteDirty || readOnly) {
@@ -198,23 +196,6 @@ Pane {
                             text: qsTr("Remove time")
                             enabled: !root.readOnly && root.task.dueTime !== ""
                             onClicked: app.removeDueTime(root.task.id)
-                        }
-                    }
-
-                    Label { text: qsTr("Labels (comma-separated)") }
-                    TextField {
-                        id: labelsField
-                        objectName: "detailsLabels"
-                        Layout.fillWidth: true
-                        Accessible.name: qsTr("Labels (comma-separated)")
-                        readOnly: root.readOnly
-                        selectByMouse: true
-                        property string editingId: ""
-                        onActiveFocusChanged: if (activeFocus) editingId = root.task.id
-                        onEditingFinished: {
-                            if (!readOnly && editingId === root.task.id && text !== root.task.labels
-                                    && app.setLabels(editingId, text))
-                                text = root.task.labels
                         }
                     }
 

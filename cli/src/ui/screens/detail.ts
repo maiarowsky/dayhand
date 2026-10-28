@@ -84,7 +84,6 @@ export function detailRows(detail: Detail, today: string, timezone: string | und
     ...field(t("detail.due"), due ? (relative && relative !== task.dueDate ? `${due} (${relative})` : due) : t("day.none")),
     ...field(t("detail.repeat"), task.repeat ? repeatText(task.repeat) : task.rrule),
     ...field(t("detail.remind"), task.reminders ? (task.reminders.length ? task.reminders.map(reminderText).join(", ") : t("detail.none")) : undefined),
-    ...field(t("detail.labels"), task.labels.map((l) => `#${l}`).join(" "), { color: "magenta" }),
     ...task.links.flatMap((l, i) => field(i ? "" : t("detail.links"), l.title ? `${l.title} <${l.url}>` : l.url)),
     ...field(t("detail.next"), task.resumeNote, { color: "green" }),
     ...field(t("detail.deleted"), task.deletedAt ? formatTimestamp(task.deletedAt, timezone) : undefined),

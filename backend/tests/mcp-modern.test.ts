@@ -142,7 +142,7 @@ describe("the official v2 SDK client", () => {
     const { tools } = await client.listTools();
     expect(tools).toHaveLength(32);
     const project = await client.callTool({ name: "add_project", arguments: { name: "SDK project", color: "cyan" } });
-    expect(project.structuredContent).toMatchObject({ project: { name: "SDK project", color: "cyan" }, moved: [], skipped: [] });
+    expect(project.structuredContent).toEqual({ project: expect.objectContaining({ name: "SDK project", color: "cyan" }) });
     const projects = await client.callTool({ name: "list_projects", arguments: {} });
     expect(projects.structuredContent).toEqual({
       result: [expect.objectContaining({ name: "SDK project", color: "cyan", counts: { open: 0, overdue: 0, dueToday: 0, done: 0 } })],

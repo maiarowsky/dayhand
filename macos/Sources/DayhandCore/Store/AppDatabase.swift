@@ -139,6 +139,10 @@ public final class AppDatabase: Sendable {
             try db.execute(sql: "UPDATE project SET serverUpdatedAt = NULL")
             try db.execute(sql: "ALTER TABLE project DROP COLUMN removing")
         }
+        // 0.4.0: labels are gone from Dayhand (only projects remain), with what this Mac kept of them.
+        migrator.registerMigration("v8") { db in
+            try db.execute(sql: "ALTER TABLE task DROP COLUMN labels")
+        }
         return migrator
     }
 }
@@ -166,7 +170,6 @@ extension TaskItem: FetchableRecord, PersistableRecord {
             updatedAt: row["updatedAt"],
             serverUpdatedAt: row["serverUpdatedAt"],
             repeat: FieldJSON.decode(RepeatRule.self, row["repeat"]),
-            labels: FieldJSON.decode([String].self, row["labels"]) ?? [],
             links: FieldJSON.decode([TaskLink].self, row["links"]) ?? [],
             deletedAt: row["deletedAt"],
             checklist: FieldJSON.decode([ChecklistItem].self, row["checklist"]) ?? [],
@@ -200,7 +203,6 @@ extension TaskItem: FetchableRecord, PersistableRecord {
         container["updatedAt"] = updatedAt
         container["serverUpdatedAt"] = serverUpdatedAt
         container["repeat"] = FieldJSON.encode(self.repeat)
-        container["labels"] = FieldJSON.encode(labels)
         container["links"] = FieldJSON.encode(links)
         container["deletedAt"] = deletedAt
         container["checklist"] = FieldJSON.encode(checklist)

@@ -8,7 +8,7 @@ is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is i
   today (folded). One click on the circle ticks a task off; the context menu (right click or **⋯**) works on it now,
   moves it to today or tomorrow, archives it or moves it to the trash.
 - **Task details**: click a row to open a right-hand panel in a wide window, or a page with **Back** in a narrow one.
-  Edit the title, status, **Working on it now**, where you stopped, comma-separated labels and checklist items.
+  Edit the title, status, **Working on it now**, where you stopped and checklist items.
   A date phrase has an **I understand** preview; Return or **Set date** applies it, with **Today**, **No day** and
   **Remove time** shortcuts.
   **Save note** saves the note explicitly; repeat, reminders and links are read-only previews.

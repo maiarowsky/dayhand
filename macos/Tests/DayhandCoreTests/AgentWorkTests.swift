@@ -29,7 +29,7 @@ private let agentFields: [String: JSONValue] = [
 struct AgentFieldTests {
     @Test func theSnapshotsAgentFieldsAreRead() throws {
         let json = try #require(JSONValue.decode(#"""
-        {"id":"s2","ref":12.0,"title":"Ship","status":"doing","isNow":false,"createdAt":1.0,"updatedAt":2.0,"labels":[],"links":[],
+        {"id":"s2","ref":12.0,"title":"Ship","status":"doing","isNow":false,"createdAt":1.0,"updatedAt":2.0,"links":[],
          "acceptance":[{"id":"a1","text":"Tests pass","met":true},{"id":"a2","text":"Docs","met":false}],
          "plan":"Step by step","proof":{"summary":"Done","checks":[{"name":"unit","result":"pass"}]},
          "dependsOn":["s1"],"blockedReason":"No key","claimedBy":{"keyId":"k1","name":"claude"},"claimExpiresAt":1800000900000.0}
@@ -81,12 +81,12 @@ struct AgentFieldTests {
         let database = try AppDatabase(queue)
         let repo = TaskRepository(database: database)
         let old = try #require(try await repo.task("old"))
-        #expect(old.title == "From 0.2" && old.labels == ["home"])
+        #expect(old.title == "From 0.2")
         #expect(old.serverUpdatedAt == nil)
         #expect(old.ref == nil && old.acceptance.isEmpty && old.dependsOn.isEmpty && old.plan == nil && old.claimedBy == nil)
 
         try await repo.apply(Snapshot(tasks: [RemoteTask(
-            id: "s1", title: "From 0.2", createdAt: 1, updatedAt: 2, labels: ["home"], ref: 7,
+            id: "s1", title: "From 0.2", createdAt: 1, updatedAt: 2, ref: 7,
             acceptance: [AcceptanceItem(id: "a1", text: "Tests pass", met: true)], plan: "Plan",
             proof: TaskProof(summary: "Green", links: [TaskLink(url: "https://ci.example")], checks: [ProofCheck(name: "unit", result: "fail")]),
             dependsOn: ["s0"], blockedReason: "No key", claimedBy: "claude", claimExpiresAt: 99
@@ -209,7 +209,7 @@ struct PlanHealthTests {
             "status": "pending", "expiresAt": 1_800_000_600_000, "requestedBy": ["type": "agent", "name": "claude"],
         ]]
         server.proposals = [[
-            "id": "s9", "ref": 9, "title": "Renew the domain", "status": "todo", "isNow": false, "labels": [], "links": [],
+            "id": "s9", "ref": 9, "title": "Renew the domain", "status": "todo", "isNow": false, "links": [],
             "createdAt": 1, "updatedAt": 1, "proposedAt": 1, "requestedBy": "sentry", "dueDate": "2026-10-30",
         ]]
         let (_, _, remote) = try connected(server, clock)

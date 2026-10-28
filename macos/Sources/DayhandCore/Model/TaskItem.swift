@@ -208,8 +208,6 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
     /// `updatedAt` of the last server copy merged into this row; nil until the server has it.
     public var serverUpdatedAt: Int64?
     public var `repeat`: RepeatRule?
-    /// Free tags across projects (`#home`); the task's project is [projectLocalId].
-    public var labels: [String]
     public var links: [TaskLink]
     /// In the trash since then; the server purges it 30 days later unless restored.
     public var deletedAt: Int64?
@@ -240,7 +238,7 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
         localId: String, serverId: String? = nil, clientId: String? = nil, title: String, note: String? = nil,
         dueDate: String? = nil, dueTime: String? = nil, status: TaskStatus = .todo, isNow: Bool = false,
         resumeNote: String? = nil, completedAt: Int64? = nil, archivedAt: Int64? = nil, createdAt: Int64,
-        updatedAt: Int64, serverUpdatedAt: Int64? = nil, repeat: RepeatRule? = nil, labels: [String] = [],
+        updatedAt: Int64, serverUpdatedAt: Int64? = nil, repeat: RepeatRule? = nil,
         links: [TaskLink] = [], deletedAt: Int64? = nil, checklist: [ChecklistItem] = [], reminders: [TaskReminder]? = nil,
         ref: Int? = nil, acceptance: [AcceptanceItem] = [], plan: String? = nil, proof: TaskProof? = nil,
         dependsOn: [String] = [], blockedReason: String? = nil, claimedBy: String? = nil, claimExpiresAt: Int64? = nil,
@@ -262,7 +260,6 @@ public struct TaskItem: Hashable, Sendable, Identifiable {
         self.updatedAt = updatedAt
         self.serverUpdatedAt = serverUpdatedAt
         self.repeat = `repeat`
-        self.labels = labels
         self.links = links
         self.deletedAt = deletedAt
         self.checklist = checklist

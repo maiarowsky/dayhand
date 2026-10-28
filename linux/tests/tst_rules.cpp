@@ -148,10 +148,8 @@ private slots:
         QVERIFY(!TaskRules::title(u"😀"_s.repeated(251)));
     }
 
-    void labelsLinksRepeatChecklistAndRemindersFollowTheBackend()
+    void linksRepeatChecklistAndRemindersFollowTheBackend()
     {
-        QCOMPARE(TaskRules::labels({u" home"_s, u"work"_s, u"home "_s, u" "_s}), (QStringList{u"home"_s, u"work"_s}));
-        QVERIFY(!TaskRules::labels({QString(51, u'x')}));
         QVERIFY(TaskRules::isLinkURL(u"https://example.com/a?b=1"_s));
         QVERIFY(TaskRules::isLinkURL(u"http://10.0.2.2:3210"_s));
         for (const QString &bad : {u"example.com"_s, u"ftp://example.com"_s, u"javascript:alert(1)"_s, u"https://"_s,

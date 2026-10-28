@@ -14,7 +14,7 @@ import { queueReturn, type ReturnOutcome } from "./webhookEvents";
 
 type Args<K extends keyof typeof args> = ObjectType<(typeof args)[K]>;
 
-const LIMITS = { kind: 50, ref: 200, url: 2_048, requestedBy: 200, reason: 1_000, labels: 20, links: 20, note: 20_000 };
+const LIMITS = { kind: 50, ref: 200, url: 2_048, requestedBy: 200, reason: 1_000, links: 20, note: 20_000 };
 const SOURCE_KIND = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // ---- Fields of a new task ----
@@ -139,11 +139,9 @@ export async function mergeProposal(ctx: MutationCtx, identity: Identity, input:
   const heading = `Merged from #${from.ref ?? from._id}: ${from.title}`;
   const note = [into.note, heading, from.note].filter((part) => part !== undefined && part !== "").join("\n\n").slice(0, LIMITS.note);
   const links = union(into.links, from.links, (link) => link.url);
-  const labels = union(into.labels, from.labels, (label) => label);
   const patch: Partial<Doc<"tasks">> = {
     note,
     links: links.length > LIMITS.links ? into.links : links,
-    labels: labels.length > LIMITS.labels ? into.labels : labels,
   };
   const returnTo = union(into.returnTo ?? [], from.returnTo ?? [], (id) => id);
   if (returnTo.length) patch.returnTo = returnTo;

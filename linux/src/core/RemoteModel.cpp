@@ -22,16 +22,6 @@ template <class T> QList<T> listOf(const QJsonValue &value, std::optional<T> (*p
     return out;
 }
 
-QStringList strings(const QJsonValue &value)
-{
-    QStringList out;
-    for (const auto &item : value.toArray()) {
-        if (item.isString())
-            out.append(item.toString());
-    }
-    return out;
-}
-
 } // namespace
 
 QJsonValue tasksArgs()
@@ -59,7 +49,6 @@ std::optional<RemoteTask> task(const QJsonValue &o)
     t.createdAt = json::integer(o[u"createdAt"]).value_or(0);
     t.updatedAt = json::integer(o[u"updatedAt"]).value_or(0);
     t.repeat = RepeatRule::parse(o[u"repeat"]);
-    t.labels = strings(o[u"labels"]);
     t.links = listOf<TaskLink>(o[u"links"], &TaskLink::parse);
     t.deletedAt = json::integer(o[u"deletedAt"]);
     t.checklist = listOf<ChecklistItem>(o[u"checklist"], &ChecklistItem::parse);

@@ -21,6 +21,11 @@
     <binary>dayhand-qt</binary>
   </provides>
   <releases>
+    <release version="0.3.0" date="2026-10-28">
+      <description>
+        <p>Labels are gone: Dayhand sorts tasks into projects only. The app removes the labels it kept on this computer.</p>
+      </description>
+    </release>
     <release version="0.2.0" date="2026-10-24">
       <description>
         <p>Task details with offline editing, labels, checklists and read-only repeat, reminder and link previews.</p>

@@ -92,8 +92,8 @@ describe("the YAML header", () => {
     }
     expect(parseFrontmatter(String.raw`title: "folder\\" # outside`)).toEqual({ title: "folder\\" });
     expect(parseFrontmatter(String.raw`labels: ["folder\\", "next #42"] # outside`)).toEqual({ labels: ["folder\\", "next #42"] });
-    const written = writeTask({ id: "TASK-42", place: "task", title: quoted, status: "To Do", labels: [quoted], dependencies: [quoted], references: [quoted], created: quoted, updated: quoted, acceptance: [] });
-    expect(readTask(written)).toMatchObject({ title: quoted, labels: [quoted], dependencies: [quoted], references: [quoted], updated: quoted });
+    const written = writeTask({ id: "TASK-42", place: "task", title: quoted, status: "To Do", dependencies: [quoted], references: [quoted], created: quoted, updated: quoted, acceptance: [] });
+    expect(readTask(written)).toMatchObject({ title: quoted, dependencies: [quoted], references: [quoted], updated: quoted });
   });
 
   test("a broken header is an error, a file without one has none", () => {
@@ -119,7 +119,6 @@ describe("task files", () => {
       id: "TASK-7",
       title: "Sort the receipts: Q3",
       status: "In Progress",
-      labels: ["finance", "q3, late"],
       dependencies: ["TASK-2", "task-3"],
       description: "Scan the paper receipts and file them by month.",
       acceptance: [
@@ -129,7 +128,7 @@ describe("task files", () => {
       ],
       plan: "1. Scan\n2. Rename",
       updated: "2026-10-20T08:00:00Z",
-      dropped: ["assignee", "priority"],
+      dropped: ["assignee", "labels", "priority"],
     });
     expect(task.extra).toEqual(["## Implementation Notes\n\nJuly done, the scanner jams on thin paper.\n\n```\n## not a heading inside a code block\n```"]);
   });
@@ -223,7 +222,6 @@ describe("writing", () => {
     place: "task",
     title: "Renew the domain / DNS",
     status: "In Progress",
-    labels: ["ops"],
     dependencies: ["TASK-3"],
     references: ["https://registrar.example.com/renew"],
     created: "2026-10-01 09:00",
@@ -243,7 +241,6 @@ describe("writing", () => {
       id: "TASK-12",
       title: file.title,
       status: "In Progress",
-      labels: ["ops"],
       dependencies: ["TASK-3"],
       references: file.references,
       description: "Before it lapses.",

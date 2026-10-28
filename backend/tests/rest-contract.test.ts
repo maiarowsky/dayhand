@@ -15,7 +15,8 @@ const AT = utc("2026-11-03T08:00");
 
 type Step = { tool: string; args: Record<string, unknown>; method: string; path: string; body?: unknown; headers?: Record<string, string> };
 
-// Task numbers instead of ids, so both users run the very same steps.
+// Task numbers instead of ids, so both users run the very same steps. The labels and fromLabel
+// are what a client older than 0.14.0 still sends: accepted and ignored by both.
 const STEPS: Step[] = [
   { tool: "add_task", args: { title: "Write report", dueDate: "2026-11-03", dueTime: "09:30", labels: ["work"], note: "draft", clientId: "c-1" },
     method: "POST", path: "/tasks", body: { title: "Write report", dueDate: "2026-11-03", dueTime: "09:30", labels: ["work"], note: "draft" }, headers: { "Idempotency-Key": "c-1" } },

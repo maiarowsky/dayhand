@@ -3,7 +3,7 @@ import DayhandLocalization
 import SwiftUI
 
 /**
- * The Details of the task panel, one row each: the day (with **To today**), reminders, repeat, labels and the project.
+ * The Details of the task panel, one row each: the day (with **To today**), reminders, repeat and the project.
  * Reminders and repeat open their editors in a popover; each stays a draft until it is saved, as before.
  */
 struct TaskFacts: View {
@@ -14,7 +14,6 @@ struct TaskFacts: View {
     @State private var editingDue = false
     @State private var editingReminders = false
     @State private var editingRepeat = false
-    @State private var addingLabel = false
 
     var body: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
@@ -51,10 +50,6 @@ struct TaskFacts: View {
                             .frame(width: 480, height: 520)
                     }
             }
-            GridRow {
-                FactLabel(icon: "tag", title: tr("Labels"))
-                labels
-            }
             if model.showsProjects {
                 GridRow {
                     FactLabel(icon: "folder", title: tr("Project"))
@@ -75,28 +70,6 @@ struct TaskFacts: View {
         .padding(.vertical, 3)
         .foregroundStyle(overdue ? Color.overdue : .primary)
         .background((overdue ? Color.overdue : Color.secondary).opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-    }
-
-    private var labels: some View {
-        FlowRow(spacing: 6) {
-            ForEach(task.labels, id: \.self) { label in
-                HStack(spacing: 4) {
-                    Text("#\(label)")
-                    Button { model.setLabels(task.localId, task.labels.filter { $0 != label }) } label: {
-                        Image(systemName: "xmark").imageScale(.small)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(tr("Remove \(label)"))
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-            }
-            Button { addingLabel = true } label: { Label(tr("Add"), systemImage: "plus") }
-                .buttonStyle(.borderless)
-                .popover(isPresented: $addingLabel, arrowEdge: .bottom) { LabelAdder(task: task) }
-        }
     }
 }
 
@@ -164,27 +137,6 @@ struct DueEditor: View {
         }
         .padding(14)
         .frame(width: 360)
-    }
-}
-
-/// A new label for the task.
-struct LabelAdder: View {
-    @EnvironmentObject private var model: AppModel
-    @Environment(\.dismiss) private var dismiss
-    let task: TaskItem
-    @State private var text = ""
-
-    var body: some View {
-        TextField(tr("Labels"), text: $text, prompt: Text(tr("home, work")))
-            .textFieldStyle(.roundedBorder)
-            .onSubmit {
-                let added = text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-                let labels = task.labels + added.filter { !task.labels.contains($0) }
-                if labels != task.labels { model.setLabels(task.localId, labels) }
-                dismiss()
-            }
-            .padding(12)
-            .frame(width: 260)
     }
 }
 

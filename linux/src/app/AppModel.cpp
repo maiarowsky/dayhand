@@ -167,7 +167,6 @@ QVariantMap AppModel::selectedTask() const
         detail.insert(u"dueDate"_s, task.dueDate.value_or(QString()));
         detail.insert(u"dueTime"_s, task.dueTime.value_or(QString()));
         detail.insert(u"due"_s, Formatting::due(task, sections.date).value_or(tr("No day")));
-        detail.insert(u"labels"_s, task.labels.join(u", "_s));
         detail.insert(u"checklist"_s, checklist);
         detail.insert(u"repeat"_s, Formatting::repeat(task, sections.date));
         detail.insert(u"reminders"_s, Formatting::reminders(task, reminderSettings));
@@ -336,11 +335,6 @@ void AppModel::setResumeNote(const QString &id, const QString &note)
 bool AppModel::saveNote(const QString &id, const QString &note)
 {
     return run([&](TaskRepository &repo) { repo.setNote(id, note); });
-}
-
-bool AppModel::setLabels(const QString &id, const QString &commaSeparated)
-{
-    return run([&](TaskRepository &repo) { repo.setLabels(id, commaSeparated.split(u',')); });
 }
 
 bool AppModel::addChecklistItem(const QString &id, const QString &title)

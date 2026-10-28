@@ -3,7 +3,7 @@ import DayhandLocalization
 import SwiftUI
 
 /**
- * Every task, those without a project, a project's or a label's, in sections: overdue, today, later (with the day),
+ * Every task, those without a project or a project's, in sections: overdue, today, later (with the day),
  * no day and the latest done (folded). Quick add at the top adds to the list's project.
  */
 struct TaskListView: View {

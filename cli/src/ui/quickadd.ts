@@ -1,13 +1,11 @@
-// Quick add in dayhand ui: a title, `#labels`, an optional `+project` and a date
-// phrase at the end or start ("Call the accountant fri 2pm #home"), using the
-// grammar of --due (when/parse.ts). The longest phrase wins; at least one word
-// stays the title. A line in quotes is taken literally, "no date" adds no day.
+// Quick add in dayhand ui: a title, an optional `+project` and a date phrase at
+// the end or start ("Call the accountant fri 2pm +Home"), using the grammar of
+// --due (when/parse.ts). The longest phrase wins; at least one word stays the title. A line in quotes is taken literally, "no date" adds no day.
 import { tokenProject, type Project } from "../projects.js";
 import { parseWhen, WhenError, type When, type WhenContext } from "../when/parse.js";
 
 export type QuickAdd = {
   title: string;
-  labels: string[];
   projectId?: string;
   project?: string;
   unknownProjects?: string[];
@@ -17,15 +15,13 @@ export type QuickAdd = {
   phrase?: string;
 };
 
-const LABEL = /^#(\p{L}[\p{L}\p{N}_-]*)$/u;
 const MAX_PHRASE_WORDS = 5;
 
 export function parseQuickAdd(text: string, context: WhenContext, projects: Project[] = []): QuickAdd {
   const trimmed = text.trim();
   const quoted = /^"(.*)"$/s.exec(trimmed);
-  if (quoted) return { title: quoted[1]!.trim(), labels: [], due: undefined };
+  if (quoted) return { title: quoted[1]!.trim(), due: undefined };
 
-  const labels: string[] = [];
   let project: Project | undefined;
   const unknownProjects: string[] = [];
   const words = trimmed.split(/\s+/).filter((word) => {
@@ -34,18 +30,16 @@ export function parseQuickAdd(text: string, context: WhenContext, projects: Proj
       if (!found) unknownProjects.push(word);
       if (found && !project) { project = found; return false; }
     }
-    const label = LABEL.exec(word);
-    if (label && !labels.includes(label[1]!)) labels.push(label[1]!);
-    return !label;
+    return true;
   });
   const assignment = { ...(project ? { projectId: project.id, project: project.name } : {}), ...(unknownProjects.length ? { unknownProjects } : {}) };
   const lower = words.map((w) => w.toLowerCase());
   if (lower.length > 2 && lower.at(-2) === "no" && lower.at(-1) === "date") {
-    return { title: words.slice(0, -2).join(" "), labels, due: null, phrase: "no date", ...assignment };
+    return { title: words.slice(0, -2).join(" "), due: null, phrase: "no date", ...assignment };
   }
   const found = phraseAtEnd(words, context) ?? phraseAtStart(words, context);
-  if (!found) return { title: words.join(" "), labels, due: undefined, ...assignment };
-  return { title: found.title, labels, due: found.due, phrase: found.phrase, ...assignment };
+  if (!found) return { title: words.join(" "), due: undefined, ...assignment };
+  return { title: found.title, due: found.due, phrase: found.phrase, ...assignment };
 }
 
 type Found = { title: string; due: When; phrase: string };

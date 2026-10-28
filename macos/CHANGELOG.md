@@ -16,14 +16,14 @@ latest one below).
   the server has (`projectId` in `app:add` and `app:update`) works offline through the outbox, and quick add reads
   `+project` (`+strona-piekarni`). Behaviour, limits and the shared cases: [README.md](README.md#projects).
 - **Sidebar** in the main window: Inbox, Today, All Tasks, No Project, the projects (colour or emoji, open count,
-  reorder by dragging, new, edit, archive and delete), Labels, Done and Archived, and Trash, with ⌘1 to ⌘9 in the
+  reorder by dragging, new, edit, archive and delete), Done and Archived, and Trash, with ⌘1 to ⌘9 in the
   Go menu (Today, All Tasks, No Project and the first six projects). A task dragged onto a project, No Project or
   Today goes there; Task → Move to Project… (⇧⌘M) picks one. Without a connection, project changes say "Requires a
   connection to the server." and nothing is queued.
-- **Lists** of every task, those without a project, a project's and a label's, in sections, with search in the
+- **Lists** of every task, those without a project and a project's, in sections, with search in the
   toolbar and quick add into the list's project.
 - **Board**: Today and every list as three status columns (To do, In progress, Done) with line icons and counts,
-  cards with the project and chips for the day, labels and the checklist, a card menu, drag between columns to
+  cards with the project and chips for the day and the checklist, a card menu, drag between columns to
   change the status, and the task panel along the bottom.
 - **Plan**: the week of Today or of a list as a grid of days and hours, task blocks with the project's colour, a
   block's popover with Open Task, and a folding Tasks drawer of status columns along the bottom: dragging a task
@@ -44,6 +44,13 @@ latest one below).
 - With a server older than 0.13.0 (no projects) nothing on the Mac is lost: tasks keep syncing, sent without
   `projectId`, with no retry loop. Project changes and new assignments say "Needs backend 0.13.0 or later",
   localized, as does the status line.
+
+### Removed
+
+- **Labels** (the free tags on a task): Dayhand keeps only projects. The Labels section of the sidebar, the label
+  lists, the label chips on rows and cards, the labels row of the task panel and label search are gone, and the app no
+  longer sends `labels` (a change already queued with them is harmless; the server ignores them). Migration v8 drops
+  the labels this Mac kept with their column; labels a server still sends are ignored.
 
 ### Known limitations
 

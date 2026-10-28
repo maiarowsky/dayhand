@@ -9,8 +9,6 @@ public enum TaskRules {
     public static let maxTitle = 500
     public static let maxNote = 20_000
     public static let maxResumeNote = 2_000
-    public static let maxLabel = 50
-    public static let maxLabels = 20
     public static let maxLinks = 20
     public static let maxURL = 2_048
     public static let maxRepeatInterval = 366
@@ -24,16 +22,6 @@ public enum TaskRules {
     public static func title(_ input: String) -> String? {
         let clean = input.trimmingCharacters(in: .whitespacesAndNewlines)
         return clean.isEmpty || clean.jsLength > maxTitle ? nil : clean
-    }
-
-    /// Trimmed, without blanks and duplicates, as the backend stores them; nil when over a limit.
-    public static func labels(_ input: [String]) -> [String]? {
-        var seen = Set<String>()
-        let cleaned = input
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty && seen.insert($0).inserted }
-        if cleaned.count > maxLabels || cleaned.contains(where: { $0.jsLength > maxLabel }) { return nil }
-        return cleaned
     }
 
     /// True for an absolute http(s) address the backend accepts.

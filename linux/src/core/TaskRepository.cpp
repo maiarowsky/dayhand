@@ -132,15 +132,6 @@ void TaskRepository::setNote(const QString &localId, const QString &note)
          [&clean](TaskItem &task, qint64) { task.note = clean; });
 }
 
-void TaskRepository::setLabels(const QString &localId, const QStringList &labels)
-{
-    const auto clean = TaskRules::labels(labels);
-    if (!clean)
-        throw InvalidChange(QCoreApplication::translate("TaskRepository", "Use up to 20 labels, at most 50 characters each."));
-    edit(localId, Mutations::update, {{u"labels"_s, QJsonArray::fromStringList(*clean)}},
-         [&clean](TaskItem &task, qint64) { task.labels = *clean; });
-}
-
 void TaskRepository::setChecklist(const QString &localId, const QList<ChecklistItem> &items)
 {
     const auto clean = TaskRules::checklist(items);

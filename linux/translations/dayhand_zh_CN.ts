@@ -585,10 +585,6 @@
         <translation>移除时间</translation>
     </message>
     <message>
-        <source>Labels (comma-separated)</source>
-        <translation>标签（逗号分隔）</translation>
-    </message>
-    <message>
         <source>Checklist</source>
         <translation>检查清单</translation>
     </message>
@@ -646,10 +642,6 @@
     <message>
         <source>The note is too long.</source>
         <translation>备注过长。</translation>
-    </message>
-    <message>
-        <source>Use up to 20 labels, at most 50 characters each.</source>
-        <translation>最多20个标签，每个不超过50个字符。</translation>
     </message>
     <message>
         <source>Use up to 100 checklist items, at most 500 characters each.</source>

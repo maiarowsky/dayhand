@@ -282,7 +282,7 @@ calendar feed or the phone's reminders until the owner decides:
 
 - **Accept**: it joins the plan as it is.
 - **Merge** into a task already in the plan: that task gets the proposal's note (after a line
-  naming it), links, labels, source and return webhooks. Since backend 0.13.0, it also inherits
+  naming it), links, source and return webhooks. Since backend 0.13.0, it also inherits
   the proposal's project if the target has none and that project still exists and is not archived;
   otherwise its project stays unchanged. The proposal goes to the trash with `mergedInto`.
 - **Reject**: it goes to the trash, restorable for 30 days.

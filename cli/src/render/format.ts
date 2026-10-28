@@ -100,7 +100,7 @@ export function dueCell(task: Task, { style = PLAIN_STYLE, today, timeOnly }: Ta
   return cellOf(text);
 }
 
-/** One task as table cells: ref, box, due, title, labels and markers. */
+/** One task as table cells: ref, box, due, title, project and markers. */
 export function taskCells(task: Task, options: TaskRowOptions = {}): Cell[] {
   const style = options.style ?? PLAIN_STYLE;
   const done = task.status === "done";
@@ -111,21 +111,20 @@ export function taskCells(task: Task, options: TaskRowOptions = {}): Cell[] {
     task.checklist?.length ? `${task.checklist.filter((i) => i.done).length}/${task.checklist.length}` : "",
     task.overdue ? style.red("overdue") : "",
   ].filter(Boolean);
-  const labels = task.labels.map((l) => style.magenta(`#${l}`));
   return [
     cellOf(refOf(task), style.cyan),
     cellOf(box, task.status === "doing" ? style.yellow : done ? style.green : undefined),
     dueCell(task, options),
     cellOf(task.title, done ? style.dim : task.isNow ? style.bold : undefined),
     // Already painted per part; widths are measured without the color codes.
-    cellOf([...(task.project ? [style.cyan(`+${projectToken(task.project)}`)] : []), ...labels, ...marks].join(" ")),
+    cellOf([...(task.project ? [style.cyan(`+${projectToken(task.project)}`)] : []), ...marks].join(" ")),
   ];
 }
 
 /** --fields in the human format: the chosen fields as cells. */
 export const fieldCells = (task: Task, fields: string[]): Cell[] => fields.map((f) => cellOf(cell(task[f])));
 
-const DEFAULT_COLUMNS = ["ref", "status", "dueDate", "dueTime", "title", "labels"];
+const DEFAULT_COLUMNS = ["ref", "status", "dueDate", "dueTime", "title"];
 
 /** One task as tab-separated values: default columns, or the --fields. */
 export function taskRow(task: Task, fields?: string[]): string[] {

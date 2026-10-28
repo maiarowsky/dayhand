@@ -21,8 +21,6 @@ namespace TaskRules {
 constexpr int maxTitle = 500;
 constexpr int maxNote = 20'000;
 constexpr int maxResumeNote = 2'000;
-constexpr int maxLabel = 50;
-constexpr int maxLabels = 20;
 constexpr int maxLinks = 20;
 constexpr int maxURL = 2'048;
 constexpr int maxRepeatInterval = 366;
@@ -34,8 +32,6 @@ constexpr int maxReminderDays = 30;
 
 /// A trimmed, non-empty title within the limit, or nothing.
 std::optional<QString> title(const QString &input);
-/// Trimmed, without blanks and duplicates, as the backend stores them; nothing when over a limit.
-std::optional<QStringList> labels(const QStringList &input);
 /// True for an absolute http(s) address the backend accepts.
 bool isLinkURL(const QString &url);
 /// The link as the backend stores it (blank title dropped), or nothing when the address is not accepted.

@@ -1,6 +1,7 @@
 // Derives MCP tool input schemas (JSON Schema) from the same Convex
 // validators the domain functions enforce, so the two cannot drift apart.
 import type { GenericValidator, PropertyValidators } from "convex/values";
+import { RETIRED_FIELDS } from "./args";
 
 type Schema = Record<string, unknown>;
 
@@ -38,10 +39,14 @@ export function toJsonSchema(validator: GenericValidator): Schema {
   }
 }
 
+/** The fields a schema publishes: all but the retired ones, which are still accepted and ignored. */
+export const publishedFields = (fields: PropertyValidators) =>
+  Object.entries(fields).filter(([name]) => !RETIRED_FIELDS.has(name));
+
 export function objectSchema(fields: PropertyValidators, docs: Record<string, string> = {}): Schema {
   const properties: Record<string, Schema> = {};
   const required: string[] = [];
-  for (const [name, field] of Object.entries(fields)) {
+  for (const [name, field] of publishedFields(fields)) {
     const schema = toJsonSchema(field);
     properties[name] = docs[name] ? { ...schema, description: docs[name] } : schema;
     if (field.isOptional === "required") required.push(name);

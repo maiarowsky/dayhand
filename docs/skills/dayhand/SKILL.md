@@ -38,9 +38,9 @@ call of a Dayhand MCP tool, so the user sees your changes in the app at once, re
 |---|---|
 | `dayhand prime --json` | Session start: Today plus your claims, approvals waiting, ready tasks and next steps |
 | `dayhand today --json` | Today: now task with its resume note, overdue, today, done today |
-| `dayhand list --json --status todo,doing --search <text>` | Find tasks on the server (also --overdue, --due-before eow, -l <label>, --limit, --cursor) |
+| `dayhand list --json --status todo,doing --search <text>` | Find tasks on the server (also --overdue, --due-before eow, -p <project>, --limit, --cursor) |
 | `dayhand show <ref> --json` | One task with its history |
-| `dayhand add "<title>" --due "fri 14:00" -l <label> --json` | Add a task (due today unless --due or --no-due) |
+| `dayhand add "<title>" --due "fri 14:00" -p <project> --json` | Add a task (due today unless --due or --no-due) |
 | `dayhand now <ref> --note "<next step>" --json` | Make a task the now task and leave a resume note |
 | `dayhand note <ref> "<text>" --json` | Append to a task's note |
 | `dayhand move <ref> <when> --json` | Reschedule (none removes the date) |
@@ -69,7 +69,7 @@ dayhand add "Send the report" --due "next fri 9am" --dry-run --json
 # Retry after exit 5 without creating a duplicate
 dayhand add "Book the dentist" --client-id dentist-2026-10-22 --json
 
-# Projects are distinct from labels; names or ids work as references
+# A task is in at most one project; names or ids work as references
 dayhand project list --json
 dayhand add "Write the menu" -p "Strona piekarni" --json
 dayhand list -p none --json
@@ -124,7 +124,7 @@ be added, never removed or retyped within a major version. `--fields ref,title,d
 | `dayhand trash` | Tasks in the trash, newest first |
 | `dayhand project` | Projects and their task counts (same as project list) |
 | `dayhand project list` | Projects in menu order with open and overdue counts |
-| `dayhand project add <name...>` | Create a project, optionally moving tasks from a label |
+| `dayhand project add <name...>` | Create a project |
 | `dayhand project edit <project>` | Change project metadata or menu order |
 | `dayhand project archive <projects...>` | Archive projects; their tasks stay where they are |
 | `dayhand project unarchive <projects...>` | Restore archived projects |

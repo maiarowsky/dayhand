@@ -59,6 +59,7 @@ struct ConvexRemoteTests {
     }
 
     @Test func remoteTasksAreReadWithNumbersAsDoubles() throws {
+        // An older server still sends labels, which Dayhand no longer has: they are ignored.
         let json = JSONValue.decode(#"""
         {"id":"s1","clientId":"c1","title":"T","status":"doing","isNow":true,"createdAt":1.0,"updatedAt":2.0,
          "repeat":{"every":"month","interval":1.0,"weekdayOfMonth":{"nth":-1.0,"weekday":5.0}},
@@ -118,13 +119,13 @@ struct RepositoryTests {
         let t = try await repo.add(title: "Task", dueDate: "2026-10-22", dueTime: nil)
         try await repo.rename(t.localId, to: "Renamed")
         try await repo.setDue(t.localId, date: "2026-10-24", time: "09:30")
-        try await repo.setLabels(t.localId, [" home", "home", "work"])
+        try await repo.setNote(t.localId, "Ask about VAT")
         try await repo.complete(t.localId)
         let row = try #require(try await repo.task(t.localId))
         #expect(row.title == "Renamed")
         #expect(row.dueDate == "2026-10-24")
         #expect(row.dueTime == "09:30")
-        #expect(row.labels == ["home", "work"])
+        #expect(row.note == "Ask about VAT")
         #expect(row.status == .done)
         #expect(row.completedAt == clock.now)
         let ops = try await repo.pendingOps()

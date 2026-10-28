@@ -64,9 +64,6 @@ Project name or id (none: without a project); backend 0.13.0
 .B \-\-no\-due
 No due day: the task shows only in list and board
 .TP
-.B \-l, \-\-label <label>
-Label (repeatable)
-.TP
 .B \-\-note <text>
 Note
 .TP
@@ -119,9 +116,6 @@ Open tasks, oldest due first (with \-\-done also done ones); filters narrow the 
 Aliases: ls.
 .RS
 .TP
-.B \-l, \-\-label <label>
-Only tasks with this label (repeatable: all must match)
-.TP
 .B \-p, \-\-project <project>
 Project name or id (none: without a project); backend 0.13.0
 .TP
@@ -147,7 +141,7 @@ Only tasks due before this day, e.g. eow, next mon, 2026\-11\-01
 Only tasks due after this day, e.g. today
 .TP
 .B \-\-search <text>
-Only tasks whose title, note, resume note or labels contain the text (any case)
+Only tasks whose title, note or resume note contain the text (any case)
 .TP
 .B \-\-limit <n>
 At most this many tasks; the JSON's nextCursor continues the list
@@ -236,18 +230,6 @@ Where you stopped / next step
 .TP
 .B \-\-clear\-resume\-note
 Remove the resume note
-.TP
-.B \-l, \-\-label <label>
-Replace all labels (repeatable)
-.TP
-.B \-\-add\-label <label>
-Add a label (repeatable)
-.TP
-.B \-\-rm\-label <label>
-Remove a label (repeatable)
-.TP
-.B \-\-clear\-labels
-Remove all labels
 .TP
 .B \-\-link <url>
 Replace all links: "https://… Title" (repeatable)
@@ -408,7 +390,7 @@ Include archived projects
 .RE
 .TP
 .B dayhand project add <name...>
-Create a project, optionally moving tasks from a label
+Create a project
 .br
 Here \-\-color is the project's token; put terminal \-\-color auto|always|never before project. \-\-no\-color still controls terminal output.
 .RS
@@ -421,12 +403,6 @@ One emoji
 .TP
 .B \-\-note <text>
 Project context (up to 2000 characters)
-.TP
-.B \-\-from\-label <label>
-Move tasks with this label and no project; report skipped tasks
-.TP
-.B \-\-remove\-label
-Remove the label from moved tasks (requires \-\-from\-label)
 .RE
 .TP
 .B dayhand project edit <project>
@@ -654,7 +630,7 @@ Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
 .B dayhand proposals merge <ref>
 Merge a proposal into a task already in the plan; the proposal goes to the trash
 .br
-The task gets the proposal's note, links, labels, source and return webhooks. Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+The task gets the proposal's note, links, source and return webhooks. Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
 .RS
 .TP
 .B \-\-into <ref>
@@ -1143,7 +1119,7 @@ or in $DAYHAND_CONFIG_DIR. dayhand whoami prints the one in use. dayhand login c
   url = "https://<other>.convex.site"
 
   [aliases]
-  home = "list \-l home \-\-status todo,doing"    # dayhand home \-\-json
+  home = "list \-p Home \-\-status todo,doing"    # dayhand home \-\-json
   week = "list \-\-due\-before eow"
 
   [ui]
@@ -1199,7 +1175,7 @@ Shell completion (dayhand completion <shell>)
   PowerShell   dayhand completion powershell | Out\-String | Invoke\-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
-numbers with their titles, labels, project names, profiles and date words. Task
+numbers with their titles, project names, profiles and date words. Task
 hints come from list_all, projects from list_projects; both are cached for 60 seconds
 per server URL and credential in the cache folder (~/.cache/dayhand,
 ~/Library/Caches/dayhand or %LOCALAPPDATA%\edayhand\eCache). Completion never prompts;
@@ -1225,8 +1201,8 @@ keeps the last data on screen with a red status line when the server cannot be
 reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
 The mouse selects and scrolls (\-\-no\-mouse leaves it to the terminal).
 
-Quick add (a) reads a date phrase at the end or the start of the line, and
-#labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
+Quick add (a) reads a date phrase at the end or the start of the line:
+"Call the accountant fri 2pm +Home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
 With backend 0.13.0 or later, the first recognized +project token selects an
 existing active project. Names match in any case; hyphens may replace spaces
@@ -1235,7 +1211,7 @@ project tokens stay in the title and are marked with ? in the preview.
 
 The / filter accepts exact +project tokens with the same name resolution,
 including archived projects; +Home does not match Home\-office. Remaining text
-searches titles, #labels, notes and task numbers as before.
+searches titles, notes and task numbers as before.
 
 Move:
   j k  ↓ ↑            Next / previous task
@@ -1248,18 +1224,18 @@ Move:
 Views:
   Tab S\-Tab           Next / previous view
   1 2 3 4 5           Today, Board, Week, Trash, Agents
-  /                   Filter: title, #label, note, #42
+  /                   Filter: title, +project, note, #42
   R                   Refresh now (also every 12 s)
   ?                   This help
   q  C\-c              Quit (q in details: back)
 
 Tasks:
-  a                   Add: Pay rent fri 2pm #home
+  a                   Add: Pay rent fri 2pm
   Space x             Done / not done (repeats go on)
   s                   Start (doing) / stop (todo)
   n                   Now task, with a resume note
   N                   Clear the now task
-  e                   Edit title, due, labels, resume note
+  e                   Edit title, due, resume note
   E                   Title and note in $EDITOR
   m                   Move: tomorrow, fri 9am, none
   d                   To the trash (asks); u undoes
@@ -1293,7 +1269,7 @@ and lazygit; no code is taken from either.
 .nf
 .RS 4
 dayhand login \-\-url https://<deployment>.convex.site
-dayhand add Call the accountant \-\-due "fri 2pm" \-l home
+dayhand add Call the accountant \-\-due "fri 2pm" \-p Home
 dayhand list \-\-due\-before eow \-\-json
 dayhand done 42
 dayhand pair

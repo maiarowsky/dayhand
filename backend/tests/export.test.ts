@@ -7,7 +7,7 @@ test("Markdown export groups the plan into readable sections", async () => {
   const user = asUser(newUserId());
   const now: any = await user.mutation(internal.ops.add, { title: "Focus task", dueDate: "2026-10-22" });
   await user.mutation(internal.ops.setNow, { taskId: now.id, resumeNote: "continue at section 2" });
-  await user.mutation(internal.ops.add, { title: "Overdue call", dueDate: "2026-10-20", labels: ["phone"] });
+  await user.mutation(internal.ops.add, { title: "Overdue call", dueDate: "2026-10-20" });
   await user.mutation(internal.ops.add, { title: "Meeting", dueDate: "2026-10-22", dueTime: "13:15" });
   await user.mutation(internal.ops.add, { title: "Later", dueDate: "2026-11-01", links: [{ url: "https://example.com", title: "Spec" }] });
   await user.mutation(internal.ops.add, { title: "Someday", note: "line one\nline two" });
@@ -17,7 +17,7 @@ test("Markdown export groups the plan into readable sections", async () => {
   const { content }: any = await user.query(internal.ops.exportPlan, { format: "markdown", at: utc("2026-10-22T10:00") });
   expect(content).toContain("# Dayhand plan");
   expect(content).toMatch(/## Now\n\n- \[ \] 2026-10-22 Focus task \(in progress\)\n  - Next step: continue at section 2/);
-  expect(content).toMatch(/## Overdue\n\n- \[ \] 2026-10-20 Overdue call #phone/);
+  expect(content).toMatch(/## Overdue\n\n- \[ \] 2026-10-20 Overdue call\n/);
   // Timed tasks first, as on the Today screen.
   expect(content).toMatch(/## Today \(2026-10-22\)\n\n- \[ \] 2026-10-22 13:15 Meeting\n- \[ \] 2026-10-22 Focus task/);
   expect(content).toMatch(/## Upcoming\n\n- \[ \] 2026-11-01 Later\n  - \[Spec\]\(https:\/\/example.com\)/);
@@ -59,13 +59,13 @@ test("exports carry projects; a JSON export imported elsewhere makes them again 
   await source.mutation(internal.ops.addProject, { name: "Strona piekarni", color: "amber", icon: "🥐", note: "Site and menu" });
   await source.mutation(internal.ops.addProject, { name: "Old" });
   await source.mutation(internal.ops.addProject, { name: "Empty" });
-  await source.mutation(internal.ops.add, { title: "Menu", dueDate: "2026-10-22", labels: ["web"], projectId: "Strona piekarni" });
+  await source.mutation(internal.ops.add, { title: "Menu", dueDate: "2026-10-22", projectId: "Strona piekarni" });
   await source.mutation(internal.ops.add, { title: "Old thing", projectId: "Old" });
   await source.mutation(internal.ops.add, { title: "Loose" });
   await source.mutation(internal.ops.updateProject, { projectId: "Old", archived: true });
 
   const markdown: any = await source.query(internal.ops.exportPlan, { format: "markdown", at: utc("2026-10-22T10:00") });
-  expect(markdown.content).toContain("- [ ] 2026-10-22 Menu +Strona-piekarni #web");
+  expect(markdown.content).toContain("- [ ] 2026-10-22 Menu +Strona-piekarni\n");
   const { content }: any = await source.query(internal.ops.exportPlan, { format: "json" });
   expect(content.version).toBe(1);
   expect(content.projects.map((p: any) => [p.name, p.archived])).toEqual([

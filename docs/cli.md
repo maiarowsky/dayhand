@@ -35,7 +35,7 @@ Without a command, `dayhand` shows Today.
 | `dayhand trash` | `list_trash` | [task-list](schemas/task-list.schema.json) | Tasks in the trash, newest first |
 | `dayhand project [options]` | `list_projects` | [project-list](schemas/project-list.schema.json) | Projects and their task counts (same as project list) |
 | `dayhand project list [options]` | `list_projects` | [project-list](schemas/project-list.schema.json) | Projects in menu order with open and overdue counts |
-| `dayhand project add <name...> [options]` | `add_project` | [project-added](schemas/project-added.schema.json) | Create a project, optionally moving tasks from a label |
+| `dayhand project add <name...> [options]` | `add_project` | [project-added](schemas/project-added.schema.json) | Create a project |
 | `dayhand project edit <project> [options]` | `update_project`, `list_projects` | [project](schemas/project.schema.json) | Change project metadata or menu order |
 | `dayhand project archive <projects...>` | `update_project` | [project](schemas/project.schema.json), [results](schemas/results.schema.json) | Archive projects; their tasks stay where they are |
 | `dayhand project unarchive <projects...>` | `update_project` | [project](schemas/project.schema.json), [results](schemas/results.schema.json) | Restore archived projects |
@@ -135,7 +135,7 @@ Without a command, `dayhand` shows Today.
 - A Markdown export's JSON is `{"format":"markdown","content":"…"}`.
 - Errors go to stderr as one line: `{"error":{"code","message","exitCode","retryable","clientId",…}}`
   ([schema](schemas/error.schema.json)); stdout stays empty. Warnings are `{"warning":{…}}` lines.
-- `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title labels`
+- `--plain` prints tab-separated rows without headers: `ref status dueDate dueTime title`
   (or the `--fields`); views with sections (Today, board) start each row with the section name.
 - `--fields project,projectId` selects the resolved project name and id; see [name resolution](#human-output).
 - `dayhand list` filters (`--project`, `--status`, `--overdue`, `--due-before`, `--due-after`, `--search`, `--limit`, `--cursor`)
@@ -153,7 +153,7 @@ Tables are aligned by display width; due days read as `today`, `tomorrow`, `yest
 `Fri 23 Oct` in your time zone. A terminal gets colors (`--color auto|always|never`, `--no-color`,
 `[ui] color`, `NO_COLOR`) and long titles cut to its width; a pipe gets the same text without
 colors or cutting. `dayhand board` shows its columns side by side on terminals 90 columns or wider.
-Task views show projects as `+Strona-piekarni` after the title, before `#labels`. Resolving task project
+Task views show projects as `+Strona-piekarni` after the title. Resolving task project
 names uses one `list_projects` read when needed, not for default JSON or plain output; explicit
 `--fields project` also resolves names.
 On a terminal, `dayhand note <ref>` and `dayhand edit <ref>` without options open `$VISUAL`/`$EDITOR`.
@@ -261,7 +261,7 @@ or in $DAYHAND_CONFIG_DIR. dayhand whoami prints the one in use. dayhand login c
   url = "https://<other>.convex.site"
 
   [aliases]
-  home = "list -l home --status todo,doing"    # dayhand home --json
+  home = "list -p Home --status todo,doing"    # dayhand home --json
   week = "list --due-before eow"
 
   [ui]
@@ -317,7 +317,7 @@ Shell completion (dayhand completion <shell>)
   PowerShell   dayhand completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
-numbers with their titles, labels, project names, profiles and date words. Task
+numbers with their titles, project names, profiles and date words. Task
 hints come from list_all, projects from list_projects; both are cached for 60 seconds
 per server URL and credential in the cache folder (~/.cache/dayhand,
 ~/Library/Caches/dayhand or %LOCALAPPDATA%\dayhand\Cache). Completion never prompts;
@@ -343,8 +343,8 @@ keeps the last data on screen with a red status line when the server cannot be
 reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
 The mouse selects and scrolls (--no-mouse leaves it to the terminal).
 
-Quick add (a) reads a date phrase at the end or the start of the line, and
-#labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
+Quick add (a) reads a date phrase at the end or the start of the line:
+"Call the accountant fri 2pm +Home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
 With backend 0.13.0 or later, the first recognized +project token selects an
 existing active project. Names match in any case; hyphens may replace spaces
@@ -353,7 +353,7 @@ project tokens stay in the title and are marked with ? in the preview.
 
 The / filter accepts exact +project tokens with the same name resolution,
 including archived projects; +Home does not match Home-office. Remaining text
-searches titles, #labels, notes and task numbers as before.
+searches titles, notes and task numbers as before.
 
 Move:
   j k  ↓ ↑            Next / previous task
@@ -366,18 +366,18 @@ Move:
 Views:
   Tab S-Tab           Next / previous view
   1 2 3 4 5           Today, Board, Week, Trash, Agents
-  /                   Filter: title, #label, note, #42
+  /                   Filter: title, +project, note, #42
   R                   Refresh now (also every 12 s)
   ?                   This help
   q  C-c              Quit (q in details: back)
 
 Tasks:
-  a                   Add: Pay rent fri 2pm #home
+  a                   Add: Pay rent fri 2pm
   Space x             Done / not done (repeats go on)
   s                   Start (doing) / stop (todo)
   n                   Now task, with a resume note
   N                   Clear the now task
-  e                   Edit title, due, labels, resume note
+  e                   Edit title, due, resume note
   E                   Title and note in $EDITOR
   m                   Move: tomorrow, fri 9am, none
   d                   To the trash (asks); u undoes
@@ -452,7 +452,6 @@ dayhand add <title...> [options]
 | `--rrule <rule>` | The rule as RFC 5545 RRULE instead, e.g. "FREQ=MONTHLY;BYDAY=-1FR" |
 | `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
 | `--no-due` | No due day: the task shows only in list and board |
-| `-l, --label <label>` | Label (repeatable) |
 | `--note <text>` | Note |
 | `--status <status>` | Initial status (todo, doing) |
 | `--resume-note <text>` | Where you stopped / next step |
@@ -470,7 +469,7 @@ dayhand add <title...> [options]
 | `--return-to <webhookId>` | A webhook that hears, with the proof, when the task closes (dayhand webhook list) |
 
 ```sh
-dayhand add Call the accountant --due "fri 2pm" -l home
+dayhand add Call the accountant --due "fri 2pm"
 dayhand add "Zdjęcia do galerii" --due fri -p "strona piekarni"
 dayhand add Pay rent --due "1 nov" --dry-run
 dayhand add "Review the plan" --time 09:00 --every week --on mon,thu
@@ -492,7 +491,6 @@ dayhand list [options]
 
 | Option | Meaning |
 |---|---|
-| `-l, --label <label>` | Only tasks with this label (repeatable: all must match) |
 | `-p, --project <project>` | Project name or id (none: without a project); backend 0.13.0 |
 | `--done` | Include done tasks |
 | `--archived` | Include archived tasks |
@@ -501,12 +499,12 @@ dayhand list [options]
 | `--ready` | Only tasks ready to work on: not done, not blocked, every dependency done (backend 0.10.0) |
 | `--due-before <when>` | Only tasks due before this day, e.g. eow, next mon, 2026-11-01 |
 | `--due-after <when>` | Only tasks due after this day, e.g. today |
-| `--search <text>` | Only tasks whose title, note, resume note or labels contain the text (any case) |
+| `--search <text>` | Only tasks whose title, note or resume note contain the text (any case) |
 | `--limit <n>` | At most this many tasks; the JSON's nextCursor continues the list |
 | `--cursor <cursor>` | Continue a list cut by --limit: the nextCursor of the previous page |
 
 ```sh
-dayhand list -l home --status todo,doing
+dayhand list -p home --status todo,doing
 dayhand list --overdue
 dayhand list --due-before eow --search accountant --limit 20
 dayhand list --limit 50 --cursor <nextCursor> --json
@@ -581,10 +579,6 @@ dayhand edit <ref> [options]
 | `--clear-repeat` | Stop repeating |
 | `--resume-note <text>` | Where you stopped / next step |
 | `--clear-resume-note` | Remove the resume note |
-| `-l, --label <label>` | Replace all labels (repeatable) |
-| `--add-label <label>` | Add a label (repeatable) |
-| `--rm-label <label>` | Remove a label (repeatable) |
-| `--clear-labels` | Remove all labels |
 | `--link <url>` | Replace all links: "https://… Title" (repeatable) |
 | `--clear-links` | Remove all links |
 | `--item <text>` | Replace the checklist (repeatable; dayhand checklist edits single items) |
@@ -603,7 +597,7 @@ dayhand edit <ref> [options]
 
 ```sh
 dayhand edit 42 --title "Call the bank" --due "tomorrow 10:00"
-dayhand edit 42 --add-label work --rm-label home
+dayhand edit 42 -p home --note "call after 5"
 dayhand edit 42 --every month --month-day last --until 2027-06-30
 dayhand edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"
 dayhand edit 42 --remind 15m --remind 1d
@@ -865,7 +859,7 @@ dayhand project list --archived --json
 
 ### dayhand project add
 
-Create a project, optionally moving tasks from a label
+Create a project
 
 Here --color is the project's token; put terminal --color auto|always|never before project. --no-color still controls terminal output.
 
@@ -880,12 +874,10 @@ dayhand project add <name...> [options]
 | `--color <token>` | Project color (red, orange, amber, green, teal, cyan, blue, indigo, purple, pink, brown, gray) |
 | `--icon <emoji>` | One emoji |
 | `--note <text>` | Project context (up to 2000 characters) |
-| `--from-label <label>` | Move tasks with this label and no project; report skipped tasks |
-| `--remove-label` | Remove the label from moved tasks (requires --from-label) |
 
 ```sh
 dayhand project add "Strona piekarni" --color amber --icon 🥐 --note "Strona i menu dla piekarni"
-dayhand project add Dom --from-label dom --dry-run
+dayhand project add Dom --dry-run
 ```
 
 ### dayhand project edit
@@ -1299,7 +1291,7 @@ dayhand proposals accept 42
 
 Merge a proposal into a task already in the plan; the proposal goes to the trash
 
-The task gets the proposal's note, links, labels, source and return webhooks. Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
+The task gets the proposal's note, links, source and return webhooks. Only the owner can do this: a cli key (an agent key gets exit 7, forbidden).
 
 ```
 dayhand proposals merge <ref> [options]

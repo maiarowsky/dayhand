@@ -15,10 +15,10 @@ import { DayhandClient } from "../transport/client.js";
 export const CACHE_TTL_MS = 60_000;
 const FETCH_TIMEOUT_MS = 3_000;
 
-export type TaskHints = { tasks: { ref: number; title: string }[]; labels: string[]; projects?: { name: string; archived: boolean }[] };
+export type TaskHints = { tasks: { ref: number; title: string }[]; projects?: { name: string; archived: boolean }[] };
 type Cached = TaskHints & { fetchedAt: number };
 
-const EMPTY: TaskHints = { tasks: [], labels: [], projects: [] };
+const EMPTY: TaskHints = { tasks: [], projects: [] };
 
 export async function taskHints(io: Io, cacheDir: string, configDir: string, config: Config, flags: { url?: string; profile?: string }): Promise<TaskHints> {
   try {
@@ -33,7 +33,6 @@ export async function taskHints(io: Io, cacheDir: string, configDir: string, con
     const tasks = (listed.structured as { result?: Task[] } | undefined)?.result ?? [];
     const hints: TaskHints = {
       tasks: tasks.filter((t) => t.ref !== undefined).map((t) => ({ ref: t.ref!, title: t.title })),
-      labels: [...new Set(tasks.flatMap((t) => t.labels))].sort(),
       projects: projects.map(({ name, archived }) => ({ name, archived })),
     };
     write(file, { ...hints, fetchedAt: Date.now() });
@@ -46,7 +45,7 @@ export async function taskHints(io: Io, cacheDir: string, configDir: string, con
 function read(file: string): Cached | undefined {
   try {
     const data = JSON.parse(readFileSync(file, "utf8")) as Cached;
-    return Array.isArray(data.tasks) && Array.isArray(data.labels) && Array.isArray(data.projects) && typeof data.fetchedAt === "number" ? data : undefined;
+    return Array.isArray(data.tasks) && Array.isArray(data.projects) && typeof data.fetchedAt === "number" ? data : undefined;
   } catch {
     return undefined;
   }

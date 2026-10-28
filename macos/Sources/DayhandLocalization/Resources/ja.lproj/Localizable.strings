@@ -316,8 +316,6 @@
 	<string>タスクは残ります。移動先を選んでください。</string>
 	<key>Keep in title</key>
 	<string>タイトルに残す</string>
-	<key>Labels</key>
-	<string>ラベル</string>
 	<key>Language</key>
 	<string>言語</string>
 	<key>Last checked %@.</key>
@@ -688,8 +686,6 @@
 	<string>アップデートはキャンセルされました。</string>
 	<key>There are too many checklist items, or one is too long.</key>
 	<string>チェックリストの項目が多すぎるか、長すぎるものがあります。</string>
-	<key>There are too many labels, or one is too long.</key>
-	<string>ラベルが多すぎるか、長すぎるものがあります。</string>
 	<key>There is already a project named “%@”.</key>
 	<string>「%@」という名前のプロジェクトがすでにあります。</string>
 	<key>These ring only when the task has a time.</key>
@@ -804,8 +800,6 @@
 	<string>失敗</string>
 	<key>from “%@”</key>
 	<string>「%@」から</string>
-	<key>home, work</key>
-	<string>家, 仕事</string>
 	<key>next step</key>
 	<string>次のステップ</string>
 	<key>no</key>

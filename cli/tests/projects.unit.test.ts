@@ -10,11 +10,12 @@ const projects = [project("bakery", "Strona piekarni"), project("cafe", "Café")
 
 describe("quick add projects", () => {
   test.each([
-    ["Menu +STRONA-piekarni fri 2pm #web", { title: "Menu", projectId: "bakery", project: "Strona piekarni", labels: ["web"], due: { date: "2026-10-30", time: "14:00" } }],
+    ["Menu +STRONA-piekarni fri 2pm", { title: "Menu", projectId: "bakery", project: "Strona piekarni", due: { date: "2026-10-30", time: "14:00" } }],
+    ["Menu #web +STRONA-piekarni fri 2pm", { title: "Menu #web", projectId: "bakery", due: { date: "2026-10-30", time: "14:00" } }],
     ["Menu +café no date", { title: "Menu", projectId: "cafe", due: null }],
     ["Menu +unknown", { title: "Menu +unknown", unknownProjects: ["+unknown"] }],
     ["Menu +Old", { title: "Menu +Old", unknownProjects: ["+Old"] }],
-    ['"Menu +Strona-piekarni #web"', { title: "Menu +Strona-piekarni #web", labels: [] }],
+    ['"Menu +Strona-piekarni #web"', { title: "Menu +Strona-piekarni #web", due: undefined }],
     ["Menu +Strona-piekarni +Café", { title: "Menu +Café", projectId: "bakery" }],
   ])("%s", (input, expected) => {
     expect(parseQuickAdd(input, context, projects)).toMatchObject(expected);
@@ -49,25 +50,25 @@ describe("quick add projects", () => {
 });
 
 test("project name decoration is immutable, works in nested results, and enables + filters", () => {
-  const task: Task = { id: "task", ref: 1, title: "Menu", status: "todo", isNow: false, projectId: "bakery", labels: ["web"], links: [], createdAt: 0, updatedAt: 0 };
+  const task: Task = { id: "task", ref: 1, title: "Menu", status: "todo", isNow: false, projectId: "bakery", links: [], createdAt: 0, updatedAt: 0 };
   const value = { results: [{ task, next: null }] };
   const decorated = withProjectNames(value, projects);
   expect(decorated.results[0]!.task.project).toBe("Strona piekarni");
   expect(value.results[0]!.task).not.toHaveProperty("project");
-  expect(matches(decorated.results[0]!.task, "+STRONA-piekarni #web", projects)).toBe(true);
+  expect(matches(decorated.results[0]!.task, "+STRONA-piekarni menu", projects)).toBe(true);
   expect(matches(decorated.results[0]!.task, "+Café", projects)).toBe(false);
 });
 
 test("project filters match complete tokens in any case and preserve ordinary text search", () => {
-  const task: Task = { id: "task", title: "Menu", ref: 42, status: "todo", isNow: false, labels: ["web"], links: [], note: "Bakery", createdAt: 0, updatedAt: 0 };
+  const task: Task = { id: "task", title: "Menu", ref: 42, status: "todo", isNow: false, links: [], note: "Bakery", createdAt: 0, updatedAt: 0 };
   const catalog = [project("home", "Home"), project("prefix", "Home-office"), project("suffix", "My Home")];
   for (const [id, name, expected] of [["home", "Home", true], ["home", "HOME", true], ["prefix", "Home-office", false], ["suffix", "My Home", false]] as const) {
     const named = { ...task, projectId: id, project: name };
     expect(matches(named, "+hOmE", catalog)).toBe(expected);
-    expect(matches(named, "+hOmE #web", catalog)).toBe(expected);
+    expect(matches(named, "+hOmE bakery", catalog)).toBe(expected);
   }
   expect(matches(task, "+Home", catalog)).toBe(false);
-  for (const filter of ["menu", "BAKERY", "#WEB", "#42", ""]) expect(matches(task, filter)).toBe(true);
+  for (const filter of ["menu", "BAKERY", "#42", ""]) expect(matches(task, filter)).toBe(true);
 });
 
 test.each([false, true])("filters resolve catalog identity before matching, including archived projects (reversed: %s)", (reversed) => {
@@ -77,7 +78,7 @@ test.each([false, true])("filters resolve catalog identity before matching, incl
     project("old", "Old shop", true), project("oldLiteral", "Old-shop", true), project("kept", "Kept project", true),
   ];
   const ordered = reversed ? [...catalog].reverse() : catalog;
-  const tasks: Task[] = catalog.map((p) => ({ id: `task-${p.id}`, title: "Menu", projectId: p.id, status: "todo", isNow: false, labels: [], links: [], createdAt: 0, updatedAt: 0 }));
+  const tasks: Task[] = catalog.map((p) => ({ id: `task-${p.id}`, title: "Menu", projectId: p.id, status: "todo", isNow: false, links: [], createdAt: 0, updatedAt: 0 }));
   for (const [filter, expected] of [
     ["+WEB-shop", ["literal"]], ["+space", ["space"]], ["+SPACE", ["shadow"]],
     ["+Blue-sky", []], ["+Old-shop", ["oldLiteral"]], ["+old", ["old"]], ["+Kept-project", ["kept"]], ["+Missing", []],

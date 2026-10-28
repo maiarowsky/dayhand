@@ -2,7 +2,7 @@ import Foundation
 
 /// Groups of task fields that one kind of change touches.
 public enum Field: CaseIterable, Hashable, Sendable {
-    case title, note, due, status, now, resume, archived, `repeat`, labels, links, deleted, checklist, reminders, project
+    case title, note, due, status, now, resume, archived, `repeat`, links, deleted, checklist, reminders, project
 }
 
 public struct MergePlan: Hashable, Sendable {
@@ -84,7 +84,6 @@ public enum SnapshotMerger {
             updatedAt: r.updatedAt,
             serverUpdatedAt: r.updatedAt,
             repeat: r.repeat,
-            labels: r.labels,
             links: r.links,
             deletedAt: r.deletedAt,
             checklist: r.checklist,
@@ -110,7 +109,6 @@ public enum SnapshotMerger {
         if keepLocal.contains(.resume) { task.resumeNote = row.resumeNote }
         if keepLocal.contains(.archived) { task.archivedAt = row.archivedAt }
         if keepLocal.contains(.repeat) { task.repeat = row.repeat }
-        if keepLocal.contains(.labels) { task.labels = row.labels }
         if keepLocal.contains(.links) { task.links = row.links }
         if keepLocal.contains(.deleted) { task.deletedAt = row.deletedAt }
         if keepLocal.contains(.checklist) { task.checklist = row.checklist }
@@ -169,7 +167,6 @@ public struct DirtyFields: Sendable {
         if keys.contains("dueDate") || keys.contains("dueTime") { fields.insert(.due) }
         if keys.contains("resumeNote") { fields.insert(.resume) }
         if keys.contains("repeat") { fields.insert(.repeat) }
-        if keys.contains("labels") { fields.insert(.labels) }
         if keys.contains("links") { fields.insert(.links) }
         if keys.contains("checklist") { fields.insert(.checklist) }
         if keys.contains("reminders") { fields.insert(.reminders) }

@@ -41,7 +41,6 @@ const FIELD_DOCS: Record<string, string> = {
   requestedBy: "Who asked for the task, e.g. a customer or a colleague (up to 200 characters). Default for an agent's proposal: the agent itself.",
   returnTo:
     "Id of one of the user's webhooks: it gets task.returned, with the proof, when the task is completed (or rejected, or merged into another task).",
-  labels: "Free tags across projects; a task's project is projectId.",
   projectId:
     'The task\'s project: its id or its name (any case), or "none" for no project. An archived project takes no new task (restore it first). In update_task, null also takes the task out of its project.',
   links: "Links attached to the task (URL and optional title). Files are not supported.",
@@ -60,10 +59,9 @@ const FIELD_DOCS: Record<string, string> = {
 };
 
 const FIND_DOCS: Record<string, string> = {
-  labels: "Only tasks having all of these labels.",
   projectId: 'Only the tasks of this project (its id or its name, any case), or "none" for the tasks without a project.',
   includeDone: "Include done tasks (default true). Ignored when status is given.",
-  query: "Only tasks whose title, note, resume note or labels contain this text (any case).",
+  query: "Only tasks whose title, note or resume note contain this text (any case).",
   status: "Only tasks with one of these statuses (todo, doing, done); done tasks are included only when listed here.",
   dueBefore: 'Only tasks due before this day: YYYY-MM-DD, "today" or "tomorrow". Tasks without a day never match.',
   dueAfter: 'Only tasks due after this day: YYYY-MM-DD, "today" or "tomorrow". Tasks without a day never match.',
@@ -144,9 +142,6 @@ const PROJECT_DOCS: Record<string, string> = {
   position: "Place in the menu, lowest first. A new project goes to the end; to move one between two others, give a number between their positions.",
   archived: "true: archive the project (it leaves the menu and takes no new tasks; its tasks stay where they are); false: restore it.",
   includeArchived: "Include archived projects (default false).",
-  fromLabel:
-    "Make the project from this label: every task with it and without a project moves in (at most 1000); tasks already in a project, or claimed by another agent, stay and are listed in skipped.",
-  removeLabel: "With fromLabel: take the label off the tasks that move (default false: the label stays).",
   moveTasksTo:
     'Where the project\'s tasks go, all of them (open, done, archived, in the trash, proposals): another project (its id or name) or "none". Needed when any task points at the project.',
 };
@@ -220,7 +215,7 @@ export const TOOLS: Tool[] = [
   write("update_task", {
     title: "Update task",
     description:
-      "Change a task's title, note, due date/time, resume note, repeat rule, labels, project, links, checklist, reminders, acceptance criteria, plan, dependencies or blocked reason.",
+      "Change a task's title, note, due date/time, resume note, repeat rule, project, links, checklist, reminders, acceptance criteria, plan, dependencies or blocked reason.",
     fields: args.update,
     output: "task",
     ref: internal.ops.update,
@@ -289,7 +284,7 @@ export const TOOLS: Tool[] = [
   read("list_all", {
     title: "Find tasks",
     description:
-      "Tasks not in the trash, oldest due first, narrowed by search text, status, labels, project, due day and overdue. Returns `result`, `total` (all matches) and `nextCursor`; pass limit to get pages.",
+      "Tasks not in the trash, oldest due first, narrowed by search text, status, project, due day and overdue. Returns `result`, `total` (all matches) and `nextCursor`; pass limit to get pages.",
     fields: args.findTasks,
     output: "task-list",
     ref: internal.ops.findTasks,
@@ -298,7 +293,7 @@ export const TOOLS: Tool[] = [
   read("list_projects", {
     title: "Projects",
     description:
-      "The user's projects in menu order, each with the counts of its open, overdue, due-today and done tasks, and the open and overdue tasks without a project (noProject). A task is in at most one project (projectId); labels are free tags across projects. Archived projects only with includeArchived.",
+      "The user's projects in menu order, each with the counts of its open, overdue, due-today and done tasks, and the open and overdue tasks without a project (noProject). A task is in at most one project (projectId). Archived projects only with includeArchived.",
     fields: args.listProjects,
     output: "project-list",
     ref: internal.ops.listProjects,
@@ -307,7 +302,7 @@ export const TOOLS: Tool[] = [
   write("add_project", {
     title: "Add project",
     description:
-      "Add a project at the end of the menu (or at position). With fromLabel the label's tasks without a project move into it (removeLabel takes the label off them); tasks already in a project stay and are listed in skipped.",
+      "Add a project at the end of the menu (or at position).",
     fields: args.addProject,
     output: "project-added",
     ref: internal.ops.addProject,
@@ -483,7 +478,7 @@ export const TOOLS: Tool[] = [
   write("merge_proposal", {
     title: "Merge proposal",
     description:
-      "Merge a proposal into a task already in the plan: the task gets its note, links, labels, source and return webhooks, and its project when the task has none and that project is not archived; the proposal goes to the trash. Only the owner can call it.",
+      "Merge a proposal into a task already in the plan: the task gets its note, links, source and return webhooks, and its project when the task has none and that project is not archived; the proposal goes to the trash. Only the owner can call it.",
     fields: args.mergeProposal,
     output: "merge",
     ref: internal.ops.mergeProposal,
@@ -511,7 +506,7 @@ export const TOOLS: Tool[] = [
   write("import_backlog", {
     title: "Import Backlog.md tasks",
     description:
-      "Import task files in the Backlog.md format (Markdown with a YAML header) as tasks: title, status (nearest of todo, doing, done), labels, acceptance criteria, implementation plan, dependencies and the final summary as proof. Each task gets the source {kind: \"backlog-md\", ref: <id>}, so a file imported before is skipped. Drafts become proposals; files without an id, docs, decisions and milestones are skipped. Returns what was created, skipped, failed and could not be carried over.",
+      "Import task files in the Backlog.md format (Markdown with a YAML header) as tasks: title, status (nearest of todo, doing, done), acceptance criteria, implementation plan, dependencies and the final summary as proof. Each task gets the source {kind: \"backlog-md\", ref: <id>}, so a file imported before is skipped. Drafts become proposals; files without an id, docs, decisions and milestones are skipped. Returns what was created, skipped, failed and could not be carried over.",
     fields: args.importBacklog,
     output: "backlog-import",
     ref: internal.ops.importBacklog,
@@ -520,7 +515,7 @@ export const TOOLS: Tool[] = [
   read("export_backlog", {
     title: "Export as Backlog.md",
     description:
-      "The plan as Backlog.md task files (Markdown with a YAML header) plus a config.yml: status mapped to To Do, In Progress or Done, labels, acceptance criteria, plan, dependencies, links as references and proof as the final summary. Tasks imported from Backlog.md keep their ids. Returns the files to write and notes identifying tasks or config.yml whose exported fields or serialized content exceed Dayhand import limits, without truncating text; nothing is stored.",
+      "The plan as Backlog.md task files (Markdown with a YAML header) plus a config.yml: status mapped to To Do, In Progress or Done, acceptance criteria, plan, dependencies, links as references and proof as the final summary. Tasks imported from Backlog.md keep their ids. Returns the files to write and notes identifying tasks or config.yml whose exported fields or serialized content exceed Dayhand import limits, without truncating text; nothing is stored.",
     fields: args.exportBacklog,
     output: "backlog-export",
     ref: internal.ops.exportBacklog,

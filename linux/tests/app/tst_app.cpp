@@ -482,8 +482,7 @@ void TestApp::detailsEditTheLocalRowAndKeepSelection()
     };
     replace(u"detailsTitle"_s, u"Ship synthetic release"_s);
     QTRY_COMPARE(model.database().task(id)->title, u"Ship synthetic release"_s);
-    replace(u"detailsLabels"_s, u" work, linux, work, "_s);
-    QTRY_COMPARE(model.database().task(id)->labels, (QStringList{u"work"_s, u"linux"_s}));
+    QVERIFY(!item(window, u"detailsLabels"_s));
     replace(u"detailsChecklistAdd"_s, u"Build package"_s);
     QTRY_COMPARE(model.database().task(id)->checklist.size(), 1);
     const QString checklistId = model.database().task(id)->checklist.first().id;
@@ -558,7 +557,7 @@ void TestApp::detailsEditTheLocalRowAndKeepSelection()
     note->forceActiveFocus();
     typeText(window, u"Synthetic release notes"_s);
     QVERIFY(!model.database().task(id)->note);
-    model.setLabels(id, u"work, linux, review"_s);
+    model.setResumeNote(id, u"Next: run the package tests"_s);
     QCOMPARE(note->property("text").toString(), u"Synthetic release notes"_s);
     auto *save = item(window, u"detailsSaveNote"_s);
     reveal(window, save);
@@ -594,7 +593,6 @@ void TestApp::detailsEditTheLocalRowAndKeepSelection()
     QTRY_VERIFY(model.database().task(id)->inTrash());
     QVERIFY(item(window, u"detailsTitle"_s)->property("readOnly").toBool());
     QVERIFY(item(window, u"detailsNote"_s)->property("readOnly").toBool());
-    QVERIFY(item(window, u"detailsLabels"_s)->property("readOnly").toBool());
     QVERIFY(item(window, u"detailsChecklistAdd"_s)->property("readOnly").toBool());
     QVERIFY(!item(window, u"detailsStatus"_s)->isEnabled());
     QVERIFY(!item(window, u"detailsNow"_s)->isEnabled());

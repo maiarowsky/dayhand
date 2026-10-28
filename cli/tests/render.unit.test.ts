@@ -18,7 +18,6 @@ const task = (title: string, extra: Partial<Task> = {}): Task => ({
   title,
   status: "todo",
   isNow: false,
-  labels: [],
   links: [],
   createdAt: 0,
   updatedAt: 0,
@@ -62,7 +61,7 @@ test("relative days", () => {
 
 describe("task lists", () => {
   const tasks = [
-    task("Pay rent", { dueDate: "2026-10-21", overdue: true, labels: ["home"] }),
+    task("Pay rent", { dueDate: "2026-10-21", overdue: true }),
     task("Call the bank", { dueDate: TODAY, dueTime: "18:00", status: "doing", isNow: true }),
     task("Plan the trip", { dueDate: "2026-10-30", repeat: { every: "week", interval: 1 } }),
   ];
@@ -72,7 +71,7 @@ describe("task lists", () => {
     const text = renderHuman(view, {}, undefined, { style: makeStyle(false), today: TODAY });
     expect(text).not.toMatch(ANSI);
     expect(text.split("\n")).toEqual([
-      expect.stringMatching(/^ {2}#\d +\[ \] {2}yesterday {4}Pay rent {7}#home overdue$/),
+      expect.stringMatching(/^ {2}#\d +\[ \] {2}yesterday {4}Pay rent {7}overdue$/),
       expect.stringMatching(/^ {2}#\d +\[~\] {2}today 18:00 {2}Call the bank {2}now$/),
       expect.stringMatching(/^ {2}#\d +\[ \] {2}Fri 30 Oct {3}Plan the trip {2}↻$/),
     ]);

@@ -597,10 +597,6 @@
         <translation>Quitar hora</translation>
     </message>
     <message>
-        <source>Labels (comma-separated)</source>
-        <translation>Etiquetas (separadas por comas)</translation>
-    </message>
-    <message>
         <source>Checklist</source>
         <translation>Lista de verificación</translation>
     </message>
@@ -658,10 +654,6 @@
     <message>
         <source>The note is too long.</source>
         <translation>La nota es demasiado larga.</translation>
-    </message>
-    <message>
-        <source>Use up to 20 labels, at most 50 characters each.</source>
-        <translation>Usa hasta 20 etiquetas, de 50 caracteres como máximo cada una.</translation>
     </message>
     <message>
         <source>Use up to 100 checklist items, at most 500 characters each.</source>

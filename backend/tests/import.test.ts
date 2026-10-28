@@ -78,7 +78,7 @@ describe("import readers", () => {
     ]);
   });
 
-  test("Todoist CSV: labels, sections, notes, sub-tasks as checklist, dates and repeats", () => {
+  test("Todoist CSV: notes, sub-tasks as checklist, dates and repeats; labels and sections are left out", () => {
     const { items, warnings } = readPlan("todoist-csv", TODOIST, CONTEXT);
     expect(items.map(({ source, ...rest }) => rest)).toEqual([
       {
@@ -86,17 +86,17 @@ describe("import readers", () => {
         note: "2 litres, skimmed\n\nAsk about the discount",
         dueDate: "2026-11-03",
         dueTime: "09:00",
-        labels: ["shop", "home"],
         checklist: [{ title: "Oat milk" }],
       },
-      { title: "Weekly report", repeat: { every: "week", interval: 1, weekdays: [1] }, dueDate: "2026-11-02", labels: ["Work"] },
-      { title: "Plan Q1", dueDate: "2026-11-20", dueTime: "15:30", labels: ["Work"] },
-      { title: "Someday", note: "Todoist date: when the moon is full", labels: ["Work"] },
+      { title: "Weekly report", repeat: { every: "week", interval: 1, weekdays: [1] }, dueDate: "2026-11-02" },
+      { title: "Plan Q1", dueDate: "2026-11-20", dueTime: "15:30" },
+      { title: "Someday", note: "Todoist date: when the moon is full" },
     ]);
     expect(warnings).toEqual([
       '"Someday": the date "when the moon is full" was not understood; it is kept in the note',
       "1 sub-task(s) became checklist items of their parent task",
       "Todoist priorities are not imported (Dayhand has none)",
+      "The labels and sections of 4 task(s) were not imported: Dayhand has projects, not labels",
     ]);
   });
 
@@ -109,7 +109,6 @@ describe("import readers", () => {
         dueDate: "2026-11-05",
         dueTime: "09:00",
         status: "todo",
-        labels: ["money", "calls"],
         links: [{ url: "https://bank.example/help" }],
         reminders: [{ minutesBefore: 30 }],
       },
@@ -117,7 +116,10 @@ describe("import readers", () => {
       { title: "Filed taxes", status: "done", completedAt: Date.UTC(2026, 9, 20, 12, 0) },
       { title: "Dentist", dueDate: "2026-11-10", dueTime: "14:30", status: "todo" },
     ]);
-    expect(warnings).toEqual(["1 cancelled entr(ies), changed occurrence(s) of a series or duplicate(s) were skipped"]);
+    expect(warnings).toEqual([
+      "1 cancelled entr(ies), changed occurrence(s) of a series or duplicate(s) were skipped",
+      "The categories of 1 entr(ies) were not imported: Dayhand has projects, not labels",
+    ]);
   });
 
   test("Dayhand's own calendar feed, also from before the rename: ✓ means done, the task number leaves the note", () => {
@@ -156,7 +158,7 @@ describe("POST /api/v1/import", () => {
   test("a Dayhand JSON export rebuilds the plan in an empty account, numbers included; importing again skips everything", async () => {
     const source = await account();
     const add = (args: Record<string, unknown>) => source.user.mutation(internal.ops.add, args) as Promise<any>;
-    await add({ title: "Report", dueDate: "2026-11-03", dueTime: "09:30", labels: ["work"], note: "draft", reminders: [{ minutesBefore: 15 }] });
+    await add({ title: "Report", dueDate: "2026-11-03", dueTime: "09:30", note: "draft", reminders: [{ minutesBefore: 15 }] });
     const bins = await add({ title: "Bins", dueDate: "2026-11-02", repeat: "FREQ=WEEKLY;BYDAY=MO", checklist: [{ title: "Glass" }] });
     const gone = await add({ title: "Gone" });
     await add({ title: "Links", links: [{ url: "https://example.com", title: "ex" }], status: "doing" });
@@ -234,13 +236,16 @@ describe("imports and projects (0.13.0)", () => {
         { name: "no id" },
       ],
       tasks: [
-        { id: "t1", title: "in Dom", projectId: "p1" },
-        { id: "t2", title: "loose" },
+        { id: "t1", title: "in Dom", projectId: "p1", labels: ["home"] },
+        { id: "t2", title: "loose", labels: [] },
         { id: "t3", title: "lost project", projectId: "gone" },
       ],
     });
     const { items, warnings, projects } = readPlan("dayhand-json", content, CONTEXT);
     expect(items.map((i) => i.project)).toEqual(["Dom", undefined, undefined]);
+    // An export from before 0.14.0 still has labels: they are left out, and said so.
+    expect(items.some((i) => "labels" in i)).toBe(false);
+    expect(warnings).toContain("The labels of 1 task(s) were not imported: Dayhand has projects, not labels (since 0.14.0)");
     expect(projects).toEqual([
       { name: "Dom", color: "teal", icon: "🏠", note: "the flat", archived: false },
       { name: "Old", archived: true },

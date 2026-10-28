@@ -37,14 +37,13 @@ Yes. The Android, macOS and Linux apps keep the plan on the device, and reminder
 Changes wait in an outbox and go to the server in order when it can be reached. `dayhand` and `dayhand ui`
 need the server.
 
-### Projects or labels?
+### Can I tag tasks?
 
-Both. A project is what a task is part of, such as a client or your website: a task is in one project or
-none, and each project has a colour, an emoji, a note for your agents and its own list in the apps. Labels
-are free tags across projects, such as `phone` or `waiting`, up to 20 on a task. If you used labels as
-projects before, `dayhand project add Home --from-label home` makes one from a label, or long-press the
-label on Android. Projects in the apps need server 0.13.0 or later, and `dayhand project`, the MCP
-project tools and the REST project routes need 0.13.1: [Projects and labels](projects.md).
+No: Dayhand sorts tasks only into projects. A project is what a task is part of, such as a client or your
+website: a task is in one project or none, and each project has a colour, an emoji, a note for your agents
+and its own list in the apps. Server 0.14.0 removed labels, with the labels stored before. Projects in the
+apps need server 0.13.0 or later, and `dayhand project`, the MCP project tools and the REST project routes
+need 0.13.1: [Projects](projects.md).
 
 ### Can I see my tasks in Google Calendar or Apple Calendar?
 

@@ -17,20 +17,6 @@ std::optional<QString> title(const QString &input)
     return clean;
 }
 
-std::optional<QStringList> labels(const QStringList &input)
-{
-    QStringList cleaned;
-    for (const QString &label : input) {
-        const QString clean = label.trimmed();
-        if (!clean.isEmpty() && !cleaned.contains(clean))
-            cleaned.append(clean);
-    }
-    const bool tooLong = std::any_of(cleaned.begin(), cleaned.end(), [](const QString &l) { return l.size() > maxLabel; });
-    if (cleaned.size() > maxLabels || tooLong)
-        return std::nullopt;
-    return cleaned;
-}
-
 bool isLinkURL(const QString &url)
 {
     if (url.isEmpty() || url.size() > maxURL || url != url.trimmed())

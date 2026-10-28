@@ -29,7 +29,7 @@ struct StoreError : std::runtime_error {
  */
 class Database {
 public:
-    static constexpr int schemaVersion = 1;
+    static constexpr int schemaVersion = 2;
 
     /// Opens and migrates the database at [path] (its folder is created), or ":memory:". Throws [StoreError].
     static std::unique_ptr<Database> open(const QString &path);

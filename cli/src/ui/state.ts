@@ -12,7 +12,7 @@ export const viewLabel = (view: ViewName): string => t(`view.${view}`);
 
 export type Prompt = "add" | "move" | "note" | "filter" | "reject";
 
-export type EditKey = "title" | "due" | "labels" | "resumeNote";
+export type EditKey = "title" | "due" | "resumeNote";
 export type EditField = { key: EditKey; label: string; line: Line; initial: string };
 
 export type Mode =

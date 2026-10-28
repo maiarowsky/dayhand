@@ -72,7 +72,7 @@ describe("MCP resources", () => {
     expect(guide.contents[0]).toMatchObject({ mimeType: "text/markdown" });
     expect(textOf(guide.contents)).toMatch(/^# Working with Dayhand/);
     expect(textOf(guide.contents)).toContain("dryRun");
-    expect(textOf(guide.contents)).toContain("## Projects and labels");
+    expect(textOf(guide.contents)).toContain("## Projects");
     await client.close();
   });
 

@@ -19,11 +19,12 @@ struct HistoryEntryTests {
         let event = TaskEvent(
             taskServerId: "s1", at: 1, actor: "agent", actorName: "claude", action: "update",
             beforeJson: #"{"note":null,"dueTime":"11:00","completedAt":5,"labels":["home"]}"#,
-            afterJson: #"{"note":"Ask about VAT","dueTime":"14:00","completedAt":null,"labels":["home"]}"#
+            afterJson: #"{"note":"Ask about VAT","dueTime":"14:00","completedAt":null,"labels":["home","tax"]}"#
         )
         let entry = event.entry
         #expect(entry.actor == .agent(name: "claude"))
-        // Timestamps are left out (the action says it) and an unchanged value is not a change.
+        // Timestamps are left out (the action says it), an unchanged value is not a change, and labels (gone from
+        // Dayhand, but in older events) are not shown.
         #expect(entry.changes == [
             FieldChange(field: .dueTime, before: "11:00", after: "14:00"),
             FieldChange(field: .note, before: .null, after: "Ask about VAT"),

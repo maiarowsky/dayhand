@@ -5,6 +5,7 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { isValidDate, isValidTime, localDate, resolveDate } from "./dates";
 import { validateRepeat } from "./repeat";
+import { RETIRED_FIELDS } from "./args";
 import { RRuleError, parseRRule, toRRule } from "./rrule";
 import { queueTaskEvents } from "./webhookEvents";
 import type { Actor, ChecklistInput, ChecklistItem, Link, Reminder, RepeatInput, RepeatRule } from "./validators";
@@ -84,12 +85,28 @@ export async function todayFor(ctx: QueryCtx, userId: string, at: number): Promi
 /**
  * A task as returned to clients: stable `id` and `ref`, no internal fields.
  * A repeating task also carries its rule as an RFC 5545 RRULE (`rrule`).
+ * Labels left from before 0.14.0 (until migrations:dropLabels) are not shown.
  */
 export function toTask(doc: Doc<"tasks">) {
-  const { _id, _creationTime, userId, ...fields } = doc;
+  const { _id, _creationTime, userId, labels, ...fields } = doc;
   return fields.repeat ? { id: _id, ...fields, rrule: toRRule(fields.repeat, fields.dueDate) } : { id: _id, ...fields };
 }
 export type TaskView = ReturnType<typeof toTask>;
+
+/** A labels filter from a client older than 0.14.0 would match every task now, so it is refused. */
+export function refuseLabelFilter(labels: readonly string[] | undefined) {
+  if (labels?.some((label) => label.trim() !== "")) fail("invalid_argument", "labels were removed in 0.14.0");
+}
+
+/** A history entry's before or after without what changes from before 0.14.0 recorded of labels (RETIRED_FIELDS). */
+export function withoutLabelFields(change: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(change).filter(([name]) => !RETIRED_FIELDS.has(name)));
+}
+
+/** A history entry's before or after as returned to clients: without the labels of changes from before 0.14.0. */
+export function changeOf(change: Record<string, unknown> | undefined): Record<string, unknown> | null {
+  return change === undefined ? null : withoutLabelFields(change);
+}
 
 /**
  * The version of a stored task as an HTTP entity tag (RFC 9110): it changes
@@ -232,8 +249,6 @@ const LIMITS = {
   title: 500,
   note: 20_000,
   resumeNote: 2_000,
-  label: 50,
-  labels: 20,
   links: 20,
   url: 2_048,
   clientId: 128,
@@ -265,13 +280,6 @@ export function checkDueDate(value: string, today: string): string {
 export function checkDueTime(value: string): string {
   if (!isValidTime(value)) fail("invalid_argument", `dueTime must be HH:MM (24h), got "${value}"`);
   return value;
-}
-
-export function checkLabels(labels: string[]): string[] {
-  const cleaned = [...new Set(labels.map((l) => l.trim()).filter((l) => l !== ""))];
-  if (cleaned.length > LIMITS.labels) fail("invalid_argument", `at most ${LIMITS.labels} labels`);
-  if (cleaned.some((l) => l.length > LIMITS.label)) fail("invalid_argument", `labels are at most ${LIMITS.label} characters`);
-  return cleaned;
 }
 
 export function checkLinks(links: Link[]): Link[] {

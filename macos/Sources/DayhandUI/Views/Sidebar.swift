@@ -4,8 +4,8 @@ import SwiftUI
 
 /**
  * The left column: the inbox, Today, every task and those without a project, the projects (hidden while the server has
- * none), the labels, the done and archived tasks and the trash, each with the number of its open tasks, red while
- * some are overdue. A task dragged onto a project, No Project or Today goes there. The update button sits in the
+ * none), the done and archived tasks and the trash, each with the number of its open tasks, red while some are
+ * overdue. A task dragged onto a project, No Project or Today goes there. The update button sits in the
  * bottom corner while a newer version is known.
  */
 struct Sidebar: View {
@@ -23,7 +23,6 @@ struct Sidebar: View {
                 }
             }
             if model.showsProjects { projectsSection }
-            if !model.counts.labelNames.isEmpty { labelsSection }
             Section {
                 PlaceRow(place: .done, icon: "checkmark.circle", title: tr("Done and Archived"))
                 PlaceRow(place: .trash, icon: "trash", title: tr("Trash"))
@@ -61,18 +60,6 @@ struct Sidebar: View {
                     .help(tr("New project (⌥⌘N)"))
                     .accessibilityLabel(tr("New Project…"))
             }
-        }
-    }
-
-    private var labelsSection: some View {
-        Section {
-            if model.labelsExpanded {
-                ForEach(model.counts.labelNames, id: \.self) { label in
-                    PlaceRow(place: .label(label), icon: "number", title: label, count: model.counts.label(label))
-                }
-            }
-        } header: {
-            SectionHeader(title: tr("Labels"), expanded: $model.labelsExpanded) { EmptyView() }
         }
     }
 }

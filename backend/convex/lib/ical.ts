@@ -196,7 +196,6 @@ function eventLines(task: Doc<"tasks">, occurrence: Occurrence, options: Calenda
     ...(occurrence.rule ? [rruleLine(occurrence.rule, occurrence.date, time, timezone)] : []),
     `SUMMARY:${escapeText(summary)}`,
     `DESCRIPTION:${escapeText(description)}`,
-    ...(task.labels.length ? [`CATEGORIES:${task.labels.map(escapeText).join(",")}`] : []),
     // A task does not make you busy.
     "TRANSP:TRANSPARENT",
     ...alarmLines(task, options),
