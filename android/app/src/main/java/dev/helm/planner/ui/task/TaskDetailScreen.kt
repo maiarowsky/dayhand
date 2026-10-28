@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,10 +40,17 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.helm.planner.R
@@ -81,6 +90,7 @@ object TaskDetailTags {
     const val LINKS_SECTION = "detail-links-section"
     const val LABELS_SECTION = "detail-labels-section"
     const val NOTE = "detail-note"
+    const val NOTE_MORE = "detail-note-more"
     const val DUE = "detail-due"
     const val REPEAT = "detail-repeat"
     const val REMINDERS = "detail-reminders"
@@ -112,7 +122,7 @@ fun TaskDetailScreen(state: TaskDetailUiState, actions: TaskDetailActions, modif
                     .testTag(TaskDetailTags.MISSING),
             )
             is TaskDetailUiState.Ready -> Column(
-                verticalArrangement = Arrangement.spacedBy(HelmDimens.sectionGap),
+                verticalArrangement = Arrangement.spacedBy(DETAIL_GAP),
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
@@ -126,9 +136,10 @@ fun TaskDetailScreen(state: TaskDetailUiState, actions: TaskDetailActions, modif
 }
 
 /**
- * Top to bottom: the title (two lines, unfolded on request), one card with what is read most (status, due, project,
- * and labels when the task has any), the note, an agent's work, then folding sections for repeat and reminders, the
- * checklist, labels when there are none, links and history.
+ * Top to bottom: the title (two lines, unfolded on request), one card with what is read most (status, the proof it
+ * was done with, due day with its actions in one row, project in one row, and labels when the task has any), the note
+ * (folded after about eight lines), an agent's work, then folding sections for repeat and reminders, the checklist,
+ * labels when there are none, links and history.
  */
 @Composable
 private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailActions) {
@@ -137,19 +148,17 @@ private fun DetailBody(state: TaskDetailUiState.Ready, actions: TaskDetailAction
     val editable = !task.inTrash
     if (task.inTrash || task.archivedAt != null) RestoreBanner(task, today, state.timezone, actions)
     TitleSection(task, editable, actions)
-    HelmCard(Modifier.testTag(TaskDetailTags.SUMMARY), contentPadding = 16.dp) {
+    HelmCard(Modifier.testTag(TaskDetailTags.SUMMARY), contentPadding = CARD_PADDING) {
         StatusField(task, editable, actions)
-        FieldDivider()
+        task.proof?.let { ProofLine(it) }
         DueField(task, today, editable, actions)
-        FieldDivider()
         ProjectField(task, editable)
         if (task.labels.isNotEmpty()) {
-            FieldDivider()
             FieldLabel(stringResource(R.string.detail_labels))
             LabelsField(task, state.knownLabels, editable, actions)
         }
     }
-    HelmCard { NoteSection(task, editable, actions) }
+    HelmCard(contentPadding = CARD_PADDING - NOTE_INSET) { NoteSection(task, editable, actions) }
     AgentWorkSection(task, state.dependencies, System.currentTimeMillis(), state.timezone, editable, actions)
     FoldingSection(
         stringResource(R.string.detail_repeat_reminders),
@@ -213,8 +222,8 @@ private fun RestoreBanner(task: Task, today: LocalDate, timezone: String, action
 @Composable
 private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
-    var whole by rememberSaveable { mutableStateOf(false) }
-    var cut by remember { mutableStateOf(false) }
+    var whole by rememberSaveable(task.title) { mutableStateOf(false) }
+    var cut by remember(task.title) { mutableStateOf(false) }
     Column {
         Text(
             task.title,
@@ -245,8 +254,6 @@ private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActio
             title = stringResource(R.string.edit_title),
             initial = task.title,
             maxLength = TaskRules.MAX_TITLE,
-            singleLine = true,
-            allowEmpty = false,
             onDismiss = { editing = false },
             onSave = {
                 actions.rename(task.localId, it)
@@ -258,10 +265,10 @@ private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActio
 
 @Composable
 private fun StatusField(task: Task, editable: Boolean, actions: TaskDetailActions) {
-    FieldLabel(stringResource(R.string.detail_status))
     SegmentedChoice(
         TaskStatus.entries,
         task.status,
+        name = stringResource(R.string.detail_status),
         label = { statusLabel(it) },
         tag = TaskDetailTags::status,
         enabled = editable,
@@ -301,7 +308,11 @@ private fun ResumeRow(task: Task, editable: Boolean, actions: TaskDetailActions)
     }
 }
 
-/** The due day (red when it has passed) and the changes to it as buttons: pick a day, add or remove the time, clear it. */
+/**
+ * The due day and its changes in one row that wraps only when it does not fit: the day (red when it has passed) opens
+ * the day picker, then add, change or remove the time, and a cross for no due day. Without a due day, one button
+ * picks it.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DueField(task: Task, today: LocalDate, editable: Boolean, actions: TaskDetailActions) {
@@ -309,23 +320,31 @@ private fun DueField(task: Task, today: LocalDate, editable: Boolean, actions: T
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     val p = palette
     val overdue = HelmDates.isOverdue(task, today.toString())
-    // Name and day are read as one.
-    Column(Modifier.semantics(mergeDescendants = true) {}.testTag(TaskDetailTags.DUE), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        FieldLabel(stringResource(R.string.detail_due))
-        Text(
-            dueLabel(task, today) ?: stringResource(R.string.detail_no_due),
-            style = helmType.value,
-            color = when {
-                task.dueDate == null -> p.textMuted
-                overdue -> p.danger
-                else -> p.text
-            },
-        )
-    }
-    if (editable) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            DetailAction(stringResource(R.string.pick_day), { pickingDay = true }, Icons.Filled.DateRange)
-            if (task.dueDate != null) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        val due = dueLabel(task, today)
+        if (due == null) {
+            if (editable) {
+                DetailAction(stringResource(R.string.pick_day), { pickingDay = true }, Icons.Filled.DateRange, Modifier.testTag(TaskDetailTags.DUE))
+            } else {
+                ValueChip(stringResource(R.string.detail_no_due), stringResource(R.string.detail_due), Icons.Filled.DateRange, p.textMuted,
+                    modifier = Modifier.testTag(TaskDetailTags.DUE))
+            }
+        } else {
+            ValueChip(
+                due,
+                stringResource(R.string.detail_due),
+                Icons.Filled.DateRange,
+                if (overdue) p.danger else p.text,
+                background = if (overdue) p.dangerSoft else p.surfaceRaised,
+                onClickLabel = stringResource(R.string.pick_day),
+                onClick = if (editable) ({ pickingDay = true }) else null,
+                modifier = Modifier.testTag(TaskDetailTags.DUE),
+            )
+            if (editable) {
                 DetailAction(
                     stringResource(if (task.dueTime == null) R.string.add_time else R.string.change_time),
                     { pickingTime = true },
@@ -334,7 +353,12 @@ private fun DueField(task: Task, today: LocalDate, editable: Boolean, actions: T
                 if (task.dueTime != null) {
                     DetailAction(stringResource(R.string.remove_time), { actions.setDue(task.localId, task.dueDate, null) }, Icons.Filled.Close)
                 }
-                DetailAction(stringResource(R.string.remove_due), { actions.setDue(task.localId, null, null) }, Icons.Filled.Close)
+                HeaderIconButton(
+                    Icons.Filled.Close,
+                    stringResource(R.string.remove_due),
+                    onClick = { actions.setDue(task.localId, null, null) },
+                    tint = p.textMuted,
+                )
             }
         }
     }
@@ -365,7 +389,7 @@ private fun DueField(task: Task, today: LocalDate, editable: Boolean, actions: T
 private fun ProjectField(task: Task, editable: Boolean) {
     val projects = LocalProjects.current
     val project = projects.projects.firstOrNull { it.localId == task.projectId }
-    ValueRow(
+    InlineValueRow(
         stringResource(R.string.project_label),
         project?.name ?: stringResource(R.string.project_no_project),
         placeholder = project == null,
@@ -491,25 +515,58 @@ private fun LinksSection(task: Task, editable: Boolean, actions: TaskDetailActio
     }
 }
 
+/**
+ * The note in the reading font with a small gap between its paragraphs, folded after about eight lines with a button
+ * to show it whole. A tap on it opens the full-screen editor.
+ */
 @Composable
 private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
     var editing by rememberSaveable { mutableStateOf(false) }
-    ValueRow(
-        label = stringResource(R.string.quick_add_note),
-        value = task.note ?: stringResource(R.string.note_empty),
-        placeholder = task.note == null,
-        editLabel = stringResource(R.string.edit_note),
-        enabled = editable,
-        onClick = { editing = true },
-        modifier = Modifier.testTag(TaskDetailTags.NOTE),
-    )
+    val note = task.note
+    var whole by rememberSaveable(note) { mutableStateOf(false) }
+    var cut by remember(note) { mutableStateOf(false) }
+    val p = palette
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = HelmDimens.touchTarget)
+            .testTag(TaskDetailTags.NOTE)
+            .clip(HelmShapes.field)
+            .clickable(enabled = editable, onClickLabel = stringResource(R.string.edit_note), role = Role.Button) { editing = true }
+            .padding(NOTE_INSET),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FieldLabel(stringResource(R.string.quick_add_note), Modifier.weight(1f))
+            if (editable) Icon(Icons.Filled.Edit, contentDescription = null, tint = p.textMuted, modifier = Modifier.size(16.dp))
+        }
+        if (note == null) {
+            Text(stringResource(R.string.note_empty), style = helmType.value, color = p.textMuted)
+        } else {
+            Text(
+                paragraphs(note),
+                style = helmType.value,
+                color = p.text,
+                maxLines = if (whole) Int.MAX_VALUE else NOTE_LINES,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { if (!whole) cut = it.hasVisualOverflow },
+                // A screen reader gets the note as written, with its line breaks and whole while folded.
+                modifier = Modifier.clearAndSetSemantics { text = AnnotatedString(note) },
+            )
+        }
+    }
+    if (cut || whole) {
+        TextAction(
+            stringResource(if (whole) R.string.title_show_less else R.string.note_show_all),
+            { whole = !whole },
+            modifier = Modifier.testTag(TaskDetailTags.NOTE_MORE),
+        )
+    }
     if (editing) {
-        TextEditDialog(
+        LongTextEditor(
             title = stringResource(R.string.edit_note),
-            initial = task.note.orEmpty(),
+            initial = note.orEmpty(),
             maxLength = TaskRules.MAX_NOTE,
-            singleLine = false,
-            allowEmpty = true,
             onDismiss = { editing = false },
             onSave = {
                 actions.setNote(task.localId, it)
@@ -519,4 +576,27 @@ private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailAction
     }
 }
 
+/**
+ * The note's lines as paragraphs with a gap a third of a line high between them: a paragraph of one zero-width space
+ * that low stands for each line break (a paragraph style starts a new paragraph by itself).
+ */
+private fun paragraphs(text: String): AnnotatedString = buildAnnotatedString {
+    text.split(LINE_BREAKS).forEachIndexed { index, line ->
+        if (index > 0) withStyle(ParagraphStyle(lineHeight = PARAGRAPH_GAP)) { append(GAP_MARK) }
+        append(line)
+    }
+}
+
 private const val TITLE_LINES = 2
+
+/** About eight lines of note before it folds; the gaps between paragraphs count as lines. */
+private const val NOTE_LINES = 10
+private val LINE_BREAKS = Regex("\n+")
+private val PARAGRAPH_GAP = 8.sp
+private const val GAP_MARK = "\u200B"
+private val DETAIL_GAP = 8.dp
+private val CARD_PADDING = 12.dp
+
+/** Keeps the note's letters clear of the rounded corners of its tappable block; its card is that much tighter. */
+private val NOTE_INSET = 6.dp
+

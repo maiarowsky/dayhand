@@ -103,6 +103,7 @@
     <string name="detail_repeat_reminders">Wiederholung und Erinnerungen</string>
     <string name="title_show_all">Ganzen Titel zeigen</string>
     <string name="title_show_less">Weniger zeigen</string>
+    <string name="note_show_all">Ganze Notiz anzeigen</string>
     <string name="section_expanded">Aufgeklappt</string>
     <string name="section_collapsed">Zugeklappt</string>
     <string name="detail_links">Links</string>

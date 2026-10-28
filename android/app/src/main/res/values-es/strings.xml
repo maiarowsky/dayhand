@@ -106,6 +106,7 @@
     <string name="detail_repeat_reminders">Repetición y recordatorios</string>
     <string name="title_show_all">Ver el título completo</string>
     <string name="title_show_less">Ver menos</string>
+    <string name="note_show_all">Mostrar toda la nota</string>
     <string name="section_expanded">Desplegado</string>
     <string name="section_collapsed">Plegado</string>
     <string name="detail_links">Enlaces</string>

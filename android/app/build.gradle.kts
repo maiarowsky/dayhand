@@ -43,7 +43,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = commitCount.get()
-        versionName = "0.13.2"
+        versionName = "0.13.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_SERVER_URL", "\"${defaultServerUrl.get()}\"")
 

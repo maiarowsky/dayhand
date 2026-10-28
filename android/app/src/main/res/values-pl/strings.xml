@@ -109,6 +109,7 @@
     <string name="detail_repeat_reminders">Powtarzanie i przypomnienia</string>
     <string name="title_show_all">Pokaż cały tytuł</string>
     <string name="title_show_less">Zwiń</string>
+    <string name="note_show_all">Pokaż całą notatkę</string>
     <string name="section_expanded">Rozwinięte</string>
     <string name="section_collapsed">Zwinięte</string>
     <string name="detail_links">Linki</string>

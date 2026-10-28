@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -29,11 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -104,6 +107,77 @@ internal fun ValueRow(
 }
 
 /**
+ * A labelled value in one row: the muted name, the value (with [leading] before it) and "›", so a field costs one
+ * 48 dp row. From the large text sizes on, the name goes over the value as in [ValueRow].
+ */
+@Composable
+internal fun InlineValueRow(
+    label: String,
+    value: String,
+    placeholder: Boolean,
+    editLabel: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    leading: (@Composable () -> Unit)? = null,
+) {
+    if (LocalDensity.current.fontScale >= LARGE_TEXT_SCALE) {
+        ValueRow(label, value, placeholder, editLabel, enabled, onClick, modifier, leading)
+        return
+    }
+    val p = palette
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = HelmDimens.touchTarget)
+            .clip(HelmShapes.field)
+            .clickable(enabled = enabled, onClickLabel = editLabel, role = Role.Button, onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FieldLabel(label, Modifier.padding(end = 12.dp))
+        leading?.let { it(); Spacer(Modifier.width(8.dp)) }
+        Text(value, style = helmType.valueSmall, color = if (placeholder) p.textMuted else p.text, modifier = Modifier.weight(1f))
+        if (enabled) {
+            Spacer(Modifier.width(8.dp))
+            LineIconView(LineIcon.Chevron, p.textMuted, size = 18.dp)
+        }
+    }
+}
+
+/**
+ * A value as a chip that opens its editor (the due day): an icon and the value on [background]. A screen reader hears
+ * "[name]: value" and what a tap does.
+ */
+@Composable
+internal fun ValueChip(
+    value: String,
+    name: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier,
+    background: Color = palette.surfaceRaised,
+    onClickLabel: String? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    val described = "$name: $value"
+    Row(
+        modifier
+            .heightIn(min = HelmDimens.touchTarget)
+            .clip(HelmShapes.pill)
+            .background(background)
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick) else Modifier)
+            .semantics(mergeDescendants = true) { contentDescription = described }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
+        Text(value, style = helmType.valueSmall, color = color)
+    }
+}
+
+/**
  * A section that folds: its upper-case name, a one-line [summary] of what is inside while folded, and an arrow. The
  * header is one button for a screen reader, with "expanded" or "collapsed" as its state.
  */
@@ -153,12 +227,15 @@ internal fun FoldingSection(
 /**
  * The statuses as one row of equal segments, one per line at large text sizes. The chosen one is filled with the
  * accent in dark text; the others are on the raised card colour in the text colour, so the choice shows as fill and
- * colour, not as an outline. Each segment is a radio button for a screen reader and at least 48 dp high.
+ * colour, not as an outline. Each segment is a radio button for a screen reader and at least 48 dp high; the group
+ * has no visible name, the options say what it is.
  */
 @Composable
 internal fun <T> SegmentedChoice(
     options: List<T>,
     selected: T,
+    /** What the choice is ("Status"), said by a screen reader before the options. */
+    name: String,
     label: @Composable (T) -> String,
     tag: (T) -> String,
     enabled: Boolean,
@@ -189,6 +266,8 @@ internal fun <T> SegmentedChoice(
     }
     val group = Modifier
         .fillMaxWidth()
+        .selectableGroup()
+        .semantics { contentDescription = name }
         .clip(if (stacked) HelmShapes.option else HelmShapes.pill)
         .background(p.surfaceRaised)
     if (stacked) {

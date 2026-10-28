@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.13.2 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.13.3 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
@@ -162,12 +162,16 @@ trash.
 optional time, repeat, reminders, a checklist, labels, links (http/https only; no files in version 1)
 and the note. **Project** uses the shared picker to assign or clear the task's single project;
 labels remain free tags across projects. The title takes at most two lines (**Show the whole title**
-unfolds it); status, due day, project and the task's labels (when it has any) share one card at
-the top, readable without scrolling on a 360 × 780 dp phone; the note follows; repeat and
-reminders, an empty checklist, labels and links when there are none and the history are folded under headers that show their value. Field
-names are small and muted, values larger in the text colour, and values and notes use the phone's
-sans-serif when the app font is monospaced. The chosen status is filled with the accent; actions
-are filled pills with an icon.
+unfolds it); status, the proof of completion as a short line, due day (with the time and a cross for
+no due day in the same row), project (one row) and the task's labels (when it has any) share one card
+at the top, and with the start of the note they are readable without scrolling on a 360 × 780 dp
+phone; the note follows, with a small gap between paragraphs, folded after about eight lines
+(**Show the whole note**); repeat and reminders, an empty checklist, labels and links when there are
+none and the history are folded under headers that show their value.
+The note is edited on a whole screen (`LongTextEditor`) with Cancel and Save on top above the
+keyboard; Back cancels. Field names are small and muted, values larger in the text colour, and values
+and notes use the phone's sans-serif when the app font is monospaced. The chosen status is filled
+with the accent; actions are filled pills with an icon.
 Since 0.9.1 it also shows the agent's acceptance criteria with the met ones ticked, and the proof the task was
 completed with, read-only (backend 0.10.0, [agent-work.md](../docs/agent-work.md)). The owner's own
 changes always go through. Since 0.11.0 the **Agent** card shows "agent: \<name\> works until

@@ -3,6 +3,21 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.13.3 (unreleased)
+
+### Changed
+
+- The note is edited on a whole screen instead of a narrow dialog: the text runs across the phone's width in
+  the reading font and size the details show it in (on a 360 dp phone the field is 328 dp wide, was 272 dp,
+  and a long note in the monospaced app font takes 19 lines instead of 33). **Cancel** and **Save** stay on top
+  above the keyboard, where the dialog's buttons were hidden behind it; Back still cancels.
+- Task details are more compact: the status has no separate heading, the proof of completion is a short line
+  under it instead of its own card further down, the due day, **Add a time** and a cross for no due day share
+  one row, and the project is one row. From the status to the project the card is a third lower on a 360 dp
+  phone (213 dp, was 319 dp), so the start of the note is on the first screen. The note has a small gap
+  between paragraphs and folds after about eight lines with **Show the whole note**. Cards and sections sit
+  closer together.
+
 ## 0.13.2 (unreleased)
 
 ### Fixed

@@ -17,6 +17,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
@@ -46,7 +50,8 @@ object AgentWorkTags {
  * What an agent does with the task (backend 0.10.0). An "Agent" card holds "agent: <name> works until 14:30" while a
  * claim lasts, with **End the claim** (after a confirmation) to take the task over, the blocked reason in red, the
  * tasks it waits for ("#12 Send the invoice (done)") and the plan. Below it the acceptance criteria with the ones met
- * ticked, and the proof the task was completed with. Nothing is shown for a task without any of them.
+ * ticked. Nothing is shown for a task without any of them. The proof the task was completed with is under its
+ * status ([ProofLine]).
  */
 @Composable
 internal fun AgentWorkSection(
@@ -97,7 +102,6 @@ internal fun AgentWorkSection(
             }
         }
     }
-    task.proof?.let { ProofCard(it) }
 }
 
 /** Who works on the task and until when, and the owner's way to take it over at once. */
@@ -170,17 +174,29 @@ private fun InfoRow(label: String, modifier: Modifier = Modifier, content: @Comp
     }
 }
 
+/**
+ * The proof a task was done with as short text under its status: "Proof of completion:" and the summary, then the
+ * checks ("✓ unit tests · ✗ lint", failed ones in red) and the links, all small, in the reading font.
+ */
 @Composable
-private fun ProofCard(proof: TaskProof) {
-    CardSection(stringResource(R.string.detail_proof)) {
-        Column(Modifier.testTag(AgentWorkTags.PROOF), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            proof.summary?.let { Text(it, style = helmType.body, color = palette.text) }
-            proof.checks.forEach { check ->
-                val result = stringResource(if (check.passed) R.string.proof_check_pass else R.string.proof_check_fail)
-                Text("$result  ${check.name}", style = helmType.small, color = if (check.passed) palette.text else palette.danger)
-            }
-            proof.links.forEach { link -> Text(link.title ?: link.url, style = helmType.small, color = palette.accent) }
-            if (proof.summary == null && proof.checks.isEmpty() && proof.links.isEmpty()) Placeholder(stringResource(R.string.proof_empty))
+internal fun ProofLine(proof: TaskProof) {
+    val p = palette
+    val style = helmType.small.copy(fontFamily = helmType.reading)
+    val label = stringResource(R.string.detail_proof)
+    val checks = proof.checks.map { check ->
+        stringResource(if (check.passed) R.string.proof_check_pass else R.string.proof_check_fail) + "  " + check.name to check.passed
+    }
+    val empty = stringResource(R.string.proof_empty)
+    val text = buildAnnotatedString {
+        withStyle(SpanStyle(color = p.textMuted, fontWeight = FontWeight.SemiBold)) { append("$label: ") }
+        append(proof.summary ?: if (checks.isEmpty() && proof.links.isEmpty()) empty else "")
+        checks.forEachIndexed { index, (check, passed) ->
+            if (index > 0 || proof.summary != null) append(" · ")
+            withStyle(SpanStyle(color = if (passed) p.text else p.danger)) { append(check) }
         }
+    }
+    Column(Modifier.semantics(mergeDescendants = true) {}.testTag(AgentWorkTags.PROOF), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(text, style = style, color = p.text)
+        proof.links.forEach { link -> Text(link.title ?: link.url, style = style, color = p.accent) }
     }
 }

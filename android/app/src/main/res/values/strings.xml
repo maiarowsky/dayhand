@@ -105,6 +105,7 @@
     <string name="detail_repeat_reminders">Repeat and reminders</string>
     <string name="title_show_all">Show the whole title</string>
     <string name="title_show_less">Show less</string>
+    <string name="note_show_all">Show the whole note</string>
     <string name="section_expanded">Expanded</string>
     <string name="section_collapsed">Collapsed</string>
     <string name="detail_links">Links</string>
