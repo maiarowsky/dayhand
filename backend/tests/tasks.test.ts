@@ -178,7 +178,7 @@ describe("idempotency by clientId", () => {
 });
 
 describe("views", () => {
-  test("listAll hides done/archived on request and ignores a labels filter", async () => {
+  test("listAll hides done/archived on request and refuses a labels filter", async () => {
     const user = asUser(newUserId());
     await user.mutation(internal.ops.add, { title: "home" });
     await user.mutation(internal.ops.add, { title: "work urgent" });
@@ -192,8 +192,9 @@ describe("views", () => {
     expect(await list({})).toEqual(["home", "work done", "work urgent"]);
     expect(await list({ includeDone: false })).toEqual(["home", "work urgent"]);
     expect(await list({ includeArchived: true })).toEqual(["home", "work done", "work old", "work urgent"]);
-    // A client older than 0.14.0 may still filter by labels: the filter is ignored.
-    expect(await list({ labels: ["work"] })).toEqual(["home", "work done", "work urgent"]);
+    // A client older than 0.14.0 may still filter by labels: refused, as it would match every task.
+    await expect(user.query(internal.ops.listAll, { labels: ["work"] })).rejects.toThrow(/labels were removed in 0.14.0/);
+    expect(await list({ labels: [] })).toEqual(["home", "work done", "work urgent"]);
   });
 
   test("board has three columns and flags the now task", async () => {

@@ -115,7 +115,8 @@ curl -s -X PATCH https://<name>.convex.site/api/v1/tasks/42 \
 One difference from RFC 7386: an object or list value (`repeat`, `links`, `checklist`,
 `reminders`) replaces the old one as a whole, as `update_task` does; it is not
 merged key by key. Status, now, archive and trash have their own routes. Tasks have no labels since
-0.14.0: a `labels` field or query parameter from an older client is accepted and ignored.
+0.14.0: a `labels` field in a body from an older client is accepted and ignored, and a `labels` query
+parameter of `GET /tasks` is refused with `invalid_argument` "labels were removed in 0.14.0".
 
 ### Projects
 

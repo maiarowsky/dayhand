@@ -5,7 +5,7 @@ import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
 import { isReady } from "./agentWork";
-import { fail, loadSettings, toTask, type Identity } from "./core";
+import { fail, loadSettings, refuseLabelFilter, toTask, type Identity } from "./core";
 import { isOverdue, localDate, resolveDate } from "./dates";
 import { projectFilter } from "./projectOps";
 
@@ -94,6 +94,7 @@ function matcher(input: Args, today: string, byId: Map<string, Doc<"tasks">>) {
 
 /** One page of matching tasks, oldest due first; `total` counts every match. */
 export async function findTasks(ctx: QueryCtx, identity: Identity, input: Args) {
+  refuseLabelFilter(input.labels);
   const at = input.at ?? Date.now();
   const today = localDate(at, (await loadSettings(ctx, identity.userId)).timezone);
   const limit = checkLimit(input.limit);

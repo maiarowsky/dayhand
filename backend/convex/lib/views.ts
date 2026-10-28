@@ -3,7 +3,7 @@ import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
-import { actorLabel, changeOf, loadSettings, loadTask, toTask, type Identity } from "./core";
+import { actorLabel, changeOf, loadSettings, loadTask, refuseLabelFilter, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
 import { projectFilter } from "./projectOps";
 import type { Status } from "./validators";
@@ -72,6 +72,7 @@ export async function listToday(ctx: QueryCtx, identity: Identity, input: Args<"
 
 /** Every active task. */
 export async function listAll(ctx: QueryCtx, identity: Identity, input: Args<"listAll">) {
+  refuseLabelFilter(input.labels);
   const at = input.at ?? Date.now();
   const today = localDate(at, (await loadSettings(ctx, identity.userId)).timezone);
   const tasks = await ctx.db

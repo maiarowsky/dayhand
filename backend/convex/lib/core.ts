@@ -5,6 +5,7 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { isValidDate, isValidTime, localDate, resolveDate } from "./dates";
 import { validateRepeat } from "./repeat";
+import { RETIRED_FIELDS } from "./args";
 import { RRuleError, parseRRule, toRRule } from "./rrule";
 import { queueTaskEvents } from "./webhookEvents";
 import type { Actor, ChecklistInput, ChecklistItem, Link, Reminder, RepeatInput, RepeatRule } from "./validators";
@@ -92,11 +93,19 @@ export function toTask(doc: Doc<"tasks">) {
 }
 export type TaskView = ReturnType<typeof toTask>;
 
+/** A labels filter from a client older than 0.14.0 would match every task now, so it is refused. */
+export function refuseLabelFilter(labels: readonly string[] | undefined) {
+  if (labels?.some((label) => label.trim() !== "")) fail("invalid_argument", "labels were removed in 0.14.0");
+}
+
+/** A history entry's before or after without what changes from before 0.14.0 recorded of labels (RETIRED_FIELDS). */
+export function withoutLabelFields(change: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(change).filter(([name]) => !RETIRED_FIELDS.has(name)));
+}
+
 /** A history entry's before or after as returned to clients: without the labels of changes from before 0.14.0. */
 export function changeOf(change: Record<string, unknown> | undefined): Record<string, unknown> | null {
-  if (change === undefined) return null;
-  const { labels, ...fields } = change;
-  return fields;
+  return change === undefined ? null : withoutLabelFields(change);
 }
 
 /**

@@ -30,6 +30,7 @@ const projectFilter = v.optional(v.string());
 // Since 0.14.0 a task has no labels (docs/projects.md). Older apps and agents may
 // still send them, and add_project's fromLabel and removeLabel: these fields are
 // accepted, ignored, and left out of the published schemas (lib/jsonSchema.ts).
+// A labels filter in listAll and findTasks is refused (refuseLabelFilter).
 export const RETIRED_FIELDS: ReadonlySet<string> = new Set(["labels", "fromLabel", "removeLabel"]);
 const retiredLabels = v.optional(v.array(v.string()));
 

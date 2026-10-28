@@ -45,11 +45,12 @@ describe("list_all on the server", () => {
     await client.close();
   });
 
-  test("status, due days and overdue narrow the list; labels are ignored", async () => {
+  test("status, due days and overdue narrow the list; a labels filter is refused", async () => {
     const client = await seeded();
     expect(titles(await find(client, { status: ["done"] }))).toEqual(["Paragon dla księgowej"]);
     expect(titles(await find(client, { includeDone: false }))).not.toContain("Paragon dla księgowej");
-    const unfiltered = await find(client, { labels: ["firma"] });
+    expect(await find(client, { labels: ["firma"] })).toMatchObject({ error: { code: "invalid_argument", message: "labels were removed in 0.14.0" } });
+    const unfiltered = await find(client, {});
     expect(unfiltered.total).toBe(5);
     expect(unfiltered.result.some((t: any) => "labels" in t)).toBe(false);
     expect(titles(await find(client, { query: "firma" }))).toEqual([]);

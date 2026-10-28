@@ -4,7 +4,8 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { internalMutation, internalQuery } from "./_generated/server";
-import { nextTaskRef } from "./lib/core";
+import { nextTaskRef, withoutLabelFields } from "./lib/core";
+import { RETIRED_FIELDS } from "./lib/args";
 
 const BATCH = 200;
 
@@ -97,17 +98,22 @@ export const exportLabels = internalQuery({
   },
 });
 
-/** A history entry's before or after without `labels`; undefined when nothing else was in it. */
+/** Whether a history entry's before or after holds labels, or add_project's fromLabel and removeLabel. */
+const hasLabels = (change: Record<string, unknown> | undefined) =>
+  change !== undefined && Object.keys(change).some((name) => RETIRED_FIELDS.has(name));
+
+/** A history entry's before or after without its labels; undefined when nothing else was in it. */
 function withoutLabels(change: Record<string, unknown> | undefined) {
-  if (change === undefined || !("labels" in change)) return { value: change, changed: false };
-  const { labels, ...rest } = change;
+  if (!hasLabels(change)) return { value: change, changed: false };
+  const rest = withoutLabelFields(change!);
   return { value: Object.keys(rest).length > 0 ? rest : undefined, changed: true };
 }
 
 /**
  * 0.14.0: removes the stored labels. First every task loses its `labels` field
  * (its updatedAt stays, as nothing a client shows changes), then (`events`)
- * every history entry loses `labels` from its before and after; an entry that
+ * every history entry loses `labels` (and a projectAdd entry `fromLabel` and
+ * `removeLabel`) from its before and after; an entry that
  * recorded only a label change is deleted. Nothing enters the history. Runs in
  * batches and schedules itself until both parts are done.
  */
@@ -147,54 +153,9 @@ export const dropLabels = internalMutation({
 });
 
 /**
- * Rolling 0.14.0 back (docs/deploy.md#upgrading-to-0140): puts the labels from
- * the backup back on their tasks, at most BATCH at a time
- * (scripts/labels-backup.mjs restore). A task no longer there is counted in missing.
- */
-export const restoreLabels = internalMutation({
-  args: { items: v.array(v.object({ taskId: v.string(), labels: v.array(v.string()) })) },
-  handler: async (ctx, { items }) => {
-    if (items.length > BATCH) throw new Error(`at most ${BATCH} items at a time`);
-    let restored = 0;
-    let missing = 0;
-    for (const item of items) {
-      const id = ctx.db.normalizeId("tasks", item.taskId);
-      const task = id ? await ctx.db.get(id) : null;
-      if (!task) {
-        missing++;
-        continue;
-      }
-      await ctx.db.patch(task._id, { labels: item.labels });
-      restored++;
-    }
-    return { restored, missing };
-  },
-});
-
-/**
- * Rolling back to 0.13.x, after restoreLabels: 0.13.x requires `labels` on every
- * task, so each task without the field gets an empty list. Batches, schedules itself.
- */
-export const fillEmptyLabels = internalMutation({
-  args: { cursor: cursorArg },
-  handler: async (ctx, { cursor }) => {
-    const page = await ctx.db.query("tasks").paginate({ numItems: BATCH, cursor: cursor ?? null });
-    let filled = 0;
-    for (const task of page.page) {
-      if (task.labels !== undefined) continue;
-      await ctx.db.patch(task._id, { labels: [] });
-      filled++;
-    }
-    if (!page.isDone) await ctx.scheduler.runAfter(0, internal.migrations.fillEmptyLabels, { cursor: page.continueCursor });
-    return { filled, done: page.isDone };
-  },
-});
-
-/**
  * Backfill counts reach 0 when complete; tasksWithProject and projects instead
  * count live project data. tasksWithLabels and taskEventsWithLabels reach 0 when
- * dropLabels is complete, tasksWithoutLabels when fillEmptyLabels is
- * (docs/deploy.md#upgrading-to-0140).
+ * dropLabels is complete (docs/deploy.md#upgrading-to-0140).
  */
 export const status = internalQuery({
   args: {},
@@ -202,21 +163,19 @@ export const status = internalQuery({
     let tasksWithoutRef = 0;
     let tasksWithProject = 0;
     let tasksWithLabels = 0;
-    let tasksWithoutLabels = 0;
     for await (const task of ctx.db.query("tasks")) {
       if (task.ref === undefined) tasksWithoutRef++;
       if (task.projectId !== undefined) tasksWithProject++;
-      if (task.labels === undefined) tasksWithoutLabels++;
-      else tasksWithLabels++;
+      if (task.labels !== undefined) tasksWithLabels++;
     }
     const keysWithoutKind = (await ctx.db.query("apiKeys").collect()).filter((k) => k.kind === undefined).length;
     let taskEventsWithoutSeq = 0;
     let taskEventsWithLabels = 0;
     for await (const event of ctx.db.query("taskEvents")) {
       if (event.taskId !== undefined && event.seq === undefined) taskEventsWithoutSeq++;
-      if ((event.before !== undefined && "labels" in event.before) || (event.after !== undefined && "labels" in event.after)) taskEventsWithLabels++;
+      if (hasLabels(event.before) || hasLabels(event.after)) taskEventsWithLabels++;
     }
     const projects = (await ctx.db.query("projects").collect()).length;
-    return { tasksWithoutRef, keysWithoutKind, taskEventsWithoutSeq, tasksWithProject, projects, tasksWithLabels, tasksWithoutLabels, taskEventsWithLabels };
+    return { tasksWithoutRef, keysWithoutKind, taskEventsWithoutSeq, tasksWithProject, projects, tasksWithLabels, taskEventsWithLabels };
   },
 });

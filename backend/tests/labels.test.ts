@@ -1,12 +1,12 @@
 // Labels are gone since 0.14.0 (docs/deploy.md#upgrading-to-0140): older clients
-// may still send them and are not refused, labels stored before are never shown,
-// and the migrations back them up, remove them and can put them back.
+// may still send them with a task and are not refused, a labels filter is refused,
+// labels stored before are never shown, and the migrations back them up and remove them.
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
-import { cliRunner, exportBackup, restoreBackup } from "../scripts/labels-backup.mjs";
+import { cliRunner, exportBackup } from "../scripts/labels-backup.mjs";
 import { convexCliEnv } from "../scripts/local-backend-lib.mjs";
 import { admin, appClient, asUser, callTool, createKey, helm, importRows, mcpClient, newUserId, rest } from "./helpers";
 
@@ -26,12 +26,13 @@ async function legacyPlan(userId: string) {
     { userId, taskId: plumber.id, actor: "app", action: "create", at: 1_000, seq: 1_000_000, after: { title: "Call the plumber", labels: ["home"] } },
     { userId, taskId: plumber.id, actor: "app", action: "update", at: 2_000, seq: 2_000_000, before: { labels: ["home"] }, after: { labels: ["home", "phone"] } },
     { userId, taskId: invoice.id, actor: "agent", action: "update", at: 3_000, seq: 3_000_000, before: { note: "draft", labels: [] }, after: { note: "final", labels: ["work"] } },
+    { userId, actor: "app", action: "projectAdd", at: 4_000, after: { projectId: "p-home", name: "Home", fromLabel: "home", removeLabel: true } },
   ]);
   return { user, plumber, invoice, plants: byTitle("Water the plants") };
 }
 
 describe("clients from before 0.14.0", () => {
-  test("the app's labels and fromLabel are accepted and ignored", async () => {
+  test("the app's labels and fromLabel are accepted and ignored, a labels filter is refused", async () => {
     const { client } = await appClient();
     const task: any = await client.mutation(api.app.add, { title: "Call the plumber", labels: ["home"] });
     expect(task).not.toHaveProperty("labels");
@@ -42,10 +43,11 @@ describe("clients from before 0.14.0", () => {
     expect(history[0].after).not.toHaveProperty("labels");
     const added: any = await client.mutation(api.app.addProject, { name: "Home", fromLabel: "home", removeLabel: true });
     expect(added).toEqual({ project: expect.objectContaining({ name: "Home" }) });
-    expect((await client.query(api.app.listAll, { labels: ["work"] })).map((t: any) => t.title)).toEqual(["Call the plumber"]);
+    await expect(client.query(api.app.listAll, { labels: ["work"] })).rejects.toThrow(/labels were removed in 0.14.0/);
+    expect((await client.query(api.app.listAll, { labels: [] })).map((t: any) => t.title)).toEqual(["Call the plumber"]);
   });
 
-  test("REST and MCP take labels in a body or the query string and never answer with them", async () => {
+  test("REST and MCP take labels in a body, refuse them as a filter and never answer with them", async () => {
     const userId = newUserId();
     const key = await createKey(userId, "old agent", "agent");
     const created = await rest(key, "POST", "/tasks", { body: { title: "Send the invoice", labels: ["work"] } });
@@ -56,8 +58,8 @@ describe("clients from before 0.14.0", () => {
     expect(patched.body).toMatchObject({ note: "final" });
     expect(patched.body).not.toHaveProperty("labels");
     const listed = await rest(key, "GET", "/tasks?labels=home");
-    expect(listed.status).toBe(200);
-    expect(listed.body.result.map((t: any) => t.title)).toEqual(["Send the invoice"]);
+    expect(listed.status).toBe(422);
+    expect(listed.body).toMatchObject({ code: "invalid_argument", detail: "labels were removed in 0.14.0" });
     const project = await rest(key, "POST", "/projects", { body: { name: "Office", fromLabel: "work" } });
     expect(project.status).toBe(201);
     expect(project.body).toEqual({ project: expect.objectContaining({ name: "Office" }) });
@@ -68,6 +70,8 @@ describe("clients from before 0.14.0", () => {
     const updated = await callTool(agent, "update_task", { taskId: added.id, labels: ["party"], title: "Book a venue" });
     expect(updated).toMatchObject({ title: "Book a venue" });
     expect(updated).not.toHaveProperty("labels");
+    const found = await agent.callTool({ name: "list_all", arguments: { labels: ["party"] } });
+    expect(found.structuredContent).toMatchObject({ error: { code: "invalid_argument", message: "labels were removed in 0.14.0" } });
     await agent.close();
   });
 
@@ -79,16 +83,17 @@ describe("clients from before 0.14.0", () => {
     expect(detail.task).not.toHaveProperty("labels");
     expect(detail.history.map((h: any) => [h.before, h.after])).toEqual([[{ note: "draft" }, { note: "final" }]]);
     const { content }: any = await user.query(internal.ops.exportPlan, { format: "json" });
-    expect(JSON.stringify(content)).not.toContain("labels");
+    expect(JSON.stringify(content)).not.toMatch(/labels|fromLabel|removeLabel/);
+    expect(content.events.find((e: any) => e.action === "projectAdd").after).toEqual({ projectId: "p-home", name: "Home" });
     const key = await createKey(userId, "reader", "agent");
     const events = await rest(key, "GET", "/events?since=0");
-    expect(JSON.stringify(events.body)).not.toContain("labels");
+    expect(JSON.stringify(events.body)).not.toMatch(/labels|fromLabel|removeLabel/);
   });
 });
 
 describe("the migrations of 0.14.0", () => {
   // They run over every user of the test deployment, so they come last in this file.
-  test("back up, drop and restore the labels", async () => {
+  test("back up and drop the labels", async () => {
     const userId = newUserId();
     const { user, plumber, invoice, plants } = await legacyPlan(userId);
     const raw = async () => {
@@ -109,7 +114,8 @@ describe("the migrations of 0.14.0", () => {
     // An existing backup is never overwritten.
     await expect(exportBackup(file, run)).rejects.toThrow(/EEXIST/);
 
-    // 2. Drop: tasks lose the field, history loses labels; an entry with only a label change goes.
+    // 2. Drop: tasks lose the field, history loses labels (and a project's entry fromLabel and
+    // removeLabel); an entry with only a label change goes.
     expect((await status()).tasksWithLabels).toBeGreaterThan(0);
     await admin().mutation(internal.migrations.dropLabels, {});
     await expect.poll(status, { timeout: 30_000 }).toMatchObject({ tasksWithLabels: 0, taskEventsWithLabels: 0 });
@@ -120,28 +126,5 @@ describe("the migrations of 0.14.0", () => {
     expect((await raw()).tasks.map((t: any) => t.updatedAt)).toEqual([plumber.updatedAt, invoice.updatedAt, plants.updatedAt]);
     // Running it again changes nothing.
     expect(await admin().mutation(internal.migrations.dropLabels, { events: true, cursor: null })).toMatchObject({ eventsCleared: 0, eventsDeleted: 0 });
-
-    // 3. Rolling back: the backup puts the labels back, then every other task gets an empty list.
-    expect(await restoreBackup(file, run)).toMatchObject({ restored: backup.items.length, missing: 0 });
-    await admin().mutation(internal.migrations.fillEmptyLabels, {});
-    await expect.poll(status, { timeout: 30_000 }).toMatchObject({ tasksWithoutLabels: 0 });
-    expect((await collectMine(userId)).sort()).toEqual([[1, ["home", "phone"]], [2, ["work"]]]);
-    expect(await admin().mutation(internal.migrations.restoreLabels, { items: [{ taskId: "not-a-task", labels: ["x"] }] })).toEqual({ restored: 0, missing: 1 });
-
-    // Leave the deployment without labels for the test files after this one.
-    await admin().mutation(internal.migrations.dropLabels, {});
-    await expect.poll(status, { timeout: 30_000 }).toMatchObject({ tasksWithLabels: 0 });
   }, 120_000);
 });
-
-/** The user's labelled tasks as migrations:exportLabels pages them, as [ref, labels]. */
-async function collectMine(userId: string) {
-  const found: [number, string[]][] = [];
-  let cursor: string | null = null;
-  for (;;) {
-    const page: any = await admin().query(internal.migrations.exportLabels, { cursor });
-    for (const item of page.items) if (item.userId === userId) found.push([item.ref, item.labels]);
-    if (page.done) return found;
-    cursor = page.cursor;
-  }
-}

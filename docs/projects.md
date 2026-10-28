@@ -14,7 +14,7 @@ list: there are no sub-projects or areas.
 Tasks have no labels or tags. Server 0.14.0 removed them, with the labels stored before: projects are
 the one way to sort tasks. How the upgrade backs them up and removes them:
 [Upgrading to 0.14.0](deploy.md#upgrading-to-0140). Apps and agents from before 0.14.0 may still send
-labels; the server accepts them and ignores them.
+labels with a task; the server accepts them and ignores them. A list filtered by labels is refused.
 
 ## Where projects are
 

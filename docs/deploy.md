@@ -328,16 +328,19 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 0.14.0 removes labels: a task has only its project ([Projects](projects.md)). Tasks, history entries and
 the JSON export no longer carry `labels`, `list_all` and the search no longer look at them, the calendar
 feed has no `CATEGORIES`, and `add_project` returns only `{ project }`. Clients from before 0.14.0 are not
-refused: `labels` in `add_task`, `update_task`, `list_all` and the app's `app:add`, `app:update` and
-`app:listAll`, and `fromLabel` and `removeLabel` in `add_project`, are accepted and ignored, over MCP,
-REST and the app alike. Webhook payloads lose the field too.
+refused when they write: `labels` in `add_task`, `update_task` and the app's `app:add` and `app:update`,
+and `fromLabel` and `removeLabel` in `add_project`, are accepted and ignored, over MCP, REST and the app
+alike. A `labels` filter is refused instead, so an old script never acts on every task: `list_all`
+(`GET /tasks?labels=`) and `app:listAll` answer `invalid_argument` "labels were removed in 0.14.0".
+Webhook payloads lose the field too.
 
 The labels stored before stay in the database, unseen, until `migrations:dropLabels` removes them; the
 schema keeps `labels` optional until then. It needs no new configuration.
 
 Order of the clients: Android, the Mac and Linux apps neither need the field nor fail without it, in either
 order. The `dayhand` CLI before the release that drops labels prints tables with them and fails on tasks
-without them (its `--json` output works): update the CLI before or with the server. The new CLI works with
+without them (its `--json` output works, except with `--label`, which the server refuses): update the
+CLI before or with the server. The new CLI works with
 older servers.
 
 1. Take a snapshot to roll back to: `npx convex export --path dayhand-before-0.14.0.zip`. It is the only
@@ -350,7 +353,8 @@ older servers.
    ```
    It prints how many labels of how many tasks it wrote, and never overwrites a file.
 4. Remove them: `npx convex run migrations:dropLabels`. It works in batches and schedules itself, tasks
-   first, then the history; a history entry that recorded only a label change is deleted. A task's
+   first, then the history; a history entry that recorded only a label change is deleted, and a project's
+   entry loses `fromLabel` and `removeLabel`. A task's
    `updatedAt` stays, so nothing syncs again. The first call answers `done: false` whatever the size.
 5. Wait until `npx convex run migrations:status` shows `tasksWithLabels: 0` and `taskEventsWithLabels: 0`.
    Running `dropLabels` again is harmless.
@@ -358,21 +362,9 @@ older servers.
 Once you will not roll back, a later release deletes the `labels` line from `convex/schema.ts`;
 Convex accepts that deploy only when no task has the field (step 5).
 
-Rollback: 0.13.x requires `labels` on every task, so Convex refuses to deploy it while any task lacks the
-field, and every task added with 0.14.0 lacks it. Stop every writer (the apps, agents, REST and MCP
-clients) and keep them stopped until 0.13.x is deployed. With 0.14.0 still deployed:
-
-1. If step 4 ran, put the labels back from the step 3 backup:
-   `node scripts/labels-backup.mjs restore "<backup-folder>/dayhand-labels-before-0.14.0.json"`. It
-   prints how many tasks got their labels and how many tasks of the backup no longer exist. Labels in
-   the history come back only with the snapshot.
-2. `npx convex run migrations:fillEmptyLabels` gives every other task an empty list. Wait until
-   `migrations:status` shows `tasksWithoutLabels: 0`.
-3. Deploy 0.13.x.
-
-To go back to exactly the state before the upgrade instead, restore the snapshot from step 1,
-`npx convex import --replace-all dayhand-before-0.14.0.zip` (this drops every change made since), then
-deploy 0.13.x.
+Rollback: restore the snapshot from step 1, `npx convex import --replace-all dayhand-before-0.14.0.zip`
+(this drops every change made since), then deploy 0.13.x. The labels file from step 3 stays as the record
+of the labels.
 
 ## Upgrading to 0.13.2
 
