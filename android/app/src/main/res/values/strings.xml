@@ -105,6 +105,7 @@
     <string name="detail_repeat_reminders">Repeat and reminders</string>
     <string name="title_show_all">Show the whole title</string>
     <string name="title_show_less">Show less</string>
+    <string name="note_show_all">Show the whole note</string>
     <string name="section_expanded">Expanded</string>
     <string name="section_collapsed">Collapsed</string>
     <string name="detail_links">Links</string>
@@ -192,6 +193,10 @@
     <plurals name="history_pending">
         <item quantity="one">%1$d change waits to be sent; it shows here after that.</item>
         <item quantity="other">%1$d changes wait to be sent; they show here after that.</item>
+    </plurals>
+    <plurals name="history_count">
+        <item quantity="one">%1$d change</item>
+        <item quantity="other">%1$d changes</item>
     </plurals>
     <string name="yes">yes</string>
     <string name="no">no</string>

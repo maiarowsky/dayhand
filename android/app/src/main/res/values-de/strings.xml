@@ -103,6 +103,7 @@
     <string name="detail_repeat_reminders">Wiederholung und Erinnerungen</string>
     <string name="title_show_all">Ganzen Titel zeigen</string>
     <string name="title_show_less">Weniger zeigen</string>
+    <string name="note_show_all">Ganze Notiz anzeigen</string>
     <string name="section_expanded">Aufgeklappt</string>
     <string name="section_collapsed">Zugeklappt</string>
     <string name="detail_links">Links</string>
@@ -190,6 +191,10 @@
     <plurals name="history_pending">
         <item quantity="one">%1$d Änderung wartet auf das Senden; danach erscheint sie hier.</item>
         <item quantity="other">%1$d Änderungen warten auf das Senden; danach erscheinen sie hier.</item>
+    </plurals>
+    <plurals name="history_count">
+        <item quantity="one">%1$d Änderung</item>
+        <item quantity="other">%1$d Änderungen</item>
     </plurals>
     <string name="yes">ja</string>
     <string name="no">nein</string>

@@ -107,10 +107,15 @@ Tap a task to open it. You can change its title, status, the now flag and its no
 optional time, the repeat, reminders, a checklist, labels and links (http and https only).
 
 The title shows two lines, with **Show the whole title** when it is longer. One card under it holds what
-you read most: the status, the due day (red once it has passed) with buttons to change it, the project and,
-when the task has any, its labels. The note follows. **Repeat and reminders**, an empty checklist, **Labels**
-and links when there are none (open **Labels** to add one) and **Change history** are folded, each with its current value in the header; tap a header to open it. Values
-and notes are set in the phone's own font even when the app font is the monospaced one.
+you read most: the status, the proof the task was completed with (when it has one) as a short line, the due
+day (red once it has passed; tap it to pick another) with the time and a cross for no due day in the same
+row, the project in one row and, when the task has any, its labels. The note follows, with a small gap between
+its paragraphs; a note longer than about eight lines is folded with **Show the whole note**. Tap the note to
+edit it on a whole screen: **Cancel** and **Save** stay on top above the keyboard, and Back cancels too, so
+nothing is saved without **Save**. **Repeat and reminders**, an empty checklist, **Labels** and links when
+there are none (open **Labels** to add one) and **Change history** are folded, each with its current value
+(for history, the number of changes) in the header; tap a header to open it. Values and notes are set in the
+phone's own font even when the app font is the monospaced one.
 
 - **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on a day of
   the month, the last day, or an nth weekday ("the 2nd Tuesday", "the last Friday"); counted from the
@@ -127,8 +132,8 @@ and notes are set in the phone's own font even when the app font is the monospac
   agent by name.
 
 When an agent works on a task, the details show it: "agent: *name* works until *time*" while its
-claim lasts, the acceptance criteria with the met ones ticked, and the proof the task was completed
-with ([agent work](agent-work.md)). Your own changes always go through, claim or not.
+claim lasts, the acceptance criteria with the met ones ticked, and, under the status, the proof the task
+was completed with ([agent work](agent-work.md)). Your own changes always go through, claim or not.
 
 ## Trash
 

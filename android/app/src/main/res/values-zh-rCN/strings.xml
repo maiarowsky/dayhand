@@ -100,6 +100,7 @@
     <string name="detail_repeat_reminders">重复和提醒</string>
     <string name="title_show_all">显示完整标题</string>
     <string name="title_show_less">收起</string>
+    <string name="note_show_all">显示完整备注</string>
     <string name="section_expanded">已展开</string>
     <string name="section_collapsed">已收起</string>
     <string name="detail_links">链接</string>
@@ -180,6 +181,9 @@
     <string name="history_not_on_server">任务同步到服务器后才开始记录历史。</string>
     <plurals name="history_pending">
         <item quantity="other">%1$d 项更改等待发送，发送后会显示在这里。</item>
+    </plurals>
+    <plurals name="history_count">
+        <item quantity="other">%1$d 项更改</item>
     </plurals>
     <string name="yes">是</string>
     <string name="no">否</string>

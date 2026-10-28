@@ -106,6 +106,7 @@
     <string name="detail_repeat_reminders">Répétition et rappels</string>
     <string name="title_show_all">Afficher tout le titre</string>
     <string name="title_show_less">Réduire</string>
+    <string name="note_show_all">Afficher toute la note</string>
     <string name="section_expanded">Déplié</string>
     <string name="section_collapsed">Replié</string>
     <string name="detail_links">Liens</string>
@@ -201,6 +202,11 @@
         <item quantity="one">%1$d modification attend d\'être envoyée ; elle apparaîtra ici ensuite.</item>
         <item quantity="many">%1$d modifications attendent d\'être envoyées ; elles apparaîtront ici ensuite.</item>
         <item quantity="other">%1$d modifications attendent d\'être envoyées ; elles apparaîtront ici ensuite.</item>
+    </plurals>
+    <plurals name="history_count">
+        <item quantity="one">%1$d modification</item>
+        <item quantity="many">%1$d modifications</item>
+        <item quantity="other">%1$d modifications</item>
     </plurals>
     <string name="yes">oui</string>
     <string name="no">non</string>

@@ -88,8 +88,6 @@ internal fun ChecklistSection(task: Task, editable: Boolean, actions: TaskDetail
             title = stringResource(R.string.checklist_add),
             initial = "",
             maxLength = TaskRules.MAX_TITLE,
-            singleLine = true,
-            allowEmpty = false,
             onDismiss = { adding = false },
             onSave = {
                 actions.addItem(task.localId, it)
@@ -156,8 +154,6 @@ private fun ItemDialog(
         title = stringResource(R.string.checklist_item),
         initial = item.title,
         maxLength = TaskRules.MAX_TITLE,
-        singleLine = true,
-        allowEmpty = false,
         onDismiss = onDismiss,
         onSave = onRename,
         extra = {

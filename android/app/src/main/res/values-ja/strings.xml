@@ -100,6 +100,7 @@
     <string name="detail_repeat_reminders">繰り返しとリマインダー</string>
     <string name="title_show_all">タイトルをすべて表示</string>
     <string name="title_show_less">折りたたむ</string>
+    <string name="note_show_all">メモ全体を表示</string>
     <string name="section_expanded">展開中</string>
     <string name="section_collapsed">折りたたみ中</string>
     <string name="detail_links">リンク</string>
@@ -180,6 +181,9 @@
     <string name="history_not_on_server">履歴は、このタスクがサーバーに届いてから記録されます。</string>
     <plurals name="history_pending">
         <item quantity="other">%1$d件の変更が送信待ちです。送信後にここに表示されます。</item>
+    </plurals>
+    <plurals name="history_count">
+        <item quantity="other">%1$d件の変更</item>
     </plurals>
     <string name="yes">はい</string>
     <string name="no">いいえ</string>

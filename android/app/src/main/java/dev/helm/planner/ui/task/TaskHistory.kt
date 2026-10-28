@@ -45,11 +45,20 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 
-/** Who changed what and when, newest first, folded until asked for; changes still in the outbox are counted, not listed. */
+/**
+ * Who changed what and when, newest first, folded until asked for with the number of entries in its header; changes
+ * still in the outbox are counted, not listed.
+ */
 @Composable
 fun HistorySection(state: TaskDetailUiState.Ready) {
     val today = LocalDate.parse(state.today)
-    FoldingSection(stringResource(R.string.detail_history), tag = TaskDetailTags.HISTORY, initiallyExpanded = false) {
+    val count = state.history.size
+    FoldingSection(
+        stringResource(R.string.detail_history),
+        tag = TaskDetailTags.HISTORY,
+        initiallyExpanded = false,
+        summary = if (count > 0) pluralStringResource(R.plurals.history_count, count, count) else null,
+    ) {
         if (state.pendingChanges > 0) Placeholder(pluralStringResource(R.plurals.history_pending, state.pendingChanges, state.pendingChanges))
         when (state.historyState) {
             HistoryState.NOT_ON_SERVER_YET -> Placeholder(stringResource(R.string.history_not_on_server))

@@ -137,9 +137,10 @@ class TaskDetailScreenTest {
         compose.onNodeWithTag(AgentWorkTags.criterion(0)).performScrollTo().assertTextContains("CSV opens", substring = true)
         compose.onNodeWithTag(AgentWorkTags.criterion(1)).assertTextContains("Docs updated", substring = true)
         compose.onNodeWithText(text(R.string.acceptance_title_progress, text(R.string.detail_acceptance), 1, 2), ignoreCase = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag(AgentWorkTags.PROOF).performScrollTo()
-        compose.onNodeWithText("Export shipped").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("${text(R.string.proof_check_fail)}  lint").performScrollTo().assertIsDisplayed()
+        // The proof is short text under the status, in the top card.
+        compose.onNodeWithTag(AgentWorkTags.PROOF).assertIsDisplayed()
+            .assertTextContains("${text(R.string.detail_proof)}: Export shipped", substring = true)
+            .assertTextContains("${text(R.string.proof_check_fail)}  lint", substring = true)
     }
 
     @Test
@@ -233,7 +234,7 @@ class TaskDetailScreenTest {
         compose.onNodeWithTag(EditorTags.URL).performTextReplacement("https://example.org/plan")
         compose.onNodeWithTag(EditorTags.SAVE).performClick()
 
-        compose.onNodeWithText(text(R.string.remove_due)).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithContentDescription(text(R.string.remove_due)).performScrollTo().assertHeightIsAtLeast(48.dp).performClick()
 
         assertEquals(
             listOf(

@@ -106,6 +106,7 @@
     <string name="detail_repeat_reminders">Repetición y recordatorios</string>
     <string name="title_show_all">Ver el título completo</string>
     <string name="title_show_less">Ver menos</string>
+    <string name="note_show_all">Mostrar toda la nota</string>
     <string name="section_expanded">Desplegado</string>
     <string name="section_collapsed">Plegado</string>
     <string name="detail_links">Enlaces</string>
@@ -200,6 +201,11 @@
         <item quantity="one">%1$d cambio espera a enviarse; aparecerá aquí después.</item>
         <item quantity="many">%1$d cambios esperan a enviarse; aparecerán aquí después.</item>
         <item quantity="other">%1$d cambios esperan a enviarse; aparecerán aquí después.</item>
+    </plurals>
+    <plurals name="history_count">
+        <item quantity="one">%1$d cambio</item>
+        <item quantity="many">%1$d cambios</item>
+        <item quantity="other">%1$d cambios</item>
     </plurals>
     <string name="yes">sí</string>
     <string name="no">no</string>
