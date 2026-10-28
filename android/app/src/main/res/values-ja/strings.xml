@@ -182,9 +182,6 @@
     <plurals name="history_pending">
         <item quantity="other">%1$d件の変更が送信待ちです。送信後にここに表示されます。</item>
     </plurals>
-    <plurals name="history_count">
-        <item quantity="other">%1$d件の変更</item>
-    </plurals>
     <string name="yes">はい</string>
     <string name="no">いいえ</string>
 

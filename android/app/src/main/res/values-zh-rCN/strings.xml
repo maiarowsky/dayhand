@@ -182,9 +182,6 @@
     <plurals name="history_pending">
         <item quantity="other">%1$d 项更改等待发送，发送后会显示在这里。</item>
     </plurals>
-    <plurals name="history_count">
-        <item quantity="other">%1$d 项更改</item>
-    </plurals>
     <string name="yes">是</string>
     <string name="no">否</string>
 

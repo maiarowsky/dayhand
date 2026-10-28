@@ -15,8 +15,8 @@ called Helm until 0.9.0.
   under it instead of its own card further down, the due day, **Add a time** and a cross for no due day share
   one row, and the project is one row. From the status to the project the card is a third lower on a 360 dp
   phone (213 dp, was 319 dp), so the start of the note is on the first screen. The note has a small gap
-  between paragraphs and folds after about eight lines with **Show the whole note**; **Change history** shows
-  the number of changes in its folded header. Cards and sections sit closer together.
+  between paragraphs and folds after about eight lines with **Show the whole note**. Cards and sections sit
+  closer together.
 
 ## 0.13.2 (unreleased)
 

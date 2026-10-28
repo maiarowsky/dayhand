@@ -203,11 +203,6 @@
         <item quantity="many">%1$d alterações aguardam envio; elas aparecem aqui depois disso.</item>
         <item quantity="other">%1$d alterações aguardam envio; elas aparecem aqui depois disso.</item>
     </plurals>
-    <plurals name="history_count">
-        <item quantity="one">%1$d alteração</item>
-        <item quantity="many">%1$d alterações</item>
-        <item quantity="other">%1$d alterações</item>
-    </plurals>
     <string name="yes">sim</string>
     <string name="no">não</string>
 

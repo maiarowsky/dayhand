@@ -194,10 +194,6 @@
         <item quantity="one">%1$d change waits to be sent; it shows here after that.</item>
         <item quantity="other">%1$d changes wait to be sent; they show here after that.</item>
     </plurals>
-    <plurals name="history_count">
-        <item quantity="one">%1$d change</item>
-        <item quantity="other">%1$d changes</item>
-    </plurals>
     <string name="yes">yes</string>
     <string name="no">no</string>
 

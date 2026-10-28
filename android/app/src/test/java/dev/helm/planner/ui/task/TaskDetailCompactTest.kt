@@ -174,9 +174,11 @@ class TaskDetailCompactTest {
         compose.onNodeWithTag(EditorTags.LONG_TEXT).assertIsDisplayed()
     }
 
-    @Test fun historyIsFoldedWithTheNumberOfEntries() {
+    @Test fun historyIsFoldedUnderItsNameAlone() {
         show()
-        compose.onNodeWithText(context.resources.getQuantityString(R.plurals.history_count, 3, 3)).performScrollTo().assertIsDisplayed()
+        val header = compose.onNodeWithTag("${TaskDetailTags.HISTORY}-header").performScrollTo().assertIsDisplayed()
+        val texts = header.fetchSemanticsNode().config[SemanticsProperties.Text].map { it.text }
+        assertEquals(listOf(text(R.string.detail_history).uppercase()), texts.map { it.uppercase() })
         compose.onNodeWithTag(TaskDetailTags.HISTORY).assertDoesNotExist()
     }
 

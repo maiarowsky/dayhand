@@ -167,7 +167,7 @@ no due day in the same row), project (one row) and the task's labels (when it ha
 at the top, and with the start of the note they are readable without scrolling on a 360 × 780 dp
 phone; the note follows, with a small gap between paragraphs, folded after about eight lines
 (**Show the whole note**); repeat and reminders, an empty checklist, labels and links when there are
-none and the history (with its number of changes) are folded under headers that show their value.
+none and the history are folded under headers that show their value.
 The note is edited on a whole screen (`LongTextEditor`) with Cancel and Save on top above the
 keyboard; Back cancels. Field names are small and muted, values larger in the text colour, and values
 and notes use the phone's sans-serif when the app font is monospaced. The chosen status is filled

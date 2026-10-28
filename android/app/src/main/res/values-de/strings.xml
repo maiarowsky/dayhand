@@ -192,10 +192,6 @@
         <item quantity="one">%1$d Änderung wartet auf das Senden; danach erscheint sie hier.</item>
         <item quantity="other">%1$d Änderungen warten auf das Senden; danach erscheinen sie hier.</item>
     </plurals>
-    <plurals name="history_count">
-        <item quantity="one">%1$d Änderung</item>
-        <item quantity="other">%1$d Änderungen</item>
-    </plurals>
     <string name="yes">ja</string>
     <string name="no">nein</string>
 

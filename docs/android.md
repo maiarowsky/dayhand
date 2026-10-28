@@ -114,7 +114,7 @@ its paragraphs; a note longer than about eight lines is folded with **Show the w
 edit it on a whole screen: **Cancel** and **Save** stay on top above the keyboard, and Back cancels too, so
 nothing is saved without **Save**. **Repeat and reminders**, an empty checklist, **Labels** and links when
 there are none (open **Labels** to add one) and **Change history** are folded, each with its current value
-(for history, the number of changes) in the header; tap a header to open it. Values and notes are set in the
+in the header; tap a header to open it. Values and notes are set in the
 phone's own font even when the app font is the monospaced one.
 
 - **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on a day of
