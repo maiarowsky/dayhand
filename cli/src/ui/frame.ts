@@ -143,8 +143,8 @@ function promptPreview(mode: Extract<Mode, { kind: "prompt" }>, s: Snapshot): Ro
   if (!text) return [seg(t("prompt.addExample"), { dim: true })];
   const parsed = parseQuickAdd(text, context, s.data.projects);
   const due = parsed.due === undefined ? { date: mode.date ?? s.today } : parsed.due;
-  const labels = [parsed.project ? `+${projectToken(parsed.project)}` : "", ...parsed.labels.map((l) => `#${l}`), ...(parsed.unknownProjects ?? []).map((token) => `? ${token}`)].filter(Boolean).join(" ");
-  return [seg(`→ ${whenText(due, s.today)}${labels ? ` ${labels}` : ""}${mode.status ? t("prompt.doing") : ""}`, { color: parsed.title ? "green" : "red" })];
+  const projects = [parsed.project ? `+${projectToken(parsed.project)}` : "", ...(parsed.unknownProjects ?? []).map((token) => `? ${token}`)].filter(Boolean).join(" ");
+  return [seg(`→ ${whenText(due, s.today)}${projects ? ` ${projects}` : ""}${mode.status ? t("prompt.doing") : ""}`, { color: parsed.title ? "green" : "red" })];
 }
 
 function statusRow(s: Snapshot): Row {

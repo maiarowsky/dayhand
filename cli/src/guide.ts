@@ -19,9 +19,9 @@ export const AGENT_RULES: string[] = [
 export const AGENT_COMMANDS: [string, string][] = [
   ["dayhand prime --json", "Session start: Today plus your claims, approvals waiting, ready tasks and next steps"],
   ["dayhand today --json", "Today: now task with its resume note, overdue, today, done today"],
-  ["dayhand list --json --status todo,doing --search <text>", "Find tasks on the server (also --overdue, --due-before eow, -l <label>, --limit, --cursor)"],
+  ["dayhand list --json --status todo,doing --search <text>", "Find tasks on the server (also --overdue, --due-before eow, -p <project>, --limit, --cursor)"],
   ["dayhand show <ref> --json", "One task with its history"],
-  ['dayhand add "<title>" --due "fri 14:00" -l <label> --json', "Add a task (due today unless --due or --no-due)"],
+  ['dayhand add "<title>" --due "fri 14:00" -p <project> --json', "Add a task (due today unless --due or --no-due)"],
   ["dayhand now <ref> --note \"<next step>\" --json", "Make a task the now task and leave a resume note"],
   ["dayhand note <ref> \"<text>\" --json", "Append to a task's note"],
   ["dayhand move <ref> <when> --json", "Reschedule (none removes the date)"],

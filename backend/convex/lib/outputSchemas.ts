@@ -1903,7 +1903,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "project": {
     "title": "Project",
-    "description": "A project as update_project returns it (since 0.13.1); list_projects adds counts. A task is in at most one project (its projectId); labels are free tags across projects. Fields that are not set are left out. Fields may be added; none are removed or retyped within a major version.",
+    "description": "A project as update_project returns it (since 0.13.1); list_projects adds counts. A task is in at most one project (its projectId). Fields that are not set are left out. Fields may be added; none are removed or retyped within a major version.",
     "type": "object",
     "required": [
       "id",
@@ -1975,49 +1975,14 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
   },
   "project-added": {
     "title": "Added project",
-    "description": "add_project: the new project and, with fromLabel, the label's tasks that moved into it and those left where they were; with dryRun what it would do (since 0.13.1). A retry with the same clientId returns the project and the tasks moved the first time, with skipped empty. Fields may be added.",
+    "description": "add_project: the new project; with dryRun what it would be (since 0.13.1). A retry with the same clientId returns the project. Since 0.14.0 there are no labels, so no tasks move in (moved and skipped are gone). Fields may be added.",
     "type": "object",
     "required": [
-      "project",
-      "moved",
-      "skipped"
+      "project"
     ],
     "properties": {
       "project": {
         "$ref": "#/$defs/project"
-      },
-      "moved": {
-        "type": "array",
-        "description": "Tasks that moved into the project; empty without fromLabel",
-        "items": {
-          "$ref": "#/$defs/task-ref"
-        }
-      },
-      "skipped": {
-        "type": "array",
-        "description": "Tasks with the label that stayed where they were: already in a project (with its projectId), or claimed by another agent",
-        "items": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/task-ref"
-            },
-            {
-              "type": "object",
-              "required": [
-                "reason"
-              ],
-              "properties": {
-                "projectId": {
-                  "type": "string",
-                  "description": "The project the task is in"
-                },
-                "reason": {
-                  "type": "string"
-                }
-              }
-            }
-          ]
-        }
       }
     }
   },
@@ -2239,7 +2204,6 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       "title",
       "status",
       "isNow",
-      "labels",
       "links",
       "createdAt",
       "updatedAt"
@@ -2354,13 +2318,6 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
       "rrule": {
         "type": "string",
         "description": "The repeat rule as an RFC 5545 RRULE value, e.g. FREQ=WEEKLY;BYDAY=MO,TH; only on repeating tasks"
-      },
-      "labels": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Free tags across projects; the task's project is projectId"
       },
       "projectId": {
         "type": "string",

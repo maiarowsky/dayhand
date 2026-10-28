@@ -147,7 +147,7 @@ empty plan**, or **Try with sample data** (one tap removes it). Today with quick
 phrase at the end sets the day: `Call the accountant fri 2pm`), the week
 and day calendar, the board, the Projects tab, task details with repeats, checklists and reminders, the morning
 summary and a backup file (**Settings → Data → Backup**) all work there; making and changing
-projects needs a server ([projects and labels](docs/projects.md)). Without a server the
+projects needs a server ([projects](docs/projects.md)). Without a server the
 plan lives only on the phone: Android backups are off for Dayhand, so keep a backup file.
 
 To sync the phone, the CLI and your agents, connect it to your own server: **Settings → Server →

@@ -8694,7 +8694,7 @@
       }
     },
     "Details" : {
-      "comment" : "Task panel: the part with day, reminders, repeat, labels and project",
+      "comment" : "Task panel: the part with day, reminders, repeat and project",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -11926,60 +11926,6 @@
         }
       }
     },
-    "Labels" : {
-      "comment" : "The task's labels",
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Labels"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Labels"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etiquetas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Étiquettes"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ラベル"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etykiety"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etiquetas"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "标签"
-          }
-        }
-      }
-    },
     "Language" : {
       "comment" : "Settings section and picker",
       "extractionState" : "manual",
@@ -14789,7 +14735,7 @@
       }
     },
     "No tasks here yet." : {
-      "comment" : "Empty list (all tasks, a label)",
+      "comment" : "Empty list (all tasks, a project)",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -23020,60 +22966,6 @@
         }
       }
     },
-    "There are too many labels, or one is too long." : {
-      "comment" : "Error",
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Es sind zu viele Labels, oder eines ist zu lang."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There are too many labels, or one is too long."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hay demasiadas etiquetas o alguna es demasiado larga."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il y a trop d’étiquettes, ou l’une est trop longue."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ラベルが多すぎるか、長すぎるものがあります。"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etykiet jest za dużo albo któraś jest za długa."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Há etiquetas demais, ou uma é longa demais."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "标签太多，或某个标签太长。"
-          }
-        }
-      }
-    },
     "There can be at most %lld projects, archived ones included." : {
       "comment" : "Error when the project limit is reached; the number is the limit",
       "extractionState" : "manual",
@@ -26298,60 +26190,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "来自“%@”"
-          }
-        }
-      }
-    },
-    "home, work" : {
-      "comment" : "Placeholder of the labels field: example labels separated by commas",
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zuhause, Arbeit"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "home, work"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "casa, trabajo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "maison, travail"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "家, 仕事"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dom, praca"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "casa, trabalho"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "家, 工作"
           }
         }
       }

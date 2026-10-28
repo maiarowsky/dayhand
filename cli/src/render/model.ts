@@ -27,7 +27,6 @@ export type Task = {
   resumeNote?: string;
   repeat?: Repeat;
   rrule?: string;
-  labels: string[];
   projectId?: string;
   /** Resolved only for human output or explicit --fields project. */
   project?: string;
@@ -85,7 +84,6 @@ export const TASK_FIELDS = [
   "resumeNote",
   "repeat",
   "rrule",
-  "labels",
   "project",
   "projectId",
   "links",

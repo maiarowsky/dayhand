@@ -70,8 +70,7 @@ status: In Progress
 assignee: []
 created_date: '2026-10-01 09:00'
 updated_date: '2026-10-02 10:30'
-labels:
-  - ops
+labels: []
 dependencies:
   - TASK-3
 references:
@@ -109,7 +108,6 @@ project's statuses in order, `["To Do", "In Progress", "Done"]` unless set.
 | `id` | the task's `source`: `{ kind: "backlog-md", ref: "TASK-12" }`, normalized to uppercase for case-insensitive identity; a file without an id is skipped with a reason |
 | `title` | `title` |
 | `status` | the nearest status: the project's first status is `todo`, its last is `done`, any between is `doing`. A status the project does not list is read by affirmative whole words (`done`, `completed`, `closed`, … → `done`; `progress`, `review`, … → `doing`). Embedded words and negated labels such as `Incomplete`, `Unfinished` or `Not Started` stay `todo`; all unrecognized labels carry a warning |
-| `labels` | `labels` |
 | `dependencies` | `dependsOn`: the tasks the same import made, or an earlier one (by source). A dependency found in neither is left out with a warning |
 | `references` | web addresses become `links` (up to 20); the rest go to the end of the note under "References:" |
 | Description, and text before the first section | `note` |
@@ -124,7 +122,7 @@ project's statuses in order, `["To Do", "In Progress", "Done"]` unless set.
 
 Left out, with the reason in the report: files that are not Markdown, files without a YAML header
 or an id or title, documents, decisions, milestones and archived drafts, and a second file with an id
-already given in the same import. Header keys Dayhand has no field for (`assignee`, `priority`,
+already given in the same import. Header keys Dayhand has no field for (`assignee`, `labels`, `priority`,
 `milestone`, `parent_task_id` and the like) are counted in one warning; `ordinal`, the order on
 the board, is ignored.
 
@@ -161,7 +159,7 @@ Decisions:
 |---|---|
 | a task from Backlog.md with an id matching `PREFIX-number` (optional dotted subnumbers), where the prefix starts with a letter and contains only letters and digits | its own id; otherwise `<PREFIX>-<number>` (`TASK-12` for #12, `--prefix` changes the prefix), a proposal `DRAFT-<number>`; an id already taken gets the next free number |
 | `status` | `To Do`, `In Progress` or `Done`, the statuses of the `config.yml` it writes |
-| `labels`, `dependsOn` | `labels`, `dependencies` (dependencies on tasks not exported are left out, and counted) |
+| `dependsOn` | `dependencies` (dependencies on tasks not exported are left out, and counted); `labels` is always empty |
 | `links` | `references` |
 | `note`, then the checklist as `- [ ]` lines | Description |
 | `acceptance` | Acceptance Criteria, ticked as in Dayhand |
@@ -180,7 +178,7 @@ exported files, including `config.yml`; it does not reconcile another project's 
 or delete unrelated files. Destination, task-directory and file symlinks are refused, including
 dangling file symlinks.
 
-An export imported into another Dayhand account keeps titles, statuses, labels, criteria, plan,
+An export imported into another Dayhand account keeps titles, statuses, criteria, plan,
 dependencies and link URLs when the flattened fields fit the import limits. Proof links and check
 results become text in the final summary, not structured proof fields; the note gains the checklist
 and the notes section as text. Export never truncates that text: its `notes` identify

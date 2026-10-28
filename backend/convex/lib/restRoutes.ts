@@ -105,7 +105,7 @@ export const TOOL_ROUTES: ToolRoute[] = [
   },
   // Since 0.13.1: projects. No ETag or If-Match: the last change wins.
   { method: "GET", path: "/projects", tool: "list_projects", input: "query", operationId: "listProjects", tag: projects, scope: "read", summary: "Projects in menu order, with the counts of their tasks" },
-  { method: "POST", path: "/projects", tool: "add_project", input: "body", operationId: "createProject", tag: projects, scope: "write", status: 201, summary: "Add a project (fromLabel makes it from a label)" },
+  { method: "POST", path: "/projects", tool: "add_project", input: "body", operationId: "createProject", tag: projects, scope: "write", status: 201, summary: "Add a project" },
   {
     method: "PATCH", path: "/projects/{projectId}", tool: "update_project", input: "body", operationId: "updateProject", tag: projects, scope: "write",
     summary: "Change, archive or restore a project (JSON Merge Patch: null clears a field)",

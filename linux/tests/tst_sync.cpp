@@ -12,6 +12,8 @@
 #include "TestSupport.h"
 
 #include <QSignalSpy>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QTest>
 
@@ -108,7 +110,8 @@ private slots:
 
     void remoteTasksAreReadWithNumbersAsDoubles()
     {
-        // moc cannot read a raw string literal that spans lines, so this one is spelled out.
+        // moc cannot read a raw string literal that spans lines, so this one is spelled out. The labels are what an
+        // older server may still send; the app has no labels and reads the task without them.
         const QByteArray sample = "{\"id\":\"s1\",\"clientId\":\"c1\",\"title\":\"T\",\"status\":\"doing\",\"isNow\":true,"
                                   "\"createdAt\":1.0,\"updatedAt\":2.0,\"repeat\":{\"every\":\"month\",\"interval\":1.0,"
                                   "\"weekdayOfMonth\":{\"nth\":-1.0,\"weekday\":5.0}},"
@@ -120,7 +123,64 @@ private slots:
         QCOMPARE(t->repeat->weekdayOfMonth, (WeekdayOfMonth{-1, 5}));
         QCOMPARE(t->reminders, (QList<TaskReminder>{TaskReminder::before(15), TaskReminder::at(u"18:00"_s, 1)}));
         QCOMPARE(t->updatedAt, 2);
+        QCOMPARE(t->links.size(), 1);
         QVERIFY(t->isNow);
+    }
+
+    void aVersion1DatabaseLosesItsLabelsAndKeepsTheRest()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath(u"dayhand.sqlite"_s);
+        {
+            // The schema and data as version 1 of the app left them, labels included.
+            QSqlDatabase old = QSqlDatabase::addDatabase(u"QSQLITE"_s, u"version-1"_s);
+            old.setDatabaseName(path);
+            QVERIFY(old.open());
+            QSqlQuery q(old);
+            for (const QString &sql : {
+                     u"CREATE TABLE task (localId TEXT PRIMARY KEY NOT NULL, serverId TEXT UNIQUE, clientId TEXT,"
+                     " title TEXT NOT NULL, note TEXT, dueDate TEXT, dueTime TEXT, status TEXT NOT NULL,"
+                     " isNow INTEGER NOT NULL DEFAULT 0, resumeNote TEXT, completedAt INTEGER, archivedAt INTEGER,"
+                     " createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL, serverUpdatedAt INTEGER, repeat TEXT,"
+                     " labels TEXT NOT NULL DEFAULT '[]', links TEXT NOT NULL DEFAULT '[]', deletedAt INTEGER,"
+                     " checklist TEXT NOT NULL DEFAULT '[]', reminders TEXT)"_s,
+                     u"CREATE INDEX task_clientId ON task (clientId)"_s,
+                     u"CREATE TABLE outbox (seq INTEGER PRIMARY KEY AUTOINCREMENT, opId TEXT NOT NULL UNIQUE,"
+                     " mutation TEXT NOT NULL, argsJson TEXT NOT NULL, taskLocalId TEXT, clientId TEXT NOT NULL,"
+                     " createdAt INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, lastError TEXT)"_s,
+                     u"CREATE INDEX outbox_taskLocalId ON outbox (taskLocalId)"_s,
+                     u"CREATE TABLE meta (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)"_s,
+                     u"INSERT INTO task (localId, serverId, title, status, createdAt, updatedAt, labels, links, checklist)"
+                     " VALUES ('a', 's1', 'Water the plants', 'todo', 1, 2, '[\"home\"]',"
+                     " '[{\"url\":\"https://example.com\"}]', '[{\"id\":\"c1\",\"title\":\"Can\",\"done\":false}]')"_s,
+                     u"INSERT INTO outbox (opId, mutation, argsJson, taskLocalId, clientId, createdAt)"
+                     " VALUES ('op1', 'app:update', '{\"labels\":[\"home\"]}', 'a', 'c', 3)"_s,
+                     u"PRAGMA user_version = 1"_s})
+                QVERIFY2(q.exec(sql), qPrintable(q.lastError().text()));
+            q = QSqlQuery();
+            old.close();
+        }
+        QSqlDatabase::removeDatabase(u"version-1"_s);
+
+        auto database = Database::open(path);
+        QSqlQuery q(database->handle());
+        QVERIFY(q.exec(u"PRAGMA user_version"_s) && q.next());
+        QCOMPARE(q.value(0).toInt(), Database::schemaVersion);
+        QStringList columns;
+        QVERIFY(q.exec(u"PRAGMA table_info(task)"_s));
+        while (q.next())
+            columns.append(q.value(1).toString());
+        QVERIFY(!columns.contains(u"labels"_s));
+        QVERIFY(columns.contains(u"links"_s));
+        const auto task = database->task(u"a"_s);
+        QVERIFY(task);
+        QCOMPARE(task->title, u"Water the plants"_s);
+        QCOMPARE(task->links, (QList<TaskLink>{TaskLink{u"https://example.com"_s, std::nullopt}}));
+        QCOMPARE(task->checklist.size(), 1);
+        // A change queued before the upgrade still waits; the server ignores its labels.
+        QCOMPARE(database->pendingCount(), 1);
+        database->save(*task);
+        QCOMPARE(database->tasks().size(), 1);
     }
 
     void withoutAServerTheDayFollowsThisComputersZoneUntilTheServerSendsItsSettings()
@@ -189,7 +249,6 @@ private slots:
         w.server.offline = true;
         TaskRepository &repo = w.local.repo;
         repo.rename(id, u"Synthetic edited task"_s);
-        repo.setLabels(id, {u" work "_s, u"linux"_s, u"work"_s, QString()});
         repo.setChecklist(id, {{u"stable-1"_s, u" Build "_s, false}});
         repo.setChecklist(id, {{u"stable-1"_s, u"Verify build"_s, true}, {u"stable-2"_s, u"Ship"_s, false}});
         repo.setChecklist(id, {{u"stable-1"_s, u"Verify build"_s, true}});
@@ -201,20 +260,20 @@ private slots:
         repo.setDue(id, u"2026-10-24"_s, std::nullopt);
         repo.setDue(id, std::nullopt, std::nullopt);
         const QStringList expected{Mutations::update, Mutations::update, Mutations::update, Mutations::update,
-                                   Mutations::update, Mutations::update, Mutations::setStatus, Mutations::setNow,
-                                   Mutations::update, Mutations::update, Mutations::update, Mutations::update};
+                                   Mutations::update, Mutations::setStatus, Mutations::setNow, Mutations::update,
+                                   Mutations::update, Mutations::update, Mutations::update};
         QCOMPARE(mutations(repo.pendingOps()), expected);
         const TaskItem edited = *repo.task(id);
         QCOMPARE(edited.title, u"Synthetic edited task"_s);
-        QCOMPARE(edited.labels, (QStringList{u"work"_s, u"linux"_s}));
         QCOMPARE(edited.checklist, (QList<ChecklistItem>{{u"stable-1"_s, u"Verify build"_s, true}}));
         QVERIFY(edited.isNow);
         QCOMPARE(edited.status, TaskStatus::Doing);
         QVERIFY(!edited.dueDate);
         QVERIFY(!edited.dueTime);
         const auto pending = repo.pendingOps();
-        QCOMPARE(json::decode(pending[1].argsJson)[u"labels"], QJsonValue(QJsonArray{u"work"_s, u"linux"_s}));
-        QCOMPARE(json::decode(pending[4].argsJson)[u"checklist"][0][u"id"].toString(), u"stable-1"_s);
+        QCOMPARE(json::decode(pending[3].argsJson)[u"checklist"][0][u"id"].toString(), u"stable-1"_s);
+        for (const auto &op : pending)
+            QVERIFY2(!json::decode(op.argsJson).toObject().contains(u"labels"), qPrintable(op.argsJson));
         QVERIFY(json::decode(pending.last().argsJson)[u"dueDate"].isNull());
         QVERIFY(json::decode(pending.last().argsJson)[u"dueTime"].isNull());
         QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Offline);
@@ -227,7 +286,6 @@ private slots:
         w.server.failNextMutation = true;
         QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Offline);
         QCOMPARE(repo.task(id)->title, edited.title);
-        QCOMPARE(repo.task(id)->labels, edited.labels);
         QCOMPARE(repo.task(id)->checklist, edited.checklist);
         QCOMPARE(repo.task(id)->note, edited.note);
         QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
@@ -235,7 +293,7 @@ private slots:
         QCOMPARE(w.server.mutationsSent().last(expected.size()), expected);
         const auto onServer = w.server.taskTitled(edited.title);
         QVERIFY(onServer);
-        QCOMPARE((*onServer)[u"labels"], QJsonValue(QJsonArray{u"work"_s, u"linux"_s}));
+        QVERIFY(!onServer->contains(u"labels"));
         QCOMPARE((*onServer)[u"checklist"], QJsonValue(QJsonArray{edited.checklist.first().wire()}));
         QCOMPARE((*onServer)[u"note"].toString(), *edited.note);
         QCOMPARE((*onServer)[u"resumeNote"].toString(), *edited.resumeNote);
@@ -243,7 +301,6 @@ private slots:
         QVERIFY((*onServer)[u"isNow"].toBool());
         QVERIFY(!onServer->contains(u"dueDate"));
         QVERIFY(!onServer->contains(u"dueTime"));
-        QCOMPARE(repo.task(id)->labels, edited.labels);
         QCOMPARE(repo.task(id)->checklist, edited.checklist);
 
         repo.setStatus(id, TaskStatus::Done);
@@ -253,13 +310,11 @@ private slots:
         repo.setStatus(id, TaskStatus::Todo);
         QVERIFY(!repo.task(id)->completedAt);
         repo.setNote(id, QString());
-        repo.setLabels(id, {});
         repo.setChecklist(id, {});
         QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
         const auto cleared = w.server.taskTitled(edited.title);
         QVERIFY(cleared);
         QVERIFY(!cleared->contains(u"note"));
-        QVERIFY((*cleared)[u"labels"].toArray().isEmpty());
         QVERIFY((*cleared)[u"checklist"].toArray().isEmpty());
         QCOMPARE((*cleared)[u"status"].toString(), u"todo"_s);
     }
@@ -269,11 +324,6 @@ private slots:
         Local l;
         const TaskItem task = l.repo.add(u"Synthetic"_s, std::nullopt, std::nullopt);
         QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setNote(task.localId, QString(TaskRules::maxNote + 1, u'x')));
-        QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setLabels(task.localId, {QString(TaskRules::maxLabel + 1, u'x')}));
-        QStringList labels;
-        for (int n = 0; n <= TaskRules::maxLabels; ++n)
-            labels.append(QString::number(n));
-        QVERIFY_THROWS_EXCEPTION(InvalidChange, l.repo.setLabels(task.localId, labels));
         QVERIFY_THROWS_EXCEPTION(InvalidChange,
                                 l.repo.setChecklist(task.localId, {{u"same"_s, u"A"_s, false}, {u"same"_s, u"B"_s, false}}));
         QList<ChecklistItem> items;
@@ -309,7 +359,6 @@ private slots:
         l.repo.moveToTrash(t.localId);
         l.repo.rename(t.localId, u"Ignored"_s);
         l.repo.setNote(t.localId, u"Ignored"_s);
-        l.repo.setLabels(t.localId, {u"ignored"_s});
         l.repo.setChecklist(t.localId, {{u"item"_s, u"Ignored"_s, false}});
         l.repo.setStatus(t.localId, TaskStatus::Doing);
         l.repo.setNow(t.localId);
@@ -317,7 +366,6 @@ private slots:
         l.repo.setResumeNote(t.localId, u"Ignored"_s);
         QCOMPARE(l.repo.task(t.localId)->title, u"T"_s);
         QVERIFY(!l.repo.task(t.localId)->note);
-        QVERIFY(l.repo.task(t.localId)->labels.isEmpty());
         QVERIFY(l.repo.task(t.localId)->checklist.isEmpty());
         QCOMPARE(l.repo.task(t.localId)->status, TaskStatus::Todo);
         QVERIFY(!l.repo.task(t.localId)->isNow);

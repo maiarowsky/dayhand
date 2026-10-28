@@ -4,7 +4,7 @@ import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
-import { loadSettings, toTask, type Identity } from "./core";
+import { changeOf, loadSettings, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
 import { renderCalendar } from "./ical";
 import { allProjects, toProject } from "./projectOps";
@@ -13,7 +13,7 @@ import type { Reminder } from "./validators";
 
 export const EXPORT_VERSION = 1;
 
-/** A project name as a Markdown tag: "+Bakery-website" (since 0.13.0, next to the #labels). */
+/** A project name as a Markdown tag: "+Bakery-website" (since 0.13.0). */
 const projectTag = (name: string) => `+${name.replace(/\s+/g, "-")}`;
 
 function taskLine(task: Doc<"tasks">, timezone: string, projectNames: Map<string, string>): string {
@@ -28,7 +28,6 @@ function taskLine(task: Doc<"tasks">, timezone: string, projectNames: Map<string
   }
   const project = task.projectId === undefined ? undefined : projectNames.get(task.projectId);
   if (project !== undefined) parts.push(projectTag(project));
-  parts.push(...task.labels.map((label) => `#${label.replace(/\s+/g, "-")}`));
   const lines = [parts.join(" ")];
   if (task.resumeNote) lines.push(`  - Next step: ${task.resumeNote}`);
   for (const item of task.checklist ?? []) lines.push(`  - ${item.done ? "[x]" : "[ ]"} ${item.title}`);
@@ -101,7 +100,11 @@ export async function exportPlan(ctx: QueryCtx, identity: Identity, input: Args)
       // Since 0.13.0, in menu order; tasks name theirs by projectId. Version 1 still: an older import ignores them.
       projects: projects.map(toProject),
       tasks: tasks.map(toTask),
-      events: events.map(({ _id, _creationTime, userId, ...event }) => event),
+      events: events.map(({ _id, _creationTime, userId, before, after, ...event }) => ({
+        ...event,
+        ...(before === undefined ? {} : { before: changeOf(before) }),
+        ...(after === undefined ? {} : { after: changeOf(after) }),
+      })),
     },
   };
 }

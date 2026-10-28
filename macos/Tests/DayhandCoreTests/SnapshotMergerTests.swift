@@ -101,28 +101,34 @@ struct SnapshotMergerTests {
         #expect(Set(plan.deletes) == ["gone", "orphan"])
     }
 
-    @Test func repeatLabelsLinksAndTheTrashComeFromTheServer() throws {
+    @Test func repeatLinksAndTheTrashComeFromTheServer() throws {
         let server = remote("s1", 10) {
             $0.repeat = RepeatRule(every: .week, weekdays: [1, 4])
-            $0.labels = ["home", "Helm"]
             $0.links = [TaskLink(url: "https://example.com", title: "Spec")]
             $0.deletedAt = 7
         }
         let task = try single(SnapshotMerger.merge(local: [], pending: [], remote: [server], nowMs: now))
         #expect(task.repeat == RepeatRule(every: .week, weekdays: [1, 4]))
-        #expect(task.labels == ["home", "Helm"])
         #expect(task.links == [TaskLink(url: "https://example.com", title: "Spec")])
         #expect(task.deletedAt == 7)
     }
 
-    @Test func aWaitingLabelChangeKeepsTheLabelsLocalAndOnlyThem() throws {
-        let local = row("a", "s1", 10) { $0.labels = ["mine"]; $0.title = "Old" }
-        let server = remote("s1", 20) { $0.labels = ["agent"]; $0.title = "Renamed"; $0.links = [TaskLink(url: "https://a.pl")] }
+    @Test func aWaitingLinksChangeKeepsTheLinksLocalAndOnlyThem() throws {
+        let local = row("a", "s1", 10) { $0.links = [TaskLink(url: "https://mine.example")]; $0.title = "Old" }
+        let server = remote("s1", 20) { $0.links = [TaskLink(url: "https://agent.example")]; $0.title = "Renamed"; $0.note = "agent note" }
+        let pending = op(Mutations.update, "a", #"{"links":[{"url":"https://mine.example"}],"clientId":"c"}"#)
+        let merged = try single(SnapshotMerger.merge(local: [local], pending: [pending], remote: [server], nowMs: now))
+        #expect(merged.links == [TaskLink(url: "https://mine.example")])
+        #expect(merged.title == "Renamed")
+        #expect(merged.note == "agent note")
+    }
+
+    @Test func aLabelsChangeQueuedBeforeLabelsWentHoldsBackNoField() throws {
+        let local = row("a", "s1", 10) { $0.title = "Old" }
+        let server = remote("s1", 20) { $0.title = "Renamed" }
         let pending = op(Mutations.update, "a", #"{"labels":["mine"],"clientId":"c"}"#)
         let merged = try single(SnapshotMerger.merge(local: [local], pending: [pending], remote: [server], nowMs: now))
-        #expect(merged.labels == ["mine"])
         #expect(merged.title == "Renamed")
-        #expect(merged.links == [TaskLink(url: "https://a.pl")])
     }
 
     @Test func aWaitingTitleChangeDoesNotHoldBackTheAgentsNote() throws {

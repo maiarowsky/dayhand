@@ -18,7 +18,7 @@ export const FILTER_OPTIONS: OptSpec[] = [
   { flags: "--ready", description: "Only tasks ready to work on: not done, not blocked, every dependency done (backend 0.10.0)" },
   { flags: "--due-before <when>", description: "Only tasks due before this day, e.g. eow, next mon, 2026-11-01" },
   { flags: "--due-after <when>", description: "Only tasks due after this day, e.g. today" },
-  { flags: "--search <text>", description: "Only tasks whose title, note, resume note or labels contain the text (any case)" },
+  { flags: "--search <text>", description: "Only tasks whose title, note or resume note contain the text (any case)" },
   { flags: "--limit <n>", description: "At most this many tasks; the JSON's nextCursor continues the list", kind: "int" },
   { flags: "--cursor <cursor>", description: "Continue a list cut by --limit: the nextCursor of the previous page" },
 ];
@@ -81,7 +81,7 @@ function localFilter(filters: Filters, opts: Opts): (tasks: Task[]) => Task[] {
     (!opts.overdue || task.overdue === true) &&
     (filters.before === undefined || (task.dueDate !== undefined && task.dueDate < filters.before)) &&
     (filters.after === undefined || (task.dueDate !== undefined && task.dueDate > filters.after)) &&
-    (needle === undefined || [task.title, task.note, task.resumeNote, ...task.labels].some((t) => t?.toLowerCase().includes(needle)));
+    (needle === undefined || [task.title, task.note, task.resumeNote].some((t) => t?.toLowerCase().includes(needle)));
   return (tasks) => {
     const kept = tasks.filter(matches);
     return filters.limit === undefined ? kept : kept.slice(0, filters.limit);

@@ -27,7 +27,6 @@ struct RemoteTask {
     qint64 createdAt = 0;
     qint64 updatedAt = 0;
     std::optional<RepeatRule> repeat;
-    QStringList labels;
     QList<TaskLink> links;
     std::optional<qint64> deletedAt;
     QList<ChecklistItem> checklist;

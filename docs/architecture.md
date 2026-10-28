@@ -57,7 +57,7 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 
 | Table | Purpose |
 |---|---|
-| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, `labels`, optional `projectId` ([projects](#projects), since 0.13.0), `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; proposals since 0.11.0: `proposedAt` (waiting in the inbox), `source` (`kind`, `ref`, `url`), `requestedBy`, `returnTo` (webhook ids), `mergedInto`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
+| `tasks` | `ref` (the user's task number), `title`, `note`, `dueDate` (YYYY-MM-DD), optional `dueTime` (HH:MM), `status` (`todo`/`doing`/`done`), `isNow`, `resumeNote`, `repeat`, optional `projectId` ([projects](#projects), since 0.13.0), `links`, `checklist` (items `id`, `title`, `done`), `reminders` (own reminders; absent = the defaults), agent work since 0.10.0 ([agent-work.md](agent-work.md)): `acceptance` (criteria `id`, `text`, `met`), `plan`, `proof`, `dependsOn`, `blockedReason`, `claimedBy`, `claimExpiresAt`; proposals since 0.11.0: `proposedAt` (waiting in the inbox), `source` (`kind`, `ref`, `url`), `requestedBy`, `returnTo` (webhook ids), `mergedInto`; `completedAt`, `archivedAt`, `deletedAt`, `createdAt`, `updatedAt`, `clientId` |
 | `projects` | Since 0.13.0: the user's ordered project catalog; fields in [`convex/schema.ts`](../backend/convex/schema.ts), operations [below](#projects) |
 | `taskEvents` | History: `actor`, `keyId` or `connectionId` and `actorName` (the API key or agent connection behind a `cli` or `agent` change), `action`, changed fields `before` and `after`, `at`, `clientId`, and for task changes `seq`, the position in the activity log (`list_events`) |
 | `eventCounters` | Last activity log position given per user (`lastSeq`); every task change reads and writes it, so positions follow the commit order |
@@ -125,8 +125,8 @@ projects yet.
 Task tools accept project selectors; [JSON import](api.md#import) and
 [Backlog.md transfer](backlog-md.md#using-it) can carry projects.
 
-A task has at most one project; an absent `tasks.projectId` means no project. Labels remain free
-tags across projects. The catalog is flat, ordered by `position`, with archived entries retained.
+A task has at most one project; an absent `tasks.projectId` means no project. Tasks have no labels
+(removed in 0.14.0, [Upgrading to 0.14.0](deploy.md#upgrading-to-0140)). The catalog is flat, ordered by `position`, with archived entries retained.
 Names are unique per user after trimming, NFC normalization and lowercasing, including archived
 projects; `"none"` is reserved for unassigned tasks. Field limits and allowed color tokens are
 owned by [`PROJECT_LIMITS`](../backend/convex/lib/projectOps.ts) and
@@ -137,10 +137,8 @@ owned by [`PROJECT_LIMITS`](../backend/convex/lib/projectOps.ts) and
   and count their local tasks. Internal `ops:listProjects` instead takes `includeArchived` and `at`
   and returns `result` with per-project open, overdue, due-today and done counts, plus `noProject`
   open and overdue counts. Archived tasks, trash and proposals do not count.
-- `app:addProject` returns `{ project, moved, skipped }`. With `fromLabel`, the label's tasks
-  without a project move into it, including done, archived, trashed tasks and proposals. Tasks
-  already in a project are reported as skipped, as are other agents' live claims when the internal
-  caller is an agent. Labels stay unless `removeLabel: true` removes that label from moved tasks.
+- `app:addProject` returns `{ project }`. `fromLabel` and `removeLabel` from apps older than 0.14.0
+  are accepted and ignored.
 - `app:updateProject` returns the project; optional fields left out are unchanged, and `null`
   clears color, icon or note. `position` controls ordering; a new project defaults to the end,
   after the highest position including archived projects. `archived: true` excludes the project

@@ -26,7 +26,7 @@ QString when(const When &when, const QString &today);
 /// Read-only repeat and reminder previews for the details panel.
 QString repeat(const TaskItem &task, const QString &today);
 QString reminders(const TaskItem &task, const ReminderSettings &settings);
-/// The small line under a task on Today: its time or day, repeat, checklist and labels.
+/// The small line under a task on Today: its time or day, repeat and checklist.
 QString detailLine(const TaskItem &task, const QString &today, bool overdue);
 /// The connection in words for the status line, or nothing when there is nothing to say.
 std::optional<QString> status(const SyncStatus &status, qint64 pending, bool useOffline);

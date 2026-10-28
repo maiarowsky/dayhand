@@ -3,7 +3,7 @@
 // same JSON Schema as the MCP inputSchema, lib/jsonSchema.ts) and the result
 // schemas of docs/schemas (lib/outputSchemas.ts): nothing here is written by hand twice.
 import type { GenericValidator, PropertyValidators } from "convex/values";
-import { objectSchema, toJsonSchema } from "./jsonSchema";
+import { objectSchema, publishedFields, toJsonSchema } from "./jsonSchema";
 import { SERVER_INFO } from "./mcpProtocol";
 import { publicUrl } from "./oauthConfig";
 import { SCHEMA_DEFS } from "./outputSchemas";
@@ -60,7 +60,7 @@ function parameters(route: Route): Json[] {
   }));
   const query: PropertyValidators = isToolRoute(route) ? (route.input === "query" ? inputFields(route) : {}) : (route.query ?? {});
   const docs = isToolRoute(route) ? toolOf(route).docs : (route.docs ?? {});
-  for (const [name, field] of Object.entries(query)) {
+  for (const [name, field] of publishedFields(query)) {
     const schema = toJsonSchema(field as GenericValidator);
     result.push({
       name,

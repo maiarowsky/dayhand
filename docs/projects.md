@@ -1,26 +1,20 @@
-# Projects and labels
+# Projects
 
-This page explains how projects and labels differ, how to turn a label you used as a project into a real
-one, and what colours, icons, the archive and deletion do. Projects in the apps need Dayhand server 0.13.0
-or later; the `dayhand project` commands, the MCP project tools and the REST project routes need 0.13.1.
-Labels work everywhere.
+This page explains what a project is, how tasks get into one, and what colours, icons, the archive and
+deletion do. Projects in the apps need Dayhand server 0.13.0 or later; the `dayhand project` commands, the
+MCP project tools and the REST project routes need 0.13.1.
 
-## Projects or labels?
+## What a project is
 
-A **project** answers "what is this part of": a client, a website, the house. A **label** answers "what kind
-of task is it": `phone`, `waiting`, `errand`.
+A **project** answers "what is this part of": a client, a website, the house. A task is in at most one
+project, or in none. A project has a name, a colour, an emoji, a note and a place in a list you order; the
+Android Projects tab and the Mac sidebar show it with its open and overdue counts. Projects are a flat
+list: there are no sub-projects or areas.
 
-| | Project | Label |
-|---|---|---|
-| On one task | at most one | up to 20 |
-| Has | a name, a colour, an emoji, a note and a place in a list you order | only its text (up to 50 characters) |
-| Shown as | a place in the Android Projects tab and the Mac sidebar, with open and overdue counts | a filter, and a place under Labels |
-| Archive | yes, without touching its tasks | no |
-| Moving a task | to another project, or to none | add or remove the label |
-
-So "Call the baker about the photos" can be in the project **Bakery website** with the label `phone`, and
-"Phone the plumber" in **Home** with the same label. Search finds both by the label; the project's list
-shows only its own tasks. Projects are a flat list: there are no sub-projects or areas.
+Tasks have no labels or tags. Server 0.14.0 removed them, with the labels stored before: projects are
+the one way to sort tasks. How the upgrade backs them up and removes them:
+[Upgrading to 0.14.0](deploy.md#upgrading-to-0140). Apps and agents from before 0.14.0 may still send
+labels; the server accepts them and ignores them.
 
 ## Where projects are
 
@@ -34,27 +28,6 @@ shows only its own tasks. Projects are a flat list: there are no sub-projects or
   task tools; only the owner deletes a project ([MCP](mcp.md#projects)). The same over the
   [REST API](api.md#projects).
 - **Linux**: the Linux app does not show projects yet. A task you edit there keeps its project.
-
-## Make a project from a label
-
-Upgrading the server changes no task and no label. If you used labels as projects before, turn them
-into projects one at a time, when you want to:
-
-```sh
-dayhand project add Home --from-label home --dry-run
-dayhand project add Home --from-label home
-```
-
-On Android, open **Projects → ⋮ → Labels**, long-press the label and choose **Make a project from
-label**. Agents
-use `add_project` with `fromLabel`. The Mac app has no such command yet.
-
-- Every task with exactly that label and no project moves into the new project, whether it is open, done,
-  archived, in the trash or a proposal.
-- Tasks that are already in a project stay where they are and are listed as skipped.
-- The label stays on the moved tasks unless you ask to remove it (`--remove-label`, or the switch on
-  Android); it is never removed from tasks that did not move.
-- `--dry-run` shows what would move without changing anything.
 
 ## Names, colours and icons
 
@@ -104,8 +77,8 @@ One deletion moves at most 1,000 tasks; move the rest first.
 
 ## Managing projects needs your server
 
-Creating, editing, ordering, archiving and deleting projects, and making one from a label, happen on the
-server at once, in every app. Offline, or on a phone or Mac without a server, the app says **Requires a
+Creating, editing, ordering, archiving and deleting projects happen on the server at once, in every
+app. Offline, or on a phone or Mac without a server, the app says **Requires a
 connection to the server** and changes nothing. Changes to tasks still work offline and are sent later.
 
 Android's sample plan has three projects of its own (Home, Work and Health) to look around with; they
@@ -123,8 +96,8 @@ never leave the phone.
   project to a project that exists ([dayhand import](cli.md#dayhand-import)). Dayhand's own JSON export
   carries the projects with their colours, icons, notes and archive state, and importing it reuses a
   project of the same name or creates it ([REST import](api.md#import)).
-- **Exports**: the Markdown export writes `+Project-name` after a task's title, next to its `#labels`.
-  The calendar feed has no projects; it lists labels as categories.
+- **Exports**: the Markdown export writes `+Project-name` after a task's title. The calendar feed has no
+  projects.
 
 ## What projects do not do yet
 
@@ -132,8 +105,7 @@ never leave the phone.
   (`dayhand log`, `list_events`) and sends no webhook. A task moved to another project is: it gets a
   `task.updated` event.
 - **No ETag for projects** over REST: when two clients change one project, the last write wins.
-- **No sub-projects or areas**, and no colours for labels.
-- **The Linux app** does not show projects, and the **Mac app** cannot make a project from a label.
+- **No sub-projects or areas.**
+- **The Linux app** does not show projects.
 - **Versions**: projects in the apps need server 0.13.0 or later, and the `dayhand project` commands, the
-  MCP project tools and the REST project routes need 0.13.1; Android 0.12.0 needs server 0.13.2. Going back to
-  server 0.12 first turns every project into a label ([Upgrading to 0.13.0](deploy.md#upgrading-to-0130)).
+  MCP project tools and the REST project routes need 0.13.1; Android 0.12.0 needs server 0.13.2.

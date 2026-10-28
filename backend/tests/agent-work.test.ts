@@ -265,7 +265,7 @@ describe("time-boxed claims", () => {
     const firstKey = keys.find((k) => k.name === "first")!.id;
     await importRows("tasks", [
       {
-        userId, ref: 1, title: "Left behind", status: "doing", isNow: false, labels: [], links: [],
+        userId, ref: 1, title: "Left behind", status: "doing", isNow: false, links: [],
         claimedBy: { keyId: firstKey, name: "first" }, claimExpiresAt: Date.now() - 1_000, createdAt: 1, updatedAt: 1,
       },
     ]);

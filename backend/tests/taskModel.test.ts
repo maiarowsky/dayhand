@@ -172,7 +172,6 @@ describe("tasks from older versions", () => {
         status: "todo",
         isNow: false,
         repeat: { every: "week", interval: 1, weekdays: [1] },
-        labels: [],
         links: [],
         createdAt,
         updatedAt: createdAt,

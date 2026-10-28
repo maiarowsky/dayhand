@@ -21,8 +21,8 @@ one-time `.ics` export:
 | Repeating | One event with the rule as `RRULE` (the same rule `dayhand` and MCP show as `rrule`) |
 | Reminders | `VALARM`s relative to the start: the task's own reminders, else the default minutes from the settings (those need a time) |
 
-- `SUMMARY` is the title, `DESCRIPTION` is `Dayhand #<number>` and the note, `CATEGORIES` the
-  labels. Events are `TRANSP:TRANSPARENT`: a task does not make you busy.
+- `SUMMARY` is the title, `DESCRIPTION` is `Dayhand #<number>` and the note. Events are
+  `TRANSP:TRANSPARENT`: a task does not make you busy.
 - `UID` is `<task id>@helm` and `DTSTAMP` the task's last change, so an unchanged plan gives
   the same text and calendar apps update events in place. Completing a repeating task creates
   the next task of the series (a new id), so the calendar gets the done occurrence and a new
@@ -84,7 +84,7 @@ address.
 ## Threat model
 
 **The address is a password to read the plan.** Whoever has it reads every dated task: titles,
-notes, labels, times and reminders, until the address is replaced. It grants nothing else: no
+notes, times and reminders, until the address is replaced. It grants nothing else: no
 changes, no undated or archived tasks, no history, settings or keys.
 
 | Threat | Control | What is left |

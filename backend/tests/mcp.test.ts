@@ -65,7 +65,7 @@ describe("MCP over Streamable HTTP", () => {
     expect(add.inputSchema.properties).not.toHaveProperty("userId");
     expect(add.inputSchema.properties).not.toHaveProperty("actor");
 
-    const task = await callTool(client, "add_task", { title: "Call the accountant", dueDate: "today", labels: ["admin"] });
+    const task = await callTool(client, "add_task", { title: "Call the accountant", dueDate: "today" });
     await callTool(client, "set_now", { taskId: task.id, resumeNote: "find the invoice first" });
     const today = await callTool(client, "list_today");
     expect(today.now).toMatchObject({ id: task.id, resumeNote: "find the invoice first" });

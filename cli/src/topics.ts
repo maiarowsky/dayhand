@@ -50,7 +50,7 @@ or in $DAYHAND_CONFIG_DIR. dayhand whoami prints the one in use. dayhand login c
   url = "https://<other>.convex.site"
 
   [aliases]
-  home = "list -l home --status todo,doing"    # dayhand home --json
+  home = "list -p Home --status todo,doing"    # dayhand home --json
   week = "list --due-before eow"
 
   [ui]
@@ -96,7 +96,7 @@ const completion = `Shell completion (dayhand completion <shell>)
   PowerShell   dayhand completion powershell | Out-String | Invoke-Expression   (add it to $PROFILE)
 
 Completes commands, aliases from config.toml, options and their values, task
-numbers with their titles, labels, project names, profiles and date words. Task
+numbers with their titles, project names, profiles and date words. Task
 hints come from list_all, projects from list_projects; both are cached for 60 seconds
 per server URL and credential in the cache folder (~/.cache/dayhand,
 ~/Library/Caches/dayhand or %LOCALAPPDATA%\\dayhand\\Cache). Completion never prompts;
@@ -117,8 +117,8 @@ keeps the last data on screen with a red status line when the server cannot be
 reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
 The mouse selects and scrolls (--no-mouse leaves it to the terminal).
 
-Quick add (a) reads a date phrase at the end or the start of the line, and
-#labels anywhere: "Call the accountant fri 2pm #home". The line below shows how
+Quick add (a) reads a date phrase at the end or the start of the line:
+"Call the accountant fri 2pm +Home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
 With backend 0.13.0 or later, the first recognized +project token selects an
 existing active project. Names match in any case; hyphens may replace spaces
@@ -127,7 +127,7 @@ project tokens stay in the title and are marked with ? in the preview.
 
 The / filter accepts exact +project tokens with the same name resolution,
 including archived projects; +Home does not match Home-office. Remaining text
-searches titles, #labels, notes and task numbers as before.
+searches titles, notes and task numbers as before.
 
 ${keysText()}
 

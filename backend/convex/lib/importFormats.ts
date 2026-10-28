@@ -28,7 +28,6 @@ export type ImportItem = {
   status?: "todo" | "doing" | "done";
   resumeNote?: string;
   repeat?: RepeatInput;
-  labels?: string[];
   links?: Link[];
   checklist?: ChecklistInput[];
   reminders?: Reminder[];
@@ -99,6 +98,7 @@ function readDayhandJson(text: string): Parsed {
   const projects = readProjects(plan.projects);
   let trashed = 0;
   let unknownProject = 0;
+  let labeled = 0;
   for (const task of plan.tasks as Record<string, unknown>[]) {
     if (task.deletedAt !== undefined) {
       trashed++;
@@ -108,6 +108,7 @@ function readDayhandJson(text: string): Parsed {
     const projectId = str(task.projectId);
     const project = projectId === undefined ? undefined : projects.get(projectId)?.name;
     if (projectId !== undefined && project === undefined) unknownProject++;
+    if (arr<string>(task.labels)?.length) labeled++;
     items.push({
       source: `helm:${str(task.id) ?? JSON.stringify([task.title, task.createdAt])}`,
       originalId: str(task.id),
@@ -119,7 +120,6 @@ function readDayhandJson(text: string): Parsed {
       status: status === "doing" || status === "done" ? status : "todo",
       resumeNote: str(task.resumeNote),
       repeat: task.repeat as RepeatInput | undefined,
-      labels: arr<string>(task.labels),
       links: arr<Link>(task.links),
       checklist: arr<ChecklistInput>(task.checklist),
       reminders: arr<Reminder>(task.reminders),
@@ -130,6 +130,7 @@ function readDayhandJson(text: string): Parsed {
   }
   if (trashed) warnings.push(`${trashed} task(s) in the trash were not imported`);
   if (unknownProject) warnings.push(`${unknownProject} task(s) name a project that is not in the file; they are imported without a project`);
+  if (labeled) warnings.push(`The labels of ${labeled} task(s) were not imported: Dayhand has projects, not labels (since 0.14.0)`);
   if (plan.settings) warnings.push("Settings and history are not imported; set the time zone with dayhand settings set if needed");
   return { items, warnings, projects: [...projects.values()] };
 }
@@ -241,6 +242,7 @@ function readIcs(text: string, context: ReadContext): Parsed {
   const items: ImportItem[] = [];
   const seen = new Set<string>();
   let skipped = 0;
+  let categorized = 0;
   for (const calendar of calendars) {
     const fromDayhand = /dayhand|helm/i.test(prop(calendar, "PRODID")?.value ?? "");
     for (const [index, c] of calendar.children.entries()) {
@@ -271,7 +273,7 @@ function readIcs(text: string, context: ReadContext): Parsed {
       const when = whenProp ? readWhen(whenProp, context, warnings) : null;
       const completed = prop(c, "COMPLETED") ? readWhen(prop(c, "COMPLETED")!, { ...context, timezone: "UTC" }, warnings) : null;
       const url = prop(c, "URL")?.value;
-      const categories = c.props.filter((p) => p.name === "CATEGORIES").flatMap((p) => textList(p.value));
+      if (c.props.some((p) => p.name === "CATEGORIES" && textList(p.value).length > 0)) categorized++;
       const rrule = prop(c, "RRULE")?.value;
       items.push({
         source,
@@ -280,7 +282,6 @@ function readIcs(text: string, context: ReadContext): Parsed {
         ...(when ?? {}),
         status,
         ...(rrule && when ? { repeat: rrule } : {}),
-        labels: categories.length ? categories : undefined,
         links: url && /^https?:\/\//.test(url) ? [{ url }] : undefined,
         reminders: readAlarms(c, when?.dueTime !== undefined),
         completedAt: status === "done" && completed ? Date.parse(`${completed.dueDate}T${completed.dueTime ?? "00:00"}:00Z`) : undefined,
@@ -288,6 +289,7 @@ function readIcs(text: string, context: ReadContext): Parsed {
     }
   }
   if (skipped) warnings.push(`${skipped} cancelled entr(ies), changed occurrence(s) of a series or duplicate(s) were skipped`);
+  if (categorized) warnings.push(`The categories of ${categorized} entr(ies) were not imported: Dayhand has projects, not labels`);
   return { items, warnings };
 }
 
@@ -393,9 +395,9 @@ function readTodoistDate(text: string, today: string): Partial<ImportItem> | nul
   return tailDay && tailTime && timePart === undefined ? { dueDate: tailDay, dueTime: tailTime } : null;
 }
 
-/** Todoist writes labels into the content as @name. */
-function splitLabels(content: string): { title: string; labels: string[] } {
-  const labels = [...content.matchAll(/(?:^|\s)@([\p{L}\p{N}_-]+)/gu)].map((m) => m[1]!);
+/** Todoist writes labels into the content as @name; Dayhand has none, so they are taken out of the title. */
+function splitLabels(content: string): { title: string; labels: number } {
+  const labels = [...content.matchAll(/(?:^|\s)@[\p{L}\p{N}_-]+/gu)].length;
   const title = content.replace(/(?:^|\s)@[\p{L}\p{N}_-]+/gu, "").replace(/\s+/g, " ").trim();
   return { title, labels };
 }
@@ -411,6 +413,7 @@ function readTodoistCsv(text: string, context: ReadContext): Parsed {
   let section: string | undefined;
   let parent: { item: ImportItem; indent: number } | null = null;
   let subtasks = 0;
+  let labeled = 0;
   for (const [index, row] of rows.entries()) {
     const type = cell(row, "TYPE").toLowerCase();
     const content = cell(row, "CONTENT");
@@ -426,6 +429,7 @@ function readTodoistCsv(text: string, context: ReadContext): Parsed {
     if (type !== "task" || content === "") continue;
     const indent = Number(cell(row, "INDENT") || 1);
     const { title, labels } = splitLabels(content);
+    if (labels > 0 || section !== undefined) labeled++;
     if (indent > 1 && parent && indent > parent.indent) {
       parent.item.checklist = [...(parent.item.checklist ?? []), { title }];
       subtasks++;
@@ -441,13 +445,13 @@ function readTodoistCsv(text: string, context: ReadContext): Parsed {
       title,
       note,
       ...(when ?? {}),
-      labels: [...labels, ...(section ? [section] : [])],
     };
     items.push(item);
     parent = { item, indent };
   }
   if (subtasks) warnings.push(`${subtasks} sub-task(s) became checklist items of their parent task`);
   if (col("PRIORITY") >= 0) warnings.push("Todoist priorities are not imported (Dayhand has none)");
+  if (labeled) warnings.push(`The labels and sections of ${labeled} task(s) were not imported: Dayhand has projects, not labels`);
   return { items, warnings };
 }
 

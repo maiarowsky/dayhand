@@ -22,25 +22,29 @@ function folder(name = "Shop") {
 }
 
 describe("projects", () => {
-  test("from-label previews store nothing, including task history; applying moves only unassigned tasks", async () => {
+  test("project add previews store nothing, including task history; applying returns only the project", async () => {
     const { key } = await newUser();
-    const other = (await dayhandJson(key, ["project", "add", "Other"])).project;
-    await dayhandJson(key, ["add", "Loose", "-l", "home"]);
-    await dayhandJson(key, ["add", "Assigned", "-l", "home", "-p", other.id]);
+    await dayhandJson(key, ["add", "Loose"]);
     const before = await dayhandJson(key, ["export", "--format", "json"]);
     const history = await dayhandJson(key, ["show", "1"]);
-    const preview = await dayhandJson(key, ["project", "add", "Home", "--from-label", "home", "--remove-label", "--dry-run"]);
+    const preview = await dayhandJson(key, ["project", "add", "Home", "--dry-run"]);
     expect(validate("dry-run.schema.json", preview)).toEqual([]);
     expect(validate("project-added.schema.json", preview.calls[0].result)).toEqual([]);
-    expect(preview.calls[0]).toMatchObject({ tool: "add_project", arguments: { fromLabel: "home", removeLabel: true }, result: { moved: [{ ref: 1 }], skipped: [{ ref: 2, projectId: other.id }] } });
+    expect(preview.calls[0]).toMatchObject({ tool: "add_project", arguments: { name: "Home" }, result: { project: { name: "Home" } } });
+    expect(Object.keys(preview.calls[0].arguments).filter((k) => k.toLowerCase().includes("label"))).toEqual([]);
     const after = await dayhandJson(key, ["export", "--format", "json"]);
     expect({ ...after.content, exportedAt: null }).toEqual({ ...before.content, exportedAt: null });
     expect(await dayhandJson(key, ["show", "1"])).toEqual(history);
-    const applied = await dayhandJson(key, ["project", "add", "Home", "--from-label", "home", "--remove-label"]);
-    expect(applied.moved).toHaveLength(1);
-    expect(applied.skipped).toHaveLength(1);
-    expect((await dayhandJson(key, ["show", "1"])).task).toMatchObject({ projectId: applied.project.id, labels: [] });
-    expect((await dayhandJson(key, ["show", "2"])).task).toMatchObject({ projectId: other.id, labels: ["home"] });
+    const applied = await dayhandJson(key, ["project", "add", "Home"]);
+    expect(validate("project-added.schema.json", applied)).toEqual([]);
+    expect(Object.keys(applied)).toEqual(["project"]);
+    expect((await dayhandJson(key, ["show", "1"])).task).not.toHaveProperty("projectId");
+    const human = await dayhand(key, ["project", "add", "Away"]);
+    expect(human.code, human.stderr).toBe(0);
+    expect(human.stdout).toBe("Added +Away\n");
+    const removed = await dayhand(key, ["project", "add", "Other", "--from-label", "home", "--json"]);
+    expect(removed.code).toBe(2);
+    expect(jsonError(removed)).toMatchObject({ code: "usage" });
   });
 
   test("menu order, metadata clearing, archive and unarchive keep their schema and tasks", async () => {
@@ -110,16 +114,16 @@ describe("projects", () => {
   test("task filtering is server-side and default plain columns do not gain a project", async () => {
     const { key } = await newUser();
     const project = (await dayhandJson(key, ["project", "add", "Strona piekarni"])).project;
-    const task = await dayhandJson(key, ["add", "Menu", "-p", project.id, "-l", "web"]);
+    const task = await dayhandJson(key, ["add", "Menu", "-p", project.id]);
     const loose = await dayhandJson(key, ["add", "Loose"]);
     expect((await dayhandJson(key, ["list", "-p", "strona PIEKARNI", "--limit", "1"])).total).toBe(1);
     expect(titles(await dayhandJson(key, ["list", "-p", "none"]))).toEqual(["Loose"]);
     expect((await dayhandJson(key, ["today", "-p", "none"])).today.map((t: any) => t.id)).toEqual([loose.id]);
     expect((await dayhandJson(key, ["board", "-p", project.id])).todo.map((t: any) => t.id)).toEqual([task.id]);
     const plain = await dayhand(key, ["list", "--plain"]);
-    expect(plain.stdout).toBe(`${task.ref}\ttodo\t${task.dueDate}\t\tMenu\tweb\n${loose.ref}\ttodo\t${loose.dueDate}\t\tLoose\t\n`);
+    expect(plain.stdout).toBe(`${task.ref}\ttodo\t${task.dueDate}\t\tMenu\n${loose.ref}\ttodo\t${loose.dueDate}\t\tLoose\n`);
     const human = await dayhand(key, ["list"]);
-    expect(human.stdout).toMatch(/Menu\s+\+Strona-piekarni #web/);
+    expect(human.stdout).toMatch(/Menu\s+\+Strona-piekarni$/m);
     expect((await dayhand(key, ["show", "1"])).stdout).toContain("+Strona-piekarni");
     expect((await dayhand(key, ["list", "--plain", "--fields", "project,projectId"])).stdout).toBe(`Strona piekarni\t${project.id}\n\t\n`);
     const fields = await dayhandJson(key, ["list", "--fields", "project,projectId"]);
@@ -259,9 +263,11 @@ describe("projects", () => {
     try {
       await ui.refresh();
       ui.key("a"); ui.paste("Menu +STRONA-piekarni #web");
-      expect(rowsText(ui.frame().rows)).toContain("+Strona-piekarni #web");
+      expect(rowsText(ui.frame().rows)).toContain("+Strona-piekarni");
       ui.key("enter"); await ui.idle();
-      expect((await dayhandJson(key, ["list", "-p", project.id])).result[0]).toMatchObject({ title: "Menu", labels: ["web"], projectId: project.id });
+      const menu = (await dayhandJson(key, ["list", "-p", project.id])).result[0];
+      expect(menu).toMatchObject({ title: "Menu #web", projectId: project.id });
+      expect(menu).not.toHaveProperty("labels");
       ui.key("/"); ui.paste("+strona-piekarni"); ui.key("enter");
       expect(rowsText(ui.frame().rows)).toContain("Menu");
       expect(rowsText(ui.frame().rows)).not.toContain("Loose");

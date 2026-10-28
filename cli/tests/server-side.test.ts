@@ -40,8 +40,8 @@ describe("with a 0.4 backend", () => {
 type Mode = "old" | "limited" | "http429";
 
 const TASKS = [
-  { id: "a", ref: 1, title: "Call the accountant", status: "todo", isNow: false, labels: [], links: [], createdAt: 1, updatedAt: 1, dueDate: "2026-10-20", overdue: true },
-  { id: "b", ref: 2, title: "Water plants", status: "todo", isNow: false, labels: [], links: [], createdAt: 2, updatedAt: 2 },
+  { id: "a", ref: 1, title: "Call the accountant", status: "todo", isNow: false, links: [], createdAt: 1, updatedAt: 1, dueDate: "2026-10-20", overdue: true },
+  { id: "b", ref: 2, title: "Water plants", status: "todo", isNow: false, links: [], createdAt: 2, updatedAt: 2 },
 ];
 const NEW_ARGS = ["query", "status", "dueBefore", "dueAfter", "overdue", "limit", "cursor", "dryRun"];
 

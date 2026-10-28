@@ -1,10 +1,10 @@
 // Projects (0.13.0) on the local backend: names unique in any case, archived ones
-// included; references by id or name; counts; a project made from a label; deleting
-// one moves its tasks with history and webhooks; filters by project; the app layer.
+// included; references by id or name; counts; deleting one moves its tasks with
+// history and webhooks; filters by project; the app layer.
 import { randomUUID } from "node:crypto";
 import { describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
-import { admin, appClient, asUser, callTool, createKey, helm, mcpClient, newUserId, rest, utc } from "./helpers";
+import { admin, appClient, asUser, createKey, helm, newUserId, rest, utc } from "./helpers";
 
 type Failure = { code: string; message: string; result?: any };
 
@@ -32,7 +32,7 @@ describe("project names", () => {
     const added: any = await user.mutation(internal.ops.addProject, { name: "  Dom  " });
     expect(added.project).toMatchObject({ name: "Dom", archived: false, position: 1024 });
     expect(added.project).not.toHaveProperty("nameKey");
-    expect(added).toMatchObject({ moved: [], skipped: [] });
+    expect(Object.keys(added)).toEqual(["project"]);
     for (const name of ["dom", "DOM", " dOm "]) {
       expect(await failure(user.mutation(internal.ops.addProject, { name }))).toMatchObject({
         code: "invalid_argument",
@@ -255,80 +255,6 @@ describe("list_projects counts", () => {
   });
 });
 
-describe("a project from a label", () => {
-  async function labelled() {
-    const userId = newUserId();
-    const user = asUser(userId);
-    await user.mutation(internal.ops.addProject, { name: "Work" });
-    const open: any = await user.mutation(internal.ops.add, { title: "open", labels: ["dom", "phone"] });
-    const inWork: any = await user.mutation(internal.ops.add, { title: "in work", labels: ["dom"], projectId: "Work" });
-    const done: any = await user.mutation(internal.ops.add, { title: "done", labels: ["dom"] });
-    await user.mutation(internal.ops.complete, { taskId: done.id });
-    const unlabelled: any = await user.mutation(internal.ops.add, { title: "unlabelled" });
-    return { userId, user, open, inWork, done, unlabelled };
-  }
-
-  test("tasks with the label and no project move in; those in a project are skipped and listed", async () => {
-    const { userId, user, open, inWork, done } = await labelled();
-    const work: any = ((await user.query(internal.ops.listProjects, {})) as any).result[0];
-    const made: any = await user.mutation(internal.ops.addProject, { name: "Dom", fromLabel: "dom" });
-    expect(made.moved).toEqual([
-      { id: open.id, ref: open.ref },
-      { id: done.id, ref: done.ref },
-    ]);
-    expect(made.skipped).toEqual([{ id: inWork.id, ref: inWork.ref, projectId: work.id, reason: "already in a project" }]);
-    const found: any = await user.query(internal.ops.findTasks, { projectId: "Dom" });
-    expect(titles(found.result)).toEqual(["done", "open"]);
-    // The label stays unless removeLabel says otherwise.
-    expect(found.result.every((t: any) => t.labels.includes("dom"))).toBe(true);
-    const history = await historyOf(userId, open.id);
-    expect(history.at(-1)).toMatchObject({ action: "update", before: { projectId: null }, after: { projectId: made.project.id } });
-  });
-
-  test("removeLabel takes the label off the tasks that moved, only those", async () => {
-    const { user, open, inWork } = await labelled();
-    await user.mutation(internal.ops.addProject, { name: "Dom", fromLabel: "dom", removeLabel: true });
-    const all: any[] = await user.query(internal.ops.listAll, {});
-    expect(all.find((t) => t.id === open.id).labels).toEqual(["phone"]);
-    expect(all.find((t) => t.id === inWork.id).labels).toEqual(["dom"]);
-    expect((await failure(user.mutation(internal.ops.addProject, { name: "X", removeLabel: true }))).code).toBe("invalid_argument");
-  });
-
-  test("a dry run shows the outcome and stores nothing, history included", async () => {
-    const { userId, user, open } = await labelled();
-    const before: any = await user.query(internal.ops.exportPlan, { format: "json" });
-    const preview = await failure(user.mutation(internal.ops.addProject, { name: "Dom", fromLabel: "dom", dryRun: true }));
-    expect(preview.code).toBe("dry_run");
-    expect(preview.result).toMatchObject({ project: { name: "Dom" }, moved: [{ id: open.id }, {}], skipped: [{}] });
-    const after: any = await user.query(internal.ops.exportPlan, { format: "json" });
-    expect(after.content.projects.map((p: any) => p.name)).toEqual(["Work"]);
-    expect(after.content.events).toHaveLength(before.content.events.length);
-    expect(after.content.tasks).toEqual(before.content.tasks);
-    expect(await historyOf(userId, open.id)).toHaveLength(1);
-  });
-
-  test("a retry with the same clientId moves nothing twice and answers with the moved tasks", async () => {
-    const { user, open, done } = await labelled();
-    const first: any = await user.mutation(internal.ops.addProject, { name: "Dom", fromLabel: "dom", clientId: "from-label-1" });
-    const again: any = await user.mutation(internal.ops.addProject, { name: "Dom", fromLabel: "dom", clientId: "from-label-1" });
-    expect(again.project.id).toBe(first.project.id);
-    expect(again.moved.map((t: any) => t.id).sort()).toEqual([open.id, done.id].sort());
-  });
-
-  test("a task another agent holds a claim on is skipped with the reason", async () => {
-    const { client, userId } = await appClient();
-    const keyA = await createKey(userId, "agent-a", "agent");
-    await createKey(userId, "agent-b", "agent");
-    const keys: any[] = await admin().query(internal.apiKeys.list, { userId, actor: "app" });
-    const idB = keys.find((k) => k.name === "agent-b").id;
-    const task: any = await client.mutation(api.app.add, { title: "claimed", labels: ["dom"] });
-    await callTool(await mcpClient(keyA), "claim_task", { taskId: task.id });
-    const made: any = await admin().mutation(internal.ops.addProject, { userId, actor: "agent", keyId: idB, actorName: "agent-b", name: "Dom", fromLabel: "dom" });
-    expect(made.moved).toEqual([]);
-    expect(made.skipped).toEqual([{ id: task.id, ref: task.ref, reason: expect.stringMatching(/agent-a/) }]);
-  });
-});
-
 describe("deleting a project", () => {
   async function withTasks() {
     const userId = newUserId();
@@ -441,53 +367,3 @@ describe("filters by project", () => {
   });
 });
 
-describe("rolling back: projectsToLabels", () => {
-  // Runs over every user of the test deployment, so it comes last in this file.
-  test("every task in a project gets the project's name as a label and loses projectId; the projects go", async () => {
-    const userId = newUserId();
-    const user = asUser(userId);
-    for (const name of ["Dom", "Full", "Empty"]) await user.mutation(internal.ops.addProject, { name });
-    const plain: any = await user.mutation(internal.ops.add, { title: "plain", labels: ["x"], projectId: "Dom" });
-    const labelled: any = await user.mutation(internal.ops.add, { title: "labelled", labels: ["Dom"], projectId: "Dom" });
-    const full: any = await user.mutation(internal.ops.add, { title: "full", labels: Array.from({ length: 20 }, (_, i) => `l${i}`), projectId: "Full" });
-    const trashed: any = await user.mutation(internal.ops.add, { title: "trashed", projectId: "Dom" });
-    await user.mutation(internal.ops.softDelete, { taskId: trashed.id });
-    const loose: any = await user.mutation(internal.ops.add, { title: "loose", labels: ["y"] });
-
-    await admin().mutation(internal.migrations.projectsToLabels, {});
-    await expect.poll(() => admin().query(internal.migrations.status, {}), { timeout: 30_000 }).toMatchObject({ tasksWithProject: 0, projects: 0 });
-    const { content }: any = await user.query(internal.ops.exportPlan, { format: "json" });
-    const labelsOf = (task: { id: string }) => content.tasks.find((t: any) => t.id === task.id).labels;
-    expect([plain, labelled, trashed, loose].map(labelsOf)).toEqual([["x", "Dom"], ["Dom"], ["Dom"], ["y"]]);
-    // No room for a 21st label: the task keeps its 20 and loses only the project.
-    expect(labelsOf(full)).toHaveLength(20);
-    expect(content.tasks.every((t: any) => t.projectId === undefined)).toBe(true);
-    expect(content.projects).toEqual([]);
-    // Running it again changes nothing.
-    expect(await admin().mutation(internal.migrations.projectsToLabels, { projects: true })).toMatchObject({ projectsDeleted: 0, done: true });
-  }, 60_000);
-
-  test("the documented rollback completion check terminates with more than 200 tasks", async () => {
-    const user = asUser(newUserId());
-    await user.mutation(internal.ops.addProject, { name: "Rollback" });
-    const items = Array.from({ length: 201 }, (_, i) => ({ key: `rollback-${i}`, title: `Task ${i}`, project: "Rollback", labels: ["keep"] }));
-    for (let offset = 0; offset < items.length; offset += 200) {
-      const imported: any = await user.mutation(internal.ops.importTasks, { items: items.slice(offset, offset + 200) });
-      expect(imported.failed).toEqual([]);
-      expect(imported.created).toHaveLength(Math.min(200, items.length - offset));
-    }
-    const before: any = await user.query(internal.ops.exportPlan, { format: "json" });
-    expect(await admin().mutation(internal.migrations.projectsToLabels, {})).toMatchObject({ done: false });
-    await expect.poll(() => admin().query(internal.migrations.status, {}), { timeout: 30_000 }).toMatchObject({ tasksWithProject: 0, projects: 0 });
-    // A completed full scan still starts with done:false; after the status check,
-    // repeating only the deletion phase gives the documented no-op confirmation.
-    expect(await admin().mutation(internal.migrations.projectsToLabels, { projects: true })).toEqual({ relabeled: 0, cleared: 0, noRoom: [], projectsDeleted: 0, done: true });
-    expect(await admin().query(internal.migrations.status, {})).toMatchObject({ tasksWithProject: 0, projects: 0 });
-    const { content }: any = await user.query(internal.ops.exportPlan, { format: "json" });
-    expect(content.tasks).toHaveLength(201);
-    expect(content.tasks.every((task: any) => task.projectId === undefined)).toBe(true);
-    expect(content.tasks.map((task: any) => task.labels)).toEqual(items.map(() => ["keep", "Rollback"]));
-    expect(content.projects).toEqual([]);
-    expect(content.events).toEqual(before.content.events);
-  }, 60_000);
-});

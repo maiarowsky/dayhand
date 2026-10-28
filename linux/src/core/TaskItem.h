@@ -125,8 +125,6 @@ struct TaskItem {
     /// `updatedAt` of the last server copy merged into this row; nothing until the server has it.
     std::optional<qint64> serverUpdatedAt;
     std::optional<RepeatRule> repeat;
-    /// Labels: free tags across projects (a task's project is `projectId`, which this app does not read yet).
-    QStringList labels;
     QList<TaskLink> links;
     /// In the trash since then; the server purges it 30 days later unless restored.
     std::optional<qint64> deletedAt;

@@ -57,7 +57,7 @@ See [project history](architecture.md#projects) for changes to the catalog itsel
 | `POST /tasks/{taskId}/merge` | `merge_proposal` (`{ "intoTaskId": "#12" }`; the owner) | write |
 | `POST /tasks/{taskId}/reject` | `reject_proposal` (`{ "reason": "…" }` optional; the owner) | write |
 | `GET /projects` | `list_projects` (`includeArchived`, `at`; [projects](#projects)) | read |
-| `POST /projects` | `add_project` (`201`; `name`, optional metadata and `fromLabel`) | write |
+| `POST /projects` | `add_project` (`201`; `name` and optional metadata) | write |
 | `PATCH /projects/{projectId}` | `update_project` (JSON Merge Patch: `null` clears optional metadata) | write |
 | `DELETE /projects/{projectId}` | `delete_project` (body `moveTasksTo` when it has tasks; the owner: a `cli` key) | write |
 | `GET /approvals` | `list_approvals` (query parameters `status`, `taskId`, `limit`) | read |
@@ -109,12 +109,13 @@ keeps its value, `null` clears it.
 curl -s -X PATCH https://<name>.convex.site/api/v1/tasks/42 \
   -H "Authorization: Bearer $DAYHAND_API_KEY" -H 'Content-Type: application/merge-patch+json' \
   -H 'If-Match: "1793011200000"' \
-  -d '{"note": null, "labels": ["work"], "dueDate": "tomorrow"}'
+  -d '{"note": null, "links": [{"url": "https://example.com/brief"}], "dueDate": "tomorrow"}'
 ```
 
-One difference from RFC 7386: an object or list value (`repeat`, `labels`, `links`,
-`checklist`, `reminders`) replaces the old one as a whole, as `update_task` does; it is not
-merged key by key. Status, now, archive and trash have their own routes.
+One difference from RFC 7386: an object or list value (`repeat`, `links`, `checklist`,
+`reminders`) replaces the old one as a whole, as `update_task` does; it is not
+merged key by key. Status, now, archive and trash have their own routes. Tasks have no labels since
+0.14.0: a `labels` field or query parameter from an older client is accepted and ignored.
 
 ### Projects
 
@@ -246,9 +247,9 @@ key (`cli`) may create a `cli` key; an `agent` key asking for `"kind": "cli"` ge
 
 | `format` | File | What becomes of it |
 |---|---|---|
-| `dayhand-json` | Dayhand's own JSON export (`dayhand export --format json`, `export_plan` format `json`, version 1); `helm-json`, its name before the rename, is still accepted | Tasks outside the trash: status, dates, repeat rule, labels, links, checklist, reminders, done and archived times. Projects are restored as described below. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
-| `ics` | iCalendar: `VTODO` and `VEVENT` | `SUMMARY` → title, `DESCRIPTION` → note, `DUE` (or `DTSTART`) → day and time in your time zone (UTC and `TZID` times are converted), `RRULE` → repeat rule, `CATEGORIES` → labels, `URL` → link, `STATUS:COMPLETED`/`IN-PROCESS` → done/doing, `VALARM` before the start → reminders. Cancelled entries and changed occurrences of a series (`RECURRENCE-ID`) are skipped. Dayhand's own calendar file (`dayhand calendar export`) reads back without its `✓` and `Dayhand #n` marks. |
-| `todoist-csv` | Todoist's CSV export of a project | Rows of type `task`; `@label` words in the content → labels; the section → a label; `note` rows → the task's note; sub-tasks (`INDENT` 2 or more) → checklist items of their task; `DATE` in English (`2026-11-03`, `today`, `tomorrow at 9am`, `Nov 20 15:30`, a weekday, `every day`, `every 2 weeks`, `every monday, friday`, `every weekday`) → day, time and repeat rule. A date it does not understand stays in the note, with a warning. Priorities are not imported. Todoist's CSV format is not documented by Todoist; this reader follows its current export. |
+| `dayhand-json` | Dayhand's own JSON export (`dayhand export --format json`, `export_plan` format `json`, version 1); `helm-json`, its name before the rename, is still accepted | Tasks outside the trash: status, dates, repeat rule, links, checklist, reminders, done and archived times. Projects are restored as described below; labels from an export made before 0.14.0 are left out, with a warning. Task numbers are kept where this account never gave them, so an export into an empty account keeps its numbers. History and settings are not imported. |
+| `ics` | iCalendar: `VTODO` and `VEVENT` | `SUMMARY` → title, `DESCRIPTION` → note, `DUE` (or `DTSTART`) → day and time in your time zone (UTC and `TZID` times are converted), `RRULE` → repeat rule, `URL` → link, `STATUS:COMPLETED`/`IN-PROCESS` → done/doing, `VALARM` before the start → reminders. `CATEGORIES` are left out, with a warning. Cancelled entries and changed occurrences of a series (`RECURRENCE-ID`) are skipped. Dayhand's own calendar file (`dayhand calendar export`) reads back without its `✓` and `Dayhand #n` marks. |
+| `todoist-csv` | Todoist's CSV export of a project | Rows of type `task`; `@label` words leave the title, and they and the section are left out, with a warning; `note` rows → the task's note; sub-tasks (`INDENT` 2 or more) → checklist items of their task; `DATE` in English (`2026-11-03`, `today`, `tomorrow at 9am`, `Nov 20 15:30`, a weekday, `every day`, `every 2 weeks`, `every monday, friday`, `every weekday`) → day, time and repeat rule. A date it does not understand stays in the note, with a warning. Priorities are not imported. Todoist's CSV format is not documented by Todoist; this reader follows its current export. |
 
 ```sh
 curl -s -X POST "https://<name>.convex.site/api/v1/import?dryRun=true" \

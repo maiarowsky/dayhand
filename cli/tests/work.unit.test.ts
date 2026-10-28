@@ -63,7 +63,7 @@ describe("dayhand criteria", () => {
   });
 
   test("prints the criteria numbered, with how many are met", () => {
-    const task = { id: "t", ref: 42, title: "Ship", status: "todo", isNow: false, labels: [], links: [], createdAt: 0, updatedAt: 0, acceptance: items } as const;
+    const task = { id: "t", ref: 42, title: "Ship", status: "todo", isNow: false, links: [], createdAt: 0, updatedAt: 0, acceptance: items } as const;
     expect(criteriaText(task as never)).toBe("#42 Ship (1/3 met)\n  1. [ ] Tests pass\n  2. [x] Docs updated\n  3. [ ] Released");
     expect(criteriaText({ ...task, acceptance: undefined } as never)).toBe("#42 Ship: (no acceptance criteria)");
   });

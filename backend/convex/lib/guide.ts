@@ -5,7 +5,7 @@ import { CALL_LIMITS } from "../callLimits";
 
 export const INSTRUCTIONS =
   'Dayhand is the user\'s personal task list and day plan. Start with agent_brief (or list_today, dayhand://today). Refer to a task by its id or its number as "#42". ' +
-  "Find tasks with list_all (query, status, labels, projectId, dueBefore/dueAfter, overdue, limit/cursor) instead of reading the whole plan; list_projects lists the projects. " +
+  "Find tasks with list_all (query, status, projectId, dueBefore/dueAfter, overdue, limit/cursor) instead of reading the whole plan; list_projects lists the projects. " +
   "Pass a clientId with changes you might retry, and dryRun: true to preview a change. " +
   "After a pause, call list_events with the nextCursor you kept to see only what changed. Before working on a task, claim_task it; complete it with proof. " +
   "Ask the owner with request_approval before anything risky; plan_health shows what needs a look. " +
@@ -35,18 +35,17 @@ their API key; every change you make is recorded in the task's history as
 - Start a session with \`agent_brief\`: Today plus the claims in force,
   approvals waiting, the tasks ready to work on and your next steps. Or
   \`list_today\` (the resource \`dayhand://today\`) for Today alone.
-- Look tasks up with \`list_all\`: \`query\` searches titles, notes, resume
-  notes and labels; \`status\`, \`labels\`, \`projectId\`, \`dueBefore\`,
-  \`dueAfter\` and \`overdue\` narrow the list; \`limit\` and \`cursor\`
+- Look tasks up with \`list_all\`: \`query\` searches titles, notes and
+  resume notes; \`status\`, \`projectId\`, \`dueBefore\`, \`dueAfter\` and
+  \`overdue\` narrow the list; \`limit\` and \`cursor\`
   page through it.
   Reading the whole plan to find one task wastes the user's context.
 - \`get_task\` (or \`dayhand://tasks/42\`) shows who changed what and when.
 
-## Projects and labels
+## Projects
 
-- A task is in at most one project (\`projectId\`); labels are free tags
-  across projects (\`waiting\`, \`phone\`). A project answers "what is this
-  part of", a label "what kind of task is it".
+- A task is in at most one project (\`projectId\`). Tasks have no labels or
+  tags: a project answers "what is this part of".
 - \`list_projects\` (or \`dayhand://projects\`) gives the projects in menu
   order with the counts of their tasks, and each project's \`note\`: what
   it is about. Name a project by its id or its name in any case; \`"none"\`
@@ -55,8 +54,7 @@ their API key; every change you make is recorded in the task's history as
   \`update_task\` with \`null\` takes it out) and narrows \`list_all\`, \`list_today\` and
   \`board\` to one project (\`"none"\`: the tasks without one).
 - Prefer a project that exists; \`add_project\` adds one when the work has
-  none, and \`fromLabel\` makes one from a label, moving the label's tasks
-  without a project into it. \`update_project\` renames, moves or archives a
+  none. \`update_project\` renames, moves or archives a
   project (an archived project takes no new tasks). Only the owner deletes
   projects.
 

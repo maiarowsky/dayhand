@@ -28,7 +28,7 @@ const TODAY = "2026-10-23";
 let nextRef = 1;
 function task(title: string, fields: Partial<Task> = {}): Task {
   const ref = fields.ref ?? nextRef++;
-  return { id: `t${ref}`, ref, title, status: "todo", isNow: false, labels: [], links: [], createdAt: ref, updatedAt: ref, ...fields };
+  return { id: `t${ref}`, ref, title, status: "todo", isNow: false, links: [], createdAt: ref, updatedAt: ref, ...fields };
 }
 
 function health(fields: Partial<Health> = {}): Health {
@@ -51,14 +51,14 @@ function approval(fields: Partial<Approval> = {}): Approval {
 const emptyAgents = (): Agents => ({ controls: { paused: false, pausedAt: null, reason: null, policies: [] }, approvals: [], proposals: [] });
 
 describe("quick add", () => {
-  test("a date phrase at the end, #labels anywhere", () => {
-    expect(parseQuickAdd("Call the accountant fri 2pm #home", ZONE)).toEqual({
+  test("a date phrase at the end; a #word is part of the title", () => {
+    expect(parseQuickAdd("Call the accountant fri 2pm", ZONE)).toEqual({
       title: "Call the accountant",
-      labels: ["home"],
       due: { date: "2026-10-30", time: "14:00" },
       phrase: "fri 2pm",
     });
-    expect(parseQuickAdd("#work Draft the invoice tomorrow", ZONE)).toMatchObject({ title: "Draft the invoice", labels: ["work"], due: { date: "2026-10-24" } });
+    expect(parseQuickAdd("#work Draft the invoice tomorrow", ZONE)).toEqual({ title: "#work Draft the invoice", due: { date: "2026-10-24" }, phrase: "tomorrow" });
+    expect(parseQuickAdd("Call the accountant fri 2pm #home", ZONE)).toEqual({ title: "Call the accountant fri 2pm #home", due: undefined });
   });
 
   test("a phrase at the start; the longest phrase wins; one word stays the title", () => {
@@ -68,8 +68,8 @@ describe("quick add", () => {
   });
 
   test("no phrase: the caller's day; numbers are not dates; quotes and 'no date'", () => {
-    expect(parseQuickAdd("Buy 2 apples", ZONE)).toEqual({ title: "Buy 2 apples", labels: [], due: undefined });
-    expect(parseQuickAdd('"Meet on fri"', ZONE)).toEqual({ title: "Meet on fri", labels: [], due: undefined });
+    expect(parseQuickAdd("Buy 2 apples", ZONE)).toEqual({ title: "Buy 2 apples", due: undefined });
+    expect(parseQuickAdd('"Meet on fri"', ZONE)).toEqual({ title: "Meet on fri", due: undefined });
     expect(parseQuickAdd("Read a book no date", ZONE)).toMatchObject({ title: "Read a book", due: null });
     expect(parseQuickAdd("Fix #42 bug", ZONE).title).toBe("Fix #42 bug");
   });
@@ -183,7 +183,7 @@ describe("line editor and keys", () => {
 
 describe("lists", () => {
   test("Today: the now task leads and is not repeated; the filter narrows", () => {
-    const now = task("Invoice", { isNow: true, status: "doing", resumeNote: "rate in mail", labels: ["work"] });
+    const now = task("Invoice", { isNow: true, status: "doing", resumeNote: "rate in mail" });
     const view: TodayView = { date: TODAY, timezone: "Europe/London", now, overdue: [task("Rent", { dueDate: "2026-10-22", overdue: true })], today: [now, task("Plan")], doneToday: [] };
     expect(todaySections(view).map((s) => [s.key, s.tasks.map((t) => t.title)])).toEqual([
       ["now", ["Invoice"]],
@@ -191,7 +191,7 @@ describe("lists", () => {
       ["today", ["Plan"]],
     ]);
     // Empty sections go, except Today, which says "no match".
-    expect(todaySections(view, "#work").map((s) => [s.key, s.tasks.length, s.empty])).toEqual([
+    expect(todaySections(view, "mail").map((s) => [s.key, s.tasks.length, s.empty])).toEqual([
       ["now", 1, undefined],
       ["today", 0, "no match"],
     ]);
@@ -280,9 +280,11 @@ describe("keys → state and effects", () => {
   });
 
   test("the edit form sends only changed fields; the trash allows only restore", () => {
-    const l = lists({ today: [{ ...a, labels: ["home"] }] });
-    const form = press(base, ["e", "C-e", "!", "tab", "tab", "C-u", "w", "o", "r", "k"], l);
-    expect(handleKey(form.state, "enter", l).effect).toMatchObject({ kind: "edit", changes: { title: "A!", labels: "work" } });
+    const l = lists({ today: [{ ...a, resumeNote: "old" }] });
+    const form = press(base, ["e", "C-e", "!", "tab", "tab", "C-u", "m", "a", "i", "l"], l);
+    const edited = handleKey(form.state, "enter", l).effect;
+    expect(edited).toMatchObject({ kind: "edit", changes: { title: "A!", resumeNote: "mail" } });
+    expect(edited).not.toHaveProperty("changes.due");
     const gone = { ...a, deletedAt: 1 };
     const trash = { ...base, view: "trash" as const };
     expect(handleKey(trash, "space", lists({ trash: [gone] })).effect).toEqual({ kind: "flash", text: "In the trash: r restores it" });
@@ -487,7 +489,7 @@ function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
 
 describe("controller", () => {
   const plan = task("Plan the week", { dueDate: TODAY, dueTime: "09:00" });
-  const rent = task("Pay rent", { dueDate: "2026-10-22", overdue: true, labels: ["home"] });
+  const rent = task("Pay rent", { dueDate: "2026-10-22", overdue: true });
   const view: TodayView = { date: TODAY, timezone: "Europe/London", now: null, overdue: [rent], today: [plan], doneToday: [] };
 
   test("loads Today, keeps the data and says why when the server goes away, and recovers", async () => {
@@ -496,7 +498,7 @@ describe("controller", () => {
     await ui.refresh();
     const text = () => rowsText(ui.frame().rows);
     expect(text()).toContain("Today, Fri 23 Oct 2026 · Europe/London");
-    expect(text()).toMatch(/OVERDUE \(1\)\n› #\d+ ○ yesterday Pay rent +#home/);
+    expect(text()).toMatch(/OVERDUE \(1\)\n› #\d+ ○ yesterday Pay rent\n/);
     state.down = true;
     await ui.refresh();
     expect(text()).toContain("● offline");
@@ -508,15 +510,15 @@ describe("controller", () => {
     ui.stop();
   });
 
-  test("a quick add sends add_task with the phrase resolved and labels; the details name the agent", async () => {
+  test("a quick add sends add_task with the phrase resolved and a #word kept in the title; the details name the agent", async () => {
     const { api, state } = fakeApi(view);
     const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
     await ui.refresh();
-    for (const key of ["a", ..."Call the accountant fri 2pm #home"].map((k) => (k === " " ? "space" : k))) ui.key(key);
-    expect(rowsText(ui.frame().rows)).toContain("Add: Call the accountant fri 2pm #home   → Fri 30 Oct 14:00 #home");
+    for (const key of ["a", ..."Call the accountant #home fri 2pm"].map((k) => (k === " " ? "space" : k))) ui.key(key);
+    expect(rowsText(ui.frame().rows)).toContain("Add: Call the accountant #home fri 2pm   → Fri 30 Oct 14:00");
     ui.key("enter");
     await ui.idle();
-    expect(state.changes).toEqual([{ tool: "add_task", args: { title: "Call the accountant", dueDate: "2026-10-30", dueTime: "14:00", labels: ["home"] } }]);
+    expect(state.changes).toEqual([{ tool: "add_task", args: { title: "Call the accountant #home", dueDate: "2026-10-30", dueTime: "14:00" } }]);
     ui.key("j");
     ui.key("enter");
     await ui.idle();
@@ -644,7 +646,7 @@ describe("controller", () => {
       setLanguage("pl");
       const polish = rowsText(ui.frame().rows);
       expect(polish).toContain("Dzisiaj, pt., 23 paź 2026 · Europe/London");
-      expect(polish).toMatch(/ZALEGŁE \(1\)\n› #\d+ ○ wczoraj Pay rent +#home/);
+      expect(polish).toMatch(/ZALEGŁE \(1\)\n› #\d+ ○ wczoraj Pay rent\n/);
       expect(polish).toContain("? pomoc");
       setLanguage("ja");
       for (const key of ["2", "3", "4", "5", "?"]) {

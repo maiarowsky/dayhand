@@ -15,8 +15,8 @@ namespace {
 const QStringList names{
     u"localId"_s,   u"serverId"_s,  u"clientId"_s,   u"title"_s,           u"note"_s,     u"dueDate"_s,
     u"dueTime"_s,   u"status"_s,    u"isNow"_s,      u"resumeNote"_s,      u"completedAt"_s, u"archivedAt"_s,
-    u"createdAt"_s, u"updatedAt"_s, u"serverUpdatedAt"_s, u"repeat"_s,     u"labels"_s,   u"links"_s,
-    u"deletedAt"_s, u"checklist"_s, u"reminders"_s,
+    u"createdAt"_s, u"updatedAt"_s, u"serverUpdatedAt"_s, u"repeat"_s,     u"links"_s,    u"deletedAt"_s,
+    u"checklist"_s, u"reminders"_s,
 };
 
 QVariant text(const std::optional<QString> &value)
@@ -94,29 +94,23 @@ TaskItem read(const QSqlQuery &q)
     t.serverUpdatedAt = optionalNumber(q.value(14));
     if (!q.value(15).isNull())
         t.repeat = RepeatRule::parse(json::decode(q.value(15).toString()));
-    for (const auto &label : json::decode(q.value(16).toString()).toArray())
-        t.labels.append(label.toString());
-    t.links = decodeList<TaskLink>(q.value(17));
-    t.deletedAt = optionalNumber(q.value(18));
-    t.checklist = decodeList<ChecklistItem>(q.value(19));
-    if (!q.value(20).isNull())
-        t.reminders = decodeList<TaskReminder>(q.value(20));
+    t.links = decodeList<TaskLink>(q.value(16));
+    t.deletedAt = optionalNumber(q.value(17));
+    t.checklist = decodeList<ChecklistItem>(q.value(18));
+    if (!q.value(19).isNull())
+        t.reminders = decodeList<TaskReminder>(q.value(19));
     return t;
 }
 
 QVariantList values(const TaskItem &t)
 {
-    QJsonArray labels;
-    for (const QString &label : t.labels)
-        labels.append(label);
     const QVariant repeat = t.repeat ? QVariant(json::encode(t.repeat->wire().toObject())) : text(std::nullopt);
     const QVariant reminders = t.reminders ? QVariant(encodeList(*t.reminders)) : text(std::nullopt);
     return {t.localId,         text(t.serverId),       text(t.clientId),      t.title,
             text(t.note),      text(t.dueDate),        text(t.dueTime),       statusWire(t.status),
             t.isNow ? 1 : 0,   text(t.resumeNote),     number(t.completedAt), number(t.archivedAt),
             t.createdAt,       t.updatedAt,            number(t.serverUpdatedAt), repeat,
-            json::encode(labels), encodeList(t.links), number(t.deletedAt),   encodeList(t.checklist),
-            reminders};
+            encodeList(t.links), number(t.deletedAt),  encodeList(t.checklist), reminders};
 }
 
 } // namespace dayhand::TaskRows

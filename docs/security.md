@@ -13,14 +13,14 @@ problem. The detailed threat models are linked at the end.
 | The Android app | its copy of the plan and the waiting changes; the sign-in, encrypted with a key in the Android Keystore | the phone; Android's cloud backup and device transfer are off for Dayhand |
 | Dayhand for macOS | its copy of the plan in `~/Library/Application Support/Dayhand`; the sign-in in the login Keychain | your Mac user |
 | Dayhand for Linux | its copy in `~/.local/share/dayhand`; the sign-in in the Secret Service keyring | your Linux user |
-| `dayhand` and `dayhand ui` | no offline plan or outbox; shell completion caches task numbers, titles and labels; the key is in the system keychain, or a file only you can read | your user on that computer |
+| `dayhand` and `dayhand ui` | no offline plan or outbox; shell completion caches task numbers, titles and project names; the key is in the system keychain, or a file only you can read | your user on that computer |
 | Backups and exports | whatever you export: `dayhand export`, the phone's backup file, `npx convex export` | wherever you keep them |
 
 Shell completion writes `tasks-<hash>.json` in the CLI cache folder: `~/.cache/dayhand` (or
 `$XDG_CACHE_HOME/dayhand`) on Linux, `~/Library/Caches/dayhand` on macOS, or
 `%LOCALAPPDATA%\dayhand\Cache` on Windows; `DAYHAND_CACHE_DIR` overrides it. The folder is created
 with mode 700 and files with mode 600 where POSIX permissions apply. The 60-second lifetime controls
-freshness, not deletion: cached titles and labels remain on disk until you remove the cache files.
+freshness, not deletion: cached titles and project names remain on disk until you remove the cache files.
 
 The local server (`dayhand server start`) keeps its data and keys in a private folder (mode 700, files
 600) and listens on `127.0.0.1` only. A server on your Convex account runs on Convex's infrastructure, in

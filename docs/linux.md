@@ -35,7 +35,7 @@ Without a tray, closing the window quits.
 
 Click a task row to open its details on the right (windows at least 800 pixels wide).
 In a narrower window, the details replace Today and **Back** returns to the list.
-Title, status, current work, where you stopped, comma-separated labels and checklist edits save locally and queue for sync.
+Title, status, current work, where you stopped and checklist edits save locally and queue for sync.
 The due field reads English date phrases like quick add, previews them with **I understand**, and applies them with Return or **Set date**.
 **Today** keeps the time, **No day** clears day and time, and **Remove time** keeps the day.
 Notes save only with **Save note**; repeat rules, reminders and links are previews, not editors.

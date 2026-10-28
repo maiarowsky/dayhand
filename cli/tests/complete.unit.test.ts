@@ -5,11 +5,11 @@ import { SHELLS } from "../src/completion/scripts.js";
 
 let hintCalls = 0;
 const sources: Sources = {
-  aliases: { home: "list -l home" },
+  aliases: { home: "list -p Home" },
   profiles: ["personal", "work"],
   hints: async () => {
     hintCalls++;
-    return { tasks: [{ ref: 4, title: "Call the bank" }, { ref: 42, title: "Write the report" }], labels: ["home", "work"], projects: [{ name: "Home", archived: false }, { name: "Strona piekarni", archived: false }, { name: "Old", archived: true }] };
+    return { tasks: [{ ref: 4, title: "Call the bank" }, { ref: 42, title: "Write the report" }], projects: [{ name: "Home", archived: false }, { name: "Strona piekarni", archived: false }, { name: "Old", archived: true }] };
   },
 };
 const values = async (...words: string[]) => (await complete(words, sources)).candidates.map((c) => c.value);
@@ -31,10 +31,11 @@ describe("candidates", () => {
     expect(await values("--js")).toEqual(["--json"]);
   });
 
-  test("option values: choices, dates, labels, profiles, comma lists, files", async () => {
+  test("option values: choices, dates, profiles, comma lists, files; no label options", async () => {
     expect(await values("--color", "")).toEqual(["auto", "always", "never"]);
     expect(await values("add", "x", "--due", "t")).toEqual(["today", "tomorrow", "tue", "thu", "this"]);
-    expect(await values("edit", "4", "--add-label", "")).toEqual(["home", "work"]);
+    expect((await values("edit", "4", "--")).filter((o) => o.includes("label"))).toEqual([]);
+    expect((await values("list", "--")).filter((o) => o.includes("label"))).toEqual([]);
     expect(await values("--profile", "w")).toEqual(["work"]);
     const statuses = await complete(["list", "--status", "todo,d"], sources);
     expect(statuses.candidates.map((c) => c.value)).toEqual(["todo,doing", "todo,done"]);
@@ -62,7 +63,7 @@ describe("candidates", () => {
     expect(await values("move", "4", "n")).toEqual(["next", "none"]);
   });
 
-  test("projects: commands, references, destinations, colors and labels", async () => {
+  test("projects: commands, references, destinations and colors", async () => {
     expect(await values("project", "")).toEqual(["list", "add", "edit", "archive", "unarchive", "rm", "assign"]);
     expect(await values("project", "add", "")).toEqual([]);
     expect(await values("project", "edit", "")).toEqual(["Home", "Strona piekarni", "Old"]);
@@ -78,7 +79,7 @@ describe("candidates", () => {
     expect(await values("project", "rm", "Home", "--move-tasks-to", "n")).toEqual(["none"]);
     expect(await values("project", "add", "Home", "--color", "a")).toEqual(["amber"]);
     expect(await values("project", "add", "--col")).toEqual(["--color"]);
-    expect(await values("project", "add", "Home", "--from-label", "h")).toEqual(["home"]);
+    expect(await values("project", "add", "Home", "--fr")).toEqual([]);
     expect(await values("list", "--fields", "project")).toEqual(["project", "projectId"]);
   });
 

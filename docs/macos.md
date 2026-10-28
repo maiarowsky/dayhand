@@ -188,12 +188,11 @@ Since 0.3.0 the Mac shows agent work read-only and edits the notification settin
 ## What is left for parity with the Android app
 
 The implemented features, including the trash and change history, are described in
-[macos/README.md](../macos/README.md). The lists are done: All Tasks, No Project and each project and label are
+[macos/README.md](../macos/README.md). The lists are done: All Tasks, No Project and each project are
 places in the sidebar, each as a list, a board or a week plan, next to Done and Archived and the trash
-([Projects and labels](projects.md)). The research estimated 80 to 110 hours for full parity; what remains,
+([Projects](projects.md)). The research estimated 80 to 110 hours for full parity; what remains,
 by screen:
 
-- **Projects**: **Make a project from label** (on the phone and with `dayhand project add --from-label`).
 - **Board**: the now task first in In progress; the Mac's board keeps the order of the list.
 - **Calendar**: the week plan has the hour grid, blocks and drag to a day and time; missing are a single day,
   later dates of a repeating task (`Recurrence.occurrences` is ported) and Undo after a drag.

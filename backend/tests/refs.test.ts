@@ -89,7 +89,6 @@ describe("task numbers", () => {
       title,
       status: "todo",
       isNow: false,
-      labels: [],
       links: [],
       createdAt,
       updatedAt: createdAt,

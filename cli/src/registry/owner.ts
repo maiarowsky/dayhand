@@ -307,7 +307,7 @@ const proposals: CommandSpec = {
       name: "merge",
       schema: "merge.schema.json",
       summary: "Merge a proposal into a task already in the plan; the proposal goes to the trash",
-      description: `The task gets the proposal's note, links, labels, source and return webhooks. ${OWNER}`,
+      description: `The task gets the proposal's note, links, source and return webhooks. ${OWNER}`,
       args: [{ name: "ref", description: "The proposal: #42 or 42", required: true }],
       options: [{ flags: "--into <ref>", description: "The task to merge it into (required)" }],
       tools: ["merge_proposal"],

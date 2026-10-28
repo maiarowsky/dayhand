@@ -10,14 +10,14 @@ import { connectAgent, dayhand, dayhandJson, helm, newUser, TEST_HOME } from "./
 describe("output", () => {
   test("dayhand without a command shows Today", async () => {
     const { key } = await newUser();
-    await dayhand(key, ["add", "Call", "the", "bank", "--time", "18:00", "-l", "admin"]);
+    await dayhand(key, ["add", "Call", "the", "bank", "--time", "18:00"]);
     await dayhand(key, ["now", "1", "--note", "have the account number"]);
     const run = await dayhand(key, []);
     expect(run.code).toBe(0);
     expect(run.stdout).toMatch(/^Today, \w{3} \d{1,2} \w{3} \d{4} \(Europe\/London\)\n/);
     expect(run.stdout).toContain("NOW  #1 Call the bank\n     next: have the account number");
     // Batch 2: aligned columns; inside TODAY only the time is shown.
-    expect(run.stdout).toMatch(/#1 +\[~\] +18:00 +Call the bank +#admin/);
+    expect(run.stdout).toMatch(/#1 +\[~\] +18:00 +Call the bank/);
     expect(await dayhandJson(key, [])).toEqual(await dayhandJson(key, ["today"]));
   });
 
@@ -42,11 +42,11 @@ describe("output", () => {
 
   test("--plain is tab-separated without headers; --fields picks columns and JSON fields", async () => {
     const { key } = await newUser();
-    await dayhand(key, ["add", "Water plants", "--time", "18:00", "-l", "home", "-l", "garden"]);
+    await dayhand(key, ["add", "Water plants", "--time", "18:00"]);
     await dayhand(key, ["add", "Someday", "--no-due"]);
     const plain = await dayhand(key, ["list", "--plain"]);
     // Server order: undated tasks first, then by day and time.
-    expect(plain.stdout).toMatch(/^2\ttodo\t\t\tSomeday\t\n1\ttodo\t\d{4}-\d{2}-\d{2}\t18:00\tWater plants\thome,garden\n$/);
+    expect(plain.stdout).toMatch(/^2\ttodo\t\t\tSomeday\n1\ttodo\t\d{4}-\d{2}-\d{2}\t18:00\tWater plants\n$/);
     expect((await dayhand(key, ["today", "--plain", "--fields", "ref,title"])).stdout).toBe("today\t1\tWater plants\n");
     const json = await dayhandJson(key, ["list", "--fields", "ref,title,dueDate"]);
     expect(json.result).toEqual([
@@ -147,15 +147,16 @@ describe("commands", () => {
     expect(shown.stdout).toMatch(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}  cli  complete  .*status: "todo" → "done"/);
   });
 
-  test("now is a task reference; note appends; edit adds and removes labels", async () => {
+  test("now is a task reference; note appends; edit changes the title and clears the note", async () => {
     const { key } = await newUser();
-    await dayhand(key, ["add", "Draft", "-l", "home", "--note", "outline"]);
+    await dayhand(key, ["add", "Draft", "--note", "outline"]);
     await dayhand(key, ["now", "1"]);
     await dayhand(key, ["note", "now", "intro written"]);
     expect((await dayhand(key, ["note", "1"])).stdout).toBe("outline\nintro written\n");
-    const edited = await dayhandJson(key, ["edit", "now", "--add-label", "work", "--rm-label", "home"]);
-    expect(edited.labels).toEqual(["work"]);
-    expect((await dayhandJson(key, ["edit", "1", "--clear-note", "--clear-labels"])).note).toBeUndefined();
+    const edited = await dayhandJson(key, ["edit", "now", "--title", "Draft v2"]);
+    expect(edited).toMatchObject({ ref: 1, title: "Draft v2" });
+    expect(edited).not.toHaveProperty("labels");
+    expect((await dayhandJson(key, ["edit", "1", "--clear-note"])).note).toBeUndefined();
     expect((await dayhand(key, ["edit", "1"])).code).toBe(2);
     const done = await dayhand(key, ["done", "now"]);
     expect(done.stdout).toMatch(/^Done:\n  #1 +\[x\]/);

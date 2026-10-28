@@ -24,7 +24,6 @@ function task(fields: Partial<Doc<"tasks">> = {}): Doc<"tasks"> {
     title: `Task ${counter}`,
     status: "todo",
     isNow: false,
-    labels: [],
     links: [],
     createdAt: Date.UTC(2026, 9, 1, 8, 0),
     updatedAt: Date.UTC(2026, 9, 2, 9, 30),
@@ -152,13 +151,13 @@ describe("events", () => {
     expect(renderCalendar([t], LONDON)).toContain(`UID:${t._id}@helm\r\nDTSTAMP:20261002T093000Z\r\n`);
   });
 
-  test("title, note, number and labels", () => {
-    const t = task({ title: "Call Ann, re: plan; 2\\3", note: "line one\nline two", labels: ["phone", "a,b"], dueDate: "2026-10-30" });
+  test("title, note and number, without categories", () => {
+    const t = task({ title: "Call Ann, re: plan; 2\\3", note: "line one\nline two", dueDate: "2026-10-30" });
     const text = renderCalendar([t], LONDON);
     const vevent = events(parse(text))[0];
     expect(vevent.getFirstPropertyValue("summary")).toBe("Call Ann, re: plan; 2\\3");
     expect(vevent.getFirstPropertyValue("description")).toBe(`Dayhand #${t.ref}\n\nline one\nline two`);
-    expect(text).toContain("CATEGORIES:phone,a\\,b\r\n");
+    expect(text).not.toContain("CATEGORIES");
     expect(text).toContain("TRANSP:TRANSPARENT\r\n");
   });
 

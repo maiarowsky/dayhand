@@ -82,7 +82,7 @@ describe("folders follow each system's convention", () => {
     const legacy = join(dirname(current), "hlm");
     mkdirSync(legacy, { recursive: true });
     const url = "https://legacy.convex.site";
-    writeFileSync(join(legacy, "config.toml"), `default_profile = "personal"\n[profiles.personal]\nurl = "${url}"\n[aliases]\nhome = "list -l home"\n`);
+    writeFileSync(join(legacy, "config.toml"), `default_profile = "personal"\n[profiles.personal]\nurl = "${url}"\n[aliases]\nhome = "list -p Home"\n`);
     const paths = resolvePaths(env, platform, home);
     expect(normalize(paths.configDir)).toBe(normalize(legacy));
     const config = loadConfig(paths.configFile, commandNames());
@@ -105,7 +105,7 @@ describe("folders follow each system's convention", () => {
       expect(loadConfig(next.configFile, commandNames())).toMatchObject({
         defaultProfile: "personal",
         profiles: { personal: { url }, local: { url: localUrl } },
-        aliases: { home: "list -l home" },
+        aliases: { home: "list -p Home" },
       });
       const credentials = new FileStore(next.configDir);
       expect(await credentials.get(url)).toEqual({ key: "dayhand_legacy", source: "file" });
@@ -166,7 +166,7 @@ url = "https://personal.convex.site/mcp"
 [profiles.work]
 url = "https://work.convex.site"
 [aliases]
-home = "list -l home --status todo,doing"
+home = "list -p Home --status todo,doing"
 [ui]
 color = "never"
 `);
@@ -175,7 +175,7 @@ color = "never"
       url: "https://top.convex.site",
       defaultProfile: "personal",
       profiles: { personal: { url: "https://personal.convex.site" }, work: { url: "https://work.convex.site" } },
-      aliases: { home: "list -l home --status todo,doing" },
+      aliases: { home: "list -p Home --status todo,doing" },
       color: "never",
     });
   });
@@ -263,15 +263,15 @@ url = "https://work.convex.site"
 
 describe("aliases", () => {
   test("words split without a shell", () => {
-    expect(splitWords(`list -l "my home"  --search 'it''s'`)).toEqual(["list", "-l", "my home", "--search", "its"]);
+    expect(splitWords(`list -p "my home"  --search 'it''s'`)).toEqual(["list", "-p", "my home", "--search", "its"]);
     expect(splitWords('add ""')).toEqual(["add", ""]);
     expect(() => splitWords('list "open')).toThrow(/Unclosed quote/);
   });
 
   test("the first command word expands once; global options before it are kept", () => {
-    const aliases = { home: "list -l home", deep: "home --done" };
-    expect(expandAlias(["home", "--json"], aliases, VALUE_OPTIONS)).toEqual(["list", "-l", "home", "--json"]);
-    expect(expandAlias(["--profile", "home", "home"], aliases, VALUE_OPTIONS)).toEqual(["--profile", "home", "list", "-l", "home"]);
+    const aliases = { home: "list -p Home", deep: "home --done" };
+    expect(expandAlias(["home", "--json"], aliases, VALUE_OPTIONS)).toEqual(["list", "-p", "Home", "--json"]);
+    expect(expandAlias(["--profile", "home", "home"], aliases, VALUE_OPTIONS)).toEqual(["--profile", "home", "list", "-p", "Home"]);
     expect(expandAlias(["deep"], aliases, VALUE_OPTIONS)).toEqual(["home", "--done"]);
     expect(expandAlias(["list", "home"], aliases, VALUE_OPTIONS)).toEqual(["list", "home"]);
     expect(expandAlias(["toString"], aliases, VALUE_OPTIONS)).toEqual(["toString"]);

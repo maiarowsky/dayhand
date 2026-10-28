@@ -25,7 +25,6 @@ public enum HistoryField: String, CaseIterable, Hashable, Sendable {
     case dueDate
     case dueTime
     case `repeat`
-    case labels
     case links
     case checklist
     case reminders

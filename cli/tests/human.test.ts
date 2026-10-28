@@ -84,12 +84,13 @@ describe("config.toml", () => {
     writeFileSync(
       m.configFile,
       readFileSync(m.configFile, "utf8") +
-        `\n[profiles.broken]\nurl = "${dead}"\n\n[aliases]\nmine = "list -l mine --status todo,doing"\nsoon = "add --due tomorrow"\n`,
+        `\n[profiles.broken]\nurl = "${dead}"\n\n[aliases]\nmine = "list -p Mine --status todo,doing"\nsoon = "add --due tomorrow"\n`,
     );
-    expect((await m.run(["soon", "Labelled", "-l", "mine", "--json"])).code).toBe(0);
+    expect((await m.run(["project", "add", "Mine", "--json"])).code).toBe(0);
+    expect((await m.run(["soon", "In mine", "-p", "Mine", "--json"])).code).toBe(0);
     expect((await m.run(["add", "Other", "--json"])).code).toBe(0);
     const mine = JSON.parse((await m.run(["mine", "--json"])).stdout);
-    expect(mine.result.map((t: { title: string }) => t.title)).toEqual(["Labelled"]);
+    expect(mine.result.map((t: { title: string }) => t.title)).toEqual(["In mine"]);
     expect(mine.result[0].dueDate).toBe(london("tomorrow").date);
 
     expect((await m.run(["--profile", "broken", "list", "--json"])).code).toBe(3); // no key stored for that URL
@@ -161,7 +162,7 @@ describe("dates in plain English", () => {
 
 test("list filters narrow list_all's result and keep its schema", async () => {
   const { key } = await newUser();
-  await dayhand(key, ["add", "Old bill", "--due", "yesterday", "-l", "home"]);
+  await dayhand(key, ["add", "Old bill", "--due", "yesterday"]);
   await dayhand(key, ["add", "Call the accountant", "--due", "tomorrow", "--note", "VAT question"]);
   await dayhand(key, ["add", "Someday idea", "--no-due"]);
   await dayhand(key, ["add", "Doing now", "--status", "doing", "--due", "in 10 days"]);
@@ -183,7 +184,7 @@ test("list filters narrow list_all's result and keep its schema", async () => {
 
 test("colors: only with --color always (or FORCE_COLOR) in a pipe, never in --json or --plain", async () => {
   const { key } = await newUser();
-  await dayhand(key, ["add", "Colorful", "-l", "x"]);
+  await dayhand(key, ["add", "Colorful", "--due", "yesterday"]);
   const ESC = "\u001b[";
   expect((await dayhand(key, ["list"])).stdout).not.toContain(ESC);
   expect((await dayhand(key, ["list", "--color", "always"])).stdout).toContain(ESC);

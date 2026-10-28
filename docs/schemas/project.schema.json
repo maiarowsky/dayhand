@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.dayhand.invalid/project.schema.json",
   "title": "Project",
-  "description": "A project as update_project returns it (since 0.13.1); list_projects adds counts. A task is in at most one project (its projectId); labels are free tags across projects. Fields that are not set are left out. Fields may be added; none are removed or retyped within a major version.",
+  "description": "A project as update_project returns it (since 0.13.1); list_projects adds counts. A task is in at most one project (its projectId). Fields that are not set are left out. Fields may be added; none are removed or retyped within a major version.",
   "type": "object",
   "required": [
     "id",

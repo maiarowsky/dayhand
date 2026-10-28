@@ -55,14 +55,13 @@ extension AppModel {
 
     private var searchQuery: String { search.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    /// Whether [task] matches what is typed in the search field (title, note or labels; case and accents ignored).
+    /// Whether [task] matches what is typed in the search field (title or note; case and accents ignored).
     func matchesSearch(_ task: TaskItem) -> Bool {
         let query = searchQuery
         guard !query.isEmpty else { return true }
         let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
         return task.title.range(of: query, options: options) != nil
             || (task.note?.range(of: query, options: options) != nil)
-            || task.labels.contains { $0.range(of: query, options: options) != nil }
     }
 
     /// Today's sections with only the tasks the search matches.
@@ -80,7 +79,6 @@ extension AppModel {
         case .all: return counts.all
         case .noProject: return counts.noProject
         case .project(let id): return counts.project(id)
-        case .label(let name): return counts.label(name)
         case nil: return SidebarCounts.Count()
         }
     }

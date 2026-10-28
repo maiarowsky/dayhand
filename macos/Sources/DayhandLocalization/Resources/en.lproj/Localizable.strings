@@ -316,8 +316,6 @@
 	<string>Its tasks stay; choose where they go.</string>
 	<key>Keep in title</key>
 	<string>Keep in title</string>
-	<key>Labels</key>
-	<string>Labels</string>
 	<key>Language</key>
 	<string>Language</string>
 	<key>Last checked %@.</key>
@@ -688,8 +686,6 @@
 	<string>The update was canceled.</string>
 	<key>There are too many checklist items, or one is too long.</key>
 	<string>There are too many checklist items, or one is too long.</string>
-	<key>There are too many labels, or one is too long.</key>
-	<string>There are too many labels, or one is too long.</string>
 	<key>There is already a project named “%@”.</key>
 	<string>There is already a project named “%@”.</string>
 	<key>These ring only when the task has a time.</key>
@@ -804,8 +800,6 @@
 	<string>fail</string>
 	<key>from “%@”</key>
 	<string>from “%@”</string>
-	<key>home, work</key>
-	<string>home, work</string>
 	<key>next step</key>
 	<string>next step</string>
 	<key>no</key>

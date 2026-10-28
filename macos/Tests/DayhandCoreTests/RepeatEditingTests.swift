@@ -212,11 +212,10 @@ struct OfflineRepeatTests {
         return (repo, SyncEngine(repository: repo, sender: remote, source: remote, onStatus: { _ in }), remote)
     }
 
-    /// Thursday 22 October 2026, repeating on Thursdays and Sundays, with a label, a ticked item and its reminders.
+    /// Thursday 22 October 2026, repeating on Thursdays and Sundays, with a ticked item and its reminders.
     func plants(_ repo: TaskRepository) async throws -> TaskItem {
         let t = try await repo.add(title: "Water the plants", dueDate: "2026-10-22", dueTime: "08:00")
         try await repo.setRepeat(t.localId, RepeatRule(every: .week, weekdays: [4, 7]))
-        try await repo.setLabels(t.localId, ["home"])
         try await repo.setReminders(t.localId, [.before(15)])
         try await repo.addItem(t.localId, "Balcony")
         let item = try #require(try await repo.task(t.localId)?.checklist.first)
@@ -237,7 +236,6 @@ struct OfflineRepeatTests {
         #expect(next.dueTime == "08:00")
         #expect(next.status == .todo)
         #expect(next.repeat == RepeatRule(every: .week, weekdays: [4, 7]))
-        #expect(next.labels == ["home"])
         #expect(next.reminders == [.before(15)])
         #expect(next.checklist.map(\.done) == [false])
         #expect(next.clientId == next.localId)

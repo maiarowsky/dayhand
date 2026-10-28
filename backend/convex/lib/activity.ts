@@ -7,7 +7,7 @@ import type { ObjectType } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
-import { actorLabel, fail, loadTask, type Identity } from "./core";
+import { actorLabel, changeOf, fail, loadTask, type Identity } from "./core";
 
 type Args = ObjectType<(typeof args)["listEvents"]>;
 
@@ -66,8 +66,8 @@ async function view(ctx: QueryCtx, event: Doc<"taskEvents">) {
     actor: event.actor,
     actorName: event.actorName ?? null,
     by: actorLabel(event),
-    before: event.before ?? null,
-    after: event.after ?? null,
+    before: changeOf(event.before),
+    after: changeOf(event.after),
   };
 }
 

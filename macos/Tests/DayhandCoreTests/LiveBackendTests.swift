@@ -76,13 +76,13 @@ struct LiveBackendTests {
 
         // Edits from the Mac, then the trash: the server agrees, and a second round changes nothing.
         try await repo.rename(accountant.localId, to: "E2E \(run) call the accountant about VAT")
-        try await repo.setLabels(accountant.localId, ["e2e", "home"])
+        try await repo.setNote(accountant.localId, "E2E note")
         try await repo.moveToTrash(done.localId)
         try await repo.clearNow()
         await engine.round()
         let after = try await check.snapshot().get().tasks
         #expect(after.first { $0.id == a.id }?.title == "E2E \(run) call the accountant about VAT")
-        #expect(after.first { $0.id == a.id }?.labels == ["e2e", "home"])
+        #expect(after.first { $0.id == a.id }?.note == "E2E note")
         #expect(after.first { $0.title == "E2E \(run) done today" }?.deletedAt != nil)
         #expect(after.allSatisfy { !$0.isNow })
         let before = try await repo.allTasks()

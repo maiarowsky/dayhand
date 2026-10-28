@@ -167,13 +167,6 @@ struct TaskRulesTests {
         #expect(TaskRules.title(String(repeating: "😀", count: 251)) == nil)
     }
 
-    @Test func labelsAreTrimmedDeduplicatedAndLimitedLikeOnTheServer() {
-        #expect(TaskRules.labels([" home", "work", "home ", " "]) == ["home", "work"])
-        #expect(TaskRules.labels([String(repeating: "x", count: 51)]) == nil)
-        #expect(TaskRules.labels((1...21).map { "l\($0)" }) == nil)
-        #expect(TaskRules.labels((1...20).map { "l\($0)" })?.count == 20)
-    }
-
     @Test func linksMustBeAbsoluteHttpOrHttpsAddresses() {
         #expect(TaskRules.isLinkURL("https://example.com/a?b=1"))
         #expect(TaskRules.isLinkURL("http://10.0.2.2:3210"))

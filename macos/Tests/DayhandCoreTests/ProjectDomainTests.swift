@@ -144,15 +144,15 @@ struct TaskListTests {
 
     var tasks: [TaskItem] {
         [
-            task("late", due: "2026-10-20") { $0.projectLocalId = "p1"; $0.labels = ["czekam"] },
+            task("late", due: "2026-10-20") { $0.projectLocalId = "p1" },
             task("today", due: today) { $0.projectLocalId = "p1" },
             task("later", due: "2026-10-30") { $0.projectLocalId = "p1" },
-            task("someday") { $0.projectLocalId = "p1"; $0.labels = ["czekam", "telefon"] },
-            task("done", due: today, status: .done) { $0.projectLocalId = "p1"; $0.completedAt = 5; $0.labels = ["dom"] },
+            task("someday") { $0.projectLocalId = "p1" },
+            task("done", due: today, status: .done) { $0.projectLocalId = "p1"; $0.completedAt = 5 },
             task("loose", due: "2026-10-21"),
             task("unknown project") { $0.projectLocalId = "gone" },
             task("archived task") { $0.projectLocalId = "p2"; $0.archivedAt = 1 },
-            task("trashed") { $0.projectLocalId = "p2"; $0.deletedAt = 1; $0.labels = ["kosz"] },
+            task("trashed") { $0.projectLocalId = "p2"; $0.deletedAt = 1 },
             task("in old") { $0.projectLocalId = "p3" },
         ]
     }
@@ -164,9 +164,6 @@ struct TaskListTests {
         #expect(counts.project("p2") == .init(open: 0, overdue: 0))
         #expect(counts.project("p3") == .init(open: 1, overdue: 0))
         #expect(counts.noProject == .init(open: 2, overdue: 1))
-        #expect(counts.label("czekam") == .init(open: 2, overdue: 1))
-        #expect(counts.label("dom") == .init(open: 0, overdue: 0))
-        #expect(counts.labelNames == ["czekam", "dom", "telefon"])
         #expect(counts.archivedProjects == 1)
     }
 
@@ -180,8 +177,6 @@ struct TaskListTests {
         #expect(s.openCount == 4 && s.doneCount == 1)
         let none = taskListSections(tasks, filter: .noProject, projects: Set(projects.map(\.localId)), nowMs: utc("2026-10-22T09:00"), timezone: "Europe/London")
         #expect(ids(none.overdue + none.noDay) == ["loose", "unknown project"])
-        let label = taskListSections(tasks, filter: .label("czekam"), projects: [], nowMs: utc("2026-10-22T09:00"), timezone: "Europe/London")
-        #expect(ids(label.overdue + label.noDay) == ["late", "someday"])
     }
 }
 
@@ -296,7 +291,7 @@ struct ProjectMigrationTests {
         }
         let repo = TaskRepository(database: try AppDatabase(queue))
         let old = try #require(try await repo.task("old"))
-        #expect(old.title == "From 0.3" && old.status == .doing && old.labels == ["home"] && old.ref == 42)
+        #expect(old.title == "From 0.3" && old.status == .doing && old.ref == 42)
         #expect(old.projectLocalId == nil)
         #expect(old.serverUpdatedAt == nil)
         #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.update])
@@ -304,7 +299,7 @@ struct ProjectMigrationTests {
         #expect(try await repo.projectSupport() == .unknown)
 
         try await repo.apply(Snapshot(
-            tasks: [RemoteTask(id: "s1", title: "From 0.3", status: "doing", createdAt: 1, updatedAt: 2, labels: ["home"], ref: 42, projectId: "srvP")],
+            tasks: [RemoteTask(id: "s1", title: "From 0.3", status: "doing", createdAt: 1, updatedAt: 2, ref: 42, projectId: "srvP")],
             projects: [RemoteProject(id: "srvP", name: "Dom", color: .teal, position: 1024, createdAt: 1, updatedAt: 1)]
         ))
         #expect(try await repo.task("old")?.projectLocalId == "srvP")
@@ -312,6 +307,32 @@ struct ProjectMigrationTests {
         #expect(try await repo.projectSupport() == .supported)
         let columns = try await queue.read { db in try db.columns(in: "project").map(\.name) }
         #expect(Set(["localId", "serverId", "clientId", "name", "color", "icon", "note", "position", "archivedAt"]).isSubset(of: Set(columns)))
+    }
+}
+
+/// Labels are gone from Dayhand (v8): the column and what it held go, every task and its waiting changes stay.
+struct LabelRemovalMigrationTests {
+    @Test func theLabelsColumnGoesWithItsDataAndTheTasksStay() async throws {
+        let queue = try DatabaseQueue()
+        try AppDatabase.inMemory().migrator.migrate(queue, upTo: "v7")
+        try await queue.write { db in
+            try db.execute(sql: """
+                INSERT INTO task (localId, serverId, title, status, createdAt, updatedAt, serverUpdatedAt, labels, projectLocalId)
+                VALUES ('old', 's1', 'Water the plants', 'todo', 1, 2, 2, '["garden","weekly"]', NULL)
+                """)
+            try db.execute(sql: """
+                INSERT INTO outbox (opId, mutation, argsJson, taskLocalId, clientId, createdAt)
+                VALUES ('o1', 'app:update', '{"labels":["garden"],"clientId":"o1"}', 'old', 'o1', 3)
+                """)
+        }
+        let repo = TaskRepository(database: try AppDatabase(queue))
+        let old = try #require(try await repo.task("old"))
+        #expect(old.title == "Water the plants" && old.serverUpdatedAt == 2)
+        // A change queued before is still sent; the server ignores its labels.
+        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.update])
+        let columns = try await queue.read { db in try db.columns(in: "task").map(\.name) }
+        #expect(!columns.contains("labels"))
+        #expect(columns.contains("title") && columns.contains("projectLocalId"))
     }
 }
 

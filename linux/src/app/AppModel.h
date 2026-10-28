@@ -129,7 +129,6 @@ public:
     Q_INVOKABLE void setStatus(const QString &id, const QString &status);
     Q_INVOKABLE void setResumeNote(const QString &id, const QString &note);
     Q_INVOKABLE bool saveNote(const QString &id, const QString &note);
-    Q_INVOKABLE bool setLabels(const QString &id, const QString &commaSeparated);
     Q_INVOKABLE bool addChecklistItem(const QString &id, const QString &title);
     Q_INVOKABLE void renameChecklistItem(const QString &id, const QString &itemId, const QString &title);
     Q_INVOKABLE void toggleChecklistItem(const QString &id, const QString &itemId);

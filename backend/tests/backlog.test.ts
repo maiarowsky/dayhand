@@ -4,7 +4,6 @@
 import { describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { readTask } from "../convex/lib/backlogMd";
-import { parseFrontmatter } from "../convex/lib/frontmatter";
 import { appClient, asUser, callTool, createKey, mcpClient, newUserId, openApiChecker, rest } from "./helpers";
 
 type File = { path: string; content: string };
@@ -70,7 +69,7 @@ describe("import_backlog", () => {
       expect.arrayContaining([
         'tasks/task-4 - Ask-the-carrier.md: status "Waiting on carrier" is not one of the project\'s statuses; read as todo',
         "tasks/task-4 - Ask-the-carrier.md: depends on TASK-99, which is neither in these files nor imported before; left out",
-        "*: Not carried over, Dayhand has no field for them: assignee (1 file), priority (1 file)",
+        "*: Not carried over, Dayhand has no field for them: assignee (1 file), labels (1 file), priority (1 file)",
       ]),
     );
 
@@ -79,7 +78,6 @@ describe("import_backlog", () => {
     const policy = byTitle(tasks, "Agree the policy");
     expect(page).toMatchObject({
       status: "todo",
-      labels: ["site"],
       source: { kind: "backlog-md", ref: "TASK-1" },
       acceptance: [
         { id: "a1", text: "The page explains the 30 days", met: false },
@@ -337,20 +335,6 @@ describe("export_backlog", () => {
     expect((await callTool(target.client, "import_backlog", { files: boundary.files.map(({ path, content }: File) => ({ path, content })) })).created).toBe(1);
   });
 
-  test("an oversized config warns and retains every aggregated label", async () => {
-    const { client } = await owner();
-    const labels = Array.from({ length: 100 }, (_, i) => Array.from({ length: 20 }, (_, j) => `label-${i}-${j}-`.padEnd(50, "x")));
-    const files = labels.map((group, i) => file(`tasks/task-${i}.md`, `id: TASK-${i}\ntitle: Labels ${i}\nlabels: ${JSON.stringify(group)}`));
-    expect((await callTool(client, "import_backlog", { files })).created).toBe(100);
-    const exported = await callTool(client, "export_backlog");
-    expect(exported.config.content.length).toBeGreaterThan(100_000);
-    expect(exported.notes).toEqual(["config.yml: exported file exceeds Dayhand import limit (100000 characters); text was not truncated"]);
-    expect(parseFrontmatter(exported.config.content).labels).toEqual(labels.flat().sort());
-    const target = await owner();
-    const refused = await target.client.callTool({ name: "import_backlog", arguments: { files: [exported.config] } });
-    expect((refused.structuredContent as any).error).toMatchObject({ code: "invalid_argument", message: expect.stringContaining("100000 characters") });
-  });
-
   test("flattened text stays complete and warnings name every task over the import limits", async () => {
     const { client } = await owner();
     const checklist = await callTool(client, "add_task", { title: "Checklist overflow", note: "n".repeat(20_000), checklist: [{ title: "Keep this item" }] });
@@ -417,11 +401,10 @@ describe("export_backlog", () => {
 
   test("round trip: export one plan, import it into another, and the criteria, dependencies and statuses survive", async () => {
     const { client: source } = await owner();
-    const base = await callTool(source, "add_task", { title: "Pick a supplier", labels: ["ops"] });
+    const base = await callTool(source, "add_task", { title: "Pick a supplier" });
     const work = await callTool(source, "add_task", {
       title: "Order the boxes",
       note: "Two sizes.",
-      labels: ["ops", "q4"],
       links: [{ url: "https://supplier.example.com/boxes", title: "catalogue" }],
       checklist: [{ title: "Measure" }],
       acceptance: [{ text: "Boxes arrive", met: false }, { text: "Invoice filed", met: true }],
@@ -456,10 +439,9 @@ describe("export_backlog", () => {
     expect(imported).toMatchObject({ created: 3, failed: [], skipped: [] });
     const tasks = await allTasks(target);
     const supplier = byTitle(tasks, "Pick a supplier");
-    expect(supplier).toMatchObject({ status: "done", labels: ["ops"], proof: { summary: "Chose the local one.\n- quotes: pass" } });
+    expect(supplier).toMatchObject({ status: "done", proof: { summary: "Chose the local one.\n- quotes: pass" } });
     expect(byTitle(tasks, "Order the boxes")).toMatchObject({
       status: "doing",
-      labels: ["ops", "q4"],
       links: [{ url: "https://supplier.example.com/boxes" }],
       acceptance: [
         { text: "Boxes arrive", met: false },
@@ -543,12 +525,12 @@ describe("Backlog.md and projects (0.13.0)", () => {
     const { userId, client } = await owner();
     const user = asUser(userId);
     await user.mutation(internal.ops.addProject, { name: "Shop front" });
-    const outside: any = await user.mutation(internal.ops.add, { title: "Outside", labels: ["misc"] });
-    await user.mutation(internal.ops.add, { title: "Inside", labels: ["site"], projectId: "shop front", dependsOn: [outside.id] });
+    const outside: any = await user.mutation(internal.ops.add, { title: "Outside" });
+    await user.mutation(internal.ops.add, { title: "Inside", projectId: "shop front", dependsOn: [outside.id] });
     const exported = await callTool(client, "export_backlog", { projectId: "Shop front" });
     expect(exported.files.map((f: any) => f.content.match(/^title: (.*)$/m)?.[1])).toEqual(["Inside"]);
     expect(exported.config.content).toMatch(/^project_name: Shop front$/m);
-    expect(exported.config.content).toMatch(/^labels: \['site'\]$/m);
+    expect(exported.config.content).toMatch(/^labels: \[\]$/m);
     expect(exported.notes).toContain("1 task(s) depend on tasks not exported (archived, in the trash or in another project); those dependencies are left out");
     const whole = await callTool(client, "export_backlog", {});
     expect(whole.total).toBe(2);

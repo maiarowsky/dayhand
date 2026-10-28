@@ -4,7 +4,7 @@ import SwiftUI
 
 /**
  * The selected task's details in a panel along the bottom of the main area: the title, status, **Work on It Now** and
- * close at the top; Details (day, reminders, repeat, labels, project), the checklist and the note side by side; then
+ * close at the top; Details (day, reminders, repeat, project), the checklist and the note side by side; then
  * what agents set (read-only), the history and archive or trash. The panel's top edge drags it taller or shorter.
  */
 struct TaskPanel: View {

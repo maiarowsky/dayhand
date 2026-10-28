@@ -12,9 +12,9 @@ namespace dayhand {
 
 namespace {
 
-const FieldSet allFields{Field::Title,  Field::Note,    Field::Due,     Field::Status,    Field::Now,
-                         Field::Resume, Field::Archived, Field::Repeat, Field::Labels,    Field::Links,
-                         Field::Deleted, Field::Checklist, Field::Reminders};
+const FieldSet allFields{Field::Title,  Field::Note,     Field::Due,    Field::Status,  Field::Now,
+                         Field::Resume, Field::Archived, Field::Repeat, Field::Links,   Field::Deleted,
+                         Field::Checklist, Field::Reminders};
 
 FieldSet updatedFields(const QString &argsJson)
 {
@@ -26,8 +26,7 @@ FieldSet updatedFields(const QString &argsJson)
     const std::pair<const char16_t *, Field> keys[] = {
         {u"title", Field::Title},     {u"note", Field::Note},           {u"dueDate", Field::Due},
         {u"dueTime", Field::Due},     {u"resumeNote", Field::Resume},   {u"repeat", Field::Repeat},
-        {u"labels", Field::Labels},   {u"links", Field::Links},         {u"checklist", Field::Checklist},
-        {u"reminders", Field::Reminders},
+        {u"links", Field::Links},     {u"checklist", Field::Checklist}, {u"reminders", Field::Reminders},
     };
     for (const auto &[key, field] : keys) {
         if (o.contains(QStringView(key)))
@@ -55,7 +54,6 @@ TaskItem fromRemote(const std::optional<TaskItem> &row, const RemoteTask &r)
     task.updatedAt = r.updatedAt;
     task.serverUpdatedAt = r.updatedAt;
     task.repeat = r.repeat;
-    task.labels = r.labels;
     task.links = r.links;
     task.deletedAt = r.deletedAt;
     task.checklist = r.checklist;
@@ -85,8 +83,6 @@ void keepLocal(TaskItem &task, const TaskItem &row, const FieldSet &keep)
         task.archivedAt = row.archivedAt;
     if (keep.contains(Field::Repeat))
         task.repeat = row.repeat;
-    if (keep.contains(Field::Labels))
-        task.labels = row.labels;
     if (keep.contains(Field::Links))
         task.links = row.links;
     if (keep.contains(Field::Deleted))

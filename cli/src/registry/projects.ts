@@ -1,4 +1,4 @@
-// Project commands call the merged backend tools; tasks still have independent labels.
+// Project commands call the merged backend tools; a task is in at most one project.
 import { CliError, usageError } from "../core/exit.js";
 import { findProject, POSITION_STEP, PROJECT_COLORS, PROJECT_NEEDS, requireProjects, unknownProjectTool, type Project, type ProjectList } from "../projects.js";
 import { tsv } from "../render/format.js";
@@ -71,22 +71,17 @@ function archive(name: "archive" | "unarchive"): CommandSpec {
 const commands: CommandSpec[] = [
   { name: "list", schema: "project-list.schema.json", summary: "Projects in menu order with open and overdue counts", options: [{ flags: "--archived", description: "Include archived projects" }], tools: ["list_projects"], examples: ["dayhand project list --archived --json"], run: list },
   {
-    name: "add", schema: "project-added.schema.json", summary: "Create a project, optionally moving tasks from a label",
+    name: "add", schema: "project-added.schema.json", summary: "Create a project",
     description: "Here --color is the project's token; put terminal --color auto|always|never before project. --no-color still controls terminal output.",
     args: [{ name: "name", description: "Project name (1–50 characters, unique in any case)", required: true, variadic: true }],
     options: [
       { flags: "--color <token>", description: "Project color", choices: PROJECT_COLORS },
       { flags: "--icon <emoji>", description: "One emoji" }, { flags: "--note <text>", description: "Project context (up to 2000 characters)" },
-      { flags: "--from-label <label>", description: "Move tasks with this label and no project; report skipped tasks" },
-      { flags: "--remove-label", description: "Remove the label from moved tasks (requires --from-label)" },
     ], tools: ["add_project"],
-    examples: ['dayhand project add "Strona piekarni" --color amber --icon 🥐 --note "Strona i menu dla piekarni"', "dayhand project add Dom --from-label dom --dry-run"],
+    examples: ['dayhand project add "Strona piekarni" --color amber --icon 🥐 --note "Strona i menu dla piekarni"', "dayhand project add Dom --dry-run"],
     run: async (ctx, args, opts) => {
-      const value = await tool<{ project: Project; moved: unknown[]; skipped: unknown[] }>(ctx, "add_project", {
-        ...metadata(opts), name: (args.name as string[]).join(" "), clientId: ctx.clientId(),
-        ...(opts.fromLabel !== undefined ? { fromLabel: opts.fromLabel } : {}), ...(opts.removeLabel ? { removeLabel: true } : {}),
-      });
-      return { value, view: { kind: "text", text: `Added ${line(value.project)}\nMoved ${value.moved.length}; skipped ${value.skipped.length}` } };
+      const value = await tool<{ project: Project }>(ctx, "add_project", { ...metadata(opts), name: (args.name as string[]).join(" "), clientId: ctx.clientId() });
+      return { value, view: { kind: "text", text: `Added ${line(value.project)}` } };
     },
   },
   {

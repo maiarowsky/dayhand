@@ -52,7 +52,10 @@ describe("exit codes", () => {
     const { key } = await newUser();
     await dayhand(key, ["add", "Task"]);
     const unknownFlag = expectFailure(await dayhand(key, ["list", "--bogus", "--json"]), 2, "usage");
-    expect(unknownFlag.valid).toContain("--label");
+    expect(unknownFlag.valid).toContain("--status");
+    expect(unknownFlag.valid).not.toContain("--label");
+    expectFailure(await dayhand(key, ["add", "X", "-l", "home", "--json"]), 2, "usage"); // labels are gone
+    expectFailure(await dayhand(key, ["edit", "1", "--add-label", "home", "--json"]), 2, "usage");
     expectFailure(await dayhand(key, ["frobnicate", "--json"]), 2, "usage");
     expectFailure(await dayhand(key, ["add", "--json"]), 2, "usage"); // missing title
     expectFailure(await dayhand(key, ["add", "X", "--due", "someday", "--json"]), 2, "invalid_argument");

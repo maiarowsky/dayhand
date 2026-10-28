@@ -3,7 +3,7 @@ import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
 import type { args } from "./args";
-import { actorLabel, loadSettings, loadTask, toTask, type Identity } from "./core";
+import { actorLabel, changeOf, loadSettings, loadTask, toTask, type Identity } from "./core";
 import { isOverdue, localDate } from "./dates";
 import { projectFilter } from "./projectOps";
 import type { Status } from "./validators";
@@ -70,11 +70,10 @@ export async function listToday(ctx: QueryCtx, identity: Identity, input: Args<"
   };
 }
 
-/** Every active task, optionally narrowed to tasks having all given labels. */
+/** Every active task. */
 export async function listAll(ctx: QueryCtx, identity: Identity, input: Args<"listAll">) {
   const at = input.at ?? Date.now();
   const today = localDate(at, (await loadSettings(ctx, identity.userId)).timezone);
-  const wanted = (input.labels ?? []).map((l) => l.trim()).filter((l) => l !== "");
   const tasks = await ctx.db
     .query("tasks")
     .withIndex("by_user", (q) => q.eq("userId", identity.userId))
@@ -83,7 +82,6 @@ export async function listAll(ctx: QueryCtx, identity: Identity, input: Args<"li
     .filter((t) => t.deletedAt === undefined && t.proposedAt === undefined)
     .filter((t) => input.includeArchived || t.archivedAt === undefined)
     .filter((t) => input.includeDone !== false || t.status !== "done")
-    .filter((t) => wanted.every((label) => t.labels.includes(label)))
     .sort(bySchedule)
     .map((t) => ({ ...toTask(t), overdue: isOverdue(t, today) }));
 }
@@ -143,8 +141,8 @@ export async function getTask(ctx: QueryCtx, identity: Identity, input: Args<"ge
       actorName: e.actorName ?? null,
       by: actorLabel(e),
       action: e.action,
-      before: e.before ?? null,
-      after: e.after ?? null,
+      before: changeOf(e.before),
+      after: changeOf(e.after),
     })),
   };
 }

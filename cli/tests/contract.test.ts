@@ -41,10 +41,10 @@ const BY_ID = ["get_approval", "decide_approval", "set_tool_policy", "import_bac
 // One user's day, in order. Changes carry a clientId, so the SDK call with the
 // same arguments is a replay that must return the same result.
 const CASES: Case[] = [
-  { path: "add", command: ["add", "Write", "report", "--time", "09:00", "-l", "work", "--note", "first", "--client-id", "c-add-1"], tool: "add_task", args: { title: "Write report", dueDate: "today", dueTime: "09:00", labels: ["work"], note: "first", clientId: "c-add-1" } },
+  { path: "add", command: ["add", "Write", "report", "--time", "09:00", "--note", "first", "--client-id", "c-add-1"], tool: "add_task", args: { title: "Write report", dueDate: "today", dueTime: "09:00", note: "first", clientId: "c-add-1" } },
   { path: "add", command: ["add", "Water plants", "--every", "week", "--on", "mon,thu", "--client-id", "c-add-2"], tool: "add_task", args: { title: "Water plants", dueDate: "today", repeat: { every: "week", interval: 1, weekdays: [1, 4] }, clientId: "c-add-2" } },
   { path: "add", command: ["add", "Someday", "--no-due", "--link", "https://example.com Docs", "--client-id", "c-add-3"], tool: "add_task", args: { title: "Someday", links: [{ url: "https://example.com", title: "Docs" }], clientId: "c-add-3" } },
-  { path: "edit", command: ["edit", "#1", "--title", "Write the report", "--add-label", "urgent", "--client-id", "c-edit"], tool: "update_task", args: { taskId: "#1", title: "Write the report", labels: ["work", "urgent"], clientId: "c-edit" } },
+  { path: "edit", command: ["edit", "#1", "--title", "Write the report", "--client-id", "c-edit"], tool: "update_task", args: { taskId: "#1", title: "Write the report", clientId: "c-edit" } },
   { path: "add", command: ["add", "Payroll", "--month-weekday", "last fri", "--count", "6", "--item", "check hours", "--item", "send", "--remind", "18:00 -1d", "--client-id", "c-add-4"], tool: "add_task", args: { title: "Payroll", dueDate: "today", repeat: { every: "month", interval: 1, weekdayOfMonth: { nth: -1, weekday: 5 }, count: 6 }, checklist: [{ title: "check hours" }, { title: "send" }], reminders: [{ time: "18:00", daysBefore: 1 }], clientId: "c-add-4" } },
   { path: "edit", command: ["edit", "#4", "--rrule", "FREQ=MONTHLY;BYMONTHDAY=-1", "--no-reminders", "--client-id", "c-edit-2"], tool: "update_task", args: { taskId: "#4", repeat: "FREQ=MONTHLY;BYMONTHDAY=-1", reminders: [], clientId: "c-edit-2" } },
   { path: "checklist", command: ["checklist", "4", "--check", "1", "--add", "file", "--client-id", "c-check"], tool: "update_task", args: { taskId: "#4", checklist: [{ id: "c1", title: "check hours", done: true }, { id: "c2", title: "send", done: false }, { title: "file" }], clientId: "c-check" } },
@@ -55,7 +55,7 @@ const CASES: Case[] = [
   { path: "now", command: ["now", "#1", "--note", "outline done", "--client-id", "c-now"], tool: "set_now", args: { taskId: "#1", resumeNote: "outline done", clientId: "c-now" } },
   { path: "today", command: ["today"], tool: "list_today", args: {} },
   { path: "now", command: ["now"], tool: "list_today", args: {} },
-  { path: "list", command: ["list", "--done", "-l", "work"], tool: "list_all", args: { includeDone: true, includeArchived: false, labels: ["work"] } },
+  { path: "list", command: ["list", "--done"], tool: "list_all", args: { includeDone: true, includeArchived: false } },
   { path: "board", command: ["board", "--done-limit", "5"], tool: "board", args: { doneLimit: 5 } },
   { path: "show", command: ["show", "1"], tool: "get_task", args: { taskId: "#1" } },
   { path: "note", command: ["note", "#1"], tool: "get_task", args: { taskId: "#1" } },

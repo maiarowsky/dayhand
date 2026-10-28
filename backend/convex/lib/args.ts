@@ -27,6 +27,12 @@ const projectId = v.string();
 // A project filter: a project id or name, or "none" for tasks without a project.
 const projectFilter = v.optional(v.string());
 
+// Since 0.14.0 a task has no labels (docs/projects.md). Older apps and agents may
+// still send them, and add_project's fromLabel and removeLabel: these fields are
+// accepted, ignored, and left out of the published schemas (lib/jsonSchema.ts).
+export const RETIRED_FIELDS: ReadonlySet<string> = new Set(["labels", "fromLabel", "removeLabel"]);
+const retiredLabels = v.optional(v.array(v.string()));
+
 // Agent work fields of a task (docs/agent-work.md), in add_task and update_task.
 const agentWork = {
   acceptance: v.optional(v.array(acceptanceInputValidator)),
@@ -44,7 +50,7 @@ export const args = {
     status: v.optional(v.union(v.literal("todo"), v.literal("doing"))),
     resumeNote: v.optional(v.string()),
     repeat: v.optional(repeatInputValidator),
-    labels: v.optional(v.array(v.string())),
+    labels: retiredLabels,
     links: v.optional(v.array(linkValidator)),
     checklist: v.optional(v.array(checklistInputValidator)),
     reminders: v.optional(v.array(reminderValidator)),
@@ -66,7 +72,7 @@ export const args = {
     dueTime: clearable(v.string()),
     resumeNote: clearable(v.string()),
     repeat: clearable(repeatInputValidator),
-    labels: v.optional(v.array(v.string())),
+    labels: retiredLabels,
     links: v.optional(v.array(linkValidator)),
     checklist: clearable(v.array(checklistInputValidator)),
     reminders: clearable(v.array(reminderValidator)),
@@ -87,14 +93,14 @@ export const args = {
   restore: { taskId, clientId },
   listToday: { projectId: projectFilter, at },
   listAll: {
-    labels: v.optional(v.array(v.string())),
+    labels: retiredLabels,
     includeDone: v.optional(v.boolean()),
     includeArchived: v.optional(v.boolean()),
     at,
   },
   // list_all through MCP: listAll plus search, filters and pages.
   findTasks: {
-    labels: v.optional(v.array(v.string())),
+    labels: retiredLabels,
     includeDone: v.optional(v.boolean()),
     includeArchived: v.optional(v.boolean()),
     query: v.optional(v.string()),
@@ -174,7 +180,7 @@ export const args = {
     icon: v.optional(v.string()),
     note: v.optional(v.string()),
     position: v.optional(v.number()),
-    // Make the project from a label: its tasks without a project move into it.
+    // Retired with labels in 0.14.0 (RETIRED_FIELDS).
     fromLabel: v.optional(v.string()),
     removeLabel: v.optional(v.boolean()),
     clientId,

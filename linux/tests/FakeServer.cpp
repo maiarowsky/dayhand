@@ -216,7 +216,7 @@ QJsonObject FakeServer::add(const QJsonObject &args)
 {
     const QString id = u"srv%1"_s.arg(nextId++);
     QJsonObject task{{u"id"_s, id}, {u"title"_s, args[u"title"]}, {u"status"_s, u"todo"_s}, {u"isNow"_s, false},
-                     {u"labels"_s, QJsonArray()}, {u"links"_s, QJsonArray()}, {u"checklist"_s, QJsonArray()},
+                     {u"links"_s, QJsonArray()}, {u"checklist"_s, QJsonArray()},
                      {u"createdAt"_s, clock()}, {u"updatedAt"_s, clock()}};
     for (const char16_t *key : {u"note", u"dueDate", u"dueTime", u"clientId"}) {
         if (args.contains(QStringView(key)))

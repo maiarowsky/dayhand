@@ -11,19 +11,19 @@ This version is the basic one (MVP):
   requests and proposals waiting for the owner, read-only), **Today**, **All Tasks**, **No Project**, **Projects**
   (a dot of the project's colour or its emoji, the name and the number of open tasks, red while some are overdue;
   drag to reorder, **+** or ⌥⌘N for a new one, a context menu to edit, move, archive or delete one, and the
-  archived ones under **Archived**), **Labels**, **Done and Archived** and **Trash**. The **Go** menu opens each
-  place: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects. The toolbar holds search (title, note and labels, in
+  archived ones under **Archived**), **Done and Archived** and **Trash**. The **Go** menu opens each
+  place: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects. The toolbar holds search (title and note, in
   every list) and **+ Task**. A task dragged onto a project, No Project or Today goes there; **Task → Move to
   Project…** (⇧⌘M) picks one by typing. The window is at least 820 × 500 points, 1100 × 700 by default.
-- **Lists**: All Tasks, No Project, a project and a label list their open tasks in sections (Overdue, Today,
+- **Lists**: All Tasks, No Project and a project list their open tasks in sections (Overdue, Today,
   Later with the day, No Day) and the latest done (folded), each task with a second line of its project (outside
-  that project's own list), day, repeat, checklist and labels. Quick add at the top of a project's list adds to
+  that project's own list), day, repeat and checklist. Quick add at the top of a project's list adds to
   that project, without a day.
 - **Board, plan or list**: the toolbar's switcher (and the **View** menu, ⌃⌘1 Board, ⌃⌘2 Plan, ⌃⌘3 List) shows Today
   and every list place as the list above, as the week's **Plan** below, or as a **Board** of three status columns, To
   do, In progress and Done, each with its line icon (no round background) and a count (Done shows the latest done
-  tasks and counts them all, as the list's Done does). A card holds the title, the project and chips for the day,
-  labels and the checklist, with a **…** menu of the task's moves; dragging a card to another column changes its
+  tasks and counts them all, as the list's Done does). A card holds the title, the project and chips for the day
+  and the checklist, with a **…** menu of the task's moves; dragging a card to another column changes its
   status, and a selected card opens the panel along the bottom. **Add Task** under To do opens quick add for the place
   (not in an archived project's place, which takes no new tasks). The choice is kept between launches. A drop changes
   only the status, never the day: on Today's board a task done today without today's day leaves the board when it is
@@ -47,7 +47,7 @@ This version is the basic one (MVP):
   for today, as on the phone.
 - **Task panel** along the bottom of the main window, with editing: the title, the status, **Work on It Now** and
   the resume note at the top; **Details** (the day and time from a phrase or **Today**, **Tomorrow**, **No day**,
-  **Remove the time**; reminders and repeat in popovers; labels; the project), the checklist and the note side by
+  **Remove the time**; reminders and repeat in popovers; the project), the checklist and the note side by
   side; then what agents set, the history, and archive or trash. Its top edge drags it taller or shorter. Links are
   shown. A task in the trash is read-only until **Restore**.
 - **Agent** in the details, read-only, when an agent or `dayhand` set any of it: who holds the
@@ -183,7 +183,7 @@ Projects need Dayhand server 0.13.0 or later. Their data and sync are `Project`,
 ([Main window](#dayhand-for-macos)). While the server has none (0.12.x) the sidebar hides them and the status line
 says "Needs backend 0.13.0 or later".
 
-- A task belongs to at most one project or none; labels stay free tags across projects. A project has a name
+- A task belongs to at most one project or none (Dayhand has no labels). A project has a name
   (1 to 50 characters on one line, not `none`, unique without regard to case among all projects, archived ones
   included), one of 12 colours, an optional icon (one emoji), a note of up to 2,000 characters, a place in the
   sidebar, and may be archived. There can be at most 200.
@@ -308,7 +308,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
 - **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`, `ProjectTrashRefusalTests.swift`): the name,
   icon, note and order rules, quick add's `+project` with the shared cases, the sidebar counts and the task list of a
   project, the merge (by server id or `clientId`, never a shared name; the server's copy wins), migrations from a
-  0.3.0 database without losing a task and from a development build of 0.4.0 (v7). Against the fake server: without
+  0.3.0 database without losing a task, from a development build of 0.4.0 (v7) and dropping the labels (v8). Against the fake server: without
   a connection every project call fails and queues nothing; creating, editing, moving, archiving and deleting (the
   tasks moved to a project or out of any) act on the server at once and the rows follow; a project call waits for a
   running round; a refusal comes back in the server's words; tasks put offline into a confirmed project arrive with
@@ -339,7 +339,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
 - **Screens**: `swift run DayhandSnapshots <folder>` draws the main window with Today, a project and All Tasks
   (a task's panel open) at 1100 and 820 points wide in both appearances, Today and a project as a board, the week's
   plan of Today, a project and All Tasks with its drawer, a block's popover, Done and
-  Archived, the archived projects, No Project, a label and the trash, the sidebar with its update button, the
+  Archived, the archived projects, No Project and the trash, the sidebar with its update button, the
   project editor, Move to Project and the deletion dialog, the panel with cached history and
   with history unavailable offline, the Agent section (claim, blocked, criteria, plan, waiting for) and a proof,
   the plan health card on Today, the read-only requests and proposals, the repeat and reminder editors (weekly with the reminders from Settings,

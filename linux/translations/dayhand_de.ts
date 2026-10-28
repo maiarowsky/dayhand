@@ -597,10 +597,6 @@
         <translation>Uhrzeit entfernen</translation>
     </message>
     <message>
-        <source>Labels (comma-separated)</source>
-        <translation>Etiketten (kommagetrennt)</translation>
-    </message>
-    <message>
         <source>Checklist</source>
         <translation>Checkliste</translation>
     </message>
@@ -658,10 +654,6 @@
     <message>
         <source>The note is too long.</source>
         <translation>Die Notiz ist zu lang.</translation>
-    </message>
-    <message>
-        <source>Use up to 20 labels, at most 50 characters each.</source>
-        <translation>Verwenden Sie bis zu 20 Etiketten mit jeweils höchstens 50 Zeichen.</translation>
     </message>
     <message>
         <source>Use up to 100 checklist items, at most 500 characters each.</source>

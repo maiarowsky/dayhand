@@ -212,7 +212,6 @@ function renderDetail(task: Task, history: HistoryEntry[], timezone: string | un
   add("repeat", task.repeat ? describeRepeat(task.repeat) : undefined);
   add("remind", task.reminders ? (task.reminders.length ? task.reminders.map(describeReminder).join(", ") : "none") : undefined);
   add("project", task.project ? `+${projectToken(task.project)}` : undefined);
-  add("labels", task.labels.join(", "));
   add("links", task.links.map((l) => (l.title ? `${l.title} <${l.url}>` : l.url)).join(", "));
   add("next", task.resumeNote);
   add("blocked", task.blockedReason as string | undefined);

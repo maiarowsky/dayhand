@@ -46,7 +46,7 @@ export async function completeCommand(words: string[], io: Io): Promise<number> 
     result = await complete(words, {
       aliases: setup.aliases,
       profiles: Object.keys(config?.profiles ?? {}),
-      hints: () => (hints ??= config ? taskHints(io, setup.paths.cacheDir, setup.paths.configDir, config, flags) : Promise.resolve({ tasks: [], labels: [] })),
+      hints: () => (hints ??= config ? taskHints(io, setup.paths.cacheDir, setup.paths.configDir, config, flags) : Promise.resolve({ tasks: [] })),
     });
   } catch {
     // Completion never prints an error into the user's command line.
@@ -158,11 +158,6 @@ async function optionValues(option: OptSpec, current: string, sources: Sources, 
     case "--before":
     case "--after":
       return filtered(current, words((await sources.hints()).projects?.map((p) => p.name) ?? []));
-    case "--from-label":
-    case "--label":
-    case "--add-label":
-    case "--rm-label":
-      return filtered(current, words((await sources.hints()).labels));
     case "--profile":
       return filtered(current, words(sources.profiles));
     case "--status":

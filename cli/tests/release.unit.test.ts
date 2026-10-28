@@ -40,7 +40,7 @@ describe("generated pages (npm run build && npm run docs)", () => {
 
 test("prime puts the now task with its resume note on top, then the rules", () => {
   const task = (ref: number, title: string, extra = {}) => ({
-    id: `t${ref}`, ref, title, status: "todo", isNow: false, labels: [], links: [], createdAt: 0, updatedAt: 0, ...extra,
+    id: `t${ref}`, ref, title, status: "todo", isNow: false, links: [], createdAt: 0, updatedAt: 0, ...extra,
   });
   const text = primeText({
     date: "2026-10-22",

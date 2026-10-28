@@ -316,8 +316,6 @@
 	<string>Jego zadania zostaną; wybierz, dokąd trafią.</string>
 	<key>Keep in title</key>
 	<string>Zostaw w tytule</string>
-	<key>Labels</key>
-	<string>Etykiety</string>
 	<key>Language</key>
 	<string>Język</string>
 	<key>Last checked %@.</key>
@@ -688,8 +686,6 @@
 	<string>Uaktualnienie zostało anulowane.</string>
 	<key>There are too many checklist items, or one is too long.</key>
 	<string>Punktów listy jest za dużo albo któryś jest za długi.</string>
-	<key>There are too many labels, or one is too long.</key>
-	<string>Etykiet jest za dużo albo któraś jest za długa.</string>
 	<key>There is already a project named “%@”.</key>
 	<string>Projekt o nazwie „%@” już istnieje.</string>
 	<key>These ring only when the task has a time.</key>
@@ -804,8 +800,6 @@
 	<string>niezaliczone</string>
 	<key>from “%@”</key>
 	<string>z „%@”</string>
-	<key>home, work</key>
-	<string>dom, praca</string>
 	<key>next step</key>
 	<string>następny krok</string>
 	<key>no</key>

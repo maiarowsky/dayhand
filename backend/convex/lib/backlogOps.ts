@@ -24,7 +24,7 @@ import {
   type BacklogTask,
   type TaskFile,
 } from "./backlogMd";
-import { checkLabels, checkLinks, checkText, checkTitle, fail, loadSettings, nextTaskRef, recordEvent, toTask, type Identity } from "./core";
+import { checkLinks, checkText, checkTitle, fail, loadSettings, nextTaskRef, recordEvent, toTask, type Identity } from "./core";
 import { localDateTime } from "./dates";
 import { FrontmatterError } from "./frontmatter";
 import { loadProject, projectTarget } from "./projectOps";
@@ -147,7 +147,6 @@ function fieldsOf(task: BacklogTask, statuses: string[], identity: Identity, tim
     note: noteOf(task, status === "done"),
     status,
     isNow: false,
-    labels: checkLabels(task.labels),
     links,
     acceptance,
     plan: task.plan === undefined ? undefined : checkLongText("plan", task.plan),
@@ -289,7 +288,6 @@ function fileOf(task: Doc<"tasks">, ids: Map<string, string>, timezone: string):
     place: task.archivedAt !== undefined ? task.proposedAt !== undefined ? "archived-draft" : "archived" : task.proposedAt !== undefined ? "draft" : "task",
     title: task.title,
     status,
-    labels: task.labels,
     dependencies: (task.dependsOn ?? []).map((id) => ids.get(id)).filter((id): id is string => id !== undefined),
     references: task.links.map((l) => l.url),
     created: localDateTime(task.createdAt, timezone),
@@ -361,8 +359,7 @@ export async function exportBacklog(ctx: QueryCtx, identity: Identity, input: Ar
     .sort((a, b) => (a.ref ?? 0) - (b.ref ?? 0));
   const ids = idsOf(tasks, prefix);
   const files = tasks.map((task) => ({ ...fileOf(task, ids, timezone), id: ids.get(task._id)!, taskId: task._id, ref: task.ref ?? null }));
-  const labels = [...new Set(tasks.flatMap((t) => t.labels))].sort();
-  const config = writeConfig(prefix, labels, project?.name);
+  const config = writeConfig(prefix, project?.name);
   const notes = [...exportNotes(tasks, ids, project !== undefined), ...files.flatMap(overflowNotes), ...files.flatMap(fileSizeNotes), ...fileSizeNotes(config)];
   return { format: BACKLOG_KIND, prefix, total: files.length, config, files, notes };
 }

@@ -62,7 +62,7 @@ extension AppModel {
         case .today:
             let s = searchedToday
             return BoardColumns(open: s.overdue + (s.now.map { [$0] } ?? []) + s.today, done: s.done, doneCount: s.done.count)
-        case .all, .noProject, .project, .label:
+        case .all, .noProject, .project:
             return BoardColumns(
                 open: list.overdue + list.today + list.later + list.noDay, done: list.done, doneCount: list.doneCount
             )
@@ -81,7 +81,7 @@ extension AppModel {
     /// Whether the place shows tasks that the board and the list can both show.
     var placeHasViews: Bool {
         switch place {
-        case .today, .all, .noProject, .project, .label: return true
+        case .today, .all, .noProject, .project: return true
         case .inbox, .archivedProjects, .done, .trash: return false
         }
     }
@@ -152,7 +152,7 @@ struct BoardColumn: View {
     }
 }
 
-/// A task on the board: its title, project, and chips for the day, labels and checklist. No colored stripe and no
+/// A task on the board: its title, project, and chips for the day and checklist. No colored stripe and no
 /// round backgrounds: line icons carry the meaning.
 struct TaskCard: View {
     @EnvironmentObject private var model: AppModel
@@ -203,7 +203,7 @@ struct TaskCard: View {
     }
 }
 
-/// The chips under a card's title: the day (red when overdue), labels, the checklist and repeat.
+/// The chips under a card's title: the day (red when overdue), the checklist and repeat.
 struct CardChips: View {
     let task: TaskItem
     let today: String
@@ -211,10 +211,9 @@ struct CardChips: View {
     var body: some View {
         let overdue = HelmDates.isOverdue(task, today: today) && task.status != .done
         let day = Formatting.due(task, today: today)
-        if day != nil || !task.labels.isEmpty || !task.checklist.isEmpty || task.repeat != nil {
+        if day != nil || !task.checklist.isEmpty || task.repeat != nil {
             FlowRow(spacing: 6) {
                 if let day { Chip(icon: "calendar", text: day, tint: overdue ? Color.overdue : nil) }
-                ForEach(task.labels, id: \.self) { Chip(icon: "tag", text: $0) }
                 if !task.checklist.isEmpty {
                     Chip(icon: "checklist", text: "\(task.checklist.filter(\.done).count)/\(task.checklist.count)")
                 }

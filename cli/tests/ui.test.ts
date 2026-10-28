@@ -141,7 +141,7 @@ describe("agent UI with the local backend", () => {
 describe.skipIf(!pty)("dayhand ui", () => {
   test("opens Today full screen with the mouse on, and q gives the terminal back", async () => {
     const { key } = await newUser();
-    await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday", "-l", "home"]);
+    await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday"]);
     await dayhandJson(key, ["add", "Review the plan", "--time", "09:00"]);
     await dayhandJson(key, ["add", "Draft the invoice", "--item", "hours", "--item", "rate"]);
     await dayhandJson(key, ["now", "3", "--note", "rate is in the email"]);
@@ -150,7 +150,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(screen).toMatch(/^ Dayhand +1 Today +2 Board +3 Week +4 Trash/);
     expect(screen).toMatch(/NOW\n› #3 ◐ +today +Draft the invoice +0\/2/);
     expect(screen).toContain("next: rate is in the email");
-    expect(screen).toMatch(/OVERDUE \(1\)\n {2}#1 ○ yesterday Pay rent +#home/);
+    expect(screen).toMatch(/OVERDUE \(1\)\n {2}#1 ○ yesterday Pay rent$/m);
     expect(screen).toMatch(/TODAY \(1\)\n {2}#2 ○ 09:00 +Review the plan/);
     await s.shot("today");
     expect(s.raw()).toContain("\u001b[?1049h");
@@ -161,16 +161,16 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(s.raw()).toContain("\u001b[?1000l\u001b[?1006l");
   });
 
-  test("quick add reads a date phrase and #labels; space completes; s starts; n makes it the now task", async () => {
+  test("quick add reads a date phrase and keeps a #word in the title; space completes; s starts; n makes it the now task", async () => {
     const { key } = await newUser();
     const s = open(key);
     await s.waitFor("nothing planned");
-    await s.press("a", ..."Call the accountant tomorrow 2pm #money");
-    await s.waitFor(/Add: Call the accountant tomorrow 2pm #money +→ tomorrow 14:00 #money/);
+    await s.press("a", ..."Call the accountant #money tomorrow 2pm");
+    await s.waitFor(/Add: Call the accountant #money tomorrow 2pm +→ tomorrow 14:00$/m);
     await s.shot("quick-add");
     await s.press("enter");
-    await s.waitFor("Added #1 Call the accountant · tomorrow 14:00");
-    expect((await show(key, 1)).task).toMatchObject({ title: "Call the accountant", dueTime: "14:00", labels: ["money"] });
+    await s.waitFor("Added #1 Call the accountant #money · tomorrow 14:00");
+    expect((await show(key, 1)).task).toMatchObject({ title: "Call the accountant #money", dueTime: "14:00" });
 
     await s.press("a", ..."Send the newsletter");
     await s.press("enter");
@@ -272,12 +272,12 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect((await dayhandJson(key, ["today"])).today).toEqual([expect.objectContaining({ id: proposal.id })]);
   });
 
-  test("the edit form saves title, due day and labels in one change", async () => {
+  test("the edit form saves title, due day and resume note in one change", async () => {
     const { key } = await newUser();
-    await dayhandJson(key, ["add", "Pay rent", "-l", "home"]);
+    await dayhandJson(key, ["add", "Pay rent"]);
     const s = open(key);
     await s.waitFor("Pay rent");
-    await s.press("e", "C-u", ..."Pay the rent", "tab", "C-u", ..."next mon 9am", "tab", ..." money");
+    await s.press("e", "C-u", ..."Pay the rent", "tab", "C-u", ..."next mon 9am", "tab", ..."rate in mail");
     const now = Date.now();
     const target = parseWhen("next mon 9am", { now, timezone: "Europe/London" });
     await s.waitFor(`→ ${whenText(target, localAt(now, "Europe/London").date)}`);
@@ -285,7 +285,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await s.press("enter");
     await s.waitFor("Saved #1 Pay the rent");
     const { task, history } = await show(key, 1);
-    expect(task).toMatchObject({ title: "Pay the rent", dueTime: "09:00", labels: ["home", "money"] });
+    expect(task).toMatchObject({ title: "Pay the rent", dueTime: "09:00", resumeNote: "rate in mail" });
     expect(history.filter((h: { action: string }) => h.action === "update")).toHaveLength(1);
   });
 
@@ -357,11 +357,11 @@ describe.skipIf(!pty)("dayhand ui", () => {
 
   test("speaks the terminal's language, DAYHAND_LANG and --lang choose another; what scripts read stays English", async () => {
     const { key } = await newUser();
-    await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday", "-l", "home"]);
+    await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday"]);
     const polish = open(key, [], undefined, { LANG: "pl_PL.UTF-8" });
     const screen = await polish.waitFor("ZALEGŁE");
     expect(screen).toMatch(/^ Dayhand +1 Dzisiaj +2 Tablica +3 Tydzień +4 Kosz/);
-    expect(screen).toMatch(/ZALEGŁE \(1\)\n› #1 ○ wczoraj Pay rent +#home/);
+    expect(screen).toMatch(/ZALEGŁE \(1\)\n› #1 ○ wczoraj Pay rent *$/m);
     await polish.press("a", ..."Zadzwoń tomorrow 2pm");
     await polish.press("enter");
     await polish.waitFor("Dodano #2 Zadzwoń · jutro 14:00");

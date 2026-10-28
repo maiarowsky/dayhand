@@ -9,7 +9,6 @@ import {
   checkClientId,
   checkDueDate,
   checkDueTime,
-  checkLabels,
   checkLinks,
   checkReminders,
   checkRepeat,
@@ -84,7 +83,6 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
     isNow: false,
     resumeNote: input.resumeNote === undefined ? undefined : checkText("resumeNote", input.resumeNote),
     repeat,
-    labels: checkLabels(input.labels ?? []),
     links: checkLinks(input.links ?? []),
     checklist: input.checklist === undefined ? undefined : checkChecklist(input.checklist),
     reminders: input.reminders === undefined ? undefined : checkReminders(input.reminders),
@@ -134,7 +132,6 @@ export async function updateTask(ctx: MutationCtx, identity: Identity, input: Ar
   }
   if (input.dueTime !== undefined) patch.dueTime = input.dueTime === null ? undefined : checkDueTime(input.dueTime);
   if (input.repeat !== undefined) patch.repeat = input.repeat === null ? undefined : checkRepeat(input.repeat, timezone);
-  if (input.labels !== undefined) patch.labels = checkLabels(input.labels);
   if (input.links !== undefined) patch.links = checkLinks(input.links);
   if (input.checklist !== undefined) patch.checklist = input.checklist === null ? undefined : checkChecklist(input.checklist);
   if (input.reminders !== undefined) patch.reminders = input.reminders === null ? undefined : checkReminders(input.reminders);
@@ -174,7 +171,7 @@ async function clearNow(ctx: MutationCtx, identity: Identity, exceptId?: Id<"tas
  * agent completing a task with acceptance criteria needs them all met and a
  * proof summary (lib/agentWork.ts). A repeating task gets its next
  * occurrence, unless its series has ended (`until`, `count`): same title,
- * note, labels, links, reminders, plan and project, the checklist and the
+ * note, links, reminders, plan and project, the checklist and the
  * criteria unticked, counted on per the rule (lib/repeat.ts).
  */
 export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">) {
@@ -211,7 +208,6 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     status: "todo" as Status,
     isNow: false,
     repeat: occurrence.repeat,
-    labels: task.labels,
     links: task.links,
     checklist: task.checklist?.map((item) => ({ ...item, done: false })),
     reminders: task.reminders,

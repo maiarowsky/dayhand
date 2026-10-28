@@ -45,7 +45,7 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 
 | Tool | Title | Hints | Result ([schema](schemas/)) | Operation |
 |---|---|---|---|---|
-| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, labels, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo, [projectId](#projects)) |
+| `add_task` | Add task | | `task` | Add a task (title; optional note, dueDate, dueTime, status, resumeNote, repeat, links, checklist, reminders, acceptance, plan, dependsOn, blockedReason, proposal, source, requestedBy, returnTo, [projectId](#projects)) |
 | `update_task` | Update task | | `task` | Change fields; `null` clears an optional field |
 | `set_status` | Set task status | | `task` | `todo` / `doing` / `done` |
 | `set_now` | Set the now task | | `set-now` | Make one task the "now" task, optionally with a resume note; `taskId: null` clears it |
@@ -57,7 +57,7 @@ it with the same arguments changes nothing more), and no tool reaches outside Da
 | `list_today` | Today | R | `today` | Overdue, today, done today and the now task; optional [project filter](#projects) |
 | `list_all` | Find tasks | R | `task-list` | Tasks not in the trash: search, filters and pages ([below](#finding-tasks-list_all)) |
 | `list_projects` | Projects | R | `project-list` | Projects in menu order, with task counts; `includeArchived`, `at` ([below](#projects)) |
-| `add_project` | Add project | | `project-added` | Add a project; `fromLabel` moves unassigned tasks with that label into it |
+| `add_project` | Add project | | `project-added` | Add a project |
 | `update_project` | Update project | | `project` | Rename, change metadata or position, archive or restore |
 | `delete_project` | Delete project | O, D | `project-delete` | Delete a project, moving its tasks to `moveTasksTo` when it has any |
 | `list_trash` | Trash | R | `task-list` | Tasks in the trash |
@@ -102,9 +102,8 @@ under `$defs`: clients never fetch a URL. The top level is an object, as 2025 cl
 
 | Argument | Meaning |
 |---|---|
-| `query` | Tasks whose title, note, resume note or labels contain this text, in any case |
+| `query` | Tasks whose title, note or resume note contain this text, in any case |
 | `status` | Only these statuses, e.g. `["todo", "doing"]`; done tasks are included only when listed |
-| `labels` | Only tasks having all of these labels |
 | `projectId` | Optional [project filter](#projects) (since 0.13.0) |
 | `ready` | `true`: only tasks ready to work on (not done, no `blockedReason`, not a proposal, every task in `dependsOn` done); `false`: only the others |
 | `proposed` | `true`: only proposals waiting in the inbox; without it, or `false`, proposals are left out (since 0.11.0) |
@@ -141,7 +140,7 @@ Backend 0.13.1 exposes four project tools:
 | Tool | Arguments | Result |
 |---|---|---|
 | `list_projects` | `includeArchived?` (default false), `at?` (Unix ms, default now) | `{ result: [project with counts], noProject: { open, overdue } }` |
-| `add_project` | `name`, `color?`, `icon?`, `note?`, `position?`, `fromLabel?`, `removeLabel?`, `clientId?`, `dryRun?`, `approvalId?` | `{ project, moved: [{ id, ref }], skipped: [{ id, ref, projectId?, reason }] }` |
+| `add_project` | `name`, `color?`, `icon?`, `note?`, `position?`, `clientId?`, `dryRun?`, `approvalId?` | `{ project }` |
 | `update_project` | `projectId` (id or name), `name?`, `color?`, `icon?`, `note?`, `position?`, `archived?`, `clientId?`, `dryRun?`, `approvalId?` | The updated project |
 | `delete_project` | `projectId`, `moveTasksTo?` (another project or `"none"`), `clientId?`, `dryRun?` | `{ project, moved: [{ id, ref }] }` |
 
@@ -160,21 +159,17 @@ only open tasks, in the user's time zone. `noProject` counts open and overdue ta
   position between its neighbors. At most 200 projects, including archived ones.
 - `update_project` with `color`, `icon` or `note` set to `null` clears that field. `archived: true`
   archives the project, not its tasks; `false` restores it. Its tasks remain in Today and the board.
-- `add_project { name, fromLabel }` moves tasks with that exact label and no project, in any state.
-  `removeLabel: true` removes the label only from moved tasks; by default it stays. Tasks already
-  in a project or claimed by another agent are listed in `skipped` with a reason. A dry run shows
-  the result without storing anything. No label is converted automatically.
 - Only the owner (`cli` key) may `delete_project`; agent keys and OAuth connections neither see
   nor call it. When any task points at the project, including done, archived, trashed tasks and
   proposals, omitting `moveTasksTo` fails with `precondition_failed` and task counts. Each moved
   task gets a history entry and `task.updated` webhook; no task is deleted. A call can move at
-  most 1000 tasks, also for `fromLabel`.
+  most 1000 tasks.
 
 Agents may add and update projects by default, like tasks. Both tools obey the owner's pause and
 `allow/ask/deny` policies (`ask` returns `approval_required`). `list_projects` needs `tasks:read`,
 the three changes `tasks:write`; a read-only token sees only `list_projects` among these four.
-`dayhand://projects` gives the default list. The guide explains projects versus labels, and
-`weekly_review` includes a project review.
+`dayhand://projects` gives the default list. The guide explains projects, and `weekly_review`
+includes a project review.
 
 Project changes themselves do not appear in `list_events` or emit `project.*` webhooks; read the
 catalog again for changes to names, colors and notes. The REST routes have no project ETag or
@@ -184,8 +179,8 @@ catalog again for changes to names, colors and notes. The REST routes have no pr
 
 `export_plan` exports the whole plan. Since backend 0.13.0:
 
-- Markdown task lines show the project as `+Project-name`, with whitespace replaced by hyphens,
-  next to the `#labels`. This is readable output, not an import format.
+- Markdown task lines show the project as `+Project-name`, with whitespace replaced by hyphens.
+  This is readable output, not an import format.
 - JSON adds a `projects` catalog in menu order, archived and empty projects included. Each task's
   `projectId` references an id in that catalog. The export version stays 1; older importers
   ignore project fields. [JSON import](api.md#import) describes restoration into another account.
@@ -393,7 +388,7 @@ task also comes back with its rule as an RRULE in `rrule`, e.g. `"FREQ=WEEKLY;BY
 `until` and `count` cannot be combined (as in RFC 5545). Completing a task counted from the due
 date creates the first date of the series after today, so a late completion skips the dates it
 missed, and those count against `count`. When the series has ended, `complete_task` returns
-`next: null`. The next occurrence keeps the title, note, labels, links and reminders, with the
+`next: null`. The next occurrence keeps the title, note, links and reminders, with the
 checklist unticked.
 
 Dayhand reads `FREQ` (DAILY, WEEKLY, MONTHLY, YEARLY), `INTERVAL`, `BYDAY`, `BYMONTHDAY`,
@@ -561,10 +556,12 @@ creates pairing codes.
 `serverInfo.version` is the backend version (`backend/package.json`) and the one clients use
 to check compatibility. It follows semver: a minor version only adds tools, fields, error codes
 and accepted values; a major version may change or remove them. A client written for 0.3
-works with any 0.x from 0.3 on.
+works with any 0.x from 0.3 on, except that 0.14.0 removed labels (before 1.0.0, a breaking
+change bumps the minor version).
 
 | Version | Changes |
 |---|---|
+| 0.14.0 | Labels removed: tasks, history and exports have no `labels`, `list_all` neither filters nor searches by them, `add_project` returns `{ project }`. `labels`, `fromLabel` and `removeLabel` from older clients are accepted and ignored. Stored labels are removed by a migration ([Upgrading to 0.14.0](deploy.md#upgrading-to-0140)). |
 | 0.13.2 | App-only restoration of a confirmed local repeat into its parent's project, including an archived project; no change to `add_task` or REST task creation. Deploy before Android 0.12.0. |
 | 0.13.1 | [Project tools](#projects): `list_projects`, `add_project`, `update_project`, owner-only `delete_project`; [REST project routes](api.md#projects); `dayhand://projects`, active projects in `agent_brief`, project output schemas; OpenAPI documents `POST /import`'s `projectId` |
 | 0.13.0 | [Project selectors](#projects), [export fields](#export-formats) and [Backlog.md targeting](backlog-md.md#using-it); [backend project support and client availability](architecture.md#projects) |

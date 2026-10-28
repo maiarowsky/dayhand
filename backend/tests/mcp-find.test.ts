@@ -7,6 +7,7 @@ const AT = utc("2026-10-23T09:00"); // a Friday; the default time zone is Europe
 async function seeded() {
   const client = await mcpClient(await createKey(newUserId()));
   const add = (args: Record<string, unknown>) => callTool(client, "add_task", args);
+  // Labels as an agent from before 0.14.0 still sends them: accepted and ignored.
   await add({ title: "Zadzwonić do księgowej", dueDate: "2026-10-20", labels: ["dom"] });
   await add({ title: "Faktury", note: "wysłać KSIĘGOWEJ do piątku", dueDate: "2026-10-23", labels: ["firma"] });
   await add({ title: "Plan tygodnia", resumeNote: "księgowa oddzwoni", dueDate: "2026-10-27" });
@@ -44,11 +45,14 @@ describe("list_all on the server", () => {
     await client.close();
   });
 
-  test("status, labels, due days and overdue narrow the list", async () => {
+  test("status, due days and overdue narrow the list; labels are ignored", async () => {
     const client = await seeded();
     expect(titles(await find(client, { status: ["done"] }))).toEqual(["Paragon dla księgowej"]);
     expect(titles(await find(client, { includeDone: false }))).not.toContain("Paragon dla księgowej");
-    expect(titles(await find(client, { labels: ["firma"] }))).toEqual(["Faktury"]);
+    const unfiltered = await find(client, { labels: ["firma"] });
+    expect(unfiltered.total).toBe(5);
+    expect(unfiltered.result.some((t: any) => "labels" in t)).toBe(false);
+    expect(titles(await find(client, { query: "firma" }))).toEqual([]);
     expect(titles(await find(client, { overdue: true }))).toEqual(["Zadzwonić do księgowej"]);
     expect(titles(await find(client, { dueAfter: "2026-10-20", dueBefore: "2026-10-27" }))).toEqual([
       "Paragon dla księgowej",

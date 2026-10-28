@@ -12,7 +12,7 @@
 namespace dayhand {
 
 /// Groups of task fields that one kind of change touches.
-enum class Field { Title, Note, Due, Status, Now, Resume, Archived, Repeat, Labels, Links, Deleted, Checklist, Reminders };
+enum class Field { Title, Note, Due, Status, Now, Resume, Archived, Repeat, Links, Deleted, Checklist, Reminders };
 
 inline size_t qHash(Field field, size_t seed = 0)
 {

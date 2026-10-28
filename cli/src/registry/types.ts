@@ -14,7 +14,7 @@ import type { When } from "../when/parse.js";
 export type ArgSpec = { name: string; description: string; required?: boolean; variadic?: boolean };
 
 export type OptSpec = {
-  /** Commander flags, e.g. "-l, --label <label>". */
+  /** Commander flags, e.g. "-p, --project <project>". */
   flags: string;
   description: string;
   /** "list": repeatable, collected into an array; "int": a whole number ≥ 0. */

@@ -271,7 +271,6 @@ export function editFields(task: Task): EditField[] {
   const values: [EditKey, string, string][] = [
     ["title", t("field.title"), task.title],
     ["due", t("field.due"), [task.dueDate, task.dueTime].filter(Boolean).join(" ")],
-    ["labels", t("field.labels"), task.labels.join(", ")],
     ["resumeNote", t("field.resumeNote"), task.resumeNote ?? ""],
   ];
   return values.map(([key, label, value]) => ({ key, label, line: line(value), initial: value }));

@@ -90,7 +90,6 @@ export const taskCommands: CommandSpec[] = [
       ...SCHEDULE_OPTIONS,
       PROJECT_OPTION,
       { flags: "--no-due", description: "No due day: the task shows only in list and board" },
-      { flags: "-l, --label <label>", description: "Label (repeatable)", kind: "list" },
       { flags: "--note <text>", description: "Note" },
       { flags: "--status <status>", description: "Initial status", choices: ["todo", "doing"] },
       { flags: "--resume-note <text>", description: "Where you stopped / next step" },
@@ -103,7 +102,7 @@ export const taskCommands: CommandSpec[] = [
     tools: ["add_task"],
     fields: "task",
     examples: [
-      'dayhand add Call the accountant --due "fri 2pm" -l home',
+      'dayhand add Call the accountant --due "fri 2pm"',
       'dayhand add "Zdjęcia do galerii" --due fri -p "strona piekarni"',
       'dayhand add Pay rent --due "1 nov" --dry-run',
       'dayhand add "Review the plan" --time 09:00 --every week --on mon,thu',
@@ -118,7 +117,6 @@ export const taskCommands: CommandSpec[] = [
       const input: Record<string, unknown> = { title: (args.title as string[]).join(" "), clientId: ctx.clientId(), ...await projectArgs(ctx, opts) };
       copy(opts, input, { time: "dueTime", note: "note", status: "status", resumeNote: "resumeNote" });
       if (opts.due !== false) await applyDue(ctx, input, (opts.due as string | undefined) ?? "today", opts);
-      if ((opts.label as string[]).length) input.labels = opts.label;
       if ((opts.link as string[]).length) input.links = (opts.link as string[]).map(parseLink);
       const repeat = await repeatInput(ctx, opts);
       if (repeat) input.repeat = repeat;
@@ -137,7 +135,6 @@ export const taskCommands: CommandSpec[] = [
     aliases: ["ls"],
     summary: "Open tasks, oldest due first (with --done also done ones); filters narrow the list",
     options: [
-      { flags: "-l, --label <label>", description: "Only tasks with this label (repeatable: all must match)", kind: "list" },
       PROJECT_OPTION,
       { flags: "--done", description: "Include done tasks" },
       { flags: "--archived", description: "Include archived tasks" },
@@ -146,7 +143,7 @@ export const taskCommands: CommandSpec[] = [
     tools: ["list_all"],
     fields: "task",
     examples: [
-      "dayhand list -l home --status todo,doing",
+      "dayhand list -p home --status todo,doing",
       "dayhand list --overdue",
       'dayhand list --due-before eow --search accountant --limit 20',
       "dayhand list --limit 50 --cursor <nextCursor> --json",
@@ -158,7 +155,6 @@ export const taskCommands: CommandSpec[] = [
       const statuses = parseStatuses(opts.status);
       const includeDone = Boolean(opts.done) || Boolean(statuses?.includes("done"));
       const input: Record<string, unknown> = { includeDone, includeArchived: Boolean(opts.archived), ...await projectArgs(ctx, opts) };
-      if ((opts.label as string[]).length) input.labels = opts.label;
       const value = await listTasks(ctx, input, opts);
       return { value, view: { kind: "tasks", tasks: asList(value), empty: hasFilters(opts) ? "no tasks match" : undefined } };
     },
@@ -208,10 +204,6 @@ export const taskCommands: CommandSpec[] = [
       { flags: "--clear-repeat", description: "Stop repeating" },
       { flags: "--resume-note <text>", description: "Where you stopped / next step" },
       { flags: "--clear-resume-note", description: "Remove the resume note" },
-      { flags: "-l, --label <label>", description: "Replace all labels (repeatable)", kind: "list" },
-      { flags: "--add-label <label>", description: "Add a label (repeatable)", kind: "list" },
-      { flags: "--rm-label <label>", description: "Remove a label (repeatable)", kind: "list" },
-      { flags: "--clear-labels", description: "Remove all labels" },
       { flags: "--link <url>", description: 'Replace all links: "https://… Title" (repeatable)', kind: "list" },
       { flags: "--clear-links", description: "Remove all links" },
       { flags: "--item <text>", description: "Replace the checklist (repeatable; dayhand checklist edits single items)", kind: "list" },
@@ -231,7 +223,7 @@ export const taskCommands: CommandSpec[] = [
     fields: "task",
     examples: [
       'dayhand edit 42 --title "Call the bank" --due "tomorrow 10:00"',
-      "dayhand edit 42 --add-label work --rm-label home",
+      'dayhand edit 42 -p home --note "call after 5"',
       "dayhand edit 42 --every month --month-day last --until 2027-06-30",
       'dayhand edit 42 --rrule "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"',
       "dayhand edit 42 --remind 15m --remind 1d",
@@ -474,18 +466,6 @@ async function editArgs(ctx: RunContext, taskId: string, opts: Opts): Promise<Re
   const reminders = remindersInput(opts);
   if (reminders !== undefined) input.reminders = reminders;
 
-  const set = opts.label as string[];
-  const added = opts.addLabel as string[];
-  const removed = opts.rmLabel as string[];
-  if ([set.length > 0, added.length + removed.length > 0, Boolean(opts.clearLabels)].filter(Boolean).length > 1) {
-    throw usageError("Use one of --label, --add-label/--rm-label or --clear-labels");
-  }
-  if (set.length) input.labels = set;
-  if (opts.clearLabels) input.labels = [];
-  if (added.length || removed.length) {
-    const current = (await tool<Detail>(ctx, "get_task", { taskId })).task.labels;
-    input.labels = [...new Set([...current, ...added])].filter((l) => !removed.includes(l));
-  }
   if (opts.clearDepends) {
     if (input.dependsOn !== undefined) throw usageError("--depends-on cannot be combined with --clear-depends");
     input.dependsOn = [];

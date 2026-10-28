@@ -98,7 +98,7 @@ describe("history", () => {
     const agent = asUser(userId, "agent");
     const task: any = await app.mutation(internal.ops.add, { title: "Write report", dueDate: "2026-10-22" });
     await agent.mutation(internal.ops.reschedule, { taskId: task.id, dueDate: "2026-10-24", dueTime: "09:30" });
-    await agent.mutation(internal.ops.update, { taskId: task.id, title: "Write the report", labels: ["work"] });
+    await agent.mutation(internal.ops.update, { taskId: task.id, title: "Write the report" });
     await app.mutation(internal.ops.update, { taskId: task.id, title: "Write the report" }); // no change
     await app.mutation(internal.ops.complete, { taskId: task.id });
 
@@ -111,8 +111,8 @@ describe("history", () => {
     ]);
     expect(history[1].before).toEqual({ dueDate: "2026-10-22", dueTime: null });
     expect(history[1].after).toEqual({ dueDate: "2026-10-24", dueTime: "09:30" });
-    expect(history[2].before).toEqual({ title: "Write report", labels: [] });
-    expect(history[2].after).toEqual({ title: "Write the report", labels: ["work"] });
+    expect(history[2].before).toEqual({ title: "Write report" });
+    expect(history[2].after).toEqual({ title: "Write the report" });
     expect(history[3].after).toMatchObject({ status: "done", completedAt: expect.any(Number) });
     expect(history.every((h: any) => typeof h.at === "number")).toBe(true);
   });
@@ -178,21 +178,22 @@ describe("idempotency by clientId", () => {
 });
 
 describe("views", () => {
-  test("listAll filters by labels (all must match) and hides done/archived on request", async () => {
+  test("listAll hides done/archived on request and ignores a labels filter", async () => {
     const user = asUser(newUserId());
-    await user.mutation(internal.ops.add, { title: "home", labels: ["home"] });
-    await user.mutation(internal.ops.add, { title: "work urgent", labels: ["work", "urgent"] });
-    const done: any = await user.mutation(internal.ops.add, { title: "work done", labels: ["work"] });
+    await user.mutation(internal.ops.add, { title: "home" });
+    await user.mutation(internal.ops.add, { title: "work urgent" });
+    const done: any = await user.mutation(internal.ops.add, { title: "work done" });
     await user.mutation(internal.ops.complete, { taskId: done.id });
-    const archived: any = await user.mutation(internal.ops.add, { title: "work old", labels: ["work"] });
+    const archived: any = await user.mutation(internal.ops.add, { title: "work old" });
     await user.mutation(internal.ops.archive, { taskId: archived.id });
 
     const list = async (args: Record<string, unknown>) =>
       titles((await user.query(internal.ops.listAll, args)) as any).sort();
-    expect(await list({ labels: ["work"] })).toEqual(["work done", "work urgent"]);
-    expect(await list({ labels: ["work", "urgent"] })).toEqual(["work urgent"]);
-    expect(await list({ labels: ["work"], includeDone: false })).toEqual(["work urgent"]);
-    expect(await list({ labels: ["work"], includeArchived: true })).toEqual(["work done", "work old", "work urgent"]);
+    expect(await list({})).toEqual(["home", "work done", "work urgent"]);
+    expect(await list({ includeDone: false })).toEqual(["home", "work urgent"]);
+    expect(await list({ includeArchived: true })).toEqual(["home", "work done", "work old", "work urgent"]);
+    // A client older than 0.14.0 may still filter by labels: the filter is ignored.
+    expect(await list({ labels: ["work"] })).toEqual(["home", "work done", "work urgent"]);
   });
 
   test("board has three columns and flags the now task", async () => {

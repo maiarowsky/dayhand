@@ -297,9 +297,9 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         nextId += 1
         var task: [String: JSONValue] = [
             "id": .string(id), "ref": .of(nextId - 1), "title": args["title"] ?? "", "status": "todo", "isNow": false,
-            "labels": [], "links": [], "checklist": [], "createdAt": .of(clock()), "updatedAt": .of(clock()),
+            "links": [], "checklist": [], "createdAt": .of(clock()), "updatedAt": .of(clock()),
         ]
-        for key in ["note", "dueDate", "dueTime", "clientId", "status", "resumeNote", "repeat", "labels", "links", "checklist", "reminders"] {
+        for key in ["note", "dueDate", "dueTime", "clientId", "status", "resumeNote", "repeat", "links", "checklist", "reminders"] {
             if let value = args[key] { task[key] = value }
         }
         if let ref = args["projectId"]?.string, case .success(let projectId?) = projectTarget(ref, current: nil) { task["projectId"] = .string(projectId) }
@@ -315,7 +315,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         guard let done = tasks[id]?.object, let rule = RepeatRule.parse(done["repeat"]) else { return }
         let today = HelmDates.localDate(clock(), settings["timezone"]?.string)
         guard let occurrence = Recurrence.advance(rule, dueDate: done["dueDate"]?.string, today: today) else { return }
-        var next = done.filter { ["title", "note", "dueTime", "labels", "links", "reminders", "projectId"].contains($0.key) }
+        var next = done.filter { ["title", "note", "dueTime", "links", "reminders", "projectId"].contains($0.key) }
         next["dueDate"] = .string(occurrence.dueDate)
         next["repeat"] = occurrence.repeat.wire
         next["checklist"] = .array((done["checklist"]?.array ?? []).map { item in

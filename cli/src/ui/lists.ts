@@ -20,7 +20,7 @@ export function matches(task: Task, filter: string, projects: Project[] = []): b
   if (!projectMatches) return false;
   const needle = tokens.filter((token) => !token.startsWith("+")).join(" ").toLowerCase();
   if (!needle) return true;
-  const haystack = [task.title, task.note ?? "", task.resumeNote ?? "", ...task.labels.map((l) => `#${l}`), task.ref === undefined ? "" : `#${task.ref}`];
+  const haystack = [task.title, task.note ?? "", task.resumeNote ?? "", task.ref === undefined ? "" : `#${task.ref}`];
   return haystack.some((text) => text.toLowerCase().includes(needle));
 }
 
