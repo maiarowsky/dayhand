@@ -7,8 +7,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -30,7 +35,9 @@ import dev.helm.planner.ui.common.dayLabel
 import dev.helm.planner.ui.common.reminderLabel
 import dev.helm.planner.ui.common.repeatLabel
 import dev.helm.planner.ui.common.statusLabel
+import dev.helm.planner.ui.components.CardSection
 import dev.helm.planner.ui.components.Pill
+import dev.helm.planner.ui.components.TextAction
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.Instant
@@ -45,11 +52,16 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 
-/** Who changed what and when, newest first, folded until asked for; changes still in the outbox are counted, not listed. */
+/**
+ * Who changed what and when, newest first, right under the note: the [SHOWN_ENTRIES] latest entries, and the rest one
+ * tap away; changes still in the outbox are counted, not listed.
+ */
 @Composable
 fun HistorySection(state: TaskDetailUiState.Ready) {
     val today = LocalDate.parse(state.today)
-    FoldingSection(stringResource(R.string.detail_history), tag = TaskDetailTags.HISTORY, initiallyExpanded = false) {
+    var whole by rememberSaveable { mutableStateOf(false) }
+    val shown = if (whole) state.history else state.history.take(SHOWN_ENTRIES)
+    CardSection(stringResource(R.string.detail_history), Modifier.testTag(TaskDetailTags.HISTORY)) {
         if (state.pendingChanges > 0) Placeholder(pluralStringResource(R.plurals.history_pending, state.pendingChanges, state.pendingChanges))
         when (state.historyState) {
             HistoryState.NOT_ON_SERVER_YET -> Placeholder(stringResource(R.string.history_not_on_server))
@@ -59,7 +71,14 @@ fun HistorySection(state: TaskDetailUiState.Ready) {
         if (state.history.isEmpty() && state.historyState != HistoryState.NOT_ON_SERVER_YET) {
             if (state.historyState != HistoryState.LOADING) Placeholder(stringResource(R.string.history_empty))
         }
-        state.history.forEach { HistoryRow(it, state.timezone, today) }
+        shown.forEach { HistoryRow(it, state.timezone, today) }
+        if (state.history.size > SHOWN_ENTRIES) {
+            TextAction(
+                if (whole) stringResource(R.string.title_show_less) else stringResource(R.string.history_show_all, state.history.size),
+                { whole = !whole },
+                modifier = Modifier.testTag(TaskDetailTags.HISTORY_MORE),
+            )
+        }
     }
 }
 
@@ -122,7 +141,6 @@ private fun changeLabel(change: FieldChange, today: LocalDate): String {
             HistoryField.DUE_DATE -> R.string.field_day
             HistoryField.DUE_TIME -> R.string.quick_add_time
             HistoryField.REPEAT -> R.string.detail_repeat
-            HistoryField.LABELS -> R.string.detail_labels
             HistoryField.LINKS -> R.string.detail_links
             HistoryField.CHECKLIST -> R.string.detail_checklist
             HistoryField.REMINDERS -> R.string.detail_reminders
@@ -145,7 +163,6 @@ private fun valueLabel(field: HistoryField, value: JsonElement, today: LocalDate
         HistoryField.NOW -> (value as? JsonPrimitive)?.booleanOrNull?.let { stringResource(if (it) R.string.yes else R.string.no) }
         HistoryField.DUE_DATE -> text?.let { runCatching { LocalDate.parse(it) }.getOrNull() }?.let { dayLabel(it, today) }
         HistoryField.REPEAT -> RepeatRule.parse(value)?.let { repeatLabel(it) }
-        HistoryField.LABELS -> (value as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content }?.joinToString(", ")
         HistoryField.LINKS -> decode(value, ListSerializer(TaskLink.serializer()))?.joinToString(", ") { it.title ?: it.url }
         HistoryField.CHECKLIST -> decode(value, ListSerializer(ChecklistItem.serializer()))
             ?.joinToString(", ") { if (it.done) "✓ ${it.title}" else it.title }?.let(::shorten)
@@ -166,3 +183,6 @@ private fun <T> decode(value: JsonElement, serializer: kotlinx.serialization.KSe
 
 private val json = Json { ignoreUnknownKeys = true }
 private const val MAX_SHOWN = 80
+
+/** History entries shown before "Show the whole history". */
+private const val SHOWN_ENTRIES = 3

@@ -2,8 +2,8 @@
 """End-to-end check of the board and task details on an emulator against a local Dayhand backend.
 
 The agent adds a task through MCP; in the app it is dragged to "In progress" on the board and
-moved to "Done" from the card's menu (no dragging). In the details screen the title, a label,
-a link and a time are changed. Offline, the task goes to the trash; the app is killed and the
+moved to "Done" from the card's menu (no dragging). In the details screen the title, the
+time and a link are changed. Offline, the task goes to the trash; the app is killed and the
 change must reach the server once the network is back. The task is then restored from the
 Trash screen. Finally an agent edit must show up in the task's history marked "Agent". Every
 step is checked on the server through MCP, as the agent sees it.
@@ -151,7 +151,7 @@ def main():
     # A first start (keystore key, database) on a loaded emulator drops taps for a while.
     time.sleep(10)
 
-    task = mcp("add_task", title=title, dueDate="today", labels=["Dayhand"])
+    task = mcp("add_task", title=title, dueDate="today")
     task_id = task["id"]
     log(f"agent added {title} ({task_id})")
     # Without the native Convex client the app polls every 30 s, so allow for one round.
@@ -175,9 +175,9 @@ def main():
     wait_server(task_id, lambda t: t["status"] == "done", "moved to Done from the menu")
     tap(find(text="Done ("))
 
-    # Details: rename, label, link, time.
+    # Details: rename, time, link.
     tap(find(text=title))
-    find(text="Labels")
+    find(desc="Status: ")
     tap(find(text=title))
     edit_text()
     # The dialog opens focused with the cursor after the title.
@@ -187,12 +187,8 @@ def main():
     tap(button("Save"))
     wait_server(task_id, lambda t: t["title"] == renamed, f"title is {renamed!r}")
 
-    tap(find(text="Add label"))
-    tap(edit_text())
-    type_text("Family")
-    tap(button("Add"))
-    wait_server(task_id, lambda t: t["labels"] == ["Dayhand", "Family"], "labels Dayhand, Family")
-
+    # The time is in the due day's menu.
+    tap(find(desc="Due: "))
     tap(find(text="Add a time"))
     tap(button("OK"))
     wait_server(task_id, lambda t: t.get("dueTime") == "09:00", "time 09:00")
@@ -201,8 +197,8 @@ def main():
     tap(button("Allow"))
     log("notification permission asked for the first timed task, allowed")
 
-    # Links are folded while the task has none.
-    tap(find_scrolling(text="LINKS"))
+    # Links are in the folded row under the status, "More: …".
+    tap(find_scrolling(text="More: "))
     tap(find_scrolling(text="Add link"))
     tap(edit_text())
     type_text("https://example.com/plan")

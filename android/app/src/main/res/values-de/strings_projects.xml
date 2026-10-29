@@ -23,8 +23,6 @@
     <string name="project_reorder">Reihenfolge ändern</string>
     <string name="project_reorder_done">Sortieren beenden</string>
     <string name="project_reorder_handle">Projekt verschieben: %1$s</string>
-    <string name="project_from_label">Aus Label ein Projekt machen</string>
-    <string name="project_remove_label">Label von verschobenen Aufgaben entfernen</string>
     <string name="project_archive_title">Projekt archivieren?</string>
     <string name="project_archive_hint">Aufgaben bleiben in Heute, Kalender und Board, wenn sie nicht mitarchiviert werden.</string>
     <string name="project_archive_tasks">Offene Aufgaben mitarchivieren</string>

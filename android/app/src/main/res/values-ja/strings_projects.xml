@@ -23,8 +23,6 @@
     <string name="project_reorder">並び順を変更</string>
     <string name="project_reorder_done">並べ替えを終了</string>
     <string name="project_reorder_handle">プロジェクトを移動：%1$s</string>
-    <string name="project_from_label">ラベルからプロジェクトを作成</string>
-    <string name="project_remove_label">移動したタスクからラベルを削除</string>
     <string name="project_archive_title">プロジェクトをアーカイブしますか？</string>
     <string name="project_archive_hint">タスクもアーカイブしない限り、今日・カレンダー・ボードに表示されます。</string>
     <string name="project_archive_tasks">未完了のタスクもアーカイブ</string>

@@ -24,14 +24,6 @@ class TaskRulesTest {
     }
 
     @Test
-    fun `labels are trimmed, deduplicated and limited like on the server`() {
-        assertEquals(listOf("home", "work"), TaskRules.labels(listOf(" home", "work", "home ", " ")))
-        assertNull(TaskRules.labels(listOf("x".repeat(51))))
-        assertNull(TaskRules.labels((1..21).map { "l$it" }))
-        assertEquals(20, TaskRules.labels((1..20).map { "l$it" })!!.size)
-    }
-
-    @Test
     fun `links must be absolute http or https addresses`() {
         assertTrue(TaskRules.isLinkUrl("https://example.com/a?b=1"))
         assertTrue(TaskRules.isLinkUrl("http://10.0.2.2:3210"))

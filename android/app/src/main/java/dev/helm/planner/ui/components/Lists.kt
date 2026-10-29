@@ -188,7 +188,7 @@ fun HelmMenu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable Colu
     )
 }
 
-/** A dialog on the palette's card colour with text actions; [content] is the body under the title. */
+/** A dialog on the palette's card colour with its actions as buttons; [content] is the body under the title. */
 @Composable
 fun HelmDialog(
     title: String,
@@ -215,7 +215,7 @@ fun HelmDialog(
                 confirm,
                 onConfirm,
                 enabled = confirmEnabled,
-                color = if (destructive) p.danger else p.accent,
+                tone = if (destructive) ButtonTone.Danger else ButtonTone.Accent,
                 modifier = confirmTag?.let { Modifier.testTag(it) } ?: Modifier,
             )
         },

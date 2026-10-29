@@ -60,7 +60,7 @@ class BoardScreenTest {
 
     private val columns = BoardColumns(
         date = "2026-10-22",
-        todo = listOf(task("a") { copy(dueDate = "2026-10-20", labels = listOf("Dayhand")) }, task("b")),
+        todo = listOf(task("a") { copy(dueDate = "2026-10-20") }, task("b")),
         doing = listOf(task("n", TaskStatus.DOING) { copy(isNow = true, resumeNote = "page 3") }),
         done = emptyList(),
     )
@@ -91,7 +91,6 @@ class BoardScreenTest {
             .assertHeightIsAtLeast(48.dp)
         compose.onNodeWithTag(BoardTags.tab(TaskStatus.DOING)).assertTextContains(text(R.string.column_with_count, text(R.string.column_doing), 1))
         compose.onNodeWithTag(BoardTags.tab(TaskStatus.DONE)).assertTextContains(text(R.string.column_with_count, text(R.string.column_done), 0))
-        compose.onNodeWithText("Dayhand").assertIsDisplayed()
         compose.onNodeWithText(text(R.string.overdue_due, LocalDate.of(2026, 10, 20).format(dateFormat("EEEdMMM", Locale.getDefault()))), substring = true, useUnmergedTree = true).assertExists()
     }
 

@@ -42,7 +42,6 @@ data class BackupTask(
     val status: TaskStatus = TaskStatus.TODO,
     val resumeNote: String? = null,
     val repeat: RepeatRule? = null,
-    val labels: List<String> = emptyList(),
     val links: List<TaskLink> = emptyList(),
     val checklist: List<ChecklistItem> = emptyList(),
     val reminders: List<TaskReminder>? = null,
@@ -126,7 +125,6 @@ object PlanBackup {
         task.dueTime?.let { put("dueTime", it) }
         task.resumeNote?.let { put("resumeNote", it) }
         task.repeat?.let { put("repeat", FieldJson.wireRepeat(it)) }
-        put("labels", JsonArray(task.labels.map(::JsonPrimitive)))
         put("links", JsonArray(task.links.map { link -> buildJsonObject { put("url", link.url); link.title?.let { put("title", it) } } }))
         if (task.checklist.isNotEmpty()) put("checklist", FieldJson.wireChecklist(task.checklist))
         task.reminders?.let { put("reminders", FieldJson.wireReminders(it)) }
@@ -193,7 +191,6 @@ object PlanBackup {
         if (dueDate != null && !isDate(dueDate)) return null
         if (dueTime != null && (dueDate == null || !TaskRules.isValid(TaskReminder(time = dueTime)))) return null
         val repeat = o["repeat"]?.takeUnless { it is JsonNull }?.let { RepeatRule.parse(it)?.takeIf(TaskRules::isValid) ?: return null }
-        val labels = TaskRules.labels(o.strings("labels") ?: return null) ?: return null
         val links = (o["links"] as? JsonArray ?: JsonArray(emptyList())).map { link(it) ?: return null }
         if (links.size > TaskRules.MAX_LINKS) return null
         val checklist = (o["checklist"] as? JsonArray).orEmpty().map { item(it, newId) ?: return null }
@@ -211,7 +208,6 @@ object PlanBackup {
             status = TaskStatus.fromWire(o.string("status")),
             resumeNote = resumeNote,
             repeat = repeat,
-            labels = labels,
             links = links,
             checklist = TaskRules.checklist(checklist) ?: return null,
             reminders = reminders,
@@ -255,12 +251,6 @@ object PlanBackup {
     }
 
     private fun JsonObject.string(key: String): String? = (this[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
-
-    private fun JsonObject.strings(key: String): List<String>? = when (val value = this[key]) {
-        null, is JsonNull -> emptyList()
-        is JsonArray -> value.map { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content ?: return null }
-        else -> null
-    }
 
     private fun JsonObject.long(key: String): Long? = (this[key] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull?.toLong()
 }

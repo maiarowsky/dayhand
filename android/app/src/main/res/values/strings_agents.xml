@@ -54,7 +54,7 @@
     <string name="agents_accept">Accept</string>
     <string name="agents_accept_note">It becomes a task of your plan and shows on Today when due.</string>
     <string name="agents_merge">Merge into a task</string>
-    <string name="agents_merge_note">Its note, links and labels join a task you already have.</string>
+    <string name="agents_merge_note">Its note and links join a task you already have.</string>
     <string name="agents_reject">Reject</string>
     <string name="agents_reject_title">Reject “%1$s”?</string>
     <string name="agents_reason_label">Why (optional, sent back to its source)</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">Find a task</string>
     <string name="agents_merge_none">No open task matches.</string>
     <string name="agents_merge_confirm_title">Merge into “%1$s”?</string>
-    <string name="agents_merge_confirm_text">The proposal goes to the trash; its note, links and labels join this task.</string>
+    <string name="agents_merge_confirm_text">The proposal goes to the trash; its note and links join this task.</string>
     <string name="agents_merge_confirm">Merge</string>
     <string name="agents_accepted">Accepted: it is a task of your plan now.</string>
     <string name="agents_merged">Merged.</string>

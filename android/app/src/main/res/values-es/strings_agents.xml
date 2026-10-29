@@ -54,7 +54,7 @@
     <string name="agents_accept">Aceptar</string>
     <string name="agents_accept_note">Se convierte en una tarea de tu plan y aparece en Hoy cuando venza.</string>
     <string name="agents_merge">Fusionar con una tarea</string>
-    <string name="agents_merge_note">Su nota, enlaces y etiquetas se añaden a una tarea que ya tienes.</string>
+    <string name="agents_merge_note">Su nota y sus enlaces se añaden a una tarea que ya tienes.</string>
     <string name="agents_reject">Rechazar</string>
     <string name="agents_reject_title">¿Rechazar “%1$s”?</string>
     <string name="agents_reason_label">Motivo (opcional, se envía a su origen)</string>
@@ -62,7 +62,7 @@
     <string name="agents_merge_search">Buscar una tarea</string>
     <string name="agents_merge_none">Ninguna tarea abierta coincide.</string>
     <string name="agents_merge_confirm_title">¿Fusionar con “%1$s”?</string>
-    <string name="agents_merge_confirm_text">La propuesta va a la papelera; su nota, enlaces y etiquetas se añaden a esta tarea.</string>
+    <string name="agents_merge_confirm_text">La propuesta va a la papelera; su nota y sus enlaces se añaden a esta tarea.</string>
     <string name="agents_merge_confirm">Fusionar</string>
     <string name="agents_accepted">Aceptada: ahora es una tarea de tu plan.</string>
     <string name="agents_merged">Fusionada.</string>

@@ -107,4 +107,27 @@ class TodaySectionsTest {
         assertTrue(s.done.isEmpty())
         assertFalse(HelmDates.isOverdue(trashed.first(), "2026-10-22"))
     }
+
+    @Test
+    fun `another day shows its open tasks and what was done on it, never overdue or now`() {
+        val tasks = listOf(
+            task("overdue", "2026-10-19"),
+            task("now", "2026-10-23") { copy(isNow = true) },
+            task("tomorrow-late", "2026-10-23", "18:00"),
+            task("tomorrow-early", "2026-10-23", "08:00"),
+            task("today", "2026-10-22"),
+            task("done-yesterday", "2026-10-21", status = TaskStatus.DONE) { copy(completedAt = utc("2026-10-21T15:00")) },
+        )
+        val tomorrow = daySections(tasks, at, "Europe/London", 1)
+        assertEquals("2026-10-23", tomorrow.date)
+        assertTrue(tomorrow.overdue.isEmpty())
+        assertNull(tomorrow.now)
+        assertEquals(listOf("tomorrow-early", "tomorrow-late", "now"), tomorrow.today.map { it.localId })
+        val yesterday = daySections(tasks, at, "Europe/London", -1)
+        assertEquals("2026-10-21", yesterday.date)
+        assertTrue(yesterday.today.isEmpty())
+        assertEquals(listOf("done-yesterday"), yesterday.done.map { it.localId })
+        assertTrue(yesterday.isEmpty)
+        assertEquals(todaySections(tasks, at, "Europe/London"), daySections(tasks, at, "Europe/London", 0))
+    }
 }

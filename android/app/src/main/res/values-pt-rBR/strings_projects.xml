@@ -23,8 +23,6 @@
     <string name="project_reorder">Definir ordem</string>
     <string name="project_reorder_done">Concluir ordenação</string>
     <string name="project_reorder_handle">Mover projeto: %1$s</string>
-    <string name="project_from_label">Criar projeto a partir da etiqueta</string>
-    <string name="project_remove_label">Remover a etiqueta das tarefas movidas</string>
     <string name="project_archive_title">Arquivar projeto?</string>
     <string name="project_archive_hint">As tarefas ficam em Hoje, Calendário e Quadro, a menos que você também as arquive.</string>
     <string name="project_archive_tasks">Arquivar também as tarefas abertas</string>

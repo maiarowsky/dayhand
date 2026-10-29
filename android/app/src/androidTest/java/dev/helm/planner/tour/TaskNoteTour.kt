@@ -75,7 +75,7 @@ class TaskNoteTour {
 
     @Test
     fun detailsAndNoteEditor() {
-        val state = TaskDetailUiState.Ready(task, today, "Europe/Warsaw", history, HistoryState.FRESH, 0, emptyList(), listOf(0))
+        val state = TaskDetailUiState.Ready(task, today, "Europe/Warsaw", history, HistoryState.FRESH, 0, listOf(0))
         compose.runOnUiThread { compose.activity.tourBars(config.dark) }
         compose.setContent {
             CompositionLocalProvider(LocalProjects provides ProjectUiContext(listOf(project))) {
@@ -85,7 +85,6 @@ class TaskNoteTour {
         shot("detail-top")
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo()
         shot("detail-note")
-        compose.onNodeWithTag("${TaskDetailTags.HISTORY}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.TRASH).performScrollTo()
         shot("detail-bottom")
         compose.onNodeWithTag(TaskDetailTags.NOTE).performScrollTo().performClick()

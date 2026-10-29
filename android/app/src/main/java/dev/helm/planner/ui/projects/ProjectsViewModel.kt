@@ -23,8 +23,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** All eight languages share these data, not server-supplied error messages. */
-data class ProjectDraft(val name: String, val color: String? = null, val icon: String? = null, val note: String? = null,
-                        val fromLabel: String? = null, val removeLabel: Boolean = false)
+data class ProjectDraft(val name: String, val color: String? = null, val icon: String? = null, val note: String? = null)
 
 interface ProjectActions {
     fun create(draft: ProjectDraft, onCreated: (Project) -> Unit) {}
@@ -50,7 +49,7 @@ class ProjectsViewModel(private val repository: TaskRepository, settings: Settin
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     override fun create(draft: ProjectDraft, onCreated: (Project) -> Unit) = run {
-        onCreated(repository.projectStore.add(draft.name, draft.color, draft.icon, draft.note, draft.fromLabel, draft.removeLabel))
+        onCreated(repository.projectStore.add(draft.name, draft.color, draft.icon, draft.note))
     }
     override fun edit(project: Project, draft: ProjectDraft, onSaved: () -> Unit) = run {
         repository.projectStore.update(project.localId, draft.name, draft.color, draft.icon, draft.note)

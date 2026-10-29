@@ -44,6 +44,7 @@
     <string name="quick_add_example">par ex. Appeler le comptable fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s · d\'après « %2$s »</string>
     <string name="quick_add_no_phrase">Pas de date dans le texte : aujourd\'hui</string>
+    <string name="quick_add_no_phrase_on">Pas de date dans le texte : %1$s</string>
     <string name="quick_add_from_options">D\'après « Plus d\'options » : %1$s</string>
     <string name="quick_add_keep_in_title">Garder dans le titre</string>
     <string name="quick_add_keep_in_title_hint">Ajouter ces mots au titre au lieu de les lire comme une date</string>
@@ -99,11 +100,8 @@
     <string name="detail_due">Échéance</string>
     <string name="detail_no_due">Sans échéance</string>
     <string name="detail_repeat">Répétition</string>
-    <string name="detail_labels">Étiquettes</string>
     <string name="project_picker_empty">Vous n\'avez pas encore de projet. Créez le premier, la tâche y sera rattachée.</string>
     <string name="projects_empty">Vous n\'avez pas encore de projet. Un projet regroupe des tâches, par exemple Maison ou Travail.</string>
-    <string name="labels_note">Les étiquettes sont des marques libres sur les tâches, indépendantes des projets. Touchez-en une pour voir ses tâches, maintenez-la pour en faire un projet.</string>
-    <string name="detail_repeat_reminders">Répétition et rappels</string>
     <string name="title_show_all">Afficher tout le titre</string>
     <string name="title_show_less">Réduire</string>
     <string name="note_show_all">Afficher toute la note</string>
@@ -157,20 +155,10 @@
         <item quantity="many">Tous les %1$d ans</item>
         <item quantity="other">Tous les %1$d ans</item>
     </plurals>
-    <string name="add_label">Ajouter une étiquette</string>
-    <string name="remove_label">Retirer l\'étiquette : %1$s</string>
-    <string name="label_name">Étiquette</string>
-    <plurals name="labels_full">
-        <item quantity="one">%1$d étiquette maximum</item>
-        <item quantity="many">%1$d étiquettes maximum</item>
-        <item quantity="other">%1$d étiquettes maximum</item>
-    </plurals>
-    <string name="labels_in_use">Déjà utilisées</string>
     <string name="add_link">Ajouter un lien</string>
     <string name="open_link">Ouvrir le lien</string>
     <string name="remove_link">Retirer le lien : %1$s</string>
     <string name="no_links">Aucun lien</string>
-    <string name="no_labels">Aucune étiquette</string>
     <string name="link_url">Adresse</string>
     <string name="link_title">Titre (facultatif)</string>
     <string name="link_invalid">Saisissez une adresse complète commençant par http:// ou https://</string>
@@ -422,4 +410,15 @@
         <item quantity="many">Attend %d tâches</item>
         <item quantity="other">Attend %d tâches</item>
     </plurals>
+    <string name="change_status">Changer le statut</string>
+    <string name="detail_more">Plus</string>
+    <string name="history_show_all">Afficher tout l\'historique (%1$d)</string>
+    <string name="day_title_tomorrow">Demain</string>
+    <string name="day_title_yesterday">Hier</string>
+    <string name="day_back_to_today">Revenir à aujourd\'hui</string>
+    <string name="day_previous">Jour précédent</string>
+    <string name="day_next">Jour suivant</string>
+    <string name="empty_day">Rien de prévu ce jour-là.</string>
+    <string name="section_day_tasks">Prévu</string>
+    <string name="change_due">Changer l\'échéance</string>
 </resources>

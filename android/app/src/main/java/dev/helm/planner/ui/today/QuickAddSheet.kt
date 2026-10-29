@@ -85,6 +85,8 @@ fun QuickAddSheet(
     onSave: (title: String, dueDate: String, dueTime: String?, note: String?, projectId: String?) -> Unit,
     now: () -> Long = System::currentTimeMillis,
     defaultProjectId: String? = null,
+    /** The day a task without a date phrase is due on: today unless the user is looking at another day. */
+    defaultDay: String? = null,
 ) {
     val projects = LocalProjects.current.projects
     var projectId by rememberSaveable { mutableStateOf(defaultProjectId) }
@@ -92,7 +94,7 @@ fun QuickAddSheet(
     var pickingProject by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
-    var day by rememberSaveable { mutableStateOf<String?>(null) }
+    var day by rememberSaveable { mutableStateOf(defaultDay) }
     var time by rememberSaveable { mutableStateOf<String?>(null) }
     // A day or time picked under "More options" wins over a phrase in the title.
     var picked by rememberSaveable { mutableStateOf(false) }
@@ -239,8 +241,8 @@ fun QuickAddSheet(
 }
 
 /**
- * What the task will get, under the title: "Friday 30 Oct, 14:00 · from “fri 2pm”", "No date phrase: today", or the
- * day and time picked under "More options". Read out when it changes.
+ * What the task will get, under the title: "Friday 30 Oct, 14:00 · from “fri 2pm”", "No date phrase: today" (or the
+ * day shown on Today), or the day and time picked under "More options". Read out when it changes.
  */
 @Composable
 private fun WhenLine(today: LocalDate, read: QuickAddInput?, picked: Boolean, day: String, time: String?) {
@@ -248,6 +250,7 @@ private fun WhenLine(today: LocalDate, read: QuickAddInput?, picked: Boolean, da
     val text = when {
         read != null && due != null -> stringResource(R.string.quick_add_from_phrase, whenLabel(due.date, due.time, today), read.phrase.orEmpty())
         picked -> stringResource(R.string.quick_add_from_options, whenLabel(day, time, today))
+        day != today.toString() -> stringResource(R.string.quick_add_no_phrase_on, whenLabel(day, time, today))
         else -> stringResource(R.string.quick_add_no_phrase)
     }
     Text(

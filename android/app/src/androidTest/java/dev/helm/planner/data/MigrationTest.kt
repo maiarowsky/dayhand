@@ -16,7 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** An app updated from 0.1 or 0.5 keeps its tasks and its waiting changes. */
+/** An app updated from 0.1, 0.5 or 0.13 keeps its tasks and its waiting changes. */
 @RunWith(AndroidJUnit4::class)
 class MigrationTest {
     @get:Rule
@@ -45,11 +45,10 @@ class MigrationTest {
                 assertEquals("Call the accountant", task.title)
                 assertEquals(TaskStatus.DOING, task.status)
                 assertEquals("page 3", task.resumeNote)
-                assertTrue(task.labels.isEmpty())
                 assertTrue(task.links.isEmpty())
                 assertNull(task.repeat)
                 assertNull(task.deletedAt)
-                assertNull("the next snapshot must fill in labels, links and repeat", task.serverUpdatedAt)
+                assertNull("the next snapshot must fill in links and repeat", task.serverUpdatedAt)
                 assertEquals("app:complete", db.outbox().all().single().mutation)
             }
         } finally {
@@ -75,7 +74,6 @@ class MigrationTest {
                 val task = db.tasks().byLocalId("a")!!
                 assertEquals("Pay rent", task.title)
                 assertEquals(RepeatRule(RepeatEvery.MONTH), task.repeat)
-                assertEquals(listOf("home"), task.labels)
                 assertTrue(task.checklist.isEmpty())
                 assertNull("no own reminders: the defaults from Settings", task.reminders)
                 assertNull("the next snapshot must fill in the checklist and reminders", task.serverUpdatedAt)
@@ -143,6 +141,40 @@ class MigrationTest {
                 assertNull(task.blockedReason)
                 assertNull("the next snapshot must fill in the plan and the dependencies", task.serverUpdatedAt)
                 assertEquals(listOf("app:release"), db.outbox().all().map { it.mutation })
+            }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun version6TasksLoseTheirLabelsAndKeepEverythingElse() {
+        helper.createDatabase(DB, 6).apply {
+            execSQL(
+                "INSERT INTO tasks (localId, serverId, clientId, title, status, isNow, createdAt, updatedAt, serverUpdatedAt, labels, links, checklist, acceptance, dependsOn, projectId) " +
+                    "VALUES ('a', 's1', 'a', 'Water the plants', 'todo', 0, 1, 2, 2, '[\"home\"]', '[]', '[]', '[]', '[]', 'p1')",
+            )
+            execSQL(
+                "INSERT INTO outbox (opId, mutation, argsJson, taskLocalId, clientId, createdAt, attempts) " +
+                    "VALUES ('o1', 'app:update', '{\"labels\":[\"home\"],\"clientId\":\"c1\"}', 'a', 'c1', 3, 0), " +
+                    "('o2', 'app:update', '{\"labels\":[],\"note\":\"Twice a week\",\"clientId\":\"c2\"}', 'a', 'c2', 4, 0)",
+            )
+            close()
+        }
+        helper.runMigrationsAndValidate(DB, 7, true).close()
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val db = Room.databaseBuilder(context, HelmDatabase::class.java, DB).build()
+        try {
+            runBlocking {
+                val task = db.tasks().byLocalId("a")!!
+                assertEquals("Water the plants", task.title)
+                assertEquals("p1", task.projectId)
+                // A change of the labels alone has nothing left to send; the other keeps its note.
+                val outbox = db.outbox().all()
+                assertEquals(listOf("o2"), outbox.map { it.opId })
+                assertTrue("labels" !in outbox.single().argsJson)
+                assertTrue("Twice a week" in outbox.single().argsJson)
             }
         } finally {
             db.close()

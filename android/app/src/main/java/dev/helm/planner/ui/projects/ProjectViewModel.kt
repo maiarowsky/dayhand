@@ -16,17 +16,17 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class ProjectUiState(val project: Project?, val projectId: String?, val label: String?, val tasks: List<Task>, val today: String, val timezone: String,
+data class ProjectUiState(val project: Project?, val projectId: String?, val tasks: List<Task>, val today: String, val timezone: String,
                           val blocked: Map<String, dev.helm.planner.domain.AgentWork.Blocked> = dev.helm.planner.domain.AgentWork.blockedTasks(tasks))
 
-fun projectUiState(tasks: List<Task>, projects: List<Project>, projectId: String?, label: String?, today: String, timezone: String) =
-    ProjectUiState(projects.firstOrNull { it.localId == projectId }, projectId, label,
-        tasks.filter { if (label != null) label in it.labels else it.projectId == projectId }, today, timezone,
+fun projectUiState(tasks: List<Task>, projects: List<Project>, projectId: String?, today: String, timezone: String) =
+    ProjectUiState(projects.firstOrNull { it.localId == projectId }, projectId,
+        tasks.filter { it.projectId == projectId }, today, timezone,
         dev.helm.planner.domain.AgentWork.blockedTasks(tasks))
 
-class ProjectViewModel(private val repository: TaskRepository, settings: SettingsStore, private val projectId: String?, private val label: String?) : ViewModel() {
+class ProjectViewModel(private val repository: TaskRepository, settings: SettingsStore, private val projectId: String?) : ViewModel() {
     val state = combine(repository.tasks, repository.projects, settings.settings, minuteTicks(System::currentTimeMillis)) { tasks, projects, s, now ->
-        projectUiState(tasks, projects, projectId, label, HelmDates.localDate(now, s.timezone), s.timezone)
+        projectUiState(tasks, projects, projectId, HelmDates.localDate(now, s.timezone), s.timezone)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val todayActions = object : TodayActions {

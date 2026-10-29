@@ -185,6 +185,6 @@ class AgentWorkTest {
         assertEquals(proof, converters.proofFromJson(converters.proofToJson(proof)))
         assertNull(converters.proofToJson(null))
         assertEquals(emptyList<AcceptanceItem>(), converters.acceptanceFromJson("not json"))
-        assertEquals(listOf("s1", "s2"), converters.labelsFromJson(converters.labelsToJson(listOf("s1", "s2"))))
+        assertEquals(listOf("s1", "s2"), converters.stringsFromJson(converters.stringsToJson(listOf("s1", "s2"))))
     }
 }

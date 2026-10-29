@@ -80,7 +80,6 @@ data class RemoteTask(
     val createdAt: Long,
     val updatedAt: Long,
     val repeat: RepeatRule? = null,
-    val labels: List<String> = emptyList(),
     val links: List<TaskLink> = emptyList(),
     val deletedAt: Long? = null,
     val checklist: List<ChecklistItem> = emptyList(),

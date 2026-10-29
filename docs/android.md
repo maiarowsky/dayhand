@@ -15,7 +15,7 @@ The first start asks where your plan lives, on two cards:
 
 - **On this phone only**: no account and no server. **Start with an empty plan**, or **Try with
   sample data** to look around first: a few overdue, today's and done tasks, a repeating one, a
-  checklist, labels and three projects. One tap removes the sample tasks (on Today, or Settings → Data), and they are
+  checklist and three projects. One tap removes the sample tasks (on Today, or Settings → Data), and they are
   never sent to a server.
 - **Connect to my server**: the pairing form ([below](#connect-to-your-server)). Back returns to the
   two cards.
@@ -34,6 +34,14 @@ From top to bottom:
 3. **Today**: tasks due today, timed ones first, by time.
 4. **Done**: what you finished today, folded.
 
+The arrows next to the title show the day before and the day after: that day's tasks and what you finished
+on it, with **Tomorrow**, **Yesterday** or the weekday as the title and the date under it. Tap the title to
+come back to today. A task added while another day is shown is due on that day.
+
+Ticking a task off saves it at once; its row stays a moment (the box fills, the title is struck through,
+the row fades) so you see which one you ticked, then the rows under it move up. With the phone's
+animations turned off the row stays still, ticked, for a moment instead.
+
 A line at the top says when the phone is offline and how many changes wait, while changes are sent,
 or when the server signed the phone out.
 
@@ -46,8 +54,8 @@ late and amber when you are asked for something; **Review** opens the agents pag
 
 The button at the bottom opens one title field. A date phrase at the end sets the day and time:
 "Call the accountant fri 2pm" is "Call the accountant" on the coming Friday at 14:00. Without a
-phrase, the task is for today. A grey line under the field says what will happen; **Keep in title**
-keeps the words as text. **More options** adds a day, a time and a note.
+phrase, the task is for today, or for the day shown on Today. A grey line under the field says what
+will happen; **Keep in title** keeps the words as text. **More options** adds a day, a time and a note.
 
 The phrases are English in every language of the app, the same as `dayhand add --due`: `today`,
 `tomorrow 9am`, `fri`, `next mon`, `in 3 days`, `23 oct`, `2026-10-23`, `2pm`. The full list:
@@ -91,31 +99,29 @@ overdue, today, later, without a day and the latest done. A project also has **L
 - **Archive** keeps the project's tasks where they are, in Today, the calendar and the board; a switch
   archives its open tasks too. **Delete** asks where its tasks go, to another project or to No project;
   no task is deleted.
-- Your labels are under **⋮ → Labels**: tap one for its tasks, or long-press it for **Make a project from
-  label**: its tasks without a project move into the new project, and you choose whether the label comes
-  off them.
 - The project picker (task details, quick add, a task's menu) lists the projects you can assign. With
   none yet, it says so and offers **New project**; the project you make there is assigned at once.
 - Managing projects needs your server: offline, or without a server, the app says **Requires a connection
   to the server** and changes nothing. Putting a task into a project works offline.
 
-The rules, and how projects differ from labels: [Projects and labels](projects.md).
+The rules for projects: [projects.md](projects.md).
 
 ## Task details
 
 Tap a task to open it. You can change its title, status, the now flag and its note, the day with an
-optional time, the repeat, reminders, a checklist, labels and links (http and https only).
+optional time, the repeat, reminders, a checklist and links (http and https only).
 
-The title shows two lines, with **Show the whole title** when it is longer. One card under it holds what
-you read most: the status, the proof the task was completed with (when it has one) as a short line, the due
-day (red once it has passed; tap it to pick another) with the time and a cross for no due day in the same
-row, the project in one row and, when the task has any, its labels. The note follows, with a small gap between
-its paragraphs; a note longer than about eight lines is folded with **Show the whole note**. Tap the note to
-edit it on a whole screen: **Cancel** and **Save** stay on top above the keyboard, and Back cancels too, so
-nothing is saved without **Save**. **Repeat and reminders**, an empty checklist, **Labels** and links when
-there are none (open **Labels** to add one) and **Change history** are folded, each with its current value
-in the header; tap a header to open it. Values and notes are set in the
-phone's own font even when the app font is the monospaced one.
+The title shows two lines, with **Show the whole title** when it is longer. One card under it holds the rest
+in as little room as it takes: the status, the due day (red once it has passed) and the project as three
+chips in one row; tap one to change it (the due day's menu also adds, changes or removes the time and
+removes the day). Under them one row, **More**, names everything else with its value ("Does not repeat ·
+Default reminders · Checklist 1 of 3 done"); tap it for work on it now, the proof the task was completed
+with, the repeat, reminders, the checklist and the links. The note follows, with a small gap between its
+paragraphs; a note longer than about eight lines is folded with **Show the whole note**. Tap the note to
+edit it in a sheet over most of the screen, as wide as the phone: **Cancel** and **Save** stay on top above
+the keyboard, and Back cancels too, so nothing is saved without **Save**. **Change history** is right under
+the note with its last three entries; **Show the whole history** lists the rest. Values and notes are set
+in the phone's own font even when the app font is the monospaced one.
 
 - **Repeat**: every N days, weeks (on chosen weekdays), months or years; a monthly task on a day of
   the month, the last day, or an nth weekday ("the 2nd Tuesday", "the last Friday"); counted from the
@@ -125,8 +131,7 @@ phone's own font even when the app font is the monospaced one.
   a repeating task starts with every item unticked.
 - **Reminders**: the defaults from Settings, none, or the task's own: minutes before the due time, or
   a time on the due day or days before (at most five).
-- **Project** picks the task's one project, or none; **Labels** are free tags
-  ([Projects and labels](projects.md)).
+- **Project** picks the task's one project, or none ([projects.md](projects.md)).
 - **Move to trash** keeps the task for 30 days. A task in the trash is read only until you restore it.
 - **Change history** lists who changed what, newest first: you in the app, you with `dayhand`, or an
   agent by name.

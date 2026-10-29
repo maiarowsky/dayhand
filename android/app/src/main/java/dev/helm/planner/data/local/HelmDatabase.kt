@@ -3,21 +3,26 @@ package dev.helm.planner.data.local
 import android.content.Context
 import androidx.room.AutoMigration
 import androidx.room.Database
+import androidx.room.DeleteColumn
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
 import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Version 2 adds repeat, labels, links and the trash to tasks, and the cached change history; version 3 the
  * checklist and the task's own reminders; version 4 the agent work: acceptance criteria, proof and the claim; version 5
- * the task's number, its plan, its dependencies and the blocked reason; version 6 adds projects and server-confirmed task project references.
+ * the task's number, its plan, its dependencies and the blocked reason; version 6 adds projects and server-confirmed task project references;
+ * version 7 removes labels: projects are the only grouping.
  */
 @Database(
     entities = [Task::class, OutboxOp::class, TaskEvent::class, Project::class],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2, spec = HelmDatabase.Version2::class),
@@ -25,6 +30,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AutoMigration(from = 3, to = 4, spec = HelmDatabase.Version4::class),
         AutoMigration(from = 4, to = 5, spec = HelmDatabase.Version5::class),
         AutoMigration(from = 5, to = 6, spec = HelmDatabase.Version6::class),
+        AutoMigration(from = 6, to = 7, spec = HelmDatabase.Version7::class),
     ],
 )
 @TypeConverters(Converters::class)
@@ -73,8 +79,45 @@ abstract class HelmDatabase : RoomDatabase() {
         }
     }
 
+    /**
+     * Labels are gone with their column. Changes still waiting in the outbox lose their labels too, so the server is
+     * never sent one; an update that only changed labels has nothing left to send and goes.
+     */
+    @DeleteColumn(tableName = "tasks", columnName = "labels")
+    class Version7 : AutoMigrationSpec {
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            val changed = mutableListOf<Pair<Long, String?>>()
+            db.query("SELECT seq, mutation, argsJson FROM outbox").use { rows ->
+                while (rows.moveToNext()) {
+                    val args = rows.getString(2)
+                    val kept = withoutLabels(rows.getString(1), args)
+                    if (kept != args) changed += rows.getLong(0) to kept
+                }
+            }
+            changed.forEach { (seq, args) ->
+                if (args == null) db.execSQL("DELETE FROM outbox WHERE seq = ?", arrayOf<Any>(seq))
+                else db.execSQL("UPDATE outbox SET argsJson = ? WHERE seq = ?", arrayOf<Any>(args, seq))
+            }
+        }
+    }
+
     companion object {
         const val FILE_NAME = "helm.db"
+
+        /**
+         * The outbox arguments [argsJson] of [mutation] without `labels`: unchanged when there are none, null for an
+         * update that changed nothing else (only its `clientId` would be left).
+         */
+        internal fun withoutLabels(mutation: String, argsJson: String): String? {
+            val args = try {
+                Json.parseToJsonElement(argsJson) as? JsonObject
+            } catch (_: SerializationException) {
+                null
+            } ?: return argsJson
+            if ("labels" !in args) return argsJson
+            val kept = JsonObject(args - "labels")
+            return if (mutation == Mutations.UPDATE && kept.keys.all { it == "clientId" }) null else kept.toString()
+        }
 
         fun open(context: Context, name: String = FILE_NAME): HelmDatabase =
             Room.databaseBuilder(context.applicationContext, HelmDatabase::class.java, name).build()
@@ -88,11 +131,12 @@ class Converters {
     @TypeConverter
     fun statusFromWire(value: String): TaskStatus = TaskStatus.fromWire(value)
 
+    /** Lists of plain strings, such as the ids a task depends on. */
     @TypeConverter
-    fun labelsToJson(labels: List<String>): String = FieldJson.encodeLabels(labels)
+    fun stringsToJson(values: List<String>): String = FieldJson.encodeStrings(values)
 
     @TypeConverter
-    fun labelsFromJson(value: String): List<String> = FieldJson.decodeLabels(value)
+    fun stringsFromJson(value: String): List<String> = FieldJson.decodeStrings(value)
 
     @TypeConverter
     fun linksToJson(links: List<TaskLink>): String = FieldJson.encodeLinks(links)

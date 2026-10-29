@@ -1,6 +1,7 @@
 package dev.helm.planner.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +49,16 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = pal
  * of the status bar by itself.
  */
 @Composable
-fun LargeHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null, onBack: (() -> Unit)? = null, actions: @Composable RowScope.() -> Unit = {}) {
+fun LargeHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onBack: (() -> Unit)? = null,
+    /** A tap on the title, with what it does for a screen reader ([titleClickLabel]); none when null. */
+    onTitleClick: (() -> Unit)? = null,
+    titleClickLabel: String? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     val p = palette
     Row(
         modifier
@@ -59,13 +69,28 @@ fun LargeHeader(title: String, modifier: Modifier = Modifier, subtitle: String? 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onBack != null) HeaderIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack)
-        Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
+        Column(
+            Modifier
+                .weight(1f)
+                .then(
+                    if (onTitleClick != null) {
+                        // Not clipped to a rounded shape: its corner would cut the first letter of the subtitle.
+                        Modifier.clickable(onClickLabel = titleClickLabel, onClick = onTitleClick).testTag(HEADER_TITLE)
+                    } else {
+                        Modifier
+                    },
+                )
+                .semantics(mergeDescendants = true) { heading() },
+        ) {
             Text(title, style = helmType.headline, color = p.text)
             subtitle?.let { Text(it, style = helmType.body, color = p.textMuted) }
         }
         actions()
     }
 }
+
+/** The tappable title of a [LargeHeader], for tests. */
+const val HEADER_TITLE = "header-title"
 
 /**
  * Header of a sub-screen: the back arrow (48 dp) and the title, as on Mussh's settings pages. Without [onBack] (a

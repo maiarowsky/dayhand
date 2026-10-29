@@ -23,8 +23,6 @@
     <string name="project_reorder">Set order</string>
     <string name="project_reorder_done">Finish ordering</string>
     <string name="project_reorder_handle">Move project: %1$s</string>
-    <string name="project_from_label">Make a project from label</string>
-    <string name="project_remove_label">Remove the label from moved tasks</string>
     <string name="project_archive_title">Archive project?</string>
     <string name="project_archive_hint">Tasks stay in Today, Calendar and Board unless you archive them too.</string>
     <string name="project_archive_tasks">Also archive open tasks</string>

@@ -21,7 +21,8 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
    fixed one, and rows put their value under the name from font scale 1.5 (`LARGE_TEXT_SCALE`).
 5. **Touch targets of at least 48 × 48 dp**, also for icon buttons (Material's `IconButton` has a 40 dp clickable
    circle, so Dayhand uses `HeaderIconButton`). Every icon-only control has a description for screen readers.
-6. **One primary action per screen** (the accent pill). Secondary actions are tinted pills, minor ones text actions.
+6. **One primary action per screen** (the accent pill). Every button is a `HelmButton` in the shape of Mussh's Send
+   button (`HelmButtonShape`); secondary and minor actions differ only by tone (soft accent, danger, quiet).
 7. **Change applies at once.** The appearance is a `StateFlow`; saving it redraws the whole app without a restart and
    it is read synchronously at start, so the first frame has the right colours.
 
@@ -54,9 +55,10 @@ suit its own backgrounds.
 | `AppType` (Headline 30, Title 18, Body 15, Small 13, Label mono 12 / 2 sp tracking) | `HelmType` | Same sizes and weights, in the chosen font; adds `screenTitle` (22 sp, Mussh's settings title) and the strong variants. Settings use it in the system sans whatever the font, as Mussh's settings do (`SettingsType`). |
 | `ChatFont` (System, Inter, IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4, JetBrains Mono) | `HelmFont` | Same list and ids, for the whole app; default System like Mussh's screens. The ten code fonts are terminal-only in Mussh and not used. Mussh has no font import, so Dayhand has none. |
 | `CardShape` 20 dp, option 16 dp, field 14 dp, icon tile 14 dp, swatch 12 dp, badge 8 dp, pills round | `HelmShapes` | Same radii; also the Material `Shapes`. |
-| `AccentButton` (56 dp accent pill) | `PrimaryButton` | Minimum height instead of a fixed one, optional icon. |
-| `GhostButton` (12 % tinted pill) | `SecondaryButton` | At least 48 dp high. |
-| `TextButton` in dialogs | `TextAction` | Accent text, 48 dp. |
+| `SendButton` (`chat/InputBar.kt`) | `HelmButton`, `HelmButtonShape` | The shape of every button: a filled pill without an outline, at least 34 dp high (a 34 dp circle around an icon alone) in a 48 × 48 dp touch target; tones `Accent`, `Soft`, `Danger`, `Quiet`; disabled on `surfaceRaised` with faint text. |
+| `AccentButton` (56 dp accent pill) | `PrimaryButton` | `HelmButton` in the accent tone, full width. |
+| `GhostButton` (12 % tinted pill) | `SecondaryButton` | `HelmButton` in the soft accent, danger or quiet tone. |
+| `TextButton` in dialogs | `TextAction` | `HelmButton`, soft accent unless another tone is asked for. |
 | `HeaderIconButton` / `BackButton` (48 dp) | `HeaderIconButton` | Material icons instead of Mussh's own drawings. |
 | `IconButtonBox` (44 dp) | `HeaderIconButton` | 48 dp, Dayhand's minimum. |
 | `FeatureCard`, `InfoCard`, cards on `surface` with 18 dp padding | `HelmCard` | |
@@ -65,7 +67,6 @@ suit its own backgrounds.
 | `MonoLabel` | `SectionLabel` | Also a heading for screen readers. |
 | `Pill` | `Pill` | |
 | filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (weekdays). |
-| outlined action pill | `ActionChip` | Pick a day, add or remove a label; 48 dp, optional leading and trailing icon. |
 | `SettingsSwitchRow` | `SwitchRow`, `helmSwitchColors()` | Same switch colours, one toggle for screen readers. |
 | `fieldColors()` + `OutlinedTextField`, 14 dp | `HelmTextField`, `helmFieldColors()` | Radio buttons and checkboxes take `helmRadioColors()` / `helmCheckboxColors()`. |
 | `SettingsPage` (back + 22 sp title, scrolling column, pinned preview) | `ScreenHeader`, `SettingsPage` | `SettingsPage` is the Settings list and each of its pages. |
@@ -80,7 +81,7 @@ suit its own backgrounds.
 | `MessageDialog` (`AlertDialog` on `surface`) | `HelmDialog` | Date and time pickers use the same card colour and text actions. |
 | `ActionSheet` / long-press menu | `HelmMenu` | Dropdown on `surfaceRaised` with option corners. |
 | `BottomSheet` | Quick add `ModalBottomSheet` | `surface`, 28 dp top corners, border-coloured handle. |
-| Board cards, "Now" card | Material `Card` in palette roles | `surface` with option corners, the "Now" card on `accentSoft` with an accent label; labels in the secondary colour on its own tint. |
+| Board cards, "Now" card | Material `Card` in palette roles | `surface` with option corners, the "Now" card on `accentSoft` with an accent label. |
 | Task history actor | `Pill` | The person in the secondary colour, the agent in `attention`. |
 | Notification accent | `setColor(accent)` | The chosen palette's accent for the shade's light or dark look. |
 | Spacing: 20 dp screen margin, 18 dp card padding, 12 dp between groups, 60 dp list rows | `HelmDimens` | List rows are 64 dp with 16 dp side padding and a 72 dp line inset. |

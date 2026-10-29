@@ -44,6 +44,7 @@
     <string name="quick_add_example">z. B. Steuerberater anrufen fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s · aus „%2$s“</string>
     <string name="quick_add_no_phrase">Kein Datum im Text: heute</string>
+    <string name="quick_add_no_phrase_on">Kein Datum im Text: %1$s</string>
     <string name="quick_add_from_options">Aus „Mehr Optionen“: %1$s</string>
     <string name="quick_add_keep_in_title">Im Titel lassen</string>
     <string name="quick_add_keep_in_title_hint">Die Wörter in den Titel übernehmen, statt sie als Datum zu lesen</string>
@@ -96,11 +97,8 @@
     <string name="detail_due">Fällig</string>
     <string name="detail_no_due">Kein Fälligkeitstag</string>
     <string name="detail_repeat">Wiederholung</string>
-    <string name="detail_labels">Labels</string>
     <string name="project_picker_empty">Du hast noch keine Projekte. Lege das erste an, und die Aufgabe wird ihm zugeordnet.</string>
     <string name="projects_empty">Du hast noch keine Projekte. Ein Projekt fasst Aufgaben zusammen, zum Beispiel Zuhause oder Arbeit.</string>
-    <string name="labels_note">Labels sind freie Markierungen an Aufgaben, unabhängig von Projekten. Tippe auf eines, um seine Aufgaben zu sehen, halte es gedrückt, um daraus ein Projekt zu machen.</string>
-    <string name="detail_repeat_reminders">Wiederholung und Erinnerungen</string>
     <string name="title_show_all">Ganzen Titel zeigen</string>
     <string name="title_show_less">Weniger zeigen</string>
     <string name="note_show_all">Ganze Notiz anzeigen</string>
@@ -148,19 +146,10 @@
         <item quantity="one">Jedes Jahr</item>
         <item quantity="other">Alle %1$d Jahre</item>
     </plurals>
-    <string name="add_label">Label hinzufügen</string>
-    <string name="remove_label">Label entfernen: %1$s</string>
-    <string name="label_name">Label</string>
-    <plurals name="labels_full">
-        <item quantity="one">Höchstens %1$d Label</item>
-        <item quantity="other">Höchstens %1$d Labels</item>
-    </plurals>
-    <string name="labels_in_use">Verwendet</string>
     <string name="add_link">Link hinzufügen</string>
     <string name="open_link">Link öffnen</string>
     <string name="remove_link">Link entfernen: %1$s</string>
     <string name="no_links">Keine Links</string>
-    <string name="no_labels">Keine Labels</string>
     <string name="link_url">Adresse</string>
     <string name="link_title">Titel (optional)</string>
     <string name="link_invalid">Gib eine vollständige Adresse mit http:// oder https:// ein</string>
@@ -399,4 +388,15 @@
         <item quantity="one">Wartet auf %d Aufgabe</item>
         <item quantity="other">Wartet auf %d Aufgaben</item>
     </plurals>
+    <string name="change_status">Status ändern</string>
+    <string name="detail_more">Mehr</string>
+    <string name="history_show_all">Ganzen Verlauf zeigen (%1$d)</string>
+    <string name="day_title_tomorrow">Morgen</string>
+    <string name="day_title_yesterday">Gestern</string>
+    <string name="day_back_to_today">Zurück zu heute</string>
+    <string name="day_previous">Vorheriger Tag</string>
+    <string name="day_next">Nächster Tag</string>
+    <string name="empty_day">Für diesen Tag ist nichts geplant.</string>
+    <string name="section_day_tasks">Geplant</string>
+    <string name="change_due">Fälligkeit ändern</string>
 </resources>

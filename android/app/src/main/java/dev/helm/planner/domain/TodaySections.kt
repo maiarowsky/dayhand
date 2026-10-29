@@ -2,6 +2,7 @@ package dev.helm.planner.domain
 
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
+import java.time.LocalDate
 
 /** The Today screen, top to bottom. The "now" task is shown once, in its own section. */
 data class TodaySections(
@@ -27,6 +28,28 @@ internal val bySchedule = Comparator<Task> { a, b ->
     }
 }
 
+/**
+ * The Today screen [offset] days from today: today's own sections, or for another day the open tasks due on it and
+ * the ones done on it. Overdue tasks and the "now" task belong to today only.
+ */
+fun daySections(tasks: List<Task>, nowMs: Long, timezone: String?, offset: Int): TodaySections {
+    if (offset == 0) return todaySections(tasks, nowMs, timezone)
+    val day = LocalDate.parse(HelmDates.localDate(nowMs, timezone)).plusDays(offset.toLong()).toString()
+    val active = tasks.filter { it.isActive }
+    return TodaySections(
+        date = day,
+        overdue = emptyList(),
+        now = null,
+        today = active.filter { it.status != TaskStatus.DONE && it.dueDate == day }.sortedWith(bySchedule),
+        done = doneOn(active, day, timezone),
+    )
+}
+
+private fun doneOn(active: List<Task>, day: String, timezone: String?) = active
+    .filter { it.status == TaskStatus.DONE && it.completedAt != null }
+    .filter { HelmDates.localDate(it.completedAt!!, timezone) == day }
+    .sortedByDescending { it.completedAt }
+
 /** Splits the local tasks into the Today sections for instant [nowMs] in [timezone]. */
 fun todaySections(tasks: List<Task>, nowMs: Long, timezone: String?): TodaySections {
     val today = HelmDates.localDate(nowMs, timezone)
@@ -38,9 +61,6 @@ fun todaySections(tasks: List<Task>, nowMs: Long, timezone: String?): TodaySecti
         overdue = open.filter { HelmDates.isOverdue(it, today) }.sortedWith(bySchedule),
         now = nowTask,
         today = open.filter { it.dueDate == today }.sortedWith(bySchedule),
-        done = active
-            .filter { it.status == TaskStatus.DONE && it.completedAt != null }
-            .filter { HelmDates.localDate(it.completedAt!!, timezone) == today }
-            .sortedByDescending { it.completedAt },
+        done = doneOn(active, today, timezone),
     )
 }

@@ -23,8 +23,6 @@
     <string name="project_reorder">Ustaw kolejność</string>
     <string name="project_reorder_done">Zakończ ustawianie</string>
     <string name="project_reorder_handle">Przesuń projekt: %1$s</string>
-    <string name="project_from_label">Zrób projekt z etykiety</string>
-    <string name="project_remove_label">Zdejmij etykietę z przenoszonych zadań</string>
     <string name="project_archive_title">Zarchiwizować projekt?</string>
     <string name="project_archive_hint">Zadania zostają w Dzisiaj, Kalendarzu i na Tablicy, chyba że też je zarchiwizujesz.</string>
     <string name="project_archive_tasks">Zarchiwizuj też otwarte zadania</string>

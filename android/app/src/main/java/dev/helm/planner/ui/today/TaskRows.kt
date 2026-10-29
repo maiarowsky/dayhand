@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
@@ -98,18 +99,21 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentW
     var editing by rememberSaveable { mutableStateOf(false) }
     val completeText = stringResource(R.string.complete_task, task.title)
     val p = palette
+    val leaving = isLeaving(task)
+    val progress = leaveProgress(leaving, reducedMotion())
     HelmCard(
         color = p.accentSoft,
         contentPadding = 6.dp,
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 12.dp)
+            .leaving(progress)
             .testTag(TodayTags.NOW),
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
+            TaskCheckbox(checked = leaving, description = completeText) { if (!leaving) actions.complete(task.localId) }
             Column(Modifier.weight(1f).padding(top = 10.dp)) {
                 SectionLabel(stringResource(R.string.section_now))
-                TaskTitle(task, blocked, emphasized = true, modifier = Modifier.openTask(task, actions))
+                TaskTitle(task, blocked, emphasized = true, strike = progress.strike, modifier = Modifier.openTask(task, actions))
                 ProjectBadge(task)
                 val resume = task.resumeNote
                 Text(
@@ -141,21 +145,26 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentW
 @Composable
 private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, blocked: AgentWork.Blocked?, trailing: @Composable () -> Unit) {
     val completeText = stringResource(R.string.complete_task, task.title)
+    // Just ticked off: the box fills and the title is struck through, then the row fades (see LeavingTasks).
+    val leaving = isLeaving(task)
+    val progress = leaveProgress(leaving, reducedMotion())
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .padding(start = 8.dp, end = 8.dp),
+            .leaving(progress)
+            .padding(start = 8.dp, end = 8.dp)
+            .testTag(TodayTags.row(task.localId)),
     ) {
-        TaskCheckbox(checked = false, description = completeText) { actions.complete(task.localId) }
+        TaskCheckbox(checked = leaving, description = completeText) { if (!leaving) actions.complete(task.localId) }
         Column(
             Modifier
                 .weight(1f)
                 .openTask(task, actions)
                 .padding(vertical = 8.dp),
         ) {
-            TaskTitle(task, blocked)
+            TaskTitle(task, blocked, strike = progress.strike)
             ProjectBadge(task)
             if (subtitle != null) {
                 Text(subtitle, style = helmType.small, color = palette.danger)
@@ -179,6 +188,7 @@ private fun TaskCheckbox(checked: Boolean, description: String, onToggle: () -> 
     }
 }
 
+/** The title (after its time); [strike] (0 to 1) strikes it through while the task is being ticked off. */
 @Composable
 private fun TaskTitle(
     task: Task,
@@ -186,17 +196,28 @@ private fun TaskTitle(
     modifier: Modifier = Modifier,
     color: Color = palette.text,
     emphasized: Boolean = false,
+    strike: Float = 0f,
 ) {
     val time = task.dueTime
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         blocked?.let { BlockedMark(it, task.localId, Modifier.padding(end = 6.dp)) }
         Text(
             text = if (time != null) "$time  ${task.title}" else task.title,
             style = if (emphasized) helmType.title else helmType.body,
-            color = color,
+            color = if (strike > 0f) palette.textMuted else color,
+            onTextLayout = { layout = it },
+            modifier = Modifier.strikeThrough(strike, { layout }, palette.textMuted),
         )
     }
 }
+
+/** Whether [task] is being ticked off on this screen (kept a moment after it is done). */
+@Composable
+private fun isLeaving(task: Task): Boolean = LocalLeavingTasks.current?.isLeaving(task.localId) == true
+
+@Composable
+private fun reducedMotion(): Boolean = LocalLeavingTasks.current?.reducedMotion == true
 
 /** Tapping a task's text opens its details; at least 48 dp tall, announced as "open details". */
 @Composable

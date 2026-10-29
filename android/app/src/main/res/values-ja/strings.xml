@@ -44,6 +44,7 @@
     <string name="quick_add_example">例：税理士に電話 fri 2pm</string>
     <string name="quick_add_from_phrase">%1$s・「%2$s」から</string>
     <string name="quick_add_no_phrase">日付の指定なし：今日</string>
+    <string name="quick_add_no_phrase_on">日付の指定なし：%1$s</string>
     <string name="quick_add_from_options">「その他のオプション」から：%1$s</string>
     <string name="quick_add_keep_in_title">タイトルに残す</string>
     <string name="quick_add_keep_in_title_hint">日付として読まずにタイトルの一部にします</string>
@@ -93,11 +94,8 @@
     <string name="detail_due">期日</string>
     <string name="detail_no_due">期日なし</string>
     <string name="detail_repeat">繰り返し</string>
-    <string name="detail_labels">ラベル</string>
     <string name="project_picker_empty">まだプロジェクトがありません。最初のプロジェクトを作成すると、タスクがそこに割り当てられます。</string>
     <string name="projects_empty">まだプロジェクトがありません。プロジェクトはタスクをまとめます（例：家、仕事）。</string>
-    <string name="labels_note">ラベルはタスクに付ける自由なタグで、プロジェクトとは別のものです。タップするとそのタスクを表示し、長押しするとプロジェクトに変換します。</string>
-    <string name="detail_repeat_reminders">繰り返しとリマインダー</string>
     <string name="title_show_all">タイトルをすべて表示</string>
     <string name="title_show_less">折りたたむ</string>
     <string name="note_show_all">メモ全体を表示</string>
@@ -140,18 +138,10 @@
     <plurals name="repeat_years">
         <item quantity="other">%1$d年ごと</item>
     </plurals>
-    <string name="add_label">ラベルを追加</string>
-    <string name="remove_label">ラベルを削除：%1$s</string>
-    <string name="label_name">ラベル</string>
-    <plurals name="labels_full">
-        <item quantity="other">ラベルは最大%1$d個</item>
-    </plurals>
-    <string name="labels_in_use">使用中</string>
     <string name="add_link">リンクを追加</string>
     <string name="open_link">リンクを開く</string>
     <string name="remove_link">リンクを削除：%1$s</string>
     <string name="no_links">リンクなし</string>
-    <string name="no_labels">ラベルなし</string>
     <string name="link_url">アドレス</string>
     <string name="link_title">タイトル（任意）</string>
     <string name="link_invalid">http:// または https:// で始まる完全なアドレスを入力してください</string>
@@ -378,4 +368,15 @@
     <plurals name="blocked_waiting_on">
         <item quantity="other">%d件のタスクを待機中</item>
     </plurals>
+    <string name="change_status">ステータスを変更</string>
+    <string name="detail_more">その他</string>
+    <string name="history_show_all">履歴をすべて表示（%1$d）</string>
+    <string name="day_title_tomorrow">明日</string>
+    <string name="day_title_yesterday">昨日</string>
+    <string name="day_back_to_today">今日に戻る</string>
+    <string name="day_previous">前の日</string>
+    <string name="day_next">次の日</string>
+    <string name="empty_day">この日の予定はありません。</string>
+    <string name="section_day_tasks">予定</string>
+    <string name="change_due">期日を変更</string>
 </resources>

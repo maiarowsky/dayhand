@@ -3,6 +3,39 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.13.4 (unreleased)
+
+### Added
+
+- Arrows next to **Today** show the day before and the day after with that day's own tasks (open ones due
+  then, and those done on it). The title says **Tomorrow**, **Yesterday** or the weekday, with the date
+  under it; tap it to come back to today. The day shown survives turning the phone, and a task added
+  there is due on that day.
+- Ticking a task off on Today or in a project no longer makes it vanish at once: it is saved immediately,
+  then the box fills, the title is struck through and the row fades (360 ms) before the rows under it move
+  up. With the phone's animations off the ticked row stays still for a moment instead.
+
+### Changed
+
+- Task details are as compact as they go: status, due day and project are three chips in one row (the time
+  and removing the day are in the due day's menu), and one **More** row names the rest with its values;
+  repeat, reminders, work on it now, the proof, the checklist and the links open from it. On a 360 × 780 dp
+  phone the note starts at 380 dp instead of 444 dp (monospaced font 382 dp instead of 446 dp, text at
+  130 % 393 dp instead of 524 dp). The change history is right under the note with its last three entries
+  and **Show the whole history**; it starts at 692 dp instead of 1195 dp.
+- The note is edited in a sheet from the bottom over nine tenths of the screen, as wide as the phone, with a
+  handle and **Cancel**, **Edit note** and **Save** above the keyboard. Back cancels; once the text is
+  changed the sheet cannot be dragged away by accident. The title and checklist items keep their small
+  dialogs.
+- Every button has one shape, taken from Mussh's Send button: a filled pill without an outline, 34 dp high,
+  in a 48 dp touch target, in the accent, the soft accent, danger or a quiet colour.
+
+### Removed
+
+- Labels: they are no longer shown, kept or sent anywhere in the app (task details, cards, projects,
+  backups, sync). The database drops them when the app updates; a change waiting to be sent loses its
+  labels, and one that changed only labels is dropped. Projects are unchanged.
+
 ## 0.13.3 (unreleased)
 
 ### Changed

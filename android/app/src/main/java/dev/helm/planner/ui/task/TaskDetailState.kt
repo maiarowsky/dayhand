@@ -23,8 +23,6 @@ sealed interface TaskDetailUiState {
         val historyState: HistoryState,
         /** Changes to this task still waiting in the outbox (not in the server's history yet). */
         val pendingChanges: Int,
-        /** Every label in use, offered when adding one. */
-        val knownLabels: List<String>,
         /** The default reminders from the settings, in minutes before the due time. */
         val defaultReminders: List<Int> = emptyList(),
         /** The tasks this one waits for (`dependsOn`), as the phone knows them. */
@@ -38,7 +36,6 @@ interface TaskDetailActions {
     fun setNote(localId: String, note: String) {}
     fun setDue(localId: String, date: String?, time: String?) {}
     fun setRepeat(localId: String, rule: RepeatRule?) {}
-    fun setLabels(localId: String, labels: List<String>) {}
     fun setLinks(localId: String, links: List<TaskLink>) {}
     fun setReminders(localId: String, reminders: List<TaskReminder>?) {}
     fun toggleItem(localId: String, itemId: String) {}

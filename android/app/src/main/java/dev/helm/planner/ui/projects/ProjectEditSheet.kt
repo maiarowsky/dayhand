@@ -16,9 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,7 +31,6 @@ import dev.helm.planner.ui.components.HelmTextField
 import dev.helm.planner.ui.components.ListNote
 import dev.helm.planner.ui.components.PrimaryButton
 import dev.helm.planner.ui.components.SectionLabel
-import dev.helm.planner.ui.components.SwitchRow
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.helmType
@@ -39,13 +38,12 @@ import dev.helm.planner.ui.theme.palette
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun ProjectEditSheet(project: Project? = null, fromLabel: String? = null, onDismiss: () -> Unit, onSaved: (Project) -> Unit = {}) {
+fun ProjectEditSheet(project: Project? = null, onDismiss: () -> Unit, onSaved: (Project) -> Unit = {}) {
     val context = LocalProjects.current
-    var name by rememberSaveable { mutableStateOf(project?.name ?: fromLabel.orEmpty()) }
+    var name by rememberSaveable { mutableStateOf(project?.name.orEmpty()) }
     var color by rememberSaveable { mutableStateOf(project?.color) }
     var icon by rememberSaveable { mutableStateOf(project?.icon.orEmpty()) }
     var note by rememberSaveable { mutableStateOf(project?.note.orEmpty()) }
-    var removeLabel by rememberSaveable { mutableStateOf(false) }
     val valid = ProjectRules.validName(name, context.projects, project?.localId) && ProjectRules.validIcon(icon) && note.length <= ProjectRules.MAX_NOTE
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = palette.surface, contentColor = palette.text, shape = HelmShapes.sheet,
@@ -58,7 +56,7 @@ fun ProjectEditSheet(project: Project? = null, fromLabel: String? = null, onDism
             ListNote(stringResource(R.string.project_name_hint))
             if (context.failed) ListNote(stringResource(if (context.connectionRequired) R.string.project_connection_required else R.string.project_failed))
             PrimaryButton(stringResource(R.string.save), onClick = {
-                val draft = ProjectDraft(name, color, icon, note, fromLabel, removeLabel)
+                val draft = ProjectDraft(name, color, icon, note)
                 if (project == null) context.actions.create(draft) { onSaved(it); onDismiss() }
                 else context.actions.edit(project, draft, onDismiss)
             }, enabled = valid, modifier = Modifier.testTag("project-save"))
@@ -74,7 +72,6 @@ fun ProjectEditSheet(project: Project? = null, fromLabel: String? = null, onDism
             }
             HelmTextField(icon, { icon = it }, label = stringResource(R.string.project_icon), singleLine = true)
             HelmTextField(note, { note = it }, label = stringResource(R.string.project_note), minLines = 2)
-            if (fromLabel != null) SwitchRow(stringResource(R.string.project_remove_label), checked = removeLabel, onChange = { removeLabel = it })
         }
     }
 }

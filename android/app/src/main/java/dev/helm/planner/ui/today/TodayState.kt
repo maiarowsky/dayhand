@@ -38,7 +38,12 @@ data class TodayUiState(
     val timezone: String = HelmDates.DEFAULT_TIMEZONE,
     /** Tasks that cannot go on (a blocked reason or a dependency not done), by local id. */
     val blocked: Map<String, AgentWork.Blocked> = emptyMap(),
-)
+    /** The day shown, in days from today: 0 is today, -1 yesterday, 1 tomorrow. */
+    val dayOffset: Int = 0,
+) {
+    /** Today, whichever day is shown. */
+    val today: String get() = java.time.LocalDate.parse(sections.date).minusDays(dayOffset.toLong()).toString()
+}
 
 /** What the user can do on Today; every call changes Room first and queues the server change. */
 interface TodayActions {
@@ -53,4 +58,7 @@ interface TodayActions {
     fun openSettings() {}
     fun openTask(localId: String) {}
     fun removeSample() {}
+
+    /** Shows the day [offset] days from today (the arrows in the header; 0 goes back to today). */
+    fun showDay(offset: Int) {}
 }

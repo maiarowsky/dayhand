@@ -68,13 +68,13 @@ class BoardTour {
         date = "2026-10-22",
         todo = listOf(
             task("a", "Podlać kwiaty") { copy(dueDate = "2026-10-21") },
-            task("b", "Zadzwonić do dentysty") { copy(dueDate = "2026-10-22", dueTime = "09:30", labels = listOf("dom")) },
-            task("c", "Przejrzeć pull request") { copy(labels = listOf("Dayhand", "praca")) },
+            task("b", "Zadzwonić do dentysty") { copy(dueDate = "2026-10-22", dueTime = "09:30") },
+            task("c", "Przejrzeć pull request"),
             task("d", "Kupić chleb"),
         ),
         doing = listOf(
             task("n", "Zaplanować tydzień", TaskStatus.DOING) { copy(isNow = true, resumeNote = "Szkic w docs/tydzien.md, dalej: budżet") },
-            task("e", "Raport kwartalny", TaskStatus.DOING) { copy(dueDate = "2026-10-24", labels = listOf("praca")) },
+            task("e", "Raport kwartalny", TaskStatus.DOING) { copy(dueDate = "2026-10-24") },
         ),
         done = listOf(task("f", "Poranny bieg", TaskStatus.DONE) { copy(completedAt = 1) }),
     )
@@ -82,7 +82,7 @@ class BoardTour {
     private val detailTask = task("a", "Zadzwonić do księgowej") {
         copy(
             serverId = "s1", note = "Zapytać o VAT za wrzesień i termin zeznania.", dueDate = "2026-10-23", dueTime = "09:30",
-            repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)), labels = listOf("Dayhand", "finanse"),
+            repeat = RepeatRule(RepeatEvery.WEEK, 1, listOf(1, 4)),
             links = listOf(TaskLink("https://example.com/umowa", "Umowa"), TaskLink("https://example.com/faktury")),
             checklist = listOf(
                 ChecklistItem("c1", "Wyciągi z banku", done = true),
@@ -100,7 +100,7 @@ class BoardTour {
     )
 
     private fun detail(task: Task) =
-        TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, HistoryState.FRESH, 1, listOf("Dayhand", "dom", "praca"), listOf(0, 30))
+        TaskDetailUiState.Ready(task, "2026-10-22", "Europe/Warsaw", history, HistoryState.FRESH, 1, listOf(0, 30))
 
     @Test
     fun board() {
@@ -114,10 +114,9 @@ class BoardTour {
     fun details() {
         show { TaskDetailScreen(detail(detailTask), object : TaskDetailActions {}) }
         shot("12-details")
-        compose.onNodeWithTag("${TaskDetailTags.HISTORY}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.TRASH).performScrollTo()
         shot("13-details-history")
-        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
+        compose.onNodeWithTag(TaskDetailTags.MORE).performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         shot("14-dialog-repeat")
     }
@@ -126,9 +125,9 @@ class BoardTour {
     fun detailsRepeatAndReminders() {
         val monthly = detailTask.copy(dueDate = "2026-10-30", repeat = RepeatRule(RepeatEvery.MONTH, weekdayOfMonth = WeekdayOfMonth(-1, 5), count = 6))
         show { TaskDetailScreen(detail(monthly), object : TaskDetailActions {}) }
+        compose.onNodeWithTag(TaskDetailTags.MORE).performScrollTo().performClick()
         compose.onNodeWithTag(ChecklistTags.SECTION).performScrollTo()
         shot("17-details-checklist")
-        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REPEAT).performScrollTo().performClick()
         shot("18-dialog-repeat-month")
         compose.onNodeWithTag(EditorTags.END_COUNT).performScrollTo()
@@ -138,7 +137,7 @@ class BoardTour {
     @Test
     fun detailsReminders() {
         show { TaskDetailScreen(detail(detailTask), object : TaskDetailActions {}) }
-        compose.onNodeWithTag("${TaskDetailTags.SCHEDULE}-header").performScrollTo().performClick()
+        compose.onNodeWithTag(TaskDetailTags.MORE).performScrollTo().performClick()
         compose.onNodeWithTag(TaskDetailTags.REMINDERS).performScrollTo().performClick()
         shot("20-dialog-reminders")
     }
