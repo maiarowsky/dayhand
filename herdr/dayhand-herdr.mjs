@@ -41,7 +41,7 @@ function pluginEnv() {
 function dayhand(args, { inherit = false } = {}) {
   const result = spawnSync("dayhand", args, {
     encoding: "utf8",
-    env: { ...process.env, ...pluginEnv(), DAYHAND_NO_INPUT: "1" },
+    env: { ...process.env, ...pluginEnv(), ...(inherit ? {} : { DAYHAND_NO_INPUT: "1" }) },
     stdio: inherit ? "inherit" : ["ignore", "pipe", "pipe"],
   });
   if (result.error) throw new PluginError("Cannot run dayhand: is it installed and on PATH?", { cause: result.error });
@@ -75,9 +75,11 @@ function saveAssignments(assignments) {
   renameSync(temp, STATE_FILE);
 }
 
-function withAssignment(assignments, paneId, assignment) {
-  const { [paneId]: _old, ...rest } = assignments;
-  return assignment ? { ...rest, [paneId]: assignment } : rest;
+// Read the file again just before writing, so changes other panes made meanwhile are kept.
+function updateAssignment(paneId, change) {
+  const { [paneId]: current, ...rest } = loadAssignments();
+  const next = change(current);
+  saveAssignments(next ? { ...rest, [paneId]: next } : rest);
 }
 
 function invocationContext() {
@@ -101,6 +103,11 @@ function today() {
   openPane("ui");
 }
 
+// Overlay pane: dayhand ui with the plugin's .env lines.
+function ui() {
+  dayhand(["ui"], { inherit: true });
+}
+
 function label(task) {
   return task.ref ? `#${task.ref}` : task.id;
 }
@@ -110,8 +117,7 @@ async function pick() {
   const paneId = process.env.DAYHAND_HERDR_PANE;
   if (!paneId) throw new PluginError("Open this from the Dayhand: give this agent a task action");
   const agent = process.env.DAYHAND_HERDR_AGENT || "the agent";
-  const assignments = loadAssignments();
-  const current = assignments[paneId];
+  const current = loadAssignments()[paneId];
   dayhand(["today"], { inherit: true });
   if (current) console.log(`\nPane ${paneId} has ${label(current)} ${current.title}`);
   const prompt = createInterface({ input: process.stdin, output: process.stdout });
@@ -119,55 +125,75 @@ async function pick() {
   prompt.close();
   if (!answer) return;
   if (answer === "-") {
-    saveAssignments(withAssignment(assignments, paneId, null));
+    updateAssignment(paneId, () => null);
     return;
   }
   const { task } = readJson(dayhand(["show", answer, "--json"]), {});
   if (!task?.id) throw new PluginError(`dayhand show ${answer} printed no task`);
-  saveAssignments(withAssignment(assignments, paneId, { id: task.id, ref: task.ref, title: task.title, agent }));
+  updateAssignment(paneId, () => ({ id: task.id, ref: task.ref, title: task.title, agent }));
   dayhand(["note", task.id, `Herdr: given to ${agent} in pane ${paneId}`]);
 }
 
+function approvalPending(approvalId) {
+  return Boolean(approvalId) && readJson(dayhand(["approval", approvalId, "--json"]), {}).status === "pending";
+}
+
+const NOTES = {
+  blocked: (agent, paneId) => `Herdr: ${agent} is waiting for you in pane ${paneId}`,
+  done: (agent, paneId) => `Herdr: ${agent} finished in pane ${paneId}; check its work`,
+};
+
+// Write the agent's state into the task; returns what to remember: the last state noted, the open approval request.
 function recordStatus(assignment, paneId, status, agent) {
   if (status === "working") {
     dayhand(["start", assignment.id]);
-  } else if (status === "blocked") {
-    dayhand(["note", assignment.id, `Herdr: ${agent} is waiting for you in pane ${paneId}`]);
-    if (pluginEnv().DAYHAND_HERDR_ASK === "1") {
-      dayhand([
-        "ask", `${agent} in Herdr is waiting for you`,
-        "--task", assignment.id,
-        "--detail", `Pane ${paneId}. Answer it in Herdr.`,
-        "--option", "Seen: I will answer it in Herdr",
-        "--option", "Later: it keeps waiting",
-        "--reversible",
-        "--expires", ASK_EXPIRES,
-      ]);
-    }
-  } else if (status === "done") {
-    dayhand(["note", assignment.id, `Herdr: ${agent} finished in pane ${paneId}; check its work`]);
+    return {};
   }
+  const recorded = {};
+  if (NOTES[status] && status !== assignment.noted) {
+    dayhand(["note", assignment.id, NOTES[status](agent, paneId)]);
+    recorded.noted = status;
+  }
+  if (status === "blocked" && pluginEnv().DAYHAND_HERDR_ASK === "1" && !approvalPending(assignment.approvalId)) {
+    const approval = readJson(dayhand([
+      "ask", `${agent} in Herdr is waiting for you`,
+      "--task", assignment.id,
+      "--detail", `Pane ${paneId}. Answer it in Herdr.`,
+      "--option", "Seen: I will answer it in Herdr",
+      "--option", "Later: it keeps waiting",
+      "--reversible",
+      "--expires", ASK_EXPIRES,
+      "--json",
+    ]), {});
+    recorded.approvalId = approval.id;
+  }
+  return recorded;
 }
 
-// Event hook: keep the pane's task in step with its agent; forget the task when the pane closes.
+// Event hook: keep the pane's task in step with its agent; forget the task when the pane closes or the task is finished.
 function event() {
   const { data = {} } = readJson(process.env.HERDR_PLUGIN_EVENT_JSON, {});
   const paneId = data.pane_id;
-  const assignments = loadAssignments();
-  const assignment = paneId && assignments[paneId];
+  const assignment = paneId && loadAssignments()[paneId];
   if (!assignment) return;
   if (process.env.HERDR_PLUGIN_EVENT === "pane.closed") {
-    saveAssignments(withAssignment(assignments, paneId, null));
+    updateAssignment(paneId, () => null);
     return;
   }
   const status = data.agent_status;
   if (!status || status === assignment.status) return;
+  const { task } = readJson(dayhand(["show", assignment.id, "--json"]), {});
+  if (!task?.id) throw new PluginError(`dayhand show ${assignment.id} printed no task`);
+  if (task.status === "done" || task.deletedAt || task.archivedAt) {
+    updateAssignment(paneId, () => null);
+    return;
+  }
   const agent = data.display_agent || data.agent || assignment.agent;
-  saveAssignments(withAssignment(assignments, paneId, { ...assignment, status }));
-  recordStatus(assignment, paneId, status, agent);
+  const recorded = recordStatus(assignment, paneId, status, agent);
+  updateAssignment(paneId, (current) => (current?.id === assignment.id ? { ...current, ...recorded, status } : current));
 }
 
-const COMMANDS = { assign, today, pick, event };
+const COMMANDS = { assign, today, ui, pick, event };
 
 try {
   const command = COMMANDS[process.argv[2]];

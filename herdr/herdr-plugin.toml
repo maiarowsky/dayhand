@@ -37,4 +37,4 @@ command = ["node", "dayhand-herdr.mjs", "pick"]
 id = "ui"
 title = "Dayhand"
 placement = "overlay"
-command = ["dayhand", "ui"]
+command = ["node", "dayhand-herdr.mjs", "ui"]
