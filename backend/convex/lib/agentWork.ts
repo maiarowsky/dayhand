@@ -205,7 +205,7 @@ function claimable(task: Doc<"tasks">) {
 
 /** Claims a task for `minutes` (default 120); claiming it again extends the caller's own claim. */
 export async function claimTask(ctx: MutationCtx, identity: Identity, input: Args<"claim">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = claimable(await loadTask(ctx, identity.userId, input.taskId));
   const holder = holderOf(identity);
@@ -221,7 +221,7 @@ export async function claimTask(ctx: MutationCtx, identity: Identity, input: Arg
  * expired too, as long as nobody else has claimed the task since.
  */
 export async function renewClaim(ctx: MutationCtx, identity: Identity, input: Args<"renewClaim">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = claimable(await loadTask(ctx, identity.userId, input.taskId));
   const minutes = claimMinutes(input.minutes);
@@ -239,7 +239,7 @@ export async function renewClaim(ctx: MutationCtx, identity: Identity, input: Ar
  * owner (app, cli) may release anyone's, which is how a person takes over.
  */
 export async function releaseTask(ctx: MutationCtx, identity: Identity, input: Args<"release">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = await loadTask(ctx, identity.userId, input.taskId);
   checkClaim(task, identity);

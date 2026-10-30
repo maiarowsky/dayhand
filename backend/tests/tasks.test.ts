@@ -160,6 +160,17 @@ describe("idempotency by clientId", () => {
     expect(history).toHaveLength(3);
   });
 
+  test("a replayed update that changed nothing is not applied over a change made since", async () => {
+    const user = asUser(newUserId());
+    const task: any = await user.mutation(internal.ops.add, { title: "v1" });
+    await user.mutation(internal.ops.update, { taskId: task.id, title: "v1", clientId: "u-1" });
+    await user.mutation(internal.ops.update, { taskId: task.id, title: "v2", clientId: "u-2" });
+    const replay: any = await user.mutation(internal.ops.update, { taskId: task.id, title: "v1", clientId: "u-1" });
+    expect(replay.title).toBe("v2");
+    const { history }: any = await user.query(internal.ops.getTask, { taskId: task.id });
+    expect(history.map((h: any) => h.action)).toEqual(["create", "update"]);
+  });
+
   test("completing a repeating task twice with one clientId spawns one next occurrence", async () => {
     const user = asUser(newUserId());
     const task: any = await user.mutation(internal.ops.add, {

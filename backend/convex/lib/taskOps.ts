@@ -115,7 +115,7 @@ export async function addTask(ctx: MutationCtx, identity: Identity, input: Args<
 }
 
 export async function updateTask(ctx: MutationCtx, identity: Identity, input: Args<"update">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   const { timezone } = await loadSettings(ctx, identity.userId);
@@ -175,7 +175,7 @@ async function clearNow(ctx: MutationCtx, identity: Identity, exceptId?: Id<"tas
  * criteria unticked, counted on per the rule (lib/repeat.ts).
  */
 export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) {
     const events = await ctx.db
       .query("taskEvents")
@@ -235,7 +235,7 @@ export async function setStatus(ctx: MutationCtx, identity: Identity, input: Arg
   if (input.status === "done") {
     return (await completeTask(ctx, identity, { taskId: input.taskId, clientId: input.clientId })).task;
   }
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = notProposal(writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity));
   const patch: Partial<Doc<"tasks">> = { status: input.status, completedAt: undefined };
@@ -246,7 +246,7 @@ export async function setStatus(ctx: MutationCtx, identity: Identity, input: Arg
 
 /** Makes one task the single "now" task (status doing); null clears it. */
 export async function setNow(ctx: MutationCtx, identity: Identity, input: Args<"setNow">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId ?? undefined);
   if (replayed) return toTask(replayed);
   if (input.taskId === null) {
     await clearNow(ctx, identity);
@@ -261,7 +261,7 @@ export async function setNow(ctx: MutationCtx, identity: Identity, input: Args<"
 }
 
 export async function archiveTask(ctx: MutationCtx, identity: Identity, input: Args<"archive">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity);
   if (task.archivedAt !== undefined) return toTask(task);
@@ -272,7 +272,7 @@ export async function archiveTask(ctx: MutationCtx, identity: Identity, input: A
 
 /** Moves a task to the trash; it is purged after 30 days unless restored. */
 export async function softDeleteTask(ctx: MutationCtx, identity: Identity, input: Args<"softDelete">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = writable(await loadTask(ctx, identity.userId, input.taskId), identity);
   if (task.deletedAt !== undefined) return toTask(task);
@@ -283,7 +283,7 @@ export async function softDeleteTask(ctx: MutationCtx, identity: Identity, input
 
 /** Brings a task back from the trash, or from the archive when not in the trash. */
 export async function restoreTask(ctx: MutationCtx, identity: Identity, input: Args<"restore">) {
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = writable(await loadTask(ctx, identity.userId, input.taskId), identity);
   const patch: Partial<Doc<"tasks">> =

@@ -219,7 +219,13 @@ export async function patchTask(
   clientId?: string,
 ) {
   const { before, after, changed } = diff(task, patch);
-  if (!changed) return task;
+  if (!changed) {
+    // A change that changed nothing still keeps its clientId, so a retry after a lost answer cannot undo what
+    // happened since, such as a claim taken meanwhile. Without a task it stays out of the task's history, the
+    // activity log and webhooks.
+    if (clientId !== undefined) await recordEvent(ctx, identity, { action, clientId });
+    return task;
+  }
   await ctx.db.patch(task._id, { ...patch, updatedAt: Date.now() });
   await recordEvent(ctx, identity, { taskId: task._id, action, before, after, clientId });
   return (await ctx.db.get(task._id))!;
@@ -234,10 +240,14 @@ export async function appliedOperation(ctx: QueryCtx, userId: string, clientId?:
     .first();
 }
 
-/** Current state of the task touched by an already applied operation, or null. */
-export async function replay(ctx: MutationCtx, userId: string, clientId?: string) {
+/**
+ * Current state of the task touched by an already applied operation, or null.
+ * An operation that changed nothing kept no task (patchTask): its retry gets the task it names.
+ */
+export async function replay(ctx: MutationCtx, userId: string, clientId?: string, taskId?: string) {
   const event = await appliedOperation(ctx, userId, checkClientId(clientId));
   if (!event) return null;
+  if (event.taskId === undefined && taskId !== undefined) return loadTask(ctx, userId, taskId);
   const task = event.taskId ? await ctx.db.get(event.taskId) : null;
   if (!task) fail("not_found", "Task of this operation no longer exists");
   return task;
