@@ -268,6 +268,13 @@ describe("writing", () => {
     expect(parsed.extra[0]).toContain("- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~");
   });
 
+  test("a code fence left open in a section ends at that section's END marker", () => {
+    const description = "Run this:\n\n```bash\nnpm test";
+    const finalSummary = "Done.";
+    const back = readTask(writeTask({ ...file, description, finalSummary }));
+    expect(back).toMatchObject({ description, acceptance: file.acceptance, plan: file.plan, finalSummary, extra: [`## Implementation Notes\n\n${file.notes}`] });
+  });
+
   test("an archived draft stays in the archived-draft classification", () => {
     const written = writeTask({ ...file, place: "archived-draft" });
     expect(written.path).toBe("archive/drafts/task-12 - Renew-the-domain-DNS.md");

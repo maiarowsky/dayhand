@@ -110,13 +110,15 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   for (const line of body.split("\n")) {
     const wasFenced = fence !== null;
     fence = fenceOf(line, fence);
-    const marker = wasFenced || fence ? null : MARKER.exec(line);
-    if (marker && scope === null && marker[2] === "BEGIN") {
+    const marker = MARKER.exec(line);
+    if (marker && !wasFenced && !fence && scope === null && marker[2] === "BEGIN") {
       scope = marker[1]!;
       continue;
     }
+    // The section's END marker closes it even inside a code fence left open, as Backlog.md reads it.
     if (marker && marker[1] === scope && marker[2] === "END") {
       scope = null;
+      fence = null;
       continue;
     }
     const heading = wasFenced || fence || scope ? null : HEADING.exec(line);
