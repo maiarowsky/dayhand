@@ -186,7 +186,11 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
     return { task: toTask(replayed), next: next ? toTask(next) : null };
   }
   const task = notProposal(writable(activeTask(await loadTask(ctx, identity.userId, input.taskId)), identity));
-  if (task.status === "done") return { task: toTask(task), next: null };
+  if (task.status === "done") {
+    // It still keeps its clientId, so a retry after a lost answer cannot end a claim taken since it was reopened.
+    if (input.clientId !== undefined) await recordEvent(ctx, identity, { action: "complete", clientId: input.clientId });
+    return { task: toTask(task), next: null };
+  }
   const proof = input.proof === undefined ? undefined : checkProof(input.proof);
   checkCompletion(task, identity, proof);
   const patch: Partial<Doc<"tasks">> = { status: "done", isNow: false, completedAt: Date.now(), claimedBy: undefined, claimExpiresAt: undefined };

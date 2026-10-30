@@ -201,7 +201,8 @@ export default defineSchema({
   taskEvents: defineTable({
     userId: v.string(),
     // Absent for changes that are not about one task (settings, API keys), and on
-    // a task change that changed nothing, kept only for its clientId (lib/core.ts).
+    // a task change that changed nothing (lib/core.ts) or a completion of a task
+    // already done (lib/taskOps.ts), kept only for its clientId.
     taskId: v.optional(v.id("tasks")),
     actor: actorValidator,
     // The API key behind a cli or agent change, and its name at the time.

@@ -310,6 +310,24 @@ describe("time-boxed claims", () => {
     await Promise.all([first.close(), second.close()]);
   });
 
+  test("a retried completion that changed nothing does not end a claim taken since the task was reopened", async () => {
+    const { app, first, second } = await team();
+    const task = await callTool(first, "add_task", { title: "Review the contract" });
+    await callTool(first, "complete_task", { taskId: task.id });
+    // The phone's queued completion arrives after the agent's own: nothing to complete, and its answer is lost.
+    const complete = { taskId: task.id, clientId: "phone-complete-1" };
+    expect((await app.mutation(api.app.complete, complete)).task.status).toBe("done");
+    await app.mutation(api.app.setStatus, { taskId: task.id, status: "todo" });
+    await callTool(second, "claim_task", { taskId: task.id });
+
+    const retried = await app.mutation(api.app.complete, complete);
+    expect(retried).toMatchObject({ task: { status: "todo", claimedBy: { name: "second" } }, next: null });
+    const { task: current, history } = await callTool(second, "get_task", { taskId: task.id });
+    expect(current).toMatchObject({ status: "todo", claimedBy: { name: "second" } });
+    expect(history.map((h: any) => `${h.action} by ${h.actor}`)).toEqual(["create by agent", "complete by agent", "setStatus by app", "claim by agent"]);
+    await Promise.all([first.close(), second.close()]);
+  });
+
   test("completing ends the claim; done, archived and trashed tasks cannot be claimed", async () => {
     const agent = await mcpClient(await createKey(newUserId(), "builder", "agent"));
     const task = await callTool(agent, "add_task", { title: "Fix the footer" });
