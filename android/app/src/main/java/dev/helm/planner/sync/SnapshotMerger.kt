@@ -20,9 +20,9 @@ data class MergePlan(val upserts: List<Task>, val deletes: List<String>)
  * - A field changed by a change still in the outbox keeps its local value. That change reaches
  *   the server after everything already there, so the server will end up with it too.
  * - Every other field takes the server value only from a newer server copy (`updatedAt`), unless
- *   the known version was invalidated. Migrations, rejected changes and acknowledged releases
- *   invalidate it so the next snapshot reconciles even an unchanged server copy. For releases,
- *   this restores claims masked while the operation waited (see `ClaimReconciliationTest`).
+ *   the known version was invalidated. Migrations, rejected changes and acknowledged releases and
+ *   completions invalidate it so the next snapshot reconciles even an unchanged server copy. For
+ *   those two, this restores claims masked while the operation waited (see `ClaimReconciliationTest`).
  * - A task missing from the snapshot was purged (or never reached the server) and goes, unless
  *   it still has changes waiting or is too fresh to be in any snapshot yet. Tasks in the trash
  *   are part of the snapshot, with `deletedAt` set.

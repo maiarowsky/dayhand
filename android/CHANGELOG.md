@@ -22,6 +22,10 @@ called Helm until 0.9.0.
   queries, and a task that moved between them was in neither. A known task both lists miss is now read
   once more (`app:getTask`); it goes only when the server does not know it (no such task, or an id of
   another server) or it is an agent's proposal restored from the trash, which the plan leaves out.
+- **End the claim** or a completion resent after a lost answer no longer ends a claim an agent took since,
+  when the first send changed nothing on the server (the claim had already ended, or the task was already
+  done). This needs a backend with this fix. A resent completion no longer leaves such a task done on the
+  phone either: the next snapshot shows it as it is on the server, as after **End the claim**.
 
 ### Changed
 
