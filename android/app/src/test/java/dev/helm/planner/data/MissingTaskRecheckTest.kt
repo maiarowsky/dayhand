@@ -42,10 +42,11 @@ class MissingTaskRecheckTest {
     private val repository = TaskRepository(db, clock = { 10_000 }, taskQueries = { queries })
     @After fun close() = db.close()
 
-    private fun task(updatedAt: Long, deletedAt: Long? = null) = buildJsonObject {
+    private fun task(updatedAt: Long, deletedAt: Long? = null, proposedAt: Long? = null) = buildJsonObject {
         put("id", "s1"); put("title", "Call the plumber"); put("status", "todo"); put("isNow", false)
         put("createdAt", 1); put("updatedAt", updatedAt)
         deletedAt?.let { put("deletedAt", it) }
+        proposedAt?.let { put("proposedAt", it) }
     }
 
     private suspend fun snapshot(active: List<JsonObject>, trash: List<JsonObject>) =
@@ -57,6 +58,14 @@ class MissingTaskRecheckTest {
         snapshot(emptyList(), emptyList())
         assertEquals(listOf("s1"), asked)
         assertFalse(db.tasks().byLocalId("s1")!!.inTrash)
+    }
+
+    @Test fun aProposalRestoredFromTheTrashGoes() = runBlocking {
+        snapshot(emptyList(), listOf(task(updatedAt = 2, deletedAt = 2, proposedAt = 1)))
+        answer = { SendResult.Applied(buildJsonObject { put("task", task(updatedAt = 3, proposedAt = 1)); put("history", JsonArray(emptyList())) }) }
+        snapshot(emptyList(), emptyList())
+        assertEquals(listOf("s1"), asked)
+        assertNull(db.tasks().byLocalId("s1"))
     }
 
     @Test fun aTaskTheServerNoLongerHasGoes() = runBlocking {

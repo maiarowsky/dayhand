@@ -260,6 +260,18 @@ struct SyncEngineTests {
         #expect(try await repo.task(id)?.title == "Renamed by the agent")
     }
 
+    @Test func aProposalRestoredFromTheTrashLeavesThePlan() async throws {
+        let (repo, engine, _) = try setUp()
+        let id = server.addElsewhere("Proposed by the agent")
+        server.editElsewhere(id, ["proposedAt": .of(clock.now), "deletedAt": .of(clock.now)])
+        await engine.round()
+        #expect(try await repo.task(id)?.inTrash == true)
+
+        server.editElsewhere(id, ["deletedAt": .null])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(id) == nil)
+    }
+
     @Test func tasksOfAnotherDeploymentLeaveAndSyncGoesOn() async throws {
         let (repo, engine, _) = try setUp()
         let id = server.addElsewhere("From the old server")

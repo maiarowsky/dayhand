@@ -158,7 +158,7 @@ HttpReply FakeServer::query(const QString &path, const QJsonObject &args)
     const bool trash = path == u"app:listTrash";
     QJsonArray list;
     for (const QJsonObject &task : allTasks()) {
-        if (task.contains(u"deletedAt") == trash)
+        if (task.contains(u"deletedAt") == trash && (trash || !task.contains(u"proposedAt")))
             list.append(task);
     }
     if (!trash && !restoreAfterNextActiveQuery.isEmpty()) {

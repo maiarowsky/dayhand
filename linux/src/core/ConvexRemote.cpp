@@ -78,7 +78,8 @@ SnapshotSource::Result ConvexRemote::snapshot(const QStringList &knownTaskIds)
         const std::optional<RemoteTask> task = RemoteJson::task(read.value[u"task"]);
         if (!task || task->id != id)
             return {std::nullopt, false, u"unreadable task"_s};
-        snapshot.tasks.append(*task);
+        if (!read.value[u"task"][u"proposedAt"].isDouble() || task->deletedAt)
+            snapshot.tasks.append(*task);
     }
     return {snapshot, false, {}};
 }

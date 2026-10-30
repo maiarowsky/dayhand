@@ -508,6 +508,19 @@ private slots:
         QVERIFY(!w.local.repo.task(id));
     }
 
+    void aProposalRestoredFromTheTrashLeavesThisComputer()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"Proposed by the agent"_s, u"2026-10-22"_s);
+        w.server.editElsewhere(id, {{u"proposedAt"_s, w.local.clock}, {u"deletedAt"_s, w.local.clock}});
+        w.engine.round();
+        QVERIFY(w.local.repo.task(id)->inTrash());
+        w.local.clock += 1000;
+        w.server.restoreAfterNextActiveQuery = id;
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QVERIFY(!w.local.repo.task(id));
+    }
+
     void tasksOfAnotherDeploymentLeaveAndSyncGoesOn()
     {
         World w;

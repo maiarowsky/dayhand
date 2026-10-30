@@ -228,7 +228,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     }
 
     private func listedTasks(inTrash: Bool) -> [JSONValue] {
-        order.compactMap { tasks[$0] }.filter { ($0["deletedAt"] != nil) == inTrash }.map { task in
+        order.compactMap { tasks[$0] }.filter { ($0["deletedAt"] != nil) == inTrash && (inTrash || $0["proposedAt"] == nil) }.map { task in
             guard !hasProjects, var fields = task.object else { return task }
             fields.removeValue(forKey: "projectId")
             return .object(fields)

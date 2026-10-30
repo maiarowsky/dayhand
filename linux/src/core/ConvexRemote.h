@@ -36,7 +36,8 @@ public:
  * the macOS app's `ConvexRemote` make. A function that failed answers 560 with `{status: "error"}`. The app JWT
  * comes from [tokens]; a refused one is refreshed and the call tried once more. Live updates come from polling
  * [snapshot]: `listAll`, `listTrash` and `getSettings`. A known task missing from both lists is read once more with
- * `getTask`: it may have moved between the trash and the active list while the two were read.
+ * `getTask`: it may have moved between the trash and the active list while the two were read. A proposal out of the
+ * trash stays out, as `listAll` leaves proposals out.
  */
 class ConvexRemote final : public MutationSender, public SnapshotSource {
 public:

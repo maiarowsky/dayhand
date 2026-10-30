@@ -6,12 +6,15 @@ import dev.helm.planner.data.remote.RemoteJson
 import dev.helm.planner.data.remote.RemoteTask
 import dev.helm.planner.data.remote.SendResult
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.put
 
 /**
  * A known task that both lists of a snapshot miss was purged, or it moved between the trash and the active list while
  * the two lists were read (`app:listAll` and `app:listTrash` are separate queries). `app:getTask` tells them apart.
+ * A proposal out of the trash goes too: `app:listAll` leaves proposals out.
  */
 object MissingTasks {
     /** [found]: tasks the server still has, to merge with the snapshot. [keep]: local ids of tasks not checked now. */
@@ -33,8 +36,14 @@ object MissingTasks {
             val serverId = requireNotNull(task.serverId)
             when (val result = runner.query(RemoteJson.QUERY_TASK, buildJsonObject { put("taskId", serverId) })) {
                 is SendResult.Applied -> {
-                    val read = ((result.value as? JsonObject)?.get("task") as? JsonObject)?.let(RemoteJson::task)
-                    if (read?.id == serverId) found += read else keep += task.localId
+                    val json = (result.value as? JsonObject)?.get("task") as? JsonObject
+                    val read = json?.let(RemoteJson::task)
+                    val proposal = (json?.get("proposedAt") as? JsonPrimitive)?.doubleOrNull != null
+                    if (read?.id == serverId) {
+                        if (!proposal || read.deletedAt != null) found += read
+                    } else {
+                        keep += task.localId
+                    }
                 }
                 is SendResult.Rejected -> if (result.code !in UNKNOWN_TASK) keep += task.localId
                 SendResult.Unauthorized, is SendResult.Failed -> keep += task.localId

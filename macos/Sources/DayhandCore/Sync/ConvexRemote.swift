@@ -26,7 +26,8 @@ public enum FeedError: Error, Hashable, Sendable {
  * from [tokens]; a refused one is refreshed and the call tried once more. Live updates come from polling
  * [snapshot]: `listAll`, `listTrash`, `getSettings` and `listProjects` (which a server older than 0.13.0 does not
  * have: its snapshot then has no projects, and nothing else changes). A known task missing from both lists is read
- * once more with `getTask`: it may have moved between the trash and the active list while the two were read.
+ * once more with `getTask`: it may have moved between the trash and the active list while the two were read. A
+ * proposal out of the trash stays out, as `listAll` leaves proposals out.
  */
 public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
     public static let udfFailed = 560
@@ -72,7 +73,7 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
                 guard let task = value["task"].flatMap(RemoteJSON.task), task.id == id else {
                     return .failure(.failed("unreadable task"))
                 }
-                snapshot.tasks.append(task)
+                if value["task"]?["proposedAt"]?.double == nil || task.deletedAt != nil { snapshot.tasks.append(task) }
             case .rejected(let message) where message.contains("Task \(id) not found") || message.contains("taskId must be a task id"):
                 break
             case let other:
