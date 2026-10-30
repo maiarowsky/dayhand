@@ -100,6 +100,14 @@ function fenceOf(line: string, current: string | null): string | null {
 
 type Section = { title: string; text: string };
 
+function closesBeforeNextMarker(lines: string[], from: number, fence: string): boolean {
+  for (const line of lines.slice(from)) {
+    if (MARKER.test(line)) return false;
+    if (fenceOf(line, fence) === null) return true;
+  }
+  return false;
+}
+
 /** The text before the first "## " heading and each "## " section, without Backlog.md's markers. */
 function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   const sections: Section[] = [];
@@ -107,7 +115,8 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   const preamble: string[] = [];
   let fence: string | null = null;
   let scope: string | null = null;
-  for (const line of body.split("\n")) {
+  const lines = body.split("\n");
+  for (const [index, line] of lines.entries()) {
     const wasFenced = fence !== null;
     fence = fenceOf(line, fence);
     const marker = MARKER.exec(line);
@@ -115,8 +124,9 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
       scope = marker[1]!;
       continue;
     }
-    // The section's END marker closes it even inside a code fence left open, as Backlog.md reads it.
-    if (marker && marker[1] === scope && marker[2] === "END") {
+    // The section's END marker closes it even inside a code fence left open, as Backlog.md reads it;
+    // inside a fence that closes before the next marker it is the fence's text.
+    if (marker && marker[1] === scope && marker[2] === "END" && !(fence && closesBeforeNextMarker(lines, index + 1, fence))) {
       scope = null;
       fence = null;
       continue;

@@ -275,6 +275,13 @@ describe("writing", () => {
     expect(back).toMatchObject({ description, acceptance: file.acceptance, plan: file.plan, finalSummary, extra: [`## Implementation Notes\n\n${file.notes}`] });
   });
 
+  test("a section's END marker inside a closed code fence stays the fence's text", () => {
+    const description = "Example:\n\n```\n<!-- SECTION:DESCRIPTION:END -->\n```";
+    const finalSummary = "Done.";
+    const back = readTask(writeTask({ ...file, description, finalSummary }));
+    expect(back).toMatchObject({ description, acceptance: file.acceptance, plan: file.plan, finalSummary, extra: [`## Implementation Notes\n\n${file.notes}`] });
+  });
+
   test("an archived draft stays in the archived-draft classification", () => {
     const written = writeTask({ ...file, place: "archived-draft" });
     expect(written.path).toBe("archive/drafts/task-12 - Renew-the-domain-DNS.md");
