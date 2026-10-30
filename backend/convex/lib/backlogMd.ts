@@ -102,6 +102,9 @@ function fenceOf(line: string, current: string | null): string | null {
 
 type Section = { title: string; text: string };
 
+/** Text without its blank first and last lines; the first line keeps its indent, so an indented code block survives. */
+const trimLines = (text: string) => text.replace(/^\s*\n/, "").trimEnd();
+
 /** The text before the first "## " heading and each "## " section, without Backlog.md's markers. */
 function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   const sections: Section[] = [];
@@ -123,14 +126,14 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
     }
     const heading = wasFenced || fence || scope ? null : HEADING.exec(line);
     if (heading) {
-      if (current) sections.push({ title: current.title, text: current.lines.join("\n").trim() });
+      if (current) sections.push({ title: current.title, text: trimLines(current.lines.join("\n")) });
       current = { title: heading[1]!, lines: [] };
       continue;
     }
     (current ? current.lines : preamble).push(line.replace(MARKER_TEXT, (_, start: string, rest: string) => start + rest.replace(/^\\/, "")));
   }
-  if (current) sections.push({ title: current.title, text: current.lines.join("\n").trim() });
-  return { preamble: preamble.join("\n").trim(), sections };
+  if (current) sections.push({ title: current.title, text: trimLines(current.lines.join("\n")) });
+  return { preamble: trimLines(preamble.join("\n")), sections };
 }
 
 const sectionKey = (title: string) => title.replace(/\(optional\)/i, "").trim().toLowerCase();
@@ -264,7 +267,7 @@ export function pathOf(task: Pick<TaskFile, "id" | "place" | "title">): string {
 /** A section whose text stays inside it: a code fence left open is closed and marker lines are escaped. */
 function block(title: string, marker: string | null, body: string | undefined): string[] {
   if (!body?.trim()) return [];
-  const lines = body.trim().split("\n").map((line) => line.replace(MARKER_TEXT, "$1\\$2"));
+  const lines = trimLines(body).split("\n").map((line) => line.replace(MARKER_TEXT, "$1\\$2"));
   const fence = lines.reduce<string | null>((open, line) => fenceOf(line, open), null);
   const text = (fence ? [...lines, fence] : lines).join("\n");
   return marker ? [`## ${title}`, "", `<!-- SECTION:${marker}:BEGIN -->`, text, `<!-- SECTION:${marker}:END -->`, ""] : [`## ${title}`, "", text, ""];

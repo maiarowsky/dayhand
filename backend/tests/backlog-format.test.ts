@@ -260,6 +260,14 @@ describe("writing", () => {
     expect(back).toMatchObject({ description, plan, finalSummary, acceptance: file.acceptance, extra: [`## Implementation Notes\n\n${notes}`] });
   });
 
+  test("an indented code block keeps its indent and leaves the next sections alone", () => {
+    const description = "    ```\n    ## Final Summary\n    ```\nAfter the example.";
+    const plan = "\n\n    step one\n    step two\n\n";
+    const back = readTask(writeTask({ ...file, description, plan }));
+    expect(back).toMatchObject({ description, plan: "    step one\n    step two", acceptance: file.acceptance, extra: ["## Implementation Notes\n\nResume: invoice saved"] });
+    expect(back.finalSummary).toBeUndefined();
+  });
+
   test.each(["Acceptance Criteria", "Definition of Done"])("%s ignores checkboxes and headings in fenced examples", (heading) => {
     const body = `## ${heading}\n- [x] Real criterion\n\n~~~~markdown\n- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~\n\n\`\`\`\`markdown\n\`\`\`\n- [ ] Still an example\n\`\`\`\`\n- [ ] Real second criterion`;
     const parsed = readTask({ path: "tasks/example.md", content: `---\nid: TASK-1\ntitle: Examples\n---\n${body}` });
