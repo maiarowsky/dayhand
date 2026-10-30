@@ -156,6 +156,11 @@ public enum RemoteJSON {
         message.contains("Could not find public function")
     }
 
+    /// A server older than 0.14.1 refused a completion for its `completedOn` argument (Convex's argument validator).
+    public static func refusesCompletedOnField(_ message: String) -> Bool {
+        message.contains("extra field `completedOn`")
+    }
+
     /// A server without projects refused a task change for its `projectId` argument (Convex's argument validator).
     public static func refusesProjectField(_ message: String) -> Bool {
         message.contains("extra field `projectId`")

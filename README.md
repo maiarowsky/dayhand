@@ -206,8 +206,8 @@ Dayhand for macOS has Today, projects and lists in a sidebar (each as a list, a 
 quick add from the menu bar or a global shortcut, reminders and the
 morning summary (its time and default reminders set in Settings), the trash and each task's change history,
 repeat and reminder editors, a plan health card and read-only agent work in the details, and offline editing.
-Repeating tasks create their next occurrence locally only without a server; a paired Mac without network waits
-until sync. The app speaks English,
+Completing a repeating task shows its next occurrence at once, also on a paired Mac without network; the server
+still creates it when it gets the completion. The app speaks English,
 Polish, German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese. It is built from source
 (Xcode 26 or later; runs on macOS 13 or later) and is not signed for other Macs yet:
 

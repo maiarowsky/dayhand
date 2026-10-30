@@ -18,7 +18,8 @@ public struct MergePlan: Hashable, Sendable {
  * - Every other field takes the server value, but only from a server copy newer than the one merged before
  *   (`updatedAt`), so a late snapshot never undoes a newer state.
  * - A task missing from the snapshot was purged (or never reached the server) and goes, unless it still has changes
- *   waiting or is too fresh to be in any snapshot yet. Tasks in the trash are part of the snapshot, with `deletedAt`.
+ *   waiting, is the next occurrence a waiting completion shows, or is too fresh to be in any snapshot yet. Tasks in
+ *   the trash are part of the snapshot, with `deletedAt`.
  * - The server's `projectId` reads as the project's `localId` on this Mac ([projects]).
  */
 public enum SnapshotMerger {
@@ -128,6 +129,10 @@ public struct DirtyFields: Sendable {
     public init(_ pending: [OutboxOp]) {
         for op in pending {
             if op.mutation == Mutations.setNow { nowEverywhere = true }
+            // The next occurrence a waiting completion shows stays until the server answers; no field of it is kept.
+            if op.mutation == Mutations.complete, let shown = JSONValue.decode(op.argsJson)?[Mutations.shownNext]?.string {
+                if byTask[shown] == nil { byTask[shown] = [] }
+            }
             guard let localId = op.taskLocalId else { continue }
             var fields = DirtyFields.fields(of: op)
             // Refused for its project, the change goes again without it: the server's project stands.

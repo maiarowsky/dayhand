@@ -22,7 +22,7 @@ public final class TaskRepository: Sendable {
     private let repeatsOnMac: @Sendable () -> Bool
 
     /// [repeatsOnMac] is true only while the Mac has no server; the Mac then creates the next occurrence locally.
-    /// With a server, completion is queued and the server handles recurrence, even while the network is unavailable.
+    /// With a server, even one out of reach, the server creates it and the Mac shows it meanwhile (see `complete`).
     public init(
         database: AppDatabase,
         clock: @escaping @Sendable () -> Int64 = Clock.nowMs,
@@ -117,7 +117,9 @@ public final class TaskRepository: Sendable {
     /**
      * Marks a task done. Without a server the Mac creates its next occurrence from the locally stored fields,
      * clears the completed task's repeat rule, and queues the rule-clear, completion and new task together.
-     * With a server, only completion is queued and the server creates the next occurrence when it receives it.
+     * With a server, even one out of reach, the Mac shows the next occurrence at once and queues only completion,
+     * with the local day (`completedOn`); the server creates the occurrence from its own copy (criteria and plan
+     * included), and its answer links the one shown here to it or removes it (`acknowledge`, `reject`).
      */
     public func complete(_ localId: String) async throws {
         let onMac = repeatsOnMac()
@@ -133,12 +135,27 @@ public final class TaskRepository: Sendable {
             task.isNow = false
             task.updatedAt = now
             var complete = completeOp
-            guard onMac, let rule, !wasDone else {
+            guard let rule, !wasDone else {
                 try task.save(db)
                 try complete.insert(db)
                 return true
             }
             let today = HelmDates.localDate(now, try Meta.settings(db, localTimezone: zone).timezone)
+            guard onMac else {
+                try task.save(db)
+                var args: [String: JSONValue] = ["clientId": .string(complete.clientId), "completedOn": .string(today)]
+                if let occurrence = Recurrence.advance(rule, dueDate: task.dueDate, today: today) {
+                    var next = self.nextOccurrence(of: task, occurrence, now: now)
+                    next.clientId = nil
+                    next.acceptance = task.acceptance.map { AcceptanceItem(id: $0.id, text: $0.text) }
+                    next.plan = task.plan
+                    try next.save(db)
+                    args[Mutations.shownNext] = .string(next.localId)
+                }
+                complete.argsJson = JSONValue.object(args).encoded()
+                try complete.insert(db)
+                return true
+            }
             task.repeat = nil
             try task.save(db)
             var stopRepeating = self.makeOp(Mutations.update, localId, ["repeat": .null], now: now)
@@ -528,31 +545,43 @@ extension TaskRepository: OutboxStore {
                 task.serverId = serverId
                 try task.save(db)
             }
+            // The next occurrence shown since a completion becomes the server's, or goes when the server made none
+            // (the task was already done elsewhere, or its rule changed there).
+            guard op.mutation == Mutations.complete, let shown = JSONValue.decode(op.argsJson)?[Mutations.shownNext]?.string,
+                  var next = try TaskItem.fetchOne(db, key: shown), next.serverId == nil else { return }
+            if let serverId = value["next"]?["id"]?.string {
+                if let arrived = try TaskItem.filter(Column("serverId") == serverId).fetchOne(db) {
+                    // A snapshot read while the answer was lost brought it already: the changes made here move onto it.
+                    try db.execute(sql: "UPDATE outbox SET taskLocalId = ? WHERE taskLocalId = ?", arguments: [arrived.localId, shown])
+                    _ = try TaskItem.deleteOne(db, key: shown)
+                } else {
+                    next.serverId = serverId
+                    try next.save(db)
+                }
+            } else {
+                try Self.dropUnsent(db, [shown])
+            }
         }
     }
 
     public func reject(_ op: OutboxOp, reason: String) async throws {
         try await writer.write { db in
-            guard let op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
+            guard var op = try OutboxOp.fetchOne(db, key: op.seq) else { return }
             // A task change refused for its project stays and goes again without it; see `ProjectSync.refused`.
             if try ProjectSync.refused(db, op, reason: reason) { return }
+            // A server older than 0.14.1 does not take the completion day: completion goes again without it.
+            if op.mutation == Mutations.complete, RemoteJSON.refusesCompletedOnField(reason),
+               var args = JSONValue.decode(op.argsJson)?.object, args.removeValue(forKey: "completedOn") != nil {
+                op.argsJson = JSONValue.object(args).encoded()
+                try op.update(db)
+                return
+            }
             _ = try OutboxOp.deleteOne(db, key: op.seq)
             guard let localId = op.taskLocalId else { return }
             let creating = try op.mutation == Mutations.add && TaskItem.fetchOne(db, key: localId)?.serverId == nil
             let clearsRepeat = op.mutation == Mutations.update && JSONValue.decode(op.argsJson)?["repeat"] == .null
             if creating || op.mutation == Mutations.complete || clearsRepeat {
-                var parents = [localId]
-                while let parent = parents.popLast() {
-                    let children = try TaskItem.fetchAll(db, sql: """
-                        SELECT task.* FROM task JOIN outbox ON outbox.taskLocalId = task.localId
-                        WHERE task.serverId IS NULL AND outbox.mutation = ? AND task.localId LIKE ?
-                        """, arguments: [Mutations.add, Self.nextOccurrencePrefix(parent) + "%"])
-                    for child in children {
-                        _ = try OutboxOp.filter(Column("taskLocalId") == child.localId).deleteAll(db)
-                        _ = try TaskItem.deleteOne(db, key: child.localId)
-                        parents.append(child.localId)
-                    }
-                }
+                try Self.dropUnsent(db, try Self.unsentNext(db, localId))
             }
             if creating {
                 // The task never existed on the server: drop it and every change made to it since.
@@ -563,6 +592,22 @@ extension TaskRepository: OutboxStore {
                 task.serverUpdatedAt = nil
                 try task.save(db)
             }
+        }
+    }
+
+    /// The next occurrences of [parent] made on this Mac that the server does not have.
+    private static func unsentNext(_ db: Database, _ parent: String) throws -> [String] {
+        try String.fetchAll(db, sql: "SELECT localId FROM task WHERE serverId IS NULL AND localId LIKE ?",
+                            arguments: [nextOccurrencePrefix(parent) + "%"])
+    }
+
+    /// Removes [localIds], next occurrences the server does not have, with their waiting changes and their own.
+    private static func dropUnsent(_ db: Database, _ localIds: [String]) throws {
+        var pending = localIds
+        while let localId = pending.popLast() {
+            _ = try OutboxOp.filter(Column("taskLocalId") == localId).deleteAll(db)
+            _ = try TaskItem.deleteOne(db, key: localId)
+            pending += try unsentNext(db, localId)
         }
     }
 

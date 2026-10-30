@@ -127,6 +127,11 @@ project; one completion has one successor. This keeps an archived project archiv
 app-only sync argument, **not** an option on `POST /tasks` or MCP `add_task`; ordinary additions
 to archived projects still fail. Deploy backend 0.13.2 before Android 0.12.0.
 
+Backend 0.14.1 also takes an app-only `completedOn` (YYYY-MM-DD) in `app:complete`: the local day of a completion
+made while the app was offline. The next occurrence of a repeating task counts from that day; a day after today, or
+one that is not a date, counts from today. It is not an option of `complete_task` or the REST routes. Dayhand for
+macOS sends it from 0.4.0 and sends the completion again without it to an older server.
+
 Since backend 0.13.1, the four project routes use the [project tool contracts](mcp.md#projects).
 `{projectId}` accepts a stored id or a case-insensitive name, URL-encoded in the path
 (`/projects/Strona%20piekarni`). Task routes also accept `projectId`: in `POST /tasks` and

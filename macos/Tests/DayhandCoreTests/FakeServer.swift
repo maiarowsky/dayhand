@@ -25,6 +25,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     private var nextProjectId = 1
     /// Backend 0.13.0 or later; off, a 0.12.x server without projects.
     var hasProjects = true
+    /// False for a backend older than 0.14.1, whose `complete` refuses the `completedOn` argument.
+    var takesCompletedOn = true
     /// Task id → its history, oldest first, as `taskEvents` holds it.
     private var events: [String: [JSONValue]] = [:]
     private var nextId = 1
@@ -276,9 +278,15 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
                     }
                 }
             case "app:complete":
+                if args["completedOn"] != nil, !takesCompletedOn {
+                    return failure("ArgumentValidationError: Object contains extra field `completedOn` that is not in the validator.")
+                }
                 let wasDone = tasks[id]?["status"]?.string == "done"
                 change(id, action: "complete") { $0["status"] = "done"; $0["completedAt"] = .of(clock()); $0["isNow"] = false }
-                if !wasDone { repeatAfter(id) }
+                let next = wasDone ? nil : repeatAfter(id, completedOn: args["completedOn"]?.string)
+                value = ["task": tasks[id] ?? .null, "next": next.flatMap { tasks[$0] } ?? .null]
+                if let clientId = args["clientId"]?.string { seenClientIds[clientId] = value }
+                return success(value)
             case "app:setStatus":
                 change(id, action: "setStatus") { task in
                     task["status"] = args["status"]
@@ -324,13 +332,22 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         return .object(task)
     }
 
-    /// The next occurrence a completed repeating task creates, as the backend's `complete`: the same fields on the
-    /// date `Recurrence.advance` gives for today in the settings' zone, the checklist unticked.
-    private func repeatAfter(_ id: String) {
-        guard let done = tasks[id]?.object, let rule = RepeatRule.parse(done["repeat"]) else { return }
+    /// The next occurrence a completed repeating task creates, as the backend's `complete`: the same fields (agent
+    /// work included) on the date `Recurrence.advance` gives for today in the settings' zone, or for an earlier
+    /// [completedOn], the checklist and the criteria unticked. Returns its id.
+    private func repeatAfter(_ id: String, completedOn: String?) -> String? {
+        guard let done = tasks[id]?.object, let rule = RepeatRule.parse(done["repeat"]) else { return nil }
         let today = HelmDates.localDate(clock(), settings["timezone"]?.string)
-        guard let occurrence = Recurrence.advance(rule, dueDate: done["dueDate"]?.string, today: today) else { return }
-        var next = done.filter { ["title", "note", "dueTime", "links", "reminders", "projectId"].contains($0.key) }
+        let day = completedOn.map { min($0, today) } ?? today
+        guard let occurrence = Recurrence.advance(rule, dueDate: done["dueDate"]?.string, today: day) else { return nil }
+        var next = done.filter { ["title", "note", "dueTime", "links", "reminders", "projectId", "plan"].contains($0.key) }
+        if let acceptance = done["acceptance"]?.array {
+            next["acceptance"] = .array(acceptance.map { item in
+                var unmet = item.object ?? [:]
+                unmet["met"] = false
+                return .object(unmet)
+            })
+        }
         next["dueDate"] = .string(occurrence.dueDate)
         next["repeat"] = occurrence.repeat.wire
         next["checklist"] = .array((done["checklist"]?.array ?? []).map { item in
@@ -349,6 +366,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         tasks[newId] = .object(next)
         order.append(newId)
         record(newId, "repeat", by: ("app", nil), before: nil, after: ["dueDate": .string(occurrence.dueDate), "repeatedFrom": .string(id)])
+        return newId
     }
 
     /// Changes a task and records the fields that changed, as the backend's `patchTask`; an edit that changes

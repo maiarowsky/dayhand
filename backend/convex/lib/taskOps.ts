@@ -27,7 +27,7 @@ import {
   type Identity,
 } from "./core";
 import { checkAcceptance, checkClaim, checkCompletion, checkDependsOn, checkLongText, checkProof } from "./agentWork";
-import { localDate } from "./dates";
+import { isValidDate, localDate } from "./dates";
 import { projectTarget } from "./projectOps";
 import { confirmOfflineRepeat, type OfflineRepeat } from "./offlineRepeat";
 import { addSource, checkRequestedBy, checkReturnTo, checkSource, notProposal, sendReturn, taskOfSource } from "./proposals";
@@ -172,9 +172,11 @@ async function clearNow(ctx: MutationCtx, identity: Identity, exceptId?: Id<"tas
  * proof summary (lib/agentWork.ts). A repeating task gets its next
  * occurrence, unless its series has ended (`until`, `count`): same title,
  * note, links, reminders, plan and project, the checklist and the
- * criteria unticked, counted on per the rule (lib/repeat.ts).
+ * criteria unticked, counted on per the rule (lib/repeat.ts). [completedOn] is the
+ * app's local day of an offline completion: the next date counts from it, never
+ * from a day after today.
  */
-export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">) {
+export async function completeTask(ctx: MutationCtx, identity: Identity, input: Args<"complete">, completedOn?: string) {
   const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) {
     const events = await ctx.db
@@ -197,7 +199,8 @@ export async function completeTask(ctx: MutationCtx, identity: Identity, input: 
   if (!task.repeat) return { task: toTask(done), next: null };
 
   const today = await todayFor(ctx, identity.userId, Date.now());
-  const occurrence = advance(task.repeat, task.dueDate, today);
+  const day = completedOn !== undefined && isValidDate(completedOn) && completedOn < today ? completedOn : today;
+  const occurrence = advance(task.repeat, task.dueDate, day);
   if (!occurrence) return { task: toTask(done), next: null };
   const now = Date.now();
   const nextFields = {

@@ -339,6 +339,8 @@ public enum Mutations {
     public static let softDelete = "app:softDelete"
     public static let restore = "app:restore"
     public static let updateSettings = "app:updateSettings"
+    /// The local id of the next occurrence a queued `complete` shows until the server answers; never sent.
+    static let shownNext = "shownNext"
     // Since backend 0.13.0; never queued.
     public static let addProject = "app:addProject"
     public static let updateProject = "app:updateProject"

@@ -292,7 +292,10 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   is erased. It also checks trash expiry and queuing an offline restore. `RepeatEditingTests.swift` checks the editors'
   drafts against the rules they make, that rules and reminders `TaskRules` refuses queue nothing, and that a
   repeating task completed without a server gets its next occurrence locally and keeps one occurrence when the
-  outbox is sent. With a server, generation stays on the server, including after a delayed offline completion.
+  outbox is sent. With a server, reachable or not, the next occurrence shows at once and becomes the server's when
+  the completion is answered (counted from the Mac's day, with the server's criteria and plan); it can be changed and
+  completed before that, goes when the server made none or refused the completion, survives a snapshot read while
+  the completion waits, and a server older than 0.14.1 still takes the completion.
   Permanent rejection of a parent add, rule-clear or completion drops its unsent generated descendants, while
   retryable failures retain them and unrelated additions still sync. `AgentWorkTests.swift` reads the agent fields
   from a snapshot (numbers as doubles), keeps them from the server even with a local change waiting, migrates a

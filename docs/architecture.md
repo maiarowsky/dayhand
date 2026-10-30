@@ -91,7 +91,8 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
   chosen task to `doing`. Leaving `doing`, completing, archiving or deleting clears it.
 - **Repeat.** Completing a repeating task creates the next occurrence: the first date of the
   series after the due date that is also after today (a late completion does not create an
-  overdue task), or, for a rule counted from completion, the first date after today. A series
+  overdue task), or, for a rule counted from completion, the first date after today (for the app,
+  "today" is the day it sent as `completedOn` for an offline completion, never later). A series
   ends with `until` or `count`. The logic is one pure module, `convex/lib/repeat.ts`: `advance`
   for completing and `occurrences` for listing a series ahead; `convex/lib/rrule.ts` maps rules
   to and from RFC 5545 RRULE ([mcp.md](mcp.md#repeat-rules)). The Android app has the same
