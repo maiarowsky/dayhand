@@ -64,6 +64,14 @@ describe("catalogs", () => {
     expect(tIn(language, "health.blocked", { count: 3 })).toBe(health);
   });
 
+  test.each(LANGUAGES)("%s task hints advertise the letter x, not a space symbol", (language) => {
+    for (const key of ["hints.today", "hints.board", "hints.week", "hints.detail"] as const) {
+      const hint = tIn(language, key);
+      expect(hint, key).toContain("  x ");
+      expect(hint, key).not.toContain("␣");
+    }
+  });
+
   test("plurals follow each language's rules", () => {
     expect([1, 2, 5, 22, 25].map((count) => tIn("pl", "week.tasks", { count }))).toEqual([" · 1 zadanie", " · 2 zadania", " · 5 zadań", " · 22 zadania", " · 25 zadań"]);
     expect([1, 2].map((count) => tIn("de", "remind.days", { count }))).toEqual(["1 Tag vorher", "2 Tage vorher"]);
