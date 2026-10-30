@@ -47,8 +47,9 @@ struct PlanTests {
         #expect(lanes["all day"] == nil)
 
         let chained = PlanGrid.lanes([task("a", "09:00"), task("b", "09:30"), task("c", "10:00"), task("d", "11:00")])
-        #expect(chained["a"]?.lane == 0 && chained["b"]?.lane == 1 && chained["c"]?.lane == 2)
-        #expect([chained["a"]?.of, chained["b"]?.of, chained["c"]?.of] == [3, 3, 3])
+        // A chain half an hour apart reuses the lane freed an hour earlier, so it keeps two lanes however long it runs.
+        #expect(chained["a"]?.lane == 0 && chained["b"]?.lane == 1 && chained["c"]?.lane == 0)
+        #expect([chained["a"]?.of, chained["b"]?.of, chained["c"]?.of] == [2, 2, 2])
         #expect(chained["d"]?.lane == 0 && chained["d"]?.of == 1)
     }
 
