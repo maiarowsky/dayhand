@@ -52,7 +52,7 @@ struct ConvexRemoteTests {
             tokens: DeviceTokens(serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: server), onRevoked: {}),
             transport: server
         )
-        let snapshot = try await remote.snapshot().get()
+        let snapshot = try await remote.snapshot(knownTaskIds: []).get()
         #expect(Set(snapshot.tasks.map(\.id)) == [kept, trashed])
         #expect(snapshot.tasks.first { $0.id == trashed }?.deletedAt == 5)
         #expect(snapshot.settings == ReminderSettings(timezone: "Europe/London", summaryTime: "05:00", reminderMinutes: [0]))
@@ -258,6 +258,31 @@ struct SyncEngineTests {
         server.editElsewhere(id, ["title": "Renamed by the agent", "updatedAt": .of(clock.now)])
         await engine.round()
         #expect(try await repo.task(id)?.title == "Renamed by the agent")
+    }
+
+    @Test func aProposalRestoredFromTheTrashLeavesThePlan() async throws {
+        let (repo, engine, _) = try setUp()
+        let id = server.addElsewhere("Proposed by the agent")
+        server.editElsewhere(id, ["proposedAt": .of(clock.now), "deletedAt": .of(clock.now)])
+        await engine.round()
+        #expect(try await repo.task(id)?.inTrash == true)
+
+        server.editElsewhere(id, ["deletedAt": .null])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(id) == nil)
+    }
+
+    @Test func tasksOfAnotherDeploymentLeaveAndSyncGoesOn() async throws {
+        let (repo, engine, _) = try setUp()
+        let id = server.addElsewhere("From the old server")
+        await engine.round()
+        #expect(try await repo.task(id) != nil)
+
+        server.becomeAnotherDeployment()
+        let kept = server.addElsewhere("From the new server")
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(id) == nil)
+        #expect(try await repo.task(kept)?.title == "From the new server")
     }
 
     @Test func aWaitingLocalChangeKeepsItsFieldAgainstTheSnapshot() async throws {

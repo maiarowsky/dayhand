@@ -80,7 +80,12 @@ SyncStatus SyncEngine::round()
         if (drained == DrainResult::Unauthorized)
             return {SyncStatus::Kind::SignedOut, 0, {}};
         // On RetryLater the plan is read anyway: changes made elsewhere still show, and waiting ones keep their fields.
-        const SnapshotSource::Result read = source.snapshot();
+        QStringList knownTaskIds;
+        for (const TaskItem &task : repository.allTasks()) {
+            if (task.serverId)
+                knownTaskIds.append(*task.serverId);
+        }
+        const SnapshotSource::Result read = source.snapshot(knownTaskIds);
         if (read.unauthorized)
             return {SyncStatus::Kind::SignedOut, 0, {}};
         if (!read.snapshot)

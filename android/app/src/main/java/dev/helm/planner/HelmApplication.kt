@@ -93,6 +93,7 @@ class AppContainer(context: Context) {
             settings.current().backend?.takeIf { network.online.first() }?.let { HttpTaskRemote(it.url, tokensFor(it)) }
         },
         repeatsOnPhone = { settings.current().takeIf { it.isLocal }?.let { HelmDates.localDate(System.currentTimeMillis(), it.timezone) } },
+        taskQueries = { settings.current().backend?.let { HttpTaskRemote(it.url, tokensFor(it)) } },
     )
     val liveSync = LiveSync(settings, repository, ::feedFor)
 

@@ -400,6 +400,24 @@ struct ProjectSyncTests {
         #expect(try await repo.pendingOps().isEmpty)
         #expect(try await repo.task(t)?.projectLocalId == nil)
     }
+
+    @Test func aTaskRestoredBetweenTheTwoListsKeepsItsProjectAndHistory() async throws {
+        let transport = RestoringTaskTransport(server)
+        let (repo, engine) = try setUp(transport: transport)
+        let a = server.addProjectElsewhere("A")
+        let t = server.addElsewhere("T")
+        server.editElsewhere(t, ["projectId": .string(a)])
+        server.editElsewhere(t, ["deletedAt": .of(clock.now)])
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.saveHistory(t, [TaskEvent(taskServerId: t, at: clock.now, actor: "app", action: "create")])
+        clock.advance(Int64(TaskItem.trashRetentionDays) * HelmDates.dayMs)
+        await transport.restoreAfterNextActiveQuery(t)
+        guard case .synced = await engine.round() else { Issue.record("expected synced after remote restore"); return }
+        #expect(try await repo.task(t)?.inTrash == false)
+        #expect(try await repo.task(t)?.projectLocalId == a)
+        #expect(try await repo.history(t).count == 1)
+        #expect(server.requests.contains { $0.body["path"]?.string == RemoteJSON.queryTask && $0.body["args"]?.array?.first?["taskId"] == .string(t) })
+    }
 }
 
 /// Holds the first snapshot's `app:listProjects` answer until released.

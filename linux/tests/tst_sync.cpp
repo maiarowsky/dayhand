@@ -101,7 +101,7 @@ private slots:
         const QString kept = w.server.addElsewhere(u"Kept"_s, u"2026-10-22"_s);
         const QString trashed = w.server.addElsewhere(u"Trashed"_s);
         w.server.editElsewhere(trashed, {{u"deletedAt"_s, 5}});
-        const auto read = w.remote.snapshot();
+        const auto read = w.remote.snapshot({});
         QVERIFY(read.snapshot);
         QCOMPARE(read.snapshot->tasks.size(), 2);
         QCOMPARE(read.snapshot->tasks[1].deletedAt, 5);
@@ -479,6 +479,59 @@ private slots:
         QCOMPARE(w.local.repo.pendingCount(), 0);
         QCOMPARE(w.local.repo.task(id)->title, u"Exists"_s);
         QVERIFY(w.local.repo.task(id)->inTrash());
+    }
+
+    void aTaskRestoredBetweenTheTwoListsStays()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"Restored"_s, u"2026-10-22"_s);
+        w.server.editElsewhere(id, {{u"deletedAt"_s, w.local.clock}});
+        w.engine.round();
+        QVERIFY(w.local.repo.task(id)->inTrash());
+        w.local.clock += 1000;
+        // Restored elsewhere after the active list was read and before the trash was: in neither list.
+        w.server.restoreAfterNextActiveQuery = id;
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QVERIFY(w.local.repo.task(id));
+        QVERIFY(!w.local.repo.task(id)->inTrash());
+    }
+
+    void aTaskPurgedFromTheServerLeavesThisComputer()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"Purged"_s, u"2026-10-22"_s);
+        w.server.editElsewhere(id, {{u"deletedAt"_s, w.local.clock}});
+        w.engine.round();
+        QVERIFY(w.local.repo.task(id));
+        w.server.purge(id);
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QVERIFY(!w.local.repo.task(id));
+    }
+
+    void aProposalRestoredFromTheTrashLeavesThisComputer()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"Proposed by the agent"_s, u"2026-10-22"_s);
+        w.server.editElsewhere(id, {{u"proposedAt"_s, w.local.clock}, {u"deletedAt"_s, w.local.clock}});
+        w.engine.round();
+        QVERIFY(w.local.repo.task(id)->inTrash());
+        w.local.clock += 1000;
+        w.server.restoreAfterNextActiveQuery = id;
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QVERIFY(!w.local.repo.task(id));
+    }
+
+    void tasksOfAnotherDeploymentLeaveAndSyncGoesOn()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"From the old server"_s, u"2026-10-22"_s);
+        w.engine.round();
+        QVERIFY(w.local.repo.task(id));
+        w.server.becomeAnotherDeployment();
+        const QString kept = w.server.addElsewhere(u"From the new server"_s, u"2026-10-22"_s);
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QVERIFY(!w.local.repo.task(id));
+        QVERIFY(w.local.repo.task(kept));
     }
 
     void theWorkerSyncsOnItsOwnThreadAndAgainWhenPoked()

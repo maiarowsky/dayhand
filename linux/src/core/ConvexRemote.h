@@ -6,6 +6,7 @@
 
 #include <QJsonValue>
 #include <QString>
+#include <QStringList>
 
 namespace dayhand {
 
@@ -26,14 +27,17 @@ public:
     };
 
     virtual ~SnapshotSource() = default;
-    virtual Result snapshot() = 0;
+    /// [knownTaskIds]: the server ids this computer has, checked once more when both lists miss one.
+    virtual Result snapshot(const QStringList &knownTaskIds) = 0;
 };
 
 /**
  * The Convex HTTP API (`POST /api/mutation`, `/api/query`), the same calls the Android app's `HttpTaskRemote` and
  * the macOS app's `ConvexRemote` make. A function that failed answers 560 with `{status: "error"}`. The app JWT
  * comes from [tokens]; a refused one is refreshed and the call tried once more. Live updates come from polling
- * [snapshot]: `listAll`, `listTrash` and `getSettings`.
+ * [snapshot]: `listAll`, `listTrash` and `getSettings`. A known task missing from both lists is read once more with
+ * `getTask`: it may have moved between the trash and the active list while the two were read. A proposal out of the
+ * trash stays out, as `listAll` leaves proposals out.
  */
 class ConvexRemote final : public MutationSender, public SnapshotSource {
 public:
@@ -43,7 +47,7 @@ public:
 
     SendResult send(const QString &mutation, const QJsonValue &args) override;
     SendResult query(const QString &path, const QJsonValue &args);
-    Result snapshot() override;
+    Result snapshot(const QStringList &knownTaskIds) override;
 
     static QByteArray requestBody(const QString &path, const QJsonValue &args);
     /**

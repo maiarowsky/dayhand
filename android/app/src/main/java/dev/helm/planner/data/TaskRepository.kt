@@ -18,6 +18,7 @@ import dev.helm.planner.data.remote.RemoteHistoryEntry
 import dev.helm.planner.domain.Recurrence
 import dev.helm.planner.domain.TaskRules
 import dev.helm.planner.sample.SamplePlan
+import dev.helm.planner.sync.MissingTasks
 import dev.helm.planner.sync.SnapshotMerger
 import dev.helm.planner.sync.dropAssignment
 import java.util.UUID
@@ -52,6 +53,8 @@ class TaskRepository(
      */
     private val repeatsOnPhone: suspend () -> String? = { null },
     projectRemote: suspend () -> dev.helm.planner.data.remote.TaskRemote? = { null },
+    /** Reads a known task the snapshot's lists both miss ([MissingTasks]); null without a server. */
+    private val taskQueries: suspend () -> dev.helm.planner.data.remote.QueryRunner? = { null },
 ) {
     val projectStore = ProjectRepository(db, newId, projectRemote, ::applySnapshot)
     val projects = projectStore.projects
@@ -477,6 +480,7 @@ class TaskRepository(
 
     /** Writes a server snapshot into Room (see [SnapshotMerger]). */
     suspend fun applySnapshot(snapshot: RemoteEvent.Snapshot) {
+        val missing = MissingTasks.check(db.tasks().all(), snapshot.tasks, taskQueries)
         db.withTransaction {
             val pending = db.outbox().all()
             snapshot.projects?.let { remote ->
@@ -484,10 +488,11 @@ class TaskRepository(
                 db.projects().upsert(projects.upserts)
                 db.projects().delete(projects.deletes)
             }
-            val plan = SnapshotMerger.merge(db.tasks().all(), pending, snapshot.tasks, clock())
+            val plan = SnapshotMerger.merge(db.tasks().all(), pending, snapshot.tasks + missing.found, clock())
+            val deletes = plan.deletes - missing.keep
             if (plan.upserts.isNotEmpty()) db.tasks().upsert(plan.upserts)
-            if (plan.deletes.isNotEmpty()) {
-                db.tasks().delete(plan.deletes)
+            if (deletes.isNotEmpty()) {
+                db.tasks().delete(deletes)
                 db.events().deleteOrphans()
             }
         }

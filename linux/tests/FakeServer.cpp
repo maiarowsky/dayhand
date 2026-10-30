@@ -57,7 +57,7 @@ HttpReply FakeServer::post(const QUrl &url, const QByteArray &json, const QStrin
     const QString function = body[u"path"].toString();
     const QJsonObject args = body[u"args"][0].toObject();
     if (path == u"/api/query")
-        return query(function);
+        return query(function, args);
     const HttpReply answer = mutation(function, args);
     if (loseNextAnswer) {
         loseNextAnswer = false;
@@ -80,6 +80,20 @@ void FakeServer::editElsewhere(const QString &id, const QJsonObject &fields)
         for (auto it = fields.begin(); it != fields.end(); ++it)
             task.insert(it.key(), it.value());
     });
+}
+
+void FakeServer::purge(const QString &id)
+{
+    tasks.remove(id);
+    order.removeAll(id);
+}
+
+void FakeServer::becomeAnotherDeployment()
+{
+    tasks.clear();
+    order.clear();
+    seenClientIds.clear();
+    idPrefix = u"other"_s;
 }
 
 QList<QJsonObject> FakeServer::allTasks() const
@@ -127,17 +141,29 @@ HttpReply FakeServer::token(const QJsonValue &body)
                        {u"expiresAt"_s, clock() + 3'600'000}});
 }
 
-HttpReply FakeServer::query(const QString &path)
+HttpReply FakeServer::query(const QString &path, const QJsonObject &args)
 {
     if (path == u"app:getSettings")
         return success(settings);
+    if (path == u"app:getTask") {
+        const QString id = args[u"taskId"].toString();
+        if (!id.startsWith(idPrefix))
+            return failure(u"Invalid arguments: taskId must be a task id or \"#<number>\", got \"%1\""_s.arg(id));
+        if (!tasks.contains(id))
+            return failure(u"Task %1 not found"_s.arg(id));
+        return success(QJsonObject{{u"task"_s, tasks.value(id)}, {u"history"_s, QJsonArray()}});
+    }
     if (path != u"app:listAll" && path != u"app:listTrash")
         return failure(u"unknown query "_s + path);
     const bool trash = path == u"app:listTrash";
     QJsonArray list;
     for (const QJsonObject &task : allTasks()) {
-        if (task.contains(u"deletedAt") == trash)
+        if (task.contains(u"deletedAt") == trash && (trash || !task.contains(u"proposedAt")))
             list.append(task);
+    }
+    if (!trash && !restoreAfterNextActiveQuery.isEmpty()) {
+        change(restoreAfterNextActiveQuery, [](QJsonObject &t) { t.remove(u"deletedAt"); });
+        restoreAfterNextActiveQuery.clear();
     }
     return success(list);
 }
@@ -214,7 +240,7 @@ bool FakeServer::applyChange(const QString &path, const QString &id, const QJson
 
 QJsonObject FakeServer::add(const QJsonObject &args)
 {
-    const QString id = u"srv%1"_s.arg(nextId++);
+    const QString id = u"%1%2"_s.arg(idPrefix).arg(nextId++);
     QJsonObject task{{u"id"_s, id}, {u"title"_s, args[u"title"]}, {u"status"_s, u"todo"_s}, {u"isNow"_s, false},
                      {u"links"_s, QJsonArray()}, {u"checklist"_s, QJsonArray()},
                      {u"createdAt"_s, clock()}, {u"updatedAt"_s, clock()}};

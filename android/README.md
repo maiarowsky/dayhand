@@ -394,6 +394,10 @@ Convex subscription (app:listAll, app:listTrash, app:listProjects, app:getSettin
   HTTP (`HttpTaskRemote`, which also polls `POST /api/query` if the native client cannot load).
 - **The trash is part of every snapshot** (`app:listTrash`), so trashed tasks stay on the phone
   with `deletedAt` set and the Trash screen works offline; a task purged after 30 days disappears.
+  The trash and the active tasks are separate queries, so a known task both miss (restored or
+  trashed in between) is read once more with `app:getTask` and goes only when the server does not
+  know it (no such task, or an id of another server) or it is a proposal out of the trash, which
+  `app:listAll` leaves out; with no answer it stays until a later snapshot.
 - **History** (`app:getTask`) is read over HTTP when a task's details open and whenever a newer
   server copy of it arrives, and cached in Room (`task_events`), so it shows offline too.
   Changes still in the outbox are counted under it; they join the history once sent.

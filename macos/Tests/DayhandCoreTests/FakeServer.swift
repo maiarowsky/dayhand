@@ -28,6 +28,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     /// Task id → its history, oldest first, as `taskEvents` holds it.
     private var events: [String: [JSONValue]] = [:]
     private var nextId = 1
+    /// What this deployment's task ids start with; an id of another deployment is not a task id to it.
+    private var idPrefix = "srv"
     private var nextJwt = 1
     private var validJwts: Set<String> = []
     private(set) var settings: JSONValue = ["timezone": "Europe/London", "summaryTime": "05:00", "defaultReminderMinutes": [0]]
@@ -91,6 +93,17 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             var args: [String: JSONValue] = ["title": .string(title)]
             if let dueDate { args["dueDate"] = .string(dueDate) }
             return add(.object(args))["id"]?.string ?? ""
+        }
+    }
+
+    /// The Mac now talks to another Convex deployment: none of the tasks, and ids of a table of its own.
+    func becomeAnotherDeployment() {
+        lock.locked {
+            tasks = [:]
+            order = []
+            events = [:]
+            seenClientIds = [:]
+            idPrefix = "other"
         }
     }
 
@@ -206,14 +219,16 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         case "app:listApprovals": return success(["approvals": .array(approvals)])
         case "app:listProposals": return success(.array(proposals))
         case "app:getTask":
-            guard let id = args["taskId"]?.string, let task = tasks[id] else { return failure("Task not found") }
+            let id = args["taskId"]?.string ?? ""
+            guard id.hasPrefix(idPrefix) else { return failure("Invalid arguments: taskId must be a task id or \"#<number>\", got \"\(id)\"") }
+            guard let task = tasks[id] else { return failure("Task \(id) not found") }
             return success(["task": task, "history": .array(events[id] ?? [])])
         default: return failure("unknown query \(path)")
         }
     }
 
     private func listedTasks(inTrash: Bool) -> [JSONValue] {
-        order.compactMap { tasks[$0] }.filter { ($0["deletedAt"] != nil) == inTrash }.map { task in
+        order.compactMap { tasks[$0] }.filter { ($0["deletedAt"] != nil) == inTrash && (inTrash || $0["proposedAt"] == nil) }.map { task in
             guard !hasProjects, var fields = task.object else { return task }
             fields.removeValue(forKey: "projectId")
             return .object(fields)
@@ -293,7 +308,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     }
 
     private func add(_ args: JSONValue) -> JSONValue {
-        let id = "srv\(nextId)"
+        let id = "\(idPrefix)\(nextId)"
         nextId += 1
         var task: [String: JSONValue] = [
             "id": .string(id), "ref": .of(nextId - 1), "title": args["title"] ?? "", "status": "todo", "isNow": false,
@@ -323,7 +338,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             unticked["done"] = false
             return .object(unticked)
         })
-        let newId = "srv\(nextId)"
+        let newId = "\(idPrefix)\(nextId)"
         nextId += 1
         next["id"] = .string(newId)
         next["ref"] = .of(nextId - 1)
@@ -461,5 +476,24 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         ]
         event["by"] = .string(actor.0 == "agent" && actor.1 != nil ? "agent: \(actor.1!)" : actor.0)
         events[id, default: []].append(.object(event))
+    }
+}
+
+/// Restores a task elsewhere right after the next `app:listAll` answer, before `app:listTrash` is read.
+actor RestoringTaskTransport: HTTPTransport {
+    private let server: FakeServer
+    private var taskId: String?
+
+    init(_ server: FakeServer) { self.server = server }
+
+    func restoreAfterNextActiveQuery(_ id: String) { taskId = id }
+
+    func post(_ url: URL, json: Data, bearer: String?) async throws -> HTTPReply {
+        let reply = try await server.post(url, json: json, bearer: bearer)
+        if let id = taskId, JSONValue.decode(json)?["path"]?.string == RemoteJSON.queryTasks {
+            taskId = nil
+            server.editElsewhere(id, ["deletedAt": .null])
+        }
+        return reply
     }
 }
