@@ -18,8 +18,9 @@ object MissingTasks {
     data class Check(val found: List<RemoteTask> = emptyList(), val keep: Set<String> = emptySet())
 
     /**
-     * Every missing task the server answers "not found" for is gone. One with no answer (offline, a server hiccup)
-     * stays until a later snapshot. Without [queries] (no server) nothing is checked, as before.
+     * Every missing task the server answers "not found" for, or whose id it does not take for a task id (an id of
+     * another deployment), is gone. One with no answer (offline, a server hiccup) stays until a later snapshot.
+     * Without [queries] (no server) nothing is checked, as before.
      */
     suspend fun check(local: List<Task>, remote: List<RemoteTask>, queries: suspend () -> QueryRunner?): Check {
         val listed = remote.mapTo(HashSet()) { it.id }
@@ -35,10 +36,12 @@ object MissingTasks {
                     val read = ((result.value as? JsonObject)?.get("task") as? JsonObject)?.let(RemoteJson::task)
                     if (read?.id == serverId) found += read else keep += task.localId
                 }
-                is SendResult.Rejected -> if (result.code != "not_found") keep += task.localId
+                is SendResult.Rejected -> if (result.code !in UNKNOWN_TASK) keep += task.localId
                 SendResult.Unauthorized, is SendResult.Failed -> keep += task.localId
             }
         }
         return Check(found, keep)
     }
+
+    private val UNKNOWN_TASK = setOf("not_found", "invalid_argument")
 }

@@ -38,7 +38,7 @@ struct LiveProjectsTests {
             guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
             transport.offline = false
             guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-            let snapshot = try await check.snapshot().get()
+            let snapshot = try await check.snapshot(knownTaskIds: []).get()
             #expect(snapshot.projects == nil)
             #expect(snapshot.tasks.first { $0.title == "E2E \(run) on an old server" }?.id == (try await repo.task(t.localId)?.serverId))
             #expect(try await repo.projects().isEmpty)
@@ -49,7 +49,7 @@ struct LiveProjectsTests {
         // Online: the project is on the server as soon as the call returns.
         let bakery = try await engine.addProject(name: "E2E \(run) Strona piekarni", color: .amber, icon: "🥐", note: "Menu")
         let projectId = try #require(bakery.serverId)
-        let made = try #require(try await check.snapshot().get().projects?.first { $0.id == projectId })
+        let made = try #require(try await check.snapshot(knownTaskIds: []).get().projects?.first { $0.id == projectId })
         #expect(made.name == "E2E \(run) Strona piekarni" && made.color == .amber && made.icon == "🥐" && made.note == "Menu")
         #expect(made.clientId == bakery.localId)
 
@@ -67,7 +67,7 @@ struct LiveProjectsTests {
 
         transport.offline = false
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        let snapshot = try await check.snapshot().get()
+        let snapshot = try await check.snapshot(knownTaskIds: []).get()
         let photos = try #require(snapshot.tasks.first { $0.title == "E2E \(run) photos" })
         let invoice = try #require(snapshot.tasks.first { $0.title == line.title })
         #expect(photos.projectId == projectId && invoice.projectId == projectId)
@@ -77,13 +77,13 @@ struct LiveProjectsTests {
         // Edits, archive and the deletion online, the tasks moved out of any project.
         try await engine.updateProject(bakery.localId, name: "E2E \(run) Bakery", color: .teal, icon: "", note: "")
         try await engine.setArchived(bakery.localId, true)
-        let edited = try #require(try await check.snapshot().get().projects?.first { $0.id == projectId })
+        let edited = try #require(try await check.snapshot(knownTaskIds: []).get().projects?.first { $0.id == projectId })
         #expect(edited.name == "E2E \(run) Bakery" && edited.color == .teal && edited.icon == nil && edited.archivedAt != nil)
         let row = try #require(try await repo.projects().first { $0.localId == bakery.localId })
         #expect(row.name == edited.name && row.isArchived)
 
         try await engine.deleteProject(bakery.localId, moveTasksTo: nil)
-        let after = try await check.snapshot().get()
+        let after = try await check.snapshot(knownTaskIds: []).get()
         #expect(after.projects?.contains { $0.id == projectId } == false)
         #expect(after.tasks.first { $0.id == photos.id }?.projectId == nil)
         #expect(try await repo.projects().contains { $0.localId == bakery.localId } == false)

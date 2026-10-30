@@ -61,7 +61,7 @@ struct LiveBackendTests {
 
         // What a fresh client reads from the server.
         let check = ConvexRemote(deploymentUrl: credential.convexUrl, tokens: tokens)
-        let server = try await check.snapshot().get().tasks
+        let server = try await check.snapshot(knownTaskIds: []).get().tasks
         let onServer = { (title: String) in server.first { $0.title == title } }
         let a = try #require(onServer(phrase.title))
         #expect(a.dueDate == phrase.when?.date)
@@ -80,7 +80,7 @@ struct LiveBackendTests {
         try await repo.moveToTrash(done.localId)
         try await repo.clearNow()
         await engine.round()
-        let after = try await check.snapshot().get().tasks
+        let after = try await check.snapshot(knownTaskIds: []).get().tasks
         #expect(after.first { $0.id == a.id }?.title == "E2E \(run) call the accountant about VAT")
         #expect(after.first { $0.id == a.id }?.note == "E2E note")
         #expect(after.first { $0.title == "E2E \(run) done today" }?.deletedAt != nil)
@@ -106,13 +106,13 @@ struct LiveBackendTests {
         let original = try await repo.settings()
         try await repo.updateSettings(summaryTime: "06:45", reminderMinutes: [30, 0])
         guard case .synced = await engine.round() else { Issue.record("settings did not sync"); return }
-        let sent = try await check.snapshot().get().settings
+        let sent = try await check.snapshot(knownTaskIds: []).get().settings
         #expect(sent.summaryTime == "06:45")
         #expect(sent.reminderMinutes == [0, 30])
         #expect(try await repo.settings().summaryTime == "06:45")
         try await repo.updateSettings(summaryTime: original.summaryTime, reminderMinutes: original.reminderMinutes)
         await engine.round()
-        #expect(try await check.snapshot().get().settings == original)
+        #expect(try await check.snapshot(knownTaskIds: []).get().settings == original)
 
         // The plan health report and Review's lists, read as the app reads them.
         #expect(await PlanHealthSync(repository: repo, runner: { remote }).refresh() == .fresh)

@@ -28,6 +28,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     /// Task id → its history, oldest first, as `taskEvents` holds it.
     private var events: [String: [JSONValue]] = [:]
     private var nextId = 1
+    /// What this deployment's task ids start with; an id of another deployment is not a task id to it.
+    private var idPrefix = "srv"
     private var nextJwt = 1
     private var validJwts: Set<String> = []
     private(set) var settings: JSONValue = ["timezone": "Europe/London", "summaryTime": "05:00", "defaultReminderMinutes": [0]]
@@ -91,6 +93,17 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             var args: [String: JSONValue] = ["title": .string(title)]
             if let dueDate { args["dueDate"] = .string(dueDate) }
             return add(.object(args))["id"]?.string ?? ""
+        }
+    }
+
+    /// The Mac now talks to another Convex deployment: none of the tasks, and ids of a table of its own.
+    func becomeAnotherDeployment() {
+        lock.locked {
+            tasks = [:]
+            order = []
+            events = [:]
+            seenClientIds = [:]
+            idPrefix = "other"
         }
     }
 
@@ -207,6 +220,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         case "app:listProposals": return success(.array(proposals))
         case "app:getTask":
             let id = args["taskId"]?.string ?? ""
+            guard id.hasPrefix(idPrefix) else { return failure("Invalid arguments: taskId must be a task id or \"#<number>\", got \"\(id)\"") }
             guard let task = tasks[id] else { return failure("Task \(id) not found") }
             return success(["task": task, "history": .array(events[id] ?? [])])
         default: return failure("unknown query \(path)")
@@ -294,7 +308,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
     }
 
     private func add(_ args: JSONValue) -> JSONValue {
-        let id = "srv\(nextId)"
+        let id = "\(idPrefix)\(nextId)"
         nextId += 1
         var task: [String: JSONValue] = [
             "id": .string(id), "ref": .of(nextId - 1), "title": args["title"] ?? "", "status": "todo", "isNow": false,
@@ -324,7 +338,7 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
             unticked["done"] = false
             return .object(unticked)
         })
-        let newId = "srv\(nextId)"
+        let newId = "\(idPrefix)\(nextId)"
         nextId += 1
         next["id"] = .string(newId)
         next["ref"] = .of(nextId - 1)

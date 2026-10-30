@@ -66,6 +66,13 @@ class MissingTaskRecheckTest {
         assertNull(db.tasks().byLocalId("s1"))
     }
 
+    @Test fun aTaskWithAnIdOfAnotherDeploymentGoes() = runBlocking {
+        snapshot(emptyList(), listOf(task(updatedAt = 2, deletedAt = 2)))
+        answer = { SendResult.Rejected("Invalid arguments: taskId must be a task id or \"#<number>\", got \"$it\"", "invalid_argument") }
+        snapshot(emptyList(), emptyList())
+        assertNull(db.tasks().byLocalId("s1"))
+    }
+
     @Test fun aTaskThatCannotBeCheckedNowStaysUntilALaterSnapshot() = runBlocking {
         snapshot(emptyList(), listOf(task(updatedAt = 2, deletedAt = 2)))
         answer = { SendResult.Failed("IOException") }

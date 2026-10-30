@@ -70,7 +70,8 @@ SnapshotSource::Result ConvexRemote::snapshot(const QStringList &knownTaskIds)
     missing.sort();
     for (const QString &id : missing) {
         const SendResult read = query(RemoteJson::queryTask, QJsonObject{{u"taskId"_s, id}});
-        if (read.kind == SendResult::Kind::Rejected && read.message.contains(u"Task %1 not found"_s.arg(id)))
+        if (read.kind == SendResult::Kind::Rejected
+            && (read.message.contains(u"Task %1 not found"_s.arg(id)) || read.message.contains(u"taskId must be a task id"_s)))
             continue;
         if (read.kind != SendResult::Kind::Applied)
             return feedError(read);

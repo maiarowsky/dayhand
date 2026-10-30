@@ -51,7 +51,7 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
         await call("/api/query", path: path, args: args)
     }
 
-    public func snapshot(knownTaskIds: [String] = []) async -> Result<Snapshot, FeedError> {
+    public func snapshot(knownTaskIds: [String]) async -> Result<Snapshot, FeedError> {
         let tasks = await query(RemoteJSON.queryTasks, args: RemoteJSON.tasksArgs)
         guard case .applied(let taskList) = tasks else { return .failure(Self.feedError(tasks)) }
         let trash = await query(RemoteJSON.queryTrash)
@@ -73,7 +73,7 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
                     return .failure(.failed("unreadable task"))
                 }
                 snapshot.tasks.append(task)
-            case .rejected(let message) where message.contains("Task \(id) not found"):
+            case .rejected(let message) where message.contains("Task \(id) not found") || message.contains("taskId must be a task id"):
                 break
             case let other:
                 return .failure(Self.feedError(other))

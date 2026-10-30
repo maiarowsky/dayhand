@@ -88,6 +88,14 @@ void FakeServer::purge(const QString &id)
     order.removeAll(id);
 }
 
+void FakeServer::becomeAnotherDeployment()
+{
+    tasks.clear();
+    order.clear();
+    seenClientIds.clear();
+    idPrefix = u"other"_s;
+}
+
 QList<QJsonObject> FakeServer::allTasks() const
 {
     QList<QJsonObject> out;
@@ -139,6 +147,8 @@ HttpReply FakeServer::query(const QString &path, const QJsonObject &args)
         return success(settings);
     if (path == u"app:getTask") {
         const QString id = args[u"taskId"].toString();
+        if (!id.startsWith(idPrefix))
+            return failure(u"Invalid arguments: taskId must be a task id or \"#<number>\", got \"%1\""_s.arg(id));
         if (!tasks.contains(id))
             return failure(u"Task %1 not found"_s.arg(id));
         return success(QJsonObject{{u"task"_s, tasks.value(id)}, {u"history"_s, QJsonArray()}});
@@ -230,7 +240,7 @@ bool FakeServer::applyChange(const QString &path, const QString &id, const QJson
 
 QJsonObject FakeServer::add(const QJsonObject &args)
 {
-    const QString id = u"srv%1"_s.arg(nextId++);
+    const QString id = u"%1%2"_s.arg(idPrefix).arg(nextId++);
     QJsonObject task{{u"id"_s, id}, {u"title"_s, args[u"title"]}, {u"status"_s, u"todo"_s}, {u"isNow"_s, false},
                      {u"links"_s, QJsonArray()}, {u"checklist"_s, QJsonArray()},
                      {u"createdAt"_s, clock()}, {u"updatedAt"_s, clock()}};

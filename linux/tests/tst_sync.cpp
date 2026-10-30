@@ -508,6 +508,19 @@ private slots:
         QVERIFY(!w.local.repo.task(id));
     }
 
+    void tasksOfAnotherDeploymentLeaveAndSyncGoesOn()
+    {
+        World w;
+        const QString id = w.server.addElsewhere(u"From the old server"_s, u"2026-10-22"_s);
+        w.engine.round();
+        QVERIFY(w.local.repo.task(id));
+        w.server.becomeAnotherDeployment();
+        const QString kept = w.server.addElsewhere(u"From the new server"_s, u"2026-10-22"_s);
+        QCOMPARE(w.engine.round().kind, SyncStatus::Kind::Synced);
+        QVERIFY(!w.local.repo.task(id));
+        QVERIFY(w.local.repo.task(kept));
+    }
+
     void theWorkerSyncsOnItsOwnThreadAndAgainWhenPoked()
     {
         // A real worker needs a reachable server; without one it reports Offline and keeps the change waiting.
