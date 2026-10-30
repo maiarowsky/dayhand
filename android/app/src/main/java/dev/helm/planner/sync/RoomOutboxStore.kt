@@ -29,7 +29,7 @@ class RoomOutboxStore(private val db: HelmDatabase) : OutboxStore {
         val localId = op.taskLocalId
         val serverId = ((value as? JsonObject)?.get("id") as? JsonPrimitive)?.content
         if (op.mutation == Mutations.ADD && localId != null && serverId != null) db.tasks().setServerId(localId, serverId)
-        if (op.mutation == Mutations.RELEASE && localId != null) {
+        if ((op.mutation == Mutations.RELEASE || op.mutation == Mutations.COMPLETE) && localId != null) {
             db.tasks().byLocalId(localId)?.let { db.tasks().upsert(listOf(it.copy(serverUpdatedAt = null))) }
         }
     }
