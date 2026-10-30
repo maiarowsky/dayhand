@@ -323,6 +323,13 @@ npx convex run apiKeys:create '{"userId":"https://dayhand.example|owner","actor"
 `signing-key.mjs private` refuses to print to a terminal; piping into `npx convex env set NAME`
 (no value argument) keeps the key out of shell history and process lists.
 
+## Upgrading to 0.14.1
+
+0.14.1 lets the app send the local day of an offline completion ([`app:complete` with
+`completedOn`](api.md#projects)), so a repeating task's next occurrence counts from that day. It changes no
+stored schema and needs no migration or new configuration. Deploy it before Dayhand for macOS 0.4.0; an older
+server refuses the argument and the Mac sends the completion again without it, counted from the sync day.
+
 ## Upgrading to 0.14.0
 
 0.14.0 removes labels: a task has only its project ([Projects](projects.md)). Tasks, history entries and

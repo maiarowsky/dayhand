@@ -71,9 +71,10 @@ export const setStatus = mutation({
   handler: async (ctx, a) => setStatusOp(ctx, await appUser(ctx), a),
 });
 export const setNow = mutation({ args: args.setNow, handler: async (ctx, a) => setNowOp(ctx, await appUser(ctx), a) });
+// 0.14.1: the app's local completion day, so an offline completion repeats from that day; not part of complete_task.
 export const complete = mutation({
-  args: args.complete,
-  handler: async (ctx, a) => completeTask(ctx, await appUser(ctx), a),
+  args: { ...args.complete, completedOn: v.optional(v.string()) },
+  handler: async (ctx, { completedOn, ...a }) => completeTask(ctx, await appUser(ctx), a, completedOn),
 });
 export const reschedule = mutation({
   args: args.reschedule,

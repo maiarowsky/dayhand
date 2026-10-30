@@ -90,11 +90,12 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
 - **One now task.** `setNow` clears `isNow` on every other task of the user and moves the
   chosen task to `doing`. Leaving `doing`, completing, archiving or deleting clears it.
 - **Repeat.** Completing a repeating task creates the next occurrence: the first date of the
-  series after the due date that is also after today (a late completion does not create an
-  overdue task), or, for a rule counted from completion, the first date after today. A series
-  ends with `until` or `count`. The logic is one pure module, `convex/lib/repeat.ts`: `advance`
-  for completing and `occurrences` for listing a series ahead; `convex/lib/rrule.ts` maps rules
-  to and from RFC 5545 RRULE ([mcp.md](mcp.md#repeat-rules)). The Android app has the same
+  series after the due date that is also after today, or, for a rule counted from completion, the
+  first date after today. For the app, "today" in both rules is the day it sent as `completedOn`
+  for an offline completion, never later; otherwise a late completion does not create an overdue
+  task. A series ends with `until` or `count`. The logic is one pure module, `convex/lib/repeat.ts`:
+  `advance` for completing and `occurrences` for listing a series ahead; `convex/lib/rrule.ts` maps
+  rules to and from RFC 5545 RRULE ([mcp.md](mcp.md#repeat-rules)). The Android app has the same
   logic in `domain/Recurrence.kt`.
 - **The owner's controls.** Every change an agent makes (an `agent` key or an agent connection)
   first passes `gateAgentWrite` (`convex/lib/agentControls.ts`) inside the same mutation:

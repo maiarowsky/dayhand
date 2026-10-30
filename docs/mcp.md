@@ -561,6 +561,7 @@ change bumps the minor version).
 
 | Version | Changes |
 |---|---|
+| 0.14.1 | App-only `completedOn` in `app:complete`: an offline completion repeats from that day ([api.md](api.md#projects)); no change to `complete_task` or the REST routes. Deploy before Dayhand for macOS 0.4.0. |
 | 0.14.0 | Labels removed: tasks, history and exports have no `labels`, `list_all` neither filters nor searches by them, `add_project` returns `{ project }`. `labels` in `add_task` and `update_task`, and `fromLabel` and `removeLabel`, from older clients are accepted and ignored; a `labels` filter in `list_all` is refused with `invalid_argument`. Stored labels are removed by a migration ([Upgrading to 0.14.0](deploy.md#upgrading-to-0140)). |
 | 0.13.2 | App-only restoration of a confirmed local repeat into its parent's project, including an archived project; no change to `add_task` or REST task creation. Deploy before Android 0.12.0. |
 | 0.13.1 | [Project tools](#projects): `list_projects`, `add_project`, `update_project`, owner-only `delete_project`; [REST project routes](api.md#projects); `dayhand://projects`, active projects in `agent_brief`, project output schemas; OpenAPI documents `POST /import`'s `projectId` |

@@ -25,6 +25,10 @@ latest one below).
 - **Board**: Today and every list as three status columns (To do, In progress, Done) with line icons and counts,
   cards with the project and chips for the day and the checklist, a card menu, drag between columns to
   change the status, and the task panel along the bottom.
+- **Repeating tasks on a paired Mac without network**: completing one shows its next occurrence at once instead of
+  after sync. The server still creates it, from the day the task was done on the Mac (`completedOn`, backend
+  0.14.1), and the next snapshot fills in its criteria and plan; when another device completed the same occurrence
+  first, only the server's next occurrence stays. Behaviour: [docs/macos.md](../docs/macos.md#offline-repeating).
 - **Plan**: the week of Today or of a list as a grid of days and hours, task blocks with the project's colour, a
   block's popover with Open Task, and a folding Tasks drawer of status columns along the bottom: dragging a task
   onto an hour sets its day and time (by the half hour), onto a day's top only its day, onto a project in the

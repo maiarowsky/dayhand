@@ -262,31 +262,164 @@ struct OfflineRepeatTests {
     }
 
     @Test(arguments: [false, true])
-    func withAServerGenerationWaitsForSync(_ offline: Bool) async throws {
+    func withAServerTheNextOccurrenceShowsAtOnceAndBecomesTheServers(_ offline: Bool) async throws {
         let (repo, engine, _) = try setUp(repeatsOnMac: false)
         let t = try await plants(repo)
         let rule = RepeatRule(every: .day, interval: 2, from: .completion)
         try await repo.setRepeat(t.localId, rule)
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        // An agent adds criteria and a plan the Mac has not seen yet.
+        let serverId = try #require(try await repo.task(t.localId)?.serverId)
+        server.editElsewhere(serverId, ["acceptance": [["id": "a1", "text": "Soil is damp", "met": true]], "plan": "Use the can"])
         server.offline = offline
         clock.set(utc("2026-10-24T14:00"))
         try await repo.move(t.localId, to: .done)
-        #expect(try await repo.allTasks().count == 1)
-        #expect(try await repo.task(t.localId)?.repeat == rule)
-        #expect(try await repo.pendingOps().map(\.mutation) == [Mutations.complete])
+
+        let shown = try #require(try await repo.allTasks().first { $0.status == .todo })
+        #expect(shown.dueDate == "2026-10-26")
+        #expect(shown.repeat == rule)
+        #expect(shown.checklist.map(\.done) == [false])
+        #expect(shown.serverId == nil)
+        #expect(try await repo.task(t.localId)?.repeat == rule, "the server keeps the rule and repeats the task itself")
+        let ops = try await repo.pendingOps()
+        #expect(ops.map(\.mutation) == [Mutations.complete])
+        #expect(JSONValue.decode(ops[0].argsJson)?["completedOn"] == "2026-10-24")
         if offline {
             guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
-            #expect(try await repo.allTasks().count == 1)
+            #expect(try await repo.task(shown.localId) != nil)
             clock.advance(4 * HelmDates.dayMs)
         }
         server.offline = false
         guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
-        #expect(server.allTasks.count == 2)
         #expect(try await repo.pendingOps().isEmpty)
-        let next = try #require(try await repo.allTasks().first { $0.status == .todo })
-        #expect(next.dueDate == (offline ? "2026-10-30" : "2026-10-26"))
-        #expect(next.serverId != nil)
-        #expect(try await repo.task(t.localId)?.repeat == rule)
+        #expect(server.allTasks.count == 2)
+        let serverNext = try #require(server.allTasks.first { $0["status"] == "todo" })
+        #expect(serverNext["dueDate"] == "2026-10-26", "counted from the day of completion on the Mac, not of sync")
+        #expect(server.requests.allSatisfy { $0.body["args"]?.array?.first?["shownNext"] == nil })
+        let next = try #require(try await repo.task(shown.localId))
+        #expect(next.serverId == serverNext["id"]?.string)
+        #expect(next.dueDate == "2026-10-26")
+        #expect(next.acceptance == [AcceptanceItem(id: "a1", text: "Soil is damp")])
+        #expect(next.plan == "Use the can")
+        #expect(try await repo.allTasks().count == 2)
+
+        await engine.round()
+        #expect(server.allTasks.count == 2)
+        #expect(try await repo.allTasks().count == 2)
+    }
+
+    @Test func aShownOccurrenceCanBeChangedAndCompletedBeforeSync() async throws {
+        let (repo, engine, _) = try setUp(repeatsOnMac: false)
+        let t = try await repo.add(title: "Daily", dueDate: "2026-10-22", dueTime: nil)
+        try await repo.setRepeat(t.localId, RepeatRule(every: .day))
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        server.offline = true
+        try await repo.complete(t.localId)
+        let first = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.complete(first.localId)
+        let second = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.rename(second.localId, to: "Daily, renamed")
+        #expect(try await repo.allTasks().compactMap(\.dueDate).sorted() == ["2026-10-22", "2026-10-23", "2026-10-24"])
+        server.offline = false
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.allTasks.count == 3)
+        #expect(server.allTasks.filter { $0["status"] == "done" }.count == 2)
+        #expect(server.task(titled: "Daily, renamed")?["dueDate"] == "2026-10-24")
+        let local = try await repo.allTasks()
+        #expect(local.count == 3)
+        #expect(local.allSatisfy { $0.serverId != nil })
+        #expect(try await repo.task(second.localId)?.title == "Daily, renamed")
+    }
+
+    @Test func anOccurrenceAlreadyCompletedElsewhereKeepsOnlyTheServersNext() async throws {
+        let (repo, engine, remote) = try setUp(repeatsOnMac: false)
+        let t = try await repo.add(title: "Daily", dueDate: "2026-10-22", dueTime: nil)
+        try await repo.setRepeat(t.localId, RepeatRule(every: .day))
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let serverId = try #require(try await repo.task(t.localId)?.serverId)
+        // The phone completes the same occurrence first; the Mac has not synced since.
+        _ = await remote.send(mutation: Mutations.complete, args: ["taskId": .string(serverId), "clientId": "phone-1"])
+        try await repo.complete(t.localId)
+        let shown = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.rename(shown.localId, to: "Edited on the Mac")
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.allTasks.count == 2)
+        #expect(try await repo.task(shown.localId) == nil)
+        let local = try await repo.allTasks()
+        #expect(local.count == 2)
+        #expect(local.allSatisfy { $0.serverId != nil })
+        #expect(local.filter { $0.status == .todo }.map(\.title) == ["Daily"])
+    }
+
+    @Test func aRefusedCompletionDropsTheShownOccurrencesAndTheirChanges() async throws {
+        let (repo, engine, _) = try setUp(repeatsOnMac: false)
+        let t = try await repo.add(title: "Daily", dueDate: "2026-10-22", dueTime: nil)
+        try await repo.setRepeat(t.localId, RepeatRule(every: .day))
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        let serverId = try #require(try await repo.task(t.localId)?.serverId)
+        server.editElsewhere(serverId, ["deletedAt": .of(clock.now)])
+        try await repo.complete(t.localId)
+        let first = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.complete(first.localId)
+        let second = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.rename(second.localId, to: "Renamed")
+        let unrelated = try await repo.add(title: "Unrelated", dueDate: nil, dueTime: nil)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(Set(try await repo.allTasks().map(\.localId)) == [t.localId, unrelated.localId])
+        #expect(server.allTasks.count == 2)
+        #expect(server.task(titled: "Daily")?["deletedAt"] != nil)
+    }
+
+    @Test func aSnapshotReadWhileTheCompletionWaitsKeepsTheShownOccurrence() async throws {
+        let (repo, engine, _) = try setUp(repeatsOnMac: false)
+        let t = try await plants(repo)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.complete(t.localId)
+        let shown = try #require(try await repo.allTasks().first { $0.status == .todo })
+        clock.advance(SnapshotMerger.unseenGraceMs * 2)
+        server.failNextMutation = true
+        guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
+        #expect(try await repo.task(shown.localId) != nil)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.task(shown.localId)?.serverId != nil)
+        #expect(try await repo.allTasks().count == 2)
+    }
+
+    @Test func aLostAnswerWithASnapshotBeforeTheRetryLeavesOneNextOccurrence() async throws {
+        let (repo, engine, _) = try setUp(repeatsOnMac: false)
+        let t = try await plants(repo)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.complete(t.localId)
+        let shown = try #require(try await repo.allTasks().first { $0.status == .todo })
+        try await repo.rename(shown.localId, to: "Water the plants, renamed")
+        server.loseNextAnswer = true
+        guard case .offline = await engine.round() else { Issue.record("expected offline"); return }
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.allTasks.count == 2)
+        #expect(server.task(titled: "Water the plants, renamed") != nil)
+        let local = try await repo.allTasks()
+        #expect(local.count == 2)
+        #expect(Set(local.compactMap(\.serverId)).count == 2)
+        #expect(local.contains { $0.title == "Water the plants, renamed" })
+    }
+
+    @Test func aServerOlderThanTheCompletionDayStillTakesTheCompletion() async throws {
+        let (repo, engine, _) = try setUp(repeatsOnMac: false)
+        server.takesCompletedOn = false
+        let t = try await plants(repo)
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        try await repo.complete(t.localId)
+        let shown = try #require(try await repo.allTasks().first { $0.status == .todo })
+        guard case .synced = await engine.round() else { Issue.record("expected synced"); return }
+        #expect(try await repo.pendingOps().isEmpty)
+        #expect(server.allTasks.count == 2)
+        #expect(server.allTasks.filter { $0["status"] == "done" }.count == 1)
+        #expect(try await repo.task(shown.localId)?.serverId != nil)
+        #expect(try await repo.allTasks().count == 2)
     }
 
     @Test(arguments: ["trash", "purge"], [false, true])

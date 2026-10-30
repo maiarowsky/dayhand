@@ -75,6 +75,7 @@ public struct OutboxProcessor: Sendable {
     /// server id of the task's project.
     private func argsFor(_ op: OutboxOp) async throws -> Prepared {
         guard case .object(var args) = JSONValue.decode(op.argsJson) else { return .refuse("unreadable change") }
+        args.removeValue(forKey: Mutations.shownNext)
         if let reason = try await resolveProject(op, &args) { return .refuse(reason) }
         guard let localId = op.taskLocalId, op.mutation != Mutations.add else { return .send(.object(args)) }
         guard let serverId = try await store.serverIdOf(localId) else { return .refuse("task never reached the server") }

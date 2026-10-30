@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "vitest";
 import { api } from "../convex/_generated/api";
 import type { RepeatRule } from "../convex/lib/validators";
+import { localDate } from "../convex/lib/dates";
 import { appClient } from "./helpers";
 
 const day = "2026-10-20";
@@ -76,4 +77,17 @@ test("a long-disconnected phone restores the occurrence calculated before until,
   const next = await f.client.mutation(api.app.add, f.input);
   expect(next).toMatchObject({ projectId: f.project.id, dueDate: "2026-10-21", repeat: { until: "2026-10-22" } });
   expect(await f.client.query(api.app.listProjects, {})).toEqual([f.archived]);
+});
+
+test("an app completion made offline repeats from its own day, never from a day after today", async () => {
+  const { client } = await appClient();
+  const { timezone } = await client.query(api.app.getSettings, {});
+  const today = localDate(Date.now(), timezone);
+  const plus = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  const rule: RepeatRule = { every: "day", interval: 2, from: "completion" };
+  for (const [completedOn, expected] of [[plus(today, -3), plus(today, -1)], [plus(today, 1), plus(today, 2)], ["not a day", plus(today, 2)]]) {
+    const task = await client.mutation(api.app.add, { title: "Water", repeat: rule });
+    const { next } = await client.mutation(api.app.complete, { taskId: task.id, clientId: randomUUID(), completedOn });
+    expect(next).toMatchObject({ dueDate: expected, repeat: rule });
+  }
 });

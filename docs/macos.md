@@ -149,20 +149,31 @@ version before announcing it.
 
 ## Offline repeating
 
-The Mac creates a repeating task's next occurrence locally only when it has no server (**Not now**, disconnected
-or signed out). It clears the completed task's rule before sending completion, then uploads the locally created
-occurrence, so connecting a server later does not also generate an occurrence for that completion. Retries reuse
-the queued occurrence's `clientId`. If the parent add, rule-clear or completion is permanently refused, its unsent
-generated occurrences are discarded.
+Completing a repeating task shows its next occurrence at once, with or without a network.
+
+**Paired Mac** (a server is connected, reachable or not): the server still creates the next occurrence. The Mac
+shows its own copy straight away and queues only the completion, with the local day (`completedOn`, backend
+0.14.1). When the server answers, the copy becomes the server's occurrence: the next snapshot fills in the
+server's fields, criteria and plan included, also when an agent changed them in the meantime. A
+completion-anchored rule counts from the day the task was done on the Mac, not from the day it syncs. Until then
+the copy can be edited and completed like any task; those changes are sent after the completion. When the server
+creates no occurrence (another device completed the same occurrence first), the copy and the changes made to it go,
+and the server's occurrence is kept: one completion, one next occurrence. When the server refuses the completion
+(the task was trashed or purged elsewhere), the copy goes too, with the copies made from it. A server older than
+0.14.1 refuses `completedOn`; the completion is then sent again without it and counted from the sync day.
+
+**Without a server** (**Not now**, disconnected or signed out): the Mac creates the next occurrence itself. It
+clears the completed task's rule before sending completion, then uploads the locally created occurrence, so
+connecting a server later does not also generate an occurrence for that completion. Retries reuse the queued
+occurrence's `clientId`. If the parent add, rule-clear or completion is permanently refused, its unsent generated
+occurrences are discarded.
 
 Known limitations:
 
-- A paired Mac without network queues completion but creates no next occurrence until it syncs; a
-  completion-anchored rule then counts from the sync date, not the local completion date.
-- A locally created next occurrence does not copy agent work (criteria, plan, proof, dependencies, blocked reason,
-  claim): those fields are read-only on the Mac.
-- Completing the same cached occurrence on two devices before sync can yield two next occurrences, as on Android;
-  this release adds no cross-device correlation protocol.
+- Without a server, a locally created next occurrence does not copy agent work (criteria, plan, proof,
+  dependencies, blocked reason, claim): those fields are read-only on the Mac.
+- Without a server, completing the same cached occurrence on two devices before sync can yield two next
+  occurrences, as on Android.
 
 ## Agent work and settings on the Mac
 
