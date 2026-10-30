@@ -292,6 +292,24 @@ describe("time-boxed claims", () => {
     await Promise.all([first.close(), second.close(), cli.close()]);
   });
 
+  test("a retried release that changed nothing does not end a claim taken since", async () => {
+    const { app, first, second } = await team();
+    const task = await callTool(first, "add_task", { title: "Review the contract" });
+    await callTool(first, "claim_task", { taskId: task.id });
+    await callTool(first, "release_task", { taskId: task.id });
+    // The phone's queued release arrives after the agent's own: nothing to release, and its answer is lost.
+    const release = { taskId: task.id, clientId: "phone-release-1" };
+    expect((await app.mutation(api.app.release, release)).claimedBy).toBeUndefined();
+    await callTool(second, "claim_task", { taskId: task.id });
+
+    const retried = await app.mutation(api.app.release, release);
+    expect(retried.claimedBy?.name).toBe("second");
+    const { task: current, history } = await callTool(second, "get_task", { taskId: task.id });
+    expect(current.claimedBy.name).toBe("second");
+    expect(history.map((h: any) => `${h.action} by ${h.actor}`)).toEqual(["create by agent", "claim by agent", "release by agent", "claim by agent"]);
+    await Promise.all([first.close(), second.close()]);
+  });
+
   test("completing ends the claim; done, archived and trashed tasks cannot be claimed", async () => {
     const agent = await mcpClient(await createKey(newUserId(), "builder", "agent"));
     const task = await callTool(agent, "add_task", { title: "Fix the footer" });
