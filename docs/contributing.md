@@ -13,6 +13,7 @@ change, signing off your commits, the commit format and the tests each part need
 | `android/` | the Android app (Kotlin, Compose) | [android/README.md](../android/README.md) |
 | `macos/` | Dayhand for macOS (Swift, SwiftUI) | [macos/README.md](../macos/README.md) |
 | `linux/` | Dayhand for Linux (Qt 6, QML, C++) | [linux/README.md](../linux/README.md) |
+| `herdr/` | the Herdr plugin: tasks for agent panes, agent state in the task, `dayhand ui` | [herdr/README.md](../herdr/README.md) |
 | `packaging/` | the Arch Linux package and the Homebrew formula template | |
 | `docs/` | these pages, the JSON schemas of `--json` and the MCP results, the Agent Skill | below |
 | `man/` | the manual pages, generated from the CLI | |
