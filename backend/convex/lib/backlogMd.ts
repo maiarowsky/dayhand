@@ -86,6 +86,8 @@ export function statusFor(status: string | undefined, statuses: string[]): { sta
 // ---- Reading ----
 
 const MARKER = /^\s*<!--\s*(SECTION:[A-Z_]+|AC|DOD):(BEGIN|END)\s*-->\s*$/;
+/** A marker line, or one escaped by a backslash after "<!" per level, as section text is written. */
+const MARKER_TEXT = /^(\s*<!)(\\*--\s*(?:SECTION:[A-Z_]+|AC|DOD):(?:BEGIN|END)\s*-->\s*)$/;
 const CHECKBOX = /^\s*[-*]\s+\[([ xX])\]\s+(?:#\d+\s+)?(.*\S)\s*$/;
 const HEADING = /^##\s+(.+?)\s*#*\s*$/;
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
@@ -100,14 +102,6 @@ function fenceOf(line: string, current: string | null): string | null {
 
 type Section = { title: string; text: string };
 
-function closesBeforeNextMarker(lines: string[], from: number, fence: string): boolean {
-  for (const line of lines.slice(from)) {
-    if (MARKER.test(line)) return false;
-    if (fenceOf(line, fence) === null) return true;
-  }
-  return false;
-}
-
 /** The text before the first "## " heading and each "## " section, without Backlog.md's markers. */
 function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   const sections: Section[] = [];
@@ -115,20 +109,16 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
   const preamble: string[] = [];
   let fence: string | null = null;
   let scope: string | null = null;
-  const lines = body.split("\n");
-  for (const [index, line] of lines.entries()) {
+  for (const line of body.split("\n")) {
     const wasFenced = fence !== null;
     fence = fenceOf(line, fence);
-    const marker = MARKER.exec(line);
-    if (marker && !wasFenced && !fence && scope === null && marker[2] === "BEGIN") {
+    const marker = wasFenced || fence ? null : MARKER.exec(line);
+    if (marker && scope === null && marker[2] === "BEGIN") {
       scope = marker[1]!;
       continue;
     }
-    // The section's END marker closes it even inside a code fence left open, as Backlog.md reads it;
-    // inside a fence that closes before the next marker it is the fence's text.
-    if (marker && marker[1] === scope && marker[2] === "END" && !(fence && closesBeforeNextMarker(lines, index + 1, fence))) {
+    if (marker && marker[1] === scope && marker[2] === "END") {
       scope = null;
-      fence = null;
       continue;
     }
     const heading = wasFenced || fence || scope ? null : HEADING.exec(line);
@@ -137,7 +127,7 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
       current = { title: heading[1]!, lines: [] };
       continue;
     }
-    (current ? current.lines : preamble).push(line);
+    (current ? current.lines : preamble).push(line.replace(MARKER_TEXT, (_, start: string, rest: string) => start + rest.replace(/^\\/, "")));
   }
   if (current) sections.push({ title: current.title, text: current.lines.join("\n").trim() });
   return { preamble: preamble.join("\n").trim(), sections };
@@ -271,9 +261,13 @@ export function pathOf(task: Pick<TaskFile, "id" | "place" | "title">): string {
   return `${FOLDERS[task.place]}/${id} - ${slugOf(task.title, budget)}.md`;
 }
 
+/** A section whose text stays inside it: a code fence left open is closed and marker lines are escaped. */
 function block(title: string, marker: string | null, body: string | undefined): string[] {
   if (!body?.trim()) return [];
-  return marker ? [`## ${title}`, "", `<!-- SECTION:${marker}:BEGIN -->`, body.trim(), `<!-- SECTION:${marker}:END -->`, ""] : [`## ${title}`, "", body.trim(), ""];
+  const lines = body.trim().split("\n").map((line) => line.replace(MARKER_TEXT, "$1\\$2"));
+  const fence = lines.reduce<string | null>((open, line) => fenceOf(line, open), null);
+  const text = (fence ? [...lines, fence] : lines).join("\n");
+  return marker ? [`## ${title}`, "", `<!-- SECTION:${marker}:BEGIN -->`, text, `<!-- SECTION:${marker}:END -->`, ""] : [`## ${title}`, "", text, ""];
 }
 
 /** One file: the header in Backlog.md's key order, then the sections that have something in them. */
