@@ -125,7 +125,7 @@ private slots:
         class Source final : public SnapshotSource {
         public:
             Snapshot value{{}, {u"Europe/London"_s, u"07:30"_s, {10}}};
-            Result snapshot() override { return {value, false, {}}; }
+            Result snapshot(const QStringList &) override { return {value, false, {}}; }
         } source;
         SyncEngine engine(repo, sender, source, [] { return now; });
         QCOMPARE(engine.round().kind, SyncStatus::Kind::Offline);

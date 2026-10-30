@@ -7,7 +7,7 @@ public protocol MutationSender: Sendable {
 
 /// Reads the whole plan for the merge.
 public protocol SnapshotSource: Sendable {
-    func snapshot() async -> Result<Snapshot, FeedError>
+    func snapshot(knownTaskIds: [String]) async -> Result<Snapshot, FeedError>
 }
 
 /// Runs one query of the app layer, e.g. `app:getTask`.
@@ -25,7 +25,8 @@ public enum FeedError: Error, Hashable, Sendable {
  * official `ConvexHttpClient` make. A function that failed answers 560 with `{status: "error"}`. The app JWT comes
  * from [tokens]; a refused one is refreshed and the call tried once more. Live updates come from polling
  * [snapshot]: `listAll`, `listTrash`, `getSettings` and `listProjects` (which a server older than 0.13.0 does not
- * have: its snapshot then has no projects, and nothing else changes).
+ * have: its snapshot then has no projects, and nothing else changes). A known task missing from both lists is read
+ * once more with `getTask`: it may have moved between the trash and the active list while the two were read.
  */
 public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
     public static let udfFailed = 560
@@ -50,7 +51,7 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
         await call("/api/query", path: path, args: args)
     }
 
-    public func snapshot() async -> Result<Snapshot, FeedError> {
+    public func snapshot(knownTaskIds: [String] = []) async -> Result<Snapshot, FeedError> {
         let tasks = await query(RemoteJSON.queryTasks, args: RemoteJSON.tasksArgs)
         guard case .applied(let taskList) = tasks else { return .failure(Self.feedError(tasks)) }
         let trash = await query(RemoteJSON.queryTrash)
@@ -63,7 +64,22 @@ public struct ConvexRemote: MutationSender, SnapshotSource, QueryRunner {
         case .rejected(let message) where RemoteJSON.isMissingFunction(message): projectList = nil
         case let other: return .failure(Self.feedError(other))
         }
-        return .success(RemoteJSON.snapshot(tasks: taskList, trash: trashList, settings: settingsValue, projects: projectList))
+        var snapshot = RemoteJSON.snapshot(tasks: taskList, trash: trashList, settings: settingsValue, projects: projectList)
+        let missing = Set(knownTaskIds).subtracting(snapshot.tasks.map(\.id))
+        for id in missing.sorted() {
+            switch await query(RemoteJSON.queryTask, args: ["taskId": .string(id)]) {
+            case .applied(let value):
+                guard let task = value["task"].flatMap(RemoteJSON.task), task.id == id else {
+                    return .failure(.failed("unreadable task"))
+                }
+                snapshot.tasks.append(task)
+            case .rejected(let message) where message.contains("Task \(id) not found"):
+                break
+            case let other:
+                return .failure(Self.feedError(other))
+            }
+        }
+        return .success(snapshot)
     }
 
     private func call(_ endpoint: String, path: String, args: JSONValue) async -> SendResult {

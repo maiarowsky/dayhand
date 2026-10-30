@@ -206,7 +206,8 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         case "app:listApprovals": return success(["approvals": .array(approvals)])
         case "app:listProposals": return success(.array(proposals))
         case "app:getTask":
-            guard let id = args["taskId"]?.string, let task = tasks[id] else { return failure("Task not found") }
+            let id = args["taskId"]?.string ?? ""
+            guard let task = tasks[id] else { return failure("Task \(id) not found") }
             return success(["task": task, "history": .array(events[id] ?? [])])
         default: return failure("unknown query \(path)")
         }
@@ -461,5 +462,24 @@ final class FakeServer: HTTPTransport, @unchecked Sendable {
         ]
         event["by"] = .string(actor.0 == "agent" && actor.1 != nil ? "agent: \(actor.1!)" : actor.0)
         events[id, default: []].append(.object(event))
+    }
+}
+
+/// Restores a task elsewhere right after the next `app:listAll` answer, before `app:listTrash` is read.
+actor RestoringTaskTransport: HTTPTransport {
+    private let server: FakeServer
+    private var taskId: String?
+
+    init(_ server: FakeServer) { self.server = server }
+
+    func restoreAfterNextActiveQuery(_ id: String) { taskId = id }
+
+    func post(_ url: URL, json: Data, bearer: String?) async throws -> HTTPReply {
+        let reply = try await server.post(url, json: json, bearer: bearer)
+        if let id = taskId, JSONValue.decode(json)?["path"]?.string == RemoteJSON.queryTasks {
+            taskId = nil
+            server.editElsewhere(id, ["deletedAt": .null])
+        }
+        return reply
     }
 }

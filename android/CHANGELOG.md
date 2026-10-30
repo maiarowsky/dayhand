@@ -15,6 +15,13 @@ called Helm until 0.9.0.
   then the box fills, the title is struck through and the row fades (360 ms) before the rows under it move
   up. With the phone's animations off the ticked row stays still for a moment instead.
 
+### Fixed
+
+- A task restored from the trash on another device while the phone read its tasks could vanish from the
+  phone until the next change, with its cached history: the active tasks and the trash are two separate
+  queries, and a task that moved between them was in neither. A known task both lists miss is now read
+  once more (`app:getTask`); it goes only when the server says it no longer exists.
+
 ### Changed
 
 - Task details are as compact as they go: status, due day and project are three chips in one row (the time

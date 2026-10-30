@@ -45,6 +45,13 @@ latest one below).
   `projectId`, with no retry loop. Project changes and new assignments say "Needs backend 0.13.0 or later",
   localized, as does the status line.
 
+### Fixed
+
+- A task restored from the trash on another device during a poll could leave the Mac until the next poll, with its
+  cached history and project: `app:listAll` and `app:listTrash` are separate queries, and a task that moved between
+  them was in neither. A known task both lists miss is now read once more (`app:getTask`); it goes only when the
+  server says it no longer exists.
+
 ### Removed
 
 - **Labels** (the free tags on a task): Dayhand keeps only projects. The Labels section of the sidebar, the label

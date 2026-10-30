@@ -57,7 +57,7 @@ HttpReply FakeServer::post(const QUrl &url, const QByteArray &json, const QStrin
     const QString function = body[u"path"].toString();
     const QJsonObject args = body[u"args"][0].toObject();
     if (path == u"/api/query")
-        return query(function);
+        return query(function, args);
     const HttpReply answer = mutation(function, args);
     if (loseNextAnswer) {
         loseNextAnswer = false;
@@ -80,6 +80,12 @@ void FakeServer::editElsewhere(const QString &id, const QJsonObject &fields)
         for (auto it = fields.begin(); it != fields.end(); ++it)
             task.insert(it.key(), it.value());
     });
+}
+
+void FakeServer::purge(const QString &id)
+{
+    tasks.remove(id);
+    order.removeAll(id);
 }
 
 QList<QJsonObject> FakeServer::allTasks() const
@@ -127,10 +133,16 @@ HttpReply FakeServer::token(const QJsonValue &body)
                        {u"expiresAt"_s, clock() + 3'600'000}});
 }
 
-HttpReply FakeServer::query(const QString &path)
+HttpReply FakeServer::query(const QString &path, const QJsonObject &args)
 {
     if (path == u"app:getSettings")
         return success(settings);
+    if (path == u"app:getTask") {
+        const QString id = args[u"taskId"].toString();
+        if (!tasks.contains(id))
+            return failure(u"Task %1 not found"_s.arg(id));
+        return success(QJsonObject{{u"task"_s, tasks.value(id)}, {u"history"_s, QJsonArray()}});
+    }
     if (path != u"app:listAll" && path != u"app:listTrash")
         return failure(u"unknown query "_s + path);
     const bool trash = path == u"app:listTrash";
@@ -138,6 +150,10 @@ HttpReply FakeServer::query(const QString &path)
     for (const QJsonObject &task : allTasks()) {
         if (task.contains(u"deletedAt") == trash)
             list.append(task);
+    }
+    if (!trash && !restoreAfterNextActiveQuery.isEmpty()) {
+        change(restoreAfterNextActiveQuery, [](QJsonObject &t) { t.remove(u"deletedAt"); });
+        restoreAfterNextActiveQuery.clear();
     }
     return success(list);
 }

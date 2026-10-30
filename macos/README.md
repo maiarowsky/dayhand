@@ -111,7 +111,8 @@ click / quick add ──> TaskRepository: the row and its mutation in the outbox
                                      │                                       (screens update at once)
 SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST /api/mutation, clientId)
                                  then app:listAll + app:listTrash + app:getSettings + app:listProjects
-                                 (POST /api/query)
+                                 (POST /api/query), and app:getTask for a known task both lists miss
+                                 (it may have moved between the trash and the active list in between)
                                  ──> ProjectMerger (the server's projects win), then SnapshotMerger (last write
                                      wins per field; the settings fields a waiting app:updateSettings sets keep their
                                      local value) ──> the database

@@ -15,7 +15,9 @@ is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is i
   **Archive** and **Move to Trash** keep the selected details open; a trashed task is read-only until **Restore**.
   Per-task reminder/repeat/link editors are not part of this version.
 - **Trash**: **⋯ → Trash** lists deleted tasks, newest deletion first, with the permanent-deletion date (30 days
-  after deletion) and **Restore**. **Back** returns to Today; the server's next snapshot removes purged tasks.
+  after deletion) and **Restore**. **Back** returns to Today; the server's next snapshot removes purged tasks (a
+  known task missing from both the active list and the trash is read once more with `app:getTask` first, since it
+  may have been restored or trashed between the two queries).
 - **Quick add** at the top of Today and as a small window of its own for a keyboard binding
   (`dayhand-qt --quick-add`). A date phrase at the end of the line sets the day and time, with the grammar of
   `dayhand` (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st". The line below the field

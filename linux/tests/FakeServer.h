@@ -50,6 +50,10 @@ public:
     /// A task added by someone else (an agent through MCP); its id.
     QString addElsewhere(const QString &title, const QString &dueDate = {});
     void editElsewhere(const QString &id, const QJsonObject &fields);
+    /// The task leaves the server for good, as the daily purge of the trash does.
+    void purge(const QString &id);
+    /// This task leaves the trash elsewhere right after the next `app:listAll` answer, before `app:listTrash` is read.
+    QString restoreAfterNextActiveQuery;
     QList<QJsonObject> allTasks() const;
     std::optional<QJsonObject> taskTitled(const QString &title) const;
     QStringList mutationsSent() const;
@@ -58,7 +62,7 @@ public:
 private:
     HttpReply pair(const QJsonValue &body);
     HttpReply token(const QJsonValue &body);
-    HttpReply query(const QString &path);
+    HttpReply query(const QString &path, const QJsonObject &args);
     HttpReply mutation(const QString &path, const QJsonObject &args);
     bool applyChange(const QString &path, const QString &id, const QJsonObject &args);
     QJsonObject add(const QJsonObject &args);

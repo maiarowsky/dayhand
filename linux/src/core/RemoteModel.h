@@ -71,6 +71,7 @@ namespace RemoteJson {
 inline const QString queryTasks = QStringLiteral("app:listAll");
 inline const QString querySettings = QStringLiteral("app:getSettings");
 inline const QString queryTrash = QStringLiteral("app:listTrash");
+inline const QString queryTask = QStringLiteral("app:getTask");
 
 /// Arguments of [queryTasks]: everything except the trash, done and archived included.
 QJsonValue tasksArgs();
