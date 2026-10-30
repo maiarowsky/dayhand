@@ -93,7 +93,7 @@ export async function sendReturn(ctx: MutationCtx, identity: Identity, task: Doc
 /** accept_proposal: the task joins the plan as it is. */
 export async function acceptProposal(ctx: MutationCtx, identity: Identity, input: Args<"acceptProposal">) {
   ownerOnly(identity, "accept proposals");
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = proposal(await loadTask(ctx, identity.userId, input.taskId));
   return toTask(await patchTask(ctx, identity, task, "accept", { proposedAt: undefined }, input.clientId));
@@ -102,7 +102,7 @@ export async function acceptProposal(ctx: MutationCtx, identity: Identity, input
 /** reject_proposal: the proposal goes to the trash (30 days, restorable) and its return webhooks hear "rejected". */
 export async function rejectProposal(ctx: MutationCtx, identity: Identity, input: Args<"rejectProposal">) {
   ownerOnly(identity, "reject proposals");
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.taskId);
   if (replayed) return toTask(replayed);
   const task = proposal(await loadTask(ctx, identity.userId, input.taskId));
   const reason = input.reason?.trim().slice(0, LIMITS.reason) || undefined;
@@ -119,7 +119,7 @@ const union = <T>(a: T[], b: T[], key: (item: T) => string) => [...new Map([...a
  */
 export async function mergeProposal(ctx: MutationCtx, identity: Identity, input: Args<"mergeProposal">) {
   ownerOnly(identity, "merge proposals");
-  const replayed = await replay(ctx, identity.userId, input.clientId);
+  const replayed = await replay(ctx, identity.userId, input.clientId, input.intoTaskId);
   if (replayed) {
     // A retry: the same answer as the first time, the target and the merged proposal.
     const events = await ctx.db

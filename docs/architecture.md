@@ -112,7 +112,9 @@ dayhand CLI ─(API key)─> /calendar/feed* (calendar.ts) ──┘
   fields. History is shown as `app`, `cli` or `agent: <key or client name>`. Settings, API key and device changes are recorded without a task id.
 - **Idempotency.** Every mutation accepts an optional `clientId`. Adding a task with a
   `clientId` that already exists returns the existing task; any other operation whose
-  `clientId` is already in the history is not applied again. The Android outbox relies on this.
+  `clientId` is already in the history is not applied again. A task change that changed nothing
+  still records its `clientId`, without a task id so it stays out of the task's history, so its
+  retry cannot undo a change made since. The Android outbox relies on this.
 
 ## Projects
 
