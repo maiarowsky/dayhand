@@ -86,6 +86,8 @@ export function statusFor(status: string | undefined, statuses: string[]): { sta
 // ---- Reading ----
 
 const MARKER = /^\s*<!--\s*(SECTION:[A-Z_]+|AC|DOD):(BEGIN|END)\s*-->\s*$/;
+/** A marker line, or one escaped by a backslash after "<!" per level, as section text is written. */
+const MARKER_TEXT = /^(\s*<!)(\\*--\s*(?:SECTION:[A-Z_]+|AC|DOD):(?:BEGIN|END)\s*-->\s*)$/;
 const CHECKBOX = /^\s*[-*]\s+\[([ xX])\]\s+(?:#\d+\s+)?(.*\S)\s*$/;
 const HEADING = /^##\s+(.+?)\s*#*\s*$/;
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
@@ -125,7 +127,7 @@ function sectionsOf(body: string): { preamble: string; sections: Section[] } {
       current = { title: heading[1]!, lines: [] };
       continue;
     }
-    (current ? current.lines : preamble).push(line);
+    (current ? current.lines : preamble).push(line.replace(MARKER_TEXT, (_, start: string, rest: string) => start + rest.replace(/^\\/, "")));
   }
   if (current) sections.push({ title: current.title, text: current.lines.join("\n").trim() });
   return { preamble: preamble.join("\n").trim(), sections };
@@ -259,9 +261,13 @@ export function pathOf(task: Pick<TaskFile, "id" | "place" | "title">): string {
   return `${FOLDERS[task.place]}/${id} - ${slugOf(task.title, budget)}.md`;
 }
 
+/** A section whose text stays inside it: a code fence left open is closed and marker lines are escaped. */
 function block(title: string, marker: string | null, body: string | undefined): string[] {
   if (!body?.trim()) return [];
-  return marker ? [`## ${title}`, "", `<!-- SECTION:${marker}:BEGIN -->`, body.trim(), `<!-- SECTION:${marker}:END -->`, ""] : [`## ${title}`, "", body.trim(), ""];
+  const lines = body.trim().split("\n").map((line) => line.replace(MARKER_TEXT, "$1\\$2"));
+  const fence = lines.reduce<string | null>((open, line) => fenceOf(line, open), null);
+  const text = (fence ? [...lines, fence] : lines).join("\n");
+  return marker ? [`## ${title}`, "", `<!-- SECTION:${marker}:BEGIN -->`, text, `<!-- SECTION:${marker}:END -->`, ""] : [`## ${title}`, "", text, ""];
 }
 
 /** One file: the header in Backlog.md's key order, then the sections that have something in them. */

@@ -268,6 +268,23 @@ describe("writing", () => {
     expect(parsed.extra[0]).toContain("- [ ] Example\n~~~\n## Final Summary\n- [x] Another example\n~~~~");
   });
 
+  test("a code fence left open in a section is closed before that section's END marker", () => {
+    const description = "Run this:\n\n````bash\nnpm test";
+    const finalSummary = "Done.";
+    const back = readTask(writeTask({ ...file, description, finalSummary }));
+    expect(back).toMatchObject({ description: `${description}\n\`\`\`\``, acceptance: file.acceptance, plan: file.plan, finalSummary, extra: [`## Implementation Notes\n\n${file.notes}`] });
+  });
+
+  test.each([
+    ["a literal END marker in a closed code fence", "Example:\n\n```\n<!-- SECTION:DESCRIPTION:END -->\n```"],
+    ["END, a heading and BEGIN in a closed code fence", "Example:\n\n```\n<!-- SECTION:DESCRIPTION:END -->\n\n## Implementation Plan\n\n<!-- SECTION:PLAN:BEGIN -->\n```"],
+    ["marker lines outside a code fence, escaped or not", "<!-- SECTION:DESCRIPTION:END -->\n## Implementation Plan\n  <!\\-- SECTION:PLAN:BEGIN -->\n<!\\\\-- AC:END -->"],
+  ])("%s stays the section's text", (_, description) => {
+    const finalSummary = "Done.";
+    const back = readTask(writeTask({ ...file, description, finalSummary }));
+    expect(back).toMatchObject({ description, acceptance: file.acceptance, plan: file.plan, finalSummary, extra: [`## Implementation Notes\n\n${file.notes}`] });
+  });
+
   test("an archived draft stays in the archived-draft classification", () => {
     const written = writeTask({ ...file, place: "archived-draft" });
     expect(written.path).toBe("archive/drafts/task-12 - Renew-the-domain-DNS.md");

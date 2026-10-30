@@ -178,6 +178,10 @@ exported files, including `config.yml`; it does not reconcile another project's 
 or delete unrelated files. Destination, task-directory and file symlinks are refused, including
 dangling file symlinks.
 
+Text stays inside its section: a code block left open is closed before the section's end marker,
+and a line that reads as a section marker is written with a backslash after `<!` (`<!\-- …`),
+which import removes.
+
 An export imported into another Dayhand account keeps titles, statuses, criteria, plan,
 dependencies and link URLs when the flattened fields fit the import limits. Proof links and check
 results become text in the final summary, not structured proof fields; the note gains the checklist
