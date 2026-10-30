@@ -60,18 +60,23 @@ enum PlanGrid {
     }
 
     /// Side by side lanes for tasks whose hour blocks overlap: each task's lane and the lanes of its group, by
-    /// `localId`.
+    /// `localId`. A task takes the first lane free at its start, so a chain of tasks half an hour apart keeps two lanes.
     static func lanes(_ tasks: [TaskItem]) -> [String: (lane: Int, of: Int)] {
         let timed = tasks.compactMap { task in task.dueTime.flatMap(offset).map { (task, $0) } }.sorted { $0.1 < $1.1 }
         var result: [String: (lane: Int, of: Int)] = [:]
-        var group: [(TaskItem, CGFloat)] = []
+        var group: [(id: String, lane: Int)] = []
+        var ends: [CGFloat] = []
         func close() {
-            for (index, item) in group.enumerated() { result[item.0.localId] = (index, group.count) }
+            for item in group { result[item.id] = (item.lane, ends.count) }
             group = []
+            ends = []
         }
-        for item in timed {
-            if let last = group.last, item.1 >= last.1 + hourHeight { close() }
-            group.append(item)
+        for (task, top) in timed {
+            if let latest = ends.max(), top >= latest { close() }
+            let lane = ends.firstIndex { top >= $0 } ?? ends.count
+            if lane == ends.count { ends.append(0) }
+            ends[lane] = top + hourHeight
+            group.append((task.localId, lane))
         }
         close()
         return result
