@@ -79,11 +79,13 @@ Keep the file readable only by you: `chmod 600 "$(herdr plugin config-dir dayhan
 
 | Line | Meaning |
 |---|---|
-| `DAYHAND_API_KEY`, `DAYHAND_URL`, `DAYHAND_PROFILE` | Passed to `dayhand`, `dayhand ui` included, as in [the command reference](../docs/cli.md#environment) |
+| `DAYHAND_API_KEY`, `DAYHAND_URL`, `DAYHAND_PROFILE` | Passed to `dayhand`, as in [the command reference](../docs/cli.md#environment); `dayhand ui` gets only `DAYHAND_URL` and `DAYHAND_PROFILE` |
 | `DAYHAND_HERDR_ASK=1` | When an agent with a task becomes blocked, also send an approval request (`dayhand ask`) so the phone tells you; it expires after 2 hours |
 
-Only lines that start with `DAYHAND_` are read. The approval request only tells you; answering it
-does not answer the agent, which still waits in its pane.
+Only lines that start with `DAYHAND_` are read. Today in Herdr (`dayhand ui`) never uses
+`DAYHAND_API_KEY`: it runs as you, with the key from `dayhand login`, so your changes there are
+yours in the history and no agent policy holds them back. The approval request only tells you;
+answering it does not answer the agent, which still waits in its pane.
 
 ## Files
 

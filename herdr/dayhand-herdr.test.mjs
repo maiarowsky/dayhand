@@ -14,7 +14,8 @@ const TASK = { id: "t1", ref: 42, title: "Fix the login" };
 const FAKE_DAYHAND = `#!/usr/bin/env node
 const { appendFileSync } = require("node:fs");
 const args = process.argv.slice(2);
-appendFileSync(process.env.FAKE_LOG, JSON.stringify(args) + "\\n");
+const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.startsWith("DAYHAND_")));
+appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args, env }) + "\\n");
 const replies = {
   show: { task: { ...${JSON.stringify(TASK)}, status: process.env.FAKE_TASK_STATUS } },
   ask: { id: "a" + Date.now(), status: "pending" },
@@ -23,37 +24,39 @@ const replies = {
 if (args.includes("--json")) process.stdout.write(JSON.stringify(replies[args[0]]));
 `;
 
-function setup({ taskStatus = "doing", approvalStatus = "pending" } = {}) {
+function setup({ taskStatus = "doing", approvalStatus = "pending", dotEnv = "DAYHAND_HERDR_ASK=1\n" } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "dayhand-herdr-"));
   const bin = join(dir, "dayhand");
   writeFileSync(bin, FAKE_DAYHAND);
   chmodSync(bin, 0o755);
-  writeFileSync(join(dir, ".env"), "DAYHAND_HERDR_ASK=1\n");
+  writeFileSync(join(dir, ".env"), dotEnv);
   writeFileSync(join(dir, "assignments.json"), JSON.stringify({ [PANE]: { ...TASK, agent: "claude" } }));
-  const log = join(dir, "calls.log");
-  writeFileSync(log, "");
+  const logFile = join(dir, "calls.log");
+  writeFileSync(logFile, "");
   const env = {
-    ...process.env,
+    ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("DAYHAND_"))),
     PATH: `${dir}:${process.env.PATH}`,
     HERDR_PLUGIN_STATE_DIR: dir,
     HERDR_PLUGIN_CONFIG_DIR: dir,
-    FAKE_LOG: log,
+    FAKE_LOG: logFile,
     FAKE_TASK_STATUS: taskStatus,
     FAKE_APPROVAL_STATUS: approvalStatus,
   };
+  const run = (command, extraEnv = {}) => {
+    const result = spawnSync("node", [SCRIPT, command], { encoding: "utf8", env: { ...env, ...extraEnv } });
+    assert.equal(result.status, 0, result.stderr);
+  };
+  const log = () => readFileSync(logFile, "utf8").trim().split("\n").filter(Boolean).map((line) => JSON.parse(line));
   return {
+    run,
     agentStatus(status) {
-      const result = spawnSync("node", [SCRIPT, "event"], {
-        encoding: "utf8",
-        env: {
-          ...env,
-          HERDR_PLUGIN_EVENT: "pane.agent_status_changed",
-          HERDR_PLUGIN_EVENT_JSON: JSON.stringify({ event: "pane.agent_status_changed", data: { pane_id: PANE, agent_status: status, display_agent: "claude" } }),
-        },
+      run("event", {
+        HERDR_PLUGIN_EVENT: "pane.agent_status_changed",
+        HERDR_PLUGIN_EVENT_JSON: JSON.stringify({ event: "pane.agent_status_changed", data: { pane_id: PANE, agent_status: status, display_agent: "claude" } }),
       });
-      assert.equal(result.status, 0, result.stderr);
     },
-    calls: () => readFileSync(log, "utf8").trim().split("\n").filter(Boolean).map((line) => JSON.parse(line)),
+    calls: () => log().map(({ args }) => args),
+    envs: () => log().map(({ env }) => env),
     assignments: () => JSON.parse(readFileSync(join(dir, "assignments.json"), "utf8")),
   };
 }
@@ -90,4 +93,11 @@ test("a task already done is not started again and the pane forgets it", () => {
   plugin.agentStatus("blocked");
   assert.deepEqual(changes(plugin.calls()), []);
   assert.deepEqual(plugin.assignments(), {});
+});
+
+test("Today in Herdr gets the deployment and profile from .env but not the agent key", () => {
+  const plugin = setup({ dotEnv: "DAYHAND_API_KEY=agent-key\nDAYHAND_URL=https://example.invalid\nDAYHAND_PROFILE=work\n" });
+  plugin.run("ui");
+  assert.deepEqual(plugin.calls(), [["ui"]]);
+  assert.deepEqual(plugin.envs(), [{ DAYHAND_URL: "https://example.invalid", DAYHAND_PROFILE: "work" }]);
 });

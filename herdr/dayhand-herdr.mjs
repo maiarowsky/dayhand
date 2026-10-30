@@ -38,10 +38,10 @@ function pluginEnv() {
   return env;
 }
 
-function dayhand(args, { inherit = false } = {}) {
+function dayhand(args, { inherit = false, env = pluginEnv() } = {}) {
   const result = spawnSync("dayhand", args, {
     encoding: "utf8",
-    env: { ...process.env, ...pluginEnv(), ...(inherit ? {} : { DAYHAND_NO_INPUT: "1" }) },
+    env: { ...process.env, ...env, ...(inherit ? {} : { DAYHAND_NO_INPUT: "1" }) },
     stdio: inherit ? "inherit" : ["ignore", "pipe", "pipe"],
   });
   if (result.error) throw new PluginError("Cannot run dayhand: is it installed and on PATH?", { cause: result.error });
@@ -103,9 +103,10 @@ function today() {
   openPane("ui");
 }
 
-// Overlay pane: dayhand ui with the plugin's .env lines.
+// Overlay pane: dayhand ui as the owner, with the key from dayhand login; .env gives only the deployment and profile.
 function ui() {
-  dayhand(["ui"], { inherit: true });
+  const { DAYHAND_URL, DAYHAND_PROFILE } = pluginEnv();
+  dayhand(["ui"], { inherit: true, env: { DAYHAND_URL, DAYHAND_PROFILE } });
 }
 
 function label(task) {
