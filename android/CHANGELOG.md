@@ -20,7 +20,8 @@ called Helm until 0.9.0.
 - A task restored from the trash on another device while the phone read its tasks could vanish from the
   phone until the next change, with its cached history: the active tasks and the trash are two separate
   queries, and a task that moved between them was in neither. A known task both lists miss is now read
-  once more (`app:getTask`); it goes only when the server says it no longer exists.
+  once more (`app:getTask`); it goes only when the server does not know it (no such task, or an id of
+  another server) or it is an agent's proposal restored from the trash, which the plan leaves out.
 
 ### Changed
 

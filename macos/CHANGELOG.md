@@ -50,7 +50,8 @@ latest one below).
 - A task restored from the trash on another device during a poll could leave the Mac until the next poll, with its
   cached history and project: `app:listAll` and `app:listTrash` are separate queries, and a task that moved between
   them was in neither. A known task both lists miss is now read once more (`app:getTask`); it goes only when the
-  server says it no longer exists.
+  server does not know it (no such task, or an id of another server) or it is an agent's proposal restored from the
+  trash, which the plan leaves out.
 
 ### Removed
 
