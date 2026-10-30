@@ -44,6 +44,13 @@ called Helm until 0.9.0.
   backups, sync). The database drops them when the app updates; a change waiting to be sent loses its
   labels, and one that changed only labels is dropped. Projects are unchanged.
 
+### Fixed
+
+- **End the claim** or a completion resent after a lost answer no longer ends a claim an agent took since,
+  when the first send changed nothing on the server (the claim had already ended, or the task was already
+  done). This needs a backend with this fix. A resent completion no longer leaves such a task done on the
+  phone either: the next snapshot shows it as it is on the server, as after **End the claim**.
+
 ## 0.13.3 (unreleased)
 
 ### Changed
