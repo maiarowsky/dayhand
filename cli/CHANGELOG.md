@@ -2,7 +2,7 @@
 
 Versions before 0.13.0 are described in the commit history (`git log -- cli`).
 
-## 0.15.0 (unreleased)
+## 0.15.0 (2026-10-31)
 
 Projects need backend 0.13.0 or later; other features keep their previous minimum versions.
 
@@ -28,6 +28,10 @@ Projects need backend 0.13.0 or later; other features keep their previous minimu
 - `dayhand ui`: marking a task done (Space or `x`) keeps the cursor in place instead of following
   the task to the end of the list. In Today it stays among the open tasks (on the previous one
   after the last).
+- `dayhand login`: the hidden API key prompt disables terminal echo before showing the prompt,
+  so the key is not displayed when pasted immediately.
+- The Herdr plugin launcher finds Node.js and `dayhand` with a minimal `PATH`, including fnm's
+  default Node version and Homebrew installations.
 
 ### Unchanged
 
