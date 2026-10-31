@@ -46,6 +46,12 @@ come in English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese
 Chinese: `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`, `LC_MESSAGES`, `LANG`). The rest
 of the CLI, `--json`, error codes and the MCP tools stay English.
 
+Coming soon: `y` copies the selected task from Today, Board, Week, Trash, agent proposals or task
+details as plain text for a chat: id, title, status, project, due date/time and notes when present.
+It uses `pbcopy` on macOS, `wl-copy`, `xclip` or `xsel` on Linux, and `clip` on Windows, with
+OSC 52 as a fallback (for example over SSH). The terminal must allow OSC 52 clipboard writes;
+that fallback reports sending the text, since the terminal does not confirm copying it.
+
 For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file and the keychain,
 `--json` prints exactly the tool's `structuredContent` (schemas in
 [docs/schemas](../docs/schemas)), errors are one JSON line on stderr, exit codes are distinct

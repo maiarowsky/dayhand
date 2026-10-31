@@ -937,7 +937,7 @@ Print the shell completion script for bash, zsh, fish or powershell (dayhand hel
 .B dayhand ui
 Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)
 .br
-Quick\-add and project\-filter syntax: dayhand help ui. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or \-\-lang) when it is one of en, pl, de, es, fr, pt\-BR, ja, zh\-Hans, else English; date phrases stay English.
+Quick\-add and project\-filter syntax: dayhand help ui. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, y copies the selected task as plain text for a chat, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or \-\-lang) when it is one of en, pl, de, es, fr, pt\-BR, ja, zh\-Hans, else English; date phrases stay English.
 .RS
 .TP
 .B \-\-view <view>
@@ -1201,6 +1201,13 @@ keeps the last data on screen with a red status line when the server cannot be
 reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
 The mouse selects and scrolls (\-\-no\-mouse leaves it to the terminal).
 
+y copies the selected task as plain text for a chat: id, title, status, project,
+due date/time and notes when present. It works in Today, Board, Week, Trash,
+agent proposals and task details without changing the task. It uses pbcopy on
+macOS, wl\-copy/xclip/xsel on Linux and clip on Windows, falling back to OSC 52
+(for example over SSH). The terminal must allow OSC 52 clipboard writes; the
+status reports sending the text because the terminal cannot confirm copying it.
+
 Quick add (a) reads a date phrase at the end or the start of the line:
 "Call the accountant fri 2pm +Home". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
@@ -1231,6 +1238,7 @@ Views:
 
 Tasks:
   a                   Add: Pay rent fri 2pm
+  y                   Copy the selected task as plain text
   Space x             Done / not done (repeats go on)
   s                   Start (doing) / stop (todo)
   n                   Now task, with a resume note

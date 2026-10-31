@@ -12,6 +12,7 @@ export type Effect =
   | { kind: "quit" }
   | { kind: "refresh" }
   | { kind: "detail"; taskId: string }
+  | { kind: "copy"; task: Task }
   | { kind: "add"; text: string; date: string; status?: "doing" }
   | { kind: "complete" | "reopen" | "start" | "stop" | "restore"; task: Task }
   | { kind: "delete"; taskId: string; label: string }
@@ -66,6 +67,7 @@ function normal(state: UiState, name: string, lists: Lists): Result {
   if (moved) return moved;
   const task = selectedTask(state, lists);
   const inTrash = Boolean(task?.deletedAt);
+  if (name === "y") return task ? { state, effect: { kind: "copy", task } } : flash(state, t("flash.noTask"));
   if (state.view === "agents" && name === "p") return lists.paused === undefined ? flash(state, t("conn.notYet")) : { state, effect: { kind: "pause", paused: !lists.paused } };
   if (task?.proposedAt && !inTrash && (name === "A" || name === "X")) {
     if (name === "A") return { state: { ...state, detail: undefined }, effect: { kind: "accept", task } };
