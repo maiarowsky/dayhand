@@ -1,6 +1,9 @@
 // Exit code matrix (docs/cli.md#exit-codes) against the real local backend.
 // Every failure with --json is one {"error":…} line on stderr and nothing on stdout.
+import { chmodSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Server } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { freePort } from "./globalSetup.js";
 import { createKey, helm, dayhand, dayhandJson, jsonError, newUser, newUserId, revokeKey, schemaValidator, type Run } from "./helpers.js";
@@ -75,6 +78,33 @@ describe("exit codes", () => {
     expect(badFormat.stderr).toMatch(/^dayhand: DAYHAND_FORMAT must be one of human, plain, json/);
     expectFailure(await dayhand(key, ["list", "--json", "--client-id", "has space"]), 2, "usage");
     expectFailure(await dayhand(undefined, ["list", "--json"], { url: "" }), 2, "usage"); // no DAYHAND_URL
+  });
+
+  test("M-01: remote HTTP is a usage error before login or an authenticated call", async () => {
+    const key = "dayhand_sample_only";
+    const url = "http://192.0.2.1:3211";
+    for (const args of [["today", "--json"], ["login", "--with-key", "--json"]]) {
+      const run = await dayhand(key, args, { url, input: `${key}\n` });
+      expectFailure(run, 2, "usage");
+      expect(run.stderr).toContain("HTTPS");
+      expect(run.stderr).not.toContain(key);
+    }
+  });
+
+  test.skipIf(process.platform === "win32")("L-01: a non-private credentials file is a config error, never a silent fallback", async () => {
+    const dir = mkdtempSync(join(process.env.DAYHAND_TEST_TMPDIR ?? tmpdir(), "dayhand-private-store-"));
+    const { key } = await newUser();
+    const env = { DAYHAND_CONFIG_DIR: dir };
+    try {
+      expect((await dayhand(undefined, ["login", "--with-key", "--store", "file", "--json"], { env, input: `${key}\n` })).code).toBe(0);
+      chmodSync(join(dir, "credentials.json"), 0o644);
+      const run = await dayhand(undefined, ["today", "--json"], { env });
+      expectFailure(run, 2, "config");
+      expect(run.stderr).toContain("chmod 600");
+      expect(run.stderr).not.toContain(key);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test("3: missing, wrong or revoked key", async () => {

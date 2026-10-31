@@ -325,7 +325,7 @@ export function deploymentUrls(value) {
 }
 
 /** The deep link the phone app reads (docs/pairing.md). */
-export const pairingLink = (siteUrl, code) => `dayhand://pair?url=${encodeURIComponent(siteUrl)}&code=${code}`;
+export const pairingLink = (siteUrl) => `dayhand://pair?url=${encodeURIComponent(siteUrl)}`;
 
 /** CONVEX_DEPLOYMENT and friends for the Convex CLI (`--env-file`), one variable per line. */
 export function envFileText(vars) {

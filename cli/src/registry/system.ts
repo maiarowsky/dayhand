@@ -159,14 +159,15 @@ export const systemCommands: CommandSpec[] = [
   {
     name: "pair", schema: "pairing.schema.json",
     summary: "One-time code (10 minutes) that signs the phone app in as you",
+    description: "Type the code in the Dayhand app. Coming soon: links and QR codes carry only the server address, never the pairing code.",
     options: [{ flags: "--no-qr", description: "Do not draw the QR code" }],
     tools: ["/devices/pairing-code"],
     examples: ["dayhand pair", "dayhand pair --json"],
     run: async (ctx, _args, opts) => {
       const client = await ctx.client();
       const created = await client.request("POST", "/devices/pairing-code");
-      const link = `dayhand://pair?url=${encodeURIComponent(client.baseUrl)}&code=${created.code}`;
-      let text = `Pairing code (single use, valid 10 minutes):\n  ${created.code}\n\nOn the phone, scan the QR code or open:\n  ${link}`;
+      const link = `dayhand://pair?url=${encodeURIComponent(client.baseUrl)}`;
+      let text = `Pairing code (single use, valid 10 minutes):\n  ${created.code}\n\nOpen the Dayhand app and type this code.\nThe link and QR fill in only the server address:\n  ${link}`;
       if (opts.qr !== false && ctx.format === "human") {
         text += "\n" + (await new Promise<string>((resolve) => qrcode.generate(link, { small: true }, resolve)));
       }

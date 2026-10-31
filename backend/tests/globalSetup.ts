@@ -38,7 +38,14 @@ async function startCimdServer(port: number): Promise<Server> {
       token_endpoint_auth_method: "client_secret_basic",
     },
   };
+  const fetches = new Map<string, number>();
   const server = createHttpServer((request, response) => {
+    const url = new URL(request.url ?? "/", origin);
+    if (url.pathname === "/fetch-count") {
+      response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify(fetches.get(url.searchParams.get("path") ?? "") ?? 0));
+      return;
+    }
+    fetches.set(url.pathname, (fetches.get(url.pathname) ?? 0) + 1);
     if (request.url === "/oauth/redirect.json") {
       response.writeHead(302, { Location: `${origin}${CIMD_PATH}` }).end();
       return;

@@ -145,7 +145,8 @@ async function summary(result: Record<string, any>, login: { profile: string; lo
     qr,
     `  Server address  ${url}`,
     `  Pairing code    ${pairing.code}`,
-    `  Or open         ${pairing.link}`,
+    `  Address only    ${pairing.link}`,
+    "  Open the Dayhand app and type the code; the QR fills in only the address.",
     "",
     `Keys and settings stay in ${files.dir} (readable only by you).`,
     ...(local

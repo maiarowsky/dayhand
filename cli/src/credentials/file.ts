@@ -4,7 +4,7 @@
 // available, or when DAYHAND_CREDENTIAL_STORE=file asks for it.
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import type { Warning } from "../config/env.js";
+import { CliError } from "../core/exit.js";
 import { StoreUnavailable, type Credential, type KeyStore } from "./store.js";
 
 type Contents = { keys: Record<string, string> };
@@ -15,7 +15,6 @@ export class FileStore implements KeyStore {
 
   constructor(
     configDir: string,
-    private readonly warn: (warning: Warning) => void = () => {},
     private readonly platform: NodeJS.Platform = process.platform,
   ) {
     this.location = path.join(configDir, "credentials.json");
@@ -40,11 +39,20 @@ export class FileStore implements KeyStore {
     return true;
   }
 
-  private read(): Contents {
-    if (!existsSync(this.location)) return { keys: {} };
-    if (this.platform !== "win32" && (statSync(this.location).mode & 0o077) !== 0) {
-      this.warn({ code: "credentials_mode", message: `${this.location} can be read by other users; run chmod 600 on it` });
+  private requirePrivate(location: string, mode: "600" | "700"): void {
+    if (this.platform === "win32") return;
+    const info = statSync(location);
+    if (info.uid !== process.getuid!()) throw new CliError("config", `${location} must belong to the current user`);
+    if ((info.mode & 0o077) !== 0) {
+      throw new CliError("config", `${location} is accessible to other users; run chmod ${mode} on it`);
     }
+  }
+
+  private read(): Contents {
+    const directory = path.dirname(this.location);
+    if (existsSync(directory)) this.requirePrivate(directory, "700");
+    if (!existsSync(this.location)) return { keys: {} };
+    this.requirePrivate(this.location, "600");
     let data: unknown;
     try {
       data = JSON.parse(readFileSync(this.location, "utf8"));
@@ -61,6 +69,7 @@ export class FileStore implements KeyStore {
   /** Written to a temporary file with mode 0600 first, then renamed: never briefly readable or half-written. */
   private write(contents: Contents): void {
     mkdirSync(path.dirname(this.location), { recursive: true, mode: 0o700 });
+    this.requirePrivate(path.dirname(this.location), "700");
     const temporary = `${this.location}.${process.pid}.tmp`;
     writeFileSync(temporary, JSON.stringify(contents, null, 2) + "\n", { mode: 0o600 });
     if (this.platform !== "win32") chmodSync(temporary, 0o600);

@@ -11,7 +11,7 @@ import { httpAction, type ActionCtx } from "./_generated/server";
 import { scopeCovers } from "./apiKeys";
 import type { CallAllowance } from "./callLimits";
 import { versionTag } from "./lib/core";
-import { bearerToken } from "./lib/http";
+import { bearerToken, readLimitedText } from "./lib/http";
 import { openApiDocument } from "./lib/openapi";
 import { problem, STATUS_OF } from "./lib/problem";
 import {
@@ -78,8 +78,8 @@ function rateHeaders(allowance: CallAllowance): Record<string, string> {
 
 /** The JSON object body of a change; empty is {}. */
 async function readBody(request: Request, maxBytes: number): Promise<Record<string, unknown>> {
-  const text = await request.text();
-  if (text.length > maxBytes) throw new HttpProblem(413, "payload_too_large", `The body is larger than ${maxBytes} bytes`);
+  const text = await readLimitedText(request, maxBytes);
+  if (text === null) throw new HttpProblem(413, "payload_too_large", `The body is larger than ${maxBytes} bytes`);
   if (text.trim() === "") return {};
   const type = (request.headers.get("Content-Type") ?? "").split(";")[0]!.trim().toLowerCase();
   if (!JSON_TYPES.includes(type)) throw new HttpProblem(415, "unsupported_media_type", "Send the body as application/json");

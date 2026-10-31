@@ -5,6 +5,7 @@
 // skips what it already brought in. With ?dryRun=true nothing is stored.
 import type { FunctionReference } from "convex/server";
 import { internal } from "./_generated/api";
+import { ownerOnly } from "./lib/core";
 import { DEPRECATED_FORMATS, IMPORT_FORMATS, ImportFormatError, KEY_NAME, detectFormat, readContext, readPlan, type ImportFormat } from "./lib/importFormats";
 import { IMPORT_BATCH, type ImportTask } from "./lib/importOps";
 import { RestInputError } from "./lib/restRoutes";
@@ -19,6 +20,7 @@ const KEY_LENGTH = 40;
 type BatchOutcome = { created: Record<string, unknown>[]; skipped: { title: string; reason: string }[]; failed: { title: string; message: string; projectKey?: string }[] };
 
 export const importPlan: RestHandler = async (ctx, { identity, body, dryRun }) => {
+  ownerOnly(identity, "import a plan");
   const extra = Object.keys(body).filter((name) => name !== "content" && name !== "format" && name !== "projectId");
   if (extra.length) throw new RestInputError(`Unknown field ${extra.join(", ")}; send { "content": "<file>", "format": "auto" }`);
   if (typeof body.content !== "string" || body.content.trim() === "") throw new RestInputError("content must be the file's text");

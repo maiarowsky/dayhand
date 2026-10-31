@@ -65,8 +65,12 @@ phone is what makes a request legitimate.
 - **A stolen refresh token used within 30 seconds** of the legitimate refresh is taken for a
   retry. The legitimate client's next refresh then fails, and a later use of an old token
   revokes the connection.
-- **Metadata documents are fetched on every authorization request** (no cache): at most 20 per
-  client per 10 minutes, to `claude.ai` only.
+- **Metadata documents have no cache. Coming soon:** every authorization attempt counts
+  before any metadata fetch (20 per client per 10 minutes, including malformed requests and
+  failed fetches). Locally invalid parameters are rejected without a fetch or redirect,
+  because the redirect has not yet been verified for the client. The global flood guard
+  also counts these attempts. Targets remain restricted to the configured CIMD origins
+  (`https://claude.ai` by default).
 - **Self-asserted names** of registered clients can be anything printable; the app marks them as
   unverified.
 - **Revoking an app JWT** (a lost phone) takes up to an hour ([pairing.md](pairing.md)); during

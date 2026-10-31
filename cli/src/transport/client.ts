@@ -5,7 +5,7 @@
 // each tool call (dryRun: true) and returns what it would produce; endpoint
 // calls, and tool calls to an older backend, are only recorded. Reads still happen.
 import type { Target } from "../config/resolve.js";
-import { displayUrl } from "../config/url.js";
+import { displayUrl, normalizeUrl } from "../config/url.js";
 import { CliError, toErrorCode } from "../core/exit.js";
 
 const TIMEOUT_MS = 30_000;
@@ -76,7 +76,7 @@ export class DayhandClient {
 
   /** The deployment HTTP actions URL (no trailing slash). */
   get baseUrl(): string {
-    return this.connection.url;
+    return normalizeUrl(this.connection.url);
   }
 
   /**
@@ -88,10 +88,11 @@ export class DayhandClient {
       this.held.push({ endpoint: path, body: body ?? null, ...(method === "POST" ? {} : { method }) });
       return {};
     }
-    const where = displayUrl(this.connection.url);
+    const url = this.baseUrl;
+    const where = displayUrl(url);
     let response: Response;
     try {
-      response = await this.fetchImpl(this.connection.url + path, {
+      response = await this.fetchImpl(url + path, {
         method,
         headers: {
           "Content-Type": "application/json",

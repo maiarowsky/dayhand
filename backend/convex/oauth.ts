@@ -76,7 +76,21 @@ export function requestStatusOf(request: Doc<"oauthRequests">, now: number): Req
   return request.approvedAt !== undefined ? "approved" : "pending";
 }
 
-/** Starts a request; refused while too many of this client's are waiting or were started lately. */
+/** Counts every authorization attempt before any metadata fetch, including malformed requests. */
+export const consumeAuthorize = internalMutation({
+  args: { clientId: v.string() },
+  handler: async (ctx, { clientId }): Promise<{ ok: true } | Limited> => {
+    const now = Date.now();
+    const limit = authorizeLimit(clientId);
+    const wait = (await retryAfter(ctx, limit, now)) ?? (await retryAfter(ctx, AUTHORIZE_FLOOD_LIMIT, now));
+    if (wait !== null) return { ok: false, reason: "rate_limited", retryAfterMs: wait };
+    await countHit(ctx, limit, now);
+    await countHit(ctx, AUTHORIZE_FLOOD_LIMIT, now);
+    return { ok: true };
+  },
+});
+
+/** Starts a request after the HTTP ingress limit; refused while too many of this client's are waiting. */
 export const createRequest = internalMutation({
   args: {
     ...secretArgs,
@@ -97,15 +111,11 @@ export const createRequest = internalMutation({
       .withIndex("by_expiresAt", (q) => q.gt("expiresAt", now))
       .take(AUTHORIZE_FLOOD_LIMIT.limit * 2);
     const waiting = live.filter((r) => r.clientId === input.clientId && requestStatusOf(r, now) === "pending");
-    const limit = authorizeLimit(input.clientId);
-    const wait = (await retryAfter(ctx, limit, now)) ?? (await retryAfter(ctx, AUTHORIZE_FLOOD_LIMIT, now));
-    if (wait !== null || waiting.length >= MAX_PENDING_PER_CLIENT) {
+    if (waiting.length >= MAX_PENDING_PER_CLIENT) {
       const oldest = Math.min(...waiting.map((r) => r.expiresAt), now + REQUEST_TTL_MS);
-      return { ok: false, reason: "rate_limited", retryAfterMs: wait ?? oldest - now };
+      return { ok: false, reason: "rate_limited", retryAfterMs: oldest - now };
     }
     if (live.some((r) => r.userCodeHash === input.userCodeHash)) return { ok: false, reason: "collision" };
-    await countHit(ctx, limit, now);
-    await countHit(ctx, AUTHORIZE_FLOOD_LIMIT, now);
     const expiresAt = now + REQUEST_TTL_MS;
     await ctx.db.insert("oauthRequests", { ...input, createdAt: now, expiresAt });
     return { ok: true, expiresAt };

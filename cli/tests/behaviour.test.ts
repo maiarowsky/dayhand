@@ -222,7 +222,9 @@ describe("commands", () => {
     expect((await dayhand(key, ["version"])).stdout).toBe(`dayhand ${version}\nserver dayhand ${(await dayhandJson(key, ["version"])).server.version}\n`);
 
     const pairing = await dayhand(key, ["pair", "--no-qr"]);
-    expect(pairing.stdout).toMatch(/dayhand:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+&code=[0-9A-Z-]{14}/);
+    expect(pairing.stdout).toMatch(/dayhand:\/\/pair\?url=http%3A%2F%2F127\.0\.0\.1%3A\d+\n/);
+    expect(pairing.stdout).not.toContain("&code=");
+    expect(pairing.stdout).toContain("Open the Dayhand app and type this code.");
     expect((await dayhand(key, ["devices"])).stdout).toBe("(no paired devices)\n");
     expect((await dayhandJson(key, ["device", "list"])).devices).toEqual([]);
   });

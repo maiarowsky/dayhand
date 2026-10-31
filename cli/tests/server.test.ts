@@ -112,6 +112,8 @@ describe("dayhand server", () => {
     let signingKey = "";
     try {
       expect(validate("server.schema.json", result)).toEqual([]);
+      expect(new URL(result.pairing.link).searchParams.has("code")).toBe(false);
+      expect(result.pairing.link).not.toContain(result.pairing.code);
       expect(result).toMatchObject({ mode: "local", url: `http://127.0.0.1:${ports.sitePort}`, issuer: "https://helm.local", userId: "https://helm.local|owner", running: true });
       expect(result).toMatchObject({ key: { created: true }, env: { issuer: "set", keys: "set" }, login: { profile: "local", store: "file", config: "created" } });
 

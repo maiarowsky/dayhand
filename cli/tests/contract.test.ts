@@ -498,6 +498,8 @@ describe("agent contract", () => {
     expect(version.compatible).toBe(true);
     const pairing = await dayhandJson(key, ["pair"]);
     expect(validate(specOf("pair").schema!, pairing)).toEqual([]);
+    expect(new URL(pairing.link).searchParams.has("code")).toBe(false);
+    expect(pairing.link).not.toContain(pairing.code);
     const devices = await dayhandJson(key, ["device", "list"]);
     expect(validate(specOf("device list").schema!, devices)).toEqual([]);
     await connectAgent(userId);

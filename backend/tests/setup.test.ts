@@ -207,7 +207,8 @@ describe("reading the Convex CLI", () => {
     expect(redact("key helm_abcdefgh and d=xyz", ["helm_abcdefgh", "xyz"])).toBe("key [hidden] and d=xyz");
     expect(envFileText({ CONVEX_DEPLOYMENT: "prod:happy-otter-123" })).toBe("CONVEX_DEPLOYMENT=prod:happy-otter-123\n");
     expect(() => envFileText({ A: "x\nB=y" })).toThrow(/one line/);
-    expect(pairingLink("https://a.convex.site", "E6M8-FE02-XSNT")).toBe("dayhand://pair?url=https%3A%2F%2Fa.convex.site&code=E6M8-FE02-XSNT");
+    // M-02: custom URI handlers must never receive the pairing credential.
+    expect(pairingLink("https://a.convex.site")).toBe("dayhand://pair?url=https%3A%2F%2Fa.convex.site");
   });
 });
 

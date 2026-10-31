@@ -85,7 +85,7 @@ function urlValue(value: unknown, key: string, fail: Fail): string {
   try {
     return normalizeUrl(text);
   } catch {
-    throw fail(key, "must be an https:// or http:// URL, e.g. https://<deployment>.convex.site");
+    throw fail(key, "must be an https:// URL (http:// only on loopback), e.g. https://<deployment>.convex.site");
   }
 }
 

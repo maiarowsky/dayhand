@@ -245,9 +245,14 @@ A key created this way has scope `read` (the default) or `write`, never `full`; 
 later than the key that created it, and it works only while that key works. So a key can never
 outlive its parent's revocation, and an integration can never mint keys of its own. Only the owner's
 key (`cli`) may create a `cli` key; an `agent` key asking for `"kind": "cli"` gets `403 forbidden`.
+**Coming soon:** creating any API key is owner-only, regardless of the requested kind or scope.
+An agent cannot mint a child to escape its tool policies.
 `dayhand key list`, `dayhand key create` and `dayhand key revoke` use these routes.
 
 ## Import
+
+**Coming soon:** plan import is owner-only (a `cli` key with scope `full`). An agent key gets
+`403 forbidden`, including for a dry run; use the policy-controlled task tools instead.
 
 `POST /import` brings a plan into Dayhand from a file:
 

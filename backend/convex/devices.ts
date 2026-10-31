@@ -81,8 +81,8 @@ export const insertCode = internalMutation({
 });
 
 // ---- Failed-attempt limit of POST /auth/pair ----
-// One counter for the whole deployment (the endpoint is unauthenticated, so
-// there is no user to count per). Over the limit, codes are not checked at all.
+// One flood counter for invalid codes. Valid codes are checked first: anonymous
+// failures must not lock out other phones. Each code still burns after five wrong secrets.
 
 async function pairLimitRow(ctx: MutationCtx) {
   return ctx.db
@@ -102,7 +102,7 @@ async function recordPairFailure(ctx: MutationCtx, now: number) {
   }
 }
 
-/** Clears the failed-attempt counter, e.g. after an attacker locked pairing: `npx convex run devices:resetPairLimit`. */
+/** Clears the invalid-code flood counter: `npx convex run devices:resetPairLimit`. */
 export const resetPairLimit = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -130,10 +130,6 @@ export const redeemCode = internalMutation({
   },
   handler: async (ctx, input): Promise<RedeemResult> => {
     const now = Date.now();
-    const limit = await pairLimitRow(ctx);
-    if (limit && now - limit.windowStart < PAIR_FAILURE_WINDOW_MS && limit.failures >= PAIR_FAILURE_LIMIT) {
-      return { ok: false, reason: "rate_limited", retryAfterMs: limit.windowStart + PAIR_FAILURE_WINDOW_MS - now };
-    }
     const code = (
       await ctx.db
         .query("pairingCodes")
@@ -142,6 +138,10 @@ export const redeemCode = internalMutation({
     ).find((c) => c.usedAt === undefined && c.expiresAt > now && c.failedAttempts < MAX_CODE_ATTEMPTS);
     if (!code || !timingSafeEqual(code.secretHash, input.secretHash)) {
       if (code) await ctx.db.patch(code._id, { failedAttempts: code.failedAttempts + 1 });
+      const limit = await pairLimitRow(ctx);
+      if (limit && now - limit.windowStart < PAIR_FAILURE_WINDOW_MS && limit.failures >= PAIR_FAILURE_LIMIT) {
+        return { ok: false, reason: "rate_limited", retryAfterMs: limit.windowStart + PAIR_FAILURE_WINDOW_MS - now };
+      }
       await recordPairFailure(ctx, now);
       return { ok: false, reason: "invalid" };
     }

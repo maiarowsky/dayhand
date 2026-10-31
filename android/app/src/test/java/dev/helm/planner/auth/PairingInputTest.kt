@@ -40,16 +40,16 @@ class PairingInputTest {
     }
 
     @Test
-    fun `a pairing link gives the server and the code`() {
+    fun `M-02 a pairing link gives only the server even if it contains a credential`() {
         val link = PairingInput.parseLink("dayhand://pair?url=https%3A%2F%2Fexample-deployment-123.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
-        assertEquals(PairingLink("https://example-deployment-123.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
+        assertEquals(PairingLink("https://example-deployment-123.eu-west-1.convex.site", null), link)
         assertEquals(PairingLink("http://10.0.2.2:3211", null), PairingInput.parseLink("dayhand://pair?url=http://10.0.2.2:3211"))
     }
 
     @Test
     fun `a helm pairing link from hlm before the rename still works`() {
         val link = PairingInput.parseLink("helm://pair?url=https%3A%2F%2Fexample-deployment-123.eu-west-1.convex.site&code=E6M8-FE02-XSNT")
-        assertEquals(PairingLink("https://example-deployment-123.eu-west-1.convex.site", "E6M8-FE02-XSNT"), link)
+        assertEquals(PairingLink("https://example-deployment-123.eu-west-1.convex.site", null), link)
     }
 
     @Test

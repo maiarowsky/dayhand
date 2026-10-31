@@ -91,7 +91,8 @@ report, and without a server it is not shown.
    `-Pdayhand.serverUrl=https://example-deployment-123.eu-west-1.convex.site`. A `.convex.cloud`
    address is turned into its `.convex.site` one.
 2. **Pairing code** from `dayhand pair`: any case, with or
-   without dashes; `O` is read as `0`, `I` and `L` as `1`.
+   without dashes; `O` is read as `0`, `I` and `L` as `1`. **Coming soon:** enter the code
+   manually in the app; pairing links and QR codes fill in only the server address.
 3. **Connect**. Errors are said in words: a wrong, used or expired code; too many wrong codes
    (with the wait); no network; the server cannot be reached; no Dayhand server at the address;
    a problem on the server. A code for **another server** than the one whose plan is on the
@@ -534,7 +535,8 @@ Requirements: JDK 17 or newer, the Android SDK with platform 36, Node.js 20+ for
 4. In the app, on Connect, enter `http://10.0.2.2:3211` on the emulator (on a phone in the
    same network use the computer's address; debug builds allow plain HTTP, release builds only
    HTTPS) and the code, then Connect. Or open the link from `dayhand pair` on the emulator:
-   `adb shell am start -a android.intent.action.VIEW -d "'dayhand://pair?url=http%3A%2F%2F10.0.2.2%3A3211&code=<code>'"`.
+   `adb shell am start -a android.intent.action.VIEW -d "'dayhand://pair?url=http%3A%2F%2F10.0.2.2%3A3211'"`,
+   then enter the code in the app.
 
 5. Check from the computer: `dayhand today` and `dayhand device list`.
 

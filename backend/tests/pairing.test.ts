@@ -130,15 +130,21 @@ describe("phone pairing", () => {
     expect(await post("/auth/pair", { code })).toMatchObject({ status: 401, body: INVALID });
   });
 
-  test("after ten failures in ten minutes pairing is refused, even with a valid code", async () => {
+  test("M-03: ten anonymous failures limit invalid codes, not a valid code from another phone", async () => {
     const { key } = await owner();
     const code = await pairingCode(key);
     for (let i = 0; i < 10; i++) expect((await post("/auth/pair", { code: "ZZZZ-ZZZZ-ZZZZ" })).status).toBe(401);
-    const limited = await post("/auth/pair", { code });
+    const limited = await post("/auth/pair", { code: "ZZZZ-ZZZZ-ZZZZ" });
     expect(limited).toMatchObject({ status: 429, body: { error: "rate_limited" } });
     expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(500);
+    expect((await post("/auth/pair", { code, deviceName: "Another phone" })).status).toBe(200);
+    // Per-code guessing protection still applies when the global flood bucket is full.
+    const guarded = await pairingCode(key);
+    const wrong = guarded.slice(0, 5) + (guarded[5] === "0" ? "1" : "0") + guarded.slice(6);
+    for (let i = 0; i < 5; i++) expect((await post("/auth/pair", { code: wrong })).status).toBe(429);
+    expect((await post("/auth/pair", { code: guarded })).status).toBe(429);
     await admin().mutation(internal.devices.resetPairLimit, {});
-    expect((await post("/auth/pair", { code })).status).toBe(200);
+    expect(await post("/auth/pair", { code: guarded })).toMatchObject({ status: 401, body: INVALID });
   });
 
   test("a revoked device gets no new tokens", async () => {

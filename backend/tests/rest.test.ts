@@ -175,8 +175,9 @@ describe("REST API: limits", () => {
 });
 
 describe("REST API: API keys", () => {
-  test("a full key creates a read key by default; it reads, cannot write, and dies with its parent", async () => {
-    const { key } = await owner();
+  test("an owner's full key creates a read key by default; it reads, cannot write, and dies with its parent", async () => {
+    const { userId } = await owner();
+    const key = await createKey(userId, "terminal", "cli");
     const created = await rest(key, "POST", "/keys", { body: { name: "n8n" } });
     expect(created.status).toBe(201);
     expect(created.body).toMatchObject({ name: "n8n", kind: "agent", scope: "read", expiresAt: null, key: expect.stringMatching(/^dayhand_/) });
@@ -193,7 +194,7 @@ describe("REST API: API keys", () => {
     const expiring = await rest(key, "POST", "/keys", { body: { name: "short", scope: "write", expiresAt: Date.now() + 60_000 } });
     expect(expiring.body).toMatchObject({ scope: "write", expiresAt: expect.any(Number) });
 
-    const parentId = listed.body.keys.find((k: { createdWith: string | null }) => k.createdWith === null).id;
+    const parentId = listed.body.keys.find((k: { id: string }) => k.id === created.body.id).createdWith;
     const revoked = await rest(key, "DELETE", `/keys/${created.body.id}`);
     expect(revoked.body).toEqual({ id: created.body.id, revokedAt: expect.any(Number) });
     expectProblem(await rest(child, "GET", "/today"), 401, "unauthenticated");
