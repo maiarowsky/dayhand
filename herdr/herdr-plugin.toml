@@ -9,21 +9,21 @@ platforms = ["linux", "macos"]
 id = "assign"
 title = "Dayhand: give this agent a task"
 contexts = ["pane"]
-command = ["node", "dayhand-herdr.mjs", "assign"]
+command = ["/bin/sh", "dayhand-herdr.sh", "assign"]
 
 [[actions]]
 id = "today"
 title = "Dayhand: open Today"
 contexts = ["pane", "workspace"]
-command = ["node", "dayhand-herdr.mjs", "today"]
+command = ["/bin/sh", "dayhand-herdr.sh", "today"]
 
 [[events]]
 on = "pane.agent_status_changed"
-command = ["node", "dayhand-herdr.mjs", "event"]
+command = ["/bin/sh", "dayhand-herdr.sh", "event"]
 
 [[events]]
 on = "pane.closed"
-command = ["node", "dayhand-herdr.mjs", "event"]
+command = ["/bin/sh", "dayhand-herdr.sh", "event"]
 
 [[panes]]
 id = "picker"
@@ -31,10 +31,10 @@ title = "Dayhand task"
 placement = "popup"
 width = "80%"
 height = "70%"
-command = ["node", "dayhand-herdr.mjs", "pick"]
+command = ["/bin/sh", "dayhand-herdr.sh", "pick"]
 
 [[panes]]
 id = "ui"
 title = "Dayhand"
 placement = "overlay"
-command = ["node", "dayhand-herdr.mjs", "ui"]
+command = ["/bin/sh", "dayhand-herdr.sh", "ui"]
