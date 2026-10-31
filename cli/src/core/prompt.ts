@@ -26,11 +26,11 @@ type RawInput = Io["stdin"] & { setRawMode?: (mode: boolean) => unknown };
 export async function askHidden(io: Io, question: string): Promise<string> {
   const stdin = io.stdin as RawInput;
   if (typeof stdin.setRawMode !== "function") return ask(io, question);
-  io.stderr.write(question);
   stdin.setRawMode(true);
-  stdin.setEncoding("utf8");
-  stdin.resume();
   try {
+    io.stderr.write(question);
+    stdin.setEncoding("utf8");
+    stdin.resume();
     return await new Promise<string>((resolve, reject) => {
       let answer = "";
       const onData = (chunk: string) => {
