@@ -29,6 +29,12 @@ A [Herdr](https://herdr.dev) plugin that connects the agents in your Herdr panes
 - `dayhand` on the `PATH` of the Herdr server, signed in (`dayhand login`), and Node.js, which
   `dayhand` needs anyway.
 
+**Coming soon:** The launcher will also find Node.js and `dayhand` when Herdr supplies only the
+system `PATH`: it keeps the existing `PATH` first, then adds fnm's default and installed Node
+versions (macOS and Linux, including `FNM_DIR` / `XDG_DATA_HOME`), `~/.local/bin`, and Homebrew's
+`/opt/homebrew/bin` and `/usr/local/bin`. No shell startup files or local plugin copy are needed.
+Other custom install prefixes still need to be on the Herdr server's `PATH`.
+
 ## Install
 
 ```sh
@@ -94,5 +100,5 @@ go to Herdr's plugin log: `herdr plugin log list --plugin dayhand`.
 
 ## Tests
 
-`node --test herdr/dayhand-herdr.test.mjs` runs the plugin's script against a stand-in `dayhand`
-and checks the commands it runs.
+`node --test herdr/dayhand-herdr.test.mjs` runs the plugin's launcher against a stand-in `dayhand`
+and checks the commands it runs, including startup with a minimal `PATH` and isolated fnm installs.
