@@ -23,6 +23,12 @@ Projects need backend 0.13.0 or later; other features keep their previous minimu
 - `dayhand ui` footer hints show `x done` instead of the `␣` space symbol; Space still marks a
   task done.
 
+### Fixed
+
+- `dayhand ui`: marking a task done (Space or `x`) keeps the cursor in place instead of following
+  the task to the end of the list. In Today it stays among the open tasks (on the previous one
+  after the last).
+
 ### Unchanged
 
 - Default `--plain` task columns and default JSON output are unchanged, apart from the backend's
