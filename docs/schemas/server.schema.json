@@ -94,7 +94,8 @@
         },
         "link": {
           "type": "string",
-          "description": "dayhand://pair?url=…&code=… (docs/pairing.md)"
+          "pattern": "^dayhand://pair\\?url=[^&]+$",
+          "description": "Server-address-only dayhand://pair?url=…; type the code in the app (docs/pairing.md)"
         }
       }
     },

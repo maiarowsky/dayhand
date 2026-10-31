@@ -33,7 +33,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- dayhand://pair?url=…&code=… from dayhand pair (QR code), or helm://pair?… from hlm before the
+            <!-- Address-only dayhand://pair?url=… (QR code), or helm://pair?… from hlm before the
                  rename: opens Connect filled in. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

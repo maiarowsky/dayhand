@@ -19,6 +19,7 @@ import {
   fail,
   loadSettings,
   nextTaskRef,
+  ownerOnly,
   recordEvent,
   toTask,
   type Identity,
@@ -155,6 +156,7 @@ function projectsByName(ctx: MutationCtx, identity: Identity) {
 }
 
 export async function importTasks(ctx: MutationCtx, identity: Identity, input: { items: ImportTask[]; projects?: ImportProject[]; projectId?: string }) {
+  ownerOnly(identity, "import a plan");
   if (input.items.length > IMPORT_BATCH) fail("invalid_argument", `at most ${IMPORT_BATCH} tasks per call`);
   const fallback = input.projectId === undefined ? undefined : await projectTarget(ctx, identity.userId, input.projectId);
   const { timezone } = await loadSettings(ctx, identity.userId);

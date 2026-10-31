@@ -12,6 +12,10 @@ export function normalizeUrl(raw: string): string {
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw usageError("The Dayhand URL must start with https:// or http://");
   }
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol === "http:" && !loopback) {
+    throw usageError("The Dayhand URL must use HTTPS outside loopback (localhost, 127.0.0.1 or [::1])");
+  }
   return raw.replace(/\/+$/, "").replace(/\/mcp$/, "");
 }
 

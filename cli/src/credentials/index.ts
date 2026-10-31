@@ -18,10 +18,10 @@ export function storeChoice(env: Env): StoreChoice | undefined {
 }
 
 /** Key stores (not the environment) in the order they are read. */
-export function keyStores(env: Env, configDir: string, warn: (w: Warning) => void, platform: Platform = process.platform): KeyStore[] {
+export function keyStores(env: Env, configDir: string, _warn: (w: Warning) => void, platform: Platform = process.platform): KeyStore[] {
   const choice = storeChoice(env);
   const keychain = new KeychainStore(platform);
-  const file = new FileStore(configDir, warn, platform);
+  const file = new FileStore(configDir, platform);
   if (choice === "keychain") return [keychain];
   if (choice === "file") return [file];
   return [keychain, file];

@@ -4,7 +4,7 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.net.URLDecoder
 
-/** A `dayhand://pair?url=…&code=…` link from `dayhand pair` (text or QR), see docs/pairing.md. */
+/** A server-address-only `dayhand://pair?url=…` link; the user types the code in the app. */
 data class PairingLink(val serverUrl: String?, val code: String?)
 
 /** Checks of what the user types on the Connect screen, the same rules as the backend. */
@@ -47,7 +47,7 @@ object PairingInput {
         return if (host.endsWith(".convex.cloud")) url.replace(".convex.cloud", ".convex.site") else url
     }
 
-    /** The server and code from a pairing link, or null when [uri] is not one. */
+    /** The server from a pairing link, or null when [uri] is not one. Never accept a credential from a private URI scheme. */
     fun parseLink(uri: String): PairingLink? {
         val parsed = parse(uri.trim()) ?: return null
         if (parsed.scheme !in LINK_SCHEMES || parsed.host != "pair") return null
@@ -58,7 +58,7 @@ object PairingInput {
         }.toMap()
         return PairingLink(
             serverUrl = params["url"]?.let(::normalizeServerUrl),
-            code = params["code"]?.let(::normalizeCode),
+            code = null,
         )
     }
 

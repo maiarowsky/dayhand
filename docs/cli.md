@@ -1460,6 +1460,8 @@ dayhand --version
 
 One-time code (10 minutes) that signs the phone app in as you
 
+Type the code in the Dayhand app. Coming soon: links and QR codes carry only the server address, never the pairing code.
+
 ```
 dayhand pair [options]
 ```

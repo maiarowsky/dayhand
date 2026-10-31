@@ -16,15 +16,18 @@ application/json`); token responses carry `Cache-Control: no-store`.
 
 ## Pairing link
 
-`dayhand pair` prints the code, a deep link and the same link as a QR code:
+The address-only pairing link (coming soon; the code is entered separately):
 
 ```
-dayhand://pair?url=<URL-encoded HTTP actions URL>&code=<XXXX-XXXX-XXXX>
+dayhand://pair?url=<URL-encoded HTTP actions URL>
 ```
 
-The app reads `url` (the HTTP actions URL, where `/auth/pair` and `/auth/token` live) and
-`code` from it. Typed codes may be lower case and may omit the dashes; `O` is read as `0`,
-`I` and `L` as `1`.
+For safety, open the Dayhand app yourself and type the code shown on the computer. Private
+URI schemes are not reserved for one app; another app can receive such a link.
+
+**Coming soon:** links and QR codes carry only `url` (the HTTP actions URL), never the code.
+The app ignores codes in older links. Typed codes may be lower case and may omit the dashes;
+`O` is read as `0`, `I` and `L` as `1`.
 
 ## POST /auth/pair
 
@@ -41,7 +44,7 @@ Request:
 | 200 | `{ "deviceId": "jd7…", "deviceName": "Pixel 9", "deviceToken": "helmdev_…", "convexUrl": "https://<name>.convex.cloud" }` | Paired. Store `deviceToken` in encrypted storage; it is shown only now. `convexUrl` is the URL for the Convex client. |
 | 400 | `{ "error": "invalid_request", "error_description": "…" }` | Body is not JSON, `code` is not a string, or `deviceName` is invalid. |
 | 401 | `{ "error": "invalid_grant", "error_description": "The code or token is not valid" }` | Wrong, unknown, malformed, expired, already used or burned code. The answer is the same for all of them. |
-| 429 | `{ "error": "rate_limited", … }`, header `Retry-After: <seconds>` | Too many failed attempts on this deployment; codes are not checked until the window ends. |
+| 429 | `{ "error": "rate_limited", … }`, header `Retry-After: <seconds>` | Too many failed attempts on this deployment. Coming soon: only invalid codes are refused; valid codes still work. |
 
 ## POST /auth/token
 
@@ -112,10 +115,10 @@ the phone's JWT gives exactly that identity. A key of another user gets an error
 - Codes: 12 Crockford base32 characters (60 random bits). The first 4 select the code, the
   other 8 are stored as SHA-256 only. A code dies after one use, after 10 minutes, or after 5
   wrong secrets for its selector.
-- `/auth/pair` allows 10 failed attempts per 10 minutes for the whole deployment (the endpoint
-  is unauthenticated, so there is no user to count per). Over the limit it answers `429`
-  without checking the code. Someone can therefore block pairing for 10 minutes, but cannot
-  guess a code; the admin can clear the counter with `devices:resetPairLimit`.
+- `/auth/pair` counts 10 failed attempts per 10 minutes for the whole deployment. **Coming
+  soon:** this flood counter limits invalid attempts only, so one caller cannot lock out a
+  valid code on another phone. Five wrong secrets still burn that particular code, even
+  while the flood counter is full. No client-supplied IP header is trusted.
 - Device tokens: a 16-byte selector and a 32-byte secret; the secret is stored as SHA-256
   only and compared in constant time. `/auth/token` has no attempt limit on purpose: 256-bit
   secrets cannot be guessed, and a limit would let anyone lock the real phone out.

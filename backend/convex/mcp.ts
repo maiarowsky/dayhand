@@ -14,7 +14,7 @@ import { hashKey } from "./apiKeys";
 import type { CallKind } from "./callLimits";
 import type { Identity } from "./lib/core";
 import { INSTRUCTIONS } from "./lib/guide";
-import { bearerToken } from "./lib/http";
+import { bearerToken, readLimitedText } from "./lib/http";
 import { getPrompt, isGuide, PromptArgumentError, PROMPTS, readResource, readsUserData, RESOURCE_TEMPLATES, RESOURCES } from "./lib/mcpContent";
 import {
   CHALLENGE_SCOPES,
@@ -387,8 +387,8 @@ export const handlePost = httpAction(async (ctx, request) => {
   const presented = bearerToken(request);
   const owner = presented ? await authenticate(ctx, presented) : null;
   if (!owner) return unauthorized(presented !== null);
-  const body = await request.text();
-  if (body.length > MAX_BODY_BYTES) return rpcError(null, RPC.invalidRequest, "Request too large", 413);
+  const body = await readLimitedText(request, MAX_BODY_BYTES);
+  if (body === null) return rpcError(null, RPC.invalidRequest, "Request too large", 413);
   let message: RpcRequest;
   try {
     message = JSON.parse(body);

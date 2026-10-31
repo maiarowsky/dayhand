@@ -11,7 +11,7 @@
 import { internal } from "./_generated/api";
 import { httpAction, type ActionCtx } from "./_generated/server";
 import { fetchClientMetadata } from "./lib/cimd";
-import { errorResponse, json, readJsonBody } from "./lib/http";
+import { errorResponse, json, readJsonBody, readLimitedText } from "./lib/http";
 import { ACCESS_TOKEN_TTL_MS, publicUrl, resourceFor, resourceMetadataFor, SCOPES, type Scope } from "./lib/oauthConfig";
 import { errorPage, pageLang, waitingPage, type Lang } from "./lib/oauthPage";
 import {
@@ -46,8 +46,8 @@ const notConfigured = () => errorResponse(503, "not_configured", "The deployment
 async function readForm(request: Request): Promise<URLSearchParams | null> {
   const type = request.headers.get("Content-Type") ?? "";
   if (!/^application\/x-www-form-urlencoded\b/i.test(type)) return null;
-  const text = await request.text();
-  return text.length > MAX_FORM_BYTES ? null : new URLSearchParams(text);
+  const text = await readLimitedText(request, MAX_FORM_BYTES);
+  return text === null ? null : new URLSearchParams(text);
 }
 
 async function s256(verifier: string): Promise<string> {
@@ -132,17 +132,16 @@ export const authorize = httpAction(async (ctx, request) => {
   if (!base) return errorPage(lang, "Not configured", 503);
   const params = new URL(request.url).searchParams;
   const clientId = params.get("client_id");
+  const allowance = await ctx.runMutation(internal.oauth.consumeAuthorize, { clientId: clientId ?? "" });
+  if (!allowance.ok) return errorPage(lang, text.limited(Math.max(1, Math.ceil(allowance.retryAfterMs / 60_000))), 429);
   if (!clientId) return errorPage(lang, text.noClient);
-  const resolved = await resolveClient(ctx, clientId);
-  if (!resolved) return errorPage(lang, text.unknownClient);
+  // Validate local parameters before spending a metadata fetch. The redirect is not yet
+  // registered/verified, so these failures stay on this page (RFC 6749 section 4.1.2.1).
   const redirectUri = params.get("redirect_uri") ?? "";
-  if (!redirectMatches(redirectUri, resolved.client.redirectUris)) return errorPage(lang, text.badRedirect);
-
-  // From here on, errors go back to the client (RFC 6749 section 4.1.2.1).
+  if (!redirectKind(redirectUri)) return errorPage(lang, text.badRedirect);
   const rawState = params.get("state");
   const state = rawState !== null && isState(rawState) ? rawState : null;
-  const fail = (error: string, description: string) =>
-    redirectWith(redirectUri, { error, error_description: description, state, iss: base });
+  const fail = (error: string, description: string) => errorPage(lang, `${error}: ${description}`);
   if (rawState !== null && state === null) return fail("invalid_request", "state is too long or not printable");
   if (params.get("response_type") !== "code") return fail("unsupported_response_type", "Only response_type=code is supported");
   const challenge = params.get("code_challenge") ?? "";
@@ -153,6 +152,9 @@ export const authorize = httpAction(async (ctx, request) => {
   if (!scopes.ok) return fail("invalid_scope", scopes.error);
   const resource = resourceFor(base);
   if (!resourceMatches(params.get("resource"), resource)) return fail("invalid_target", `The only resource is ${resource}`);
+  const resolved = await resolveClient(ctx, clientId);
+  if (!resolved) return errorPage(lang, text.unknownClient);
+  if (!redirectMatches(redirectUri, resolved.client.redirectUris)) return errorPage(lang, text.badRedirect);
 
   const handle = newSelectorToken("helmrq_");
   for (let attempt = 0; attempt < 5; attempt++) {

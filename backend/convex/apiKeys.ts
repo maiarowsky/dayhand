@@ -64,6 +64,7 @@ export const create = internalAction({
 export const insert = internalMutation({
   args: { ...identityArgs, ...args.createApiKey, hash: v.string() },
   handler: async (ctx, input) => {
+    ownerOnly(identityOf(input), "create API keys");
     const name = input.name.trim();
     if (!name || name.length > MAX_NAME) fail("invalid_argument", `name must be 1 to ${MAX_NAME} characters`);
     const now = Date.now();
@@ -76,8 +77,6 @@ export const insert = internalMutation({
     const parentKeyId = input.keyId;
     if (parentKeyId !== undefined) {
       if (scope === "full") fail("invalid_argument", "A key created with an API key can only have scope read or write");
-      // A cli key is the owner (ownerOnly); an agent key must not mint one and so reach the owner's tools.
-      if (kind === "cli") ownerOnly(identityOf(input), "create a cli key");
       const parent = await ctx.db.get(parentKeyId);
       if (parent?.expiresAt !== undefined && (input.expiresAt === undefined || input.expiresAt > parent.expiresAt)) {
         fail("invalid_argument", "The new key must expire no later than the key that creates it");

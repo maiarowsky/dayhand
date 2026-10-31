@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.dayhand.invalid/pairing.schema.json",
   "title": "Pairing code",
-  "description": "POST /devices/pairing-code plus the deep link (dayhand pair).",
+  "description": "POST /devices/pairing-code plus an address-only link; type the code in the app (dayhand pair).",
   "type": "object",
   "required": [
     "code",
@@ -25,7 +25,8 @@
     },
     "link": {
       "type": "string",
-      "pattern": "^dayhand://pair\\?"
+      "pattern": "^dayhand://pair\\?url=[^&]+$",
+      "description": "Server address only, never a pairing credential"
     }
   }
 }

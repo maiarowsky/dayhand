@@ -34,6 +34,10 @@ selection and the writable per-version copy.
 For key creation, automatic sign-in during server setup, and credential storage, see
 [signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
 default (`dayhand help config`); the key never goes into it.
+**Coming soon:** remote servers require HTTPS; plain HTTP is allowed only for `localhost`,
+`127.0.0.1` and `[::1]`. On macOS/Linux, a credentials file and its directory must belong to
+the current user and be private (modes 600 and 700); unsafe permissions cause a config error,
+not a warning or a fallback to another store.
 Dates are English phrases resolved in your time zone (`dayhand help dates`, `dayhand when "next mon"`).
 
 `dayhand ui` is the same client full screen, written with [Ink](https://github.com/vadimdemedes/ink)

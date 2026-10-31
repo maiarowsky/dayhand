@@ -80,7 +80,7 @@ describe("folders follow each system's convention", () => {
     const env = { HOME: home, XDG_CONFIG_HOME: home, XDG_DATA_HOME: home, LOCALAPPDATA: home };
     const current = resolvePaths(env, platform, home).configDir;
     const legacy = join(dirname(current), "hlm");
-    mkdirSync(legacy, { recursive: true });
+    mkdirSync(legacy, { recursive: true, mode: 0o700 });
     const url = "https://legacy.convex.site";
     writeFileSync(join(legacy, "config.toml"), `default_profile = "personal"\n[profiles.personal]\nurl = "${url}"\n[aliases]\nhome = "list -p Home"\n`);
     const paths = resolvePaths(env, platform, home);
@@ -186,7 +186,8 @@ color = "never"
 
   test.each<[string, RegExp]>([
     ['colour = "red"', /: colour: unknown key/],
-    ['url = "ftp://x"', /: url: must be an https:\/\/ or http:\/\/ URL/],
+    ['url = "ftp://x"', /: url: must be an https:\/\/ URL/],
+    ['url = "http://192.0.2.1"', /: url: must be an https:\/\/ URL \(http:\/\/ only on loopback\)/],
     ['url = 3', /: url: must be a non-empty string/],
     ['api_key = "helm_secret"', /: api_key: API keys do not belong in config\.toml/],
     ['[profiles.work]\ntoken = "helm_secret"', /: profiles\.work\.token: API keys do not belong/],
@@ -280,8 +281,7 @@ describe("aliases", () => {
 
 describe("credentials file", () => {
   test("keys per URL, mode 0600, removed with the last key", async () => {
-    const warnings: string[] = [];
-    const store = new FileStore(join(dir, "creds"), (w) => warnings.push(w.code));
+    const store = new FileStore(join(dir, "creds"));
     await store.set("https://a.convex.site", "helm_aaa");
     await store.set("https://b.convex.site", "helm_bbb");
     expect(await store.get("https://a.convex.site")).toEqual({ key: "helm_aaa", source: "file" });
@@ -291,18 +291,15 @@ describe("credentials file", () => {
     expect(await store.delete("https://a.convex.site")).toBe(false);
     expect(await store.delete("https://b.convex.site")).toBe(true);
     expect(() => statSync(store.location)).toThrow();
-    expect(warnings).toEqual([]);
   });
 
-  test("a file others can read is used, with a warning (macOS and Linux)", async () => {
+  test("a file others can read is refused (macOS and Linux)", async () => {
     if (process.platform === "win32") return;
-    const warnings: string[] = [];
-    const store = new FileStore(join(dir, "loose"), (w) => warnings.push(w.code));
+    const store = new FileStore(join(dir, "loose"));
     await store.set("https://a.convex.site", "helm_aaa");
     const { chmodSync } = await import("node:fs");
     chmodSync(store.location, 0o644);
-    expect((await store.get("https://a.convex.site"))?.key).toBe("helm_aaa");
-    expect(warnings).toEqual(["credentials_mode"]);
+    await expect(store.get("https://a.convex.site")).rejects.toMatchObject({ code: "config", exitCode: 2 });
   });
 });
 

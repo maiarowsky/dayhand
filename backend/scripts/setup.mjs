@@ -174,7 +174,7 @@ async function finish({ dir, envFile, wantedIssuer, siteUrl, checkUrl, convexUrl
     issuer: env.issuer,
     userId,
     server: { name: server.name, version: server.version, openapi },
-    pairing: { code: pairing.code, expiresAt: pairing.expiresAt, link: pairingLink(siteUrl, pairing.code) },
+    pairing: { code: pairing.code, expiresAt: pairing.expiresAt, link: pairingLink(siteUrl) },
     key: { file: key.file, created: key.created },
     env: { issuer: env.issuerAction, keys: env.keys },
     files: { dir, state: join(dir, FILES.state), signingKey: env.signingKeyFile, cliKey: key.file },

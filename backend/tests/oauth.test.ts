@@ -276,7 +276,7 @@ describe("the flow with Dynamic Client Registration, driven by the MCP SDK's OAu
 });
 
 describe("authorization request errors", () => {
-  test("a wrong redirect URI gets an error page; other errors go back to the client", async () => {
+  test("locally invalid parameters get an error page before the redirect or client metadata is trusted", async () => {
     const { challenge } = pkce();
     const wrongRedirect = await openAuthorize(authorizeParams(cimdClientId(), challenge, { redirect_uri: "https://evil.example/cb" }));
     expect(wrongRedirect.status).toBe(400);
@@ -294,11 +294,24 @@ describe("authorization request errors", () => {
     ];
     for (const [extra, error] of cases) {
       const page = await openAuthorize(authorizeParams(cimdClientId(), challenge, extra));
-      expect(page.status, JSON.stringify(extra)).toBe(303);
-      const query = new URL(page.location!).searchParams;
-      expect(query.get("error"), JSON.stringify(extra)).toBe(error);
-      expect(query.get("state")).toBe("state-123");
-      expect(query.get("iss")).toBe(site());
+      expect(page.status, JSON.stringify(extra)).toBe(400);
+      expect(page.location).toBeNull();
+      expect(page.html).toContain(error);
+    }
+  });
+
+  test("M-04: malformed authorization attempts count before CIMD; failed metadata fetches exhaust the budget too", async () => {
+    const { challenge } = pkce();
+    for (const malformed of [true, false]) {
+      const path = `/oauth/budget-${malformed}.json`;
+      const clientId = cimdClientId(path); // Local server returns 404; never creates a pending request.
+      const fetchCount = async () => (await fetch(`${new URL(clientId).origin}/fetch-count?path=${encodeURIComponent(path)}`)).json();
+      const params = authorizeParams(clientId, challenge, malformed ? { redirect_uri: undefined } : {});
+      for (let i = 0; i < 20; i++) expect((await openAuthorize(params)).status).toBe(400);
+      expect(await fetchCount()).toBe(malformed ? 0 : 20);
+      expect((await openAuthorize(params)).status).toBe(429);
+      expect((await openAuthorize(authorizeParams(clientId, challenge))).status).toBe(429);
+      expect(await fetchCount()).toBe(malformed ? 0 : 20);
     }
   });
 
