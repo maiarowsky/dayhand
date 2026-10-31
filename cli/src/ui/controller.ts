@@ -9,6 +9,7 @@ import { withProjectNames } from "../projects.js";
 import { isoWeekday, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
 import { agentId } from "./agents.js";
+import { ClipboardError, copyText, taskText, type ClipboardMethod } from "./clipboard.js";
 import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
 import { handleKey, type Effect } from "./handle.js";
@@ -30,6 +31,8 @@ export type ControllerOptions = {
   rows?: number;
   /** Runs $VISUAL/$EDITOR on the text and returns what was saved (core/editor.ts). */
   editText?: (text: string, fileName: string) => string;
+  /** Copies plain text without a server call. */
+  copyText?: (text: string) => Promise<ClipboardMethod>;
   /** Called around the editor: mouse reporting off before, on after. */
   beforeEditor?: () => void;
   afterEditor?: () => void;
@@ -52,6 +55,7 @@ export class Controller {
   private readonly listeners = new Set<() => void>();
   private readonly inflight = new Map<string, Promise<void>>();
   private changes: Promise<void> = Promise.resolve();
+  private copies: Promise<void> = Promise.resolve();
   private completingTaskId?: string;
   private timer?: ReturnType<typeof setInterval>;
   private flashTimer?: ReturnType<typeof setTimeout>;
@@ -323,6 +327,9 @@ export class Controller {
         this.data = { ...this.data, detail: this.data.detail?.task.id === effect.taskId ? this.data.detail : undefined };
         void this.refresh();
         return;
+      case "copy":
+        this.copy(effect.task);
+        return;
       case "flash":
         this.say(effect.text, "info");
         this.emit();
@@ -333,8 +340,22 @@ export class Controller {
     }
   }
 
+  /** Copy the captured selection, even if the cursor moves while the clipboard is busy. */
+  private copy(task: Task): void {
+    const text = taskText(task);
+    this.copies = this.copies.then(async () => {
+      try {
+        const method = await (this.options.copyText ?? copyText)(text);
+        this.say(t(method === "osc52" ? "done.clipboardTerminal" : "done.copied"), "ok");
+      } catch (error) {
+        this.say(t(error instanceof ClipboardError && error.reason === "unavailable" ? "error.clipboardUnavailable" : "error.clipboard"), "error");
+      }
+      this.emit();
+    });
+  }
+
   /** Changes run one after another; each ends with a refresh of what is on screen. */
-  private change(effect: Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" }>, today: string, form?: UiState["mode"]): void {
+  private change(effect: Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" | "copy" }>, today: string, form?: UiState["mode"]): void {
     if (!this.timezone) {
       this.say(t("conn.notYet"), "error");
       this.emit();
@@ -375,9 +396,9 @@ export class Controller {
     this.ui = reanchor(this.ui, id, derive(this.snapshot()).lists);
   }
 
-  /** Resolves when every queued change is answered (tests). */
+  /** Resolves when every queued change, copy and read is answered (tests). */
   idle(): Promise<void> {
-    return this.changes.then(() => Promise.all([...this.inflight.values()])).then(() => undefined);
+    return Promise.all([this.changes, this.copies]).then(() => Promise.all([...this.inflight.values()])).then(() => undefined);
   }
 
   /** The task the cursor is on (tests). */

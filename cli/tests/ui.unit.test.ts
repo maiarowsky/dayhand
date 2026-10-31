@@ -9,6 +9,7 @@ import { makeApi, retryAfterMs, Throttled, type Api } from "../src/ui/api.js";
 import { Budget } from "../src/ui/budget.js";
 import type { Agents, Approval, Health, WorkTask } from "../src/ui/agents.js";
 import { Controller } from "../src/ui/controller.js";
+import { ClipboardError, taskText } from "../src/ui/clipboard.js";
 import { handleKey } from "../src/ui/handle.js";
 import { chunkKeys, KEY_GROUPS, keyName, keysText } from "../src/ui/keys.js";
 import { editLine, insert, line } from "../src/ui/line.js";
@@ -491,6 +492,78 @@ describe("controller", () => {
   const plan = task("Plan the week", { dueDate: TODAY, dueTime: "09:00" });
   const rent = task("Pay rent", { dueDate: "2026-10-22", overdue: true });
   const view: TodayView = { date: TODAY, timezone: "Europe/London", now: null, overdue: [rent], today: [plan], doneToday: [] };
+
+  test.each(["today", "board", "week", "trash", "agents"] as const)("%s: y copies the highlighted task with a resolved project and no API change", async (viewName) => {
+    const selected = task("Copy this task", { dueDate: TODAY, note: "Full note\nSecond line", projectId: "p" });
+    const other = task("First task", { dueDate: TODAY, createdAt: 0 });
+    const { api, state } = fakeApi({ ...view, overdue: [], today: [other, selected] }, {
+      projects: async () => [{ id: "p", name: "Demo project", position: 0, archived: false, createdAt: 1, updatedAt: 1 }],
+      trash: async () => [other, selected].map((task) => ({ ...task, deletedAt: 1 })),
+    });
+    state.agents.proposals = [other, selected].map((task) => ({ ...task, proposedAt: 1 }));
+    const copied: string[] = [];
+    const ui = new Controller({ api, view: viewName, now: () => NOW, copyText: async (text) => { copied.push(text); return "system"; } });
+    try {
+      await ui.refresh();
+      ui.key("j");
+      expect(ui.selected()?.id).toBe(selected.id);
+      const before = structuredClone(ui.snapshot().ui);
+      ui.key("y");
+      await ui.idle();
+      expect(copied).toEqual([taskText({ ...selected, project: "Demo project" })]);
+      expect(ui.snapshot().ui).toEqual(before);
+      expect(ui.snapshot().busy).toBe(0);
+      expect(state.changes).toEqual([]);
+      expect(rowsText(ui.frame().rows)).toContain("Task copied");
+    } finally {
+      ui.stop();
+    }
+  });
+
+  test("details copy the captured task even offline, and the cursor can move before the copy finishes", async () => {
+    const { api, state } = fakeApi(view);
+    const copied: string[] = [];
+    let finish!: () => void;
+    const ui = new Controller({ api, view: "today", now: () => NOW, copyText: async (text) => {
+      copied.push(text);
+      await new Promise<void>((resolve) => { finish = resolve; });
+      return "osc52";
+    } });
+    try {
+      await ui.refresh();
+      ui.key("enter");
+      await ui.idle();
+      const opened = ui.selected()!;
+      state.down = true;
+      await ui.refresh();
+      ui.key("y");
+      ui.key("esc");
+      ui.key("j");
+      await Promise.resolve();
+      expect(copied).toEqual([taskText(opened)]);
+      expect(ui.selected()?.id).toBe(plan.id);
+      finish();
+      await ui.idle();
+      expect(ui.snapshot().flash?.text).toBe("Sent to terminal clipboard (OSC 52)");
+      expect(state.changes).toEqual([]);
+    } finally {
+      ui.stop();
+    }
+  });
+
+  test.each([new ClipboardError("unavailable"), new Error("private subprocess details")])("clipboard failures show a safe status message, not task changes: %s", async (error) => {
+    const { api, state } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => NOW, copyText: async () => { throw error; } });
+    try {
+      await ui.refresh();
+      ui.key("y");
+      await ui.idle();
+      expect(ui.snapshot().flash).toMatchObject({ tone: "error", text: error instanceof ClipboardError ? "Cannot copy: no clipboard tool or terminal" : "Cannot copy: clipboard tool or terminal write failed" });
+      expect(state.changes).toEqual([]);
+    } finally {
+      ui.stop();
+    }
+  });
 
   test("loads Today, keeps the data and says why when the server goes away, and recovers", async () => {
     const { api, state } = fakeApi(view);

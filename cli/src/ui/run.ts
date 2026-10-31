@@ -8,6 +8,7 @@ import { createElement } from "react";
 import { App } from "./app.js";
 import type { Api } from "./api.js";
 import { Controller } from "./controller.js";
+import { copyText } from "./clipboard.js";
 import type { ViewName } from "./state.js";
 
 // Button presses and the wheel (1000), reported as SGR coordinates (1006).
@@ -44,6 +45,10 @@ export async function runUi(options: UiOptions): Promise<void> {
     columns: stdout.columns,
     rows: stdout.rows,
     editText: options.editText,
+    copyText: (text) => copyText(text, { writeOsc52: stdout.isTTY ? (sequence) => {
+      if (fd !== undefined) writeSync(fd, sequence);
+      else stdout.write(sequence);
+    } : null }),
     beforeEditor: () => mouse(false),
     afterEditor: () => mouse(true),
   });

@@ -1,6 +1,7 @@
 // dayhand ui driven by keys and clicks on a real pseudo-terminal, against the local
 // backend: every change is checked through dayhand --json afterwards. node-pty ships
 // prebuilt binaries for macOS and Windows only; elsewhere these tests are skipped.
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { createKey, dayhand, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
@@ -134,11 +135,52 @@ describe("agent UI with the local backend", () => {
     const help = await dayhand(undefined, ["help", "ui"]);
     expect(help.code).toBe(0);
     expect(help.stdout).toMatch(/1 2 3 4 5 +Today, Board, Week, Trash, Agents/);
+    expect(help.stdout).toMatch(/y +Copy the selected task as plain text/);
     for (const binding of [/p +Agents: pause \/ resume changes/, /1 2 3 4 +Request: choose an option/, /Enter Esc +Request: confirm/, /A +Accept the selected proposal/, /X +Reject the selected proposal/]) expect(help.stdout).toMatch(binding);
   });
 });
 
 describe.skipIf(!pty)("dayhand ui", () => {
+  test.skipIf(process.platform === "win32").each(["today", "board"])("%s: y pipes the selected task into the clipboard tool and leaves the backend unchanged", async (view) => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["project", "add", "Demo project"]);
+    await dayhandJson(key, ["add", "First task", "--time", "08:00"]);
+    const task = await dayhandJson(key, ["add", "Zażółć 日本語 🚀", "--time", "09:00", "-p", "Demo project", "--note", "First line\nSecond line"]);
+    const before = await show(key, task.ref);
+    const dir = mkdtempSync(join(TEST_HOME, "clipboard-"));
+    const output = join(dir, "copied.txt");
+    // Use a real executable boundary, without touching the host's clipboard.
+    const executable = `#!${process.execPath}\nconst fs = require("node:fs"); fs.writeFileSync(process.env.CLIPBOARD_OUTPUT, fs.readFileSync(0));\n`;
+    for (const command of ["pbcopy", "wl-copy", "xclip", "xsel"]) writeFileSync(join(dir, command), executable, { mode: 0o755 });
+    const s = open(key, ["--view", view, "--lang", "en"], undefined, { PATH: dir, CLIPBOARD_OUTPUT: output });
+    await s.waitFor(/› #1 ○[^\n]*First task/);
+    await s.press("j");
+    // Board truncates the visible title; the clipboard must still contain it all.
+    const selection = /› #2 ○[^\n]*Zażółć/;
+    await s.waitFor(selection);
+    await s.press("y");
+    const screen = await s.waitFor("Task copied");
+    expect(readFileSync(output, "utf8")).toBe(`ID: ${task.id}\nRef: #2\nTitle: Zażółć 日本語 🚀\nStatus: todo\nProject: Demo project\nDue: ${task.dueDate} 09:00\nNote:\nFirst line\nSecond line`);
+    expect(screen).toMatch(selection);
+    expect(screen).toContain("y copy");
+    expect(await show(key, task.ref)).toEqual(before);
+  });
+
+  test.skipIf(process.platform === "win32")("y falls back to raw OSC 52 when no clipboard executable is available", async () => {
+    const { key } = await newUser();
+    const task = await dayhandJson(key, ["add", "Copy over SSH", "--note", "A complete note"]);
+    const before = await show(key, task.ref);
+    const dir = mkdtempSync(join(TEST_HOME, "no-clipboard-"));
+    const s = open(key, ["--lang", "en"], undefined, { PATH: dir });
+    await s.waitFor(/› #1 ○ Copy over SSH/);
+    await s.press("y");
+    await s.waitFor("Sent to terminal clipboard (OSC 52)");
+    const sequence = /\u001b\]52;c;([A-Za-z0-9+/=]+)\u0007/.exec(s.raw());
+    expect(sequence, "OSC 52 must bypass Ink's patched stdout").not.toBeNull();
+    expect(Buffer.from(sequence![1]!, "base64").toString("utf8")).toBe(`ID: ${task.id}\nRef: #1\nTitle: Copy over SSH\nStatus: todo\nDue: ${task.dueDate}\nNote:\nA complete note`);
+    expect(await show(key, task.ref)).toEqual(before);
+  });
+
   test("opens Today full screen with the mouse on, and q gives the terminal back", async () => {
     const { key } = await newUser();
     await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday"]);

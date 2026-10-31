@@ -69,6 +69,7 @@ export const KEY_GROUPS: KeyGroup[] = [
     title: "keys.tasks",
     bindings: [
       { keys: "a", does: "keys.tasks.add" },
+      { keys: "y", does: "keys.tasks.copy" },
       { keys: "Space x", does: "keys.tasks.done" },
       { keys: "s", does: "keys.tasks.start" },
       { keys: "n", does: "keys.tasks.now" },

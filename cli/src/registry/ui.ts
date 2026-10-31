@@ -17,7 +17,7 @@ export const uiCommands: CommandSpec[] = [
     description:
       "Quick-add and project-filter syntax: dayhand help ui. " +
       "Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. " +
-      "q quits, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES " +
+      "q quits, y copies the selected task as plain text for a chat, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES " +
       `or LANG, overridden by DAYHAND_LANG or --lang) when it is one of ${LANGUAGES.join(", ")}, else English; ` +
       "date phrases stay English.",
     options: [
