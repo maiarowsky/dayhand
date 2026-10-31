@@ -5,7 +5,7 @@
 class Dayhand < Formula
   desc "Command-line client for the Dayhand task manager, for people and agents"
   homepage "https://github.com/maiarowsky/dayhand"
-  url "https://registry.npmjs.org/dayhand/-/dayhand-0.14.0.tgz" # x-release-please-version
+  url "https://registry.npmjs.org/dayhand/-/dayhand-0.15.1.tgz" # x-release-please-version
   sha256 "0000000000000000000000000000000000000000000000000000000000000000" # the npm tarball's, after publishing
   license "Apache-2.0"
 
