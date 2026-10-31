@@ -29,11 +29,13 @@ beforeAll(async () => {
   await exec("tar", ["-xf", archive, "-C", dir]);
   const oldRoot = join(dir, "backend");
   expect(JSON.parse(readFileSync(join(oldRoot, "package.json"), "utf8")).version).toBe("0.12.0");
-  // The runtime/toolchain dependencies are unchanged between 0.12 and 0.13;
-  // reuse the packages installed with npm ci --ignore-scripts from the current lockfile.
+  // Reuse the packages installed with npm ci --ignore-scripts from the current lockfile.
+  // Only body-parser and fast-uri differ after the security patches on 2026-10-31.
   const currentLock = JSON.parse(readFileSync(join(ROOT, "backend/package-lock.json"), "utf8"));
   const oldLock = JSON.parse(readFileSync(join(oldRoot, "package-lock.json"), "utf8"));
-  const dependencies = (lock: any) => Object.entries(lock.packages).filter(([path]) => path !== "");
+  const securityPatches = new Set(["node_modules/body-parser", "node_modules/fast-uri"]);
+  const dependencies = (lock: any) => Object.entries(lock.packages)
+    .filter(([path]) => path !== "" && !securityPatches.has(path));
   expect(dependencies(currentLock)).toEqual(dependencies(oldLock));
   symlinkSync(join(ROOT, "backend/node_modules"), join(oldRoot, "node_modules"), "dir");
   backend = await startLocalBackend({ dataDir: join(dir, "data"), port: await freePort(), sitePort: await freePort(), instanceName: "dayhand-projekty-t5-legacy", instanceSecret: newInstanceSecret() });
