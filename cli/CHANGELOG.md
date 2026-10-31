@@ -2,6 +2,15 @@
 
 Versions before 0.13.0 are described in the commit history (`git log -- cli`).
 
+## 0.15.1 (2026-10-31)
+
+### Added
+
+- `dayhand ui`: `y` copies the selected task from Today and Board as plain text for a chat:
+  id, title, status, project, due date/time and note when present. It uses the system clipboard,
+  with OSC 52 as a fallback (for example over SSH). The terminal must allow OSC 52 clipboard
+  writes; the fallback reports sending the text because the terminal does not confirm copying it.
+
 ## 0.15.0 (2026-10-31)
 
 Projects need backend 0.13.0 or later; other features keep their previous minimum versions.
