@@ -15,7 +15,7 @@ import { handleKey, type Effect } from "./handle.js";
 import { weekStart } from "./lists.js";
 import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
-import { initialState, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
+import { initialState, moveRow, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
 
 export const DEFAULT_INTERVAL_S = 12;
 const FLASH_MS = { ok: 5000, info: 5000, error: 10_000 };
@@ -52,6 +52,7 @@ export class Controller {
   private readonly listeners = new Set<() => void>();
   private readonly inflight = new Map<string, Promise<void>>();
   private changes: Promise<void> = Promise.resolve();
+  private completingTaskId?: string;
   private timer?: ReturnType<typeof setInterval>;
   private flashTimer?: ReturnType<typeof setTimeout>;
   private version = 0;
@@ -197,7 +198,7 @@ export class Controller {
     }
   }
 
-  /** One read, never two of the same at once (a fresh one reads again after it); the cursor stays on its task. */
+  /** One read, never two of the same at once (a fresh one reads again after it); the cursor follows its task unless completing it. */
   private load<T>(key: string, get: () => Promise<T>, put: (value: T) => void, fresh = false): Promise<void> {
     const running = this.inflight.get(key);
     if (running) return fresh ? running.then(() => this.load(key, get, put)) : running;
@@ -207,7 +208,9 @@ export class Controller {
         if (this.stopped) return;
         const before = this.selectedId();
         put(value);
-        this.ui = reanchor(this.ui, before, derive(this.snapshot()).lists);
+        const lists = derive(this.snapshot()).lists;
+        // Completing a task keeps its list position instead of following it to Done.
+        this.ui = before && before === this.completingTaskId ? moveRow(this.ui, lists, 0) : reanchor(this.ui, before, lists);
         this.conn = { state: "online", at: this.now() };
       } catch (error) {
         this.failed(error);
@@ -348,11 +351,12 @@ export class Controller {
     this.busy++;
     this.emit();
     this.changes = this.changes.then(async () => {
+      this.completingTaskId = effect.kind === "complete" ? effect.task.id : undefined;
       try {
         const done = await runChange(effect, context);
         // The message comes with the refreshed screen, so a key pressed on seeing it acts on what it says.
         await this.refresh(true);
-        if (done.select) this.select(done.select);
+        if (done.select && effect.kind !== "complete") this.select(done.select);
         this.say(done.text, "ok");
       } catch (error) {
         const failure = error instanceof Throttled ? error : toCliError(error);
@@ -360,6 +364,7 @@ export class Controller {
         const refused = failure instanceof CliError && (failure.code === "usage" || failure.code === "invalid_argument");
         if (form && refused && this.ui.mode.kind === "normal") this.ui = { ...this.ui, mode: form };
       } finally {
+        this.completingTaskId = undefined;
         this.busy--;
         this.emit();
       }

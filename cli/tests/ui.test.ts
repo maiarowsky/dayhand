@@ -203,6 +203,37 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(screen).toContain("x done");
   });
 
+  test.each([
+    ["today", "space"], ["today", "x"],
+    ["board", "space"], ["board", "x"],
+    ["week", "space"], ["week", "x"],
+  ])("%s: %s completes without moving the cursor to Done", async (view, keyName) => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["add", "First task", "--time", "09:00"]);
+    await dayhandJson(key, ["add", "Middle task", "--time", "10:00"]);
+    await dayhandJson(key, ["add", "Last task", "--time", "11:00"]);
+    const s = open(key, ["--view", view, "--lang", "en"]);
+    await s.waitFor(/› #1 ○[^\n]*First task/);
+    await s.press("j");
+    await s.waitFor(/› #2 ○[^\n]*Middle task/);
+    await s.press(keyName);
+    await s.waitFor(/› #3 ○[^\n]*Last task/);
+    expect((await show(key, 2)).task.status).toBe("done");
+    // The next completion acts on the task that took the same slot, not the completed task.
+    await s.press(keyName);
+    await s.waitFor("Done: #3 Last task");
+    expect((await show(key, 3)).task.status).toBe("done");
+    expect((await show(key, 2)).task.status).toBe("done");
+    if (view === "board") {
+      // The last row disappeared: stay in TODO and clamp to its remaining row.
+      await s.waitFor(/› #1 ○[^\n]*First task/);
+      await s.press(keyName);
+      const screen = await s.waitFor("TODO (0)");
+      expect(screen).not.toMatch(/› #\d/);
+      expect((await show(key, 1)).task.status).toBe("done");
+    }
+  });
+
   test("the board: H/L move a task between columns and the cursor follows it", async () => {
     const { key } = await newUser();
     await dayhandJson(key, ["add", "Write the post"]);
