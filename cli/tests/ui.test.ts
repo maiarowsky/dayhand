@@ -188,6 +188,21 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await s.waitFor("Now task cleared");
   });
 
+  test.each(["x", "space"])("%s completes and reopens the selected task; hints advertise x", async (keyName) => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["add", "Demo completion shortcut"]);
+    const s = open(key, ["--lang", "en"]);
+    await s.waitFor(/› #1 ○ Demo completion shortcut/);
+    await s.press(keyName);
+    await s.waitFor(/› #1 ✔ Demo completion shortcut/);
+    expect((await show(key, 1)).task.status).toBe("done");
+    await s.press(keyName);
+    const screen = await s.waitFor(/› #1 ○ Demo completion shortcut/);
+    expect((await show(key, 1)).task.status).toBe("todo");
+    await s.shot(`completion-${keyName}`);
+    expect(screen).toContain("x done");
+  });
+
   test("the board: H/L move a task between columns and the cursor follows it", async () => {
     const { key } = await newUser();
     await dayhandJson(key, ["add", "Write the post"]);

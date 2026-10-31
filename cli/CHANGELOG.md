@@ -18,6 +18,11 @@ Projects need backend 0.13.0 or later; other features keep their previous minimu
 - `dayhand ui` quick add recognizes `+project` (hyphens may replace spaces); unknown tokens stay
   in the title. The `/` filter accepts an exact `+project` token in any case.
 
+### Changed
+
+- `dayhand ui` footer hints show `x done` instead of the `␣` space symbol; Space still marks a
+  task done.
+
 ### Unchanged
 
 - Default `--plain` task columns and default JSON output are unchanged, apart from the backend's
