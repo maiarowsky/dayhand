@@ -15,7 +15,7 @@ import { handleKey, type Effect } from "./handle.js";
 import { weekStart } from "./lists.js";
 import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
-import { initialState, moveRow, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
+import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
 
 export const DEFAULT_INTERVAL_S = 12;
 const FLASH_MS = { ok: 5000, info: 5000, error: 10_000 };
@@ -210,7 +210,7 @@ export class Controller {
         put(value);
         const lists = derive(this.snapshot()).lists;
         // Completing a task keeps its list position instead of following it to Done.
-        this.ui = before && before === this.completingTaskId ? moveRow(this.ui, lists, 0) : reanchor(this.ui, before, lists);
+        this.ui = before && before === this.completingTaskId ? keepRow(this.ui, lists) : reanchor(this.ui, before, lists);
         this.conn = { state: "online", at: this.now() };
       } catch (error) {
         this.failed(error);

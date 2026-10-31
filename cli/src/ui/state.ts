@@ -158,6 +158,13 @@ export function moveRow(state: UiState, lists: Lists, delta: number): UiState {
   }
 }
 
+/** After completing a task the cursor keeps its row; in Today it stays among the open tasks (the first row when none is left). */
+export function keepRow(state: UiState, lists: Lists): UiState {
+  if (state.view !== "today") return moveRow(state, lists, 0);
+  const open = lists.today.filter((task) => task.status !== "done").length;
+  return { ...state, cursor: { ...state.cursor, today: Math.max(0, Math.min(state.cursor.today, open - 1)) } };
+}
+
 /** j/k in the week: within the day, then on into the next or previous day. */
 function moveInWeek(state: UiState, lists: Lists, delta: number): UiState {
   const c = state.cursor;
