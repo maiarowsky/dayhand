@@ -6,10 +6,12 @@ Versions before 0.13.0 are described in the commit history (`git log -- cli`).
 
 ### Added
 
-- `dayhand ui`: `y` copies the selected task from Today and Board as plain text for a chat:
-  id, title, status, project, due date/time and note when present. It uses the system clipboard,
-  with OSC 52 as a fallback (for example over SSH). The terminal must allow OSC 52 clipboard
-  writes; the fallback reports sending the text because the terminal does not confirm copying it.
+- `dayhand ui`: `y` copies the selected task from Today, Board, Week, Trash, agent proposals
+  and task details as plain text for a chat without changing the task: id, title and status,
+  plus task number, project, due date/time, note and resume note when present. It uses the
+  system clipboard, with OSC 52 as a fallback (for example over SSH). The terminal must allow
+  OSC 52 clipboard writes; the fallback reports sending the text because the terminal does
+  not confirm copying it.
 
 ## 0.15.0 (2026-10-31)
 
