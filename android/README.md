@@ -24,7 +24,7 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
-- Version 0.13.4 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.13.5 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
