@@ -64,8 +64,10 @@ export function withProjectNames<T>(value: T, projects: Project[]): T {
   return visit(value) as T;
 }
 
-export function hasProjectTasks(value: unknown): boolean {
-  if (isTask(value)) return typeof value.projectId === "string";
-  if (Array.isArray(value)) return value.some(hasProjectTasks);
-  return typeof value === "object" && value !== null && Object.values(value).some(hasProjectTasks);
+/** Whether any task belongs to a project, other than the `known` project ids. */
+export function hasProjectTasks(value: unknown, known: ReadonlySet<string> = new Set()): boolean {
+  if (isTask(value)) return typeof value.projectId === "string" && !known.has(value.projectId);
+  const visit = (item: unknown) => hasProjectTasks(item, known);
+  if (Array.isArray(value)) return value.some(visit);
+  return typeof value === "object" && value !== null && Object.values(value).some(visit);
 }

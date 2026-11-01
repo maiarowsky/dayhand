@@ -69,8 +69,9 @@ keys follow vim and lazygit.
   **Coming soon:** a 60-second default, doubling after three unchanged polls up to 300 seconds.
   Any key or changed data restores the base interval (still configurable from 10 to 300 seconds).
   Ticks read only the current view and open task, plus Today health every fifth tick. Projects
-  and Today health reload on entry, view changes, your changes and `R`; your changes still
-  refresh immediately.
+  and Today health reload on entry, view changes, your changes and `R`; projects also reload when
+  a task on screen names a project created elsewhere. A new project without tasks reaches quick-add
+  and filters after `R` or a view change. Your changes still refresh immediately.
 - **Colours** are the terminal's 16 ANSI colours, so your terminal theme applies.
 - **Language**: the screens speak English, Polish, German, Spanish, French, Brazilian Portuguese,
   Japanese or Simplified Chinese, following `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`,

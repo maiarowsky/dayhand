@@ -1,5 +1,6 @@
 // Count actual MCP reads through the UI API, with Vitest's clock and sample data only.
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import type { Project } from "../src/projects.js";
 import type { Task, TodayView } from "../src/render/model.js";
 import { makeApi } from "../src/ui/api.js";
 import { Controller, DEFAULT_INTERVAL_S } from "../src/ui/controller.js";
@@ -12,10 +13,11 @@ function server() {
   const state = {
     today: { date: "2026-10-23", timezone: "UTC", now: null, overdue: [], today: [SAMPLE], doneToday: [] } as TodayView,
     detail: { task: SAMPLE, history: [] },
+    projects: [] as Project[],
   };
   const empty = { count: 0, tasks: [] };
   const replies: Record<string, Record<string, unknown>> = {
-    get_settings: { timezone: "UTC" }, list_projects: { result: [] },
+    get_settings: { timezone: "UTC" },
     board: { todo: [SAMPLE], doing: [], done: [] }, list_all: { result: [SAMPLE] }, list_trash: { result: [] },
     get_agent_controls: { paused: false, pausedAt: null, reason: null, policies: [] }, list_approvals: { approvals: [] },
     plan_health: {
@@ -26,7 +28,7 @@ function server() {
     complete_task: { task: { ...SAMPLE, status: "done" }, next: null },
   };
   const callTool = vi.fn(async (name: string) => {
-    const structured = name === "list_today" ? state.today : name === "get_task" ? state.detail : replies[name];
+    const structured = name === "list_today" ? state.today : name === "get_task" ? state.detail : name === "list_projects" ? { result: state.projects } : replies[name];
     if (!structured) throw new Error(`Unexpected tool: ${name}`);
     // Network responses are separate objects, even when their contents did not change.
     return { structured: structuredClone(structured), text: "", content: [] };
@@ -139,6 +141,21 @@ describe("UI polling", () => {
     expect(s.count("complete_task")).toBe(1);
     expect(s.count("list_projects")).toBe(4);
     expect(s.count("plan_health")).toBe(3);
+  });
+
+  test("a project created elsewhere is named after the next tick, then project reads stop", async () => {
+    const s = server();
+    const ui = open(s.api);
+    await ui.start();
+    s.callTool.mockClear();
+    s.state.projects = [{ id: "groceries", name: "Groceries", position: 1024, archived: false, createdAt: 1, updatedAt: 1 }];
+    s.state.today = { ...s.state.today, today: [{ ...SAMPLE, id: "milk", title: "Buy milk", projectId: "groceries" }] };
+    await advance(60);
+    expect(s.count("list_projects")).toBe(1);
+    expect(ui.snapshot().data.today?.today[0]?.project).toBe("Groceries");
+    await advance(60);
+    expect(s.count("list_today")).toBe(2);
+    expect(s.count("list_projects")).toBe(1);
   });
 
   test("a changed open task resets backoff; closing it stops detail polling", async () => {

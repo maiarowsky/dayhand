@@ -5,7 +5,7 @@
 import { CliError, toCliError } from "../core/exit.js";
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
-import { withProjectNames } from "../projects.js";
+import { hasProjectTasks, withProjectNames } from "../projects.js";
 import { isoWeekday, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
 import { agentId } from "./agents.js";
@@ -190,11 +190,11 @@ export class Controller {
 
   /** Compare view data, not connection timestamps, flash messages or the clock. */
   private screenData(): string {
-    return JSON.stringify([
-      this.data[this.ui.view], this.data.projects,
-      this.ui.view === "today" ? this.data.health : undefined,
-      this.ui.detail ? this.data.detail : undefined,
-    ]);
+    return JSON.stringify([this.data.projects, ...this.shown()]);
+  }
+
+  private shown(): unknown[] {
+    return [this.data[this.ui.view], this.ui.view === "today" ? this.data.health : undefined, this.ui.detail ? this.data.detail : undefined];
   }
 
   stop(): void {
@@ -224,14 +224,20 @@ export class Controller {
       if (!this.timezone) return;
     }
     const jobs = [this.loadView(this.ui.view, fresh, ancillary || !this.data.today || this.todayPolls % HEALTH_POLLS === 0)];
-    // Retry an initial load that failed offline; once cached, projects are never polled.
-    if (ancillary || !this.data.projects) jobs.push(this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }), fresh));
+    // Retry an initial load that failed offline; once cached, projects are read only for a task naming an unknown one.
+    if (ancillary || !this.data.projects) jobs.push(this.loadProjects(fresh));
     if (this.ui.detail) {
       const id = this.ui.detail.taskId;
       jobs.push(this.load(`task:${id}`, () => this.options.api.task(id), (detail) => (this.data = { ...this.data, detail }), fresh));
     }
     await Promise.all(jobs);
+    const known = this.data.projects;
+    if (known && hasProjectTasks(this.shown(), new Set(known.map((p) => p.id)))) await this.loadProjects(fresh);
     if (before !== this.screenData()) this.resetPolling();
+  }
+
+  private loadProjects(fresh: boolean): Promise<void> {
+    return this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }), fresh);
   }
 
   /** The user's zone; the week moves to its today unless keys moved it while the settings loaded. */

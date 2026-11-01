@@ -16,7 +16,7 @@ export const uiCommands: CommandSpec[] = [
     summary: "Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)",
     description:
       "Quick-add and project-filter syntax: dayhand help ui. " +
-      "Needs a terminal. Polls the current view every 60 s by default, doubling after three unchanged polls up to 300 s. Any key or changed data restores the base interval. Projects reload on entry, view changes, mutations and R; Today health also reloads every fifth poll. Stays within the key's limits of 120 reads and 60 changes a minute. " +
+      "Needs a terminal. Polls the current view every 60 s by default, doubling after three unchanged polls up to 300 s. Any key or changed data restores the base interval. Projects reload on entry, view changes, mutations, R and when a task on screen names an unknown project; a new project without tasks reaches quick-add and filters after R or a view change. Today health also reloads every fifth poll. Stays within the key's limits of 120 reads and 60 changes a minute. " +
       "q quits, y copies the selected task as plain text for a chat, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES " +
       `or LANG, overridden by DAYHAND_LANG or --lang) when it is one of ${LANGUAGES.join(", ")}, else English; ` +
       "date phrases stay English.",
