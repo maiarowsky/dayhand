@@ -66,6 +66,11 @@ keys follow vim and lazygit.
 - **Refresh**: what is on screen is read again every 12 seconds (`--interval 10` to `300`), within the
   key's limits of 120 reads and 60 changes a minute; `R` refreshes now. Without a connection it keeps the
   last data on screen, says so in red, and tries again.
+  **Coming soon:** a 60-second default, doubling after three unchanged polls up to 300 seconds.
+  Any key or changed data restores the base interval (still configurable from 10 to 300 seconds).
+  Ticks read only the current view and open task, plus Today health every fifth tick. Projects
+  and Today health reload on entry, view changes, your changes and `R`; your changes still
+  refresh immediately.
 - **Colours** are the terminal's 16 ANSI colours, so your terminal theme applies.
 - **Language**: the screens speak English, Polish, German, Spanish, French, Brazilian Portuguese,
   Japanese or Simplified Chinese, following `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`,

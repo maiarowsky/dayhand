@@ -2070,7 +2070,7 @@ dayhand completion powershell | Out-String | Invoke-Expression
 
 Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)
 
-Quick-add and project-filter syntax: dayhand help ui. Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. q quits, y copies the selected task as plain text for a chat, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
+Quick-add and project-filter syntax: dayhand help ui. Needs a terminal. Polls the current view every 60 s by default, doubling after three unchanged polls up to 300 s. Any key or changed data restores the base interval. Projects reload on entry, view changes, mutations and R; Today health also reloads every fifth poll. Stays within the key's limits of 120 reads and 60 changes a minute. q quits, y copies the selected task as plain text for a chat, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES or LANG, overridden by DAYHAND_LANG or --lang) when it is one of en, pl, de, es, fr, pt-BR, ja, zh-Hans, else English; date phrases stay English.
 
 ```
 dayhand ui [options]
@@ -2079,7 +2079,7 @@ dayhand ui [options]
 | Option | Meaning |
 |---|---|
 | `--view <view>` | The view to open with (today, board, week, trash) |
-| `--interval <seconds>` | Seconds between refreshes, 10 to 300 (default 12) |
+| `--interval <seconds>` | Base seconds between refreshes, 10 to 300 (default 60); backs off to 300 when unchanged |
 | `--no-mouse` | Leave the mouse to the terminal (for selecting text) |
 | `--lang <language>` | The screens' language: en, pl, de, es, fr, pt-BR, ja, zh-Hans (default: DAYHAND_LANG, then the locale) |
 

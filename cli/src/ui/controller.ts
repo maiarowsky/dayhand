@@ -18,13 +18,16 @@ import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model
 import type { Screen } from "./screens/screen.js";
 import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
 
-export const DEFAULT_INTERVAL_S = 12;
+export const DEFAULT_INTERVAL_S = 60;
+const MAX_INTERVAL_S = 300;
+const UNCHANGED_POLLS = 3;
+const HEALTH_POLLS = 5;
 const FLASH_MS = { ok: 5000, info: 5000, error: 10_000 };
 
 export type ControllerOptions = {
   api: Api;
   view: ViewName;
-  /** Seconds between refreshes of what is on screen. */
+  /** Base seconds between refreshes; idle polling backs off to 300 seconds. */
   interval?: number;
   now?: () => number;
   columns?: number;
@@ -57,7 +60,13 @@ export class Controller {
   private changes: Promise<void> = Promise.resolve();
   private copies: Promise<void> = Promise.resolve();
   private completingTaskId?: string;
-  private timer?: ReturnType<typeof setInterval>;
+  private timer?: ReturnType<typeof setTimeout>;
+  private pollingEnabled = false;
+  private polling = false;
+  private pollInterval: number;
+  private unchangedPolls = 0;
+  private todayPolls = 0;
+  private activity = 0;
   private flashTimer?: ReturnType<typeof setTimeout>;
   private version = 0;
   private cached?: { version: number; screen: Screen };
@@ -67,6 +76,7 @@ export class Controller {
   private input?: { pause: () => void; resume: () => void };
 
   constructor(private readonly options: ControllerOptions) {
+    this.pollInterval = options.interval ?? DEFAULT_INTERVAL_S;
     this.now = options.now ?? Date.now;
     this.columns = options.columns ?? 80;
     this.rows = options.rows ?? 24;
@@ -125,7 +135,7 @@ export class Controller {
   }
 
   snapshot(): Snapshot {
-    return { ui: this.ui, data: withProjectNames(this.data, this.data.projects ?? []), conn: this.conn, flash: this.flash, busy: this.busy, columns: this.columns, rows: this.rows, timezone: this.timezone, today: this.today(), now: this.now(), interval: this.options.interval ?? DEFAULT_INTERVAL_S };
+    return { ui: this.ui, data: withProjectNames(this.data, this.data.projects ?? []), conn: this.conn, flash: this.flash, busy: this.busy, columns: this.columns, rows: this.rows, timezone: this.timezone, today: this.today(), now: this.now(), interval: this.pollInterval };
   }
 
   frame(): Screen {
@@ -137,15 +147,59 @@ export class Controller {
     return this.data.today?.date ?? localAt(this.now(), this.timezone ?? "UTC").date;
   }
 
-  /** Loads the settings and the first view, then refreshes every `interval` seconds. */
+  /** Loads the first view, then polls only what is on screen, less often when idle. */
   async start(): Promise<void> {
-    this.timer = setInterval(() => void this.refresh(), (this.options.interval ?? DEFAULT_INTERVAL_S) * 1000);
     await this.refresh();
+    this.pollingEnabled = true;
+    this.schedulePoll();
+  }
+
+  private schedulePoll(): void {
+    clearTimeout(this.timer);
+    if (this.pollingEnabled && !this.stopped && !this.polling) {
+      this.timer = setTimeout(() => void this.poll(), this.pollInterval * 1000);
+    }
+  }
+
+  private resetPolling(): void {
+    this.activity++;
+    this.unchangedPolls = 0;
+    const base = this.options.interval ?? DEFAULT_INTERVAL_S;
+    const changed = this.pollInterval !== base;
+    this.pollInterval = base;
+    this.schedulePoll();
+    if (changed) this.emit();
+  }
+
+  private async poll(): Promise<void> {
+    this.polling = true;
+    const activity = this.activity;
+    if (this.ui.view === "today") this.todayPolls++;
+    try {
+      await this.refresh(false, false);
+      if (activity === this.activity && ++this.unchangedPolls >= UNCHANGED_POLLS) {
+        this.unchangedPolls = 0;
+        this.pollInterval = Math.min(this.pollInterval * 2, MAX_INTERVAL_S);
+        this.emit();
+      }
+    } finally {
+      this.polling = false;
+      this.schedulePoll();
+    }
+  }
+
+  /** Compare view data, not connection timestamps, flash messages or the clock. */
+  private screenData(): string {
+    return JSON.stringify([
+      this.data[this.ui.view], this.data.projects,
+      this.ui.view === "today" ? this.data.health : undefined,
+      this.ui.detail ? this.data.detail : undefined,
+    ]);
   }
 
   stop(): void {
     this.stopped = true;
-    clearInterval(this.timer);
+    clearTimeout(this.timer);
     clearTimeout(this.flashTimer);
   }
 
@@ -156,19 +210,28 @@ export class Controller {
     this.emit();
   }
 
-  /** What is on screen, again: the settings until they are known, the view, the open task; `fresh` reads after any read already running. */
-  async refresh(fresh = false): Promise<void> {
+  /** User refreshes include projects and health; ticks only load the view and open task.
+   * `fresh` reads after any read already running, so a mutation never shows stale data. */
+  async refresh(fresh = false, ancillary = true): Promise<void> {
     if (this.stopped || this.conn.state === "rejected") return;
+    if (ancillary) {
+      this.todayPolls = 0;
+      this.resetPolling();
+    }
+    const before = this.screenData();
     if (!this.timezone) {
       await this.load("settings", () => this.options.api.settings(), (s) => this.setZone(s.timezone));
       if (!this.timezone) return;
     }
-    const jobs = [this.loadView(this.ui.view, fresh), this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }), fresh)];
+    const jobs = [this.loadView(this.ui.view, fresh, ancillary || !this.data.today || this.todayPolls % HEALTH_POLLS === 0)];
+    // Retry an initial load that failed offline; once cached, projects are never polled.
+    if (ancillary || !this.data.projects) jobs.push(this.load("projects", () => this.options.api.projects(), (projects) => (this.data = { ...this.data, projects }), fresh));
     if (this.ui.detail) {
       const id = this.ui.detail.taskId;
       jobs.push(this.load(`task:${id}`, () => this.options.api.task(id), (detail) => (this.data = { ...this.data, detail }), fresh));
     }
     await Promise.all(jobs);
+    if (before !== this.screenData()) this.resetPolling();
   }
 
   /** The user's zone; the week moves to its today unless keys moved it while the settings loaded. */
@@ -181,12 +244,12 @@ export class Controller {
     this.ui = { ...this.ui, weekStart: weekStart(today), cursor: { ...this.ui.cursor, weekDay: isoWeekday(today) - 1 } };
   }
 
-  private loadView(view: ViewName, fresh: boolean): Promise<void> {
+  private loadView(view: ViewName, fresh: boolean, readHealth: boolean): Promise<void> {
     const { api } = this.options;
     switch (view) {
       case "today":
         return this.load("today", async () => {
-          const [today, health] = await Promise.all([api.today(), api.health().catch(() => undefined)]);
+          const [today, health] = await Promise.all([api.today(), readHealth ? api.health().catch(() => undefined) : this.data.health]);
           return { today, health };
         }, (value) => (this.data = { ...this.data, ...value }), fresh);
       case "agents":
@@ -263,6 +326,7 @@ export class Controller {
   }
 
   key(name: string): void {
+    this.resetPolling();
     if (name === "R" && this.conn.state === "rejected") this.conn = { state: "connecting" };
     const lists = derive(this.snapshot()).lists;
     const before = this.ui.mode;
@@ -280,6 +344,7 @@ export class Controller {
   /** A click selects (a second click on the selected task opens it), the wheel moves the cursor. */
   mouse(event: Mouse): void {
     if (event.release) return;
+    this.resetPolling();
     if (event.button === 64 || event.button === 65) {
       const key = event.button === 64 ? "k" : "j";
       for (let i = 0; i < 3; i++) this.key(key);
