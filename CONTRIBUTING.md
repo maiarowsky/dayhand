@@ -14,10 +14,14 @@ git commit -s -m "fix: keep the now task when renaming"
 
 This adds a line such as `Signed-off-by: Your Name <you@example.com>` that must match the
 commit author; this also applies to automated review fixes and documentation commits.
-If a pipeline commit lacks sign-off, have the pipeline append a new signed-off
-[individual remediation commit](https://github.com/dcoapp/app#individual-remediation-commit-support)
-by the same author, as enabled in `.github/dco.yml`, with this message body (substitute the
-original author's identity and full commit SHA; repeat the declaration for each missing sign-off):
+To sign off your own last commit while it is neither published nor reviewed:
+`git commit --amend -s --no-edit`.
+Never amend, rebase or reset a reviewed pipeline HEAD or a published commit to repair
+metadata. Instead the same author appends a new signed-off
+[individual remediation commit](https://github.com/dcoapp/app#individual-remediation-commit-support),
+as enabled in `.github/dco.yml`; on a pipeline branch the pipeline appends it. Use this message
+body (substitute the original author's identity and full commit SHA; repeat the declaration for
+each missing sign-off):
 
 ```text
 I, Your Name <you@example.com>, hereby add my Signed-off-by to this commit: <full SHA>
@@ -27,8 +31,6 @@ Signed-off-by: Your Name <you@example.com>
 
 Check every commit before approving a pipeline gate; commits without sign-off or valid
 remediation cannot be merged, and another author's missing sign-off needs that author's action.
-Never amend, rebase or reset an already reviewed HEAD to repair metadata: the pipeline keeps
-ownership of the branch and must append the remediation itself.
 
 ## Commit messages
 
@@ -42,10 +44,6 @@ before each run, and stop this no-CI path if required checks appear.
 `.no-mistakes.yaml` declares `no_ci: true` (trusted only from `main`): keep local review and
 tests, verify their exact HEAD matches the PR, and report "local validation passed; no PR CI",
 not "CI green"; any registered pending or failing checks still apply.
-For the PR introducing this declaration, the maintainer must review the local gate results,
-commit/DCO list and forge readback for that exact HEAD; hand off that evidence in under five
-minutes after final local GO rather than waiting for absent checks, without skipping or
-approving an unverified CI gate.
 
 Backend tests run against a real Convex local backend that the test suite starts and
 removes by itself (the binary is downloaded once into `backend/.local-backend/`, pinned and
