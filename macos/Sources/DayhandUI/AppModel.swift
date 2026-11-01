@@ -502,6 +502,10 @@ final class AppModel: ObservableObject {
         if let engine { Task { await engine.userActivity() } }
     }
 
+    func syncDidWake() {
+        if let engine { Task { await engine.didWake() } }
+    }
+
     func syncNow() async {
         if let engine { await engine.round() }
         historyRefreshRevision += 1

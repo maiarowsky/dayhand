@@ -165,7 +165,9 @@ names `dayhand revoke <deviceId>` for the server.
 visible window. Every three unchanged merges double that interval (120, 240, then at most 300 seconds). A changed
 merge, user interaction, waking the Mac or bringing the app back to the foreground resets it to 60 seconds, and
 reads at once only when the last read is at least 60 seconds old (time asleep counts); Sync Now reads at once. Background, hidden, minimized or
-closed windows use at least 300 seconds. A local change still sends the outbox and reads immediately, even in the
+closed windows use at least 300 seconds. A read that fails because the Mac has no network at all (just after
+waking, before Wi-Fi is back) is retried after 5 seconds, at most three times in a row, then at the usual interval;
+server errors are not. A local change still sends the outbox and reads immediately, even in the
 background. Project calls remain serialized with rounds and write the server's answer locally without a read.
 
 Each round retains all four snapshot queries. Trash is part of the complete task set (missing tasks are purged by
@@ -324,7 +326,8 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   `SyncCadenceTests` drives the real scheduler, SQLite merge and HTTP snapshot queries with a virtual clock:
   hourly counts at base/idle/background and with frequent foreground returns and clicks, resets for
   tasks/projects/settings, one read for launch plus activation, project calls without reads, a background timer
-  woken on foreground return, immediate ordered outbox delivery, retries and a poke while a snapshot is in flight.
+  woken on foreground return, a timer rechecked on system wake, at most three quick retries without network (none
+  for server errors), immediate ordered outbox delivery, retries and a poke while a snapshot is in flight.
   The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`, `ProjectTrashRefusalTests.swift`): the name,

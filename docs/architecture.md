@@ -167,7 +167,8 @@ The macOS `SyncEngine` sends its offline outbox in order before reading `app:lis
 at every three unchanged merges to a 300-second cap, and uses at least 300 seconds in the background.
 Local edits bypass the wait; user interaction, a changed merge, system wake and foreground return reset the active cadence
 to 60 seconds without forcing a read, so returning or clicking often still reads at most once a minute. Project
-calls take turns with snapshot rounds and write the server's answer locally without requesting a read.
+calls take turns with snapshot rounds and write the server's answer locally without requesting a read. A round
+that failed only because the Mac had no network is retried after 5 seconds, at most three times in a row.
 
 Both task-list queries read **all** of the user's task documents before filtering. `app:listProjects` only reads
 the project catalog, unlike `ops:listProjects`, which also scans tasks for counts. The complete trash, project

@@ -23,7 +23,7 @@ final class SyncActivity {
             }.store(in: &observations)
         }
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification).sink { [weak model] _ in
-            Task { @MainActor in model?.syncUserActivity() }
+            Task { @MainActor in model?.syncDidWake() }
         }.store(in: &observations)
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown, .scrollWheel]) { [weak model] event in
             MainActor.assumeIsolated { model?.syncUserActivity() }

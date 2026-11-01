@@ -22,6 +22,8 @@ public actor SyncEngine {
     public static let defaultPollInterval: Duration = SyncCadence.baseInterval
     /// Counts the time the Mac sleeps, so a read before sleep is as old as it really is.
     @usableFromInline static let clockOrigin = ContinuousClock.now
+    /// The failure of a request that never left the Mac (no network), the only one retried sooner.
+    static let noNetwork = PairingAPI.reason(URLError(.notConnectedToInternet))
 
     let repository: TaskRepository
     let sender: MutationSender
@@ -81,13 +83,18 @@ public actor SyncEngine {
         signal.fire()
     }
 
-    /// Interaction (or the Mac waking) shortens an idle wait to the base, but does not fetch once per keystroke; it wakes
-    /// the loop only when that moves the deadline or the read is already overdue.
+    /// Interaction shortens an idle wait to the base, but does not fetch once per keystroke or wake the loop at the base.
     public func userActivity() {
         let previous = cadence.interval
         cadence.reset()
         activityRevision &+= 1
-        if cadence.interval < previous || nextPollDelay == .zero { signal.fire() }
+        if cadence.interval < previous { signal.fire() }
+    }
+
+    /// The loop's timer did not run while the Mac slept: recheck the deadline now, reading only if it has passed.
+    public func didWake() {
+        userActivity()
+        signal.fire()
     }
 
     /// Entering the foreground resets the wait to the base: it reads at once only when the last read is that old.
@@ -131,6 +138,7 @@ public actor SyncEngine {
         } else {
             cadence.reset()
         }
+        cadence.roundEnded(withoutNetwork: status == .offline(Self.noNetwork))
         lastRoundAt = now()
         onStatus(status)
         // A manual round may have replaced a timer's deadline. A poke during I/O remains immediate.

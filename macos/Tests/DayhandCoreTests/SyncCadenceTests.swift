@@ -204,9 +204,9 @@ struct SyncCadenceTests {
         let (repo, engine) = try setup()
         server.offline = true
         _ = try await repo.add(title: "Waiting", dueDate: nil, dueTime: nil)
-        #expect(await hour(engine) == 60)
+        #expect(await hour(engine) == 63) // 0, 5, 10 and 15 s without network, then every 60 s.
         #expect(try await repo.pendingOps().count == 1)
-        clock.set(3_600_000)
+        clock.set(3_615_000)
         server.offline = false
         await engine.pollIfDue()
         #expect(try await repo.pendingOps().isEmpty)
@@ -289,21 +289,80 @@ struct SyncCadenceTests {
         await engine.start()
         for _ in 0..<500 where log.count < 2 { try await Task.sleep(nanoseconds: 1_000_000) }
         clock.advance(10_000)
-        await engine.userActivity() // Woken 10 s after the read: the base still holds.
+        await engine.didWake() // Woken 10 s after the read: the base still holds.
         try await Task.sleep(nanoseconds: 100_000_000)
         #expect(log.count == 2)
         #expect(await engine.nextPollDelay == .seconds(50))
-        clock.advance(8 * 3_600_000) // Asleep overnight; the loop's 60 s timer is still waiting.
-        await engine.userActivity()
+        clock.advance(49_900) // Asleep again; at wake 100 ms are left, not the timer's awake-time 60 s.
+        await engine.didWake()
+        try await Task.sleep(nanoseconds: 20_000_000)
+        #expect(log.count == 2)
+        clock.advance(100) // The virtual clock reaches the deadline while the rearmed 100 ms timer runs.
         for _ in 0..<2000 where log.count < 3 { try await Task.sleep(nanoseconds: 1_000_000) }
         #expect(log.count == 3)
+        clock.advance(8 * 3_600_000) // Asleep overnight; the loop's 60 s timer is still waiting.
+        await engine.didWake()
+        for _ in 0..<2000 where log.count < 4 { try await Task.sleep(nanoseconds: 1_000_000) }
+        #expect(log.count == 4)
         await engine.setActive(false)
         clock.advance(8 * 3_600_000)
-        await engine.userActivity() // Background: the interval stays 300 s, but this read is overdue too.
-        for _ in 0..<2000 where log.count < 4 { try await Task.sleep(nanoseconds: 1_000_000) }
+        await engine.didWake() // Background: the interval stays 300 s, but this read is overdue too.
+        for _ in 0..<2000 where log.count < 5 { try await Task.sleep(nanoseconds: 1_000_000) }
         await engine.stop()
-        #expect(log.count == 4)
+        #expect(log.count == 5)
+        assertReads(4)
+    }
+
+    @Test func aReadWithoutNetworkAfterWakeIsRetriedSoonButOnlyThreeTimes() async throws {
+        let (_, engine) = try setup()
+        await engine.pollIfDue()
+        clock.set(8 * 3_600_000) // Woken overnight before Wi-Fi is back.
+        server.offline = true
+        #expect(await engine.pollIfDue() == .offline(SyncEngine.noNetwork))
+        #expect(await engine.nextPollDelay == .seconds(5))
+        clock.advance(4_000)
+        #expect(await engine.pollIfDue() == nil)
+        clock.advance(1_000)
+        server.offline = false
+        #expect(Self.synced(await engine.pollIfDue()))
+        #expect(await engine.nextPollDelay == .seconds(60))
+        assertReads(2)
+
+        await engine.setActive(false)
+        clock.advance(300_000)
+        server.offline = true
+        var delays: [Duration] = []
+        for _ in 0..<4 {
+            #expect(await engine.pollIfDue() == .offline(SyncEngine.noNetwork))
+            delays.append(await engine.nextPollDelay)
+            clock.advance(Int64(Signal.nanoseconds(delays.last ?? .zero) / 1_000_000))
+        }
+        #expect(delays == [.seconds(5), .seconds(5), .seconds(5), .seconds(300)])
+        server.offline = false
+        #expect(Self.synced(await engine.pollIfDue()))
+        #expect(await engine.nextPollDelay == .seconds(300))
         assertReads(3)
+    }
+
+    @Test func serverErrorsAndLostAnswersAreNotRetriedSooner() async throws {
+        let (repo, engine) = try setup()
+        await engine.pollIfDue()
+        _ = try await repo.add(title: "Waiting", dueDate: nil, dueTime: nil)
+        clock.advance(60_000)
+        server.failNextMutation = true
+        #expect(await engine.pollIfDue() == .offline("HTTP 503"))
+        #expect(await engine.nextPollDelay == .seconds(60))
+        clock.advance(60_000)
+        server.loseNextAnswer = true // The server applied it; only the answer was lost.
+        let lost = await engine.pollIfDue()
+        #expect(lost == .offline(PairingAPI.reason(URLError(.networkConnectionLost))))
+        #expect(await engine.nextPollDelay == .seconds(60))
+        assertReads(3)
+    }
+
+    static func synced(_ status: SyncStatus?) -> Bool {
+        if case .synced = status { return true }
+        return false
     }
 }
 
