@@ -79,18 +79,21 @@ public actor SyncEngine {
         signal.fire()
     }
 
-    /// Interaction shortens an idle wait to the base, but does not fetch once per keystroke.
+    /// Interaction shortens an idle wait to the base, but does not fetch once per keystroke or wake the loop at the base.
     public func userActivity() {
+        let previous = cadence.interval
         cadence.reset()
         activityRevision &+= 1
-        signal.fire()
+        if cadence.interval < previous { signal.fire() }
     }
 
-    /// Entering the foreground refreshes immediately; leaving it only reschedules the next automatic read.
+    /// Entering the foreground resets the wait to the base: it reads at once only when the last read is that old.
     public func setActive(_ active: Bool) {
         guard active != cadence.active else { return }
+        let previous = cadence.interval
         cadence.setActive(active)
-        if active { requestSync() } else { signal.fire() }
+        if active { activityRevision &+= 1 }
+        if cadence.interval != previous { signal.fire() }
     }
 
     var nextPollDelay: Duration {

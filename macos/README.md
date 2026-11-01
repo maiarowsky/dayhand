@@ -163,15 +163,17 @@ names `dayhand revoke <deviceId>` for the server.
 
 **Coming soon: cheaper live updates.** Automatic polling starts at 60 seconds while the app is active and has a
 visible window. Every three unchanged merges double that interval (120, 240, then at most 300 seconds). A changed
-merge, user interaction or Sync Now resets it to 60 seconds; bringing the app back to the foreground also reads
-immediately. Background, hidden, minimized or closed windows use at least 300 seconds. A local change still sends
-the outbox and reads immediately, even in the background; project calls remain serialized with rounds.
+merge, user interaction or bringing the app back to the foreground resets it to 60 seconds, and reads at once
+only when the last read is at least 60 seconds old; Sync Now reads at once. Background, hidden, minimized or
+closed windows use at least 300 seconds. A local change still sends the outbox and reads immediately, even in the
+background. Project calls remain serialized with rounds and write the server's answer locally without a read.
 
 Each round retains all four snapshot queries. Trash is part of the complete task set (missing tasks are purged by
 the merger); projects supply membership and server capability; settings supply the timezone and notification
 rules and repair rejected settings edits. Reusing stale settings after draining the outbox could undo an accepted
 edit. These reads are not visibility-only data. A quiescent first hour takes 17 rounds / 68 snapshot queries,
-then 12 / 48 per idle hour; continuously changing foreground data takes 60 / 240. These counts include the initial
+then 12 / 48 per idle hour; continuously changing foreground data, or returning to the app and clicking every
+15-20 seconds, takes at most 60 / 240. These counts include the initial
 read and exclude the next hour's boundary, retries, missing-task lookups and explicit actions.
 Plan health reads remain separate, as described above, and follow successful polls rather than their own timer.
 The official Swift client (`convex-swift`) ships its core as a binary Rust framework, so it is not used:
@@ -320,8 +322,9 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   and the others follow the server, that Sync Now waits for a running poll before sending changes, that an offline
   change is sent later, and that a refused one is repaired.
   `SyncCadenceTests` drives the real scheduler, SQLite merge and HTTP snapshot queries with a virtual clock:
-  hourly counts at base/idle/background, resets for tasks/projects/settings, foreground and user activity,
-  immediate ordered outbox delivery, retries and a poke while a snapshot is in flight.
+  hourly counts at base/idle/background and with frequent foreground returns and clicks, resets for
+  tasks/projects/settings, one read for launch plus activation, project calls without reads, a background timer
+  woken on foreground return, immediate ordered outbox delivery, retries and a poke while a snapshot is in flight.
   The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`, `ProjectTrashRefusalTests.swift`): the name,

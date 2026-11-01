@@ -71,7 +71,6 @@ extension SyncEngine {
 
     /// Sends one project change and returns the server's answer, or throws what the user is told instead.
     private func projectCall(_ mutation: String, _ args: [String: JSONValue]) async throws -> JSONValue {
-        defer { requestSync() }
         switch await sender.send(mutation: mutation, args: .object(args)) {
         case .applied(let value):
             return value

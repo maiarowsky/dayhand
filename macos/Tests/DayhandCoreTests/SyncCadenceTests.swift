@@ -125,9 +125,48 @@ struct SyncCadenceTests {
         #expect(Array(calls.dropFirst(4).prefix(4)) == [Mutations.add, Mutations.update, Mutations.complete, RemoteJSON.queryTasks])
         #expect(await engine.nextPollDelay == .seconds(300))
         await engine.setActive(true)
-        #expect(await engine.nextPollDelay == .zero)
+        #expect(await engine.nextPollDelay == .seconds(60)) // The poke's read is recent: the foreground does not read again.
+        #expect(await engine.pollIfDue() == nil)
+    }
+
+    @Test func returningOrClickingEvery15To20SecondsReadsAtMostOncePerMinute() async throws {
+        let (_, engine) = try setup()
+        var reads: [Int64] = []
+        var returnAt: Int64 = 0
+        var step: Int64 = 15
+        for second in Int64(0)..<3600 {
+            clock.set(second * 1000)
+            if second == returnAt {
+                await engine.setActive(true)
+                await engine.userActivity()
+                step = step == 15 ? 20 : 15
+                returnAt += step
+            } else if second == returnAt - 5 {
+                await engine.setActive(false)
+            }
+            if await engine.pollIfDue() != nil { reads.append(second) }
+        }
+        #expect(reads.count <= 60)
+        #expect(zip(reads, reads.dropFirst()).allSatisfy { $1 - $0 >= 60 })
+        assertReads(reads.count)
+    }
+
+    @Test func projectCallsAndTheirFailuresDoNotForceARead() async throws {
+        let (repo, engine) = try setup()
+        server.addProjectElsewhere("Home")
         await engine.pollIfDue()
-        #expect(await engine.nextPollDelay == .seconds(60))
+        let home = try #require(try await repo.projects().first).localId
+        clock.advance(10_000)
+        for position in [1001.0, 1002.0, 1003.0] { try await engine.moveProject(home, to: position) }
+        try await engine.addProject(name: "New")
+        #expect(await engine.nextPollDelay == .seconds(50))
+        #expect(await engine.pollIfDue() == nil)
+        server.offline = true
+        await #expect(throws: RepositoryError.needsConnection) { try await engine.moveProject(home, to: 1004) }
+        #expect(await engine.nextPollDelay == .seconds(50))
+        #expect(await engine.pollIfDue() == nil)
+        assertReads(1)
+        #expect(try await repo.projects().first { $0.localId == home }?.position == 1003)
     }
 
     @Test func pokeResetsAnIdleForegroundEvenWhenTheSnapshotDoesNotChange() async throws {
@@ -193,6 +232,48 @@ struct SyncCadenceTests {
         #expect(try await repo.pendingOps().isEmpty)
         #expect(try await repo.task(task.localId)?.serverId != nil)
         #expect(server.mutationsSent() == [Mutations.add])
+    }
+
+    @Test func launchAndFirstActivationReadOnceEvenDuringTheInitialRead() async throws {
+        let transport = HeldSnapshot(server: server)
+        let tokens = DeviceTokens(serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: transport), onRevoked: {})
+        let remote = ConvexRemote(deploymentUrl: FakeServer.cloud, tokens: tokens, transport: transport)
+        let log = StatusLog()
+        let engine = SyncEngine(repository: TaskRepository(database: try AppDatabase.inMemory()), sender: remote, source: remote, onStatus: { log.append($0) })
+        await engine.setActive(false)
+        await engine.start()
+        for _ in 0..<200 where !(await transport.paused) { try await Task.sleep(nanoseconds: 1_000_000) }
+        #expect(await transport.paused)
+        await engine.setActive(true)
+        await engine.userActivity()
+        await transport.release()
+        for _ in 0..<500 where log.count < 2 { try await Task.sleep(nanoseconds: 1_000_000) }
+        try await Task.sleep(nanoseconds: 100_000_000)
+        await engine.setActive(false)
+        await engine.setActive(true)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        await engine.stop()
+        #expect(log.count == 2) // connecting, the one startup snapshot.
+        assertReads(1)
+    }
+
+    @Test func returningToTheForegroundWakesASleepingBackgroundTimer() async throws {
+        let tokens = DeviceTokens(serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: server), onRevoked: {})
+        let remote = ConvexRemote(deploymentUrl: FakeServer.cloud, tokens: tokens, transport: server)
+        let log = StatusLog()
+        let engine = SyncEngine(
+            repository: TaskRepository(database: try AppDatabase.inMemory()), sender: remote, source: remote,
+            pollInterval: .milliseconds(50), onStatus: { log.append($0) }
+        )
+        await engine.setActive(false)
+        await engine.start()
+        for _ in 0..<500 where log.count < 2 { try await Task.sleep(nanoseconds: 1_000_000) }
+        try await Task.sleep(nanoseconds: 200_000_000) // Past the 50 ms base; the background wait is 300 s.
+        #expect(log.count == 2)
+        await engine.setActive(true)
+        for _ in 0..<2000 where log.count < 3 { try await Task.sleep(nanoseconds: 1_000_000) }
+        await engine.stop()
+        #expect(log.count >= 3)
     }
 }
 
