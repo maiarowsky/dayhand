@@ -50,6 +50,14 @@ come in English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese
 Chinese: `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`, `LC_MESSAGES`, `LANG`). The rest
 of the CLI, `--json`, error codes and the MCP tools stay English.
 
+Coming soon: polling starts at 60 s by default and doubles after three unchanged polls, up to
+300 s. Any key or changed data restores the base interval. Ticks read only the current view
+(Today with its health line) and an open task. Projects reload on entry,
+view changes, your changes and manual refresh (`R`); projects also reload when a task on screen
+names a project created elsewhere. A new project without tasks reaches quick-add and filters
+after `R` or a view change. Your changes still refresh immediately.
+The base interval remains configurable from 10 to 300 s.
+
 `y` copies the selected task from Today, Board, Week, Trash, agent proposals or task
 details as plain text for a chat: id, title, status, project, due date/time and notes when present.
 It uses `pbcopy` on macOS, `wl-copy`, `xclip` or `xsel` on Linux, and `clip` on Windows, with

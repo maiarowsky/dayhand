@@ -112,9 +112,9 @@ its resume note, today, done today), the board, the week (Monday to Sunday as
 bars, the selected day in full below) and the trash. Enter opens a task with its
 history, which names who made each change: app, cli or agent: <name>. It uses
 the key from dayhand login and the same MCP tools as the other commands, refreshes
-what is on screen every 12 seconds (--interval) within the key's limits, and
-keeps the last data on screen with a red status line when the server cannot be
-reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
+what is on screen every 60 seconds (--interval), less often while nothing
+changes, within the key's limits, and keeps the last data on screen with a red
+status line when the server cannot be reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
 The mouse selects and scrolls (--no-mouse leaves it to the terminal).
 
 y copies the selected task as plain text for a chat: id, title, status, project,

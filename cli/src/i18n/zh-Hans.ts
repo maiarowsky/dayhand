@@ -178,7 +178,7 @@ export const zhHans: Catalog = {
   "keys.views.next": "下一个 / 上一个视图",
   "keys.views.pick": "今天、看板、周、废纸篓、代理",
   "keys.views.filter": "筛选：标题、+项目、备注、#42",
-  "keys.views.refresh": "立即刷新（也每 12 秒刷新）",
+  "keys.views.refresh": "立即刷新（也每 60 秒刷新，无变化时放慢）",
   "keys.views.help": "本帮助",
   "keys.views.quit": "退出（在详情中 q：返回）",
   "keys.tasks": "任务",

@@ -435,7 +435,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const s = open(key, [], undefined, { DAYHAND_URL: "http://127.0.0.1:9" });
     const screen = await s.waitFor("Cannot reach http://127.0.0.1:9");
     expect(screen).toContain("● offline");
-    expect(screen).toContain("Retrying every 12 s; R retries now, q quits.");
+    expect(screen).toContain("Retrying every 60 s; R retries now, q quits.");
     await s.shot("offline");
     await s.press("?");
     await s.waitFor("Keys");

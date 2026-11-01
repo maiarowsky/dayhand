@@ -178,7 +178,7 @@ export const ja: Catalog = {
   "keys.views.next": "次 / 前の表示",
   "keys.views.pick": "今日、ボード、週、ゴミ箱、エージェント",
   "keys.views.filter": "フィルター：タイトル、+プロジェクト、メモ、#42",
-  "keys.views.refresh": "今すぐ更新（12秒ごとにも更新）",
+  "keys.views.refresh": "今すぐ更新（60秒ごとにも更新、変化がなければ間隔を延長）",
   "keys.views.help": "このヘルプ",
   "keys.views.quit": "終了（詳細では q で戻る）",
   "keys.tasks": "タスク",

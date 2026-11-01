@@ -6,7 +6,7 @@ import type { ViewName } from "../ui/state.js";
 import type { CommandSpec } from "./types.js";
 
 const VIEWS: ViewName[] = ["today", "board", "week", "trash"];
-const INTERVAL = { min: 10, max: 300, default: 12 };
+const INTERVAL = { min: 10, max: 300, default: 60 };
 /** A hung server must not keep a change waiting for the default 30 s. */
 const TIMEOUT_MS = 10_000;
 
@@ -16,13 +16,13 @@ export const uiCommands: CommandSpec[] = [
     summary: "Dayhand full screen in the terminal: Today, board, week and trash, with keys like vim and lazygit (dayhand help ui)",
     description:
       "Quick-add and project-filter syntax: dayhand help ui. " +
-      "Needs a terminal. Refreshes every 12 s by default, within the key's limits of 120 reads and 60 changes a minute. " +
+      "Needs a terminal. Polls the current view every 60 s by default, doubling after three unchanged polls up to 300 s. Any key or changed data restores the base interval. Projects reload on entry, view changes, mutations, R and when a task on screen names an unknown project; a new project without tasks reaches quick-add and filters after R or a view change. Today polls also read its health line. Stays within the key's limits of 120 reads and 60 changes a minute. " +
       "q quits, y copies the selected task as plain text for a chat, ? lists the keys; dayhand help ui prints them. The screens speak the terminal's language (LC_ALL, LC_MESSAGES " +
       `or LANG, overridden by DAYHAND_LANG or --lang) when it is one of ${LANGUAGES.join(", ")}, else English; ` +
       "date phrases stay English.",
     options: [
       { flags: "--view <view>", description: "The view to open with", choices: VIEWS },
-      { flags: "--interval <seconds>", description: `Seconds between refreshes, ${INTERVAL.min} to ${INTERVAL.max} (default ${INTERVAL.default})`, kind: "int" },
+      { flags: "--interval <seconds>", description: `Base seconds between refreshes, ${INTERVAL.min} to ${INTERVAL.max} (default ${INTERVAL.default}); backs off to 300 when unchanged`, kind: "int" },
       { flags: "--no-mouse", description: "Leave the mouse to the terminal (for selecting text)" },
       { flags: "--lang <language>", description: `The screens' language: ${LANGUAGES.join(", ")} (default: DAYHAND_LANG, then the locale)` },
     ],
