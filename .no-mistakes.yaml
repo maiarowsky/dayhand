@@ -1,0 +1,6 @@
+# No PR CI: the workflows only manage releases; local review and tests remain required.
+# Trusted only after this declaration reaches main; registered checks still apply.
+no_ci: true
+
+commit:
+  fix_message: "chore: {{.Step}}: {{.Summary}}"
