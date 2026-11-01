@@ -21,7 +21,6 @@ import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, ty
 export const DEFAULT_INTERVAL_S = 60;
 const MAX_INTERVAL_S = 300;
 const UNCHANGED_POLLS = 3;
-const HEALTH_POLLS = 5;
 const FLASH_MS = { ok: 5000, info: 5000, error: 10_000 };
 
 export type ControllerOptions = {
@@ -66,7 +65,6 @@ export class Controller {
   private polling = false;
   private pollInterval: number;
   private unchangedPolls = 0;
-  private todayPolls = 0;
   private activity = 0;
   private flashTimer?: ReturnType<typeof setTimeout>;
   private version = 0;
@@ -177,7 +175,6 @@ export class Controller {
   private async poll(): Promise<void> {
     this.polling = true;
     const activity = this.activity;
-    if (this.ui.view === "today") this.todayPolls++;
     try {
       await this.refresh(false, false);
       if (activity === this.activity && ++this.unchangedPolls >= UNCHANGED_POLLS) {
@@ -213,20 +210,17 @@ export class Controller {
     this.emit();
   }
 
-  /** User refreshes include projects and health; ticks only load the view and open task.
+  /** User refreshes include projects; ticks only load the view (Today with its health) and open task.
    * `fresh` reads after any read already running, so a mutation never shows stale data. */
   async refresh(fresh = false, ancillary = true): Promise<void> {
     if (this.stopped || this.conn.state === "rejected") return;
-    if (ancillary) {
-      this.todayPolls = 0;
-      this.resetPolling();
-    }
+    if (ancillary) this.resetPolling();
     const before = this.screenData();
     if (!this.timezone) {
       await this.load("settings", () => this.options.api.settings(), (s) => this.setZone(s.timezone));
       if (!this.timezone) return;
     }
-    const jobs = [this.loadView(this.ui.view, fresh, ancillary || !this.data.today || this.todayPolls % HEALTH_POLLS === 0)];
+    const jobs = [this.loadView(this.ui.view, fresh)];
     // Retry an initial load that failed offline; once cached, projects are read only for a task naming an unknown one.
     if (ancillary || !this.data.projects) jobs.push(this.loadProjects(fresh));
     if (this.ui.detail) {
@@ -253,12 +247,12 @@ export class Controller {
     this.ui = { ...this.ui, weekStart: weekStart(today), cursor: { ...this.ui.cursor, weekDay: isoWeekday(today) - 1 } };
   }
 
-  private loadView(view: ViewName, fresh: boolean, readHealth: boolean): Promise<void> {
+  private loadView(view: ViewName, fresh: boolean): Promise<void> {
     const { api } = this.options;
     switch (view) {
       case "today":
         return this.load("today", async () => {
-          const [today, health] = await Promise.all([api.today(), readHealth ? api.health().catch(() => undefined) : this.data.health]);
+          const [today, health] = await Promise.all([api.today(), api.health().catch(() => undefined)]);
           return { today, health };
         }, (value) => (this.data = { ...this.data, ...value }), fresh);
       case "agents":

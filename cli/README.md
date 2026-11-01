@@ -51,8 +51,8 @@ Chinese: `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`, `LC_MESSAGES`
 of the CLI, `--json`, error codes and the MCP tools stay English.
 
 Coming soon: polling starts at 60 s by default and doubles after three unchanged polls, up to
-300 s. Any key or changed data restores the base interval. Ticks read only the current view and
-an open task; Today health is read every fifth tick. Projects and Today health reload on entry,
+300 s. Any key or changed data restores the base interval. Ticks read only the current view
+(Today with its health line) and an open task. Projects reload on entry,
 view changes, your changes and manual refresh (`R`); projects also reload when a task on screen
 names a project created elsewhere. A new project without tasks reaches quick-add and filters
 after `R` or a view change. Your changes still refresh immediately.

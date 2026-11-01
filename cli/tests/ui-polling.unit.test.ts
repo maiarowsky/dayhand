@@ -49,9 +49,9 @@ afterEach(() => { controllers.splice(0).forEach((ui) => ui.stop()); vi.useRealTi
 
 describe("UI polling", () => {
   test.each([
-    ["today", ["list_today"]], ["board", ["board"]], ["week", ["list_all"]],
+    ["today", ["list_today", "plan_health"]], ["board", ["board"]], ["week", ["list_all"]],
     ["trash", ["list_trash"]], ["agents", ["get_agent_controls", "list_approvals", "list_all"]],
-  ] as const)("%s: five ticks read only the current view; Today health on the fifth", async (view, reads) => {
+  ] as const)("%s: five ticks read only the current view, Today with its health", async (view, reads) => {
     const s = server();
     const ui = open(s.api, view);
     await ui.start();
@@ -60,10 +60,11 @@ describe("UI polling", () => {
     for (let tick = 1; tick <= 5; tick++) {
       ui.key("j"); // Active user: stay at the base interval without a read on the key itself.
       await advance(60);
-      expect(s.count("plan_health")).toBe(view === "today" ? Math.floor(tick / 5) : 0);
+      expect(s.count(reads[0])).toBe(tick);
+      expect(s.count("plan_health")).toBe(view === "today" ? tick : 0);
     }
     for (const read of reads) expect(s.count(read)).toBe(5);
-    expect(s.callTool).toHaveBeenCalledTimes(5 * reads.length + (view === "today" ? 1 : 0));
+    expect(s.callTool).toHaveBeenCalledTimes(5 * reads.length);
     expect(s.count("get_settings")).toBe(0);
     expect(s.count("list_projects")).toBe(0);
   });
@@ -81,7 +82,7 @@ describe("UI polling", () => {
     }
   });
 
-  test("an idle first hour has 19 polling reads, versus 900 at the old 12-second cadence", async () => {
+  test("an idle Today has 32 polling reads in the first hour and 24 per hour at the cap, versus 900 at the old 12-second cadence", async () => {
     expect(DEFAULT_INTERVAL_S).toBe(60);
     const s = server();
     await open(s.api).start();
@@ -89,17 +90,17 @@ describe("UI polling", () => {
     s.callTool.mockClear();
     await advance(3600);
     expect(s.count("list_today")).toBe(16);
-    expect(s.count("plan_health")).toBe(3);
-    expect(s.callTool).toHaveBeenCalledTimes(19);
-    // At the cap: five ticks per 25 minutes, each with Today and one extra health read.
+    expect(s.count("plan_health")).toBe(16);
+    expect(s.callTool).toHaveBeenCalledTimes(32);
+    // At the cap: twelve ticks an hour, each reading Today and its health.
     s.callTool.mockClear();
-    await advance(1500);
-    expect(s.count("list_today")).toBe(5);
-    expect(s.count("plan_health")).toBe(1);
-    expect(s.callTool).toHaveBeenCalledTimes(6);
+    await advance(3600);
+    expect(s.count("list_today")).toBe(12);
+    expect(s.count("plan_health")).toBe(12);
+    expect(s.callTool).toHaveBeenCalledTimes(24);
   });
 
-  test("changing data keeps Today at 72 polling reads per hour, without project reads", async () => {
+  test("changing data keeps Today at 120 polling reads per hour, without project reads", async () => {
     const s = server();
     await open(s.api).start();
     s.callTool.mockClear();
@@ -108,8 +109,8 @@ describe("UI polling", () => {
       await advance(60);
     }
     expect(s.count("list_today")).toBe(60);
-    expect(s.count("plan_health")).toBe(12);
-    expect(s.callTool).toHaveBeenCalledTimes(72);
+    expect(s.count("plan_health")).toBe(60);
+    expect(s.callTool).toHaveBeenCalledTimes(120);
   });
 
   test("any key resets backoff without a read, and R, a view switch and a mutation read projects immediately", async () => {
@@ -127,20 +128,20 @@ describe("UI polling", () => {
     ui.key("R");
     await ui.idle();
     expect(s.count("list_projects")).toBe(1);
-    expect(s.count("plan_health")).toBe(1);
+    expect(s.count("plan_health")).toBe(2);
     ui.key("2");
     await ui.idle();
     expect(s.count("board")).toBe(1);
     expect(s.count("list_projects")).toBe(2);
     ui.key("1");
     await ui.idle();
-    expect(s.count("plan_health")).toBe(2);
+    expect(s.count("plan_health")).toBe(3);
     expect(s.count("list_projects")).toBe(3);
     ui.key("space");
     await ui.idle();
     expect(s.count("complete_task")).toBe(1);
     expect(s.count("list_projects")).toBe(4);
-    expect(s.count("plan_health")).toBe(3);
+    expect(s.count("plan_health")).toBe(4);
   });
 
   test("keys between ticks never postpone a poll, also after backoff", async () => {
@@ -216,10 +217,10 @@ describe("UI polling", () => {
     await advance(60);
     expect(ui.snapshot().data.projects).toEqual([]);
     expect(ui.snapshot().data.today).toEqual(s.state.today);
-    expect(s.count("plan_health")).toBe(1);
+    expect(ui.snapshot().data.health).toBeDefined();
     s.callTool.mockClear();
     await advance(60);
-    expect(s.callTool.mock.calls).toEqual([["list_today", {}]]);
+    expect(s.callTool.mock.calls).toEqual([["list_today", {}], ["plan_health", {}]]);
   });
 
   test("offline retry text follows the backed-off interval and a key restores it", async () => {
@@ -244,10 +245,10 @@ describe("UI polling", () => {
     }));
     s.callTool.mockClear();
     await advance(60);
-    expect(s.callTool).toHaveBeenCalledTimes(1);
+    expect(s.count("list_today")).toBe(1);
     ui.key("j");
     await advance(300);
-    expect(s.callTool).toHaveBeenCalledTimes(1);
+    expect(s.count("list_today")).toBe(1);
     release();
     await advance(0);
     await advance(60);
