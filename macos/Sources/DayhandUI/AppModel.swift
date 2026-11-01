@@ -85,6 +85,7 @@ final class AppModel: ObservableObject {
     private let engineBox = EngineBox()
     /// The connected server's sync engine; nil without a pairing.
     private(set) var engine: SyncEngine?
+    private var syncActive = false
     private var clockTimer: Timer?
     private var planTask: Task<Void, Never>?
     private var healthTask: Task<Void, Never>?
@@ -491,6 +492,20 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func setSyncActive(_ active: Bool) {
+        guard active != syncActive else { return }
+        syncActive = active
+        if let engine { Task { await engine.setActive(active) } }
+    }
+
+    func syncUserActivity() {
+        if let engine { Task { await engine.userActivity() } }
+    }
+
+    func syncDidWake() {
+        if let engine { Task { await engine.didWake() } }
+    }
+
     func syncNow() async {
         if let engine { await engine.round() }
         historyRefreshRevision += 1
@@ -526,7 +541,11 @@ final class AppModel: ObservableObject {
         })
         self.engine = engine
         engineBox.set(engine, queries: remote)
-        Task { await engine.start() }
+        let active = syncActive
+        Task {
+            await engine.setActive(active)
+            await engine.start()
+        }
         refreshHealth(afterNanoseconds: 0)
     }
 

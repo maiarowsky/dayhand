@@ -217,8 +217,12 @@ by screen:
   English phrases only ("fri 2pm"), as `dayhand` does; "pt 14:00" or "jutro" would need the grammar in each language.
 - **Reminders**: macOS may deliver a notification late after sleep; the Android app drops a reminder more than
   15 minutes late. Dayhand could withdraw stale pending ones when the Mac wakes.
-- **Live updates**: polling every 15 seconds now. A Convex WebSocket subscription would make changes elsewhere
-  appear at once; `convex-swift` needs a binary framework, so this would be a small client of the Convex sync
+- **Live updates (coming soon)**: active polling starts at 60 seconds and doubles after every three unchanged
+  merges, up to 300 seconds; background or hidden windows poll no faster than every 300 seconds. Local changes
+  still sync immediately; foreground return, interaction, waking the Mac or a changed merge resets the active
+  interval to 60 seconds, reading at once only when the last read is at least that old, time asleep included. A read
+  that finds no network (just after waking) is retried after 5 seconds, at most three times. See [sync details](../macos/README.md#how-it-works). A Convex WebSocket subscription would make
+  changes elsewhere appear at once; `convex-swift` needs a binary framework, so this would be a small client of the Convex sync
   protocol, or the Rust core if a binary is accepted.
 - **UI tests**: current screen and layout checks are described in [macos/README.md](../macos/README.md#tests);
   clicks through the real app (XCUITest) need the Xcode project above.

@@ -330,11 +330,15 @@ public final class TaskRepository: Sendable {
     // MARK: Server snapshots
 
     /// Writes a server snapshot into the database (see `ProjectMerger` and `SnapshotMerger`) and keeps its settings,
-    /// except the fields a settings change still in the outbox sets.
-    public func apply(_ snapshot: Snapshot) async throws {
+    /// except the fields a settings change still in the outbox sets. Returns whether the merged state changed,
+    /// not whether SQLite executed a write (equal settings/support are written on every snapshot).
+    @discardableResult
+    public func apply(_ snapshot: Snapshot) async throws -> Bool {
         let now = clock()
         let zone = localTimezone()
-        try await writer.write { db in
+        return try await writer.write { db in
+            let previousProjects = try Self.allProjects(db)
+            let previousSupport = try Meta.projectSupport(db)
             let projects = try ProjectSync.apply(db, snapshot.projects)
             let local = try TaskItem.fetchAll(db)
             let pending = try OutboxOp.order(Column("seq")).fetchAll(db)
@@ -344,7 +348,10 @@ public final class TaskRepository: Sendable {
             // History of tasks that no longer exist on the Mac (purged from the trash on the server).
             try db.execute(sql: "DELETE FROM taskEvent WHERE taskServerId NOT IN (SELECT serverId FROM task WHERE serverId IS NOT NULL)")
             let mine = try Meta.settings(db, localTimezone: zone)
-            try Meta.write(db, SnapshotMerger.settings(local: mine, pending: pending, remote: snapshot.settings))
+            let settings = SnapshotMerger.settings(local: mine, pending: pending, remote: snapshot.settings)
+            try Meta.write(db, settings)
+            let projectsChanged = try previousProjects != Self.allProjects(db) || previousSupport != Meta.projectSupport(db)
+            return !plan.upserts.isEmpty || !plan.deletes.isEmpty || settings != mine || projectsChanged
         }
     }
 

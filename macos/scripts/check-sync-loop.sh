@@ -1,11 +1,11 @@
 #!/bin/sh
-# Runs the release app signed in to a server that never answers, so the sync loop waits out its 15-second poll again
+# Runs the release app signed in to a server that never answers, so the sync loop waits out its adaptive poll again
 # and again, and fails if the app ends before the time is up or the loop did not turn. Release builds once aborted
 # at the end of that wait (`swift_task_dealloc`, "freed pointer was not the last allocation", macOS 0.2.1), which
 # neither `swift test` nor a debug build shows.
 #
-#   scripts/check-sync-loop.sh                # builds dist/Dayhand.app first, then runs it for 50 seconds
-#   DAYHAND_APP=<path>/Dayhand.app DAYHAND_CHECK_SECONDS=90 scripts/check-sync-loop.sh
+#   scripts/check-sync-loop.sh                # builds dist/Dayhand.app first, then runs it for 950 seconds
+#   DAYHAND_APP=<path>/Dayhand.app DAYHAND_CHECK_SECONDS=1250 scripts/check-sync-loop.sh
 #
 # The app's window opens while it runs. Your app and data stay untouched: a temporary copy uses a separate bundle id
 # for notifications and preferences, whose defaults domain is deleted on cleanup. The database is a temporary folder,
@@ -14,8 +14,9 @@
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-SECONDS_TO_RUN=${DAYHAND_CHECK_SECONDS:-50}
-POLL_SECONDS=15
+SECONDS_TO_RUN=${DAYHAND_CHECK_SECONDS:-950}
+# Allow for a hidden/background window; active failures retry at 60 seconds.
+POLL_SECONDS=300
 CHECK_BUNDLE_ID=io.github.maiarowsky.dayhand.check-sync-loop
 APP=${DAYHAND_APP:-}
 if [ -z "$APP" ]; then
