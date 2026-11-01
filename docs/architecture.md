@@ -160,6 +160,21 @@ from `list_events` and emit no task webhook. Each moved task instead gets its or
 history entry and `task.updated` webhook. Upgrade and rollback requirements are in
 [deploy.md](deploy.md#upgrading-to-0130).
 
+## macOS snapshot cadence (coming soon)
+
+The macOS `SyncEngine` sends its offline outbox in order before reading `app:listAll`, `app:listTrash`,
+`app:getSettings` and `app:listProjects`. It starts at 60 seconds while active with a visible window, doubles
+at every three unchanged merges to a 300-second cap, and uses at least 300 seconds in the background.
+Local edits bypass the wait; user interaction, a changed merge and foreground return reset the active cadence,
+and foreground return reads immediately. Project calls still take turns with snapshot rounds.
+
+Both task-list queries read **all** of the user's task documents before filtering. `app:listProjects` only reads
+the project catalog, unlike `ops:listProjects`, which also scans tasks for counts. The complete trash, project
+mapping and current settings remain necessary for the existing merger and reminders; none is omitted based on
+which screen is visible. Plan health is separate: its age is checked after successful rounds, with additional
+reads on task changes and explicit UI actions. A smaller server revision query could avoid unchanged full reads
+later, but requires backend work. Details and virtual-clock query counts: [macOS sync](../macos/README.md#how-it-works).
+
 ## Authentication
 
 - **Agent and CLI:** personal API keys (`dayhand_` + 32 random bytes, base64url), each with a

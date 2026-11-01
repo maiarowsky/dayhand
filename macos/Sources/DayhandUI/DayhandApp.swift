@@ -136,10 +136,12 @@ enum CommandMenus {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuRefresh: AnyCancellable?
+    private var syncActivity: SyncActivity?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         MainActor.assumeIsolated {
             _ = Updater.shared
+            syncActivity = SyncActivity(model: AppModel.shared)
             KeyboardShortcuts.onKeyUp(for: .quickAdd) { QuickAddPanel.shared.toggle() }
             // Debounced on the run loop's default mode: after SwiftUI has applied the change, never while a menu is open.
             menuRefresh = AppModel.shared.objectWillChange
@@ -153,6 +155,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated {
             for url in urls { AppModel.shared.open(url) }
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        MainActor.assumeIsolated { syncActivity?.stop() }
     }
 
     /// Closing the window keeps Dayhand in the menu bar, with its reminders and the quick add shortcut.

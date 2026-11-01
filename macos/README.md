@@ -116,7 +116,8 @@ SyncEngine, one round at a time: OutboxProcessor sends the outbox in order (POST
                                  ──> ProjectMerger (the server's projects win), then SnapshotMerger (last write
                                      wins per field; the settings fields a waiting app:updateSettings sets keep their
                                      local value) ──> the database
-rounds: every 15 s, and at once after a local change
+rounds (coming soon): 60 s active, doubling after every three unchanged merges to 300 s;
+                      at least 300 s in the background, at once after a local change
 
 project editor ──> SyncEngine project call, never during a round: app:addProject, app:updateProject or
                    app:deleteProject at once ──> the server's answer into the database
@@ -160,9 +161,20 @@ into an app JWT for an hour, kept in memory only and fetched again five minutes 
 changes stay. Network errors and `503` keep the token and retry. **Disconnect** forgets the sign-in on the Mac and
 names `dayhand revoke <deviceId>` for the server.
 
-**Live updates** come from polling every 15 seconds while the app runs (four snapshot queries, well under the
-server's limits). Plan health reads are separate, as described above. The official Swift client (`convex-swift`)
-ships its core as a binary Rust framework, so it is not used:
+**Coming soon: cheaper live updates.** Automatic polling starts at 60 seconds while the app is active and has a
+visible window. Every three unchanged merges double that interval (120, 240, then at most 300 seconds). A changed
+merge, user interaction or Sync Now resets it to 60 seconds; bringing the app back to the foreground also reads
+immediately. Background, hidden, minimized or closed windows use at least 300 seconds. A local change still sends
+the outbox and reads immediately, even in the background; project calls remain serialized with rounds.
+
+Each round retains all four snapshot queries. Trash is part of the complete task set (missing tasks are purged by
+the merger); projects supply membership and server capability; settings supply the timezone and notification
+rules and repair rejected settings edits. Reusing stale settings after draining the outbox could undo an accepted
+edit. These reads are not visibility-only data. A quiescent first hour takes 17 rounds / 68 snapshot queries,
+then 12 / 48 per idle hour; continuously changing foreground data takes 60 / 240. These counts include the initial
+read and exclude the next hour's boundary, retries, missing-task lookups and explicit actions.
+Plan health reads remain separate, as described above, and follow successful polls rather than their own timer.
+The official Swift client (`convex-swift`) ships its core as a binary Rust framework, so it is not used:
 the app needs only the Convex HTTP API, as the Android app's `HttpTaskRemote` does.
 
 **Reminders.** Android keeps two alarms and works out what to show when one fires. macOS delivers notifications
@@ -268,13 +280,13 @@ create a key and a pairing code there, then connect with `http://127.0.0.1:3211`
 
 ```sh
 swift test                        # the live-backend test is skipped by default
-scripts/check-sync-loop.sh        # the release app with its sync loop turning, 50 seconds
+scripts/check-sync-loop.sh        # the release app with its sync loop turning, 950 seconds
 ```
 
 `scripts/check-sync-loop.sh` forces a release build of `dist/Dayhand.app`, even when `DAYHAND_CONFIGURATION` is set
 to debug. To use an existing release bundle instead, set `DAYHAND_APP=<path>/Dayhand.app`; `DAYHAND_CHECK_SECONDS`
-changes the default 50-second run. The script opens a temporary copy under a separate bundle id for notifications
-and preferences, then deletes that preferences domain on cleanup. It uses a temporary database and a process-local
+changes the default 950-second run (long enough for background polling). The script opens a temporary copy under
+a separate bundle id for notifications and preferences, then deletes that preferences domain on cleanup. It uses a temporary database and a process-local
 Keychain stand-in for Dayhand's sign-in, pointed at a local server that accepts and closes each connection without
 replying. It fails if the app exits early or makes too few server connections. This exercises the release-app crash
 at the end of the sync loop's wait, which unit tests and debug builds did not reproduce.
@@ -307,6 +319,9 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   that values the backend refuses queue nothing, that a snapshot taken while the change waits keeps its fields
   and the others follow the server, that Sync Now waits for a running poll before sending changes, that an offline
   change is sent later, and that a refused one is repaired.
+  `SyncCadenceTests` drives the real scheduler, SQLite merge and HTTP snapshot queries with a virtual clock:
+  hourly counts at base/idle/background, resets for tasks/projects/settings, foreground and user activity,
+  immediate ordered outbox delivery, retries and a poke while a snapshot is in flight.
   The loop's wait ends at its timeout or at
   a change, many times over (`SignalTests`; also worth running as `swift test -c release --filter SignalTests`).
 - **Projects** (`ProjectDomainTests.swift`, `ProjectSyncTests.swift`, `ProjectTrashRefusalTests.swift`): the name,

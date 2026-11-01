@@ -13,19 +13,22 @@ public enum SyncStatus: Hashable, Sendable {
 
 /**
  * Keeps the local database and the server in step while the app runs, one round at a time: send the outbox in order
- * (`OutboxProcessor`), then read the whole plan and merge it (`SnapshotMerger`). Rounds run every [pollInterval]
- * (the "live" view of changes made elsewhere) and at once after every local change ([poke]). Sending and reading
+ * (`OutboxProcessor`), then read the whole plan and merge it (`SnapshotMerger`). Automatic rounds back off from
+ * 60 to 300 seconds while unchanged (300 in the background); every local change ([poke]) runs at once. Sending and reading
  * never overlap, so a snapshot is always taken after the changes before it were sent. The project calls
  * (`ProjectCalls.swift`) take turns with the rounds the same way, so no snapshot straddles a project change.
  */
 public actor SyncEngine {
-    /// Polling every 15 seconds stays far under the server's limits (docs/architecture.md) and feels live enough.
-    public static let defaultPollInterval: Duration = .seconds(15)
+    public static let defaultPollInterval: Duration = SyncCadence.baseInterval
 
     let repository: TaskRepository
     let sender: MutationSender
     private let source: SnapshotSource
-    private let pollInterval: Duration
+    private var cadence: SyncCadence
+    private let now: @Sendable () -> Duration
+    private var lastRoundAt: Duration?
+    private var immediate = true
+    private var activityRevision: UInt64 = 0
     private let onStatus: @Sendable (SyncStatus) -> Void
     private let signal = Signal()
     private var loop: Task<Void, Never>?
@@ -35,24 +38,28 @@ public actor SyncEngine {
 
     public init(
         repository: TaskRepository, sender: MutationSender, source: SnapshotSource,
-        pollInterval: Duration = SyncEngine.defaultPollInterval, onStatus: @escaping @Sendable (SyncStatus) -> Void
+        pollInterval: Duration = SyncEngine.defaultPollInterval,
+        now: @escaping @Sendable () -> Duration = { .seconds(ProcessInfo.processInfo.systemUptime) },
+        onStatus: @escaping @Sendable (SyncStatus) -> Void
     ) {
         self.repository = repository
         self.sender = sender
         self.source = source
-        self.pollInterval = pollInterval
+        self.cadence = SyncCadence(base: pollInterval)
+        self.now = now
         self.onStatus = onStatus
     }
 
     public func start() {
         guard loop == nil else { return }
+        requestSync()
         onStatus(.connecting)
         loop = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
-                let status = await self.round()
+                let status = await self.pollIfDue()
                 if status == .signedOut { return }
-                await self.signal.wait(timeout: self.pollInterval)
+                await self.signal.wait(timeout: self.nextPollDelay)
             }
         }
     }
@@ -64,15 +71,64 @@ public actor SyncEngine {
     }
 
     /// A local change is waiting: run a round now instead of at the next poll.
-    public nonisolated func poke() { signal.fire() }
+    public nonisolated func poke() { Task { await requestSync() } }
 
-    /// One round: the outbox, then a snapshot. Also callable directly (tests, "Sync now").
+    func requestSync() {
+        userActivity()
+        immediate = true
+        signal.fire()
+    }
+
+    /// Interaction shortens an idle wait to the base, but does not fetch once per keystroke.
+    public func userActivity() {
+        cadence.reset()
+        activityRevision &+= 1
+        signal.fire()
+    }
+
+    /// Entering the foreground refreshes immediately; leaving it only reschedules the next automatic read.
+    public func setActive(_ active: Bool) {
+        guard active != cadence.active else { return }
+        cadence.setActive(active)
+        if active { requestSync() } else { signal.fire() }
+    }
+
+    var nextPollDelay: Duration {
+        guard !immediate, let lastRoundAt else { return .zero }
+        return max(.zero, lastRoundAt + cadence.interval - now())
+    }
+
+    /// The timer and the virtual-clock tests take the same path, rechecking after waiting for a project/manual call.
+    @discardableResult
+    func pollIfDue() async -> SyncStatus? {
+        await takeTurn()
+        defer { passTurn() }
+        guard nextPollDelay == .zero else { return nil }
+        return await runRound()
+    }
+
+    /// One explicit round: the outbox, then a snapshot. Also callable directly (tests, "Sync now").
     @discardableResult
     public func round() async -> SyncStatus {
         await takeTurn()
         defer { passTurn() }
-        let status = await sendAndRead()
+        userActivity()
+        return await runRound()
+    }
+
+    private func runRound() async -> SyncStatus {
+        immediate = false
+        let revision = activityRevision
+        let (status, changed) = await sendAndRead()
+        if case .synced = status, revision == activityRevision {
+            cadence.merged(changed: changed)
+        } else {
+            cadence.reset()
+        }
+        lastRoundAt = now()
         onStatus(status)
+        // A manual round may have replaced a timer's deadline. A poke during I/O remains immediate.
+        signal.fire()
         return status
     }
 
@@ -92,13 +148,13 @@ public actor SyncEngine {
         }
     }
 
-    private func sendAndRead() async -> SyncStatus {
+    private func sendAndRead() async -> (SyncStatus, Bool) {
         do {
             let processor = OutboxProcessor(store: repository, sender: sender)
             var drained = try await processor.drain()
             while drained == .moreLeft { drained = try await processor.drain() }
             switch drained {
-            case .unauthorized: return .signedOut
+            case .unauthorized: return (.signedOut, false)
             case .retryLater:
                 // Read anyway: changes made elsewhere still show, and the waiting ones keep their fields.
                 break
@@ -107,19 +163,19 @@ public actor SyncEngine {
             let knownTaskIds = try await repository.allTasks().compactMap(\.serverId)
             switch await source.snapshot(knownTaskIds: knownTaskIds) {
             case .success(let snapshot):
-                try await repository.apply(snapshot)
+                let changed = try await repository.apply(snapshot)
                 if drained == .retryLater {
                     let waiting = try await repository.next()
-                    return .offline(waiting?.lastError ?? "a change could not be sent")
+                    return (.offline(waiting?.lastError ?? "a change could not be sent"), changed)
                 }
-                return .synced(at: Clock.nowMs())
+                return (.synced(at: Clock.nowMs()), changed)
             case .failure(.unauthorized):
-                return .signedOut
+                return (.signedOut, false)
             case .failure(.failed(let reason)):
-                return .offline(reason)
+                return (.offline(reason), false)
             }
         } catch {
-            return .offline(String(describing: type(of: error)))
+            return (.offline(String(describing: type(of: error))), false)
         }
     }
 }
