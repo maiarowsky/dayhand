@@ -6,8 +6,8 @@ on the phone, has the **Settings** screen, connects to a server by **pairing** w
 code from `dayhand pair`, approves and disconnects **agent connections** such as the Claude app, and
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
-**Install**: the signed release build is ready, but no release is published yet. Once it is,
-download the `.apk` from the [latest release](https://github.com/maiarowsky/dayhand/releases/latest),
+**Install**: download the signed `.apk` from
+[Dayhand Planner 0.13.5](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5),
 allow your browser or file manager to install apps when Android asks, and on the first start
 choose **On this phone only** to use Dayhand without a server. What works without a server, what
 needs one and how to connect your own: [On the phone](../README.md#on-the-phone). To build it yourself, see

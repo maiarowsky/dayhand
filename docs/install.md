@@ -4,7 +4,7 @@
 |---|---|---|
 | [Command line](#command-line-dayhand) (`dayhand`, `dh`, `dayhand ui`) | macOS, Linux, Windows; Node.js 22.12+ | `npm i -g dayhand` or `brew install maiarowsky/tap/dayhand` |
 | [Your own server](#your-own-server) | macOS and Linux (on this computer), or your Convex account | `dayhand server start` or `dayhand server deploy` |
-| [Android](#android) | Android 8.0 or newer | build it yourself; coming soon: signed APK on GitHub Releases, Google Play |
+| [Android](#android) | Android 8.0 or newer | [signed APK on GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5), or build it yourself; Google Play coming soon |
 | [macOS](#macos) | macOS 13 or newer; built with Xcode 26 | from source; coming soon: signed, notarized download |
 | [Linux](#linux-and-omarchy) | Qt 6 desktops; a package for Arch Linux and Omarchy | from source |
 
@@ -77,9 +77,11 @@ The apps also work with no server at all, each on its own device.
 
 Android 8.0 (API 26) or newer.
 
-**Coming soon:** a signed APK on [GitHub Releases](https://github.com/maiarowsky/dayhand/releases) and
-Google Play. The release build is prepared and signed with the project's key, but no release is
-published yet.
+Download the signed APK from
+[Dayhand Planner 0.13.5 on GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5).
+Allow your browser or file manager to install apps when Android asks, then open the downloaded APK.
+The release includes `SHA256SUMS` and the signing certificate fingerprint for verification.
+Google Play is still coming soon.
 
 **Build it yourself** with JDK 17 or newer and the Android SDK (platform 36). With a phone connected
 over USB with debugging on, or an emulator running, in the checkout:

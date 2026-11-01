@@ -33,7 +33,7 @@ TODAY
 | macOS, Linux, Windows | `npm i -g dayhand` |
 | macOS, Linux with Homebrew | `brew install maiarowsky/tap/dayhand` |
 | Try it without installing | `npx dayhand --help` |
-| Android 8.0+ | build it yourself ([On the phone](#on-the-phone)); a signed APK on GitHub Releases is prepared, no release is published yet |
+| Android 8.0+ | [signed APK on GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5), or build it yourself ([On the phone](#on-the-phone)) |
 | Dayhand for macOS | build it from a checkout ([On the Mac](#on-the-mac)) |
 | Dayhand for Linux | build it from a checkout ([On Linux](#on-linux)) |
 
