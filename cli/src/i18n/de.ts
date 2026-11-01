@@ -178,7 +178,7 @@ export const de: Catalog = {
   "keys.views.next": "Nächste / vorige Ansicht",
   "keys.views.pick": "Heute, Board, Woche, Papierkorb, Agenten",
   "keys.views.filter": "Filter: Titel, +Projekt, Notiz, #42",
-  "keys.views.refresh": "Jetzt aktualisieren (sonst alle 12 s)",
+  "keys.views.refresh": "Jetzt aktualisieren (sonst alle 60 s, ohne Änderungen seltener)",
   "keys.views.help": "Diese Hilfe",
   "keys.views.quit": "Beenden (q in Details: zurück)",
   "keys.tasks": "Aufgaben",

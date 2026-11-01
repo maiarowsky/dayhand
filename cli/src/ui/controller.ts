@@ -61,6 +61,7 @@ export class Controller {
   private copies: Promise<void> = Promise.resolve();
   private completingTaskId?: string;
   private timer?: ReturnType<typeof setTimeout>;
+  private pollDue = 0;
   private pollingEnabled = false;
   private polling = false;
   private pollInterval: number;
@@ -157,6 +158,7 @@ export class Controller {
   private schedulePoll(): void {
     clearTimeout(this.timer);
     if (this.pollingEnabled && !this.stopped && !this.polling) {
+      this.pollDue = Date.now() + this.pollInterval * 1000;
       this.timer = setTimeout(() => void this.poll(), this.pollInterval * 1000);
     }
   }
@@ -167,8 +169,9 @@ export class Controller {
     const base = this.options.interval ?? DEFAULT_INTERVAL_S;
     const changed = this.pollInterval !== base;
     this.pollInterval = base;
-    this.schedulePoll();
-    if (changed) this.emit();
+    if (!changed) return;
+    if (this.pollDue - Date.now() > base * 1000) this.schedulePoll();
+    this.emit();
   }
 
   private async poll(): Promise<void> {

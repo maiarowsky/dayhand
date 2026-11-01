@@ -179,7 +179,7 @@ export const en = {
   "keys.views.next": "Next / previous view",
   "keys.views.pick": "Today, Board, Week, Trash, Agents",
   "keys.views.filter": "Filter: title, +project, note, #42",
-  "keys.views.refresh": "Refresh now (also every 12 s)",
+  "keys.views.refresh": "Refresh now (also every 60 s, less often when idle)",
   "keys.views.help": "This help",
   "keys.views.quit": "Quit (q in details: back)",
   "keys.tasks": "Tasks",

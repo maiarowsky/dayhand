@@ -178,7 +178,7 @@ export const ptBR: Catalog = {
   "keys.views.next": "Vista seguinte / anterior",
   "keys.views.pick": "Hoje, Quadro, Semana, Lixeira, Agentes",
   "keys.views.filter": "Filtro: título, +projeto, nota, #42",
-  "keys.views.refresh": "Atualizar agora (também a cada 12 s)",
+  "keys.views.refresh": "Atualizar agora (também a cada 60 s, menos sem mudanças)",
   "keys.views.help": "Esta ajuda",
   "keys.views.quit": "Sair (q nos detalhes: voltar)",
   "keys.tasks": "Tarefas",

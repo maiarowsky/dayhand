@@ -183,7 +183,7 @@ export const pl: Catalog = {
   "keys.views.next": "Następny / poprzedni widok",
   "keys.views.pick": "Dzisiaj, Tablica, Tydzień, Kosz, Agenci",
   "keys.views.filter": "Filtr: tytuł, +projekt, notatka, #42",
-  "keys.views.refresh": "Odśwież teraz (i co 12 s)",
+  "keys.views.refresh": "Odśwież teraz (i co 60 s, rzadziej bez zmian)",
   "keys.views.help": "Ta pomoc",
   "keys.views.quit": "Wyjdź (q w szczegółach: wstecz)",
   "keys.tasks": "Zadania",

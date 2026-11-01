@@ -178,7 +178,7 @@ export const es: Catalog = {
   "keys.views.next": "Vista siguiente / anterior",
   "keys.views.pick": "Hoy, Tablero, Semana, Papelera, Agentes",
   "keys.views.filter": "Filtro: título, +proyecto, nota, #42",
-  "keys.views.refresh": "Actualizar ahora (también cada 12 s)",
+  "keys.views.refresh": "Actualizar ahora (también cada 60 s, menos sin cambios)",
   "keys.views.help": "Esta ayuda",
   "keys.views.quit": "Salir (q en detalles: volver)",
   "keys.tasks": "Tareas",

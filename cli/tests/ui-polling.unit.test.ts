@@ -143,6 +143,26 @@ describe("UI polling", () => {
     expect(s.count("plan_health")).toBe(3);
   });
 
+  test("keys between ticks never postpone a poll, also after backoff", async () => {
+    const s = server();
+    const ui = open(s.api);
+    await ui.start();
+    s.callTool.mockClear();
+    for (let second = 45; second <= 630; second += 45) {
+      await advance(45); // An active user presses a key every 45 s, always before the next tick.
+      ui.key("j");
+    }
+    expect(s.count("list_today")).toBe(10);
+    await advance(150); // t = 780: three unchanged ticks at 660, 720 and 780; next is due at 900
+    expect(s.count("list_today")).toBe(13);
+    expect(ui.snapshot().interval).toBe(120);
+    await advance(100);
+    ui.key("j");
+    expect(ui.snapshot().interval).toBe(60);
+    await advance(20);
+    expect(s.count("list_today")).toBe(14);
+  });
+
   test("a project created elsewhere is named after the next tick, then project reads stop", async () => {
     const s = server();
     const ui = open(s.api);
