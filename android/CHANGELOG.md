@@ -3,6 +3,23 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## 0.13.5 (unreleased)
+
+### Fixed
+
+- Pairing links fill only the server address. Enter the one-time code manually in the app;
+  codes included in `dayhand://pair` or `helm://pair` links are no longer used.
+
+### Compatibility
+
+- Upgrading from a build with labels removes them from the phone and from pending label edits;
+  tasks and projects remain. Backend 0.14.x no longer exposes labels in the API. Stored server
+  labels remain until the server administrator explicitly runs the separate removal migration.
+- On the updated server, creating API keys and importing a plan through REST require the
+  owner's `cli` key with scope `full`; agent keys use the policy-controlled task tools instead.
+- CLI 0.15.1 can still generate pairing links containing a code. Enter the code manually rather
+  than sharing or opening those links. This APK does not update the installed CLI.
+
 ## 0.13.4 (unreleased)
 
 ### Added
