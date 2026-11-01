@@ -28,7 +28,9 @@ function server() {
     complete_task: { task: { ...SAMPLE, status: "done" }, next: null },
   };
   const callTool = vi.fn(async (name: string) => {
-    const structured = name === "list_today" ? state.today : name === "get_task" ? state.detail : name === "list_projects" ? { result: state.projects } : replies[name];
+    // plan_health stamps every read with the time it was made, like the server.
+    const structured = name === "list_today" ? state.today : name === "get_task" ? state.detail : name === "list_projects" ? { result: state.projects }
+      : name === "plan_health" ? { ...replies.plan_health, at: Date.now() } : replies[name];
     if (!structured) throw new Error(`Unexpected tool: ${name}`);
     // Network responses are separate objects, even when their contents did not change.
     return { structured: structuredClone(structured), text: "", content: [] };

@@ -8,7 +8,7 @@ import type { Task } from "../render/model.js";
 import { hasProjectTasks, withProjectNames } from "../projects.js";
 import { isoWeekday, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
-import { agentId } from "./agents.js";
+import { agentId, type Health } from "./agents.js";
 import { ClipboardError, copyText, taskText, type ClipboardMethod } from "./clipboard.js";
 import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
@@ -188,13 +188,13 @@ export class Controller {
     }
   }
 
-  /** Compare view data, not connection timestamps, flash messages or the clock. */
+  /** Compare view data, not connection timestamps, the health read time, flash messages or the clock. */
   private screenData(): string {
     return JSON.stringify([this.data.projects, ...this.shown()]);
   }
 
   private shown(): unknown[] {
-    return [this.data[this.ui.view], this.ui.view === "today" ? this.data.health : undefined, this.ui.detail ? this.data.detail : undefined];
+    return [this.data[this.ui.view], this.ui.view === "today" ? withoutReadTime(this.data.health) : undefined, this.ui.detail ? this.data.detail : undefined];
   }
 
   stop(): void {
@@ -473,6 +473,12 @@ export class Controller {
   selected(): Task | undefined {
     return selectedTask(this.ui, derive(this.snapshot()).lists);
   }
+}
+
+function withoutReadTime(health?: Health): Health | undefined {
+  if (!health) return undefined;
+  const { at: _at, ...rest } = health as Health & { at?: number };
+  return rest;
 }
 
 function changeError(error: CliError): string {
