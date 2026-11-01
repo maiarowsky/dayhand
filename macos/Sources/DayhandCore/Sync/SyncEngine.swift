@@ -93,6 +93,7 @@ public actor SyncEngine {
 
     /// The loop's timer did not run while the Mac slept: recheck the deadline now, reading only if it has passed.
     public func didWake() {
+        cadence.woke()
         userActivity()
         signal.fire()
     }

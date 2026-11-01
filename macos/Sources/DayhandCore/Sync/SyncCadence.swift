@@ -26,6 +26,11 @@ struct SyncCadence: Sendable {
         return min(usual, Self.noNetworkRetryInterval)
     }
 
+    /// A wake gets its own few quick retries while the network comes back.
+    mutating func woke() {
+        roundsWithoutNetwork = 0
+    }
+
     mutating func roundEnded(withoutNetwork: Bool) {
         roundsWithoutNetwork = withoutNetwork ? roundsWithoutNetwork + 1 : 0
     }

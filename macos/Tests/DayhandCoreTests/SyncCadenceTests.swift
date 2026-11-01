@@ -344,6 +344,30 @@ struct SyncCadenceTests {
         assertReads(3)
     }
 
+    @Test func eachWakeGetsItsOwnQuickRetriesButActivityAndPokesDoNot() async throws {
+        let (_, engine) = try setup()
+        await engine.pollIfDue()
+        clock.advance(60_000)
+        server.offline = true
+        for _ in 0..<4 {
+            #expect(await engine.pollIfDue() == .offline(SyncEngine.noNetwork))
+            clock.advance(Int64(Signal.nanoseconds(await engine.nextPollDelay) / 1_000_000))
+        }
+        #expect(await engine.nextPollDelay == .zero)
+        #expect(await engine.pollIfDue() == .offline(SyncEngine.noNetwork))
+        #expect(await engine.nextPollDelay == .seconds(60)) // The quick retries are spent.
+        clock.advance(1_000)
+        await engine.userActivity()
+        #expect(await engine.nextPollDelay == .seconds(59))
+        await engine.requestSync() // The actor entry used by nonisolated poke().
+        #expect(await engine.pollIfDue() == .offline(SyncEngine.noNetwork))
+        #expect(await engine.nextPollDelay == .seconds(60))
+        clock.advance(8 * 3_600_000)
+        await engine.didWake()
+        #expect(await engine.pollIfDue() == .offline(SyncEngine.noNetwork))
+        #expect(await engine.nextPollDelay == .seconds(5))
+    }
+
     @Test func serverErrorsAndLostAnswersAreNotRetriedSooner() async throws {
         let (repo, engine) = try setup()
         await engine.pollIfDue()
