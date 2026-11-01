@@ -79,8 +79,8 @@ other floating TUIs.
   hold `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`.
 - `E` opens `$VISUAL` or `$EDITOR` for a task's title and note, in the same window, and comes
   back when it closes.
-- The screen refreshes every 12 seconds (`--interval`). Without a connection it keeps the last
-  data, says so in red, and retries.
+- Refresh (`--interval`) and what it does without a connection:
+  [terminal.md](terminal.md#dayhand-ui).
 
 ## Not checked
 
