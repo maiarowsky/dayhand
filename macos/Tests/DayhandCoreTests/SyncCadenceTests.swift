@@ -275,6 +275,36 @@ struct SyncCadenceTests {
         await engine.stop()
         #expect(log.count >= 3)
     }
+
+    @Test func wakingFromSleepReadsAtOnceOnlyWhenTheLastReadIsOverdue() async throws {
+        let clock = clock
+        server.clock = { clock.now }
+        let tokens = DeviceTokens(serverUrl: FakeServer.site, deviceToken: FakeServer.deviceToken, api: PairingAPI(transport: server), onRevoked: {})
+        let remote = ConvexRemote(deploymentUrl: FakeServer.cloud, tokens: tokens, transport: server)
+        let log = StatusLog()
+        let engine = SyncEngine(
+            repository: TaskRepository(database: try AppDatabase.inMemory(), clock: { clock.now }), sender: remote, source: remote,
+            now: { .milliseconds(clock.now) }, onStatus: { log.append($0) }
+        )
+        await engine.start()
+        for _ in 0..<500 where log.count < 2 { try await Task.sleep(nanoseconds: 1_000_000) }
+        clock.advance(10_000)
+        await engine.userActivity() // Woken 10 s after the read: the base still holds.
+        try await Task.sleep(nanoseconds: 100_000_000)
+        #expect(log.count == 2)
+        #expect(await engine.nextPollDelay == .seconds(50))
+        clock.advance(8 * 3_600_000) // Asleep overnight; the loop's 60 s timer is still waiting.
+        await engine.userActivity()
+        for _ in 0..<2000 where log.count < 3 { try await Task.sleep(nanoseconds: 1_000_000) }
+        #expect(log.count == 3)
+        await engine.setActive(false)
+        clock.advance(8 * 3_600_000)
+        await engine.userActivity() // Background: the interval stays 300 s, but this read is overdue too.
+        for _ in 0..<2000 where log.count < 4 { try await Task.sleep(nanoseconds: 1_000_000) }
+        await engine.stop()
+        #expect(log.count == 4)
+        assertReads(3)
+    }
 }
 
 private actor HeldSnapshot: HTTPTransport {

@@ -163,8 +163,8 @@ names `dayhand revoke <deviceId>` for the server.
 
 **Coming soon: cheaper live updates.** Automatic polling starts at 60 seconds while the app is active and has a
 visible window. Every three unchanged merges double that interval (120, 240, then at most 300 seconds). A changed
-merge, user interaction or bringing the app back to the foreground resets it to 60 seconds, and reads at once
-only when the last read is at least 60 seconds old; Sync Now reads at once. Background, hidden, minimized or
+merge, user interaction, waking the Mac or bringing the app back to the foreground resets it to 60 seconds, and
+reads at once only when the last read is at least 60 seconds old (time asleep counts); Sync Now reads at once. Background, hidden, minimized or
 closed windows use at least 300 seconds. A local change still sends the outbox and reads immediately, even in the
 background. Project calls remain serialized with rounds and write the server's answer locally without a read.
 

@@ -165,7 +165,7 @@ history entry and `task.updated` webhook. Upgrade and rollback requirements are 
 The macOS `SyncEngine` sends its offline outbox in order before reading `app:listAll`, `app:listTrash`,
 `app:getSettings` and `app:listProjects`. It starts at 60 seconds while active with a visible window, doubles
 at every three unchanged merges to a 300-second cap, and uses at least 300 seconds in the background.
-Local edits bypass the wait; user interaction, a changed merge and foreground return reset the active cadence
+Local edits bypass the wait; user interaction, a changed merge, system wake and foreground return reset the active cadence
 to 60 seconds without forcing a read, so returning or clicking often still reads at most once a minute. Project
 calls take turns with snapshot rounds and write the server's answer locally without requesting a read.
 

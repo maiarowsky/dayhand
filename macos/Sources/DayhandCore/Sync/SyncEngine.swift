@@ -20,6 +20,8 @@ public enum SyncStatus: Hashable, Sendable {
  */
 public actor SyncEngine {
     public static let defaultPollInterval: Duration = SyncCadence.baseInterval
+    /// Counts the time the Mac sleeps, so a read before sleep is as old as it really is.
+    @usableFromInline static let clockOrigin = ContinuousClock.now
 
     let repository: TaskRepository
     let sender: MutationSender
@@ -39,7 +41,7 @@ public actor SyncEngine {
     public init(
         repository: TaskRepository, sender: MutationSender, source: SnapshotSource,
         pollInterval: Duration = SyncEngine.defaultPollInterval,
-        now: @escaping @Sendable () -> Duration = { .seconds(ProcessInfo.processInfo.systemUptime) },
+        now: @escaping @Sendable () -> Duration = { SyncEngine.clockOrigin.duration(to: .now) },
         onStatus: @escaping @Sendable (SyncStatus) -> Void
     ) {
         self.repository = repository
@@ -79,12 +81,13 @@ public actor SyncEngine {
         signal.fire()
     }
 
-    /// Interaction shortens an idle wait to the base, but does not fetch once per keystroke or wake the loop at the base.
+    /// Interaction (or the Mac waking) shortens an idle wait to the base, but does not fetch once per keystroke; it wakes
+    /// the loop only when that moves the deadline or the read is already overdue.
     public func userActivity() {
         let previous = cadence.interval
         cadence.reset()
         activityRevision &+= 1
-        if cadence.interval < previous { signal.fire() }
+        if cadence.interval < previous || nextPollDelay == .zero { signal.fire() }
     }
 
     /// Entering the foreground resets the wait to the base: it reads at once only when the last read is that old.
