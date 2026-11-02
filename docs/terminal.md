@@ -10,8 +10,8 @@ once and is signed `cli` in the history. Installing it: [Install](install.md#com
 | To | Run |
 |---|---|
 | See Today | `dayhand` (or `dayhand today`) |
-| Add a task | `dayhand add Call the accountant --due "fri 2pm" -l admin` |
-| See every open task | `dayhand list`, `dayhand list -l admin --due-before eow` |
+| Add a task | `dayhand add Call the accountant --due "fri 2pm"` |
+| See every open task | `dayhand list`, `dayhand list -p Work --due-before eow` |
 | See the board | `dayhand board` |
 | Finish a task | `dayhand done 3` (several at once: `dayhand done 3 4 now`) |
 | Move it to another day | `dayhand move 3 "next mon 9am"` (`none` removes the day) |

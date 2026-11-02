@@ -158,8 +158,8 @@ set +e
   . "$PRELUDE"
   mkdir -p "$WORK/home-sample" && export HOME="$WORK/home-sample" && cd "$REPO"
   start_server sample $((PORT + 2)) $((PORT + 3)) >/dev/null
-  dayhand add "Send the invoice to Anna" --due yesterday -l work >/dev/null
-  dayhand add "Call the accountant" --due "today 14:00" -l admin >/dev/null
+  dayhand add "Send the invoice to Anna" --due yesterday >/dev/null
+  dayhand add "Call the accountant" --due "today 14:00" >/dev/null
   AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
   export AGENT_KEY
   expected="$WORK/sample.expected" actual="$WORK/sample.actual"
