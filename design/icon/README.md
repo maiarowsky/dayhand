@@ -7,7 +7,7 @@ PNG was measured and redrawn with exact symmetry, smooth edges and no generator 
 | File | Use |
 |---|---|
 | `dayhand-icon.svg` | Master artwork, 1024 x 1024, full-bleed square (platforms apply their own mask). |
-| `play-store-512.png` | Google Play listing icon, 512 x 512, no alpha, no rounding. |
+| `play-store-512.png` | Google Play listing icon, 512 x 512, no alpha, no rounding. A copy is the logo in the root README (`docs/assets/dayhand-icon.png`). |
 | `ios-1024.png` | iOS App Store master, 1024 x 1024, no alpha. Not wired into `ios/` yet. |
 
 Android uses an adaptive icon built from the same geometry

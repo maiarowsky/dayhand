@@ -65,7 +65,7 @@ To see every setup step first without changing anything, add `--dry-run` to `ser
 ## 3. Plan your day
 
 ```sh
-dayhand add "Call the accountant" --due "today 14:00" -l admin
+dayhand add "Call the accountant" --due "today 14:00"
 dayhand add "Send the invoice to Anna" --due fri
 dayhand
 dayhand done 1

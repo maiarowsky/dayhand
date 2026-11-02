@@ -18,7 +18,7 @@ Requires Node.js 22.12 or newer; runs on macOS, Linux and Windows.
 npm i -g dayhand                    # or: brew install maiarowsky/tap/dayhand; without installing: npx dayhand
 dayhand login --url https://<deployment>.convex.site    # locally: http://127.0.0.1:3211
 dayhand                             # Today
-dayhand add Call the accountant --due "fri 2pm" -l home
+dayhand add Call the accountant --due "fri 2pm"
 dayhand list --due-before eow --search accountant
 dayhand ui                          # full screen: Today, board, week, trash, agents (? lists the keys)
 source <(dayhand completion bash)   # or zsh, fish, powershell: dayhand help completion
