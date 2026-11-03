@@ -23,7 +23,7 @@ export const uiCommands: CommandSpec[] = [
     options: [
       { flags: "--view <view>", description: "The view to open with", choices: VIEWS },
       { flags: "--interval <seconds>", description: `Base seconds between refreshes, ${INTERVAL.min} to ${INTERVAL.max} (default ${INTERVAL.default}); backs off to 300 when unchanged`, kind: "int" },
-      { flags: "--no-mouse", description: "Leave the mouse to the terminal (for selecting text)" },
+      { flags: "--no-mouse", description: "Start with the mouse left to the terminal for selecting text (M turns it on)" },
       { flags: "--lang <language>", description: `The screens' language: ${LANGUAGES.join(", ")} (default: DAYHAND_LANG, then the locale)` },
     ],
     tools: ["list_today", "board", "list_all", "list_trash", "get_task", "get_settings", "add_task", "update_task", "set_status", "set_now", "complete_task", "reschedule_task", "delete_task", "restore_task"],

@@ -33,7 +33,7 @@ function tabBar(s: Snapshot): Screen {
     hits.push(hitRow(0, widthOf(label), { kind: "tab", view }, rowWidth(row) + 1));
     row.push(seg(" "), seg(label, { inverse: s.ui.view === view && !s.ui.detail, bold: s.ui.view === view }));
   }
-  const status = connection(s);
+  const status = [...(s.ui.mouse ? [] : [seg(t("conn.mouseOff"), { color: "yellow", bold: true })]), ...connection(s)];
   const room = s.columns - rowWidth(row) - rowWidth(status);
   return { rows: [room > 0 ? [...row, seg(" ".repeat(room)), ...status] : row], hits };
 }
@@ -174,7 +174,8 @@ function keysRow(s: Snapshot): Row {
     if (s.ui.view === "trash") return t("hints.trash");
     return t("hints.today");
   })();
-  return [seg(` ${cut(hints, s.columns - 2)}`, { dim: true })];
+  const mouseOff: Row = !s.ui.mouse && mode === "normal" ? [seg(` ${t("hints.mouseOff")} `, { color: "yellow", bold: true })] : [];
+  return [...mouseOff, seg(` ${cut(hints, s.columns - 2)}`, { dim: true })];
 }
 
 /** How far details and help can scroll before their last row leaves the bottom. */

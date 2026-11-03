@@ -85,6 +85,7 @@ export const de: Catalog = {
   "conn.waiting": "● wartet ",
   "conn.offline": "● offline ",
   "conn.rejected": "● Schlüssel abgelehnt ",
+  "conn.mouseOff": "○ Maus aus ",
   "conn.since": " · Daten von {time}",
   "conn.login": "Führe dayhand login in einem anderen Terminal aus und drücke dann R.",
   "conn.retrying": "Neuer Versuch alle {seconds} s; R versucht es jetzt, q beendet.",
@@ -119,6 +120,7 @@ export const de: Catalog = {
   "hints.week": "y kopieren  ? Hilfe  h/l Tag  H/L einen Tag  [ ] Wochen  t heute  a neu  x erledigt  Enter öffnen  q Ende",
   "hints.trash": "y kopieren  ? Hilfe  r wiederherstellen  Enter öffnen  / Filter  Tab Ansichten  q Ende",
   "hints.today": "y kopieren  ? Hilfe  a neu  x erledigt  s starten  n jetzt  e bearbeiten  m verschieben  d Papierkorb  / Filter  Tab Ansichten  q Ende",
+  "hints.mouseOff": "Maus aus: Text mit der Maus markieren · M schaltet sie wieder ein",
 
   "small.title": "Terminal zu klein",
   "small.size": "jetzt {columns}×{rows}, nötig {minColumns}×{minRows}",
@@ -180,6 +182,7 @@ export const de: Catalog = {
   "keys.views.filter": "Filter: Titel, +Projekt, Notiz, #42",
   "keys.views.refresh": "Jetzt aktualisieren (sonst alle 60 s, ohne Änderungen seltener)",
   "keys.views.help": "Diese Hilfe",
+  "keys.views.mouse": "Maus aus, um Text im Terminal zu markieren / wieder an",
   "keys.views.quit": "Beenden (q in Details: zurück)",
   "keys.tasks": "Aufgaben",
   "keys.tasks.copy": "Ausgewählte Aufgabe als Klartext kopieren",

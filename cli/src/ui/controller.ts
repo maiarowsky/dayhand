@@ -35,9 +35,10 @@ export type ControllerOptions = {
   editText?: (text: string, fileName: string) => string;
   /** Copies plain text without a server call. */
   copyText?: (text: string) => Promise<ClipboardMethod>;
-  /** Called around the editor: mouse reporting off before, on after. */
-  beforeEditor?: () => void;
-  afterEditor?: () => void;
+  /** Mouse reporting at start (--no-mouse: off). */
+  mouse?: boolean;
+  /** Turns the terminal's mouse reporting on or off: M, and off while the editor runs. */
+  setMouse?: (on: boolean) => void;
 };
 
 type Suspend = (run: () => Promise<void>) => Promise<void>;
@@ -81,7 +82,7 @@ export class Controller {
     this.rows = options.rows ?? 24;
     const today = localAt(this.now(), "UTC").date;
     const ui = initialState(options.view, weekStart(today));
-    this.ui = { ...ui, cursor: { ...ui.cursor, weekDay: isoWeekday(today) - 1 } };
+    this.ui = { ...ui, mouse: options.mouse ?? ui.mouse, cursor: { ...ui.cursor, weekDay: isoWeekday(today) - 1 } };
   }
 
   // React's useSyncExternalStore reads these.
@@ -122,13 +123,13 @@ export class Controller {
       saved = edit(text, fileName);
     };
     // Before Ink lets go of stdin, or a 'data' listener would start reading the editor's keys.
-    this.options.beforeEditor?.();
+    this.options.setMouse?.(false);
     this.input?.pause();
     try {
       await (this.suspend ? this.suspend(run) : run());
     } finally {
       this.input?.resume();
-      this.options.afterEditor?.();
+      this.options.setMouse?.(this.ui.mouse);
     }
     return saved;
   }
@@ -398,6 +399,9 @@ export class Controller {
       case "copy":
         this.copy(effect.task);
         return;
+      case "mouse":
+        this.options.setMouse?.(effect.on);
+        return;
       case "flash":
         this.say(effect.text, "info");
         this.emit();
@@ -423,7 +427,7 @@ export class Controller {
   }
 
   /** Changes run one after another; each ends with a refresh of what is on screen. */
-  private change(effect: Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" | "copy" }>, today: string, form?: UiState["mode"]): void {
+  private change(effect: Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" | "copy" | "mouse" }>, today: string, form?: UiState["mode"]): void {
     if (!this.timezone) {
       this.say(t("conn.notYet"), "error");
       this.emit();

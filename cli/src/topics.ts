@@ -115,16 +115,16 @@ the key from dayhand login and the same MCP tools as the other commands, refresh
 what is on screen every 60 seconds (--interval), less often while nothing
 changes, within the key's limits, and keeps the last data on screen with a red
 status line when the server cannot be reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
-The mouse selects and scrolls (--no-mouse leaves it to the terminal).
+The mouse selects and scrolls. While it does, the terminal cannot select text:
+M turns mouse reporting off so you can select and copy with the mouse, and M
+again turns it back on (--no-mouse starts with it off).
 
 y copies the selected task as plain text for a chat: id, title, status, project,
 due date/time and notes when present. It works in Today, Board, Week, Trash,
 agent proposals and task details without changing the task. It uses pbcopy on
-macOS, wl-copy/xclip/xsel on Linux and clip on Windows, falling back to OSC 52.
-Over SSH (SSH_CONNECTION, SSH_CLIENT or SSH_TTY set) it sends OSC 52 first, so
-the text reaches the terminal in front of you, not the host's clipboard. The
-terminal must allow OSC 52 clipboard writes; the status reports sending the
-text because the terminal cannot confirm copying it.
+macOS, wl-copy/xclip/xsel on Linux and clip on Windows, falling back to OSC 52
+(for example over SSH). The terminal must allow OSC 52 clipboard writes; the
+status reports sending the text because the terminal cannot confirm copying it.
 
 Quick add (a) reads a date phrase at the end or the start of the line:
 "Call the accountant fri 2pm +Home". The line below shows how

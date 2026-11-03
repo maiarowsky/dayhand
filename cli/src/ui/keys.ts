@@ -62,6 +62,7 @@ export const KEY_GROUPS: KeyGroup[] = [
       { keys: "/", does: "keys.views.filter" },
       { keys: "R", does: "keys.views.refresh" },
       { keys: "?", does: "keys.views.help" },
+      { keys: "M", does: "keys.views.mouse" },
       { keys: "q  C-c", does: "keys.views.quit" },
     ],
   },

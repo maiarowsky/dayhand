@@ -27,7 +27,7 @@ export type EffectContext = {
 
 export type Done = { text: string; select?: string };
 
-type Change = Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" | "copy" }>;
+type Change = Exclude<Effect, { kind: "quit" | "refresh" | "detail" | "flash" | "copy" | "mouse" }>;
 
 const label = (task: Pick<Task, "ref" | "title">) => `${refText(task as Task)} ${task.title}`.trim();
 

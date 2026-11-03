@@ -25,6 +25,7 @@ export type Effect =
   | { kind: "editor"; task: Task }
   | { kind: "undo"; taskId: string }
   | { kind: "pause"; paused: boolean }
+  | { kind: "mouse"; on: boolean }
   | { kind: "decide"; approvalId: string; optionId: string; label: string }
   | { kind: "accept"; task: Task }
   | { kind: "reject"; task: Task; reason: string }
@@ -115,7 +116,7 @@ function normal(state: UiState, name: string, lists: Lists): Result {
   }
 }
 
-/** Keys that only move: views, cursor, details scrolling, help, filter, quit. */
+/** Keys that only move: views, cursor, details scrolling, help, filter, mouse, quit. */
 function navigation(state: UiState, name: string, lists: Lists): Result | undefined {
   const half = Math.max(1, Math.floor(lists.page / 2));
   const rows: Record<string, number> = { j: 1, down: 1, k: -1, up: -1, g: -Infinity, home: -Infinity, G: Infinity, end: Infinity, "C-d": half, pgdn: half, "C-u": -half, pgup: -half };
@@ -136,6 +137,8 @@ function navigation(state: UiState, name: string, lists: Lists): Result | undefi
       return { state: { ...state, filter: "" } };
     case "?":
       return { state: { ...state, mode: { kind: "help", scroll: 0 } } };
+    case "M":
+      return { state: { ...state, mouse: !state.mouse }, effect: { kind: "mouse", on: !state.mouse } };
     case "tab":
       return view(VIEWS.indexOf(state.view) + 1);
     case "S-tab":

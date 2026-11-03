@@ -85,6 +85,7 @@ export const zhHans: Catalog = {
   "conn.waiting": "● 等待中 ",
   "conn.offline": "● 离线 ",
   "conn.rejected": "● 密钥被拒绝 ",
+  "conn.mouseOff": "○ 鼠标已关闭 ",
   "conn.since": " · 数据来自 {time}",
   "conn.login": "请在另一个终端运行 dayhand login，然后按 R。",
   "conn.retrying": "每 {seconds} 秒重试一次；R 立即重试，q 退出。",
@@ -119,6 +120,7 @@ export const zhHans: Catalog = {
   "hints.week": "y 复制  ? 帮助  h/l 天  H/L 挪一天  [ ] 周  t 今天  a 添加  x 完成  Enter 打开  q 退出",
   "hints.trash": "y 复制  ? 帮助  r 恢复  Enter 打开  / 筛选  Tab 视图  q 退出",
   "hints.today": "y 复制  ? 帮助  a 添加  x 完成  s 开始  n 现在  e 编辑  m 移动  d 废纸篓  / 筛选  Tab 视图  q 退出",
+  "hints.mouseOff": "鼠标已关闭：用鼠标选择文本 · 按 M 重新开启",
 
   "small.title": "终端太小",
   "small.size": "当前 {columns}×{rows}，需要 {minColumns}×{minRows}",
@@ -180,6 +182,7 @@ export const zhHans: Catalog = {
   "keys.views.filter": "筛选：标题、+项目、备注、#42",
   "keys.views.refresh": "立即刷新（也每 60 秒刷新，无变化时放慢）",
   "keys.views.help": "本帮助",
+  "keys.views.mouse": "关闭鼠标以在终端中选择文本 / 再按开启",
   "keys.views.quit": "退出（在详情中 q：返回）",
   "keys.tasks": "任务",
   "keys.tasks.copy": "将所选任务复制为纯文本",

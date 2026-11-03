@@ -86,6 +86,7 @@ export const en = {
   "conn.waiting": "● waiting ",
   "conn.offline": "● offline ",
   "conn.rejected": "● key rejected ",
+  "conn.mouseOff": "○ mouse off ",
   "conn.since": " · showing data from {time}",
   "conn.login": "Run dayhand login in another terminal, then press R.",
   "conn.retrying": "Retrying every {seconds} s; R retries now, q quits.",
@@ -120,6 +121,7 @@ export const en = {
   "hints.week": "y copy  ? help  h/l day  H/L move a day  [ ] weeks  t today  a add  x done  Enter open  q quit",
   "hints.trash": "y copy  ? help  r restore  Enter open  / filter  Tab views  q quit",
   "hints.today": "y copy  ? help  a add  x done  s start  n now  e edit  m move  d trash  / filter  Tab views  q quit",
+  "hints.mouseOff": "Mouse off: select text with the mouse · M turns it back on",
 
   "small.title": "Terminal too small",
   "small.size": "now {columns}×{rows}, needs {minColumns}×{minRows}",
@@ -181,6 +183,7 @@ export const en = {
   "keys.views.filter": "Filter: title, +project, note, #42",
   "keys.views.refresh": "Refresh now (also every 60 s, less often when idle)",
   "keys.views.help": "This help",
+  "keys.views.mouse": "Mouse off to select text in the terminal / on again",
   "keys.views.quit": "Quit (q in details: back)",
   "keys.tasks": "Tasks",
   "keys.tasks.copy": "Copy the selected task as plain text",

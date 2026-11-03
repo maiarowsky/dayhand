@@ -85,6 +85,7 @@ export const ptBR: Catalog = {
   "conn.waiting": "● aguardando ",
   "conn.offline": "● offline ",
   "conn.rejected": "● chave recusada ",
+  "conn.mouseOff": "○ mouse desligado ",
   "conn.since": " · dados das {time}",
   "conn.login": "Execute dayhand login em outro terminal e depois pressione R.",
   "conn.retrying": "Tentando de novo a cada {seconds} s; R tenta agora, q sai.",
@@ -119,6 +120,7 @@ export const ptBR: Catalog = {
   "hints.week": "y copiar  ? ajuda  h/l dia  H/L um dia  [ ] semanas  t hoje  a adicionar  x concluída  Enter abrir  q sair",
   "hints.trash": "y copiar  ? ajuda  r restaurar  Enter abrir  / filtro  Tab vistas  q sair",
   "hints.today": "y copiar  ? ajuda  a adicionar  x concluída  s começar  n agora  e editar  m mover  d lixeira  / filtro  Tab vistas  q sair",
+  "hints.mouseOff": "Mouse desligado: selecione texto com o mouse · M liga de novo",
 
   "small.title": "Terminal pequeno demais",
   "small.size": "agora {columns}×{rows}, precisa de {minColumns}×{minRows}",
@@ -180,6 +182,7 @@ export const ptBR: Catalog = {
   "keys.views.filter": "Filtro: título, +projeto, nota, #42",
   "keys.views.refresh": "Atualizar agora (também a cada 60 s, menos sem mudanças)",
   "keys.views.help": "Esta ajuda",
+  "keys.views.mouse": "Desligar o mouse para selecionar texto no terminal / ligar de novo",
   "keys.views.quit": "Sair (q nos detalhes: voltar)",
   "keys.tasks": "Tarefas",
   "keys.tasks.copy": "Copiar a tarefa selecionada como texto simples",

@@ -85,6 +85,7 @@ export const ja: Catalog = {
   "conn.waiting": "● 待機中 ",
   "conn.offline": "● オフライン ",
   "conn.rejected": "● キーが拒否されました ",
+  "conn.mouseOff": "○ マウス オフ ",
   "conn.since": " · {time} 時点のデータ",
   "conn.login": "別のターミナルで dayhand login を実行してから R を押してください。",
   "conn.retrying": "{seconds} 秒ごとに再試行中。R で今すぐ再試行、q で終了。",
@@ -119,6 +120,7 @@ export const ja: Catalog = {
   "hints.week": "y コピー  ? ヘルプ  h/l 日  H/L 1日ずらす  [ ] 週  t 今日  a 追加  x 完了  Enter 開く  q 終了",
   "hints.trash": "y コピー  ? ヘルプ  r 元に戻す  Enter 開く  / フィルター  Tab 表示  q 終了",
   "hints.today": "y コピー  ? ヘルプ  a 追加  x 完了  s 開始  n いま  e 編集  m 移動  d ゴミ箱  / フィルター  Tab 表示  q 終了",
+  "hints.mouseOff": "マウス オフ: マウスでテキストを選択 · M で元に戻す",
 
   "small.title": "ターミナルが小さすぎます",
   "small.size": "現在 {columns}×{rows}、必要 {minColumns}×{minRows}",
@@ -180,6 +182,7 @@ export const ja: Catalog = {
   "keys.views.filter": "フィルター：タイトル、+プロジェクト、メモ、#42",
   "keys.views.refresh": "今すぐ更新（60秒ごとにも更新、変化がなければ間隔を延長）",
   "keys.views.help": "このヘルプ",
+  "keys.views.mouse": "マウスをオフにしてターミナルでテキストを選択 / もう一度でオン",
   "keys.views.quit": "終了（詳細では q で戻る）",
   "keys.tasks": "タスク",
   "keys.tasks.copy": "選択したタスクをプレーンテキストでコピー",

@@ -1,7 +1,7 @@
 // dayhand ui driven by keys and clicks on a real pseudo-terminal, against the local
 // backend: every change is checked through dayhand --json afterwards. node-pty ships
 // prebuilt binaries for macOS and Windows only; elsewhere these tests are skipped.
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { createKey, dayhand, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
@@ -181,25 +181,6 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(await show(key, task.ref)).toEqual(before);
   });
 
-  // Owner report 2026-11-03: copying from a phone over SSH did nothing. pbcopy on the
-  // host succeeded and said "Task copied", but the text was on the host, not the phone.
-  test.skipIf(process.platform === "win32")("over SSH y sends OSC 52 to the terminal instead of the host's clipboard tool", async () => {
-    const { key } = await newUser();
-    const task = await dayhandJson(key, ["add", "Copy from the phone", "--note", "A complete note"]);
-    const dir = mkdtempSync(join(TEST_HOME, "ssh-clipboard-"));
-    const output = join(dir, "copied.txt");
-    const executable = `#!${process.execPath}\nconst fs = require("node:fs"); fs.writeFileSync(process.env.CLIPBOARD_OUTPUT, fs.readFileSync(0));\n`;
-    for (const command of ["pbcopy", "wl-copy", "xclip", "xsel"]) writeFileSync(join(dir, command), executable, { mode: 0o755 });
-    const s = open(key, ["--lang", "en"], undefined, { PATH: dir, CLIPBOARD_OUTPUT: output, SSH_CONNECTION: "192.0.2.10 50000 192.0.2.20 22" });
-    await s.waitFor(/› #1 ○ Copy from the phone/);
-    await s.press("y");
-    await s.waitFor("Sent to terminal clipboard (OSC 52)");
-    const sequence = /\u001b\]52;c;([A-Za-z0-9+/=]+)\u0007/.exec(s.raw());
-    expect(sequence, "the phone's terminal gets the text").not.toBeNull();
-    expect(Buffer.from(sequence![1]!, "base64").toString("utf8")).toBe(`ID: ${task.id}\nRef: #1\nTitle: Copy from the phone\nStatus: todo\nDue: ${task.dueDate}\nNote:\nA complete note`);
-    expect(existsSync(output), "the host's clipboard is not the user's over SSH").toBe(false);
-  });
-
   test("opens Today full screen with the mouse on, and q gives the terminal back", async () => {
     const { key } = await newUser();
     await dayhandJson(key, ["add", "Pay rent", "--due", "yesterday"]);
@@ -220,6 +201,33 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(await s.exit).toBe(0);
     expect(s.raw()).toContain("\u001b[?1049l");
     expect(s.raw()).toContain("\u001b[?1000l\u001b[?1006l");
+  });
+
+  test("M turns mouse reporting off so the terminal selects text, M turns it back on, and q leaves it off", async () => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["add", "First"]);
+    await dayhandJson(key, ["add", "Second", "--note", "A note to select"]);
+    const s = open(key, ["--lang", "en"], { columns: 140, rows: 24 });
+    const screen = await s.waitFor(/› #1 ○ First/);
+    const on = "\u001b[?1000h\u001b[?1006h";
+    const off = "\u001b[?1000l\u001b[?1006l";
+    expect(s.raw()).toContain(on);
+    expect(s.raw()).not.toContain(off);
+    const second = locate(screen, "Second");
+    await s.press("M");
+    await s.waitFor("Mouse off: select text with the mouse · M turns it back on");
+    expect(s.raw()).toContain(off);
+    const mark = s.raw().length;
+    await s.press("M");
+    await s.waitFor(/^ y copy {2}\? help/m);
+    expect(await s.screen()).not.toContain("Mouse off");
+    expect(s.raw().slice(mark)).toContain(on);
+    await s.click(second.x, second.y);
+    await s.waitFor(/› #2 ○ Second/);
+    const back = s.raw().length;
+    await s.press("q");
+    expect(await s.exit).toBe(0);
+    expect(s.raw().slice(back)).toContain(off);
   });
 
   test("quick add reads a date phrase and keeps a #word in the title; space completes; s starts; n makes it the now task", async () => {

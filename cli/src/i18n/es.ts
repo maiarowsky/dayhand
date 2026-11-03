@@ -85,6 +85,7 @@ export const es: Catalog = {
   "conn.waiting": "● esperando ",
   "conn.offline": "● sin conexión ",
   "conn.rejected": "● clave rechazada ",
+  "conn.mouseOff": "○ ratón desactivado ",
   "conn.since": " · datos de las {time}",
   "conn.login": "Ejecuta dayhand login en otra terminal y luego pulsa R.",
   "conn.retrying": "Reintentando cada {seconds} s; R reintenta ahora, q sale.",
@@ -119,6 +120,7 @@ export const es: Catalog = {
   "hints.week": "y copiar  ? ayuda  h/l día  H/L un día  [ ] semanas  t hoy  a añadir  x hecha  Enter abrir  q salir",
   "hints.trash": "y copiar  ? ayuda  r restaurar  Enter abrir  / filtro  Tab vistas  q salir",
   "hints.today": "y copiar  ? ayuda  a añadir  x hecha  s empezar  n ahora  e editar  m mover  d papelera  / filtro  Tab vistas  q salir",
+  "hints.mouseOff": "Ratón desactivado: selecciona texto con el ratón · M lo vuelve a activar",
 
   "small.title": "Terminal demasiado pequeña",
   "small.size": "ahora {columns}×{rows}, necesita {minColumns}×{minRows}",
@@ -180,6 +182,7 @@ export const es: Catalog = {
   "keys.views.filter": "Filtro: título, +proyecto, nota, #42",
   "keys.views.refresh": "Actualizar ahora (también cada 60 s, menos sin cambios)",
   "keys.views.help": "Esta ayuda",
+  "keys.views.mouse": "Desactivar el ratón para seleccionar texto en la terminal / reactivarlo",
   "keys.views.quit": "Salir (q en detalles: volver)",
   "keys.tasks": "Tareas",
   "keys.tasks.copy": "Copiar la tarea seleccionada como texto sin formato",
