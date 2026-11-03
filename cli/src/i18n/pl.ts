@@ -85,7 +85,6 @@ export const pl: Catalog = {
   "conn.waiting": "● czekam ",
   "conn.offline": "● offline ",
   "conn.rejected": "● klucz odrzucony ",
-  "conn.mouseOff": "○ mysz wył. ",
   "conn.since": " · dane z {time}",
   "conn.login": "Uruchom dayhand login w innym terminalu, potem naciśnij R.",
   "conn.retrying": "Ponawiam co {seconds} s; R ponawia teraz, q kończy.",

@@ -85,7 +85,6 @@ export const zhHans: Catalog = {
   "conn.waiting": "● 等待中 ",
   "conn.offline": "● 离线 ",
   "conn.rejected": "● 密钥被拒绝 ",
-  "conn.mouseOff": "○ 鼠标已关闭 ",
   "conn.since": " · 数据来自 {time}",
   "conn.login": "请在另一个终端运行 dayhand login，然后按 R。",
   "conn.retrying": "每 {seconds} 秒重试一次；R 立即重试，q 退出。",

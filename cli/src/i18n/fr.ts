@@ -85,7 +85,6 @@ export const fr: Catalog = {
   "conn.waiting": "● en attente ",
   "conn.offline": "● hors ligne ",
   "conn.rejected": "● clé refusée ",
-  "conn.mouseOff": "○ souris désactivée ",
   "conn.since": " · données de {time}",
   "conn.login": "Lancez dayhand login dans un autre terminal, puis appuyez sur R.",
   "conn.retrying": "Nouvel essai toutes les {seconds} s ; R réessaie, q quitte.",

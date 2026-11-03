@@ -85,7 +85,6 @@ export const ja: Catalog = {
   "conn.waiting": "● 待機中 ",
   "conn.offline": "● オフライン ",
   "conn.rejected": "● キーが拒否されました ",
-  "conn.mouseOff": "○ マウス オフ ",
   "conn.since": " · {time} 時点のデータ",
   "conn.login": "別のターミナルで dayhand login を実行してから R を押してください。",
   "conn.retrying": "{seconds} 秒ごとに再試行中。R で今すぐ再試行、q で終了。",

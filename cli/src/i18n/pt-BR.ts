@@ -85,7 +85,6 @@ export const ptBR: Catalog = {
   "conn.waiting": "● aguardando ",
   "conn.offline": "● offline ",
   "conn.rejected": "● chave recusada ",
-  "conn.mouseOff": "○ mouse desligado ",
   "conn.since": " · dados das {time}",
   "conn.login": "Execute dayhand login em outro terminal e depois pressione R.",
   "conn.retrying": "Tentando de novo a cada {seconds} s; R tenta agora, q sai.",

@@ -3,7 +3,7 @@
 // limits, the cursor following its task). The screens are checked as text.
 import { describe, expect, test } from "vitest";
 import { CliError } from "../src/core/exit.js";
-import { setLanguage, tIn } from "../src/i18n/index.js";
+import { LANGUAGES, setLanguage, tIn } from "../src/i18n/index.js";
 import type { Board, Detail, Task, TodayView } from "../src/render/model.js";
 import { makeApi, retryAfterMs, Throttled, type Api } from "../src/ui/api.js";
 import { Budget } from "../src/ui/budget.js";
@@ -575,7 +575,6 @@ describe("controller", () => {
       expect(text()).not.toContain("Mouse off");
       ui.key("M");
       expect(calls).toEqual([false]);
-      expect(text()).toContain("○ mouse off");
       expect(text()).toContain("Mouse off: select text with the mouse · M turns it back on");
       ui.key("E");
       await ui.idle();
@@ -591,6 +590,27 @@ describe("controller", () => {
       expect(calls).toHaveLength(6);
       expect(ui.snapshot().ui).toMatchObject({ mouse: true, mode: { kind: "prompt", line: { text: "M" } } });
     } finally {
+      ui.stop();
+    }
+  });
+
+  test.each(LANGUAGES)("%s at 80×24 offline: turning the mouse off leaves the tab bar as it was and the footer says how to turn it on", async (language) => {
+    const { api, state } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 80, rows: 24 });
+    try {
+      setLanguage(language);
+      await ui.refresh();
+      state.down = true;
+      await ui.refresh();
+      const tabs = rowsText([ui.frame().rows[0]!]);
+      ui.key("M");
+      const rows = ui.frame().rows;
+      expect(rowsText([rows[0]!])).toBe(tabs);
+      if (language === "pl" || language === "de") expect(tabs).toContain(tIn(language, "conn.offline").trim());
+      expect(rowsText([rows.at(-1)!])).toContain(tIn(language, "hints.mouseOff"));
+      for (const row of rows) expect(rowWidth(row)).toBeLessThanOrEqual(80);
+    } finally {
+      setLanguage("en");
       ui.stop();
     }
   });

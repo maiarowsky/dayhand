@@ -86,7 +86,6 @@ export const en = {
   "conn.waiting": "● waiting ",
   "conn.offline": "● offline ",
   "conn.rejected": "● key rejected ",
-  "conn.mouseOff": "○ mouse off ",
   "conn.since": " · showing data from {time}",
   "conn.login": "Run dayhand login in another terminal, then press R.",
   "conn.retrying": "Retrying every {seconds} s; R retries now, q quits.",
