@@ -11,9 +11,11 @@
 I'm building Dayhand for myself and for other people who run a business on their own. It is a
 task list and a day plan for you and for the AI agents that work for you.
 
-The phone keeps the plan offline, with a calendar and reminders. A server you run yourself, started
-with one command, lets your agent add, plan and finish tasks over MCP or the `dayhand` command
-line. Every change shows who made it: you or one of your agents.
+You plan in the terminal, full screen with `dayhand ui` or one command at a time, in the desktop
+apps for Linux and macOS, or on an Android phone that keeps the plan offline with a calendar and
+reminders. A server you run yourself, started with one command, keeps them in sync and lets your
+agent add, plan and finish tasks over MCP or the `dayhand` command line. Every change shows who
+made it: you or one of your agents.
 
 ```console
 $ DAYHAND_API_KEY=$AGENT_KEY dayhand add "Draft the VAT reply" --due "today 16:00" --remind 30
@@ -28,9 +30,69 @@ TODAY
   #3  [ ]  16:00      Draft the VAT reply
 ```
 
-## Screens
+## Terminal UI
 
-All screens below use sample data. On Android, Today, the board and the projects:
+`dayhand ui` opens the plan full screen in the terminal, on Linux and macOS alike. Below, Today with
+sample data:
+
+<p align="center">
+  <img src="docs/assets/terminal-today.webp" width="700" alt="dayhand ui in a terminal, Today: the views 1 to 5 on top, a red plan health line, the task you are working on now with its resume note, two overdue tasks, today's tasks with times and projects, one task done today and the main keys at the bottom">
+</p>
+
+It has five views: Today, the board (to do, in progress, done), the week, the trash and Agents.
+Enter opens a task with its history, which names who made each change (`app`, `cli` or
+`agent: <name>`), who claimed the work, its acceptance criteria, plan, proof and dependencies. The
+coloured line above Today sums up plan health, with the same counts as `dayhand health`.
+
+| Key | Does |
+|---|---|
+| `j` `k`, `h` `l` | Next and previous task; board column or week day |
+| `Tab`, `1` to `5` | Next view; Today, Board, Week, Trash, Agents |
+| `a` | Add a task with a date phrase: `Call the accountant fri 2pm` |
+| `Space` or `x`, `s`, `n` | Done; start or stop; make it the task you are working on now |
+| `e`, `m`, `d` | Edit; move to another day; to the trash (asks first) |
+| `/`, `y` | Filter; copy the task as plain text, ready to paste into a chat with an agent |
+| `p`, `A`, `X` | In Agents: pause or resume changes; accept or reject a proposal |
+| `?`, `q` | Every key; quit |
+
+The keys follow vim and lazygit, and the mouse selects and scrolls (hold `Shift` while dragging to
+select text, or start `dayhand ui --no-mouse`). **Coming soon:** `M` turns mouse reporting off so you
+can select text with the mouse, and on again. It uses the terminal's 16 colours, so it follows your
+theme, and its screens speak the terminal's language when it is one of the eight the apps speak
+(`--lang pl` or `DAYHAND_LANG=pl` to choose); everything scripts and agents read stays English. It
+has no reminders: the desktop and phone apps do. On Omarchy it becomes an app of its own
+([docs/omarchy.md](docs/omarchy.md)). Every key: `dayhand help ui` and
+[docs/terminal.md](docs/terminal.md).
+
+`dayhand ui` comes with the command line ([Install](#install)) and opens the plan of the server it
+is signed in to ([Quick start](#quick-start)).
+
+## Desktop apps
+
+**Dayhand for Linux** (Qt 6) has Today with task details, a trash with restore, reminder settings,
+a quick add window for a keyboard binding and a tray icon. Reminders and the morning summary come
+as desktop notifications.
+
+**Dayhand for macOS** keeps Today, projects and lists in a sidebar. Each one opens as a list, a
+board or a week plan. It has quick add from the menu bar or a global shortcut, reminders and the
+morning summary, the trash, each task's change history and read-only agent work.
+
+Both work offline and speak English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese
+and Simplified Chinese. Both are built from source for now:
+[Build the desktop apps](#build-the-desktop-apps).
+
+Dayhand for macOS, Today as a list with a task open, then the same day as a week plan (sample data):
+
+<p align="center">
+  <img src="docs/assets/macos-today.webp" width="700" alt="Dayhand for macOS, Today: projects in the sidebar, a plan health line, quick add, an overdue task, the task you are working on now, and the details of a task with due time, reminders, project and note">
+  <img src="docs/assets/macos-week-plan.webp" width="700" alt="Dayhand for macOS, week plan: tasks placed on a calendar from Monday to Sunday, and below it the tasks to drag onto it in to do, in progress and done columns">
+</p>
+
+## On the phone
+
+Dayhand for Android (8.0 or newer) starts without any server. Under **On this phone only** choose
+**Start with an empty plan**, or **Try with sample data** (one tap removes it). Today, the board and
+the projects, with sample data:
 
 <p align="center">
   <img src="docs/assets/android-today.webp" width="260" alt="Dayhand for Android, Today: two overdue tasks with a To today button, the task you are working on now with a note, and today's tasks with times and projects">
@@ -38,32 +100,87 @@ All screens below use sample data. On Android, Today, the board and the projects
   <img src="docs/assets/android-projects.webp" width="260" alt="Dayhand for Android, Projects: Home, Work and Health with open and overdue counts, tasks without a project, archived projects and the trash">
 </p>
 
-Dayhand for macOS, Today as a list with a task open, then the same day as a week plan:
-
-<p align="center">
-  <img src="docs/assets/macos-today.webp" width="700" alt="Dayhand for macOS, Today: projects in the sidebar, a plan health line, quick add, an overdue task, the task you are working on now, and the details of a task with due time, reminders, project and note">
-  <img src="docs/assets/macos-week-plan.webp" width="700" alt="Dayhand for macOS, week plan: tasks placed on a calendar from Monday to Sunday, and below it the tasks to drag onto it in to do, in progress and done columns">
-</p>
+Without a server you still get Today with quick add (a date phrase at the end sets the day:
+`Call the accountant fri 2pm`), the week and day calendar, the board, the Projects tab, task
+details with repeats, checklists and reminders, the morning summary and a backup file (**Backup**
+under **Data** in Settings). Making and changing projects needs a server
+([projects](docs/projects.md)). The plan then lives only on the phone. Android backups are off for
+Dayhand, so keep a backup file. To sync the phone with the command line, the desktop apps and your
+agents: [Connect the phone](#connect-the-phone).
 
 ## Install
 
-`dayhand`, the command line (short name `dh`), needs [Node.js](https://nodejs.org) 22.12 or newer:
+| System | Command line and `dayhand ui` | App | Server on this computer |
+|---|---|---|---|
+| [Linux](#linux) | npm or Homebrew | Dayhand for Linux, built from source | yes, x64 or arm64 |
+| [macOS](#macos) | npm or Homebrew | Dayhand for macOS, built from source | yes, Apple silicon or Intel |
+| [Windows](#windows) | npm, not tested on Windows | none | no: use a free Convex account |
+| [Android](#android) | none | [signed APK](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5) | not needed: the app works without one |
 
-| Where | Command |
-|---|---|
-| macOS, Linux, Windows | `npm i -g dayhand` |
-| macOS, Linux with Homebrew | `brew install maiarowsky/tap/dayhand` |
-| Try it without installing | `npx dayhand --help` |
-| Android 8.0 or newer | [signed APK on GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5), or build it yourself ([On the phone](#on-the-phone)) |
-| Dayhand for macOS | build it from a checkout ([On the Mac](#on-the-mac)) |
-| Dayhand for Linux | build it from a checkout ([On Linux](#on-linux)) |
+`dayhand`, the command line (short name `dh`), and with it `dayhand ui` need
+[Node.js](https://nodejs.org) 22.12 or newer:
 
 ```sh
 npm i -g dayhand
 ```
 
-`npm rm -g dayhand` removes it. Every way to install, with updates and shell completion:
-[docs/install.md](docs/install.md).
+or, on Linux and macOS with Homebrew, which brings Node.js along:
+
+```
+brew install maiarowsky/tap/dayhand
+```
+
+`npx dayhand --help` tries it without installing, and `npm rm -g dayhand` or `brew uninstall dayhand`
+removes it. Updates, shell completion and manual pages: [docs/install.md](docs/install.md).
+
+### Linux
+
+- **Command line and `dayhand ui`**: npm or Homebrew, as above. On Debian and Ubuntu, debhelper has
+  a `dh` command of its own; type `dayhand` there.
+- **Server**: `dayhand server start` runs it on this computer, with no account
+  ([Quick start](#quick-start)).
+- **App**: Dayhand for Linux is built from source. Arch Linux and Omarchy have a package in this
+  repository (not on the AUR); other distributions build it with CMake, a path the project does
+  not test: [Dayhand for Linux](#dayhand-for-linux).
+
+### macOS
+
+- **Command line and `dayhand ui`**: npm or Homebrew, as above.
+- **Server**: `dayhand server start` runs it on this computer, with no account
+  ([Quick start](#quick-start)).
+- **App**: Dayhand for macOS runs on macOS 13 or later and is built from source with Xcode 26 or
+  later. It is not signed for other Macs yet: [Dayhand for macOS](#dayhand-for-macos).
+  **Coming soon:** a signed, notarized download.
+
+### Windows
+
+- **Command line and `dayhand ui`**: `npm i -g dayhand` installs them; there is no Homebrew here.
+  The code has Windows paths (the key in Windows Credential Manager, `y` copying with `clip`,
+  Notepad as the default editor), but the project's tests do not run on Windows, so the commands and
+  `dayhand ui` are untested there.
+- **Server**: the local server does not run on Windows. Run it on your own free Convex account:
+  setup opens the browser to sign in to Convex, deploys and signs `dayhand` in
+  ([Your own server](#your-own-server)):
+
+  ```
+  dayhand server deploy
+  ```
+
+  The shell examples in this README use a POSIX shell, for example Git Bash.
+- **App**: there is no Windows desktop app.
+
+### Android
+
+- **App**: Android 8.0 or newer. Download the
+  [signed APK from GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5)
+  and allow your browser or file manager to install apps when Android asks; the release includes
+  `SHA256SUMS` and the signing certificate fingerprint. Google Play is coming soon.
+- **Build it yourself** with JDK 17 or newer and the Android SDK:
+  [docs/install.md](docs/install.md#android) and [android/README.md](android/README.md).
+- **Server**: not needed to start ([On the phone](#on-the-phone)); to sync, see
+  [Connect the phone](#connect-the-phone).
+
+The iPhone and iPad app is in development and has nothing to install yet.
 
 ## Quick start
 
@@ -88,11 +205,14 @@ export DAYHAND_URL=http://127.0.0.1:3211
 dayhand add "Call the accountant" --due "today 14:00"
 dayhand
 dayhand done 1
+dayhand ui
 ```
 
 `dayhand` alone is Today: the task you are working on now, overdue, today and done today. Dates
 are English phrases in your time zone (`fri 2pm`, `in 3 days`, `2026-11-02`), all listed by
-`dayhand help dates`. Stop the server with Ctrl+C; `dayhand server start` again keeps the data.
+`dayhand help dates`. `dayhand ui` opens the same plan full screen, and `q` quits it
+([Terminal UI](#terminal-ui)). Stop the server with Ctrl+C; `dayhand server start` again keeps the
+data.
 
 ## Your agent
 
@@ -173,17 +293,40 @@ a task from Today and writes the agent's state into that task: in progress, wait
 finished and ready for you to check. It never marks the task done. Setup:
 [herdr/README.md](herdr/README.md).
 
-## On the phone
+## Build the desktop apps
 
-The Android app starts without any server. Under **On this phone only** choose **Start with an
-empty plan**, or **Try with sample data** (one tap removes it).
+Both apps are built in a clone of this repository, like the one made for the Agent Skill above.
 
-Without a server you still get Today with quick add (a date phrase at the end sets the day:
-`Call the accountant fri 2pm`), the week and day calendar, the board, the Projects tab, task
-details with repeats, checklists and reminders, the morning summary and a backup file (**Backup**
-under **Data** in Settings). Making and changing projects needs a server
-([projects](docs/projects.md)). The plan then lives only on the phone. Android backups are off for
-Dayhand, so keep a backup file.
+### Dayhand for Linux
+
+On Arch Linux or Omarchy, Dayhand for Linux is built as a package from this repository (it is not
+on the AUR):
+
+```sh
+(cd packaging/arch && makepkg -si)
+```
+
+On other distributions it builds with CMake against Qt 6
+([docs/install.md](docs/install.md#linux-and-omarchy)); only Arch Linux builds are tested in the
+project. Bind `dayhand-qt --quick-add` to a key in Hyprland and add the Omarchy theme template to
+follow your theme's colours: [docs/linux.md](docs/linux.md). More: [linux/README.md](linux/README.md).
+
+### Dayhand for macOS
+
+It needs Xcode 26 or later to build and runs on macOS 13 or later. It is not signed for other Macs
+yet:
+
+```sh
+(cd macos && scripts/build-app.sh)
+open macos/dist/Dayhand.app
+```
+
+Connect it with a code from `dayhand pair`, or choose **Not now** to keep the plan on this Mac.
+The morning summary time and default reminders are in Settings. When you complete a repeating task, its next
+occurrence shows at once, also on a paired Mac with no network. More:
+[macos/README.md](macos/README.md) and [docs/macos.md](docs/macos.md).
+
+## Connect the phone
 
 To sync the phone, the CLI and your agents, connect it to your own server. In Settings, under
 **Server**, choose **Connect to my server** and scan the code from
@@ -194,8 +337,7 @@ dayhand pair
 
 Release builds of the app connect only over HTTPS, so a server on your computer needs
 `tailscale serve` in front of it ([docs/deploy.md](docs/deploy.md#phone-and-computer-tailscale)).
-Tasks you added on the phone before are sent to the server. Building the app yourself:
-[android/README.md](android/README.md).
+Tasks you added on the phone before are sent to the server.
 
 ## Your own server
 
@@ -203,7 +345,7 @@ Dayhand has no shared server to sign up for, and the app has no built-in server 
 run yours in one of two ways:
 
 - **On this computer**: follow [Quick start](#quick-start). Data and keys stay in a private folder.
-- **On your own free Convex account**: `dayhand server deploy` logs in to Convex in the browser,
+- **On your own free Convex account**, also from Windows: `dayhand server deploy` logs in to Convex in the browser,
   deploys, signs `dayhand` in and prints the server address and a pairing code. This gives a
   public HTTPS address, which the Claude apps and a phone away from home need. Follow the
   [server update guide](docs/deploy.md#updating) to update; keys and data are kept.
@@ -218,66 +360,6 @@ Costs (nothing on Convex's Free plan), backups, updates, Tailscale and setup by 
 [docs/deploy.md](docs/deploy.md). The Convex local backend binary is source-available under
 FSL-1.1-Apache-2.0; it is downloaded from Convex's GitHub releases at a pinned version and its
 checksum is verified.
-
-## In the terminal
-
-```sh
-dayhand ui
-```
-
-This opens Today, the board, the week, the trash and Agents (`5`) full screen. Keys work like in
-vim and lazygit (`j`/`k`, `h`/`l`, `?` for help), and the mouse works too. Quick add takes date
-phrases: press `a`, then type `Call the accountant fri 2pm`.
-
-- A coloured line above Today sums up plan health, with the same counts as `dayhand health`.
-- In Agents, `p` pauses or resumes changes. Enter opens an approval request, a digit selects an
-  option and a separate Enter confirms it. `A` accepts a proposal into the plan; `X` rejects it
-  with a required reason.
-- Task details show who made each change, who claimed the work, acceptance criteria, the plan,
-  proof, dependencies and blocking.
-- `y` copies the selected task as plain text, ready to paste into a chat with an agent.
-
-It uses the terminal's 16 colours, so it follows your theme. On Omarchy it becomes an app of its
-own ([docs/omarchy.md](docs/omarchy.md)). Keys: `dayhand help ui`. The screens speak the
-terminal's language when it is one of the eight the Mac app speaks (`--lang pl` or
-`DAYHAND_LANG=pl` to choose). Everything scripts and agents read stays English.
-
-## On the Mac
-
-Dayhand for macOS keeps Today, projects and lists in a sidebar. Each one opens as a list, a board
-or a week plan. It has quick add from the menu bar or a global shortcut, reminders and the morning
-summary (time and default reminders in Settings), the trash and each task's change history. Task
-details have repeat and reminder editors, a plan health card and read-only agent work. Editing
-works offline.
-
-When you complete a repeating task, its next occurrence shows at once, also on a paired Mac with
-no network. The server still creates it when it gets the completion. The app speaks English,
-Polish, German, Spanish, French, Brazilian Portuguese, Japanese or Simplified Chinese.
-
-It is built from source (Xcode 26 or later; runs on macOS 13 or later) and is not signed for other
-Macs yet:
-
-```sh
-(cd macos && scripts/build-app.sh)
-open macos/dist/Dayhand.app
-```
-
-Connect it with a code from `dayhand pair`, or choose **Not now** to keep the plan on this Mac.
-More: [macos/README.md](macos/README.md) and [docs/macos.md](docs/macos.md).
-
-## On Linux
-
-Dayhand for Linux (Qt 6) has Today with task details, a trash with restore, reminder settings, a
-quick add window for a keyboard binding and a tray icon. Reminders and the morning summary come as
-desktop notifications. It works offline and speaks eight languages. On Arch Linux or Omarchy it is
-built as a package from this repository (it is not on the AUR):
-
-```sh
-(cd packaging/arch && makepkg -si)
-```
-
-Bind `dayhand-qt --quick-add` to a key in Hyprland and add the Omarchy theme template to follow your
-theme's colours: [docs/linux.md](docs/linux.md). More: [linux/README.md](linux/README.md).
 
 ## The name
 
@@ -315,7 +397,7 @@ The tests start their own throwaway backend:
 (cd cli && npm test)
 ```
 
-Every command in this README runs against a local backend with sample data in
+Every command in the `sh` blocks of this README runs against a local backend with sample data in
 `scripts/verify-readme.sh`. Contributions are accepted under the
 [Developer Certificate of Origin](CONTRIBUTING.md).
 

@@ -9,7 +9,8 @@
 | [Linux](#linux-and-omarchy) | Qt 6 desktops; a package for Arch Linux and Omarchy | from source |
 
 The iPhone and iPad app is in development and has nothing to install yet. There is no Windows desktop
-app; on Windows the command line works with a server on your own Convex account.
+app; on Windows the command line works with a server on your own Convex account. The project's tests
+do not run on Windows, so the command line and `dayhand ui` are not tested there.
 
 ## Command line: dayhand
 
