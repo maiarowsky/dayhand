@@ -124,6 +124,7 @@ export const pl: Catalog = {
   "hints.week": "y kopiuj  ? pomoc  h/l dzień  H/L o dzień  [ ] tygodnie  t dziś  a dodaj  x zrobione  Enter otwórz  q wyjdź",
   "hints.trash": "y kopiuj  ? pomoc  r przywróć  Enter otwórz  / filtr  Tab widoki  q wyjdź",
   "hints.today": "y kopiuj  ? pomoc  a dodaj  x zrobione  s zacznij  n teraz  e edytuj  m przenieś  d kosz  / filtr  Tab widoki  q wyjdź",
+  "hints.mouseOff": "Mysz wyłączona: zaznacz tekst myszą · M włącza ją z powrotem",
 
   "small.title": "Terminal za mały",
   "small.size": "teraz {columns}×{rows}, potrzeba {minColumns}×{minRows}",
@@ -185,6 +186,7 @@ export const pl: Catalog = {
   "keys.views.filter": "Filtr: tytuł, +projekt, notatka, #42",
   "keys.views.refresh": "Odśwież teraz (i co 60 s, rzadziej bez zmian)",
   "keys.views.help": "Ta pomoc",
+  "keys.views.mouse": "Wyłącz mysz, by zaznaczać tekst w terminalu / włącz ponownie",
   "keys.views.quit": "Wyjdź (q w szczegółach: wstecz)",
   "keys.tasks": "Zadania",
   "keys.tasks.copy": "Kopiuj zaznaczone zadanie jako zwykły tekst",

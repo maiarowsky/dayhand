@@ -32,8 +32,10 @@ export async function runUi(options: UiOptions): Promise<void> {
   setLanguage(options.language);
   const stdout = options.stdout ?? process.stdout;
   const fd = stdout === process.stdout ? 1 : undefined;
+  let reporting = false;
   const mouse = (on: boolean) => {
-    if (!options.mouse) return;
+    if (on === reporting) return;
+    reporting = on;
     // Synchronous, so the sequence is out even when the process is exiting.
     if (fd !== undefined) writeSync(fd, on ? MOUSE_ON : MOUSE_OFF);
     else stdout.write(on ? MOUSE_ON : MOUSE_OFF);
@@ -49,12 +51,12 @@ export async function runUi(options: UiOptions): Promise<void> {
       if (fd !== undefined) writeSync(fd, sequence);
       else stdout.write(sequence);
     } : null }),
-    beforeEditor: () => mouse(false),
-    afterEditor: () => mouse(true),
+    mouse: options.mouse,
+    setMouse: mouse,
   });
   const restore = () => mouse(false);
   process.once("exit", restore);
-  mouse(true);
+  mouse(options.mouse);
   try {
     const app = render(createElement(App, { controller, color: options.color }), {
       stdin: options.stdin ?? process.stdin,

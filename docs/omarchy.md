@@ -77,6 +77,7 @@ other floating TUIs.
 - Keys: `?` in the app, or `dayhand help ui` ([cli.md](cli.md#topic-ui)). `q` quits.
 - The mouse selects and scrolls. Mouse reporting stops the terminal's own text selection;
   hold `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`.
+  Coming soon: `M` turns mouse reporting off to select text, and on again.
 - `E` opens `$VISUAL` or `$EDITOR` for a task's title and note, in the same window, and comes
   back when it closes.
 - Refresh (`--interval`) and what it does without a connection:

@@ -3,7 +3,7 @@
 // limits, the cursor following its task). The screens are checked as text.
 import { describe, expect, test } from "vitest";
 import { CliError } from "../src/core/exit.js";
-import { setLanguage, tIn } from "../src/i18n/index.js";
+import { LANGUAGES, setLanguage, tIn } from "../src/i18n/index.js";
 import type { Board, Detail, Task, TodayView } from "../src/render/model.js";
 import { makeApi, retryAfterMs, Throttled, type Api } from "../src/ui/api.js";
 import { Budget } from "../src/ui/budget.js";
@@ -560,6 +560,71 @@ describe("controller", () => {
       await ui.idle();
       expect(ui.snapshot().flash).toMatchObject({ tone: "error", text: error instanceof ClipboardError ? "Cannot copy: no clipboard tool or terminal" : "Cannot copy: clipboard tool or terminal write failed" });
       expect(state.changes).toEqual([]);
+    } finally {
+      ui.stop();
+    }
+  });
+
+  test("M turns mouse reporting off and on; the editor gives back the chosen state; prompts take M as text", async () => {
+    const { api } = fakeApi(view);
+    const calls: boolean[] = [];
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 140, rows: 24, setMouse: (on) => calls.push(on), editText: (text) => text });
+    try {
+      await ui.refresh();
+      const text = () => rowsText(ui.frame().rows);
+      expect(text()).not.toContain("Mouse off");
+      ui.key("M");
+      expect(calls).toEqual([false]);
+      expect(text()).toContain("Mouse off: select text with the mouse · M turns it back on");
+      ui.key("E");
+      await ui.idle();
+      expect(calls).toEqual([false, false, false]);
+      ui.key("M");
+      expect(calls).toEqual([false, false, false, true]);
+      expect(text()).not.toContain("Mouse off");
+      ui.key("E");
+      await ui.idle();
+      expect(calls).toEqual([false, false, false, true, false, true]);
+      ui.key("a");
+      ui.key("M");
+      expect(calls).toHaveLength(6);
+      expect(ui.snapshot().ui).toMatchObject({ mouse: true, mode: { kind: "prompt", line: { text: "M" } } });
+    } finally {
+      ui.stop();
+    }
+  });
+
+  test.each(LANGUAGES)("%s at 80×24 offline: turning the mouse off leaves the tab bar as it was and the footer says how to turn it on", async (language) => {
+    const { api, state } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 80, rows: 24 });
+    try {
+      setLanguage(language);
+      await ui.refresh();
+      state.down = true;
+      await ui.refresh();
+      const tabs = rowsText([ui.frame().rows[0]!]);
+      ui.key("M");
+      const rows = ui.frame().rows;
+      expect(rowsText([rows[0]!])).toBe(tabs);
+      if (language === "pl" || language === "de") expect(tabs).toContain(tIn(language, "conn.offline").trim());
+      expect(rowsText([rows.at(-1)!])).toContain(tIn(language, "hints.mouseOff"));
+      for (const row of rows) expect(rowWidth(row)).toBeLessThanOrEqual(80);
+    } finally {
+      setLanguage("en");
+      ui.stop();
+    }
+  });
+
+  test("--no-mouse starts with mouse reporting off and M turns it on", async () => {
+    const { api } = fakeApi(view);
+    const calls: boolean[] = [];
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 140, rows: 24, mouse: false, setMouse: (on) => calls.push(on) });
+    try {
+      await ui.refresh();
+      expect(rowsText(ui.frame().rows)).toContain("Mouse off: select text");
+      ui.key("M");
+      expect(calls).toEqual([true]);
+      expect(rowsText(ui.frame().rows)).not.toContain("Mouse off");
     } finally {
       ui.stop();
     }

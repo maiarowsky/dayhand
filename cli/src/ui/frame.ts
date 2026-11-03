@@ -174,7 +174,8 @@ function keysRow(s: Snapshot): Row {
     if (s.ui.view === "trash") return t("hints.trash");
     return t("hints.today");
   })();
-  return [seg(` ${cut(hints, s.columns - 2)}`, { dim: true })];
+  const mouseOff: Row = !s.ui.mouse && mode === "normal" ? [seg(` ${t("hints.mouseOff")} `, { color: "yellow", bold: true })] : [];
+  return [...mouseOff, seg(` ${cut(hints, s.columns - 2)}`, { dim: true })];
 }
 
 /** How far details and help can scroll before their last row leaves the bottom. */

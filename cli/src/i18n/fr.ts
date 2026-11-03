@@ -119,6 +119,7 @@ export const fr: Catalog = {
   "hints.week": "y copier  ? aide  h/l jour  H/L d’un jour  [ ] semaines  t aujourd’hui  a ajouter  x terminée  Entrée ouvrir  q quitter",
   "hints.trash": "y copier  ? aide  r restaurer  Entrée ouvrir  / filtre  Tab vues  q quitter",
   "hints.today": "y copier  ? aide  a ajouter  x terminée  s commencer  n maintenant  e modifier  m déplacer  d corbeille  / filtre  Tab vues  q quitter",
+  "hints.mouseOff": "Souris désactivée : sélectionnez du texte à la souris · M la réactive",
 
   "small.title": "Terminal trop petit",
   "small.size": "actuellement {columns}×{rows}, il faut {minColumns}×{minRows}",
@@ -180,6 +181,7 @@ export const fr: Catalog = {
   "keys.views.filter": "Filtre : titre, +projet, note, #42",
   "keys.views.refresh": "Actualiser (aussi toutes les 60 s, moins sans changement)",
   "keys.views.help": "Cette aide",
+  "keys.views.mouse": "Désactiver la souris pour sélectionner du texte dans le terminal / la réactiver",
   "keys.views.quit": "Quitter (q dans les détails : retour)",
   "keys.tasks": "Tâches",
   "keys.tasks.copy": "Copier la tâche sélectionnée en texte brut",

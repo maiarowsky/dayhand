@@ -64,6 +64,9 @@ It uses `pbcopy` on macOS, `wl-copy`, `xclip` or `xsel` on Linux, and `clip` on 
 OSC 52 as a fallback (for example over SSH). The terminal must allow OSC 52 clipboard writes;
 that fallback reports sending the text, since the terminal does not confirm copying it.
 
+Coming soon: the mouse still selects and scrolls, and `M` turns mouse reporting off so you can
+select and copy text with the mouse in the terminal; `M` again turns it back on.
+
 For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file and the keychain,
 `--json` prints exactly the tool's `structuredContent` (schemas in
 [docs/schemas](../docs/schemas)), errors are one JSON line on stderr, exit codes are distinct

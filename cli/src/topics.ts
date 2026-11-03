@@ -115,7 +115,9 @@ the key from dayhand login and the same MCP tools as the other commands, refresh
 what is on screen every 60 seconds (--interval), less often while nothing
 changes, within the key's limits, and keeps the last data on screen with a red
 status line when the server cannot be reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
-The mouse selects and scrolls (--no-mouse leaves it to the terminal).
+The mouse selects and scrolls. While it does, the terminal cannot select text:
+M turns mouse reporting off so you can select and copy with the mouse, and M
+again turns it back on (--no-mouse starts with it off).
 
 y copies the selected task as plain text for a chat: id, title, status, project,
 due date/time and notes when present. It works in Today, Board, Week, Trash,

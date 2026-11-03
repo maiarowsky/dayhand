@@ -45,6 +45,8 @@ export type UiState = {
   filter: string;
   /** The task last moved to the trash, for u (undo). */
   lastDeleted?: string;
+  /** Mouse reporting; M turns it off so the terminal selects text, and on again. */
+  mouse: boolean;
 };
 
 /** What the keys can reach: each view's tasks in cursor order (filtered), plus the day for adding. */
@@ -70,6 +72,7 @@ export function initialState(view: ViewName, weekStart: string): UiState {
     cursor: { today: 0, boardColumn: 0, board: [0, 0, 0], weekDay: 0, weekRow: 0, trash: 0, agents: 0 },
     weekStart,
     filter: "",
+    mouse: true,
   };
 }
 

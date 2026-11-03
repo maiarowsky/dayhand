@@ -63,6 +63,8 @@ keys follow vim and lazygit.
   [the quick-add rules](cli.md#topic-ui).
 - **The mouse** selects and scrolls. Mouse reporting stops the terminal's own text selection: hold
   `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`.
+  **Coming soon:** `M` turns mouse reporting off so you can select and copy text with the mouse,
+  and `M` again turns it back on.
 - **Refresh**: what is on screen is read again every 12 seconds (`--interval 10` to `300`), within the
   key's limits of 120 reads and 60 changes a minute; `R` refreshes now. Without a connection it keeps the
   last data on screen, says so in red, and tries again.

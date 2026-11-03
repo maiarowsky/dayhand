@@ -203,6 +203,33 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(s.raw()).toContain("\u001b[?1000l\u001b[?1006l");
   });
 
+  test("M turns mouse reporting off so the terminal selects text, M turns it back on, and q leaves it off", async () => {
+    const { key } = await newUser();
+    await dayhandJson(key, ["add", "First"]);
+    await dayhandJson(key, ["add", "Second", "--note", "A note to select"]);
+    const s = open(key, ["--lang", "en"], { columns: 140, rows: 24 });
+    const screen = await s.waitFor(/› #1 ○ First/);
+    const on = "\u001b[?1000h\u001b[?1006h";
+    const off = "\u001b[?1000l\u001b[?1006l";
+    expect(s.raw()).toContain(on);
+    expect(s.raw()).not.toContain(off);
+    const second = locate(screen, "Second");
+    await s.press("M");
+    await s.waitFor("Mouse off: select text with the mouse · M turns it back on");
+    expect(s.raw()).toContain(off);
+    const mark = s.raw().length;
+    await s.press("M");
+    await s.waitFor(/^ y copy {2}\? help/m);
+    expect(await s.screen()).not.toContain("Mouse off");
+    expect(s.raw().slice(mark)).toContain(on);
+    await s.click(second.x, second.y);
+    await s.waitFor(/› #2 ○ Second/);
+    const back = s.raw().length;
+    await s.press("q");
+    expect(await s.exit).toBe(0);
+    expect(s.raw().slice(back)).toContain(off);
+  });
+
   test("quick add reads a date phrase and keeps a #word in the title; space completes; s starts; n makes it the now task", async () => {
     const { key } = await newUser();
     const s = open(key);

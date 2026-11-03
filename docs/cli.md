@@ -341,7 +341,9 @@ the key from dayhand login and the same MCP tools as the other commands, refresh
 what is on screen every 60 seconds (--interval), less often while nothing
 changes, within the key's limits, and keeps the last data on screen with a red
 status line when the server cannot be reached. Colours are the terminal's 16 ANSI colours, so its theme applies.
-The mouse selects and scrolls (--no-mouse leaves it to the terminal).
+The mouse selects and scrolls. While it does, the terminal cannot select text:
+M turns mouse reporting off so you can select and copy with the mouse, and M
+again turns it back on (--no-mouse starts with it off).
 
 y copies the selected task as plain text for a chat: id, title, status, project,
 due date/time and notes when present. It works in Today, Board, Week, Trash,
@@ -376,6 +378,7 @@ Views:
   /                   Filter: title, +project, note, #42
   R                   Refresh now (also every 60 s, less often when idle)
   ?                   This help
+  M                   Mouse off to select text in the terminal / on again
   q  C-c              Quit (q in details: back)
 
 Tasks:
@@ -2080,7 +2083,7 @@ dayhand ui [options]
 |---|---|
 | `--view <view>` | The view to open with (today, board, week, trash) |
 | `--interval <seconds>` | Base seconds between refreshes, 10 to 300 (default 60); backs off to 300 when unchanged |
-| `--no-mouse` | Leave the mouse to the terminal (for selecting text) |
+| `--no-mouse` | Start with the mouse left to the terminal for selecting text (M turns it on) |
 | `--lang <language>` | The screens' language: en, pl, de, es, fr, pt-BR, ja, zh-Hans (default: DAYHAND_LANG, then the locale) |
 
 ```sh
