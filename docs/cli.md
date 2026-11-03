@@ -346,9 +346,11 @@ The mouse selects and scrolls (--no-mouse leaves it to the terminal).
 y copies the selected task as plain text for a chat: id, title, status, project,
 due date/time and notes when present. It works in Today, Board, Week, Trash,
 agent proposals and task details without changing the task. It uses pbcopy on
-macOS, wl-copy/xclip/xsel on Linux and clip on Windows, falling back to OSC 52
-(for example over SSH). The terminal must allow OSC 52 clipboard writes; the
-status reports sending the text because the terminal cannot confirm copying it.
+macOS, wl-copy/xclip/xsel on Linux and clip on Windows, falling back to OSC 52.
+Over SSH (SSH_CONNECTION, SSH_CLIENT or SSH_TTY set) it sends OSC 52 first, so
+the text reaches the terminal in front of you, not the host's clipboard. The
+terminal must allow OSC 52 clipboard writes; the status reports sending the
+text because the terminal cannot confirm copying it.
 
 Quick add (a) reads a date phrase at the end or the start of the line:
 "Call the accountant fri 2pm +Home". The line below shows how

@@ -12,7 +12,14 @@ export type ClipboardOptions = {
   run?: Run;
   /** Raw terminal output, outside Ink's patched stdout; null disables OSC 52. */
   writeOsc52?: ((sequence: string) => void) | null;
+  /** Read for SSH_CONNECTION, SSH_CLIENT and SSH_TTY. */
+  env?: NodeJS.ProcessEnv;
 };
+
+/** Over SSH the host's clipboard is not the one in front of the user. */
+function overSsh(env: NodeJS.ProcessEnv): boolean {
+  return Boolean(env.SSH_CONNECTION || env.SSH_CLIENT || env.SSH_TTY);
+}
 
 export class ClipboardError extends Error {
   constructor(readonly reason: "unavailable" | "failed", cause?: unknown) {
@@ -47,9 +54,14 @@ function runCommand(command: string, args: string[], input: Buffer): Promise<voi
   });
 }
 
-/** Try the native clipboard first, then ask the terminal (also over SSH) via OSC 52. */
+/**
+ * Try the native clipboard first, then ask the terminal via OSC 52. Over SSH the
+ * terminal goes first: the host's pbcopy or xclip would succeed on the wrong machine.
+ */
 export async function copyText(text: string, options: ClipboardOptions = {}): Promise<ClipboardMethod> {
   const platform = options.platform ?? process.platform;
+  const write = options.writeOsc52 === undefined ? (process.stdout.isTTY ? (sequence: string) => { writeSync(process.stdout.fd, sequence); } : null) : options.writeOsc52;
+  if (write && overSsh(options.env ?? process.env)) return osc52(text, write);
   const commands: [string, string[]][] = platform === "darwin" ? [["pbcopy", []]]
     : platform === "win32" ? [["clip", []]]
     : platform === "linux" ? [["wl-copy", []], ["xclip", ["-selection", "clipboard"]], ["xsel", ["--clipboard", "--input"]]] : [];
@@ -66,8 +78,11 @@ export async function copyText(text: string, options: ClipboardOptions = {}): Pr
       if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) failed = true;
     }
   }
-  const write = options.writeOsc52 === undefined ? (process.stdout.isTTY ? (sequence: string) => { writeSync(process.stdout.fd, sequence); } : null) : options.writeOsc52;
   if (!write) throw new ClipboardError(failed ? "failed" : "unavailable", cause);
+  return osc52(text, write);
+}
+
+function osc52(text: string, write: (sequence: string) => void): ClipboardMethod {
   try {
     write(`\u001b]52;c;${Buffer.from(text, "utf8").toString("base64")}\u0007`);
     return "osc52";

@@ -1,7 +1,7 @@
 // dayhand ui driven by keys and clicks on a real pseudo-terminal, against the local
 // backend: every change is checked through dayhand --json afterwards. node-pty ships
 // prebuilt binaries for macOS and Windows only; elsewhere these tests are skipped.
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { createKey, dayhand, helm, dayhandJson, newUser, TEST_HOME } from "./helpers.js";
@@ -179,6 +179,25 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(sequence, "OSC 52 must bypass Ink's patched stdout").not.toBeNull();
     expect(Buffer.from(sequence![1]!, "base64").toString("utf8")).toBe(`ID: ${task.id}\nRef: #1\nTitle: Copy over SSH\nStatus: todo\nDue: ${task.dueDate}\nNote:\nA complete note`);
     expect(await show(key, task.ref)).toEqual(before);
+  });
+
+  // Owner report 2026-11-03: copying from a phone over SSH did nothing. pbcopy on the
+  // host succeeded and said "Task copied", but the text was on the host, not the phone.
+  test.skipIf(process.platform === "win32")("over SSH y sends OSC 52 to the terminal instead of the host's clipboard tool", async () => {
+    const { key } = await newUser();
+    const task = await dayhandJson(key, ["add", "Copy from the phone", "--note", "A complete note"]);
+    const dir = mkdtempSync(join(TEST_HOME, "ssh-clipboard-"));
+    const output = join(dir, "copied.txt");
+    const executable = `#!${process.execPath}\nconst fs = require("node:fs"); fs.writeFileSync(process.env.CLIPBOARD_OUTPUT, fs.readFileSync(0));\n`;
+    for (const command of ["pbcopy", "wl-copy", "xclip", "xsel"]) writeFileSync(join(dir, command), executable, { mode: 0o755 });
+    const s = open(key, ["--lang", "en"], undefined, { PATH: dir, CLIPBOARD_OUTPUT: output, SSH_CONNECTION: "192.0.2.10 50000 192.0.2.20 22" });
+    await s.waitFor(/› #1 ○ Copy from the phone/);
+    await s.press("y");
+    await s.waitFor("Sent to terminal clipboard (OSC 52)");
+    const sequence = /\u001b\]52;c;([A-Za-z0-9+/=]+)\u0007/.exec(s.raw());
+    expect(sequence, "the phone's terminal gets the text").not.toBeNull();
+    expect(Buffer.from(sequence![1]!, "base64").toString("utf8")).toBe(`ID: ${task.id}\nRef: #1\nTitle: Copy from the phone\nStatus: todo\nDue: ${task.dueDate}\nNote:\nA complete note`);
+    expect(existsSync(output), "the host's clipboard is not the user's over SSH").toBe(false);
   });
 
   test("opens Today full screen with the mouse on, and q gives the terminal back", async () => {

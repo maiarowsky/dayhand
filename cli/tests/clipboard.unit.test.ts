@@ -33,7 +33,7 @@ describe("clipboard tools", () => {
     const text = "Zażółć 日本語 🚀\n$(not a command)";
     const run = vi.fn(async () => {});
     const writeOsc52 = vi.fn();
-    await expect(copyText(text, { platform, run, writeOsc52 })).resolves.toBe("system");
+    await expect(copyText(text, { platform, run, writeOsc52, env: {} })).resolves.toBe("system");
     const input = platform === "win32" ? Buffer.from(`\ufeff${text}`, "utf16le") : Buffer.from(text, "utf8");
     expect(run).toHaveBeenCalledExactlyOnceWith(command, args, input);
     expect(writeOsc52).not.toHaveBeenCalled();
@@ -46,7 +46,7 @@ describe("clipboard tools", () => {
     const run = vi.fn(async (command: string) => {
       if (command !== available) throw command === "wl-copy" ? new Error("no Wayland display") : missing();
     });
-    await expect(copyText("demo", { platform: "linux", run, writeOsc52: null })).resolves.toBe("system");
+    await expect(copyText("demo", { platform: "linux", run, writeOsc52: null, env: {} })).resolves.toBe("system");
     expect(run).toHaveBeenCalledTimes(count);
     expect(run).toHaveBeenLastCalledWith(available, args, Buffer.from("demo"));
   });
@@ -55,9 +55,23 @@ describe("clipboard tools", () => {
     const text = "Zażółć 日本語 🚀\n".repeat(100);
     const run = vi.fn(async () => { throw missing(); });
     const writeOsc52 = vi.fn();
-    await expect(copyText(text, { platform: "linux", run, writeOsc52 })).resolves.toBe("osc52");
+    await expect(copyText(text, { platform: "linux", run, writeOsc52, env: {} })).resolves.toBe("osc52");
     expect(run).toHaveBeenCalledTimes(3);
     expect(writeOsc52).toHaveBeenCalledExactlyOnceWith(`\u001b]52;c;${Buffer.from(text).toString("base64")}\u0007`);
+  });
+
+  test.each(["SSH_CONNECTION", "SSH_CLIENT", "SSH_TTY"])("with %s the terminal at the other end gets the text, not the host's tool", async (name) => {
+    const run = vi.fn(async () => {});
+    const writeOsc52 = vi.fn();
+    await expect(copyText("demo", { platform: "darwin", run, writeOsc52, env: { [name]: "set" } })).resolves.toBe("osc52");
+    expect(run).not.toHaveBeenCalled();
+    expect(writeOsc52).toHaveBeenCalledExactlyOnceWith(`\u001b]52;c;${Buffer.from("demo").toString("base64")}\u0007`);
+  });
+
+  test("over SSH without a terminal the host's tool is still tried", async () => {
+    const run = vi.fn(async () => {});
+    await expect(copyText("demo", { platform: "darwin", run, writeOsc52: null, env: { SSH_TTY: "/dev/ttys001" } })).resolves.toBe("system");
+    expect(run).toHaveBeenCalledOnce();
   });
 
   test("without a tool or terminal, failure retains the cause", async () => {
@@ -68,7 +82,7 @@ describe("clipboard tools", () => {
   test("tool and terminal write errors are failures, not successful copies", async () => {
     const cause = new Error("clipboard not available");
     await expect(copyText("demo", { platform: "darwin", run: async () => { throw cause; }, writeOsc52: null })).rejects.toMatchObject({ reason: "failed", cause });
-    await expect(copyText("demo", { platform: "linux", run: async () => { throw missing(); }, writeOsc52: () => { throw cause; } })).rejects.toMatchObject({ reason: "failed", cause });
+    await expect(copyText("demo", { platform: "linux", run: async () => { throw missing(); }, writeOsc52: () => { throw cause; }, env: {} })).rejects.toMatchObject({ reason: "failed", cause });
     expect(new ClipboardError("failed", cause).cause).toBe(cause);
   });
 });

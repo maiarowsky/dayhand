@@ -61,8 +61,10 @@ The base interval remains configurable from 10 to 300 s.
 `y` copies the selected task from Today, Board, Week, Trash, agent proposals or task
 details as plain text for a chat: id, title, status, project, due date/time and notes when present.
 It uses `pbcopy` on macOS, `wl-copy`, `xclip` or `xsel` on Linux, and `clip` on Windows, with
-OSC 52 as a fallback (for example over SSH). The terminal must allow OSC 52 clipboard writes;
-that fallback reports sending the text, since the terminal does not confirm copying it.
+OSC 52 as a fallback. Over SSH (`SSH_CONNECTION`, `SSH_CLIENT` or `SSH_TTY` set) OSC 52 comes
+first, so the text reaches the terminal in front of you rather than the host's clipboard. The
+terminal must allow OSC 52 clipboard writes; OSC 52 reports sending the text, since the terminal
+does not confirm copying it.
 
 For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file and the keychain,
 `--json` prints exactly the tool's `structuredContent` (schemas in
