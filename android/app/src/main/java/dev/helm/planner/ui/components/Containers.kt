@@ -39,7 +39,7 @@ import dev.helm.planner.ui.theme.Palette
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 
-/** A card (Mussh "FeatureCard" container): [color] on a 20 dp rounded shape with 18 dp padding, optionally tappable. */
+/** A card (Mussh "FeatureCard" container): [color] in the card shape with a thin border and card padding, optionally tappable. */
 @Composable
 fun HelmCard(
     modifier: Modifier = Modifier,

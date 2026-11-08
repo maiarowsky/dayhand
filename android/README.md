@@ -2,7 +2,7 @@
 
 **Coming soon:** a calendar-led appearance with neutral surfaces, status-coloured blocks and a blue today marker.
 Phones open on a readable day; the full week and all seven days remain available. The same spacing and type
-carry through the other screens. See the [design measurements](../docs/design.md#coming-soon-calendar-led-android-and-macos-appearance).
+carry through the other screens. See the [design measurements](../docs/design.md#calendar-led-appearance).
 
 Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **calendar**
 (week and day), the **board**, **projects**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed

@@ -2,7 +2,7 @@
 
 **Coming soon:** a seven-day plan with pinned date headings, a compact date toolbar, a day/week control and
 lime, olive and graphite task blocks. Today, lists, the board and settings share its neutral surfaces and blue
-controls. See the [design measurements](../docs/design.md#coming-soon-calendar-led-android-and-macos-appearance).
+controls. See the [design measurements](../docs/design.md#calendar-led-appearance).
 
 Swift and SwiftUI, macOS 13 or later, all open source (Apache-2.0; the libraries GRDB.swift and
 KeyboardShortcuts are MIT, Sparkle is MIT-style). Dayhand is the new name of Helm: the app, its folder and its bundle id
