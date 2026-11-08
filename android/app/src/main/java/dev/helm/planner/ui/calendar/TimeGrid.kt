@@ -44,6 +44,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarDay
 import dev.helm.planner.domain.CalendarDays
@@ -249,9 +250,21 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
                 .then(if (selected == true && !day.isToday) Modifier.border(1.dp, p.textMuted, CircleShape) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
-            Text(date.dayOfMonth.toString(), style = helmType.headline,
+            Text(date.dayOfMonth.toString(), style = dayNumberStyle(),
                 color = if (day.isToday) PlannerColors.onToday(p) else p.text, maxLines = 1)
         }
+    }
+}
+
+/**
+ * The headline style for a day's number, no larger than [DAY_NUMBER_MAX] so that two digits stay inside the 42 dp
+ * circle and clear of the next day's number at the largest system font sizes.
+ */
+@Composable
+private fun dayNumberStyle() = helmType.headline.let { style ->
+    val density = LocalDensity.current
+    remember(style, density) {
+        with(density) { if (style.fontSize.toDp() <= DAY_NUMBER_MAX) style else style.copy(fontSize = DAY_NUMBER_MAX.toSp(), lineHeight = 1.25.em) }
     }
 }
 
@@ -269,6 +282,9 @@ fun shortWeekdaysFit(width: Dp): Boolean {
 
 /** Space kept either side of a weekday in its header. */
 private val HEADER_SPACE = 4.dp
+
+/** The largest a day's number in its circle grows with the system font size. */
+private val DAY_NUMBER_MAX = 26.dp
 
 /** "All day" in the hours' column, beside the band of tasks without a time. */
 @Composable
