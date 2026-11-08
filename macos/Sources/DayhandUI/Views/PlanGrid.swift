@@ -233,8 +233,8 @@ struct PlanAllDayChip: View {
     }
 }
 
-/// A timed task in the grid: a tinted block with a bar of its color on the left, its title, project and time (as much
-/// as the block has room for).
+/// A timed task in the grid: a block in its status's color with a bar of its project's color on the left (when the
+/// project has one), its title, time and project (as much as the block has room for).
 struct PlanBlock: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
@@ -242,18 +242,23 @@ struct PlanBlock: View {
 
     var body: some View {
         let project = model.projectLine(task)?.name
+        let projectColor = model.projectOf(task)?.color.map(ProjectColors.color)
         let time = task.dueTime.map(DateText.time)
         ViewThatFits(in: .vertical) {
             lines([time, project].compactMap { $0 })
             lines([time].compactMap { $0 })
             lines([])
         }
-        .padding(.horizontal, 6)
+        .padding(.leading, projectColor == nil ? 6 : 9)
+        .padding(.trailing, 6)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .clipped()
         .foregroundStyle(PlannerStyle.text(task.status))
         .background(PlannerStyle.fill(task.status), in: RoundedRectangle(cornerRadius: 3))
+        .overlay(alignment: .leading) {
+            if let projectColor { PlanBar(color: projectColor) }
+        }
         .contentShape(RoundedRectangle(cornerRadius: 3))
         .onTapGesture { showing = true }
         .popover(isPresented: $showing, arrowEdge: .trailing) { PlanTaskPopover(task: task) { showing = false } }
