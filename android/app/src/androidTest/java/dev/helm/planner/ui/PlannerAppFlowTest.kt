@@ -60,7 +60,8 @@ import org.junit.runner.RunWith
  * installation only (`-e plannerLocalProof true`). The flow seeds `sample-planner-proof-*` tasks and a light or dark
  * appearance; afterwards it restores the appearance and removes those tasks and the task it creates. With
  * `-e plannerKeepForRestart true` it leaves the tasks for a second run with `-e plannerVerifyRestart true` after
- * `am force-stop`, which checks them and then removes them.
+ * `am force-stop`, which checks them and then removes them. A run that seeds first removes whatever an interrupted
+ * earlier run left behind.
  */
 @RunWith(AndroidJUnit4::class)
 class PlannerAppFlowTest {
@@ -83,6 +84,7 @@ class PlannerAppFlowTest {
             check(container.settings.current().isLocal) { "This proof requires an unpaired test installation" }
             if (flag("plannerVerifyRestart") || flag("plannerSettingsProof")) return@runBlocking
             container.settings.setConnectPromptDone()
+            removeProofTasks()
             previousAppearance = container.appearance.appearance.value
             container.appearance.save(Appearance(mode = if (config.dark) ThemeMode.Dark else ThemeMode.Light))
             val fixtures = (0L..6L).flatMap { offset ->
