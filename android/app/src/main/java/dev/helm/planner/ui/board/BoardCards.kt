@@ -24,6 +24,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import dev.helm.planner.ui.theme.PlannerColors
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -53,6 +56,7 @@ import java.time.LocalDate
 /** A task on the board: tap for details, long-press and drag to another column, or move it from the menu. */
 @Composable
 fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDragState, blocked: AgentWork.Blocked? = null) {
+    val marker = PlannerColors.background(task.status, palette)
     Card(
         onClick = { actions.openTask(task.localId) },
         colors = CardDefaults.cardColors(containerColor = palette.surface, contentColor = palette.text),
@@ -65,7 +69,9 @@ fun BoardCard(task: Task, today: LocalDate, actions: BoardActions, drag: BoardDr
             .moveActions(task, actions)
             .testTag(BoardTags.card(task.localId)),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier
+            .drawBehind { drawRect(marker, size = Size(3.dp.toPx(), size.height)) }
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)) {
             CardContent(task, today, Modifier.weight(1f), blocked = blocked)
             MoveMenu(task, actions)
         }

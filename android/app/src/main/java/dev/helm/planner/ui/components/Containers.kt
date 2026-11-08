@@ -53,6 +53,7 @@ fun HelmCard(
             .fillMaxWidth()
             .clip(HelmShapes.card)
             .background(color)
+            .border(0.5.dp, palette.border, HelmShapes.card)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
         verticalArrangement = Arrangement.spacedBy(8.dp),

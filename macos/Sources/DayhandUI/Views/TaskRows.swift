@@ -148,9 +148,9 @@ struct DoneBox: View {
 enum StatusStyle {
     static func color(_ status: TaskStatus) -> Color {
         switch status {
-        case .todo: return Color(nsColor: ProjectColors.nsColor(.orange))
-        case .doing: return Color(nsColor: ProjectColors.nsColor(.purple))
-        case .done: return Color(nsColor: ProjectColors.nsColor(.green))
+        case .todo: return PlannerStyle.adaptive(0x596821, 0xCEDC85)
+        case .doing: return PlannerStyle.adaptive(0x626D28, 0xB7C575)
+        case .done: return PlannerStyle.adaptive(0x454C45, 0xB8C0B8)
         }
     }
 

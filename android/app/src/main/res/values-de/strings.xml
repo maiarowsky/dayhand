@@ -399,4 +399,5 @@
     <string name="empty_day">Für diesen Tag ist nichts geplant.</string>
     <string name="section_day_tasks">Geplant</string>
     <string name="change_due">Fälligkeit ändern</string>
+    <string name="palette_dayhand_note">Neutrale Flächen, blaue Bedienelemente und olivgrüne Aufgaben.</string>
 </resources>

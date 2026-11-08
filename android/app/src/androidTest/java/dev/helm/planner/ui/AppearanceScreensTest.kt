@@ -52,7 +52,7 @@ class AppearanceScreensTest {
                 PaletteScreen(appearance, onChange = { appearance = it }, onBack = {})
             }
         }
-        assertColor(Palettes.Terracotta.background, background())
+        assertColor(Palettes.Graphite.background, background())
 
         compose.onNodeWithTag(AppearanceTags.palette(Palettes.Nord)).performScrollTo().performClick()
         compose.waitForIdle()
@@ -70,14 +70,14 @@ class AppearanceScreensTest {
                 PaletteScreen(appearance, onChange = { appearance = it }, onBack = {})
             }
         }
-        assertColor(Palettes.Paper.background, background())
+        assertColor(Palettes.Daylight.background, background())
         compose.onNodeWithTag(AppearanceTags.palette(Palettes.SolarizedLight)).performScrollTo().performClick()
         compose.waitForIdle()
         assertColor(Palettes.SolarizedLight.background, background())
 
         appearance = appearance.copy(mode = ThemeMode.Dark)
         compose.waitForIdle()
-        assertColor(Palettes.Terracotta.background, background())
+        assertColor(Palettes.Graphite.background, background())
     }
 
     @Test

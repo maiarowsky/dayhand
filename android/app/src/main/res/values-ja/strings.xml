@@ -379,4 +379,5 @@
     <string name="empty_day">この日の予定はありません。</string>
     <string name="section_day_tasks">予定</string>
     <string name="change_due">期日を変更</string>
+    <string name="palette_dayhand_note">落ち着いた背景、青い操作ボタン、オリーブ色のタスク。</string>
 </resources>

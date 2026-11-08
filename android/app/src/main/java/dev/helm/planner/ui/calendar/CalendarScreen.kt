@@ -4,6 +4,7 @@ import android.icu.text.DateIntervalFormat
 import android.icu.util.DateInterval
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -145,7 +147,6 @@ private fun CalendarContent(
             if (week) strip.animateTo(strip.firstDay + by * WEEK_DAYS) else dayPager.animateScrollToPage(dayPager.currentPage + by)
         }
     }
-    val atHome = if (week) strip.firstDay == strip.home(today) else dayPager.currentPage == CENTER
     val goHome = { scope.launch { if (week) strip.animateTo(strip.home(today)) else dayPager.animateScrollToPage(CENTER) } }
     BackHandler(enabled = !week) { showWeek() }
     val moved = stringResource(R.string.calendar_moved)
@@ -186,7 +187,26 @@ private fun CalendarContent(
                     )
                     HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
                 }
-                ModeTabs(mode, onMode = { if (it == CalendarMode.WEEK) showWeek() else mode = it }, showToday = !atHome, onToday = { goHome() })
+                ModeTabs(mode, onMode = { if (it == CalendarMode.WEEK) showWeek() else openDay(if (strip.firstDay == strip.home(today)) state.today else strip.date(strip.firstDay).toString()) }, onToday = { goHome() })
+                if (!week) {
+                    val selected = dayOf(dayPager.currentPage)
+                    val days = CalendarDays.days(state.tasks, CalendarDays.weekStart(selected), WEEK_DAYS, state.today)
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        val dayWidth = (maxWidth / WEEK_DAYS).coerceAtLeast(HelmDimens.touchTarget)
+                        val dateScroll = rememberScrollState()
+                        val revealSelected = with(LocalDensity.current) {
+                            (dayWidth * selected.dayOfWeek.value - maxWidth).roundToPx().coerceAtLeast(0)
+                        }
+                        LaunchedEffect(selected, revealSelected, dateScroll.maxValue) {
+                            dateScroll.scrollTo(revealSelected)
+                        }
+                        Row(Modifier.horizontalScroll(dateScroll)) {
+                            days.forEach { day ->
+                                DayHeader(day, openDay, Modifier.width(dayWidth), selected = day.date == selected.toString())
+                            }
+                        }
+                    }
+                }
                 StatusBanner(state.connection, state.pendingChanges, actions::openSettings)
             }
         },
@@ -254,7 +274,7 @@ private fun CalendarContent(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showToday: Boolean, onToday: () -> Unit) {
+private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, onToday: () -> Unit) {
     val p = palette
     Column {
         Row(
@@ -288,7 +308,7 @@ private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showTod
                     )
                 }
             }
-            if (showToday) TextAction(stringResource(R.string.calendar_go_today), onToday, modifier = Modifier.testTag(CalendarTags.TODAY))
+            TextAction(stringResource(R.string.calendar_go_today), onToday, modifier = Modifier.testTag(CalendarTags.TODAY))
         }
         HorizontalDivider(color = p.border)
     }

@@ -439,4 +439,5 @@
     <string name="empty_day">Na ten dzień nic nie zaplanowano.</string>
     <string name="section_day_tasks">Zaplanowane</string>
     <string name="change_due">Zmień termin</string>
+    <string name="palette_dayhand_note">Spokojne tła, niebieskie przyciski i oliwkowe zadania.</string>
 </resources>

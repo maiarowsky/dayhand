@@ -1,6 +1,8 @@
 package dev.helm.planner.ui.components
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -15,7 +17,10 @@ import dev.helm.planner.ui.theme.palette
 /** The bottom bar between the main views, on the card colour with the accent for the current one. */
 @Composable
 fun HelmTabBar(content: @Composable RowScope.() -> Unit) {
-    NavigationBar(containerColor = palette.surface, contentColor = palette.text, tonalElevation = 0.dp, content = content)
+    Column {
+        HorizontalDivider(color = palette.border, thickness = 0.5.dp)
+        NavigationBar(containerColor = palette.surface, contentColor = palette.text, tonalElevation = 0.dp, content = content)
+    }
 }
 
 /** One tab: soft-accent pill behind the icon and accent icon and label when [selected]. */

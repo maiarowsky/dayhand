@@ -379,4 +379,5 @@
     <string name="empty_day">这一天没有计划。</string>
     <string name="section_day_tasks">计划</string>
     <string name="change_due">更改截止日期</string>
+    <string name="palette_dayhand_note">中性背景、蓝色控件和橄榄色任务。</string>
 </resources>

@@ -69,10 +69,20 @@ class PaletteContrastTest {
     }
 
     @Test
+    fun calendarStatusAndTodayTextMeetContrast() {
+        Palettes.all.forEach { p ->
+            dev.helm.planner.data.local.TaskStatus.entries.forEach { status ->
+                assertTrue("$status on ${p.id}", contrast(PlannerColors.text(status), PlannerColors.background(status, p)) >= 4.5)
+            }
+            assertTrue(contrast(PlannerColors.onToday(p), PlannerColors.today(p)) >= 4.5)
+        }
+    }
+
+    @Test
     fun idsAreUniqueAndBothVariantsExist() {
         assertEquals(Palettes.all.size, Palettes.all.map { it.id }.toSet().size)
-        assertEquals(11, Palettes.dark.size)
-        assertEquals(5, Palettes.light.size)
+        assertEquals(12, Palettes.dark.size)
+        assertEquals(6, Palettes.light.size)
         assertTrue(!Palettes.DefaultDark.light && Palettes.DefaultLight.light)
     }
 

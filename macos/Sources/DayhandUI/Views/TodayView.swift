@@ -88,6 +88,7 @@ extension View {
         listStyle(.inset)
             .scrollContentBackground(.hidden)
             .background(Color.card, in: RoundedRectangle(cornerRadius: Metrics.radius))
+            .overlay(RoundedRectangle(cornerRadius: Metrics.radius).strokeBorder(PlannerStyle.line, lineWidth: 0.5))
             .padding(.horizontal, Metrics.gutter)
             .padding(.bottom, 12)
     }

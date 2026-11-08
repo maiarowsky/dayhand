@@ -227,7 +227,10 @@ private fun HelmRoot(
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
-            state?.let { CalendarScreen(it, actions, bottomBar = tabs) }
+            state?.let {
+                val narrow = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
+                CalendarScreen(it, actions, initialMode = if (narrow) dev.helm.planner.ui.calendar.CalendarMode.DAY else dev.helm.planner.ui.calendar.CalendarMode.WEEK, bottomBar = tabs)
+            }
         }
         route == Route.BOARD -> {
             val viewModel = viewModel {

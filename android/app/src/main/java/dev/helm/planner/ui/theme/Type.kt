@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.sp
 @Immutable
 class HelmType(val family: FontFamily, val reading: FontFamily = family) {
     /** Title of a top-level screen ("Today"). */
-    val headline = TextStyle(fontFamily = family, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold)
+    val headline = TextStyle(fontFamily = family, fontSize = 24.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold)
 
     /** Title of a sub-screen (Settings, a task). */
     val screenTitle = TextStyle(fontFamily = family, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold)
@@ -32,7 +32,7 @@ class HelmType(val family: FontFamily, val reading: FontFamily = family) {
     val valueSmall = TextStyle(fontFamily = reading, fontSize = 15.sp, lineHeight = 21.sp)
 
     /** Upper-case section labels. */
-    val label = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium)
+    val label = TextStyle(fontFamily = family, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.6.sp, fontWeight = FontWeight.Medium)
 
     /** Material components (fields, dialogs, menus, pickers) in the same font and sizes. */
     val material: Typography = Typography().let { m ->

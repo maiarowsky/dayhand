@@ -70,8 +70,8 @@ class AppearanceRestartTest {
 
     @Test
     fun paletteAndFontChangeAtOnceAndSurviveARestart() {
-        assertColor(Palettes.Terracotta.background, screenEdge())
-        assertColor(Palettes.Terracotta.surface, tabBarCorner())
+        assertColor(Palettes.Graphite.background, screenEdge())
+        assertColor(Palettes.Graphite.surface, tabBarCorner())
 
         compose.onNodeWithContentDescription(context.getString(R.string.open_settings)).performClick()
         compose.onNodeWithTag(AppearanceTags.COLORS).performScrollTo().performClick()

@@ -1,5 +1,27 @@
 # Design system
 
+## Coming soon: calendar-led Android and macOS appearance
+
+The native apps are adopting neutral surfaces, a compact date toolbar, large day numbers and a blue circle for
+today. Calendar blocks use lime for To do, olive for In progress and graphite for Done, with titles, times and
+textual status descriptions. Overdue and repeating tasks retain their marks; project colours remain separate.
+Dayhand keeps its name and icon, and Android keeps all sixteen previous palettes and saved choices.
+
+Android's new Dayhand light and dark defaults share the same roles across Today, Calendar, Board, Projects,
+task details, sheets and Settings. Headings are 24/30 sp, screen margins 16 dp, card padding 14 dp, card corners
+8 dp and event corners 3 dp; controls keep their 48 dp touch targets. Phones open the calendar on one day with
+a scrollable seven-day selector. The week remains a seven-day overview, with titles when columns have room.
+Settings keep the scrolling viewport inside system safe areas. A row places its value below the title when
+the complete texts do not fit side by side, preserving the font size and full wording on narrow screens.
+
+The Mac plan has a 52 pt hour rail, 64 pt per hour, columns at least 108 pt wide, pinned day headings, 28 pt
+dates in 42 pt circles, and a day/week control. Narrow windows scroll horizontally. Tasks without a time remain
+in the day heading and the task drawer; the drawer can be expanded below the grid. Both apps use the existing
+due date and time fields. Block heights are visual slots, not stored or inferred task durations.
+
+The following tables describe the appearance currently in main; the measurements above describe the upcoming
+native refresh.
+
 Dayhand's Android app uses the visual language of Mussh (the owner's other app) so the two read
 as one family: the same palettes, type scale, shapes, buttons, cards, fields and states. Dayhand keeps its own identity:
 its name, its own icon and its words. No Mussh name, logo or icon is used.

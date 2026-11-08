@@ -388,6 +388,8 @@
 	<string>Neue Aufgabe (⌘N oder das Kürzel für Schnell hinzufügen aus jeder App)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Neue Aufgabe, z. B. Steuerberater anrufen fri 2pm</string>
+	<key>Next day</key>
+	<string>Nächster Tag</string>
 	<key>Next week</key>
 	<string>Nächste Woche</string>
 	<key>No Day</key>
@@ -506,6 +508,8 @@
 	<string>Update wird vorbereitet …</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Vorabversionen erscheinen vor einem Release und können Ecken und Kanten haben.</string>
+	<key>Previous day</key>
+	<string>Vorheriger Tag</string>
 	<key>Previous week</key>
 	<string>Vorherige Woche</string>
 	<key>Project</key>
@@ -758,6 +762,8 @@
 	<string>Ansicht</string>
 	<key>Waiting for</key>
 	<string>Wartet auf</string>
+	<key>Week</key>
+	<string>Woche</string>
 	<key>Weekly</key>
 	<string>Wöchentlich</string>
 	<key>What the project is about, for you and agents</key>

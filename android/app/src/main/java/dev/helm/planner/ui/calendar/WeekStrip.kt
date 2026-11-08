@@ -199,7 +199,7 @@ fun WeekView(
                     HourLabels(Modifier.width(gutter).fillMaxHeight(), shown.map { it.date })
                     DayStrip(state, first, shown, dayWidth, Modifier.weight(1f).fillMaxHeight().onPlaced { hours.hours = it }, Modifier.fillMaxHeight()) { day ->
                         val touch = if (bars) DayTouch({ onOpenDay(day.date) }, if (day.hasTasks) ({ onHoldDay(day) }) else null) else null
-                        DayColumn(day, nowMinute, onOpen, onMove, showTime = false, Modifier.fillMaxSize(), touch)
+                        DayColumn(day, nowMinute, onOpen, onMove, showTime = true, Modifier.fillMaxSize(), touch)
                     }
                 }
                 Spacer(Modifier.height(24.dp))

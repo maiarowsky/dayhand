@@ -170,19 +170,39 @@ object Palettes {
     val CatppuccinLatte get() = PaletteThemes.CatppuccinLatte
     val RosePineDawn get() = PaletteThemes.RosePineDawn
 
+    /** Neutral Dayhand surfaces; existing saved palettes remain available and keep their ids. */
+    val Daylight = Paper.copy(
+        id = "dayhand-light",
+        background = Color(0xFFF7F8F5), surface = Color.White, surfaceRaised = Color(0xFFECEFE7),
+        border = Color(0xFFDEE1DC), text = Color(0xFF242A23), textMuted = Color(0xFF50584E), textFaint = Color(0xFF6E776A),
+        accent = Color(0xFF175DC0), accentDim = Color(0xFF5B83B8), onAccent = Color.White, accentSoft = Color(0xFFE6EDF8),
+        danger = Color(0xFFA52D24), dangerSoft = Color(0xFFF8E9E6), warning = Color(0xFF86520A), warningSoft = Color(0xFFF4EDD9),
+        success = Color(0xFF566625), successSoft = Color(0xFFEBF0D8), working = Color(0xFF626D28), done = Color(0xFF454C45),
+        attention = Color(0xFFA52D24), link = Color(0xFF175DC0), secondary = Color(0xFF596821),
+    )
+    val Graphite = Terracotta.copy(
+        id = "dayhand-dark",
+        background = Color(0xFF1A1D1B), surface = Color(0xFF252927), surfaceRaised = Color(0xFF303631),
+        border = Color(0xFF414940), text = Color(0xFFF2F5EE), textMuted = Color(0xFFC1C9BC), textFaint = Color(0xFF939E8D),
+        accent = Color(0xFF8BB8FF), accentDim = Color(0xFF7299D5), onAccent = Color(0xFF112B50), accentSoft = Color(0xFF283950),
+        danger = Color(0xFFFFA498), dangerSoft = Color(0xFF462D28), warning = Color(0xFFE6C16E), warningSoft = Color(0xFF3F3825),
+        success = Color(0xFFCEDC85), successSoft = Color(0xFF343D25), working = Color(0xFFB7C575), done = Color(0xFFB8C0B8),
+        attention = Color(0xFFFFA498), link = Color(0xFF8BB8FF), secondary = Color(0xFFCEDC85),
+    )
+
     val all: List<Palette> = listOf(
-        Terracotta, Honey, Amber, GruvboxDark, SolarizedDark, Nord, Dracula, TokyoNight, CatppuccinMocha, OneDark, RosePine,
-        Paper, GruvboxLight, SolarizedLight, CatppuccinLatte, RosePineDawn,
+        Graphite, Terracotta, Honey, Amber, GruvboxDark, SolarizedDark, Nord, Dracula, TokyoNight, CatppuccinMocha, OneDark, RosePine,
+        Daylight, Paper, GruvboxLight, SolarizedLight, CatppuccinLatte, RosePineDawn,
     )
 
     val dark: List<Palette> get() = all.filterNot { it.light }
     val light: List<Palette> get() = all.filter { it.light }
 
-    /** Mussh's default palette, used in dark mode until the user picks another. */
-    val DefaultDark: Palette = Terracotta
+    /** Dayhand's neutral dark default, used until the user picks another palette. */
+    val DefaultDark: Palette = Graphite
 
-    /** The warm light palette that goes with [DefaultDark]. */
-    val DefaultLight: Palette = Paper
+    /** The neutral light palette that goes with [DefaultDark]. */
+    val DefaultLight: Palette = Daylight
 
     /** The palette with [id] if it is a dark one, else [DefaultDark]; an unknown id never breaks the start. */
     fun darkById(id: String?): Palette = dark.firstOrNull { it.id == id } ?: DefaultDark

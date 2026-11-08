@@ -28,6 +28,7 @@ public struct DayhandApp: App {
                 // Drawn again in a new language, with dates in its locale.
                 .id(model.language)
                 .environment(\.locale, Localization.current.locale)
+                .tint(PlannerStyle.blue)
         }
         .defaultSize(width: 1100, height: 700)
         .commands {
@@ -74,6 +75,7 @@ public struct DayhandApp: App {
                 .environmentObject(model)
                 .id(model.language)
                 .environment(\.locale, Localization.current.locale)
+                .tint(PlannerStyle.blue)
         } label: {
             MenuBarLabel(sections: model.sections)
         }
@@ -85,6 +87,7 @@ public struct DayhandApp: App {
                 .environmentObject(updater)
                 .id(model.language)
                 .environment(\.locale, Localization.current.locale)
+                .tint(PlannerStyle.blue)
         }
     }
 }

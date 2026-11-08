@@ -269,6 +269,8 @@ fun paletteName(option: Palette): Int = PaletteTexts[option.id]?.first ?: R.stri
 private fun paletteNote(option: Palette): Int = PaletteTexts[option.id]?.second ?: R.string.palette_terracotta_note
 
 private val PaletteTexts: Map<String, Pair<Int, Int>> = mapOf(
+    Palettes.Daylight.id to (R.string.app_name to R.string.palette_dayhand_note),
+    Palettes.Graphite.id to (R.string.app_name to R.string.palette_dayhand_note),
     Palettes.Terracotta.id to (R.string.palette_terracotta to R.string.palette_terracotta_note),
     Palettes.Honey.id to (R.string.palette_honey to R.string.palette_honey_note),
     Palettes.Amber.id to (R.string.palette_amber to R.string.palette_amber_note),

@@ -69,7 +69,7 @@ fun helmFieldColors(): TextFieldColors = palette.let { p ->
     )
 }
 
-/** A text field: Material's outlined field with Dayhand's colours, 14 dp corners and the body text style. */
+/** A text field: Material's outlined field with Dayhand's colours, shared field shape and body text style. */
 @Composable
 fun HelmTextField(
     value: String,
