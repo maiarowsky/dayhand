@@ -51,6 +51,8 @@ struct PlanView: View {
     }
 
     private func grid(days: [CivilDate], plan: [String: [TaskItem]], layout: PlanLayout, width: CGFloat) -> some View {
+        // The days' titles are the pinned header of the same scroll view as the hours, so their columns line up
+        // whatever the scroller takes.
         ScrollViewReader { reader in
             ScrollView([.horizontal, .vertical]) {
                 LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -88,6 +90,8 @@ struct PlanView: View {
     static let hourColumn: CGFloat = 52
     private static let morning = "morning"
 
+    /// What the plan scrolls to when it opens: scrolled to the top of the window, it puts the morning just under the
+    /// days' titles pinned over the hours (so it sits above the grid by their height).
     private func morningAnchor(header: CGFloat) -> some View {
         VStack(spacing: 0) {
             Color.clear.frame(width: 0, height: max(0, CGFloat(PlanGrid.morning - PlanGrid.firstHour) * PlanGrid.hourHeight - header))
