@@ -28,7 +28,7 @@ struct PlanView: View {
     private func controls(selected: CivilDate, week: PlanWeek) -> some View {
         HStack(spacing: 8) {
             Button(tr("Today")) { dayOffset = 0 }
-                .help(tr("This Week"))
+                .help(tr("Today"))
             Button { dayOffset -= showsDay ? 1 : 7 } label: { Image(systemName: "chevron.left") }
                 .accessibilityLabel(showsDay ? tr("Previous day") : tr("Previous week"))
             Button { dayOffset += showsDay ? 1 : 7 } label: { Image(systemName: "chevron.right") }
