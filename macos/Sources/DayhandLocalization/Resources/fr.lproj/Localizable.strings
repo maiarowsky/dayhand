@@ -700,8 +700,6 @@
 	<string>Ils n’acceptent pas de nouvelles tâches ; leurs tâches y restent.</string>
 	<key>This Mac</key>
 	<string>Ce Mac</string>
-	<key>This Week</key>
-	<string>Cette semaine</string>
 	<key>This version</key>
 	<string>Cette version</string>
 	<key>Tick %@</key>

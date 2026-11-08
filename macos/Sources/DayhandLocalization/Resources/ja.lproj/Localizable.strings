@@ -700,8 +700,6 @@
 	<string>新しいタスクは追加できません。既存のタスクはそのまま残ります。</string>
 	<key>This Mac</key>
 	<string>この Mac</string>
-	<key>This Week</key>
-	<string>今週</string>
 	<key>This version</key>
 	<string>このバージョン</string>
 	<key>Tick %@</key>

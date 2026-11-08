@@ -700,8 +700,6 @@
 	<string>不接收新任务；其中的任务保留不变。</string>
 	<key>This Mac</key>
 	<string>这台 Mac</string>
-	<key>This Week</key>
-	<string>本周</string>
 	<key>This version</key>
 	<string>当前版本</string>
 	<key>Tick %@</key>
