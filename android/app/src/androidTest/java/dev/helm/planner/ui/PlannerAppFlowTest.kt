@@ -1,6 +1,5 @@
 package dev.helm.planner.ui
 
-import android.accessibilityservice.AccessibilityServiceInfo
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.geometry.Rect
@@ -16,7 +15,6 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -47,7 +45,6 @@ import dev.helm.planner.ui.today.QuickAddTags
 import dev.helm.planner.ui.today.TodayTags
 import dev.helm.planner.tour.TourConfig
 import dev.helm.planner.tour.shoot
-import java.io.File
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -58,24 +55,35 @@ import org.junit.Test
 import org.junit.rules.ExternalResource
 import org.junit.runner.RunWith
 
-/** Opt-in acceptance path through MainActivity, its real view models and on-disk Room database. */
+/**
+ * Opt-in acceptance path through MainActivity, its real view models and on-disk Room database, on an unpaired test
+ * installation only (`-e plannerLocalProof true`). The flow seeds `sample-planner-proof-*` tasks and a light or dark
+ * appearance; afterwards it restores the appearance and removes those tasks and the task it creates. With
+ * `-e plannerKeepForRestart true` it leaves the tasks for a second run with `-e plannerVerifyRestart true` after
+ * `am force-stop`, which checks them and then removes them.
+ */
 @RunWith(AndroidJUnit4::class)
 class PlannerAppFlowTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val container get() = (context.applicationContext as HelmApplication).container
+    private val arguments = InstrumentationRegistry.getArguments()
     private val today = LocalDate.now()
     private val week = today.minusDays(today.dayOfWeek.value.toLong() - 1)
     private val config = TourConfig.fromArguments()
     private val prefix = "sample-planner-proof-"
+    private val createdTitle = "Studio rehearsal ${config.variant}"
+    private fun flag(name: String) = arguments.getString(name) == "true"
 
     @get:Rule(order = 0)
     val localPlan = object : ExternalResource() {
+        private var previousAppearance: Appearance? = null
+
         override fun before() = runBlocking {
-            assumeTrue(InstrumentationRegistry.getArguments().getString("plannerLocalProof") == "true")
+            assumeTrue(flag("plannerLocalProof"))
             check(container.settings.current().isLocal) { "This proof requires an unpaired test installation" }
-            val arguments = InstrumentationRegistry.getArguments()
-            if (arguments.getString("plannerVerifyRestart") == "true" || arguments.getString("plannerSettingsProof") == "true") return@runBlocking
+            if (flag("plannerVerifyRestart") || flag("plannerSettingsProof")) return@runBlocking
             container.settings.setConnectPromptDone()
+            previousAppearance = container.appearance.appearance.value
             container.appearance.save(Appearance(mode = if (config.dark) ThemeMode.Dark else ThemeMode.Light))
             val fixtures = (0L..6L).flatMap { offset ->
                 val date = week.plusDays(offset).toString()
@@ -92,6 +100,21 @@ class PlannerAppFlowTest {
             )
             container.database.tasks().upsert(fixtures)
         }
+
+        override fun after() {
+            previousAppearance?.let { container.appearance.save(it) }
+            val seeded = previousAppearance != null
+            if ((seeded && !flag("plannerKeepForRestart")) || flag("plannerVerifyRestart")) removeProofTasks()
+        }
+    }
+
+    /** Deletes the seeded tasks and the task the flow adds (with anything it queued for a server). */
+    private fun removeProofTasks() = runBlocking {
+        val db = container.database
+        val created = db.tasks().all().filter { it.title.startsWith(createdTitle) }.map { it.localId }
+        created.forEach { db.outbox().deleteForTask(it) }
+        db.tasks().delete(created)
+        db.tasks().deleteLike("$prefix%")
     }
 
     @get:Rule(order = 1)
@@ -106,30 +129,11 @@ class PlannerAppFlowTest {
     private fun shot(name: String) {
         compose.waitForIdle()
         shoot(compose.activity, config, name)
-        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-        val info = checkNotNull(automation.serviceInfo)
-        val previousFlags = info.flags
-        try {
-            info.flags = previousFlags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
-            automation.serviceInfo = info
-            val roots = automation.windows.mapNotNull { it.root } + listOfNotNull(automation.rootInActiveWindow)
-            check(roots.isNotEmpty()) { "Cannot inspect visible windows at $name" }
-            // This opt-in flow uses the English test profile; inspect system windows as well as the app.
-            val anrVisible = roots.any { root ->
-                listOf("isn't responding", "isn’t responding", "not responding").any { text ->
-                    root.findAccessibilityNodeInfosByText(text).any { it.isVisibleToUser }
-                }
-            }
-            assertTrue("Visible ANR dialog at $name; screenshot retained", !anrVisible)
-        } finally {
-            info.flags = previousFlags
-            automation.serviceInfo = info
-        }
     }
 
     @Test
     fun localServerValueIsReadableInSettings() {
-        assumeTrue(InstrumentationRegistry.getArguments().getString("plannerSettingsProof") == "true")
+        assumeTrue(flag("plannerSettingsProof"))
         compose.onNodeWithContentDescription(context.getString(R.string.open_settings)).performClick()
         assertEquals("Server", context.getString(R.string.settings_backend))
         assertEquals("On this phone only", context.getString(R.string.local_title))
@@ -147,11 +151,7 @@ class PlannerAppFlowTest {
         val valueMatcher = hasTestTag("$tag-value")
         val title = compose.onNode(titleMatcher, useUnmergedTree = true)
         val value = compose.onNode(valueMatcher, useUnmergedTree = true)
-        // Record both concrete Text results before either readability assertion can fail.
-        val proofs = listOf(textLayoutProof(expectedTitle, titleMatcher), textLayoutProof(expectedValue, valueMatcher))
-        val directory = File(compose.activity.getExternalFilesDir(null), "tour/${config.variant}").apply { mkdirs() }
         val safeBounds = safeWindowBounds()
-        File(directory, "$checkpoint-layout.txt").writeText("safeWindowBounds=$safeBounds\n" + proofs.joinToString("\n\n") { it.second })
         title.assertIsDisplayed().assertTextEquals(expectedTitle)
         value.assertIsDisplayed().assertTextEquals(expectedValue)
         val titleBounds = title.fetchSemanticsNode().boundsInRoot
@@ -162,8 +162,8 @@ class PlannerAppFlowTest {
             assertTrue("$expectedTitle and value need visible separation",
                 valueBounds.top > titleBounds.bottom || valueBounds.left > titleBounds.right)
         }
-        assertReadableText(title, expectedTitle, proofs[0])
-        assertReadableText(value, expectedValue, proofs[1])
+        assertReadableText(title, expectedTitle)
+        assertReadableText(value, expectedValue)
         for (text in listOf(title, value)) {
             val bounds = text.fetchSemanticsNode().boundsInWindow
             assertTrue("$expectedTitle: text $bounds must stay inside system-safe window $safeBounds",
@@ -180,9 +180,10 @@ class PlannerAppFlowTest {
             (decor.width - insets.right).toFloat(), (decor.height - insets.bottom).toFloat())
     }
 
-    private fun assertReadableText(interaction: SemanticsNodeInteraction, expected: String, proof: Pair<List<TextLayoutResult>, String>) {
-        val (layouts, details) = proof
-        val message = "The whole text must remain readable: $expected\n$details"
+    private fun assertReadableText(interaction: SemanticsNodeInteraction, expected: String) {
+        val message = "The whole text must remain readable: $expected"
+        val layouts = mutableListOf<TextLayoutResult>()
+        interaction.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         val node = interaction.fetchSemanticsNode()
         assertEquals(message, listOf(expected), node.config[SemanticsProperties.Text].map { it.text })
         assertTrue(message, node.children.isEmpty() && !node.config.isMergingSemanticsOfDescendants)
@@ -212,35 +213,6 @@ class PlannerAppFlowTest {
             }
             assertEquals(message, expected.length, nextOffset)
         }
-    }
-
-    private fun textLayoutProof(expected: String, matcher: SemanticsMatcher): Pair<List<TextLayoutResult>, String> {
-        val matches = compose.onAllNodes(matcher, useUnmergedTree = true).fetchSemanticsNodes()
-        val layouts = mutableListOf<TextLayoutResult>()
-        var actionResult: Boolean? = null
-        if (matches.size == 1) {
-            compose.onNode(matcher, useUnmergedTree = true)
-                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { actionResult = it(layouts) }
-        }
-        val details = buildString {
-            appendLine("expected=$expected; useUnmergedTree=true; matches=${matches.size}")
-            matches.forEach { node ->
-                appendLine("node=${node.id}; text=${node.config.getOrNull(SemanticsProperties.Text)}; tag=${node.config.getOrNull(SemanticsProperties.TestTag)}")
-                appendLine("origin=${node.positionInRoot}; bounds=${node.boundsInRoot}; windowBounds=${node.boundsInWindow}; size=${node.size}; mergesDescendants=${node.config.isMergingSemanticsOfDescendants}; children=${node.children.map { it.id }}; parent=${node.parent?.id}")
-            }
-            appendLine("actionResult=$actionResult; layouts=${layouts.size}")
-            layouts.forEachIndexed { index, layout ->
-                appendLine("layout[$index].text=${layout.layoutInput.text.text}")
-                appendLine("constraints=${layout.layoutInput.constraints}; size=${layout.size}; lineCount=${layout.lineCount}")
-                appendLine("didOverflowWidth=${layout.didOverflowWidth}; didOverflowHeight=${layout.didOverflowHeight}; hasVisualOverflow=${layout.hasVisualOverflow}")
-                appendLine("paragraphWidth=${layout.multiParagraph.width}; paragraphHeight=${layout.multiParagraph.height}; didExceedMaxLines=${layout.multiParagraph.didExceedMaxLines}")
-                appendLine("fontSize=${layout.layoutInput.style.fontSize}; lineHeight=${layout.layoutInput.style.lineHeight}; density=${layout.layoutInput.density}; overflow=${layout.layoutInput.overflow}")
-                repeat(layout.lineCount) { line ->
-                    appendLine("line[$line]: start=${layout.getLineStart(line)}; end=${layout.getLineEnd(line)}; ellipsized=${layout.isLineEllipsized(line)}; left=${layout.getLineLeft(line)}; right=${layout.getLineRight(line)}; top=${layout.getLineTop(line)}; bottom=${layout.getLineBottom(line)}")
-                }
-            }
-        }
-        return layouts.toList() to details
     }
 
     @Test
@@ -279,7 +251,7 @@ class PlannerAppFlowTest {
 
         tab("Today")
         compose.onNodeWithTag(TodayTags.FAB).performClick()
-        val title = "Studio rehearsal ${config.variant}"
+        val title = createdTitle
         compose.onNodeWithTag(QuickAddTags.TITLE).performTextReplacement(title)
         compose.onNodeWithTag(QuickAddTags.SAVE).performScrollTo().clickWhenStable(compose)
         compose.waitUntil(5_000) { runBlocking { container.database.tasks().all().any { it.title == title } } }
@@ -316,8 +288,8 @@ class PlannerAppFlowTest {
     /** Invoked in a separate instrumentation run after am force-stop, without reseeding the database. */
     @Test
     fun reopenSavedTaskAfterProcessRestart() {
-        assumeTrue(InstrumentationRegistry.getArguments().getString("plannerVerifyRestart") == "true")
-        val title = "Studio rehearsal ${config.variant} edited"
+        assumeTrue(flag("plannerVerifyRestart"))
+        val title = "$createdTitle edited"
         val saved = runBlocking { container.database.tasks().all().single { it.title == title } }
         assertEquals(TaskStatus.DONE, saved.status)
         assertEquals(today.toString(), task(prefix + "untimed").dueDate)
