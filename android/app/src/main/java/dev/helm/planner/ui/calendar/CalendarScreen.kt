@@ -80,12 +80,16 @@ enum class CalendarMode { WEEK, DAY }
 private const val PAGES = 10_000
 private const val CENTER = PAGES / 2
 
+/** Narrower than this, a calendar asked to [CalendarScreen]'s `dayWhenNarrow` opens on one day. */
+private val NARROW_WIDTH = 600.dp
+
 /**
  * The calendar: the week's hours, Monday to Sunday (tasks with a time on the hours, the rest in a band on top), or one
  * day. A swipe or the arrows turn the week. On a tablet or a phone on its side the week's tasks have their titles; on a
  * phone held upright they are bars (see [barsOnly]): a tap on a day opens it with the titles, a long press lists its
  * tasks ([DaySheet]). A tap on a task opens its details; a long press lifts it to drag to another day and time (or, let
- * go without moving, opens the move sheet), with Undo.
+ * go without moving, opens the move sheet), with Undo. It opens on [initialMode], or on one day when [dayWhenNarrow]
+ * is set and the calendar is narrower than 600 dp.
  */
 @Composable
 fun CalendarScreen(
@@ -93,10 +97,12 @@ fun CalendarScreen(
     actions: CalendarActions,
     modifier: Modifier = Modifier,
     initialMode: CalendarMode = CalendarMode.WEEK,
+    dayWhenNarrow: Boolean = false,
     bottomBar: @Composable () -> Unit = {},
 ) {
     BoxWithConstraints(modifier) {
-        CalendarContent(state, actions, barsOnly(maxWidth, gutterWidth()), initialMode, bottomBar)
+        val first = if (dayWhenNarrow && maxWidth < NARROW_WIDTH) CalendarMode.DAY else initialMode
+        CalendarContent(state, actions, barsOnly(maxWidth, gutterWidth()), first, bottomBar)
     }
 }
 
