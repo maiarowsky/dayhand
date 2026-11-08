@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -212,10 +213,11 @@ internal fun DayColumn(
 
 /**
  * A day above the week's columns: short weekday (or its first letter when the short names do not fit, [narrow]) and
- * number; today in a blue circle; a tap opens the day.
+ * number; today in a blue circle; a tap opens the day. In the day view's date row [selected] marks the open day with
+ * an outline and tells a screen reader; above the week it is null and says nothing.
  */
 @Composable
-fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier, narrow: Boolean = false, selected: Boolean = false) {
+fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier, narrow: Boolean = false, selected: Boolean? = null) {
     val p = palette
     val date = LocalDate.parse(day.date)
     val locale = appLocale()
@@ -231,6 +233,7 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
             .semantics(mergeDescendants = true) {
                 heading()
                 contentDescription = description
+                selected?.let { this.selected = it }
             }
             .padding(top = 6.dp, bottom = 6.dp)
             .testTag(CalendarTags.dayHeader(day.date)),
@@ -243,7 +246,7 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
                 .sizeIn(minWidth = 42.dp, minHeight = 42.dp)
                 .clip(CircleShape)
                 .background(if (day.isToday) PlannerColors.today(p) else Color.Transparent)
-                .then(if (selected && !day.isToday) Modifier.border(1.dp, p.textMuted, CircleShape) else Modifier),
+                .then(if (selected == true && !day.isToday) Modifier.border(1.dp, p.textMuted, CircleShape) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             Text(date.dayOfMonth.toString(), style = helmType.headline,
