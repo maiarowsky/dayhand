@@ -144,12 +144,13 @@ struct DoneBox: View {
     }
 }
 
-/// The color and line icon of each status, the same in every view.
+/// The color and line icon of each status, the same in every view. To do is a green lime and In progress an olive
+/// that stay apart in both appearances; every color has at least 3:1 against the window and list backgrounds.
 enum StatusStyle {
     static func color(_ status: TaskStatus) -> Color {
         switch status {
-        case .todo: return PlannerStyle.adaptive(0x596821, 0xCEDC85)
-        case .doing: return PlannerStyle.adaptive(0x626D28, 0xB7C575)
+        case .todo: return PlannerStyle.adaptive(0x4A7C00, 0xCEDC85)
+        case .doing: return PlannerStyle.adaptive(0x626D28, 0x8E9A3F)
         case .done: return PlannerStyle.adaptive(0x454C45, 0xB8C0B8)
         }
     }
