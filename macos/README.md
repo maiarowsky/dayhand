@@ -32,8 +32,9 @@ This version is the basic one (MVP):
   (not in an archived project's place, which takes no new tasks). The choice is kept between launches. A drop changes
   only the status, never the day: on Today's board a task done today without today's day leaves the board when it is
   dragged back to To do or In progress.
-- **Plan**: the place's week, Monday to Sunday, as a grid of the whole day's hours that opens at 08:00, with
-  ‹ **This Week** › to move between weeks. A task with a time is a block with its project's colour on the left, its
+- **Plan**: the place's week, Monday to Sunday, or one day, as a grid of the whole day's hours that opens at 08:00,
+  with **Today**, ‹ › to move by a week or a day and a **Week**/**Day** control; clicking a day's heading opens that
+  day. A task with a time is a block in its status's colour with a bar of its project's colour on the left, its
   title, project and start time (a task has only a start, so a block is an hour long); tasks whose blocks overlap
   share the width. Tasks without a time sit at the top of their day (**+n more** past a few). A block opens a popover
   with the status, the day and time, the checklist and **Open Task**, which opens the panel. The **Tasks** drawer

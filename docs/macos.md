@@ -205,7 +205,7 @@ places in the sidebar, each as a list, a board or a week plan, next to Done and 
 by screen:
 
 - **Board**: the now task first in In progress; the Mac's board keeps the order of the list.
-- **Calendar**: the week plan has the hour grid, blocks and drag to a day and time; missing are a single day,
+- **Calendar**: the plan has the week and a single day, the hour grid, blocks and drag to a day and time; missing are
   later dates of a repeating task (`Recurrence.occurrences` is ported) and Undo after a drag.
 - **Details**: an editor for links, a date picker and moving checklist items.
 - **Agents**: deciding approval requests and proposals, pausing agents, tool policies and **End the claim**; the
