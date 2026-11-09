@@ -127,7 +127,14 @@ struct PlanLayout: Equatable {
     init(height: CGFloat) {
         let short = height < 560
         untimed = short ? 1 : 3
-        header = short ? 88 : 118
+        header = Self.dayTitle + CGFloat(untimed) * Self.untimedTask + Self.moreLine
         drawer = min(190, max(110, (height * 0.28).rounded()))
     }
+
+    /// A day's name and its number's circle in `PlanDayHeader`, with the padding above and the gap below them.
+    private static let dayTitle: CGFloat = 70
+    /// One untimed task's chip and the space before it.
+    private static let untimedTask: CGFloat = 20
+    /// "+n more" with the space before it and the padding under the header.
+    private static let moreLine: CGFloat = 26
 }
