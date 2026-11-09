@@ -193,10 +193,23 @@ private fun CalendarContent(
                     )
                     HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
                 }
-                ModeTabs(mode, onMode = { if (it == CalendarMode.WEEK) showWeek() else openDay(if (strip.firstDay == strip.home(today)) state.today else strip.date(strip.firstDay).toString()) }, onToday = { goHome() })
+                ModeTabs(
+                    mode,
+                    onMode = {
+                        if (it != mode) {
+                            if (it == CalendarMode.WEEK) {
+                                showWeek()
+                            } else {
+                                openDay(if (strip.firstDay == strip.home(today)) state.today else strip.date(strip.firstDay).toString())
+                            }
+                        }
+                    },
+                    onToday = { goHome() },
+                )
                 if (!week) {
                     val selected = dayOf(dayPager.currentPage)
-                    val days = CalendarDays.days(state.tasks, CalendarDays.weekStart(selected), WEEK_DAYS, state.today)
+                    val weekStart = CalendarDays.weekStart(selected)
+                    val days = remember(state.tasks, state.today, weekStart) { CalendarDays.days(state.tasks, weekStart, WEEK_DAYS, state.today) }
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
                         val dayWidth = (maxWidth / WEEK_DAYS).coerceAtLeast(HelmDimens.touchTarget)
                         val dateScroll = rememberScrollState()
@@ -275,8 +288,8 @@ private fun CalendarContent(
 }
 
 /**
- * Week or day as two text tabs with a line under the chosen one (as the board's columns), and "Today" on the right
- * when the view is elsewhere.
+ * Week or day as two text tabs with a line under the chosen one (as the board's columns), and "Today" always on the
+ * right.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
