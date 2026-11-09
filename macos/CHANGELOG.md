@@ -29,13 +29,17 @@ latest one below).
   after sync. The server still creates it, from the day the task was done on the Mac (`completedOn`, backend
   0.14.1), and the next snapshot fills in its criteria and plan; when another device completed the same occurrence
   first, only the server's next occurrence stays. Behaviour: [docs/macos.md](../docs/macos.md#offline-repeating).
-- **Plan**: the week of Today or of a list as a grid of days and hours, task blocks with the project's colour, a
-  block's popover with Open Task, and a folding Tasks drawer of status columns along the bottom: dragging a task
-  onto an hour sets its day and time (by the half hour), onto a day's top only its day, onto a project in the
-  sidebar its project. The toolbar's Board | Plan | List switcher (⌃⌘1, ⌃⌘2, ⌃⌘3) is kept between launches.
+- **Plan**: the week of Today or of a list as a grid of days and hours, task blocks with a bar of the project's
+  colour, a block's popover with Open Task, and a folding Tasks drawer of status columns along the bottom:
+  dragging a task onto an hour sets its day and time (by the half hour), onto a day's top only its day, onto a
+  project in the sidebar its project. The toolbar's Board | Plan | List switcher (⌃⌘1, ⌃⌘2, ⌃⌘3) is kept between launches.
 
 ### Changed
 
+- Calendar-led appearance: the plan shows a week or one day with pinned date headings, **Today**, ‹ › and a
+  **Week**/**Day** control; blocks are lime (To do), olive (In progress) or graphite (Done) with a thin bar of the
+  project's colour. Today, lists, the board and settings share its neutral surfaces and blue controls.
+  Measurements: [docs/design.md](../docs/design.md#calendar-led-appearance).
 - The main window: the sidebar of places replaces the Today/Trash chooser, and the selected task opens in a panel
   along the bottom instead of a details column. The window is at least 820 × 500 points.
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.

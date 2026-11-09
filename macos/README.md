@@ -1,7 +1,7 @@
 # Dayhand for macOS
 
-**Coming soon:** a seven-day plan with pinned date headings, a compact date toolbar, a day/week control and
-lime, olive and graphite task blocks. Today, lists, the board and settings share its neutral surfaces and blue
+The app is calendar-led: a seven-day plan with pinned date headings, a compact date toolbar, a day/week control
+and lime, olive and graphite task blocks. Today, lists, the board and settings share its neutral surfaces and blue
 controls. See the [design measurements](../docs/design.md#calendar-led-appearance).
 
 Swift and SwiftUI, macOS 13 or later, all open source (Apache-2.0; the libraries GRDB.swift and
