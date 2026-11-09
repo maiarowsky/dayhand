@@ -388,6 +388,8 @@
 	<string>New task (⌘N, or the quick add shortcut from any app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>New task, e.g. Call the accountant fri 2pm</string>
+	<key>Next day</key>
+	<string>Next day</string>
 	<key>Next week</key>
 	<string>Next week</string>
 	<key>No Day</key>
@@ -506,6 +508,8 @@
 	<string>Preparing the update…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Previews come before a release and may have rough edges.</string>
+	<key>Previous day</key>
+	<string>Previous day</string>
 	<key>Previous week</key>
 	<string>Previous week</string>
 	<key>Project</key>
@@ -696,8 +700,6 @@
 	<string>They take no new tasks; their tasks stay in them.</string>
 	<key>This Mac</key>
 	<string>This Mac</string>
-	<key>This Week</key>
-	<string>This Week</string>
 	<key>This version</key>
 	<string>This version</string>
 	<key>Tick %@</key>
@@ -758,6 +760,8 @@
 	<string>View</string>
 	<key>Waiting for</key>
 	<string>Waiting for</string>
+	<key>Week</key>
+	<string>Week</string>
 	<key>Weekly</key>
 	<string>Weekly</string>
 	<key>What the project is about, for you and agents</key>

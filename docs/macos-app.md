@@ -38,9 +38,10 @@ and the selected task opens in a panel along the bottom. Projects need Dayhand s
 - **Lists**: All Tasks, No Project or a project, their open tasks in sections by day, with search
   in the toolbar.
 - **Board**: To do, In progress and Done side by side; drag a card to another column to change its status.
-- **Plan**: the week, Monday to Sunday, on an hour grid. Tasks with a time are blocks in their project's
-  colour; tasks without a time sit at the top of their day. Drag a task from the **Tasks** drawer along
-  the bottom onto an hour to plan it then, or onto a day's top for the day without a time.
+- **Plan**: the week, Monday to Sunday, or one day, on an hour grid. Tasks with a time are blocks in their
+  status's colour with a bar of their project's colour; tasks without a time sit at the top of their day.
+  Drag a task from the **Tasks** drawer along the bottom onto an hour to plan it then, or onto a day's top
+  for the day without a time.
 - **Task panel**: title, status, "working on it now" with the resume note, the day and time (a date
   phrase, **Today**, **Tomorrow**, **No day**, **Remove the time**), the project, the checklist and the note. Links are shown. For repeat and reminder editors and read-only agent work, see
   [Mac app features](../macos/README.md).

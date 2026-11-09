@@ -388,6 +388,8 @@
 	<string>Nueva tarea (⌘N o el atajo de añadido rápido desde cualquier app)</string>
 	<key>New task, e.g. Call the accountant fri 2pm</key>
 	<string>Nueva tarea, p. ej. Llamar al contable fri 2pm</string>
+	<key>Next day</key>
+	<string>Día siguiente</string>
 	<key>Next week</key>
 	<string>Semana siguiente</string>
 	<key>No Day</key>
@@ -506,6 +508,8 @@
 	<string>Preparando la actualización…</string>
 	<key>Previews come before a release and may have rough edges.</key>
 	<string>Las preliminares llegan antes de una versión y pueden tener detalles sin pulir.</string>
+	<key>Previous day</key>
+	<string>Día anterior</string>
 	<key>Previous week</key>
 	<string>Semana anterior</string>
 	<key>Project</key>
@@ -696,8 +700,6 @@
 	<string>No aceptan tareas nuevas; sus tareas se quedan en ellos.</string>
 	<key>This Mac</key>
 	<string>Este Mac</string>
-	<key>This Week</key>
-	<string>Esta semana</string>
 	<key>This version</key>
 	<string>Esta versión</string>
 	<key>Tick %@</key>
@@ -758,6 +760,8 @@
 	<string>Vista</string>
 	<key>Waiting for</key>
 	<string>Espera a</string>
+	<key>Week</key>
+	<string>Semana</string>
 	<key>Weekly</key>
 	<string>Cada semana</string>
 	<key>What the project is about, for you and agents</key>

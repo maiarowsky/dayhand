@@ -421,4 +421,5 @@
     <string name="empty_day">Nothing planned for this day.</string>
     <string name="section_day_tasks">Planned</string>
     <string name="change_due">Change due day</string>
+    <string name="palette_dayhand_note">Neutral surfaces, blue controls and olive tasks.</string>
 </resources>

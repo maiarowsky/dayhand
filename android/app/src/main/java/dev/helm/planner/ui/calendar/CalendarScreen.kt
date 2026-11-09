@@ -4,6 +4,7 @@ import android.icu.text.DateIntervalFormat
 import android.icu.util.DateInterval
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -78,12 +80,16 @@ enum class CalendarMode { WEEK, DAY }
 private const val PAGES = 10_000
 private const val CENTER = PAGES / 2
 
+/** Narrower than this, a calendar asked to [CalendarScreen]'s `dayWhenNarrow` opens on one day. */
+private val NARROW_WIDTH = 600.dp
+
 /**
  * The calendar: the week's hours, Monday to Sunday (tasks with a time on the hours, the rest in a band on top), or one
  * day. A swipe or the arrows turn the week. On a tablet or a phone on its side the week's tasks have their titles; on a
  * phone held upright they are bars (see [barsOnly]): a tap on a day opens it with the titles, a long press lists its
  * tasks ([DaySheet]). A tap on a task opens its details; a long press lifts it to drag to another day and time (or, let
- * go without moving, opens the move sheet), with Undo.
+ * go without moving, opens the move sheet), with Undo. It opens on [initialMode], or on one day when [dayWhenNarrow]
+ * is set and the calendar is narrower than 600 dp.
  */
 @Composable
 fun CalendarScreen(
@@ -91,10 +97,12 @@ fun CalendarScreen(
     actions: CalendarActions,
     modifier: Modifier = Modifier,
     initialMode: CalendarMode = CalendarMode.WEEK,
+    dayWhenNarrow: Boolean = false,
     bottomBar: @Composable () -> Unit = {},
 ) {
     BoxWithConstraints(modifier) {
-        CalendarContent(state, actions, barsOnly(maxWidth, gutterWidth()), initialMode, bottomBar)
+        val first = if (dayWhenNarrow && maxWidth < NARROW_WIDTH) CalendarMode.DAY else initialMode
+        CalendarContent(state, actions, barsOnly(maxWidth, gutterWidth()), first, bottomBar)
     }
 }
 
@@ -145,7 +153,6 @@ private fun CalendarContent(
             if (week) strip.animateTo(strip.firstDay + by * WEEK_DAYS) else dayPager.animateScrollToPage(dayPager.currentPage + by)
         }
     }
-    val atHome = if (week) strip.firstDay == strip.home(today) else dayPager.currentPage == CENTER
     val goHome = { scope.launch { if (week) strip.animateTo(strip.home(today)) else dayPager.animateScrollToPage(CENTER) } }
     BackHandler(enabled = !week) { showWeek() }
     val moved = stringResource(R.string.calendar_moved)
@@ -186,7 +193,39 @@ private fun CalendarContent(
                     )
                     HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
                 }
-                ModeTabs(mode, onMode = { if (it == CalendarMode.WEEK) showWeek() else mode = it }, showToday = !atHome, onToday = { goHome() })
+                ModeTabs(
+                    mode,
+                    onMode = {
+                        if (it != mode) {
+                            if (it == CalendarMode.WEEK) {
+                                showWeek()
+                            } else {
+                                openDay(if (strip.firstDay == strip.home(today)) state.today else strip.date(strip.firstDay).toString())
+                            }
+                        }
+                    },
+                    onToday = { goHome() },
+                )
+                if (!week) {
+                    val selected = dayOf(dayPager.currentPage)
+                    val weekStart = CalendarDays.weekStart(selected)
+                    val days = remember(state.tasks, state.today, weekStart) { CalendarDays.days(state.tasks, weekStart, WEEK_DAYS, state.today) }
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        val dayWidth = (maxWidth / WEEK_DAYS).coerceAtLeast(HelmDimens.touchTarget)
+                        val dateScroll = rememberScrollState()
+                        val revealSelected = with(LocalDensity.current) {
+                            (dayWidth * selected.dayOfWeek.value - maxWidth).roundToPx().coerceAtLeast(0)
+                        }
+                        LaunchedEffect(selected, revealSelected, dateScroll.maxValue) {
+                            dateScroll.scrollTo(revealSelected)
+                        }
+                        Row(Modifier.horizontalScroll(dateScroll)) {
+                            days.forEach { day ->
+                                DayHeader(day, openDay, Modifier.width(dayWidth), selected = day.date == selected.toString())
+                            }
+                        }
+                    }
+                }
                 StatusBanner(state.connection, state.pendingChanges, actions::openSettings)
             }
         },
@@ -249,12 +288,12 @@ private fun CalendarContent(
 }
 
 /**
- * Week or day as two text tabs with a line under the chosen one (as the board's columns), and "Today" on the right
- * when the view is elsewhere.
+ * Week or day as two text tabs with a line under the chosen one (as the board's columns), and "Today" always on the
+ * right.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showToday: Boolean, onToday: () -> Unit) {
+private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, onToday: () -> Unit) {
     val p = palette
     Column {
         Row(
@@ -288,7 +327,7 @@ private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, showTod
                     )
                 }
             }
-            if (showToday) TextAction(stringResource(R.string.calendar_go_today), onToday, modifier = Modifier.testTag(CalendarTags.TODAY))
+            TextAction(stringResource(R.string.calendar_go_today), onToday, modifier = Modifier.testTag(CalendarTags.TODAY))
         }
         HorizontalDivider(color = p.border)
     }

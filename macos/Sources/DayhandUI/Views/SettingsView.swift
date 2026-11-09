@@ -14,6 +14,8 @@ struct SettingsView: View {
             AboutSettings().tabItem { Label(tr("About"), systemImage: "info.circle") }
         }
         .frame(width: 520, height: 420)
+        .background(Color.canvas)
+        .tint(PlannerStyle.blue)
     }
 }
 

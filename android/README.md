@@ -1,5 +1,9 @@
 # Dayhand for Android
 
+The app is calendar-led: neutral surfaces, status-coloured blocks and a blue today marker. Phones open the
+calendar on a readable day; the full week and all seven days remain available. The same spacing and type carry
+through the other screens. See the [design measurements](../docs/design.md#calendar-led-appearance).
+
 Kotlin, Jetpack Compose and Material 3. This version has **Today** with quick add, the **calendar**
 (week and day), the **board**, **projects**, **task details** and the **trash**, works offline, rings reminders and a morning summary computed
 on the phone, has the **Settings** screen, connects to a server by **pairing** with a one-time

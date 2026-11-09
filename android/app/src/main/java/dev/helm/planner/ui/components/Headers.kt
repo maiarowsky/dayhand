@@ -65,7 +65,7 @@ fun LargeHeader(
             .fillMaxWidth()
             .background(p.background)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-            .padding(start = HelmDimens.screenMargin, end = 8.dp, top = 12.dp, bottom = 8.dp),
+            .padding(start = HelmDimens.screenMargin, end = 8.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (onBack != null) HeaderIconButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), onBack)
@@ -104,7 +104,7 @@ fun ScreenHeader(title: String, onBack: (() -> Unit)?, modifier: Modifier = Modi
             .fillMaxWidth()
             .background(p.background)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-            .padding(start = if (onBack != null) 8.dp else HelmDimens.screenMargin, end = 8.dp, top = 12.dp, bottom = 8.dp),
+            .padding(start = if (onBack != null) 8.dp else HelmDimens.screenMargin, end = 8.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {

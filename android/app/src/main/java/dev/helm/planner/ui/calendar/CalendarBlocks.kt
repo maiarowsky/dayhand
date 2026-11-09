@@ -33,9 +33,11 @@ import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
+import dev.helm.planner.ui.common.statusLabel
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
 import dev.helm.planner.ui.theme.Palette
+import dev.helm.planner.ui.theme.PlannerColors
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
@@ -75,14 +77,13 @@ object CalendarTags {
     fun sheetMove(key: String) = "calendar_sheet_move:$key"
 }
 
-/** Colours of an entry: overdue in the danger colour, done and later dates of a series quiet, the rest in the accent. */
+/** Status colours shared with the board; the edge and marks also identify overdue tasks. */
 internal data class EntryColors(val background: Color, val bar: Color, val text: Color)
 
-internal fun Palette.colorsOf(entry: CalendarEntry) = when {
-    entry.done -> EntryColors(surfaceRaised, textFaint, textMuted)
-    entry.overdue -> EntryColors(dangerSoft, danger, text)
-    entry.repeat -> EntryColors(surfaceRaised, accentDim, textMuted)
-    else -> EntryColors(accentSoft, accent, text)
+internal fun Palette.colorsOf(entry: CalendarEntry): EntryColors {
+    val status = entry.task.status
+    val foreground = PlannerColors.text(status)
+    return EntryColors(PlannerColors.background(status, this), if (entry.overdue) danger else foreground, foreground)
 }
 
 /** A mark that does not rely on colour: "!" overdue, "↻" a later date of a series, "✓" done; none for the rest. */
@@ -108,6 +109,7 @@ fun entryDescription(entry: CalendarEntry): String {
         add(entry.task.title)
         add(day)
         add(entry.time ?: stringResource(R.string.calendar_no_time))
+        add(statusLabel(entry.task.status))
         if (entry.overdue) add(stringResource(R.string.calendar_state_overdue))
         if (entry.done) add(stringResource(R.string.calendar_state_done))
         if (entry.repeat) add(stringResource(R.string.calendar_state_repeat))
@@ -159,7 +161,7 @@ private class Placed {
     var coordinates: LayoutCoordinates? = null
 }
 
-/** How a block looks: its colours and edge, [time] (if any) over the title. [behaviour] goes inside the clip. */
+/** How a block looks: its colours and edge, [time] (if any) under the title. [behaviour] goes inside the clip. */
 @Composable
 internal fun EntryFace(entry: CalendarEntry, time: String?, maxLines: Int, modifier: Modifier, behaviour: Modifier = Modifier) {
     val p = palette
@@ -175,7 +177,6 @@ internal fun EntryFace(entry: CalendarEntry, time: String?, maxLines: Int, modif
     ) {
         // No padding above and below: the lines are centred, and a half-hour block keeps two lines at a larger font.
         Column(Modifier.padding(start = BAR_WIDTH + 5.dp, end = 4.dp)) {
-            if (time != null) Text(time, style = helmType.small, color = p.textMuted, maxLines = 1)
             WordTitle(
                 markedTitle(entry),
                 style = helmType.smallStrong,
@@ -183,6 +184,7 @@ internal fun EntryFace(entry: CalendarEntry, time: String?, maxLines: Int, modif
                 maxLines = maxLines,
                 textDecoration = if (entry.done) TextDecoration.LineThrough else null,
             )
+            if (time != null) Text(time, style = helmType.small, color = colors.text, maxLines = 1)
         }
     }
 }

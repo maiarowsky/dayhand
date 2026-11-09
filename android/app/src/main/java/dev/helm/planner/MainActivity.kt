@@ -227,7 +227,7 @@ private fun HelmRoot(
                 }
             }
             val state by viewModel.state.collectAsStateWithLifecycle()
-            state?.let { CalendarScreen(it, actions, bottomBar = tabs) }
+            state?.let { CalendarScreen(it, actions, dayWhenNarrow = true, bottomBar = tabs) }
         }
         route == Route.BOARD -> {
             val viewModel = viewModel {

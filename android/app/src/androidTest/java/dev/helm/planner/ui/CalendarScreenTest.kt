@@ -137,7 +137,7 @@ class CalendarScreenTest {
             .assertContentDescriptionContains("Task b", substring = true)
         compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).assertDoesNotExist()
         compose.onNodeWithTag(CalendarTags.NOW_LINE).assertExists()
-        compose.onNodeWithTag(CalendarTags.TODAY).assertDoesNotExist()
+        compose.onNodeWithTag(CalendarTags.TODAY).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.entry("c@2026-10-29")).assertDoesNotExist()
 
         compose.onNodeWithTag(CalendarTags.NEXT).performClick()
@@ -147,7 +147,7 @@ class CalendarScreenTest {
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertDoesNotExist()
         compose.onNodeWithTag(CalendarTags.TODAY).performClick()
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertExists()
-        compose.onNodeWithTag(CalendarTags.TODAY).assertDoesNotExist()
+        compose.onNodeWithTag(CalendarTags.TODAY).assertIsDisplayed()
     }
 
     @Test
@@ -164,7 +164,7 @@ class CalendarScreenTest {
         compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeRight(startX = left + 10f, endX = left + width / 3f, durationMillis = 200) }
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-19")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.TODAY).assertDoesNotExist()
+        compose.onNodeWithTag(CalendarTags.TODAY).assertIsDisplayed()
     }
 
     @Test
@@ -198,8 +198,8 @@ class CalendarScreenTest {
         compose.onNodeWithTag(CalendarTags.sheetEntry("r@2026-10-23")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.sheetMove("r@2026-10-23")).assertDoesNotExist()
         val shown = shownText(CalendarTags.sheetEntry("a@2026-10-23"))
-        assertTrue(shown, shown.startsWith("09:00\n"))
-        shown.lines().drop(1).forEach { line ->
+        assertTrue(shown, shown.endsWith("\n09:00"))
+        shown.lines().dropLast(1).forEach { line ->
             val words = line.removeSuffix("…").split(" ")
             words.dropLast(1).forEach { assertTrue("'$it' in '$shown'", it in title.split(" ")) }
             assertTrue(shown, words.last() in title.split(" ") || line.endsWith("…"))
@@ -225,7 +225,7 @@ class CalendarScreenTest {
         show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), width = 700.dp)
 
         (19..25).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertExists() }
-        assertEquals("Task a", shownText(CalendarTags.entry("a@2026-10-22")))
+        assertEquals("Task a\n09:00", shownText(CalendarTags.entry("a@2026-10-22")))
         compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).assertExists()
         compose.onNodeWithTag(CalendarTags.untimedBars("2026-10-23")).assertDoesNotExist()
     }
@@ -252,7 +252,8 @@ class CalendarScreenTest {
         listOf("z@2026-10-22" to title, "r@2026-10-23" to "Raport kwartalny").forEach { (key, full) ->
             val words = full.split(" ")
             val shown = compose.onNodeWithTag(CalendarTags.entry(key)).fetchSemanticsNode().config[SemanticsProperties.Text].joinToString("\n") { it.text }
-            val lines = shown.split("\n")
+            if (key.startsWith("z@")) assertTrue(shown, shown.endsWith("\n09:00"))
+            val lines = shown.removeSuffix("\n09:00").split("\n")
             assertTrue(shown, lines.size in 1..2)
             // Every line is whole words of the title, the last one possibly shortened with "…": never half a word
             // followed by its other half on the next line.

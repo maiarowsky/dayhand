@@ -13,11 +13,11 @@ class AppearanceStoreTest {
     }
 
     @Test
-    fun startsWithMusshDefaults() {
+    fun startsWithDayhandDefaults() {
         val appearance = AppearanceStore(MemoryValues()).appearance.value
         assertEquals(ThemeMode.System, appearance.mode)
-        assertSame(Palettes.Terracotta, appearance.darkPalette)
-        assertSame(Palettes.Paper, appearance.lightPalette)
+        assertSame(Palettes.Graphite, appearance.darkPalette)
+        assertSame(Palettes.Daylight, appearance.lightPalette)
         assertEquals(HelmFont.System, appearance.font)
     }
 

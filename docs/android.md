@@ -70,6 +70,8 @@ the title, with a hint. **More options** also has the project picker.
 The bar at the bottom switches between Today, the calendar, the board and Projects.
 
 - **Week** shows Monday to Sunday on an hour grid, **Day** one day. Swipe or use the arrows to turn.
+  Narrower than 600 dp (a phone held upright) the calendar opens on **Day** at today; Day has a row of
+  the week's dates to pick from.
 - Tasks with a time are blocks at their hour; tasks without a time sit in a band above the hours.
   On a phone held upright the week shows them as bars without titles; tap a day for its titles, or
   long-press a day for a list with **Move** on each task.

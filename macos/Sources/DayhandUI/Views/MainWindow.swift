@@ -14,7 +14,7 @@ struct MainWindow: View {
     var body: some View {
         NavigationSplitView {
             Sidebar()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 320)
+                .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 300)
         } detail: {
             MainArea()
                 .navigationTitle(PlaceText.title(model.place, model: model))
@@ -134,7 +134,7 @@ struct PlaceHeader<Mark: View, Trailing: View>: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .center, spacing: 8) {
                     mark()
-                    Text(title).font(.system(size: 26, weight: .bold)).lineLimit(1)
+                    Text(title).font(.system(size: 22, weight: .semibold)).lineLimit(1)
                 }
                 if let subtitle {
                     Text(subtitle).font(.callout).foregroundStyle(.secondary).lineLimit(1)
@@ -144,7 +144,7 @@ struct PlaceHeader<Mark: View, Trailing: View>: View {
             trailing()
         }
         .padding(.horizontal, Metrics.gutter)
-        .padding(.top, 14)
+        .padding(.top, 10)
         .padding(.bottom, 8)
     }
 }
@@ -158,21 +158,21 @@ extension PlaceHeader where Mark == EmptyView, Trailing == EmptyView {
 /// The spacing the main area keeps, so lists, cards and the panel line up.
 enum Metrics {
     static let gutter: CGFloat = 20
-    static let radius: CGFloat = 10
+    static let radius: CGFloat = 6
 }
 
 extension NSColor {
     /// The background of the main area, a shade off the cards so they stand out in both appearances.
     static let dayhandCanvas = NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            ? NSColor(srgbRed: 0.118, green: 0.118, blue: 0.125, alpha: 1)
-            : NSColor(srgbRed: 0.957, green: 0.953, blue: 0.945, alpha: 1)
+            ? NSColor(srgbRed: 0.102, green: 0.114, blue: 0.106, alpha: 1)
+            : NSColor(srgbRed: 0.969, green: 0.973, blue: 0.965, alpha: 1)
     }
 
     /// A card or the panel on the canvas.
     static let dayhandCard = NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            ? NSColor(srgbRed: 0.173, green: 0.173, blue: 0.180, alpha: 1)
+            ? NSColor(srgbRed: 0.145, green: 0.161, blue: 0.149, alpha: 1)
             : .white
     }
 }

@@ -103,7 +103,8 @@ internal fun SettingsSections(state: SettingsUiState, actions: SettingsActions, 
         rows = buildList<@Composable () -> Unit> {
             add {
                 val icon = if (connected) LineIcon.Cloud else LineIcon.Phone
-                ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = icon, value = connectionValue(state.data.connection)) {
+                ListRow(stringResource(R.string.settings_backend), SettingsTags.ROW_SERVER, icon = icon,
+                    value = connectionValue(state.data.connection), valueBelowTitle = true) {
                     open(SettingsPane.SERVER)
                 }
             }

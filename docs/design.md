@@ -1,8 +1,31 @@
 # Design system
 
-Dayhand's Android app uses the visual language of Mussh (the owner's other app) so the two read
-as one family: the same palettes, type scale, shapes, buttons, cards, fields and states. Dayhand keeps its own identity:
-its name, its own icon and its words. No Mussh name, logo or icon is used.
+## Calendar-led appearance
+
+The native apps use neutral surfaces, a compact date toolbar, large day numbers and a blue circle for today.
+Calendar blocks use lime for To do, olive for In progress and graphite for Done, with titles, times and
+textual status descriptions; these status colours are the same in every palette. Overdue and repeating tasks
+retain their marks. Project colours remain separate: the project's dot, and on the Mac a thin bar at the edge
+of a calendar block. Dayhand keeps its name and icon, and Android keeps all sixteen earlier palettes and saved
+choices.
+
+Android's Dayhand light and dark defaults share the same roles across Today, Calendar, Board, Projects,
+task details, sheets and Settings. Top-level headings are 24 sp on 30 sp lines, screen margins 16 dp, card
+padding 14 dp, card corners 8 dp and event corners 3 dp; controls keep their 48 dp touch targets. Phones open
+the calendar on one day with a scrollable seven-day selector. The week remains a seven-day overview, with titles
+when columns have room.
+Settings keep the scrolling viewport inside system safe areas. A row places its value below the title when
+the complete texts do not fit side by side, preserving the font size and full wording on narrow screens.
+
+The Mac plan has a 52 pt hour rail, 64 pt per hour, columns at least 108 pt wide, pinned day headings, 28 pt
+dates in 42 pt circles, and a day/week control. Narrow windows scroll horizontally. Tasks without a time remain
+in the day heading and the task drawer; the drawer can be expanded below the grid. Both apps use the existing
+due date and time fields. Block heights are visual slots, not stored or inferred task durations.
+
+Dayhand's Android app started from the visual language of Mussh (the owner's other app) and keeps its palette
+roles and sixteen palettes, most of its type scale, its fonts, button shape, fields and states. The shapes,
+spacing, top-level headline, section labels and default palettes are Dayhand's own, as the table below notes.
+Dayhand keeps its own identity: its name, its own icon and its words. No Mussh name, logo or icon is used.
 
 The code lives in `android/app/src/main/java/dev/helm/planner/ui/theme/` (tokens) and `ui/components/` (shared
 components). Screens use only these: no raw colours, no `MaterialTheme.colorScheme` lookups and no ad-hoc shapes.
@@ -18,7 +41,8 @@ components). Screens use only these: no raw colours, no `MaterialTheme.colorSche
    the accent, danger and secondary colours have at least 4.5:1 on the background; faint text (hints, decoration
    only) at least 3:1. `PaletteContrastTest` checks every palette.
 4. **Type follows the system size.** Every size is in sp. Anything that holds text has a minimum height, never a
-   fixed one, and rows put their value under the name from font scale 1.5 (`LARGE_TEXT_SCALE`).
+   fixed one, and rows put their value under the name from font scale 1.5 (`LARGE_TEXT_SCALE`) or whenever the
+   complete name and value do not fit side by side.
 5. **Touch targets of at least 48 × 48 dp**, also for icon buttons (Material's `IconButton` has a 40 dp clickable
    circle, so Dayhand uses `HeaderIconButton`). Every icon-only control has a description for screen readers.
 6. **One primary action per screen** (the accent pill). Every button is a `HelmButton` in the shape of Mussh's Send
@@ -48,43 +72,43 @@ suit its own backgrounds.
 | Mussh (Android) | Dayhand | Notes |
 |---|---|---|
 | `ui.Palette` (roles) | `ui.theme.Palette` | Same roles and values minus the chat, code and agent roles Dayhand has no use for (`userBubble`, `code*`, `toolSurface`, `vivid*`, `blocked`, `idle`, `unknown`, `inlineCode`, `quoteBar`). Mussh `working` is Dayhand "Now", `done` is done, `attention`/`danger` is overdue. |
-| `Palettes.all` (16) and `PaletteThemes` | `Palettes`, `PaletteThemes` | Same 16 palettes, ids and values: dark Terracotta (default), Honey, Amber, Gruvbox Dark, Solarized Dark, Nord, Dracula, Tokyo Night, Catppuccin Mocha, One Dark, Rosé Pine; light Paper (default), Gruvbox Light, Solarized Light, Catppuccin Latte, Rosé Pine Dawn. Generated from the Mussh sources, not retyped. |
+| `Palettes.all` (16) and `PaletteThemes` | `Palettes`, `PaletteThemes` | Same 16 palettes, ids and values: dark Terracotta, Honey, Amber, Gruvbox Dark, Solarized Dark, Nord, Dracula, Tokyo Night, Catppuccin Mocha, One Dark, Rosé Pine; light Paper, Gruvbox Light, Solarized Light, Catppuccin Latte, Rosé Pine Dawn. Generated from the Mussh sources, not retyped. Dayhand adds its own pair, the defaults, both named "Dayhand" in Settings: dark `dayhand-dark` (`Palettes.Graphite`) and light `dayhand-light` (`Palettes.Daylight`). Calendar and board status colours and the today circle come from `PlannerColors`, not from the palette. |
 | One palette for the whole app | Dark palette + light palette + mode | Mussh has no light/dark mode; Dayhand needs one, so it keeps one choice per variant. |
 | `AppTheme`, `LocalPalette`, `palette` | `HelmTheme(appearance)`, `LocalPalette`, `palette` | Plus `LocalHelmType`/`helmType`, the Material type scale and shapes. |
 | `colorScheme(palette)` | `colorScheme(palette)` | Same mapping, also the Material 1.4 container roles. |
-| `AppType` (Headline 30, Title 18, Body 15, Small 13, Label mono 12 / 2 sp tracking) | `HelmType` | Same sizes and weights, in the chosen font; adds `screenTitle` (22 sp, Mussh's settings title) and the strong variants. Settings use it in the system sans whatever the font, as Mussh's settings do (`SettingsType`). |
+| `AppType` (Headline 30, Title 18, Body 15, Small 13, Label mono 12 / 2 sp tracking) | `HelmType` | Same sizes and weights, in the chosen font, except the headline (24 sp on 30 sp lines, semibold) and the label (12 sp in the chosen font with 0.6 sp tracking, not monospaced); adds `screenTitle` (22 sp, Mussh's settings title) and the strong variants. Settings use it in the system sans whatever the font, as Mussh's settings do (`SettingsType`). |
 | `ChatFont` (System, Inter, IBM Plex Sans, Atkinson Hyperlegible, Geist, Source Serif 4, JetBrains Mono) | `HelmFont` | Same list and ids, for the whole app; default System like Mussh's screens. The ten code fonts are terminal-only in Mussh and not used. Mussh has no font import, so Dayhand has none. |
-| `CardShape` 20 dp, option 16 dp, field 14 dp, icon tile 14 dp, swatch 12 dp, badge 8 dp, pills round | `HelmShapes` | Same radii; also the Material `Shapes`. |
+| `CardShape` 20 dp, option 16 dp, field 14 dp, icon tile 14 dp, swatch 12 dp, badge 8 dp, pills round | `HelmShapes` | Dayhand's own radii: card 8 dp, option 6 dp, field and icon tile 8 dp, swatch 12 dp, badge and calendar block 3 dp, pills round, sheet 16 dp at the top; also the Material `Shapes`. |
 | `SendButton` (`chat/InputBar.kt`) | `HelmButton`, `HelmButtonShape` | The shape of every button: a filled pill without an outline, at least 34 dp high (a 34 dp circle around an icon alone) in a 48 × 48 dp touch target; tones `Accent`, `Soft`, `Danger`, `Quiet`; disabled on `surfaceRaised` with faint text. |
 | `AccentButton` (56 dp accent pill) | `PrimaryButton` | `HelmButton` in the accent tone, full width. |
 | `GhostButton` (12 % tinted pill) | `SecondaryButton` | `HelmButton` in the soft accent, danger or quiet tone. |
 | `TextButton` in dialogs | `TextAction` | `HelmButton`, soft accent unless another tone is asked for. |
 | `HeaderIconButton` / `BackButton` (48 dp) | `HeaderIconButton` | Material icons instead of Mussh's own drawings. |
 | `IconButtonBox` (44 dp) | `HeaderIconButton` | 48 dp, Dayhand's minimum. |
-| `FeatureCard`, `InfoCard`, cards on `surface` with 18 dp padding | `HelmCard` | |
+| `FeatureCard`, `InfoCard`, cards on `surface` with 18 dp padding | `HelmCard` | 14 dp padding, card corners and a 0.5 dp line in the border colour. |
 | Settings section (muted `MonoLabel` over a card) | `CardSection` | Task details; Settings uses `ListGroup`. |
 | `IconTile` | `IconTile` | |
-| `MonoLabel` | `SectionLabel` | Also a heading for screen readers. |
+| `MonoLabel` | `SectionLabel` | In the label style (not monospaced); also a heading for screen readers. |
 | `Pill` | `Pill` | |
 | filter choice (pills) | `HelmChip` | Soft-accent pill with a tick when selected (not colour alone), 48 dp; `multiple` for checkbox groups (weekdays). |
 | `SettingsSwitchRow` | `SwitchRow`, `helmSwitchColors()` | Same switch colours, one toggle for screen readers. |
 | `fieldColors()` + `OutlinedTextField`, 14 dp | `HelmTextField`, `helmFieldColors()` | Radio buttons and checkboxes take `helmRadioColors()` / `helmCheckboxColors()`. |
 | `SettingsPage` (back + 22 sp title, scrolling column, pinned preview) | `ScreenHeader`, `SettingsPage` | `SettingsPage` is the Settings list and each of its pages. |
-| Top-level screen title | `LargeHeader` | Headline 30 sp with a subtitle and actions (Today, Board). |
-| Bottom navigation | `HelmTabBar`, `HelmTab` | Bar on `surface`, the selected tab in the accent on `accentSoft`. |
+| Top-level screen title | `LargeHeader` | Headline 24 sp with a subtitle and actions (Today, Board). |
+| Bottom navigation | `HelmTabBar`, `HelmTab` | Bar on `surface` under a thin line in the border colour, the selected tab in the accent on `accentSoft`. |
 | Accent "new" button | `HelmFab` | Accent pill with the on-accent icon (Today, Board). |
-| `SettingsGroup`, `SettingsRow`, `SettingsNote`, `SettingsIcon` | `ListGroup`, `ListRow`, `ChoiceRow`, `ListNote`, `LineIcon` | Muted upper-case label over a 20 dp card on `surface`, rows split by thin full-width lines. A row is at least 60 dp: a 22 dp outline icon (no tile, no state colour), the name, a short muted value (at most 190 dp) and a thin "›"; an optional muted note under the name or a control at the end. From font scale 1.5 the value goes under the name. `ChoiceRow` is a choice with an accent check mark. Settings is built from these: one row per setting, each opening its page. |
+| `SettingsGroup`, `SettingsRow`, `SettingsNote`, `SettingsIcon` | `ListGroup`, `ListRow`, `ChoiceRow`, `ListNote`, `LineIcon` | Muted upper-case label over a card on `surface` with card corners, rows split by thin full-width lines. A row is at least 60 dp: a 22 dp outline icon (no tile, no state colour), the name, a short muted value (at most 190 dp) and a thin "›"; an optional muted note under the name or a control at the end. From font scale 1.5, or when the complete name and value do not fit side by side, the value goes under the name. `ChoiceRow` is a choice with an accent check mark. Settings is built from these: one row per setting, each opening its page. |
 | `OptionRow` (palette and font choice) | `OptionCard` | |
 | `AppearancePreview`, palette swatches, font sample "Aa ąę 0O il1" | `AppearancePreview`, `Swatches`, `FontOption` | Preview is a small Today screen in both chosen palettes. |
 | Connection notice, `successSoft` result card | `StatusBanner(tone)` | Soft background per tone, text colour kept for contrast, read out when it changes. |
 | Empty lists | `EmptyState` | Icon tile, sentence, primary action. |
 | `MessageDialog` (`AlertDialog` on `surface`) | `HelmDialog` | Date and time pickers use the same card colour and text actions. |
 | `ActionSheet` / long-press menu | `HelmMenu` | Dropdown on `surfaceRaised` with option corners. |
-| `BottomSheet` | Quick add `ModalBottomSheet` | `surface`, 28 dp top corners, border-coloured handle. |
-| Board cards, "Now" card | Material `Card` in palette roles | `surface` with option corners, the "Now" card on `accentSoft` with an accent label. |
+| `BottomSheet` | Quick add `ModalBottomSheet` | `surface`, 16 dp top corners, border-coloured handle. |
+| Board cards, "Now" card | Material `Card` in palette roles | `surface` with option corners and a 3 dp stripe in the status colour at the start, the "Now" card on `accentSoft` with an accent label. |
 | Task history actor | `Pill` | The person in the secondary colour, the agent in `attention`. |
 | Notification accent | `setColor(accent)` | The chosen palette's accent for the shade's light or dark look. |
-| Spacing: 20 dp screen margin, 18 dp card padding, 12 dp between groups, 60 dp list rows | `HelmDimens` | List rows are 64 dp with 16 dp side padding and a 72 dp line inset. |
+| Spacing: 20 dp screen margin, 18 dp card padding, 12 dp between groups, 60 dp list rows | `HelmDimens` | 16 dp screen margin and 14 dp card padding; 12 dp between groups. List rows are 64 dp with 16 dp side padding and a 72 dp line inset. |
 
 ## Fonts and licenses
 

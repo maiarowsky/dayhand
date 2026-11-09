@@ -190,6 +190,7 @@ struct TaskCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.card, in: RoundedRectangle(cornerRadius: Metrics.radius))
+        .overlay(alignment: .leading) { Rectangle().fill(PlannerStyle.fill(task.status)).frame(width: 3).padding(.vertical, 6) }
         .overlay(
             RoundedRectangle(cornerRadius: Metrics.radius)
                 .strokeBorder(selected ? Color.accentColor : Color.secondary.opacity(0.18), lineWidth: selected ? 1.5 : 1)

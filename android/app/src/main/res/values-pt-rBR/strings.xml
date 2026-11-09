@@ -420,4 +420,5 @@
     <string name="empty_day">Nada planejado para este dia.</string>
     <string name="section_day_tasks">Planejado</string>
     <string name="change_due">Alterar prazo</string>
+    <string name="palette_dayhand_note">Fundos neutros, controles azuis e tarefas verde-oliva.</string>
 </resources>

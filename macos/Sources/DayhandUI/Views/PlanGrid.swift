@@ -30,7 +30,7 @@ struct PlanWeek: Equatable {
 enum PlanGrid {
     static let firstHour = 0
     static let lastHour = 24
-    static let hourHeight: CGFloat = 48
+    static let hourHeight: CGFloat = 64
     /// The hour the grid scrolls to when it opens.
     static let morning = 8
 
@@ -38,9 +38,9 @@ enum PlanGrid {
 
     /// A day's column and title: blue under a dragged task, faintly blue today, faintly red at the weekend.
     static func dayTint(_ day: CivilDate, isToday: Bool, targeted: Bool) -> Color {
-        targeted ? Color.accentColor.opacity(0.10)
-            : isToday ? Color.accentColor.opacity(0.04)
-            : day.weekday >= 6 ? Color.overdue.opacity(0.035) : Color.clear
+        targeted ? PlannerStyle.blue.opacity(0.10)
+            : isToday ? PlannerStyle.blue.opacity(0.025)
+            : day.weekday >= 6 ? Color.secondary.opacity(0.025) : Color.clear
     }
 
     /// How far down a task at [time] ("HH:mm") starts; a task in the last hour keeps a whole hour of the grid.
@@ -119,7 +119,7 @@ struct PlanDayColumn: View {
         }
         .frame(height: PlanGrid.height)
         .background(dayBackground)
-        .overlay(alignment: .leading) { Rectangle().fill(Color.secondary.opacity(0.15)).frame(width: 1) }
+        .overlay(alignment: .leading) { Rectangle().fill(PlannerStyle.line).frame(width: 0.5) }
         .dropDestination(for: String.self) { items, location in
             guard let id = items.lazy.compactMap(TaskDrag.localId).first else { return false }
             model.setDue(id, date: day.description, time: PlanGrid.time(at: location.y))
@@ -127,7 +127,19 @@ struct PlanDayColumn: View {
         } isTargeted: { targeted = $0 }
     }
 
-    private var dayBackground: some View { Rectangle().fill(PlanGrid.dayTint(day, isToday: isToday, targeted: targeted)) }
+    private var dayBackground: some View {
+        ZStack(alignment: .top) {
+            PlanGrid.dayTint(day, isToday: isToday, targeted: targeted)
+            VStack(spacing: 0) {
+                ForEach(PlanGrid.firstHour..<PlanGrid.lastHour, id: \.self) { _ in
+                    VStack(spacing: 0) {
+                        Rectangle().fill(PlannerStyle.line).frame(height: 0.5)
+                        Spacer(minLength: 0)
+                    }.frame(height: PlanGrid.hourHeight)
+                }
+            }
+        }
+    }
 }
 
 /// A day's name and date, and its untimed tasks; a task dropped here is planned for the day without a time.
@@ -137,21 +149,47 @@ struct PlanDayHeader: View {
     let tasks: [TaskItem]
     let isToday: Bool
     var limit = 3
+    var openDay: () -> Void = {}
     @State private var targeted = false
+    @State private var showingAll = false
 
     var body: some View {
         let untimed = tasks.filter { $0.dueTime == nil }
         VStack(spacing: 4) {
-            Text(DateText.shortWeekday(day.weekday) ?? "")
-                .font(.headline)
-                .foregroundStyle(isToday ? Color.accentColor : .primary)
-            Text(DateText.dayAndMonth(day.description)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            Button(action: openDay) {
+                VStack(spacing: 3) {
+                    Text(DateText.shortWeekday(day.weekday) ?? "")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(isToday ? PlannerStyle.blue : .secondary)
+                    Text(String(day.day))
+                        .font(.system(size: 28, weight: .regular))
+                        .foregroundStyle(isToday ? PlannerStyle.onBlue : .primary)
+                        .frame(width: 42, height: 42)
+                        .background(isToday ? PlannerStyle.blue : .clear, in: Circle())
+                }
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(DateText.dayAndMonth(day.description))
+            .accessibilityValue(isToday ? tr("Today") : "")
             VStack(spacing: 3) {
                 ForEach(untimed.prefix(limit)) { task in
                     PlanAllDayChip(task: task)
                 }
                 let more = untimed.count - limit
-                if more > 0 { Text(tr("+\(more) more")).font(.caption2).foregroundStyle(.secondary) }
+                if more > 0 {
+                    Button(tr("+\(more) more")) { showingAll = true }
+                        .buttonStyle(.plain)
+                        .font(.caption)
+                        .popover(isPresented: $showingAll) {
+                            ScrollView {
+                                VStack(spacing: 8) {
+                                    ForEach(untimed) { PlanAllDayChip(task: $0) }
+                                }.padding(12)
+                            }.frame(width: 300, height: 260)
+                        }
+                }
             }
         }
         .padding(.vertical, 6)
@@ -186,7 +224,8 @@ struct PlanAllDayChip: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(planTint(task, model).opacity(0.15), in: RoundedRectangle(cornerRadius: 5))
+            .foregroundStyle(PlannerStyle.text(task.status))
+            .background(PlannerStyle.fill(task.status), in: RoundedRectangle(cornerRadius: 3))
             .onTapGesture { showing = true }
             .popover(isPresented: $showing, arrowEdge: .bottom) { PlanTaskPopover(task: task) { showing = false } }
             .draggable(TaskDrag.payload(task.localId)) { DragPreview(title: task.title) }
@@ -194,44 +233,47 @@ struct PlanAllDayChip: View {
     }
 }
 
-/// A timed task in the grid: a tinted block with a bar of its color on the left, its title, project and time (as much
-/// as the block has room for).
+/// A timed task in the grid: a block in its status's color with a bar of its project's color on the left (when the
+/// project has one), its title, time and project (as much as the block has room for).
 struct PlanBlock: View {
     @EnvironmentObject private var model: AppModel
     let task: TaskItem
     @State private var showing = false
 
     var body: some View {
-        let tint = planTint(task, model)
         let project = model.projectLine(task)?.name
+        let projectColor = model.projectOf(task)?.color.map(ProjectColors.color)
         let time = task.dueTime.map(DateText.time)
         ViewThatFits(in: .vertical) {
-            lines([project, time].compactMap { $0 })
-            lines([project ?? time].compactMap { $0 })
+            lines([time, project].compactMap { $0 })
+            lines([time].compactMap { $0 })
             lines([])
         }
-        .padding(.leading, 9)
-        .padding(.trailing, 4)
-        .padding(.vertical, 2)
+        .padding(.leading, projectColor == nil ? 6 : 9)
+        .padding(.trailing, 6)
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .clipped()
-        .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 6))
+        .foregroundStyle(PlannerStyle.text(task.status))
+        .background(PlannerStyle.fill(task.status), in: RoundedRectangle(cornerRadius: 3))
         .overlay(alignment: .leading) {
-            PlanBar(color: tint)
+            if let projectColor { PlanBar(color: projectColor) }
         }
-        .contentShape(RoundedRectangle(cornerRadius: 6))
+        .contentShape(RoundedRectangle(cornerRadius: 3))
         .onTapGesture { showing = true }
         .popover(isPresented: $showing, arrowEdge: .trailing) { PlanTaskPopover(task: task) { showing = false } }
         .draggable(TaskDrag.payload(task.localId)) { DragPreview(title: task.title) }
         .contextMenu { TaskMenu(task: task) }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
+        .accessibilityValue(StatusStyle.name(task.status))
     }
 
     private func lines(_ below: [String]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(task.title).font(.caption.weight(.semibold)).lineLimit(below.isEmpty ? 2 : 1).strikethrough(task.status == .done)
-            ForEach(below, id: \.self) { Text($0).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
+            Text((HelmDates.isOverdue(task, today: model.today) ? "! " : "") + task.title)
+                .font(.callout.weight(.medium)).lineLimit(below.isEmpty ? 2 : 1).strikethrough(task.status == .done)
+            ForEach(below, id: \.self) { Text($0).font(.caption).lineLimit(1) }
         }
     }
 }

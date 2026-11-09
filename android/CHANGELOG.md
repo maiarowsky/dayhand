@@ -3,6 +3,15 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## Unreleased
+
+### Changed
+
+- Calendar-led appearance: neutral surfaces, lime, olive and graphite blocks for To do, In progress and Done, and
+  a blue circle for today. Phones open the calendar on one day with a seven-day date row; the week stays
+  available. The same spacing and type carry through the other screens, and the earlier palettes and saved choices
+  remain. Measurements: [docs/design.md](../docs/design.md#calendar-led-appearance).
+
 ## 0.13.5 (2026-11-01)
 
 First public APK: [Dayhand Planner 0.13.5](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5).

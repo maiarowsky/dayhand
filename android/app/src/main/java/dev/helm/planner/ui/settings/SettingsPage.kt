@@ -44,8 +44,8 @@ fun SettingsPage(title: String, onBack: () -> Unit, tag: String, pinned: (@Compo
             Column(
                 Modifier
                     .weight(1f)
-                    .verticalScroll(rememberScrollState())
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = HelmDimens.screenMargin),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {

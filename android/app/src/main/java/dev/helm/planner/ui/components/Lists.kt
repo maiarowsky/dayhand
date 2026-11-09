@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.HelmShapes
@@ -37,8 +39,9 @@ import dev.helm.planner.ui.theme.palette
 /** Font scale from which what sits side by side is stacked instead, all of it whole (Mussh: accessibility sizes). */
 const val LARGE_TEXT_SCALE = 1.5f
 
-/** Widest a row's value may get before it ends in an ellipsis, so the name keeps its room (Mussh: 190 dp). */
+/** Widest a value may be beside its title; longer values move below it (Mussh: 190 dp). */
 private val VALUE_MAX_WIDTH = 190.dp
+private val VALUE_GAP = 12.dp
 
 /**
  * A list section (Mussh "SettingsGroup"): a muted upper-case label and a rounded card on `surface` whose rows are
@@ -62,8 +65,8 @@ fun ListGroup(title: String?, rows: List<@Composable () -> Unit>, modifier: Modi
  * A list row (Mussh "SettingsRow"), at least [HelmDimens.listRowMinHeight] high: a thin outline icon, the name, the
  * current value in muted text and "›" when it opens something. [note] is a muted line under the name (what a state
  * means); [trailing] is a control after it (a switch, a spinner). From [LARGE_TEXT_SCALE] the value goes under the
- * name and nothing is cut off. A tappable row is one button for a screen reader ([clickLabel] says what a tap does),
- * any other row one item.
+ * name, as it does when the complete texts would not fit side by side. A tappable row is one button for a screen
+ * reader ([clickLabel] says what a tap does), any other row one item.
  */
 @Composable
 fun ListRow(
@@ -83,10 +86,12 @@ fun ListRow(
     longClickLabel: String? = null,
     leadingContent: (@Composable () -> Unit)? = null,
     valueColor: Color = palette.textMuted,
+    /** Keep a long value whole below its title at every text size. */
+    valueBelowTitle: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
     val p = palette
-    val large = LocalDensity.current.fontScale >= LARGE_TEXT_SCALE
+    val stackedValue = valueBelowTitle || LocalDensity.current.fontScale >= LARGE_TEXT_SCALE
     Row(
         modifier
             .fillMaxWidth()
@@ -109,32 +114,8 @@ fun ListRow(
             LineIconView(it, if (enabled) p.textMuted else p.textFaint, size = HelmDimens.lineIcon)
             Spacer(Modifier.width(16.dp))
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            // A name next to a value stays on one line, as on Mussh; alone it wraps.
-            val oneLine = value != null && !large
-            Text(
-                title,
-                style = helmType.body,
-                color = if (enabled) titleColor else p.textFaint,
-                maxLines = if (oneLine) 1 else Int.MAX_VALUE,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (large) value?.let { Text(it, style = helmType.body, color = valueColor, modifier = Modifier.testTag("$tag-value")) }
-            note?.let { Text(it, style = helmType.small, color = p.textMuted) }
-        }
-        if (!large) {
-            value?.let {
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    it,
-                    style = helmType.body,
-                    color = valueColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.widthIn(max = VALUE_MAX_WIDTH).testTag("$tag-value"),
-                )
-            }
-        }
+        ListRowText(title, tag, value, note, if (enabled) titleColor else p.textFaint,
+            valueColor, stackedValue, Modifier.weight(1f))
         trailing?.let {
             Spacer(Modifier.width(12.dp))
             it()
@@ -142,6 +123,39 @@ fun ListRow(
         if (chevron ?: (onClick != null)) {
             Spacer(Modifier.width(8.dp))
             LineIconView(LineIcon.Chevron, p.textFaint, size = 18.dp)
+        }
+    }
+}
+
+/** Stack the value when the complete texts do not fit the space left by icons and controls. */
+@Composable
+private fun ListRowText(title: String, tag: String, value: String?, note: String?, titleColor: Color,
+    valueColor: Color, forceStack: Boolean, modifier: Modifier) {
+    BoxWithConstraints(modifier) {
+        val measurer = rememberTextMeasurer()
+        val style = helmType.body
+        val density = LocalDensity.current
+        val stacked = forceStack || value?.let {
+            val titleWidth = measurer.measure(title, style, maxLines = 1).size.width
+            val valueWidth = measurer.measure(it, style, maxLines = 1).size.width
+            titleWidth + valueWidth + with(density) { VALUE_GAP.roundToPx() } > constraints.maxWidth ||
+                valueWidth > with(density) { VALUE_MAX_WIDTH.roundToPx() }
+        } == true
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = style, color = titleColor,
+                    maxLines = if (value != null && !stacked) 1 else Int.MAX_VALUE,
+                    overflow = TextOverflow.Ellipsis)
+                if (stacked) value?.let {
+                    Text(it, style = style, color = valueColor, modifier = Modifier.testTag("$tag-value"))
+                }
+                note?.let { Text(it, style = helmType.small, color = palette.textMuted) }
+            }
+            if (!stacked) value?.let {
+                Spacer(Modifier.width(VALUE_GAP))
+                Text(it, style = style, color = valueColor, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = VALUE_MAX_WIDTH).testTag("$tag-value"))
+            }
         }
     }
 }

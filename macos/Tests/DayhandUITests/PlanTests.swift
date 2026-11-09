@@ -1,6 +1,7 @@
 import DayhandCore
 import DayhandLocalization
 import Foundation
+import SwiftUI
 import Testing
 @testable import DayhandUI
 
@@ -60,6 +61,28 @@ struct PlanTests {
         #expect(PlanLayout(height: 650).untimed == 3)
         #expect(PlanLayout(height: 2000).drawer == 190)
         #expect(PlanLayout(height: 200).drawer == 110)
+    }
+
+    @Test func aDaysTitleWithAllItsUntimedTasksFitsTheHeader() throws {
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        defaults.register(defaults: [AppModel.Keys.useOffline: true, AppModel.Keys.language: "en"])
+        let model = AppModel(AppEnvironment(
+            database: try AppDatabase.inMemory(), credentials: MemoryCredentialStore(), notifications: false, defaults: defaults
+        ))
+        let day = try #require(CivilDate("2026-10-22"))
+        let tasks = (1...5).map {
+            TaskItem(localId: "u\($0)", title: "Untimed task \($0)", dueDate: day.description, createdAt: 0, updatedAt: 0)
+        }
+        for height in [466.0, 650.0] {
+            let layout = PlanLayout(height: height)
+            // More untimed tasks than shown, so "+n more" is there too.
+            let header = PlanDayHeader(day: day, tasks: tasks, isToday: true, limit: layout.untimed)
+                .environmentObject(model)
+                .frame(width: 108)
+                .fixedSize(horizontal: false, vertical: true)
+            let needed = NSHostingView(rootView: header).fittingSize.height
+            #expect(needed <= layout.header, "\(height): the day's title needs \(needed), the header has \(layout.header)")
+        }
     }
 
     @Test func aPlacePlansItsActiveTasksDueInTheWeek() async throws {

@@ -2,6 +2,7 @@ package dev.helm.planner.ui.calendar
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,11 +38,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import dev.helm.planner.R
 import dev.helm.planner.domain.CalendarDay
 import dev.helm.planner.domain.CalendarDays
@@ -48,6 +52,7 @@ import dev.helm.planner.domain.CalendarEntry
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.theme.HelmDimens
+import dev.helm.planner.ui.theme.PlannerColors
 import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.DayOfWeek
@@ -59,7 +64,7 @@ val HOUR_HEIGHT: Dp = HelmDimens.touchTarget * 2
 val GUTTER_WIDTH: Dp = 48.dp
 
 /** How strongly today's column is tinted: enough to find it, not enough to compete with its tasks. */
-private const val TODAY_TINT = 0.22f
+private const val TODAY_TINT = 0.025f
 
 /** Room above the first hour shown, so its label (drawn just above its line) is not cut off. */
 val HOUR_LABEL_ROOM: Dp = 16.dp
@@ -97,7 +102,7 @@ internal fun HourLabels(modifier: Modifier, dates: List<String>) {
         Column(Modifier.fillMaxSize()) {
             repeat(HOURS) { hour ->
                 Box(Modifier.height(HOUR_HEIGHT).fillMaxWidth().padding(end = 6.dp), contentAlignment = Alignment.TopEnd) {
-                    if (hour > 0) Text("%02d:00".format(hour), style = helmType.small, color = p.textFaint, maxLines = 1, softWrap = false, modifier = Modifier.offset(y = LABEL_SHIFT))
+                    if (hour > 0) Text("%02d:00".format(hour), style = helmType.small, color = p.textFaint, maxLines = 1, softWrap = false, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -105,7 +110,7 @@ internal fun HourLabels(modifier: Modifier, dates: List<String>) {
     }
 }
 
-/** Hour labels sit centred on their line. */
+/** The moving drop guide sits centred on its line; ordinary labels stay below the line to clear pinned headers. */
 private val LABEL_SHIFT = (-9).dp
 
 @Composable
@@ -162,14 +167,14 @@ internal fun DayColumn(
     val p = palette
     BoxWithConstraints(
         modifier
-            .background(if (day.isToday) p.accentSoft.copy(alpha = TODAY_TINT) else p.background)
+            .background(if (day.isToday) PlannerColors.today(p).copy(alpha = TODAY_TINT) else p.surface)
             .dragGuide(day.date)
             .drawBehind {
                 val hour = HOUR_HEIGHT.toPx()
                 for (h in 0 until HOURS) {
-                    drawLine(p.border, Offset(0f, h * hour), Offset(size.width, h * hour), strokeWidth = 1.dp.toPx())
+                    drawLine(p.border, Offset(0f, h * hour), Offset(size.width, h * hour), strokeWidth = 0.5.dp.toPx())
                 }
-                drawLine(p.border, Offset(0f, 0f), Offset(0f, size.height), strokeWidth = 1.dp.toPx())
+                drawLine(p.border, Offset(0f, 0f), Offset(0f, size.height), strokeWidth = 0.5.dp.toPx())
             },
     ) {
         val laneSpace = maxWidth
@@ -200,7 +205,7 @@ internal fun DayColumn(
                     .offset(y = HOUR_HEIGHT * nowMinute / 60)
                     .fillMaxWidth()
                     .height(2.dp)
-                    .background(p.accent)
+                    .background(PlannerColors.today(p))
                     .testTag(CalendarTags.NOW_LINE),
             )
         }
@@ -209,10 +214,11 @@ internal fun DayColumn(
 
 /**
  * A day above the week's columns: short weekday (or its first letter when the short names do not fit, [narrow]) and
- * number; today in the accent, underlined; a tap opens the day.
+ * number; today in a blue circle; a tap opens the day. In the day view's date row [selected] marks the open day with
+ * an outline and tells a screen reader; above the week it is null and says nothing.
  */
 @Composable
-fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier, narrow: Boolean = false) {
+fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier = Modifier, narrow: Boolean = false, selected: Boolean? = null) {
     val p = palette
     val date = LocalDate.parse(day.date)
     val locale = appLocale()
@@ -228,28 +234,37 @@ fun DayHeader(day: CalendarDay, onOpenDay: (String) -> Unit, modifier: Modifier 
             .semantics(mergeDescendants = true) {
                 heading()
                 contentDescription = description
+                selected?.let { this.selected = it }
             }
-            .padding(top = 4.dp)
+            .padding(top = 6.dp, bottom = 6.dp)
             .testTag(CalendarTags.dayHeader(day.date)),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val color = if (day.isToday) p.accent else p.textMuted
+        val color = if (day.isToday) PlannerColors.today(p) else p.textMuted
         Text(date.dayOfWeek.getDisplayName(if (narrow) TextStyle.NARROW else TextStyle.SHORT, locale), style = helmType.small, color = color, maxLines = 1, softWrap = false)
-        Text(
-            date.dayOfMonth.toString(),
-            style = if (day.isToday) helmType.bodyStrong else helmType.body,
-            color = if (day.isToday) p.accent else p.text,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-        )
-        // Today is marked by a line as well as by colour.
         Box(
             Modifier
-                .padding(top = 4.dp)
-                .size(width = 24.dp, height = 2.dp)
+                .sizeIn(minWidth = 42.dp, minHeight = 42.dp)
                 .clip(CircleShape)
-                .background(if (day.isToday) p.accent else Color.Transparent),
-        )
+                .background(if (day.isToday) PlannerColors.today(p) else Color.Transparent)
+                .then(if (selected == true && !day.isToday) Modifier.border(1.dp, p.textMuted, CircleShape) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(date.dayOfMonth.toString(), style = dayNumberStyle(),
+                color = if (day.isToday) PlannerColors.onToday(p) else p.text, maxLines = 1)
+        }
+    }
+}
+
+/**
+ * The headline style for a day's number, no larger than [DAY_NUMBER_MAX] so that two digits stay inside the 42 dp
+ * circle and clear of the next day's number at the largest system font sizes.
+ */
+@Composable
+private fun dayNumberStyle() = helmType.headline.let { style ->
+    val density = LocalDensity.current
+    remember(style, density) {
+        with(density) { if (style.fontSize.toDp() <= DAY_NUMBER_MAX) style else style.copy(fontSize = DAY_NUMBER_MAX.toSp(), lineHeight = 1.25.em) }
     }
 }
 
@@ -267,6 +282,9 @@ fun shortWeekdaysFit(width: Dp): Boolean {
 
 /** Space kept either side of a weekday in its header. */
 private val HEADER_SPACE = 4.dp
+
+/** The largest a day's number in its circle grows with the system font size. */
+private val DAY_NUMBER_MAX = 26.dp
 
 /** "All day" in the hours' column, beside the band of tasks without a time. */
 @Composable
@@ -330,7 +348,11 @@ fun UntimedBars(day: CalendarDay, onOpenDay: (String) -> Unit, onHoldDay: (Calen
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         val shown = if (untimed.size > visible) untimed.take(visible - 1) else untimed
-        shown.forEach { Box(Modifier.fillMaxWidth().height(SHORT_BAR).clip(SHORT_BAR_SHAPE).background(p.colorsOf(it).bar)) }
+        shown.forEach {
+            val colors = p.colorsOf(it)
+            Box(Modifier.fillMaxWidth().height(SHORT_BAR).clip(SHORT_BAR_SHAPE)
+                .background(colors.background).border(0.5.dp, colors.bar, SHORT_BAR_SHAPE))
+        }
         val hidden = untimed.size - shown.size
         if (hidden > 0) Text(stringResource(R.string.calendar_more, hidden), style = helmType.small, color = p.textMuted, maxLines = 1, softWrap = false)
     }
