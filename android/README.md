@@ -583,7 +583,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # backup file (write, read, the server's export), sample plan, another server,
                                             # agents (answers, requests, proposals, the switch, tool policies and their refusals,
                                             # the health card, new requests)
-                                            # the installs widget's file (counts, missing counts, broken files), totals and address check,
+                                            # the installs widget's file (counts, missing counts, broken files), totals, address check and that a full widget shows every line,
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,

@@ -244,12 +244,13 @@ gives an HTTPS address inside your tailnet ([Phone and computer](deploy.md#phone
 On Android 12 and later the widget's settings change the address.
 
 The widget shows the day's total over both stores, the 7-day total, and a row per app with its iOS
-and Android counts as `day · 7 days`. A count the file does not have shows as `—` with the app, the
-store and its reason, never as 0. Both totals add up only the known counts. A total that leaves a
-count out (or, for the 7-day total, a known count without `last7`), or adds counts from different
-days, is partial: it shows with `+`, such as `17+`, and the note "+ partial". A total shows as `—`
-only when no count is known. The widget fetches the file every three hours and when you tap it. When
-the fetch fails it keeps showing the last file with the time it was fetched.
+and Android counts as `day · 7 days`. A count the file does not have shows as `—`, never as 0; under
+the rows the widget names the app, the store and the reason for the first two such counts. Both
+totals add up only the known counts. A total that leaves a count out (or, for the 7-day total, a
+known count without `last7`), or adds counts from different days, is partial: it shows with `+`,
+such as `17+`, and the note "+ partial". A total shows as `—` only when no count is known. The widget
+fetches the file every three hours and when you tap it. When the fetch fails it keeps showing the
+last file with the time it was fetched.
 
 ```json
 {
