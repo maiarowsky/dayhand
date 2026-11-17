@@ -40,7 +40,7 @@ data class WidgetData(
         if (url == null) return WidgetView.NotSet
         val report = body?.let { runCatching { InstallsJson.parse(it) }.getOrNull() }
         return when {
-            report != null && fetchedAt != null -> WidgetView.Showing(report, InstallsSummary.of(report), fetchedAt, failure)
+            report != null -> WidgetView.Showing(InstallsTable.of(report), failure)
             failure != null -> WidgetView.Failed(failure)
             else -> WidgetView.Loading
         }
@@ -55,54 +55,38 @@ sealed interface WidgetView {
     data class Failed(val failure: FetchFailure) : WidgetView
 
     /** The last good file; [failure] says the latest refresh did not replace it. */
-    data class Showing(
-        val report: InstallsReport,
-        val summary: InstallsSummary,
-        val fetchedAt: Long,
-        val failure: FetchFailure?,
-    ) : WidgetView
+    data class Showing(val table: InstallsTable, val failure: FetchFailure?) : WidgetView
 }
 
-data class DayRange(val first: LocalDate, val last: LocalDate)
-
-/** A sum of known counts; [partial] when it leaves a count out or adds counts from different days. */
-data class Total(val value: Int, val partial: Boolean)
-
-/** One app's store with no count, and why. */
-data class MissingCount(val app: String, val platform: Platform, val reason: MissingReason)
+/** One app's all-time installs per store and over both; a number is null when it would leave a count out. */
+data class TableRow(val name: String, val counts: Map<Platform, Int?>, val total: Int?)
 
 /**
- * The header and footer of the widget: the day's total and the 7-day total over the known counts (null when none is
- * known; partial when a count is missing, a known count has no 7-day value, or the counts are from different days), the
- * published days per store, and each count that is missing with its reason.
+ * The widget's table: a row per app, the oldest published day among the known counts, the stores with a count missing
+ * for lack of data, and whether a count is missing because the file has no `total` field.
  */
-data class InstallsSummary(
-    val dayTotal: Total?,
-    val weekTotal: Total?,
-    val days: Map<Platform, DayRange>,
-    val missing: List<MissingCount>,
+data class InstallsTable(
+    val rows: List<TableRow>,
+    val asOf: LocalDate?,
+    val storesWithoutData: List<Platform>,
+    val noTotalInFile: Boolean,
 ) {
-    /** The single day every known count is from, or null when the stores (or apps) are on different days. */
-    val commonDay: LocalDate?
-        get() = days.values.flatMap { listOf(it.first, it.last) }.distinct().singleOrNull()
-
     companion object {
-        fun of(report: InstallsReport): InstallsSummary {
-            val counts = report.apps.flatMap { app -> Platform.entries.map { Triple(app.name, it, app.count(it)) } }
-            val known = counts.mapNotNull { (_, platform, count) -> (count as? PlatformCount.Known)?.let { platform to it } }
-            val missing = counts.mapNotNull { (app, platform, count) ->
-                (count as? PlatformCount.Missing)?.let { MissingCount(app, platform, it.reason) }
+        fun of(report: InstallsReport): InstallsTable {
+            val rows = report.apps.map { app ->
+                val counts = Platform.entries.associateWith { (app.count(it) as? PlatformCount.Known)?.total }
+                TableRow(app.name, counts, sum(counts.values))
             }
-            val partial = missing.isNotEmpty() || known.map { it.second.day }.distinct().size > 1
-            val weeks = known.map { it.second.last7 }
-            return InstallsSummary(
-                dayTotal = total(known.map { it.second.value }, partial),
-                weekTotal = total(weeks.filterNotNull(), partial || null in weeks),
-                days = known.groupBy({ it.first }, { it.second.day }).mapValues { (_, d) -> DayRange(d.min(), d.max()) },
-                missing = missing,
+            val counts = report.apps.flatMap { app -> Platform.entries.map { it to app.count(it) } }
+            val reasons = counts.mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }
+            return InstallsTable(
+                rows = rows,
+                asOf = counts.mapNotNull { (it.second as? PlatformCount.Known)?.day }.minOrNull(),
+                storesWithoutData = reasons.filter { it.second != MissingReason.NO_TOTAL }.map { it.first }.distinct().sorted(),
+                noTotalInFile = reasons.any { it.second == MissingReason.NO_TOTAL },
             )
         }
 
-        private fun total(values: List<Int>, partial: Boolean): Total? = values.takeIf { it.isNotEmpty() }?.let { Total(it.sum(), partial) }
+        private fun sum(values: Collection<Int?>): Int? = values.takeIf { it.isNotEmpty() && null !in it }?.filterNotNull()?.sum()
     }
 }

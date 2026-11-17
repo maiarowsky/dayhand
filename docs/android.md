@@ -233,9 +233,9 @@ cannot do: [Agents and you](agents.md).
 
 ## Store installs widget
 
-A home screen widget shows how many people installed your own apps from the App Store and Google Play.
-The stores publish installs once a day, about a day late (Apple) or one to two days late (Google), so
-the widget shows the latest published day and the last 7 days, not live numbers.
+A home screen widget shows how many people installed your own apps from the App Store and Google Play,
+in total since each app came out. The stores publish installs once a day, about a day late (Apple) or
+one to two days late (Google), so the numbers are as of the latest published day, not live.
 
 Add **Store installs** from the home screen's widget list. It asks for the address of a JSON file in
 the format below, which a program of yours writes from the stores' reports (Dayhand does not read the
@@ -243,14 +243,12 @@ stores itself). Release builds read it over HTTPS only; for a file on your compu
 gives an HTTPS address inside your tailnet ([Phone and computer](deploy.md#phone-and-computer-tailscale)).
 On Android 12 and later the widget's settings change the address.
 
-The widget shows the day's total over both stores, the 7-day total, and a row per app with its iOS
-and Android counts as `day · 7 days`. A count the file does not have shows as `—`, never as 0; under
-the rows the widget names the app, the store and the reason for the first two such counts. Both
-totals add up only the known counts. A total that leaves a count out (or, for the 7-day total, a
-known count without `last7`), or adds counts from different days, is partial: it shows with `+`,
-such as `17+`, and the note "+ partial". A total shows as `—` only when no count is known. The widget
-fetches the file every three hours and when you tap it. When the fetch fails it keeps showing the
-last file with the time it was fetched.
+The widget is a table with the columns App, iOS, Android and Total: a row per app with its total
+installs on each store and over both. Above the table a line says "as of" the oldest `day` among the
+numbers shown. A number the file does not have shows as `—`, never as 0, and so does the Total of its
+row: the widget never shows a sum that leaves a number out. One line under the table says why numbers
+are missing: which store has no data, such as "Android: no data from Google Play", and "no total in
+the file" when an entry lacks `total`. The widget fetches the file every three hours and when you tap it. When the fetch fails it keeps showing the last file and says why.
 
 ```json
 {
@@ -259,8 +257,8 @@ last file with the time it was fetched.
   "apps": [
     {
       "name": "Example",
-      "ios": {"day": "2026-11-16", "value": 12, "last7": 80},
-      "android": {"day": null, "value": null, "last7": null, "note": "no Play report yet"}
+      "ios": {"day": "2026-11-16", "value": 12, "last7": 80, "total": 1520},
+      "android": {"day": null, "value": null, "last7": null, "total": null, "note": "no Play report yet"}
     }
   ]
 }
@@ -271,15 +269,16 @@ last file with the time it was fetched.
 | `schema` | `1`. Any other value and the widget refuses the file. |
 | `generatedAt` | When the file was written, ISO 8601 with a time zone; optional, the widget does not read it. |
 | `apps[].name` | The app's name, as the row shows it. |
-| `apps[].ios`, `apps[].android` | One store's count. A store left out shows as "not in the file". |
-| `day` | The published day the count is for (`YYYY-MM-DD`). |
-| `value` | Installs on that day, a whole number of 0 or more; `null` when there is no count. |
-| `last7` | Installs over the 7 days ending on `day`; optional. |
-| `note` | Why `value` is `null`, shown on the widget. |
+| `apps[].ios`, `apps[].android` | One store's numbers. A store left out shows as `—`. |
+| `day` | The published day the numbers are for (`YYYY-MM-DD`). |
+| `total` | All installs from the app's release up to `day`, a whole number of 0 or more; `null` when there is no number. The widget shows this one. |
+| `value` | Installs on `day`; optional, the widget does not read it. |
+| `last7` | Installs over the 7 days ending on `day`; optional, the widget does not read it. |
+| `note` | Why `total` is `null`; for the program's own log, the widget does not show it. |
 
 A file that is not JSON, has another schema or lacks `apps` is refused, and the widget
-keeps the last good one. A broken entry (a count without a day, a negative count, a number in quotes)
-shows as "invalid entry" for that count only. Fields the widget does not know are ignored.
+keeps the last good one. A broken entry (a total without a day, a negative total, a number in quotes)
+shows as `—` for that number only. Fields the widget does not know are ignored.
 
 ## Backups
 

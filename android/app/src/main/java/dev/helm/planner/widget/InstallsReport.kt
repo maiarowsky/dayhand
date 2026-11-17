@@ -13,28 +13,29 @@ import kotlinx.serialization.json.intOrNull
 
 enum class Platform(val key: String) { IOS("ios"), ANDROID("android") }
 
-/** One app on one store: a published day's count, or why there is none. A missing count is never zero. */
+/** One app on one store: all installs up to a published day, or why there is no such number. A missing count is never zero. */
 sealed interface PlatformCount {
-    data class Known(val day: LocalDate, val value: Int, val last7: Int?) : PlatformCount
+    data class Known(val day: LocalDate, val total: Int) : PlatformCount
 
     data class Missing(val reason: MissingReason) : PlatformCount
 }
 
-sealed interface MissingReason {
-    /** The generator's own words, such as "Apple has not published the report yet". */
-    data class Stated(val note: String) : MissingReason
-
-    data object NotGiven : MissingReason
+enum class MissingReason {
+    /** `total` is `null`: the store's reports gave no number. */
+    NO_DATA,
 
     /** The app has no entry for this store in the file. */
-    data object NotInFile : MissingReason
+    NOT_IN_FILE,
 
-    /** The entry is there but malformed (a count without a day, a negative count, text instead of a number). */
-    data object Invalid : MissingReason
+    /** The entry has no `total` field, as files written before the field existed. */
+    NO_TOTAL,
+
+    /** The entry is there but malformed (a total without a day, a negative total, text instead of a number). */
+    INVALID,
 }
 
 data class AppInstalls(val name: String, val counts: Map<Platform, PlatformCount>) {
-    fun count(platform: Platform): PlatformCount = counts[platform] ?: PlatformCount.Missing(MissingReason.NotInFile)
+    fun count(platform: Platform): PlatformCount = counts[platform] ?: PlatformCount.Missing(MissingReason.NOT_IN_FILE)
 }
 
 data class InstallsReport(val apps: List<AppInstalls>)
@@ -43,7 +44,7 @@ class InvalidInstallsFile(message: String, cause: Throwable? = null) : Exception
 
 /**
  * The installs file the widget reads (docs/android.md#store-installs-widget), schema 1. A broken file as a whole is refused with
- * [InvalidInstallsFile]; one broken entry only marks that count [MissingReason.Invalid]. Unknown fields are ignored.
+ * [InvalidInstallsFile]; one broken entry only marks that count [MissingReason.INVALID]. Unknown fields are ignored.
  */
 object InstallsJson {
     const val SCHEMA = 1
@@ -68,22 +69,17 @@ object InstallsJson {
 
     private fun count(element: JsonElement?): PlatformCount {
         val entry = when (element) {
-            null, JsonNull -> return PlatformCount.Missing(MissingReason.NotInFile)
+            null, JsonNull -> return PlatformCount.Missing(MissingReason.NOT_IN_FILE)
             is JsonObject -> element
-            else -> return PlatformCount.Missing(MissingReason.Invalid)
+            else -> return PlatformCount.Missing(MissingReason.INVALID)
         }
-        val value = entry["value"]
-        if (value == null || value == JsonNull) {
-            val note = entry.text("note")?.trim()?.takeIf { it.isNotEmpty() }
-            return PlatformCount.Missing(note?.let(MissingReason::Stated) ?: MissingReason.NotGiven)
+        val total = when (val field = entry["total"]) {
+            null -> return PlatformCount.Missing(MissingReason.NO_TOTAL)
+            JsonNull -> return PlatformCount.Missing(MissingReason.NO_DATA)
+            else -> field.count() ?: return PlatformCount.Missing(MissingReason.INVALID)
         }
-        val count = value.count() ?: return PlatformCount.Missing(MissingReason.Invalid)
-        val day = entry.text("day")?.let(::date) ?: return PlatformCount.Missing(MissingReason.Invalid)
-        val last7 = when (val week = entry["last7"]) {
-            null, JsonNull -> null
-            else -> week.count() ?: return PlatformCount.Missing(MissingReason.Invalid)
-        }
-        return PlatformCount.Known(day, count, last7)
+        val day = entry.text("day")?.let(::date) ?: return PlatformCount.Missing(MissingReason.INVALID)
+        return PlatformCount.Known(day, total)
     }
 
     private fun JsonElement.count(): Int? = (this as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull?.takeIf { it >= 0 }

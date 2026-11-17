@@ -2,6 +2,7 @@ package dev.helm.planner.widget
 
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -10,24 +11,23 @@ class InstallsStateTest {
     private val url = "https://mac.tail0000.ts.net/installs.json"
     private val good = """
         {"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [
-          {"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 5, "last7": 31}},
-          {"name": "Beta", "ios": {"day": "2026-11-16", "value": 0, "last7": 4}, "android": {"value": null, "note": "no Play report"}},
-          {"name": "Gamma", "ios": {"value": null, "note": "no Play report"}, "android": {"value": null, "note": "no Play report"}}
+          {"name": "Alpha", "ios": {"day": "2026-11-16", "total": 1200}, "android": {"day": "2026-11-15", "total": 340}},
+          {"name": "Beta", "ios": {"day": "2026-11-16", "total": 0}, "android": {"day": "2026-11-14", "total": 25}}
         ]}
     """.trimIndent()
 
     @Test
-    fun aFailedRefreshKeepsTheLastFileAndItsTime() {
+    fun aFailedRefreshKeepsTheLastFile() {
         val loaded = WidgetData(url).after(FetchResult.Body(good), now = 1_000)
 
         val offline = loaded.after(FetchResult.Failed(FetchFailure.Network), now = 2_000)
         val broken = loaded.after(FetchResult.Body("{oops"), now = 3_000)
 
         listOf(offline to FetchFailure.Network, broken to FetchFailure.InvalidFile).forEach { (data, failure) ->
+            assertEquals(1_000L, data.fetchedAt)
             val view = data.view() as WidgetView.Showing
-            assertEquals(1_000L, view.fetchedAt)
             assertEquals(failure, view.failure)
-            assertEquals(Total(17, partial = true), view.summary.dayTotal)
+            assertEquals(1540, view.table.rows.first().total)
         }
     }
 
@@ -37,7 +37,7 @@ class InstallsStateTest {
 
         val view = data.view() as WidgetView.Showing
         assertNull(view.failure)
-        assertEquals(5_000L, view.fetchedAt)
+        assertEquals(5_000L, data.fetchedAt)
     }
 
     @Test
@@ -48,52 +48,55 @@ class InstallsStateTest {
     }
 
     @Test
-    fun totalsCountOnlyKnownNumbersAndSayTheyArePartial() {
-        val summary = InstallsSummary.of(InstallsJson.parse(good))
+    fun everyCountKnownAddsUpEachRow() {
+        val table = InstallsTable.of(InstallsJson.parse(good))
 
-        assertEquals(Total(17, partial = true), summary.dayTotal)
-        assertEquals(Total(115, partial = true), summary.weekTotal)
-        assertEquals(
-            mapOf(
-                Platform.IOS to DayRange(LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 16)),
-                Platform.ANDROID to DayRange(LocalDate.of(2026, 11, 15), LocalDate.of(2026, 11, 15)),
-            ),
-            summary.days,
-        )
-        assertNull(summary.commonDay)
         assertEquals(
             listOf(
-                MissingCount("Beta", Platform.ANDROID, MissingReason.Stated("no Play report")),
-                MissingCount("Gamma", Platform.IOS, MissingReason.Stated("no Play report")),
-                MissingCount("Gamma", Platform.ANDROID, MissingReason.Stated("no Play report")),
+                TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to 340), 1540),
+                TableRow("Beta", mapOf(Platform.IOS to 0, Platform.ANDROID to 25), 25),
             ),
-            summary.missing,
+            table.rows,
         )
+        assertEquals(LocalDate.of(2026, 11, 14), table.asOf)
+        assertEquals(emptyList<Platform>(), table.storesWithoutData)
+        assertFalse(table.noTotalInFile)
     }
 
     @Test
-    fun nothingKnownIsNoTotalNotZero() {
-        val report = InstallsJson.parse(
-            """{"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [{"name": "Alpha", "ios": {"value": null}, "android": {"value": null}}]}""",
+    fun aMissingCountBlanksItsRowSumNeverAPartialSum() {
+        val table = table(
+            """{"name": "Alpha", "ios": {"day": "2026-11-16", "total": 1200}, "android": {"day": "2026-11-15", "total": null, "note": "HTTP 403"}}""",
+            """{"name": "Beta", "ios": {"day": "2026-11-16", "total": 7}, "android": {"day": "2026-11-15", "total": 25}}""",
         )
 
-        val summary = InstallsSummary.of(report)
-        assertNull(summary.dayTotal)
-        assertNull(summary.weekTotal)
-        assertTrue(summary.days.isEmpty())
+        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to null), null), table.rows[0])
+        assertEquals(TableRow("Beta", mapOf(Platform.IOS to 7, Platform.ANDROID to 25), 32), table.rows[1])
+        assertEquals(listOf(Platform.ANDROID), table.storesWithoutData)
+        assertFalse(table.noTotalInFile)
     }
 
     @Test
-    fun aMissingWeekMakesOnlyTheWeekTotalPartial() {
-        val report = InstallsJson.parse(
-            """{"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 2, "last7": 9}, "android": {"day": "2026-11-16", "value": 1}}]}""",
-        )
+    fun anOldFileWithoutTotalsShowsNoNumbersAndSaysSo() {
+        val table = table("""{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 3}}""")
 
-        val summary = InstallsSummary.of(report)
-        assertEquals(Total(3, partial = false), summary.dayTotal)
-        assertEquals(Total(9, partial = true), summary.weekTotal)
-        assertEquals(LocalDate.of(2026, 11, 16), summary.commonDay)
+        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to null, Platform.ANDROID to null), null), table.rows.single())
+        assertNull(table.asOf)
+        assertEquals(emptyList<Platform>(), table.storesWithoutData)
+        assertTrue(table.noTotalInFile)
     }
+
+    @Test
+    fun nothingKnownIsNoSumNotZero() {
+        val table = table("""{"name": "Alpha", "ios": {"total": null}}""")
+
+        assertNull(table.rows.single().total)
+        assertNull(table.asOf)
+        assertEquals(listOf(Platform.IOS, Platform.ANDROID), table.storesWithoutData)
+    }
+
+    private fun table(vararg apps: String) =
+        InstallsTable.of(InstallsJson.parse("""{"schema": 1, "apps": [${apps.joinToString(",")}]}"""))
 
     @Test
     fun addressesNeedHttpsOrAnOpenedHost() {

@@ -37,17 +37,11 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import dev.helm.planner.R
 import java.text.NumberFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Date
 import java.util.Locale
 
 /**
- * Store installs on the home screen: the latest published day's total over both stores, the 7-day total, and a row
- * per app with its iOS and Android counts (day · 7 days). A tap fetches the file again; before an address is set
- * it opens the setup screen.
+ * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs. A tap fetches the file again; before an address is set it opens the setup screen.
  */
 class InstallsWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -83,8 +77,7 @@ class RefreshInstalls : ActionCallback {
 }
 
 private const val MAX_APPS = 6
-private const val MAX_REASONS = 2
-private val CELL_WIDTH = 64.dp
+private val CELL_WIDTH = 56.dp
 
 @Composable
 internal fun InstallsContent(view: WidgetView) {
@@ -117,78 +110,63 @@ private fun Report(view: WidgetView.Showing) {
     val context = LocalContext.current
     val locale = context.resources.configuration.locales[0]
     val numbers = NumberFormat.getIntegerInstance(locale)
-    val days = dayFormatter(locale)
-    val summary = view.summary
+    val table = view.table
     val muted = GlanceTheme.colors.onSurfaceVariant
+    val strong = GlanceTheme.colors.onSurface
     // Glance keeps at most 10 children per Column and silently drops the rest, so each block is its own Column.
     Column(GlanceModifier.fillMaxWidth()) {
-        Text(context.getString(R.string.installs_title), style = small(muted))
-        Text(dateLabel(context, summary, days), style = small(muted))
-        Text(
-            totalText(summary.dayTotal, numbers),
-            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
+        Text(context.getString(R.string.installs_title), style = TextStyle(color = strong, fontSize = 14.sp, fontWeight = FontWeight.Bold))
+        table.asOf?.let { Text(context.getString(R.string.installs_as_of, dayFormatter(locale).format(it)), style = small(muted)) }
+        Spacer(GlanceModifier.height(6.dp))
+    }
+    Column(GlanceModifier.fillMaxWidth()) {
+        TableLine(
+            context.getString(R.string.installs_column_app),
+            Platform.entries.map { platformName(context, it) } + context.getString(R.string.installs_column_total),
+            small(muted),
         )
-        val week = context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers))
-        val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
-        Text(if (partial) "$week · ${context.getString(R.string.installs_partial)}" else week, style = small(muted))
-        view.failure?.let { Text(failureText(context, it), style = tiny(GlanceTheme.colors.error)) }
-        Text(context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days)), style = tiny(muted))
-    }
-    Column(GlanceModifier.fillMaxWidth()) {
-        Row(GlanceModifier.fillMaxWidth()) {
-            Text(context.getString(R.string.installs_legend), style = tiny(muted), modifier = GlanceModifier.defaultWeight())
-            Platform.entries.forEach { Text(platformName(context, it), style = tiny(muted, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH)) }
-        }
-        view.report.apps.take(MAX_APPS).forEach { app ->
-            Row(GlanceModifier.fillMaxWidth()) {
-                Text(app.name, style = row(GlanceTheme.colors.onSurface), modifier = GlanceModifier.defaultWeight())
-                Platform.entries.forEach { platform ->
-                    Text(cell(app.count(platform), numbers), style = row(GlanceTheme.colors.onSurface, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH))
-                }
-            }
+        table.rows.take(MAX_APPS).forEach { row ->
+            TableLine(row.name, Platform.entries.map { number(row.counts[it], numbers) } + number(row.total, numbers), cell(strong))
         }
     }
     Column(GlanceModifier.fillMaxWidth()) {
-        summary.missing.take(MAX_REASONS).forEach { (app, platform, reason) ->
-            Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted))
+        footnote(context, table)?.let {
+            Spacer(GlanceModifier.height(4.dp))
+            Text(it, style = small(muted))
         }
+        view.failure?.let { Text(failureText(context, it), style = small(GlanceTheme.colors.error)) }
+    }
+}
+
+@Composable
+private fun TableLine(name: String, cells: List<String>, style: TextStyle) {
+    Row(GlanceModifier.fillMaxWidth().padding(vertical = 1.dp)) {
+        Text(name, style = style, maxLines = 1, modifier = GlanceModifier.defaultWeight())
+        cells.forEach { Text(it, style = style.copy(textAlign = TextAlign.End), maxLines = 1, modifier = GlanceModifier.width(CELL_WIDTH)) }
     }
 }
 
 private const val DASH = "—"
-private const val PARTIAL = "+"
 
-private fun totalText(total: Total?, numbers: NumberFormat): String =
-    total?.let { numbers.format(it.value) + if (it.partial) PARTIAL else "" } ?: DASH
+private fun number(value: Int?, numbers: NumberFormat): String = value?.let(numbers::format) ?: DASH
 
 private fun small(color: ColorProvider) = TextStyle(color = color, fontSize = 12.sp)
 
-private fun tiny(color: ColorProvider, align: TextAlign = TextAlign.Start) = TextStyle(color = color, fontSize = 10.sp, textAlign = align)
-
-private fun row(color: ColorProvider, align: TextAlign = TextAlign.Start) = TextStyle(color = color, fontSize = 12.sp, textAlign = align)
-
-private fun cell(count: PlatformCount, numbers: NumberFormat): String = when (count) {
-    is PlatformCount.Known -> count.last7?.let { "${numbers.format(count.value)} · ${numbers.format(it)}" } ?: numbers.format(count.value)
-    is PlatformCount.Missing -> DASH
-}
+private fun cell(color: ColorProvider) = TextStyle(color = color, fontSize = 14.sp)
 
 private fun dayFormatter(locale: Locale): DateTimeFormatter =
     DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dM"), locale)
 
-/** One date when every count is from the same day, else each store's day (or range of days). */
-private fun dateLabel(context: Context, summary: InstallsSummary, days: DateTimeFormatter): String {
-    summary.commonDay?.let { return days.format(it) }
-    return summary.days.entries.sortedBy { it.key }.joinToString(" · ") { (platform, range) ->
-        val text = if (range.first == range.last) days.format(range.first) else "${days.format(range.first)}–${days.format(range.last)}"
-        "${platformName(context, platform)} $text"
+/** One short line on why a number is missing: the stores without data, or a file that has no totals. */
+private fun footnote(context: Context, table: InstallsTable): String? {
+    val stores = when (table.storesWithoutData.toSet()) {
+        emptySet<Platform>() -> null
+        setOf(Platform.IOS) -> R.string.installs_no_data_ios
+        setOf(Platform.ANDROID) -> R.string.installs_no_data_android
+        else -> R.string.installs_no_data_both
     }
-}
-
-private fun fetchedLabel(context: Context, at: Long, days: DateTimeFormatter): String {
-    val zone = ZoneId.systemDefault()
-    val day = Instant.ofEpochMilli(at).atZone(zone).toLocalDate()
-    val time = DateFormat.getTimeFormat(context).format(Date(at))
-    return if (day == LocalDate.now(zone)) time else "${days.format(day)} $time"
+    val parts = listOfNotNull(stores, R.string.installs_no_total.takeIf { table.noTotalInFile })
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ") { context.getString(it) }
 }
 
 private fun platformName(context: Context, platform: Platform): String = context.getString(
@@ -197,13 +175,6 @@ private fun platformName(context: Context, platform: Platform): String = context
         Platform.ANDROID -> R.string.installs_android
     },
 )
-
-private fun reasonText(context: Context, reason: MissingReason): String = when (reason) {
-    is MissingReason.Stated -> reason.note
-    MissingReason.NotGiven -> context.getString(R.string.installs_reason_none)
-    MissingReason.NotInFile -> context.getString(R.string.installs_reason_not_in_file)
-    MissingReason.Invalid -> context.getString(R.string.installs_reason_invalid)
-}
 
 private fun failureText(context: Context, failure: FetchFailure): String = when (failure) {
     FetchFailure.Network -> context.getString(R.string.installs_failure_network)
