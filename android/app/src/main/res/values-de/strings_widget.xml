@@ -4,6 +4,7 @@
     <string name="installs_widget_description">Installationen aus App Store und Google Play</string>
     <string name="installs_title">Installationen</string>
     <string name="installs_week_total">7 Tage: %1$s</string>
+    <string name="installs_partial">+ unvollständig</string>
     <string name="installs_legend">Tag · 7 Tage</string>
     <string name="installs_fetched">abgerufen %1$s</string>
     <string name="installs_failure_network">Keine Verbindung</string>

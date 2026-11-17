@@ -127,12 +127,14 @@ private fun Report(view: WidgetView.Showing) {
     }
     Row(verticalAlignment = Alignment.Bottom) {
         Text(
-            summary.dayTotal?.let(numbers::format) ?: DASH,
+            totalText(summary.dayTotal, numbers),
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
         )
         Spacer(GlanceModifier.width(8.dp))
+        val week = context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers))
+        val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
         Text(
-            context.getString(R.string.installs_week_total, summary.weekTotal?.let(numbers::format) ?: DASH),
+            if (partial) "$week · ${context.getString(R.string.installs_partial)}" else week,
             style = small(muted),
             modifier = GlanceModifier.padding(bottom = 4.dp),
         )
@@ -145,12 +147,12 @@ private fun Report(view: WidgetView.Showing) {
         Row(GlanceModifier.fillMaxWidth()) {
             Text(app.name, style = row(GlanceTheme.colors.onSurface), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
             Platform.entries.forEach { platform ->
-                Text(cell(app.count(platform), numbers), style = row(GlanceTheme.colors.onSurface, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH), maxLines = 1)
+                Text(cell(app.count(platform), numbers), style = row(GlanceTheme.colors.onSurface, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH))
             }
         }
     }
-    summary.missing.take(MAX_REASONS).forEach { (platform, reason) ->
-        Text("$DASH ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted), maxLines = 1)
+    summary.missing.take(MAX_REASONS).forEach { (app, platform, reason) ->
+        Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted), maxLines = 1)
     }
     val fetched = context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days))
     if (view.failure == null) {
@@ -161,6 +163,10 @@ private fun Report(view: WidgetView.Showing) {
 }
 
 private const val DASH = "—"
+private const val PARTIAL = "+"
+
+private fun totalText(total: Total?, numbers: NumberFormat): String =
+    total?.let { numbers.format(it.value) + if (it.partial) PARTIAL else "" } ?: DASH
 
 private fun small(color: ColorProvider) = TextStyle(color = color, fontSize = 12.sp)
 

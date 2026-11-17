@@ -4,6 +4,7 @@
     <string name="installs_widget_description">App Store と Google Play のインストール数</string>
     <string name="installs_title">インストール数</string>
     <string name="installs_week_total">7日間: %1$s</string>
+    <string name="installs_partial">+ 一部のみ</string>
     <string name="installs_legend">日 · 7日間</string>
     <string name="installs_fetched">取得 %1$s</string>
     <string name="installs_failure_network">接続できません</string>

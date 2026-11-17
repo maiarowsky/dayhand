@@ -1,6 +1,5 @@
 package dev.helm.planner.widget
 
-import java.time.Instant
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -27,7 +26,6 @@ class InstallsJsonTest {
     fun readsCountsAndReasons() {
         val report = InstallsJson.parse(sample)
 
-        assertEquals(Instant.parse("2026-11-17T06:30:00Z"), report.generatedAt)
         assertEquals(listOf("Alpha", "Beta"), report.apps.map { it.name })
         val alpha = report.apps[0]
         assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 12, 80), alpha.count(Platform.IOS))
@@ -64,10 +62,11 @@ class InstallsJsonTest {
     }
 
     @Test
-    fun offsetsInGeneratedAtAreRead() {
-        val report = InstallsJson.parse("""{"schema": 1, "generatedAt": "2026-11-17T07:30:00.250+01:00", "apps": []}""")
-
-        assertEquals(Instant.parse("2026-11-17T06:30:00.250Z"), report.generatedAt)
+    fun generatedAtIsOptional() {
+        val app = """{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 3}}"""
+        listOf("""{"schema": 1, "apps": [$app]}""", """{"schema": 1, "generatedAt": "yesterday", "apps": [$app]}""").forEach { text ->
+            assertEquals(text, listOf("Alpha"), InstallsJson.parse(text).apps.map { it.name })
+        }
     }
 
     @Test
@@ -80,8 +79,6 @@ class InstallsJsonTest {
             """{"generatedAt": "2026-11-17T06:30:00Z", "apps": []}""",
             """{"schema": 2, "generatedAt": "2026-11-17T06:30:00Z", "apps": []}""",
             """{"schema": "1", "generatedAt": "2026-11-17T06:30:00Z", "apps": []}""",
-            """{"schema": 1, "apps": []}""",
-            """{"schema": 1, "generatedAt": "yesterday", "apps": []}""",
             """{"schema": 1, "generatedAt": "2026-11-17T06:30:00Z"}""",
             """{"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [{"ios": {"value": null}}]}""",
             """{"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [{"name": "  "}]}""",

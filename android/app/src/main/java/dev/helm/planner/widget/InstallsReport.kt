@@ -1,8 +1,6 @@
 package dev.helm.planner.widget
 
-import java.time.Instant
 import java.time.LocalDate
-import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -39,12 +37,12 @@ data class AppInstalls(val name: String, val counts: Map<Platform, PlatformCount
     fun count(platform: Platform): PlatformCount = counts[platform] ?: PlatformCount.Missing(MissingReason.NotInFile)
 }
 
-data class InstallsReport(val generatedAt: Instant, val apps: List<AppInstalls>)
+data class InstallsReport(val apps: List<AppInstalls>)
 
 class InvalidInstallsFile(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**
- * The installs file the widget reads (docs/installs-widget.md), schema 1. A broken file as a whole is refused with
+ * The installs file the widget reads (docs/android.md#store-installs-widget), schema 1. A broken file as a whole is refused with
  * [InvalidInstallsFile]; one broken entry only marks that count [MissingReason.Invalid]. Unknown fields are ignored.
  */
 object InstallsJson {
@@ -58,9 +56,8 @@ object InstallsJson {
         } as? JsonObject ?: throw InvalidInstallsFile("not a JSON object")
         val schema = (root["schema"] as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull
         if (schema != SCHEMA) throw InvalidInstallsFile("schema ${root["schema"]} is not $SCHEMA")
-        val generatedAt = root.text("generatedAt")?.let(::instant) ?: throw InvalidInstallsFile("no generatedAt")
         val apps = root["apps"] as? JsonArray ?: throw InvalidInstallsFile("no apps")
-        return InstallsReport(generatedAt, apps.map(::app))
+        return InstallsReport(apps.map(::app))
     }
 
     private fun app(element: JsonElement): AppInstalls {
@@ -95,12 +92,6 @@ object InstallsJson {
 
     private fun date(text: String): LocalDate? = try {
         LocalDate.parse(text)
-    } catch (_: DateTimeParseException) {
-        null
-    }
-
-    private fun instant(text: String): Instant? = try {
-        OffsetDateTime.parse(text).toInstant()
     } catch (_: DateTimeParseException) {
         null
     }

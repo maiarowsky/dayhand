@@ -244,9 +244,12 @@ gives an HTTPS address inside your tailnet ([Phone and computer](deploy.md#phone
 On Android 12 and later the widget's settings change the address.
 
 The widget shows the day's total over both stores, the 7-day total, and a row per app with its iOS
-and Android counts as `day · 7 days`. A count the file does not have shows as `—` with its reason,
-never as 0. The widget fetches the file every three hours and when you tap it. When the fetch fails
-it keeps showing the last file with the time it was fetched.
+and Android counts as `day · 7 days`. A count the file does not have shows as `—` with the app, the
+store and its reason, never as 0. Both totals add up only the known counts. A total that leaves a
+count out (or, for the 7-day total, a known count without `last7`), or adds counts from different
+days, is partial: it shows with `+`, such as `17+`, and the note "+ partial". A total shows as `—`
+only when no count is known. The widget fetches the file every three hours and when you tap it. When
+the fetch fails it keeps showing the last file with the time it was fetched.
 
 ```json
 {
@@ -265,7 +268,7 @@ it keeps showing the last file with the time it was fetched.
 | Field | Meaning |
 |---|---|
 | `schema` | `1`. Any other value and the widget refuses the file. |
-| `generatedAt` | When the file was written, ISO 8601 with a time zone. |
+| `generatedAt` | When the file was written, ISO 8601 with a time zone; optional, the widget does not read it. |
 | `apps[].name` | The app's name, as the row shows it. |
 | `apps[].ios`, `apps[].android` | One store's count. A store left out shows as "not in the file". |
 | `day` | The published day the count is for (`YYYY-MM-DD`). |
@@ -273,7 +276,7 @@ it keeps showing the last file with the time it was fetched.
 | `last7` | Installs over the 7 days ending on `day`; optional. |
 | `note` | Why `value` is `null`, shown on the widget. |
 
-A file that is not JSON, has another schema or lacks `generatedAt` or `apps` is refused, and the widget
+A file that is not JSON, has another schema or lacks `apps` is refused, and the widget
 keeps the last good one. A broken entry (a count without a day, a negative count, a number in quotes)
 shows as "invalid entry" for that count only. Fields the widget does not know are ignored.
 

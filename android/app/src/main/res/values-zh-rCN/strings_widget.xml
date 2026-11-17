@@ -4,6 +4,7 @@
     <string name="installs_widget_description">来自 App Store 和 Google Play 的安装量</string>
     <string name="installs_title">安装量</string>
     <string name="installs_week_total">7 天：%1$s</string>
+    <string name="installs_partial">+ 不完整</string>
     <string name="installs_legend">当天 · 7 天</string>
     <string name="installs_fetched">获取于 %1$s</string>
     <string name="installs_failure_network">无连接</string>

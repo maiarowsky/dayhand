@@ -27,7 +27,7 @@ class InstallsStateTest {
             val view = data.view() as WidgetView.Showing
             assertEquals(1_000L, view.fetchedAt)
             assertEquals(failure, view.failure)
-            assertEquals(17, view.summary.dayTotal)
+            assertEquals(Total(17, partial = true), view.summary.dayTotal)
         }
     }
 
@@ -48,11 +48,11 @@ class InstallsStateTest {
     }
 
     @Test
-    fun totalsCountOnlyKnownNumbers() {
+    fun totalsCountOnlyKnownNumbersAndSayTheyArePartial() {
         val summary = InstallsSummary.of(InstallsJson.parse(good))
 
-        assertEquals(17, summary.dayTotal)
-        assertEquals(115, summary.weekTotal)
+        assertEquals(Total(17, partial = true), summary.dayTotal)
+        assertEquals(Total(115, partial = true), summary.weekTotal)
         assertEquals(
             mapOf(
                 Platform.IOS to DayRange(LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 16)),
@@ -62,7 +62,11 @@ class InstallsStateTest {
         )
         assertNull(summary.commonDay)
         assertEquals(
-            listOf(Platform.ANDROID to MissingReason.Stated("no Play report"), Platform.IOS to MissingReason.Stated("no Play report")),
+            listOf(
+                MissingCount("Beta", Platform.ANDROID, MissingReason.Stated("no Play report")),
+                MissingCount("Gamma", Platform.IOS, MissingReason.Stated("no Play report")),
+                MissingCount("Gamma", Platform.ANDROID, MissingReason.Stated("no Play report")),
+            ),
             summary.missing,
         )
     }
@@ -80,14 +84,14 @@ class InstallsStateTest {
     }
 
     @Test
-    fun aMissingWeekLeavesTheWeekTotalOpen() {
+    fun aMissingWeekMakesOnlyTheWeekTotalPartial() {
         val report = InstallsJson.parse(
             """{"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 2, "last7": 9}, "android": {"day": "2026-11-16", "value": 1}}]}""",
         )
 
         val summary = InstallsSummary.of(report)
-        assertEquals(3, summary.dayTotal)
-        assertNull(summary.weekTotal)
+        assertEquals(Total(3, partial = false), summary.dayTotal)
+        assertEquals(Total(9, partial = true), summary.weekTotal)
         assertEquals(LocalDate.of(2026, 11, 16), summary.commonDay)
     }
 
