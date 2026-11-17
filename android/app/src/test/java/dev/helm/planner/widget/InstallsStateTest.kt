@@ -27,7 +27,7 @@ class InstallsStateTest {
             assertEquals(1_000L, data.fetchedAt)
             val view = data.view() as WidgetView.Showing
             assertEquals(failure, view.failure)
-            assertEquals(1565, view.table.total)
+            assertEquals(1540, view.table.rows.first().total)
         }
     }
 
@@ -48,7 +48,7 @@ class InstallsStateTest {
     }
 
     @Test
-    fun everyCountKnownAddsUpRowsAndColumns() {
+    fun everyCountKnownAddsUpEachRow() {
         val table = InstallsTable.of(InstallsJson.parse(good))
 
         assertEquals(
@@ -58,15 +58,13 @@ class InstallsStateTest {
             ),
             table.rows,
         )
-        assertEquals(mapOf(Platform.IOS to 1200, Platform.ANDROID to 365), table.totals)
-        assertEquals(1565, table.total)
         assertEquals(LocalDate.of(2026, 11, 14), table.asOf)
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
     }
 
     @Test
-    fun aMissingCountBlanksItsRowAndColumnSumsNeverAPartialSum() {
+    fun aMissingCountBlanksItsRowSumNeverAPartialSum() {
         val table = table(
             """{"name": "Alpha", "ios": {"day": "2026-11-16", "total": 1200}, "android": {"day": "2026-11-15", "total": null, "note": "HTTP 403"}}""",
             """{"name": "Beta", "ios": {"day": "2026-11-16", "total": 7}, "android": {"day": "2026-11-15", "total": 25}}""",
@@ -74,8 +72,6 @@ class InstallsStateTest {
 
         assertEquals(TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to null), null), table.rows[0])
         assertEquals(TableRow("Beta", mapOf(Platform.IOS to 7, Platform.ANDROID to 25), 32), table.rows[1])
-        assertEquals(mapOf(Platform.IOS to 1207, Platform.ANDROID to null), table.totals)
-        assertNull(table.total)
         assertEquals(listOf(Platform.ANDROID), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
     }
@@ -85,8 +81,6 @@ class InstallsStateTest {
         val table = table("""{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 3}}""")
 
         assertEquals(TableRow("Alpha", mapOf(Platform.IOS to null, Platform.ANDROID to null), null), table.rows.single())
-        assertEquals(mapOf(Platform.IOS to null, Platform.ANDROID to null), table.totals)
-        assertNull(table.total)
         assertNull(table.asOf)
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertTrue(table.noTotalInFile)
@@ -97,17 +91,8 @@ class InstallsStateTest {
         val table = table("""{"name": "Alpha", "ios": {"total": null}}""")
 
         assertNull(table.rows.single().total)
-        assertNull(table.total)
         assertNull(table.asOf)
         assertEquals(listOf(Platform.IOS, Platform.ANDROID), table.storesWithoutData)
-    }
-
-    @Test
-    fun aFileWithoutAppsHasNoSums() {
-        val table = InstallsTable.of(InstallsJson.parse("""{"schema": 1, "apps": []}"""))
-
-        assertEquals(mapOf(Platform.IOS to null, Platform.ANDROID to null), table.totals)
-        assertNull(table.total)
     }
 
     private fun table(vararg apps: String) =

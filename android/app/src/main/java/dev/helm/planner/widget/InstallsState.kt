@@ -62,14 +62,11 @@ sealed interface WidgetView {
 data class TableRow(val name: String, val counts: Map<Platform, Int?>, val total: Int?)
 
 /**
- * The widget's table: a row per app, the column sums (null when any app's count is missing, never a partial sum), the
- * oldest published day among the known counts, the stores with a count missing for lack of data, and whether a count is
- * missing because the file has no `total` field.
+ * The widget's table: a row per app, the oldest published day among the known counts, the stores with a count missing
+ * for lack of data, and whether a count is missing because the file has no `total` field.
  */
 data class InstallsTable(
     val rows: List<TableRow>,
-    val totals: Map<Platform, Int?>,
-    val total: Int?,
     val asOf: LocalDate?,
     val storesWithoutData: List<Platform>,
     val noTotalInFile: Boolean,
@@ -84,8 +81,6 @@ data class InstallsTable(
             val reasons = counts.mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }
             return InstallsTable(
                 rows = rows,
-                totals = Platform.entries.associateWith { platform -> sum(rows.map { it.counts[platform] }) },
-                total = sum(rows.map { it.total }),
                 asOf = counts.mapNotNull { (it.second as? PlatformCount.Known)?.day }.minOrNull(),
                 storesWithoutData = reasons.filter { it.second != MissingReason.NO_TOTAL }.map { it.first }.distinct().sorted(),
                 noTotalInFile = reasons.any { it.second == MissingReason.NO_TOTAL },

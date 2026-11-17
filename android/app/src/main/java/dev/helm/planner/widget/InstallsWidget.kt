@@ -41,8 +41,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs and a
- * row of column sums. A tap fetches the file again; before an address is set it opens the setup screen.
+ * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs. A tap fetches the file again; before an address is set it opens the setup screen.
  */
 class InstallsWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -129,11 +128,6 @@ private fun Report(view: WidgetView.Showing) {
         table.rows.take(MAX_APPS).forEach { row ->
             TableLine(row.name, Platform.entries.map { number(row.counts[it], numbers) } + number(row.total, numbers), cell(strong))
         }
-        TableLine(
-            context.getString(R.string.installs_column_total),
-            Platform.entries.map { number(table.totals[it], numbers) } + number(table.total, numbers),
-            cell(strong, FontWeight.Bold),
-        )
     }
     Column(GlanceModifier.fillMaxWidth()) {
         footnote(context, table)?.let {
@@ -158,7 +152,7 @@ private fun number(value: Int?, numbers: NumberFormat): String = value?.let(numb
 
 private fun small(color: ColorProvider) = TextStyle(color = color, fontSize = 12.sp)
 
-private fun cell(color: ColorProvider, weight: FontWeight = FontWeight.Normal) = TextStyle(color = color, fontSize = 14.sp, fontWeight = weight)
+private fun cell(color: ColorProvider) = TextStyle(color = color, fontSize = 14.sp)
 
 private fun dayFormatter(locale: Locale): DateTimeFormatter =
     DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dM"), locale)

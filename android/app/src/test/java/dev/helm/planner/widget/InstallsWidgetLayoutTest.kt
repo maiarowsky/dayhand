@@ -42,9 +42,10 @@ class InstallsWidgetLayoutTest {
 
         listOf("Installs", "as of 11/15", "App", "iOS", "Android").forEach { assertTrue("$it in $texts", it in texts) }
         (1..6).forEach { assertTrue("App$it in $texts", "App$it" in texts) }
-        listOf("1,000", "100", "1,100", "6,000", "21,000").forEach { assertTrue("$it in $texts", it in texts) }
-        assertEquals("Total header and row in $texts", 2, texts.count { it == "Total" })
-        assertEquals("App6 Android, its row sum, the Android sum and the grand total in $texts", 4, texts.count { it == "—" })
+        listOf("1,000", "100", "1,100", "6,000").forEach { assertTrue("$it in $texts", it in texts) }
+        assertEquals("Total header only, no row of sums in $texts", 1, texts.count { it == "Total" })
+        assertFalse("no sum over the apps in $texts", "21,000" in texts)
+        assertEquals("App6 Android and its row sum in $texts", 2, texts.count { it == "—" })
         assertTrue("reason in $texts", "Android: no data from Google Play" in texts)
         assertTrue("failure in $texts", "No connection" in texts)
         assertFalse("no generator note in $texts", texts.any { "403" in it })
