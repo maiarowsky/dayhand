@@ -22,7 +22,6 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
-import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -121,50 +120,31 @@ private fun Report(view: WidgetView.Showing) {
     val days = dayFormatter(locale)
     val summary = view.summary
     val muted = GlanceTheme.colors.onSurfaceVariant
+    Text(context.getString(R.string.installs_title), style = small(muted))
+    Text(dateLabel(context, summary, days), style = small(muted))
+    Text(
+        totalText(summary.dayTotal, numbers),
+        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
+    )
+    val week = context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers))
+    val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
+    Text(if (partial) "$week · ${context.getString(R.string.installs_partial)}" else week, style = small(muted))
+    view.failure?.let { Text(failureText(context, it), style = tiny(GlanceTheme.colors.error)) }
+    Text(context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days)), style = tiny(muted))
     Row(GlanceModifier.fillMaxWidth()) {
-        Text(context.getString(R.string.installs_title), style = small(muted), modifier = GlanceModifier.defaultWeight())
-        Text(dateLabel(context, summary, days), style = small(muted), maxLines = 1)
-    }
-    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        Text(
-            totalText(summary.dayTotal, numbers),
-            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
-        )
-        Spacer(GlanceModifier.width(8.dp))
-        Text(
-            context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers)),
-            style = small(muted),
-            modifier = GlanceModifier.padding(bottom = 4.dp),
-            maxLines = 1,
-        )
-        val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
-        Text(
-            if (partial) " · ${context.getString(R.string.installs_partial)}" else "",
-            style = small(muted),
-            modifier = GlanceModifier.defaultWeight().padding(bottom = 4.dp),
-            maxLines = 1,
-        )
-    }
-    val fetched = context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days))
-    if (view.failure == null) {
-        Text(fetched, style = tiny(muted), maxLines = 1)
-    } else {
-        Text("${failureText(context, view.failure)} · $fetched", style = tiny(GlanceTheme.colors.error), maxLines = 1)
-    }
-    Row(GlanceModifier.fillMaxWidth()) {
-        Text(context.getString(R.string.installs_legend), style = tiny(muted), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+        Text(context.getString(R.string.installs_legend), style = tiny(muted), modifier = GlanceModifier.defaultWeight())
         Platform.entries.forEach { Text(platformName(context, it), style = tiny(muted, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH)) }
     }
     view.report.apps.take(MAX_APPS).forEach { app ->
         Row(GlanceModifier.fillMaxWidth()) {
-            Text(app.name, style = row(GlanceTheme.colors.onSurface), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
+            Text(app.name, style = row(GlanceTheme.colors.onSurface), modifier = GlanceModifier.defaultWeight())
             Platform.entries.forEach { platform ->
                 Text(cell(app.count(platform), numbers), style = row(GlanceTheme.colors.onSurface, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH))
             }
         }
     }
     summary.missing.take(MAX_REASONS).forEach { (app, platform, reason) ->
-        Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted), maxLines = 1)
+        Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted))
     }
 }
 
