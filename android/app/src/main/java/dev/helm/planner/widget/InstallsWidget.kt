@@ -87,7 +87,7 @@ private const val MAX_REASONS = 2
 private val CELL_WIDTH = 64.dp
 
 @Composable
-private fun InstallsContent(view: WidgetView) {
+internal fun InstallsContent(view: WidgetView) {
     val context = LocalContext.current
     val tap = if (view is WidgetView.NotSet) actionStartActivity<InstallsConfigActivity>() else actionRunCallback<RefreshInstalls>()
     Column(
@@ -120,31 +120,38 @@ private fun Report(view: WidgetView.Showing) {
     val days = dayFormatter(locale)
     val summary = view.summary
     val muted = GlanceTheme.colors.onSurfaceVariant
-    Text(context.getString(R.string.installs_title), style = small(muted))
-    Text(dateLabel(context, summary, days), style = small(muted))
-    Text(
-        totalText(summary.dayTotal, numbers),
-        style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
-    )
-    val week = context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers))
-    val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
-    Text(if (partial) "$week · ${context.getString(R.string.installs_partial)}" else week, style = small(muted))
-    view.failure?.let { Text(failureText(context, it), style = tiny(GlanceTheme.colors.error)) }
-    Text(context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days)), style = tiny(muted))
-    Row(GlanceModifier.fillMaxWidth()) {
-        Text(context.getString(R.string.installs_legend), style = tiny(muted), modifier = GlanceModifier.defaultWeight())
-        Platform.entries.forEach { Text(platformName(context, it), style = tiny(muted, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH)) }
+    // Glance keeps at most 10 children per Column and silently drops the rest, so each block is its own Column.
+    Column(GlanceModifier.fillMaxWidth()) {
+        Text(context.getString(R.string.installs_title), style = small(muted))
+        Text(dateLabel(context, summary, days), style = small(muted))
+        Text(
+            totalText(summary.dayTotal, numbers),
+            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
+        )
+        val week = context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers))
+        val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
+        Text(if (partial) "$week · ${context.getString(R.string.installs_partial)}" else week, style = small(muted))
+        view.failure?.let { Text(failureText(context, it), style = tiny(GlanceTheme.colors.error)) }
+        Text(context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days)), style = tiny(muted))
     }
-    view.report.apps.take(MAX_APPS).forEach { app ->
+    Column(GlanceModifier.fillMaxWidth()) {
         Row(GlanceModifier.fillMaxWidth()) {
-            Text(app.name, style = row(GlanceTheme.colors.onSurface), modifier = GlanceModifier.defaultWeight())
-            Platform.entries.forEach { platform ->
-                Text(cell(app.count(platform), numbers), style = row(GlanceTheme.colors.onSurface, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH))
+            Text(context.getString(R.string.installs_legend), style = tiny(muted), modifier = GlanceModifier.defaultWeight())
+            Platform.entries.forEach { Text(platformName(context, it), style = tiny(muted, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH)) }
+        }
+        view.report.apps.take(MAX_APPS).forEach { app ->
+            Row(GlanceModifier.fillMaxWidth()) {
+                Text(app.name, style = row(GlanceTheme.colors.onSurface), modifier = GlanceModifier.defaultWeight())
+                Platform.entries.forEach { platform ->
+                    Text(cell(app.count(platform), numbers), style = row(GlanceTheme.colors.onSurface, TextAlign.End), modifier = GlanceModifier.width(CELL_WIDTH))
+                }
             }
         }
     }
-    summary.missing.take(MAX_REASONS).forEach { (app, platform, reason) ->
-        Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted))
+    Column(GlanceModifier.fillMaxWidth()) {
+        summary.missing.take(MAX_REASONS).forEach { (app, platform, reason) ->
+            Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted))
+        }
     }
 }
 
