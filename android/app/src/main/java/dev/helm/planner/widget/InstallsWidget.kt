@@ -125,19 +125,31 @@ private fun Report(view: WidgetView.Showing) {
         Text(context.getString(R.string.installs_title), style = small(muted), modifier = GlanceModifier.defaultWeight())
         Text(dateLabel(context, summary, days), style = small(muted), maxLines = 1)
     }
-    Row(verticalAlignment = Alignment.Bottom) {
+    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Text(
             totalText(summary.dayTotal, numbers),
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 24.sp, fontWeight = FontWeight.Bold),
         )
         Spacer(GlanceModifier.width(8.dp))
-        val week = context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers))
-        val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
         Text(
-            if (partial) "$week · ${context.getString(R.string.installs_partial)}" else week,
+            context.getString(R.string.installs_week_total, totalText(summary.weekTotal, numbers)),
             style = small(muted),
             modifier = GlanceModifier.padding(bottom = 4.dp),
+            maxLines = 1,
         )
+        val partial = listOfNotNull(summary.dayTotal, summary.weekTotal).any { it.partial }
+        Text(
+            if (partial) " · ${context.getString(R.string.installs_partial)}" else "",
+            style = small(muted),
+            modifier = GlanceModifier.defaultWeight().padding(bottom = 4.dp),
+            maxLines = 1,
+        )
+    }
+    val fetched = context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days))
+    if (view.failure == null) {
+        Text(fetched, style = tiny(muted), maxLines = 1)
+    } else {
+        Text("${failureText(context, view.failure)} · $fetched", style = tiny(GlanceTheme.colors.error), maxLines = 1)
     }
     Row(GlanceModifier.fillMaxWidth()) {
         Text(context.getString(R.string.installs_legend), style = tiny(muted), modifier = GlanceModifier.defaultWeight(), maxLines = 1)
@@ -153,12 +165,6 @@ private fun Report(view: WidgetView.Showing) {
     }
     summary.missing.take(MAX_REASONS).forEach { (app, platform, reason) ->
         Text("$DASH $app ${platformName(context, platform)}: ${reasonText(context, reason)}", style = tiny(muted), maxLines = 1)
-    }
-    val fetched = context.getString(R.string.installs_fetched, fetchedLabel(context, view.fetchedAt, days))
-    if (view.failure == null) {
-        Text(fetched, style = tiny(muted), maxLines = 1)
-    } else {
-        Text("${failureText(context, view.failure)} · $fetched", style = tiny(GlanceTheme.colors.error), maxLines = 1)
     }
 }
 
