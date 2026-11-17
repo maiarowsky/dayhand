@@ -55,6 +55,27 @@
                 android:resource="@xml/shared_files" />
         </provider>
 
+        <!-- Store installs on the home screen (widget/InstallsWidget.kt) and the screen that sets its file address. -->
+        <receiver
+            android:name=".widget.InstallsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/installs_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/installs_widget_info" />
+        </receiver>
+        <activity
+            android:name=".widget.InstallsConfigActivity"
+            android:exported="true"
+            android:label="@string/installs_config_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".notify.AlarmReceiver"
             android:exported="false" />

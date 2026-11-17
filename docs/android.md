@@ -231,6 +231,56 @@ notification for each. There is no push service in between, so a request can wai
 minutes, longer in battery saving, before the phone shows it. What these controls do and what they
 cannot do: [Agents and you](agents.md).
 
+## Store installs widget
+
+A home screen widget shows how many people installed your own apps from the App Store and Google Play.
+The stores publish installs once a day, about a day late (Apple) or one to two days late (Google), so
+the widget shows the latest published day and the last 7 days, not live numbers.
+
+Add **Store installs** from the home screen's widget list. It asks for the address of a JSON file in
+the format below, which a program of yours writes from the stores' reports (Dayhand does not read the
+stores itself). Release builds read it over HTTPS only; for a file on your computer, `tailscale serve`
+gives an HTTPS address inside your tailnet ([Phone and computer](deploy.md#phone-and-computer-tailscale)).
+On Android 12 and later the widget's settings change the address.
+
+The widget shows the day's total over both stores, the 7-day total, and a row per app with its iOS
+and Android counts as `day · 7 days`. A count the file does not have shows as `—`, never as 0; under
+the rows the widget names the app, the store and the reason for the first two such counts. Both
+totals add up only the known counts. A total that leaves a count out (or, for the 7-day total, a
+known count without `last7`), or adds counts from different days, is partial: it shows with `+`,
+such as `17+`, and the note "+ partial". A total shows as `—` only when no count is known. The widget
+fetches the file every three hours and when you tap it. When the fetch fails it keeps showing the
+last file with the time it was fetched.
+
+```json
+{
+  "schema": 1,
+  "generatedAt": "2026-11-17T06:30:00Z",
+  "apps": [
+    {
+      "name": "Example",
+      "ios": {"day": "2026-11-16", "value": 12, "last7": 80},
+      "android": {"day": null, "value": null, "last7": null, "note": "no Play report yet"}
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `schema` | `1`. Any other value and the widget refuses the file. |
+| `generatedAt` | When the file was written, ISO 8601 with a time zone; optional, the widget does not read it. |
+| `apps[].name` | The app's name, as the row shows it. |
+| `apps[].ios`, `apps[].android` | One store's count. A store left out shows as "not in the file". |
+| `day` | The published day the count is for (`YYYY-MM-DD`). |
+| `value` | Installs on that day, a whole number of 0 or more; `null` when there is no count. |
+| `last7` | Installs over the 7 days ending on `day`; optional. |
+| `note` | Why `value` is `null`, shown on the widget. |
+
+A file that is not JSON, has another schema or lacks `apps` is refused, and the widget
+keeps the last good one. A broken entry (a count without a day, a negative count, a number in quotes)
+shows as "invalid entry" for that count only. Fields the widget does not know are ignored.
+
 ## Backups
 
 Android's Auto Backup is off for Dayhand: the plan, the settings and the sign-in go neither to Google
@@ -245,5 +295,6 @@ have yet, so the same file restores once.
 
 The app asks for the network (to reach your server), notifications, exact alarms and starting after a
 reboot (to arm reminders again). It has no analytics, no crash reporting and no other outside services:
-the only address it talks to is your server. The sign-in to the server is encrypted with a key in the
-Android Keystore. More: [Security and privacy](security.md).
+the only addresses it talks to are your server and, if you add the
+[store installs widget](#store-installs-widget), the file address you give it. The sign-in to the
+server is encrypted with a key in the Android Keystore. More: [Security and privacy](security.md).

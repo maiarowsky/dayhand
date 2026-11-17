@@ -29,7 +29,8 @@ your account; Convex can technically reach it, as any host can reach what it hos
 ## No tracking
 
 - The Android app has no analytics, no crash reporting and no other outside services. It talks only to
-  your server.
+  your server and, if you add the
+  [store installs widget](android.md#store-installs-widget), the file address you give it.
 - Dayhand for macOS and Linux talk only to your server. A macOS build made with the release key also
   checks the update feed (Sparkle), with Sparkle's system profile off; builds you make yourself never do.
 - `dayhand` talks only to the server you signed it in to. `dayhand server start` downloads the Convex

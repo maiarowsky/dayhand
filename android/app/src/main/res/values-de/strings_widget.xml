@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="installs_widget_label">Store-Installationen</string>
+    <string name="installs_widget_description">Installationen aus App Store und Google Play</string>
+    <string name="installs_title">Installationen</string>
+    <string name="installs_week_total">7 Tage: %1$s</string>
+    <string name="installs_partial">+ unvollständig</string>
+    <string name="installs_legend">Tag · 7 Tage</string>
+    <string name="installs_fetched">abgerufen %1$s</string>
+    <string name="installs_failure_network">Keine Verbindung</string>
+    <string name="installs_failure_http">Server antwortete %1$d</string>
+    <string name="installs_failure_file">Keine gültige Installationsdatei</string>
+    <string name="installs_tap_to_set">Tippe, um die Dateiadresse festzulegen</string>
+    <string name="installs_loading">Wird geladen…</string>
+    <string name="installs_tap_to_retry">Tippe, um es erneut zu versuchen</string>
+    <string name="installs_reason_none">kein Grund angegeben</string>
+    <string name="installs_reason_not_in_file">nicht in der Datei</string>
+    <string name="installs_reason_invalid">ungültiger Eintrag</string>
+    <string name="installs_config_title">Installations-Widget</string>
+    <string name="installs_config_help">Die Adresse einer JSON-Datei mit Installationen aus App Store und Google Play. Verwende https, etwa die Adresse, die tailscale serve einem Computer in deinem Tailnet gibt.</string>
+    <string name="installs_config_url">Dateiadresse</string>
+    <string name="installs_config_save">Speichern</string>
+    <string name="installs_config_invalid_url">Gib eine Adresse ein, die mit https:// oder http:// beginnt</string>
+    <string name="installs_config_cleartext">Unverschlüsseltes http ist nicht erlaubt. Verwende eine https-Adresse, etwa die von tailscale serve.</string>
+</resources>
