@@ -471,6 +471,16 @@ phone is skipped, so the same file restores once; tasks in the trash and tasks t
 are counted, not restored. On this phone only the backup's summary time and default reminders
 are restored too; with a server its settings stay. At most 2000 tasks, as the server's import.
 
+## Store installs widget
+
+`widget/` is a Jetpack Glance home screen widget with the installs of your own apps from the App Store
+and Google Play, read from a JSON file at an address set when the widget is placed
+(`InstallsConfigActivity`; release builds accept https only). `InstallsJson` parses the file (format and
+fields: [docs/android.md](../docs/android.md#store-installs-widget)), `InstallsStore` keeps the address
+and the last file that parsed, and `InstallsWorker` fetches it every three hours (WorkManager) and on a
+tap. A failed fetch keeps the last file and shows when it was fetched; a missing count shows as `—`
+with its reason, never 0.
+
 ## Signing in
 
 The phone is paired once and then asks the server for short-lived app tokens
@@ -573,6 +583,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # backup file (write, read, the server's export), sample plan, another server,
                                             # agents (answers, requests, proposals, the switch, tool policies and their refusals,
                                             # the health card, new requests)
+                                            # the installs widget's file (counts, missing counts, broken files), totals and address check,
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,

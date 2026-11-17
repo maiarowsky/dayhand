@@ -5,6 +5,12 @@ called Helm until 0.9.0.
 
 ## Unreleased
 
+### Added
+
+- Store installs widget for the home screen: the latest published day and the last 7 days of installs from the
+  App Store and Google Play per app, read from a JSON file you serve over HTTPS. A missing count shows as `—`
+  with its reason, never 0. Format: [docs/android.md](../docs/android.md#store-installs-widget).
+
 ### Changed
 
 - Calendar-led appearance: neutral surfaces, lime, olive and graphite blocks for To do, In progress and Done, and

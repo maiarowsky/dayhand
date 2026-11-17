@@ -17,6 +17,8 @@ tink = "1.23.0"
 # 1.12.0 was released on 2026-10-19, too new.
 serialization = "1.11.0"
 coroutines = "1.11.0"
+# 1.2.0 was released on 2026-08-26; 1.3.0 is still alpha.
+glance = "1.2.0"
 # Official Convex Android client (2026-02-19), the latest release.
 convex = "0.8.0"
 junit4 = "4.13.2"
@@ -45,6 +47,7 @@ room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 work-testing = { module = "androidx.work:work-testing", version.ref = "work" }
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }

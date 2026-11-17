@@ -144,6 +144,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.work.runtime)
+    implementation(libs.glance.appwidget)
     implementation(libs.datastore.preferences)
     implementation(libs.tink.android)
     implementation(libs.serialization.json)

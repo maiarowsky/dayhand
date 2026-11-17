@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="installs_widget_label">应用商店安装量</string>
+    <string name="installs_widget_description">来自 App Store 和 Google Play 的安装量</string>
+    <string name="installs_title">安装量</string>
+    <string name="installs_week_total">7 天：%1$s</string>
+    <string name="installs_legend">当天 · 7 天</string>
+    <string name="installs_fetched">获取于 %1$s</string>
+    <string name="installs_failure_network">无连接</string>
+    <string name="installs_failure_http">服务器返回 %1$d</string>
+    <string name="installs_failure_file">不是有效的安装量文件</string>
+    <string name="installs_tap_to_set">轻触以设置文件地址</string>
+    <string name="installs_loading">正在加载…</string>
+    <string name="installs_tap_to_retry">轻触重试</string>
+    <string name="installs_reason_none">未说明原因</string>
+    <string name="installs_reason_not_in_file">文件中没有</string>
+    <string name="installs_reason_invalid">无效条目</string>
+    <string name="installs_config_title">安装量小组件</string>
+    <string name="installs_config_help">包含 App Store 和 Google Play 安装量的 JSON 文件地址。请使用 https，例如 tailscale serve 为 tailnet 中的电脑提供的地址。</string>
+    <string name="installs_config_url">文件地址</string>
+    <string name="installs_config_save">保存</string>
+    <string name="installs_config_invalid_url">请输入以 https:// 或 http:// 开头的地址</string>
+    <string name="installs_config_cleartext">不允许未加密的 http。请使用 https 地址，例如 tailscale serve 提供的地址。</string>
+</resources>

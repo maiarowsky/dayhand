@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The installs widget (widget/InstallsWidget.kt) and its setup screen. -->
+    <string name="installs_ios" translatable="false">iOS</string>
+    <string name="installs_android" translatable="false">Android</string>
+    <string name="installs_widget_label">Store installs</string>
+    <string name="installs_widget_description">Installs from the App Store and Google Play</string>
+    <string name="installs_title">Installs</string>
+    <string name="installs_week_total">7 days: %1$s</string>
+    <string name="installs_legend">day · 7 days</string>
+    <string name="installs_fetched">fetched %1$s</string>
+    <string name="installs_failure_network">No connection</string>
+    <string name="installs_failure_http">Server answered %1$d</string>
+    <string name="installs_failure_file">Not a valid installs file</string>
+    <string name="installs_tap_to_set">Tap to set the file address</string>
+    <string name="installs_loading">Loading…</string>
+    <string name="installs_tap_to_retry">Tap to try again</string>
+    <string name="installs_reason_none">no reason given</string>
+    <string name="installs_reason_not_in_file">not in the file</string>
+    <string name="installs_reason_invalid">invalid entry</string>
+    <string name="installs_config_title">Installs widget</string>
+    <string name="installs_config_help">The address of a JSON file with installs from the App Store and Google Play. Use https, such as the address tailscale serve gives a computer in your tailnet.</string>
+    <string name="installs_config_url">File address</string>
+    <string name="installs_config_save">Save</string>
+    <string name="installs_config_invalid_url">Enter an address that starts with https:// or http://</string>
+    <string name="installs_config_cleartext">Plain http is not allowed. Use an https address, such as the one tailscale serve gives.</string>
+</resources>
