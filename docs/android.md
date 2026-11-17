@@ -246,9 +246,9 @@ On Android 12 and later the widget's settings change the address.
 The widget is a table with the columns App, iOS, Android and Total: a row per app with its total
 installs on each store and over both. Above the table a line says "as of" the oldest `day` among the
 numbers shown. A number the file does not have shows as `—`, never as 0, and so does the Total of its
-row: the widget never shows a sum that leaves a number out. One line under the table says which store has no data, such as "Android: no data from
-Google Play", or "no total in the file" for a file without `total`. The widget fetches the file every
-three hours and when you tap it. When the fetch fails it keeps showing the last file and says why.
+row: the widget never shows a sum that leaves a number out. One line under the table says why numbers
+are missing: which store has no data, such as "Android: no data from Google Play", and "no total in
+the file" when an entry lacks `total`. The widget fetches the file every three hours and when you tap it. When the fetch fails it keeps showing the last file and says why.
 
 ```json
 {

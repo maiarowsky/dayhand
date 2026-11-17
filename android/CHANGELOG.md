@@ -7,9 +7,9 @@ called Helm until 0.9.0.
 
 ### Added
 
-- Store installs widget for the home screen: the latest published day and the last 7 days of installs from the
-  App Store and Google Play per app, read from a JSON file you serve over HTTPS. A missing count shows as `—`
-  with its reason, never 0. Format: [docs/android.md](../docs/android.md#store-installs-widget).
+- Store installs widget for the home screen: a table of each app's all-time installs from the App Store, from
+  Google Play and over both, read from a JSON file you serve over HTTPS. A missing number shows as `—`, never 0,
+  and so does its row's total. Format: [docs/android.md](../docs/android.md#store-installs-widget).
 
 ### Changed
 
