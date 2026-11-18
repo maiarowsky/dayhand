@@ -75,7 +75,8 @@
   --space-l: clamp(2rem, 1.6rem + 1.8vw, 3.5rem);
   --space-xl: clamp(4rem, 2.8rem + 4.5vw, 8rem);
 
-  /* Three corners and the pill: large panels, cards, small parts inside a card. */
+  /* Three corners and the pill: large panels, cards, buttons and other controls (and small parts inside a card);
+     the pill only for tags, badges and captions, never a control. */
   --radius: 1.75rem;
   --radius-card: 1.25rem;
   --radius-inner: 0.5rem;
