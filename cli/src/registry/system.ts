@@ -159,7 +159,7 @@ export const systemCommands: CommandSpec[] = [
   {
     name: "pair", schema: "pairing.schema.json",
     summary: "One-time code (10 minutes) that signs the phone app in as you",
-    description: "Type the code in the Dayhand app. Coming soon: links and QR codes carry only the server address, never the pairing code.",
+    description: "Type the code in the Dayhand app. Links and QR codes carry only the server address, never the pairing code.",
     options: [{ flags: "--no-qr", description: "Do not draw the QR code" }],
     tools: ["/devices/pairing-code"],
     examples: ["dayhand pair", "dayhand pair --json"],

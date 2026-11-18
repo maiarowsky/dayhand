@@ -56,8 +56,8 @@ coloured line above Today sums up plan health, with the same counts as `dayhand 
 | `?`, `q` | Every key; quit |
 
 The keys follow vim and lazygit, and the mouse selects and scrolls (hold `Shift` while dragging to
-select text, or start `dayhand ui --no-mouse`). **Coming soon:** `M` turns mouse reporting off so you
-can select text with the mouse, and on again. It uses the terminal's 16 colours, so it follows your
+select text, or start `dayhand ui --no-mouse`); `M` turns mouse reporting off so you can select text
+with the mouse, and on again. It uses the terminal's 16 colours, so it follows your
 theme, and its screens speak the terminal's language when it is one of the eight the apps speak
 (`--lang pl` or `DAYHAND_LANG=pl` to choose); everything scripts and agents read stays English. It
 has no reminders: the desktop and phone apps do. On Omarchy it becomes an app of its own

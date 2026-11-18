@@ -2,6 +2,39 @@
 
 Versions before 0.13.0 are described in the commit history (`git log -- cli`).
 
+## 0.16.0 (2026-11-18)
+
+### Added
+
+- `dayhand server start --issuer <url>` sets the issuer of a new local server, so an export from
+  another server (for example a Convex Cloud one) can be imported into it and keeps its owner.
+  A different `--issuer` for a local server that already has one stops with a usage error (exit 2),
+  also with `--dry-run`.
+- `dayhand ui`: `M` turns the terminal's mouse reporting off so you can select and copy text with
+  the mouse, and on again. `--no-mouse` starts with reporting off.
+
+### Changed
+
+- `dayhand ui` polls every 60 s by default instead of 12 s and doubles the interval after three
+  unchanged polls, up to 300 s. Any key or changed data restores the base interval (`--interval`
+  10 to 300 s). Timed polls read only the current view (Today with its health line) and an open
+  task; projects reload on start, `R`, a view change and your own changes.
+- The packaged server reads less for `plan_health`: only open tasks, current proposals and tasks
+  completed in the last two days, not the whole task history. `oldestOpen.ageDays` is never below 0.
+
+### Security
+
+- Remote servers need HTTPS: plain HTTP is allowed only for `localhost`, `127.0.0.1` and `[::1]`,
+  and the key is never sent over plain HTTP to another host.
+- On macOS and Linux a credentials file and its folder must belong to you and be private
+  (modes 600 and 700); otherwise `dayhand` stops with a config error instead of using them.
+- Links and QR codes from `dayhand pair` and server setup carry only the server address; the code
+  is typed in the app.
+- The packaged server's `/auth/pair` flood counter refuses only invalid codes, so a caller sending
+  wrong codes no longer locks out a valid code on another phone.
+- The packaged server counts every OAuth authorization attempt before any client metadata fetch,
+  and rejects locally invalid parameters without a fetch or redirect.
+
 ## 0.15.1 (2026-10-31)
 
 ### Added
