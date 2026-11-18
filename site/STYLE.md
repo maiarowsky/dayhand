@@ -113,10 +113,10 @@ questions beside their heading, and a closing backdrop across the page above the
 The large rounded panels behind the screenshots and cards (`.backdrop` in `home.css`) are one flat colour from
 the palette, `--backdrop`: a warm caramel cream in the light theme and a light espresso in the dark one.
 
-Kept plain on purpose: three corner sizes and the pill (`--radius` for the large panels, `--radius-card` for
-every card, `--radius-inner` inside a card, `--pill` for buttons and tags), one palette with no extra accent
-colours, shadows only under the screenshots, no icons set into sentences and no arrows after links. The one
-loud element is the word "free".
+Corners come in three sizes and the pill: `--radius` for the large panels, `--radius-card` for every card,
+`--radius-inner` inside a card and `--pill` for buttons and tags. The palette has no accent colours beyond
+espresso, caramel and cream. Shadows sit only under the screenshots, sentences carry no icons and links carry
+no arrows. Only the word "free" is set in display size and the accent colour.
 
 Type: Instrument Sans for text and headings, Geist Mono for code, both under the SIL Open Font License and
 served from `public/fonts/`. Headings are weight 500 with tight letter spacing (-0.045em, the first-screen
