@@ -15,9 +15,7 @@ const band = [
 
 <section id="connect" class="connect" aria-labelledby="connect-title">
   <h2 id="connect-title">Connect the agent you already use</h2>
-  <div class="band" aria-hidden="true">
-    <ul role="list">{band.map((command) => <li>{command}</li>)}</ul>
-  </div>
+  <ul class="band" role="list" aria-hidden="true">{band.map((command) => <li>{command}</li>)}</ul>
   <ul class="columns" role="list">
     <li>
       The server speaks MCP at <code>/mcp</code>. Any MCP client connects with the address and an

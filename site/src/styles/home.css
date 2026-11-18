@@ -173,7 +173,7 @@
 .rules .notice { inline-size: min(100%, 22rem); }
 
 /* Connect: a row of the commands an agent uses, then three ways in and the commands for Claude Code. */
-.band ul {
+.band {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
