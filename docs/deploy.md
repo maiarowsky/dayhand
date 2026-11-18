@@ -170,9 +170,12 @@ Nothing, on Convex's Free plan. Its limits per team, as published on [convex.dev
 | Deployments | 40 per team |
 | Developers | 1 to 6 |
 
-On Free the limits are hard caps: once one is reached, new writes may fail; nothing is billed.
-The paid Starter plan instead charges for usage above the same amounts. One person's tasks are
-small next to these numbers; the Convex dashboard shows what you use.
+On Free the limits are hard caps and nothing is billed. Once the team goes over one, Convex can
+disable the whole team: every request to every deployment in it then fails with HTTP 500 until
+the next month or a move to a paid plan. The paid Starter plan instead charges for usage above the
+same amounts. One person's tasks are small next to these numbers, but database I/O adds up with
+every read: a client that polls the server all day uses far more of it than the phone app does.
+The Convex dashboard shows what you use.
 
 ### Backups
 

@@ -50,30 +50,43 @@ function reasonsOf(task: Doc<"tasks">, byId: Map<string, Doc<"tasks">>): string[
   return reasons;
 }
 
+const isLive = (t: Doc<"tasks">) => t.deletedAt === undefined && t.archivedAt === undefined;
+
+/** Reads only what the report can show, never the history of finished tasks: polled every minute, it must stay cheap. */
 export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args) {
   const at = input.at ?? Date.now();
-  const { timezone } = await loadSettings(ctx, identity.userId);
+  const { userId } = identity;
+  const { timezone } = await loadSettings(ctx, userId);
   const today = localDate(at, timezone);
-  const all = await ctx.db
+  const withStatus = (status: "todo" | "doing") =>
+    ctx.db
+      .query("tasks")
+      .withIndex("by_user_status_dueDate", (q) => q.eq("userId", userId).eq("status", status))
+      .collect();
+  const notDone = [...(await withStatus("todo")), ...(await withStatus("doing"))];
+  const byId = new Map(notDone.map((t) => [t._id as string, t]));
+  const open = notDone.filter((t) => isLive(t) && t.proposedAt === undefined);
+  const proposals = (
+    await ctx.db
+      .query("tasks")
+      .withIndex("by_user_proposedAt", (q) => q.eq("userId", userId).gt("proposedAt", 0))
+      .collect()
+  ).filter(isLive);
+  const recentlyDone = await ctx.db
     .query("tasks")
-    .withIndex("by_user", (q) => q.eq("userId", identity.userId))
+    .withIndex("by_user_completedAt", (q) => q.eq("userId", userId).gte("completedAt", at - 2 * DAY_MS))
     .collect();
-  const byId = new Map(all.map((t) => [t._id as string, t]));
-  const live = all.filter((t) => t.deletedAt === undefined && t.archivedAt === undefined);
-  const proposals = live.filter((t) => t.proposedAt !== undefined);
-  const plan = live.filter((t) => t.proposedAt === undefined);
-  const open = plan.filter((t) => t.status !== "done");
 
   const approvals = await ctx.db
     .query("approvals")
-    .withIndex("by_user", (q) => q.eq("userId", identity.userId).gte("createdAt", at - APPROVAL_WINDOW_MS))
+    .withIndex("by_user", (q) => q.eq("userId", userId).gte("createdAt", at - APPROVAL_WINDOW_MS))
     .collect();
   const pending = approvals.filter((a) => statusOf(a, at) === "pending");
   const waiting = new Map<string, number>();
   for (const approval of pending) if (approval.taskId) waiting.set(approval.taskId, (waiting.get(approval.taskId) ?? 0) + 1);
 
-  const doneToday = plan
-    .filter((t) => t.status === "done" && t.completedAt !== undefined && localDate(t.completedAt, timezone) === today)
+  const doneToday = recentlyDone
+    .filter((t) => t.status === "done" && isLive(t) && t.proposedAt === undefined && localDate(t.completedAt!, timezone) === today)
     .sort((a, b) => b.completedAt! - a.completedAt!);
   const withProof = doneToday.filter(hasProof).length;
   const blocked = open.map((t) => ({ task: t, reasons: reasonsOf(t, byId) })).filter((b) => b.reasons.length > 0);
@@ -84,7 +97,7 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
     at,
     date: today,
     timezone,
-    agentsPaused: await agentsPaused(ctx, identity.userId),
+    agentsPaused: await agentsPaused(ctx, userId),
     overdue: section(open.filter((t) => isOverdue(t, today)).sort(byDue).map(brief)),
     dueToday: section(open.filter((t) => t.dueDate === today).sort(byDue).map(brief)),
     inProgress: section(
@@ -110,6 +123,6 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
       withProof,
       withoutProof: doneToday.length - withProof,
     },
-    oldestOpen: oldest ? { ...brief(oldest), createdAt: oldest.createdAt, ageDays: Math.floor((at - oldest.createdAt) / DAY_MS) } : null,
+    oldestOpen: oldest ? { ...brief(oldest), createdAt: oldest.createdAt, ageDays: Math.max(0, Math.floor((at - oldest.createdAt) / DAY_MS)) } : null,
   };
 }
