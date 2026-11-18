@@ -168,6 +168,15 @@ function httpsOrigin(value, flag) {
 /** DAYHAND_JWT_ISSUER: an https origin. It becomes part of every user id. */
 export const checkIssuer = (value) => httpsOrigin(value, "--issuer");
 
+/** A local server keeps the issuer it was made with: --issuer may only repeat it. */
+export function checkLocalIssuer(state, issuer) {
+  if (issuer === undefined || state?.issuer === undefined || state.issuer === issuer) return;
+  throw new UsageError(
+    `This local server already has the issuer ${state.issuer}, not ${issuer}; to take over another server's data ` +
+      `start a new server in another folder (set DAYHAND_SERVER_CONFIG_DIR), or pass --issuer ${state.issuer}`,
+  );
+}
+
 export function npmCli(env = process.env, execPath = process.execPath) {
   const nodeDir = path.dirname(execPath);
   const candidates = [

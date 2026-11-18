@@ -63,7 +63,7 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
       .query("tasks")
       .withIndex("by_user_status_dueDate", (q) => q.eq("userId", userId).eq("status", status))
       .collect();
-  const notDone = [...(await withStatus("todo")), ...(await withStatus("doing"))];
+  const notDone = [...(await withStatus("todo")), ...(await withStatus("doing"))].sort((a, b) => a._creationTime - b._creationTime);
   const byId = new Map(notDone.map((t) => [t._id as string, t]));
   const open = notDone.filter((t) => isLive(t) && t.proposedAt === undefined);
   const proposals = (

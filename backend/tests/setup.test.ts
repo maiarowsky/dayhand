@@ -265,6 +265,39 @@ describe("--dry-run", () => {
     expect(text).not.toContain("helm.local");
   });
 
+  const localServer = (name: string, issuer: string) => {
+    const dir = fresh(name);
+    mkdirSync(join(dir, "local"), { recursive: true });
+    writeFileSync(join(dir, "local", "server.json"), JSON.stringify({ issuer, userId: `${issuer}|owner` }));
+    return dir;
+  };
+
+  test("an existing local server refuses another --issuer, in the plan and in a real start, before anything runs", async () => {
+    const dir = localServer("dry-issuer-conflict", "https://helm.local");
+    const start = (args: string[]) =>
+      run(process.execPath, ["--import", blocker, script, ...args], {
+        env: { PATH: process.env.PATH ?? "", HOME: join(dir, "home"), DAYHAND_SERVER_CONFIG_DIR: dir },
+      });
+    for (const attempt of [dryRun(dir, ["--local", "--issuer", "https://old.example"]), start(["--local", "--issuer", "https://old.example"])]) {
+      const failure = await attempt.then(
+        () => null,
+        (error: { code: number; stderr: string }) => error,
+      );
+      expect(failure?.code).toBe(2);
+      expect(failure?.stderr).toContain("already has the issuer https://helm.local, not https://old.example");
+      expect(failure?.stderr).toContain("DAYHAND_SERVER_CONFIG_DIR");
+      expect(failure?.stderr).toContain("--issuer https://helm.local");
+    }
+    expect(existsSync(join(dir, "local", "convex.env"))).toBe(false);
+  });
+
+  test("an existing local server accepts --issuer when it repeats its issuer", async () => {
+    const dir = localServer("dry-issuer-same", "https://old.example");
+    const text = JSON.parse((await dryRun(dir, ["--local", "--issuer", "https://old.example"])).stdout).plan.join("\n");
+    expect(text).toContain("DAYHAND_JWT_ISSUER (https://old.example)");
+    expect(text).toContain("https://old.example|owner");
+  });
+
   test("a mistake in the options exits 2 before anything runs", async () => {
     await expect(dryRun(fresh("bad"), ["--local", "--team", "x"])).rejects.toMatchObject({ code: 2 });
   });
