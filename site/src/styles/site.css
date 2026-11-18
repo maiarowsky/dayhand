@@ -2,10 +2,18 @@
    home.css. No framework; the only thing from another server is the General Sans font. The rules this follows are
    in STYLE.md. */
 
-/* Fonts. General Sans (Indian Type Foundry, ITF Free Font License) for text and headings loads from Fontshare's
-   servers through the stylesheet in Page.astro, because its licence does not allow the files in a public
-   repository. Geist Mono for code is served from this site under the SIL Open Font License
-   (public/fonts/geist-mono-OFL.txt); each file covers the Latin or Latin Extended range only. */
+/* Fonts. General Sans (Indian Type Foundry, ITF Free Font License) for text and headings loads from the Fontshare
+   CDN through the @font-face below, because its licence does not allow the files in a public repository; with
+   font-display: swap the text shows at once in the fallback font if Fontshare is slow or down. Geist Mono for code
+   is served from this site under the SIL Open Font License (public/fonts/geist-mono-OFL.txt); each file covers the
+   Latin or Latin Extended range only. */
+@font-face {
+  font-family: "General Sans";
+  src: url("https://cdn.fontshare.com/wf/LHQJ5KSAL7VGAEIDSTEXCCOIUKFLT2I6/GW57XUEG4ZBVMLZZTQZTGYPROITRRQ5W/JA3IZUEMJ2J6WWT2OQVJOAWDXO3YL4YG.woff2") format("woff2");
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
 @font-face {
   font-family: "Geist Mono";
   src: url("/fonts/geist-mono-latin.woff2") format("woff2");
@@ -105,7 +113,7 @@ body {
   /* General Sans ships every weight from 200 to 700 in one variable file, so a weight is never faked. */
   font-synthesis-weight: none;
   /* The x-height of General Sans (and of Geist Mono below), measured: a fallback font is scaled to it, so text
-     keeps its size while the web fonts load or if Fontshare cannot be reached. */
+     keeps its size while the web fonts load or if Fontshare is slow or cannot be reached. */
   font-size-adjust: 0.53;
 }
 h1, h2, h3, h4 { line-height: 1.15; text-wrap: balance; margin: 0; font-weight: 550; }

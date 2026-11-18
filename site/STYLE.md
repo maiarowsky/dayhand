@@ -48,8 +48,8 @@ npm run preview   # serves dist/ as it will be published
 
 Check the build with `scripts/check-site.sh` before every change is merged (`--build` installs and builds
 first). It reads `site/dist/`: HTML structure, image attributes, internal links and fragments, that pages
-link with a trailing slash, that nothing a page loads comes from another server except the General Sans stylesheet and a preconnect to
-Fontshare, the metadata of every page
+link with a trailing slash, that nothing a page loads comes from another server except a preconnect to the
+Fontshare CDN and, in the CSS, the General Sans font file on it, the metadata of every page
 (description; canonical address, Open Graph tags and a sitemap entry, or `noindex`), the 404 page, the
 image weight of a page, the documentation search index, `sitemap.xml` and `robots.txt`. Its CSS/JS scans
 are static lint rules for URL literals and the CSS patterns ruled out below; they do not run code or watch
@@ -122,13 +122,13 @@ no arrows. Only the word "free" is set in display size and the accent colour.
 
 Type: General Sans for text and headings, Geist Mono for code. General Sans (Indian Type Foundry) is under the
 ITF Free Font License, which allows commercial use on websites but not the files in a public repository, so it
-loads from Fontshare's servers: one variable file, weights 200 to 700, through the stylesheet and preconnect in
-`Page.astro`. Geist Mono is under the SIL Open Font License and served from `public/fonts/`. The first-screen
+loads from the Fontshare CDN: one variable file, weights 200 to 700, through the `@font-face` in `site.css`
+(with `font-display: swap`) and a preconnect in `Page.astro`. Geist Mono is under the SIL Open Font License and served from `public/fonts/`. The first-screen
 heading is weight 450 (-0.055em); h2 and the headings of the tiles, plans and downloads 500 with tight letter
 spacing (-0.045em, the card headings -0.035em); other h3 and h4 550; body text 450. The type scale is the one
 fluid scale on `:root`. `font-size-adjust` (0.53 for text and for code, the measured x-heights of the two
-fonts) scales a fallback font to the same size, so the text does not jump while the fonts load or if Fontshare
-cannot be reached.
+fonts) scales a fallback font to the same size, so the text shows at once and does not jump while the fonts
+load or if Fontshare is slow or cannot be reached.
 
 ## Rules from good-css.com that this site follows
 
@@ -154,14 +154,12 @@ The layout was checked at 360 px, 390 px and 1440 px wide, in the light and the 
 - **A content grid with named lines.** Header, sections and footer share
   `[full-start] … [content-start] … [content-end] … [full-end]`, so the 16 px gutter (`--gutter`) holds at
   any width and the page never scrolls sideways; code blocks and the rows of phone screens scroll inside
-  themselves, except the short install commands (the first screen, the quick start, the plans and
-  Download), which wrap at their spaces beside the Copy button. The day phone crops are cut at their
+  themselves, except the short install commands (the first screen, the quick start and Download), which wrap at their spaces beside the Copy button. The day phone crops are cut at their
   edges with `overflow: clip`, and each starts (`--crop-start`, a share of the screen's height) where the
   part its card talks about begins.
 - **Intrinsic grids first.** Cards use `repeat(auto-fit, minmax(min(100%, …), 1fr))`. The few width
   queries move the header navigation below the name, put a heading beside its lead and a screenshot
-  beside its text, turn a row of phone screens from a sideways strip into a grid, and give the phone in
-  the first screen more room on narrow screens.
+  beside its text, and turn a row of phone screens from a sideways strip into a grid.
 - **Group spacing set by the parent** with `gap`; there are no spacer elements.
 - **One focus ring** with `:focus-visible` in the accent colour (the code colour on the dark code
   background), never `outline: none`; a skip link is the first element on the page.
@@ -198,8 +196,8 @@ scroll-driven animation, `text-box` and `@property`.
 
 ## Privacy
 
-No cookies, no analytics and no scripts from other servers. The General Sans font loads from Fontshare (servers
-used by Indian Type Foundry), which sees the visitor's IP address and the page address as for any download;
+No cookies, no analytics and no scripts from other servers. The General Sans font file loads from the Fontshare
+CDN (Indian Type Foundry) through our own `@font-face`, and Fontshare sees the visitor's IP address as for any download;
 nothing else loads from another server. The waitlist form sends an email
 address to this site's own Worker, which keeps it in D1 for one email when Dayhand Cloud opens. `scripts/check-site.sh` checks what the
 built pages reference and lints the built CSS and JS; it does not prove runtime network behaviour. Verify
