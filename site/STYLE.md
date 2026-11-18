@@ -2,7 +2,8 @@
 
 `site/` is an [Astro](https://astro.build) project that builds dayhand.dev into `site/dist/` as plain
 static files: the home page and the documentation (from `docs/*.md`) as HTML, two stylesheets, three small
-scripts, two fonts and images, with no framework on the page and nothing loaded from other servers. The only server
+scripts, Geist Mono and images, with no framework on the page. The one thing loaded from another server is the
+General Sans font, from Fontshare. The only server
 code is the Worker script in `worker/`, which answers the waitlist form (`POST /api/waitlist`). The
 site is in English; its text is written for this project.
 
@@ -38,7 +39,7 @@ npm run preview   # serves dist/ as it will be published
 | `src/scripts/waitlist.ts` | sends the Dayhand Cloud waitlist form; without it the form is hidden and a line says why |
 | `src/site.ts` | the addresses the pages link to |
 | `src/assets/screens/` | the app screenshots the build resizes |
-| `public/fonts/` | Instrument Sans and Geist Mono as WOFF2 (Latin and Latin Extended), each with its SIL Open Font License; from the Fontsource packages `@fontsource-variable/instrument-sans` 5.3.0 and `@fontsource-variable/geist-mono` 5.3.0 |
+| `public/fonts/` | Geist Mono as WOFF2 (Latin and Latin Extended) with its SIL Open Font License, from the Fontsource package `@fontsource-variable/geist-mono` 5.3.0 |
 | `public/` | files copied as they are: `favicon.svg` (a copy of `design/icon/dayhand-icon.svg`), `robots.txt`, and `apple-touch-icon.png` and `og-image.png`, rendered by `scripts/render-site-images.sh` from the icon and `og-image.svg` |
 | `wrangler.toml` | the Cloudflare Worker that serves `dist/` at dayhand.dev, and its D1 waitlist database |
 | `worker/` | the Worker script: `POST /api/waitlist` only (`index.ts`), and the checks on what the form sends (`input.ts`) |
@@ -47,7 +48,8 @@ npm run preview   # serves dist/ as it will be published
 
 Check the build with `scripts/check-site.sh` before every change is merged (`--build` installs and builds
 first). It reads `site/dist/`: HTML structure, image attributes, internal links and fragments, that pages
-link with a trailing slash, that nothing a page loads comes from another server, the metadata of every page
+link with a trailing slash, that nothing a page loads comes from another server except the General Sans stylesheet and a preconnect to
+Fontshare, the metadata of every page
 (description; canonical address, Open Graph tags and a sitemap entry, or `noindex`), the 404 page, the
 image weight of a page, the documentation search index, `sitemap.xml` and `robots.txt`. Its CSS/JS scans
 are static lint rules for URL literals and the CSS patterns ruled out below; they do not run code or watch
@@ -102,8 +104,8 @@ picture by eye for anything that is not demo data, and look at the page in both 
 ## The home page
 
 Big type, a lot of air, and the product in front. The sections, in order: the first screen (a centred
-heading with the wheel icon inside it, the two buttons and the first two commands), the real Mac and Android
-apps on a backdrop, the ways an agent reaches the plan, one sentence set large, a card on a backdrop saying
+heading with the wheel icon inside it, the two buttons and the install command on one line), the real Mac app
+on a backdrop, the ways an agent reaches the plan, one sentence set large, a card on a backdrop saying
 that agents work on the same plan, one day of agent work as tiles with cropped screenshots, connecting an agent
 under a row of the commands it uses, the screens and platforms, "free" as one large word, where the plan lives (three cards, the
 Dayhand Cloud waitlist in the middle one), the quick start as four numbered cards, Download, open source, the
@@ -113,18 +115,20 @@ The large rounded panels behind the screenshots and cards (`.backdrop` in `home.
 the palette, `--backdrop`: a warm caramel cream in the light theme and a light espresso in the dark one.
 
 Corners come in three sizes and the pill: `--radius` for the large panels, `--radius-card` for every card,
-`--radius-inner` inside a card and `--pill` for buttons and tags. The palette has no accent colours beyond
+`--radius-inner` for buttons, fields and other controls and for small parts inside a card, and `--pill` for tags,
+badges and captions, which are not controls. The palette has no accent colours beyond
 espresso, caramel and cream. Shadows sit only under the screenshots and the terminal sample, sentences carry no icons and links carry
 no arrows. Only the word "free" is set in display size and the accent colour.
 
-Type: Instrument Sans for text and headings, Geist Mono for code, both under the SIL Open Font License and
-served from `public/fonts/`. h1, h2 and the headings of the tiles, plans and downloads are weight 500 with tight letter
-spacing (-0.045em, the first-screen heading -0.055em, the card headings -0.035em), other h3 and h4 550,
-body text 450; the type scale is the one fluid scale on `:root`. Only the Latin file of
-Instrument Sans is preloaded; the Latin Extended files load only for a page that uses those characters, and
-anything outside both ranges falls back to the system font. `font-size-adjust` (0.51 for text, 0.53 for code,
-the measured x-heights of the two fonts) scales a fallback font to the same size, so the text does not jump
-while the fonts load.
+Type: General Sans for text and headings, Geist Mono for code. General Sans (Indian Type Foundry) is under the
+ITF Free Font License, which allows commercial use on websites but not the files in a public repository, so it
+loads from Fontshare's servers: one variable file, weights 200 to 700, through the stylesheet and preconnect in
+`Page.astro`. Geist Mono is under the SIL Open Font License and served from `public/fonts/`. The first-screen
+heading is weight 450 (-0.055em); h2 and the headings of the tiles, plans and downloads 500 with tight letter
+spacing (-0.045em, the card headings -0.035em); other h3 and h4 550; body text 450. The type scale is the one
+fluid scale on `:root`. `font-size-adjust` (0.53 for text and for code, the measured x-heights of the two
+fonts) scales a fallback font to the same size, so the text does not jump while the fonts load or if Fontshare
+cannot be reached.
 
 ## Rules from good-css.com that this site follows
 
@@ -194,7 +198,9 @@ scroll-driven animation, `text-box` and `@property`.
 
 ## Privacy
 
-No cookies, no analytics, no fonts or scripts from other servers. The waitlist form sends an email
+No cookies, no analytics and no scripts from other servers. The General Sans font loads from Fontshare (servers
+used by Indian Type Foundry), which sees the visitor's IP address and the page address as for any download;
+nothing else loads from another server. The waitlist form sends an email
 address to this site's own Worker, which keeps it in D1 for one email when Dayhand Cloud opens. `scripts/check-site.sh` checks what the
 built pages reference and lints the built CSS and JS; it does not prove runtime network behaviour. Verify
 requests separately in a browser's Network panel.

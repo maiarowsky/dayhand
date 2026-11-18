@@ -1,22 +1,11 @@
 /* dayhand.dev, every page: tokens, reset, header, footer, buttons, code and the docs. The home page sections are in
-   home.css. No framework, nothing from other servers. The rules this follows are in STYLE.md. */
+   home.css. No framework; the only thing from another server is the General Sans font. The rules this follows are
+   in STYLE.md. */
 
-/* Fonts, served from this site under the SIL Open Font License (public/fonts/*-OFL.txt): Instrument Sans for
-   text and headings, Geist Mono for code. Each file covers the Latin or Latin Extended range only. */
-@font-face {
-  font-family: "Instrument Sans";
-  src: url("/fonts/instrument-sans-latin.woff2") format("woff2");
-  font-weight: 400 700;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: "Instrument Sans";
-  src: url("/fonts/instrument-sans-latin-ext.woff2") format("woff2");
-  font-weight: 400 700;
-  font-display: swap;
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
+/* Fonts. General Sans (Indian Type Foundry, ITF Free Font License) for text and headings loads from Fontshare's
+   servers through the stylesheet in Page.astro, because its licence does not allow the files in a public
+   repository. Geist Mono for code is served from this site under the SIL Open Font License
+   (public/fonts/geist-mono-OFL.txt); each file covers the Latin or Latin Extended range only. */
 @font-face {
   font-family: "Geist Mono";
   src: url("/fonts/geist-mono-latin.woff2") format("woff2");
@@ -86,7 +75,7 @@
   --content: 72.5rem;
   --gutter: 1rem;
 
-  --font-sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --font-sans: "General Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -101,6 +90,8 @@ html {
   scroll-padding-block-start: var(--space-m);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 body {
   margin: 0;
@@ -111,10 +102,11 @@ body {
   font-size: var(--step-0);
   font-weight: 450;
   line-height: 1.6;
-  font-synthesis: none;
-  /* The x-height of Instrument Sans (and of Geist Mono below), measured: a fallback font is scaled to it, so text
-     keeps its size while the web fonts load or if they fail. */
-  font-size-adjust: 0.51;
+  /* General Sans ships every weight from 200 to 700 in one variable file, so a weight is never faked. */
+  font-synthesis-weight: none;
+  /* The x-height of General Sans (and of Geist Mono below), measured: a fallback font is scaled to it, so text
+     keeps its size while the web fonts load or if Fontshare cannot be reached. */
+  font-size-adjust: 0.53;
 }
 h1, h2, h3, h4 { line-height: 1.15; text-wrap: balance; margin: 0; font-weight: 550; }
 p, li, dd, figcaption, summary { text-wrap: pretty; }
@@ -206,9 +198,9 @@ ul.actions { padding: 0; list-style: none; }
   justify-content: center;
   gap: 0.5em;
   min-block-size: 3rem;
-  padding: 0.6em 1.35em;
+  padding: 0.6em 1.1em;
   border: 0;
-  border-radius: var(--pill);
+  border-radius: var(--radius-inner);
   background: var(--surface-2);
   color: var(--text);
   font: inherit;

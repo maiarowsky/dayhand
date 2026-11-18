@@ -15,7 +15,7 @@
 .pill {
   position: relative;
   padding: 0.25em 0.95em;
-  border-radius: var(--pill);
+  border-radius: var(--radius-inner);
   background: var(--surface);
   color: var(--text);
   font-size: var(--step--1);
@@ -26,7 +26,7 @@
 .hero h1 {
   max-inline-size: 14ch;
   font-size: var(--step-4);
-  font-weight: 500;
+  font-weight: 450;
   letter-spacing: -0.055em;
   line-height: 0.95;
 }
@@ -40,7 +40,9 @@
 .lead { max-inline-size: 44ch; color: var(--muted); font-size: var(--step-1); }
 .hero .actions { justify-content: center; }
 .quickstart { display: grid; justify-items: center; gap: var(--space-xs); }
-.quickstart .code-wrap { inline-size: min(100%, 22rem); }
+.quickstart .code-wrap { inline-size: min(100%, 27rem); }
+/* On a phone the one-line command takes two even lines, so "dayhand server start" stays whole. */
+.quickstart pre, .pill { text-wrap: balance; }
 
 .stage {
   grid-column: full;
@@ -50,20 +52,7 @@
   margin-block-start: var(--space-l);
   padding: clamp(1.5rem, 5vw, 4.5rem) clamp(0.75rem, 4vw, 4rem) var(--space-m);
 }
-.showcase {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  inline-size: min(100%, 66rem);
-  margin-inline: auto;
-}
-.showcase .window { grid-row: 1; grid-column: 1 / span 10; }
-/* Percentage margins resolve against the width of the grid area, so the overlap scales with the page. The window's
-   drop-shadow filter makes it a stacking context, which would paint over the phone. */
-.showcase .phone { position: relative; z-index: 1; grid-row: 1; grid-column: 10 / span 3; margin-block-start: 55%; }
-@media (width < 40rem) {
-  .showcase .window { grid-column: 1 / -1; }
-  .showcase .phone { grid-column: 7 / -1; margin-block-start: 40%; }
-}
+.showcase { inline-size: min(100%, 66rem); margin-inline: auto; }
 .stage-caption, .phones figcaption {
   justify-self: center;
   padding: 0.3em 0.9em;
@@ -280,7 +269,7 @@
   min-block-size: 3rem;
   padding-inline: 1rem;
   border: 1px solid var(--border);
-  border-radius: var(--pill);
+  border-radius: var(--radius-inner);
   background: var(--surface-raised);
   color: var(--text);
   font: inherit;
@@ -369,7 +358,7 @@
   flex: none;
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  border-radius: 50%;
+  border-radius: var(--radius-inner);
   background: var(--surface-raised);
   font-size: 1.25rem;
   font-weight: 400;

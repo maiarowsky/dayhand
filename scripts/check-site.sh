@@ -4,8 +4,9 @@
 #   in order, unique ids, alt text and a size on every <img>, no inline scripts or on* handlers;
 # - links: every internal link, #fragment and https://dayhand.dev/ address points at a file of the build and an
 #   id that exists, and links to pages end with a slash, the way the host serves them;
-# - nothing from other servers: everything a page loads (styles, scripts, images, icons) is in the build; only
-#   plain <a href> links may point at other sites;
+# - nothing from other servers but one font: everything a page loads (styles, scripts, images, icons) is in the
+#   build, except the General Sans stylesheet from Fontshare and a preconnect to its two hosts (FONT_STYLESHEET,
+#   FONT_ORIGINS); only plain <a href> links may point at other sites;
 # - metadata: every page has a description; a page for search engines has a canonical address of its own,
 #   Open Graph tags and a place in sitemap.xml, and any other page says noindex; 404.html and robots.txt exist;
 # - images: what one page loads at the widest srcset candidates, for one colour scheme, stays within a budget;
@@ -42,6 +43,9 @@ from xml.etree import ElementTree
 DIST = os.path.abspath(sys.argv[1])
 ORIGIN = "https://dayhand.dev"
 IMAGE_BUDGET = 1_500_000  # bytes of images one page may load for one colour scheme
+# General Sans may not be stored in a public repository (ITF Free Font License), so it loads from Fontshare.
+FONT_STYLESHEET = "https://api.fontshare.com/v2/css?f[]=general-sans@1&display=swap"
+FONT_ORIGINS = {"https://api.fontshare.com", "https://cdn.fontshare.com"}
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 EXTERNAL = re.compile(r"^(?:[a-z][a-z0-9+.-]*:)?//", re.I)
@@ -241,7 +245,11 @@ for path, (page, text) in pages.items():
             continue
         target = local_target(path, value)
         if target is None:
-            # Other sites: only plain links may point there; anything the page would load must be local.
+            # Other sites: only plain links may point there; anything the page would load must be local, except
+            # the one font stylesheet and the preconnect to its hosts.
+            if tag == "link" and (("stylesheet" in rel and value == FONT_STYLESHEET)
+                                  or ("preconnect" in rel and value in FONT_ORIGINS)):
+                continue
             if tag != "a":
                 problem(path, line, f"<{tag} {attr}> references another server: {value}")
             continue

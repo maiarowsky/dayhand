@@ -1,12 +1,10 @@
 ---
-// The first screen: what Dayhand is, the two ways in and the first commands, then the real apps on a
+// The first screen: what Dayhand is, the two ways in and the install command, then the real Mac app on a
 // backdrop, and the ways an agent reaches the plan.
 import Screenshot from "../Screenshot.astro";
 import { DOCS_PATH } from "../../site";
 import macLight from "../../assets/screens/mac-today-light.webp";
 import macDark from "../../assets/screens/mac-today-dark.webp";
-import phoneLight from "../../assets/screens/android-today-light.webp";
-import phoneDark from "../../assets/screens/android-today-dark.webp";
 
 const reach = [
   { href: `${DOCS_PATH}mcp/`, label: "MCP" },
@@ -19,7 +17,7 @@ const reach = [
 
 <section class="hero" aria-labelledby="hero-title">
   <div class="hero-text">
-    <a class="pill" href="#screens">Android, macOS, Linux and your terminal</a>
+    <a class="pill" href="#screens">Android, macOS, Linux and your terminal. iPhone coming soon</a>
     <h1 id="hero-title">
       A day plan <img class="h1-mark" src="/favicon.svg" alt="" width="64" height="64" /> for you and your AI agents
     </h1>
@@ -32,8 +30,7 @@ const reach = [
       <a class="button" href={DOCS_PATH}>Read the docs</a>
     </div>
     <div class="quickstart inline-copy">
-      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that install the command line and start your own server"><code>npm i -g dayhand
-dayhand server start</code></pre>
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line and starts your own server"><code>npm i -g dayhand && dayhand server start</code></pre>
       <p class="fineprint">
         Free and open source. No account needed. <a href={`${DOCS_PATH}getting-started/`}>Quick start, about 10 minutes</a>
       </p>
@@ -47,21 +44,12 @@ dayhand server start</code></pre>
         light={macLight}
         dark={macDark}
         widths={[700, 1080, 1600, 2160]}
-        sizes="(min-width: 76rem) 60rem, (min-width: 40rem) 80vw, calc(100vw - 3rem)"
+        sizes="(min-width: 76rem) 66rem, calc(100vw - 3rem)"
         eager
         alt="Dayhand for macOS. On the left, Today: one overdue task, Send the October invoices; the task being worked on now, Write the proposal for the bakery website; and seven tasks for today. On the right, the details of Write the case study for the logo project: in progress, due today, labelled marketing, with two of three checklist items done."
       />
-      <Screenshot
-        class="phone"
-        light={phoneLight}
-        dark={phoneDark}
-        widths={[300, 600, 900]}
-        sizes="(min-width: 76rem) 17rem, (min-width: 40rem) 24vw, 45vw"
-        eager
-        alt="Dayhand for Android showing the same Today: a card that sums up the plan, with one overdue task, one approval request, one blocked task and one proposal, then the overdue invoices, the task being worked on now and the tasks for today with their times."
-      />
     </div>
-    <figcaption class="stage-caption">The real Dayhand for macOS and Android, on the same sample plan.</figcaption>
+    <figcaption class="stage-caption">The real Dayhand for macOS, on a sample plan.</figcaption>
   </figure>
 
   <div class="reach">
