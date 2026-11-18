@@ -51,7 +51,7 @@ note:
         claude holds this task until 19:01. When the time runs out anyone may take it; your own changes always go
         through.
       </p>
-      <div class="tile-media crop">
+      <div class="tile-media crop claim">
         <Screenshot
           class="phone"
           light={claimLight}
@@ -68,7 +68,7 @@ note:
         Before a step that cannot be undone, the agent asks and waits. With no answer by the deadline, the request
         expires and the agent is told.
       </p>
-      <div class="tile-media crop">
+      <div class="tile-media crop ask">
         <Screenshot
           class="phone"
           light={approvalLight}
@@ -82,7 +82,7 @@ note:
     <li class="tile">
       <h3>Prove</h3>
       <p>The agent says what it did, with named checks such as <code>totals=pass</code>.</p>
-      <div class="tile-media crop">
+      <div class="tile-media crop prove">
         <Screenshot
           class="phone"
           light={proofLight}
@@ -114,7 +114,7 @@ note:
           sizes="(min-width: 30rem) 22rem, calc(100vw - 4rem)"
           alt="An Android notification from Dayhand: claude asks for your approval, Send the October newsletter to the mailing list."
         />
-        <div class="crop">
+        <div class="crop policies">
           <Screenshot
             class="phone"
             light={agentsLight}

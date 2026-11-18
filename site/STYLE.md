@@ -118,8 +118,9 @@ espresso, caramel and cream. Shadows sit only under the screenshots, sentences c
 no arrows. Only the word "free" is set in display size and the accent colour.
 
 Type: Instrument Sans for text and headings, Geist Mono for code, both under the SIL Open Font License and
-served from `public/fonts/`. Headings are weight 500 with tight letter spacing (-0.045em, the first-screen
-heading -0.055em), body text 450; the type scale is the one fluid scale on `:root`. Only the Latin file of
+served from `public/fonts/`. h1, h2 and the headings of the tiles, plans and downloads are weight 500 with tight letter
+spacing (-0.045em, the first-screen heading -0.055em, the card headings -0.035em), other h3 and h4 550,
+body text 450; the type scale is the one fluid scale on `:root`. Only the Latin file of
 Instrument Sans is preloaded; the Latin Extended files load only for a page that uses those characters, and
 anything outside both ranges falls back to the system font. `font-size-adjust` (0.51 for text, 0.53 for code,
 the measured x-heights of the two fonts) scales a fallback font to the same size, so the text does not jump
@@ -151,7 +152,8 @@ The layout was checked at 360 px, 390 px and 1440 px wide, in the light and the 
   any width and the page never scrolls sideways; code blocks and the rows of phone screens scroll inside
   themselves, except the short install commands (the first screen, the quick start, the plans and
   Download), which wrap at their spaces beside the Copy button. The day phone crops are cut at their
-  edges with `overflow: clip`.
+  edges with `overflow: clip`, and each starts (`--crop-start`, a share of the screen's height) where the
+  part its card talks about begins.
 - **Intrinsic grids first.** Cards use `repeat(auto-fit, minmax(min(100%, …), 1fr))`. The few width
   queries move the header navigation below the name, put a heading beside its lead and a screenshot
   beside its text, turn a row of phone screens from a sideways strip into a grid, and give the phone in
