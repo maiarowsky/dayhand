@@ -295,7 +295,7 @@ async function setupLocal(options, dir) {
     const result = await finish({
       dir,
       envFile,
-      wantedIssuer: state?.issuer ?? LOCAL_ISSUER,
+      wantedIssuer: state?.issuer ?? options.issuer ?? LOCAL_ISSUER,
       siteUrl: options.publicUrl ?? backend.siteUrl,
       checkUrl: backend.siteUrl,
       convexUrl: options.publicApiUrl ?? backend.url,

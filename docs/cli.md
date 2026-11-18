@@ -2009,6 +2009,7 @@ dayhand server start [options]
 | `--site-port <n>` | HTTP actions port (default: 3211) |
 | `--public-url <url>` | The HTTPS address phones use, e.g. https://<machine>.<tailnet>.ts.net |
 | `--public-api-url <url>` | The Convex API's HTTPS address (default: --public-url at port 8443) |
+| `--issuer <url>` | DAYHAND_JWT_ISSUER for a new server (default: https://helm.local); an old server's, to import its data |
 | `--backend <folder>` | The Dayhand repository's backend/ folder (default: the repository you run from, else the backend packaged with dayhand) |
 
 ```sh

@@ -75,7 +75,8 @@ describe("options", () => {
     expect(parseOptions(["--local", "--public-url", "https://a.example", "--public-api-url", "https://api.a.example"]).publicApiUrl).toBe("https://api.a.example");
   });
 
-  test("the issuer is an https origin", () => {
+  test("the issuer is an https origin, also for a local server taking over another server's data", () => {
+    expect(parseOptions(["--local", "--issuer", "https://helm.example"]).issuer).toBe("https://helm.example");
     expect(checkIssuer("https://helm.example/")).toBe("https://helm.example");
     expect(() => checkIssuer("https://user@helm.example")).toThrow(UsageError);
   });
@@ -255,6 +256,13 @@ describe("--dry-run", () => {
     expect(text).toContain("reuse the app-signing key");
     expect(text).toContain("DAYHAND_JWT_ISSUER (https://helm.example)");
     expect(text).toContain("keep the CLI key");
+  });
+
+  test("a new local server with --issuer signs in as that issuer's owner", async () => {
+    const text = JSON.parse((await dryRun(fresh("dry-issuer"), ["--local", "--issuer", "https://helm.example"])).stdout).plan.join("\n");
+    expect(text).toContain("DAYHAND_JWT_ISSUER (https://helm.example)");
+    expect(text).toContain("https://helm.example|owner");
+    expect(text).not.toContain("helm.local");
   });
 
   test("a mistake in the options exits 2 before anything runs", async () => {

@@ -215,6 +215,11 @@ folder's `convex.env`, run `dayhand server deploy` once more (the import replace
 it makes a new CLI key) and pair the phone again. The environment variables are not in the
 export; the signing key can be new.
 
+Into a new local server the same way: the first `dayhand server start --issuer <old issuer>` (with a
+new `DAYHAND_SERVER_CONFIG_DIR`, or no `local/` folder in it yet), import the zip with
+`<folder>/local/convex.env` while it runs, then stop it and start it again (that makes the new CLI
+key). The issuer is the part before `|owner` in the `userId` of any exported task.
+
 ### On this computer, without an account
 
 ```sh
