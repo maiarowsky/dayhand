@@ -65,7 +65,7 @@ phone is what makes a request legitimate.
 - **A stolen refresh token used within 30 seconds** of the legitimate refresh is taken for a
   retry. The legitimate client's next refresh then fails, and a later use of an old token
   revokes the connection.
-- **Metadata documents have no cache. Coming soon:** every authorization attempt counts
+- **Metadata documents have no cache.** Every authorization attempt counts
   before any metadata fetch (20 per client per 10 minutes, including malformed requests and
   failed fetches). Locally invalid parameters are rejected without a fetch or redirect,
   because the redirect has not yet been verified for the client. The global flood guard

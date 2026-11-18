@@ -30,6 +30,10 @@ Versions before 0.13.0 are described in the commit history (`git log -- cli`).
   (modes 600 and 700); otherwise `dayhand` stops with a config error instead of using them.
 - Links and QR codes from `dayhand pair` and server setup carry only the server address; the code
   is typed in the app.
+- The packaged server's `/auth/pair` flood counter refuses only invalid codes, so a caller sending
+  wrong codes no longer locks out a valid code on another phone.
+- The packaged server counts every OAuth authorization attempt before any client metadata fetch,
+  and rejects locally invalid parameters without a fetch or redirect.
 
 ## 0.15.1 (2026-10-31)
 
