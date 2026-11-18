@@ -1,0 +1,39 @@
+---
+// The quick start in four steps, from installing the command line to an agent working on the plan.
+import { DOCS_PATH } from "../../site";
+---
+
+<section class="steps-section" aria-labelledby="steps-title">
+  <h2 id="steps-title">From install to a shared plan in about ten minutes</h2>
+  <ol class="steps" role="list">
+    <li>
+      <h3>Install the command line</h3>
+      <p>One command puts <code>dayhand</code> on your PATH, with the server inside the package.</p>
+      <div class="inline-copy step-foot">
+        <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line"><code>npm i -g dayhand</code></pre>
+      </div>
+    </li>
+    <li>
+      <h3>Start your server</h3>
+      <p>It runs on your computer, with no copy of the repository. Or deploy it to your own Convex account.</p>
+      <div class="inline-copy step-foot">
+        <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that starts your server"><code>dayhand server start</code></pre>
+      </div>
+    </li>
+    <li>
+      <h3>Connect your phone</h3>
+      <p>In the app, choose Settings → Server → Connect to my server, then scan the code this prints. It works once.</p>
+      <div class="inline-copy step-foot">
+        <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that prints a pairing code"><code>dayhand pair</code></pre>
+      </div>
+    </li>
+    <li>
+      <h3>Connect an agent</h3>
+      <p>Give it a key of its own and add the server to Claude Code or any MCP client.</p>
+      <a class="more step-foot" href="#connect">How to connect <span aria-hidden="true">→</span></a>
+    </li>
+  </ol>
+  <p class="note">
+    Every step in detail: <a href={`${DOCS_PATH}getting-started/`}>the quick start</a>.
+  </p>
+</section>

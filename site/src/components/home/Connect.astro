@@ -1,0 +1,37 @@
+---
+// How an agent connects: a band of the commands it uses, three short ways in, and the commands for Claude Code.
+const band = [
+  "dayhand",
+  "dayhand show 12",
+  "dayhand ui",
+  "dayhand log --by agent",
+  "/mcp",
+  "--json",
+  "dayhand key create",
+  "dayhand pair",
+  "dayhand server start",
+];
+---
+
+<section id="connect" class="connect" aria-labelledby="connect-title">
+  <h2 id="connect-title">Connect the agent you already use</h2>
+  <div class="band" aria-hidden="true">
+    <ul role="list">{band.map((command) => <li>{command}</li>)}</ul>
+  </div>
+  <ul class="columns" role="list">
+    <li>
+      The server speaks MCP at <code>/mcp</code>. Any MCP client connects with the address and an
+      <code>Authorization: Bearer</code> header; for Claude Code it is one command.
+    </li>
+    <li>
+      The Claude apps connect as a custom connector with OAuth, and you approve each connection on your phone.
+    </li>
+    <li>
+      Agents that run shell commands use <code>dayhand</code>. With <code>--json</code> it prints exactly what the MCP
+      tools return, and a ready Agent Skill teaches an agent the commands.
+    </li>
+  </ul>
+  <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that connect Claude Code"><code>AGENT_KEY=$(dayhand key create claude --scope write --json | jq -r .key)
+claude mcp add --transport http dayhand http://127.0.0.1:3211/mcp \
+  --header "Authorization: Bearer $AGENT_KEY"</code></pre>
+</section>

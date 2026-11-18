@@ -1,0 +1,152 @@
+---
+// One day of agent work in the real apps on sample data: criteria, claim, ask, prove, the rules and the history,
+// each a card with the screen that shows it.
+import Screenshot from "../Screenshot.astro";
+import claimLight from "../../assets/screens/android-claim-light.webp";
+import claimDark from "../../assets/screens/android-claim-dark.webp";
+import approvalLight from "../../assets/screens/android-approval-light.webp";
+import approvalDark from "../../assets/screens/android-approval-dark.webp";
+import proofLight from "../../assets/screens/android-proof-light.webp";
+import proofDark from "../../assets/screens/android-proof-dark.webp";
+import agentsLight from "../../assets/screens/android-agents-light.webp";
+import agentsDark from "../../assets/screens/android-agents-dark.webp";
+import notification from "../../assets/screens/android-notification-light.webp";
+import historyLight from "../../assets/screens/mac-history-light.webp";
+import historyDark from "../../assets/screens/mac-history-dark.webp";
+
+const phoneWidths = [300, 600, 900];
+const phoneSizes = "(min-width: 40rem) 16rem, 70vw";
+---
+
+<section class="workday" aria-labelledby="workday-title">
+  <div class="split-head">
+    <h2 id="workday-title">One day of agent work</h2>
+    <p class="section-lead">
+      Here is what that looks like in the real app, on sample data: one task from its criteria to its proof.
+    </p>
+  </div>
+
+  <ul class="bento" role="list">
+    <li class="tile">
+      <h3>Say what done means</h3>
+      <p>The agent reads the task over MCP or with <code>dayhand show</code>, and leaves a note where it stopped.</p>
+      <figure class="terminal wrap tile-media">
+        <div class="terminal-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+        <pre tabindex="0" aria-label="The dayhand show command printing one task"><code><span class="prompt">$</span> dayhand show 12
+<span class="out">#12 Publish the October newsletter
+status   todo
+due      2026-10-24 17:00 (today)
+claimed  claude until 2026-10-24 19:01
+acceptance:
+  1. [x] Every link opens
+  2. [x] The unsubscribe link works
+  3. [ ] You approved the final text
+note:
+  The draft is in newsletter-october.md.</span></code></pre>
+      </figure>
+    </li>
+    <li class="tile">
+      <h3>Claim</h3>
+      <p>
+        claude holds this task until 19:01. When the time runs out anyone may take it; your own changes always go
+        through.
+      </p>
+      <div class="tile-media crop">
+        <Screenshot
+          class="phone"
+          light={claimLight}
+          dark={claimDark}
+          widths={phoneWidths}
+          sizes={phoneSizes}
+          alt="The task Update the pricing page on Android, in progress, with the line agent: claude works until 19:01, and its acceptance criteria, one of two met."
+        />
+      </div>
+    </li>
+    <li class="tile">
+      <h3>Ask</h3>
+      <p>
+        Before a step that cannot be undone, the agent asks and waits. With no answer by the deadline, the request
+        expires and the agent is told.
+      </p>
+      <div class="tile-media crop">
+        <Screenshot
+          class="phone"
+          light={approvalLight}
+          dark={approvalDark}
+          widths={phoneWidths}
+          sizes={phoneSizes}
+          alt="An approval request on Android: claude asks to send the October newsletter to the mailing list, which cannot be undone, with a deadline and two answers, Send now and Keep it as a draft."
+        />
+      </div>
+    </li>
+    <li class="tile">
+      <h3>Prove</h3>
+      <p>The agent says what it did, with named checks such as <code>totals=pass</code>.</p>
+      <div class="tile-media crop">
+        <Screenshot
+          class="phone"
+          light={proofLight}
+          dark={proofDark}
+          widths={phoneWidths}
+          sizes={phoneSizes}
+          alt="The finished task Export the Q3 sales report on Android, with both acceptance criteria met and the proof of completion: three CSV files are in reports/q3 and the totals match the bank statement, with two passed checks."
+        />
+      </div>
+    </li>
+    <li class="tile wide">
+      <div class="tile-text">
+        <h3>You set the rules</h3>
+        <p>
+          One switch pauses every agent. A policy for each agent key allows, asks for or denies each tool, and work an
+          agent proposes waits in an inbox until you accept, merge or reject it. A health card above Today shows what
+          needs a look.
+        </p>
+        <p>
+          The phone checks for new approval requests about every 15 minutes and shows them as a notification. Dayhand
+          uses no push service, so nothing sits between your server and your phone.
+        </p>
+      </div>
+      <div class="tile-media rules">
+        <Screenshot
+          class="notice"
+          light={notification}
+          widths={[500, 996]}
+          sizes="(min-width: 30rem) 22rem, calc(100vw - 4rem)"
+          alt="An Android notification from Dayhand: claude asks for your approval, Send the October newsletter to the mailing list."
+        />
+        <div class="crop">
+          <Screenshot
+            class="phone"
+            light={agentsLight}
+            dark={agentsDark}
+            widths={phoneWidths}
+            sizes={phoneSizes}
+            alt="The Agents screen on Android: the Pause agents switch, one request waiting for you, one proposal from claude, and tool policies that deny delete_task to bookkeeper and claude and ask before claude completes a task."
+          />
+        </div>
+      </div>
+    </li>
+    <li class="tile wide">
+      <div class="tile-text">
+        <h3>See who did what</h3>
+        <p>
+          An agent's edits stand out in the task history and the activity log, and <code>dayhand log --by agent</code>
+          lists them in the terminal. Revoke a key and that agent is out.
+        </p>
+      </div>
+      <Screenshot
+        class="window tile-media"
+        light={historyLight}
+        dark={historyDark}
+        widths={[700, 1080, 1600, 2160]}
+        sizes="(min-width: 76rem) 44rem, calc(100vw - 4rem)"
+        alt="Dayhand for macOS with the history of Write the case study for the logo project, newest first: the agent claude moved it to in progress, added a note, ticked two checklist items and claimed it, after you created it from the command line."
+      />
+    </li>
+  </ul>
+
+  <p class="note">
+    Dayhand records your decisions and the agents' work in the plan. It cannot stop what an agent does outside
+    Dayhand.
+  </p>
+</section>

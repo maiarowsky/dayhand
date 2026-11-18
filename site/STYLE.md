@@ -1,8 +1,8 @@
 # dayhand.dev: how the site is built
 
 `site/` is an [Astro](https://astro.build) project that builds dayhand.dev into `site/dist/` as plain
-static files: the home page and the documentation (from `docs/*.md`) as HTML, one stylesheet, three small
-scripts and images, with no framework on the page and nothing loaded from other servers. The only server
+static files: the home page and the documentation (from `docs/*.md`) as HTML, two stylesheets, three small
+scripts, two fonts and images, with no framework on the page and nothing loaded from other servers. The only server
 code is the Worker script in `worker/`, which answers the waitlist form (`POST /api/waitlist`). The
 site is in English; its text is written for this project.
 
@@ -20,7 +20,7 @@ npm run preview   # serves dist/ as it will be published
 | File | What it is |
 |---|---|
 | `astro.config.mjs` | static output into `dist/`, a folder per page with a trailing slash, no inline styles or scripts, images through sharp |
-| `src/pages/index.astro` | the home page; each section is a component in `src/components/home/` |
+| `src/pages/index.astro` | the home page; each section is a component in `src/components/home/`, in the order below |
 | `src/pages/docs/[...slug].astro` | one documentation page for each file `src/docs/pages.ts` lists |
 | `src/pages/docs/search-index.json.ts` | the search index of the documentation, written at build time |
 | `src/pages/404.astro` | the page the host serves for an address that does not exist |
@@ -31,12 +31,15 @@ npm run preview   # serves dist/ as it will be published
 | `src/docs/pages.ts` | which `docs/*.md` files are pages, in which group and order, and their addresses |
 | `src/docs/html.ts` | turns the HTML Astro renders from a doc into a page (below) |
 | `src/components/Screenshot.astro` | one app screenshot, light and dark, as WebP at the widths a place needs |
-| `src/styles/site.css` | every style, with the tokens on `:root` |
+| `src/components/Icon.astro` | a small decorative line icon drawn inline in the text colour |
+| `src/styles/site.css` | the tokens on `:root`, the reset, the header, footer, buttons, code and the docs: every page |
+| `src/styles/home.css` | the sections of the home page, imported only by `index.astro` |
 | `src/scripts/copy-buttons.ts` | adds a Copy button to code blocks; the page works without it |
 | `src/scripts/docs-search.ts` | keeps the docs menu open beside the page and runs the search; the docs work without it |
 | `src/scripts/waitlist.ts` | sends the Dayhand Cloud waitlist form; without it the form is hidden and a line says why |
 | `src/site.ts` | the addresses the pages link to |
 | `src/assets/screens/` | the app screenshots the build resizes |
+| `public/fonts/` | Instrument Sans and Geist Mono as WOFF2 (Latin and Latin Extended), each with its SIL Open Font License; from the Fontsource packages `@fontsource-variable/instrument-sans` 5.3.0 and `@fontsource-variable/geist-mono` 5.3.0 |
 | `public/` | files copied as they are: `favicon.svg` (a copy of `design/icon/dayhand-icon.svg`), `robots.txt`, and `apple-touch-icon.png` and `og-image.png`, rendered by `scripts/render-site-images.sh` from the icon and `og-image.svg` |
 | `wrangler.toml` | the Cloudflare Worker that serves `dist/` at dayhand.dev, and its D1 waitlist database |
 | `worker/` | the Worker script: `POST /api/waitlist` only (`index.ts`), and the checks on what the form sends (`input.ts`) |
@@ -97,16 +100,36 @@ which is cropped to its card. The build makes smaller WebP files at the widths e
 width and height set so nothing moves while they load. To replace one, keep the file name, check the new
 picture by eye for anything that is not demo data, and look at the page in both themes.
 
+## The home page
+
+Big type, a lot of air, and the product in front. The sections, in order: the first screen (a centred
+heading with the wheel icon inside it, the two buttons and the first two commands), the real Mac and Android
+apps standing in a day scene, the ways an agent reaches the plan, one sentence set large, the agent rules on a
+card in a scene, one day of agent work as tiles with cropped screenshots, connecting an agent under a tilted
+band of commands, the screens and platforms, "free" as one large word, where the plan lives (three cards, the
+Dayhand Cloud waitlist in the middle one), the quick start as four numbered cards, Download, open source, the
+questions beside their heading, and a closing scene across the page above the footer.
+
+The day scenes are drawn by CSS alone (`.scene` in `home.css`): a sky gradient, a sun (`::before`) and fields
+(`::after`) behind the content. Morning is the default, `noon` and `evening` move the sun, and the dark theme
+turns every scene into an evening through the same tokens.
+
+Type: Instrument Sans for text and headings, Geist Mono for code, both under the SIL Open Font License and
+served from `public/fonts/`. Headings are weight 500 with tight letter spacing (-0.045em, the first-screen
+heading -0.055em), body text 450; the type scale is the one fluid scale on `:root`. Only the Latin file of
+Instrument Sans is preloaded; the Latin Extended files load only for a page that uses those characters, and
+anything outside both ranges falls back to the system font.
+
 ## Rules from good-css.com that this site follows
 
 The CSS follows the principles published at [good-css.com](https://good-css.com) (read in October 2026).
-The layout was checked at 390 px and 1280 px wide, in the light and the dark theme:
+The layout was checked at 360 px, 390 px and 1440 px wide, in the light and the dark theme:
 
 - **Tokens on `:root`.** Colours, the type and space scale, radii, fonts and motion are custom
   properties; components only use them. Hover tints are made with `color-mix(in oklch, …)` from a token,
   never a second hard-coded colour.
-- **One stylesheet.** `site.css` is imported once by the layout and built into one file; components have
-  no `<style>` blocks, so every rule is in one place.
+- **Two stylesheets.** `site.css` is imported by the layout and serves every page; `home.css` holds the home
+  page sections and only the home page loads it. Components have no `<style>` blocks.
 - **OKLCH colour, shared theme tokens.** The palette comes from the app icon (espresso, caramel,
   cream). Theme-dependent tokens use `light-dark()` with `oklch()` colours; the palette and terminal
   text colours stay fixed across themes. `color-scheme: light dark` makes the browser pick them from
@@ -121,12 +144,13 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
 - **A content grid with named lines.** Header, sections and footer share
   `[full-start] … [content-start] … [content-end] … [full-end]`, so the 16 px gutter (`--gutter`) holds at
   any width and the page never scrolls sideways; code blocks and the rows of phone screens scroll inside
-  themselves, except the install commands in the first screen and in Download, which wrap at their
-  spaces beside the Copy button.
+  themselves, except the short install commands (the first screen, the quick start, the plans and
+  Download), which wrap at their spaces beside the Copy button. The tilted band of commands and the day
+  scenes are cut at their edges with `overflow: clip`.
 - **Intrinsic grids first.** Cards use `repeat(auto-fit, minmax(min(100%, …), 1fr))`. The few width
-  queries move the header navigation below the name, put a screenshot beside its text, turn a row of
-  phone screens from a sideways strip into a grid, and give the phone in the first screen more room on
-  narrow screens.
+  queries move the header navigation below the name, put a heading beside its lead and a screenshot
+  beside its text, turn a row of phone screens from a sideways strip into a grid, and give the phone in
+  the first screen more room on narrow screens.
 - **Group spacing set by the parent** with `gap`; there are no spacer elements.
 - **One focus ring** with `:focus-visible` in the accent colour (the code colour on the dark code
   background), never `outline: none`; a skip link is the first element on the page.
@@ -136,8 +160,8 @@ The layout was checked at 390 px and 1280 px wide, in the light and the dark the
   that WCAG 2.5.8 asks for.
 - **Opt-in motion.** Movement only inside `prefers-reduced-motion: no-preference`; colour fades stay
   outside. Transitions name their properties (never `transition: all`), use an ease-out token and stay
-  under 300 ms.
-- **`overflow: clip` instead of `hidden`** on the terminal frames, and `tabular-nums` only on the step
+  under 300 ms. The one animation is the sun of the first screen rising once on load (1.6 s).
+- **`overflow: clip` instead of `hidden`** on the terminal frames, the scenes and the cropped screenshots, and `tabular-nums` only on the step
   numbers.
 - **Native elements before scripts.** The FAQ and the docs menu are `<details>`, the search box is
   `<search>`; JavaScript only adds Copy buttons, keeps the docs menu open beside the page, searches and
@@ -151,8 +175,10 @@ scroll-driven animation, `text-box` and `@property`.
 ## Accessibility
 
 - Text, links and badges reach WCAG AA contrast in both themes: worked out from the colour tokens in
-  October 2026, the lowest pair is 6.1:1. Lighthouse scored accessibility, best practices and SEO 100 for
-  the home page and the `cli` and `deploy` docs, on a desktop and on a phone, with no layout shift.
+  November 2026, the lowest pair of body text is 6.2:1, and the large word "free" is 4.0:1 against the page
+  (3:1 is the bar for large text). Lighthouse scored accessibility, best practices and SEO 100 for the home
+  page in November 2026, on a desktop and on a phone in both themes; the `cli` and `deploy` docs scored 100
+  in October 2026.
 - Landmarks: `header`, `nav` (named "Main" and "Footer"), `main`, `footer`; each section is labelled by its
   heading, and headings go in order (one `h1`). Docs pages add the "Documentation" navigation, an "On
   this page" list for pages with four or more sections, and "Previous and next page".
