@@ -104,21 +104,27 @@ picture by eye for anything that is not demo data, and look at the page in both 
 
 Big type, a lot of air, and the product in front. The sections, in order: the first screen (a centred
 heading with the wheel icon inside it, the two buttons and the first two commands), the real Mac and Android
-apps standing in a day scene, the ways an agent reaches the plan, one sentence set large, the agent rules on a
-card in a scene, one day of agent work as tiles with cropped screenshots, connecting an agent under a tilted
-band of commands, the screens and platforms, "free" as one large word, where the plan lives (three cards, the
+apps on a backdrop, the ways an agent reaches the plan, one sentence set large, the agent rules on a card on
+a backdrop, one day of agent work as tiles with cropped screenshots, connecting an agent under a row of the
+commands it uses, the screens and platforms, "free" as one large word, where the plan lives (three cards, the
 Dayhand Cloud waitlist in the middle one), the quick start as four numbered cards, Download, open source, the
-questions beside their heading, and a closing scene across the page above the footer.
+questions beside their heading, and a closing backdrop across the page above the footer.
 
-The day scenes are drawn by CSS alone (`.scene` in `home.css`): a sky gradient, a sun (`::before`) and fields
-(`::after`) behind the content. Morning is the default, `noon` and `evening` move the sun, and the dark theme
-turns every scene into an evening through the same tokens.
+The large rounded panels behind the screenshots and cards (`.backdrop` in `home.css`) are one flat colour from
+the palette, `--backdrop`: a warm caramel cream in the light theme and a light espresso in the dark one.
+
+Kept plain on purpose: three corner sizes and the pill (`--radius` for the large panels, `--radius-card` for
+every card, `--radius-inner` inside a card, `--pill` for buttons and tags), one palette with no extra accent
+colours, shadows only under the screenshots, no icons set into sentences and no arrows after links. The one
+loud element is the word "free".
 
 Type: Instrument Sans for text and headings, Geist Mono for code, both under the SIL Open Font License and
 served from `public/fonts/`. Headings are weight 500 with tight letter spacing (-0.045em, the first-screen
 heading -0.055em), body text 450; the type scale is the one fluid scale on `:root`. Only the Latin file of
 Instrument Sans is preloaded; the Latin Extended files load only for a page that uses those characters, and
-anything outside both ranges falls back to the system font.
+anything outside both ranges falls back to the system font. `font-size-adjust` (0.51 for text, 0.53 for code,
+the measured x-heights of the two fonts) scales a fallback font to the same size, so the text does not jump
+while the fonts load.
 
 ## Rules from good-css.com that this site follows
 
@@ -145,8 +151,8 @@ The layout was checked at 360 px, 390 px and 1440 px wide, in the light and the 
   `[full-start] … [content-start] … [content-end] … [full-end]`, so the 16 px gutter (`--gutter`) holds at
   any width and the page never scrolls sideways; code blocks and the rows of phone screens scroll inside
   themselves, except the short install commands (the first screen, the quick start, the plans and
-  Download), which wrap at their spaces beside the Copy button. The tilted band of commands and the day
-  scenes are cut at their edges with `overflow: clip`.
+  Download), which wrap at their spaces beside the Copy button. The day phone crops are cut at their
+  edges with `overflow: clip`.
 - **Intrinsic grids first.** Cards use `repeat(auto-fit, minmax(min(100%, …), 1fr))`. The few width
   queries move the header navigation below the name, put a heading beside its lead and a screenshot
   beside its text, turn a row of phone screens from a sideways strip into a grid, and give the phone in
@@ -160,8 +166,8 @@ The layout was checked at 360 px, 390 px and 1440 px wide, in the light and the 
   that WCAG 2.5.8 asks for.
 - **Opt-in motion.** Movement only inside `prefers-reduced-motion: no-preference`; colour fades stay
   outside. Transitions name their properties (never `transition: all`), use an ease-out token and stay
-  under 300 ms. The one animation is the sun of the first screen rising once on load (1.6 s).
-- **`overflow: clip` instead of `hidden`** on the terminal frames, the scenes and the cropped screenshots, and `tabular-nums` only on the step
+  under 300 ms. Nothing moves on its own.
+- **`overflow: clip` instead of `hidden`** on the terminal frames and the cropped screenshots, and `tabular-nums` only on the step
   numbers.
 - **Native elements before scripts.** The FAQ and the docs menu are `<details>`, the search box is
   `<search>`; JavaScript only adds Copy buttons, keeps the docs menu open beside the page, searches and
@@ -175,8 +181,7 @@ scroll-driven animation, `text-box` and `@property`.
 ## Accessibility
 
 - Text, links and badges reach WCAG AA contrast in both themes: worked out from the colour tokens in
-  November 2026, the lowest pair of body text is 6.2:1, and the large word "free" is 4.0:1 against the page
-  (3:1 is the bar for large text). Lighthouse scored accessibility, best practices and SEO 100 for the home
+  November 2026, the lowest pair of body text is 6.1:1 (muted text on the backdrop). Lighthouse scored accessibility, best practices and SEO 100 for the home
   page in November 2026, on a desktop and on a phone in both themes; the `cli` and `deploy` docs scored 100
   in October 2026.
 - Landmarks: `header`, `nav` (named "Main" and "Footer"), `main`, `footer`; each section is labelled by its

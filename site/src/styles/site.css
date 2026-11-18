@@ -35,7 +35,7 @@
 :root {
   color-scheme: light dark;
 
-  /* Palette from design/icon: espresso, caramel, cream; sage and ochre for the fields of the day scenes. */
+  /* Palette from design/icon: espresso, caramel, cream, and nothing else. */
   --espresso: oklch(28.6% 0.042 49.9);
   --caramel: oklch(76% 0.097 69.6);
   --cream: oklch(95% 0.03 82);
@@ -61,13 +61,8 @@
   --error: light-dark(oklch(48% 0.15 30), oklch(80% 0.11 35));
   --shot-shadow: oklch(20% 0.03 50 / 0.28);
 
-  /* The day scenes: a sky, a sun and fields. Morning in the light theme, evening in the dark one. */
-  --sky-top: light-dark(oklch(94% 0.045 88), oklch(23% 0.03 40));
-  --sky-low: light-dark(oklch(87% 0.075 72), oklch(35% 0.06 48));
-  --sun: light-dark(oklch(82% 0.12 78), oklch(76% 0.097 69.6));
-  --field-1: light-dark(oklch(82% 0.075 118), oklch(33% 0.035 110));
-  --field-2: light-dark(oklch(72% 0.085 124), oklch(27% 0.03 115));
-  --field-3: light-dark(oklch(76% 0.09 82), oklch(23% 0.025 70));
+  /* The one colour behind the large panels that hold the screenshots. */
+  --backdrop: light-dark(oklch(90.5% 0.05 75), oklch(28% 0.032 52));
 
   /* Type and space: one fluid scale, rem plus vw, maximum at most 2.5 times the minimum. */
   --step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
@@ -83,9 +78,11 @@
   --space-l: clamp(2rem, 1.6rem + 1.8vw, 3.5rem);
   --space-xl: clamp(4rem, 2.8rem + 4.5vw, 8rem);
 
+  /* Three corners and the pill: large panels, cards, small parts inside a card. */
   --radius: 1.75rem;
   --radius-card: 1.25rem;
   --radius-inner: 0.5rem;
+  --pill: 999px;
   --content: 72.5rem;
   --gutter: 1rem;
   --phone: 17rem;
@@ -116,13 +113,16 @@ body {
   font-weight: 450;
   line-height: 1.6;
   font-synthesis: none;
+  /* The x-height of Instrument Sans (and of Geist Mono below), measured: a fallback font is scaled to it, so text
+     keeps its size while the web fonts load or if they fail. */
+  font-size-adjust: 0.51;
 }
 h1, h2, h3, h4 { line-height: 1.15; text-wrap: balance; margin: 0; font-weight: 550; }
 p, li, dd, figcaption, summary { text-wrap: pretty; }
 p, ul, ol, dl, dd, figure, pre { margin: 0; }
 img { display: block; max-inline-size: 100%; block-size: auto; }
 picture { display: block; }
-code, pre { font-family: var(--font-mono); font-size: 0.9em; }
+code, pre { font-family: var(--font-mono); font-size: 0.9em; font-size-adjust: 0.53; }
 :not(pre) > code {
   padding-inline: 0.3em;
   border-radius: var(--radius-inner);
@@ -209,7 +209,7 @@ ul.actions { padding: 0; list-style: none; }
   min-block-size: 3rem;
   padding: 0.6em 1.35em;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--pill);
   background: var(--surface-2);
   color: var(--text);
   font: inherit;
@@ -295,7 +295,7 @@ pre.code {
   margin-inline-end: 0.35em;
   padding: 0 0.6em;
   border: 1px solid currentColor;
-  border-radius: 999px;
+  border-radius: var(--pill);
   font-size: var(--step--1);
   font-weight: 600;
   line-height: 1.6;
