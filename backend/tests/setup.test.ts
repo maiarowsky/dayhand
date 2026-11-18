@@ -278,8 +278,9 @@ describe("--dry-run", () => {
       run(process.execPath, ["--import", blocker, script, ...args], {
         env: { PATH: process.env.PATH ?? "", HOME: join(dir, "home"), DAYHAND_SERVER_CONFIG_DIR: dir },
       });
-    for (const attempt of [dryRun(dir, ["--local", "--issuer", "https://old.example"]), start(["--local", "--issuer", "https://old.example"])]) {
-      const failure = await attempt.then(
+    // One at a time: a rejection that nobody awaits yet is reported as unhandled.
+    for (const attempt of [() => dryRun(dir, ["--local", "--issuer", "https://old.example"]), () => start(["--local", "--issuer", "https://old.example"])]) {
+      const failure = await attempt().then(
         () => null,
         (error: { code: number; stderr: string }) => error,
       );
