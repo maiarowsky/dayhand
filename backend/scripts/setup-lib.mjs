@@ -56,7 +56,8 @@ Options:
   --team <slug>         Convex team (default: your only team; asked when you have several)
   --project <name>      Name of the new Convex project (default: ${DEFAULT_PROJECT})
   --deployment <name>   Use this existing production deployment instead of a new project
-  --issuer <url>        DAYHAND_JWT_ISSUER for a new server (default: the server's address)
+  --issuer <url>        DAYHAND_JWT_ISSUER for a new server (default: the server's address;
+                        --local: https://helm.local), e.g. the old server's to import its data
   --port <n>            --local: Convex API port (default: ${DEFAULT_PORT})
   --site-port <n>       --local: HTTP actions port (default: ${DEFAULT_SITE_PORT})
   --public-url <url>    --local: the HTTPS address phones use (e.g. tailscale serve);
@@ -122,7 +123,7 @@ export function parseOptions(argv) {
     throw new UsageError(`--deployment ${options.deployment}: expected a deployment name like happy-otter-123`);
   }
   if (options.local) {
-    const cloudOnly = ["team", "deployment", "issuer"].filter((name) => values[name] !== undefined);
+    const cloudOnly = ["team", "deployment"].filter((name) => values[name] !== undefined);
     if (values.project !== undefined) cloudOnly.push("project");
     if (cloudOnly.length) throw new UsageError(`--local runs without an account; leave out ${cloudOnly.map((name) => `--${name}`).join(", ")}`);
     if (options.port === options.sitePort) throw new UsageError("--port and --site-port must differ");
@@ -166,6 +167,15 @@ function httpsOrigin(value, flag) {
 
 /** DAYHAND_JWT_ISSUER: an https origin. It becomes part of every user id. */
 export const checkIssuer = (value) => httpsOrigin(value, "--issuer");
+
+/** A local server keeps the issuer it was made with: --issuer may only repeat it. */
+export function checkLocalIssuer(state, issuer) {
+  if (issuer === undefined || state?.issuer === undefined || state.issuer === issuer) return;
+  throw new UsageError(
+    `This local server already has the issuer ${state.issuer}, not ${issuer}; to take over another server's data ` +
+      `start a new server in another folder (set DAYHAND_SERVER_CONFIG_DIR), or pass --issuer ${state.issuer}`,
+  );
+}
 
 export function npmCli(env = process.env, execPath = process.execPath) {
   const nodeDir = path.dirname(execPath);

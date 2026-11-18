@@ -252,6 +252,7 @@ const server: CommandSpec = {
         { flags: "--site-port <n>", description: "HTTP actions port (default: 3211)", kind: "int" },
         { flags: "--public-url <url>", description: "The HTTPS address phones use, e.g. https://<machine>.<tailnet>.ts.net" },
         { flags: "--public-api-url <url>", description: "The Convex API's HTTPS address (default: --public-url at port 8443)" },
+        { flags: "--issuer <url>", description: "DAYHAND_JWT_ISSUER for a new server (default: https://helm.local); an old server's, to import its data" },
         BACKEND_OPTION,
       ],
       tools: ["get_settings"],

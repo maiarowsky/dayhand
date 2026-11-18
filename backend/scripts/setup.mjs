@@ -19,6 +19,7 @@ import { createInterface } from "node:readline/promises";
 import { BACKEND_DIR, newInstanceSecret, startLocalBackend } from "./local-backend-lib.mjs";
 import { checkMcp, checkOpenApi, checkSigning, commands, convex, hasConvexCli, parseRunOutput } from "./setup-convex.mjs";
 import {
+  checkLocalIssuer,
   resolveConfigDir,
   deploymentUrls,
   envFileText,
@@ -295,7 +296,7 @@ async function setupLocal(options, dir) {
     const result = await finish({
       dir,
       envFile,
-      wantedIssuer: state?.issuer ?? LOCAL_ISSUER,
+      wantedIssuer: state?.issuer ?? options.issuer ?? LOCAL_ISSUER,
       siteUrl: options.publicUrl ?? backend.siteUrl,
       checkUrl: backend.siteUrl,
       convexUrl: options.publicApiUrl ?? backend.url,
@@ -318,8 +319,10 @@ async function main() {
   const root = resolveConfigDir();
   if (root.warning) log(`Warning: ${root.warning}`);
   const dir = serverDir(root.dir, options.local);
+  const state = readState(dir);
+  if (options.local) checkLocalIssuer(state, options.issuer);
   if (options.dryRun) {
-    const plan = dryRunPlan(options, dir, { state: readState(dir), dependencies: hasConvexCli() });
+    const plan = dryRunPlan(options, dir, { state, dependencies: hasConvexCli() });
     if (options.json) console.log(JSON.stringify({ dryRun: true, mode: options.local ? "local" : "cloud", plan }));
     else console.log(["Would do (nothing changes, nothing goes over the network):", ...plan.map((step, i) => `  ${i + 1}. ${step}`)].join("\n"));
     return;

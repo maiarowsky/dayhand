@@ -170,9 +170,12 @@ Nothing, on Convex's Free plan. Its limits per team, as published on [convex.dev
 | Deployments | 40 per team |
 | Developers | 1 to 6 |
 
-On Free the limits are hard caps: once one is reached, new writes may fail; nothing is billed.
-The paid Starter plan instead charges for usage above the same amounts. One person's tasks are
-small next to these numbers; the Convex dashboard shows what you use.
+On Free the limits are hard caps and nothing is billed. Once the team goes over one, Convex can
+disable the whole team: every request to every deployment in it then fails with HTTP 500 until
+the next month or a move to a paid plan. The paid Starter plan instead charges for usage above the
+same amounts. One person's tasks are small next to these numbers, but database I/O adds up with
+every read: a client that polls the server all day uses far more of it than the phone app does.
+The Convex dashboard shows what you use.
 
 ### Backups
 
@@ -211,6 +214,11 @@ run `dayhand server deploy --deployment <new> --issuer <old issuer>`, import the
 folder's `convex.env`, run `dayhand server deploy` once more (the import replaced the keys table, so
 it makes a new CLI key) and pair the phone again. The environment variables are not in the
 export; the signing key can be new.
+
+Into a new local server the same way: the first `dayhand server start --issuer <old issuer>` (with a
+new `DAYHAND_SERVER_CONFIG_DIR`, or no `local/` folder in it yet), import the zip with
+`<folder>/local/convex.env` while it runs, then stop it and start it again (that makes the new CLI
+key). The issuer is the part before `|owner` in the `userId` of any exported task.
 
 ### On this computer, without an account
 

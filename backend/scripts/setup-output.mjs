@@ -14,8 +14,8 @@ export function dryRunPlan(options, dir, { state, dependencies }) {
   const where = ["--env-file", envFile];
   const keyFile = join(dir, FILES.signingKey);
   const cliKeyFile = join(dir, FILES.cliKey);
-  const issuer = state?.issuer ?? (options.local ? LOCAL_ISSUER : options.issuer ?? "https://<deployment>.convex.site, the server's address");
-  const userId = `${state?.issuer ?? (options.local ? LOCAL_ISSUER : "<issuer>")}|owner`;
+  const issuer = state?.issuer ?? options.issuer ?? (options.local ? LOCAL_ISSUER : "https://<deployment>.convex.site, the server's address");
+  const userId = `${state?.issuer ?? options.issuer ?? (options.local ? LOCAL_ISSUER : "<issuer>")}|owner`;
   const steps = [];
   if (!dependencies) steps.push("install the backend's dependencies: npm ci --ignore-scripts (in backend/)");
   if (options.local) {

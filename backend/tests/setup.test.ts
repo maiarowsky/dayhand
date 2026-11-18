@@ -75,7 +75,8 @@ describe("options", () => {
     expect(parseOptions(["--local", "--public-url", "https://a.example", "--public-api-url", "https://api.a.example"]).publicApiUrl).toBe("https://api.a.example");
   });
 
-  test("the issuer is an https origin", () => {
+  test("the issuer is an https origin, also for a local server taking over another server's data", () => {
+    expect(parseOptions(["--local", "--issuer", "https://helm.example"]).issuer).toBe("https://helm.example");
     expect(checkIssuer("https://helm.example/")).toBe("https://helm.example");
     expect(() => checkIssuer("https://user@helm.example")).toThrow(UsageError);
   });
@@ -255,6 +256,47 @@ describe("--dry-run", () => {
     expect(text).toContain("reuse the app-signing key");
     expect(text).toContain("DAYHAND_JWT_ISSUER (https://helm.example)");
     expect(text).toContain("keep the CLI key");
+  });
+
+  test("a new local server with --issuer signs in as that issuer's owner", async () => {
+    const text = JSON.parse((await dryRun(fresh("dry-issuer"), ["--local", "--issuer", "https://helm.example"])).stdout).plan.join("\n");
+    expect(text).toContain("DAYHAND_JWT_ISSUER (https://helm.example)");
+    expect(text).toContain("https://helm.example|owner");
+    expect(text).not.toContain("helm.local");
+  });
+
+  const localServer = (name: string, issuer: string) => {
+    const dir = fresh(name);
+    mkdirSync(join(dir, "local"), { recursive: true });
+    writeFileSync(join(dir, "local", "server.json"), JSON.stringify({ issuer, userId: `${issuer}|owner` }));
+    return dir;
+  };
+
+  test("an existing local server refuses another --issuer, in the plan and in a real start, before anything runs", async () => {
+    const dir = localServer("dry-issuer-conflict", "https://helm.local");
+    const start = (args: string[]) =>
+      run(process.execPath, ["--import", blocker, script, ...args], {
+        env: { PATH: process.env.PATH ?? "", HOME: join(dir, "home"), DAYHAND_SERVER_CONFIG_DIR: dir },
+      });
+    // One at a time: a rejection that nobody awaits yet is reported as unhandled.
+    for (const attempt of [() => dryRun(dir, ["--local", "--issuer", "https://old.example"]), () => start(["--local", "--issuer", "https://old.example"])]) {
+      const failure = await attempt().then(
+        () => null,
+        (error: { code: number; stderr: string }) => error,
+      );
+      expect(failure?.code).toBe(2);
+      expect(failure?.stderr).toContain("already has the issuer https://helm.local, not https://old.example");
+      expect(failure?.stderr).toContain("DAYHAND_SERVER_CONFIG_DIR");
+      expect(failure?.stderr).toContain("--issuer https://helm.local");
+    }
+    expect(existsSync(join(dir, "local", "convex.env"))).toBe(false);
+  });
+
+  test("an existing local server accepts --issuer when it repeats its issuer", async () => {
+    const dir = localServer("dry-issuer-same", "https://old.example");
+    const text = JSON.parse((await dryRun(dir, ["--local", "--issuer", "https://old.example"])).stdout).plan.join("\n");
+    expect(text).toContain("DAYHAND_JWT_ISSUER (https://old.example)");
+    expect(text).toContain("https://old.example|owner");
   });
 
   test("a mistake in the options exits 2 before anything runs", async () => {
