@@ -114,7 +114,7 @@ the palette, `--backdrop`: a warm caramel cream in the light theme and a light e
 
 Corners come in three sizes and the pill: `--radius` for the large panels, `--radius-card` for every card,
 `--radius-inner` inside a card and `--pill` for buttons and tags. The palette has no accent colours beyond
-espresso, caramel and cream. Shadows sit only under the screenshots, sentences carry no icons and links carry
+espresso, caramel and cream. Shadows sit only under the screenshots and the terminal sample, sentences carry no icons and links carry
 no arrows. Only the word "free" is set in display size and the accent colour.
 
 Type: Instrument Sans for text and headings, Geist Mono for code, both under the SIL Open Font License and
