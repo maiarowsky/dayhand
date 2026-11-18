@@ -34,7 +34,7 @@ selection and the writable per-version copy.
 For key creation, automatic sign-in during server setup, and credential storage, see
 [signing in](../docs/cli.md#topic-login). `config.toml` holds the URL, profiles, aliases and the color
 default (`dayhand help config`); the key never goes into it.
-**Coming soon:** remote servers require HTTPS; plain HTTP is allowed only for `localhost`,
+Remote servers require HTTPS; plain HTTP is allowed only for `localhost`,
 `127.0.0.1` and `[::1]`. On macOS/Linux, a credentials file and its directory must belong to
 the current user and be private (modes 600 and 700); unsafe permissions cause a config error,
 not a warning or a fallback to another store.
@@ -42,7 +42,7 @@ Dates are English phrases resolved in your time zone (`dayhand help dates`, `day
 
 `dayhand ui` is the same client full screen, written with [Ink](https://github.com/vadimdemedes/ink)
 (React for the terminal; Ink and React load only for this command). It shows Today, the board,
-the week, the trash and agent controls, polls what is on screen every 12 s (`--interval`) within the key's
+the week, the trash and agent controls, polls what is on screen (`--interval`) within the key's
 limits, keeps the last data with a red status line when the server cannot be reached, and
 shows who made each change in a task's history. Keys follow vim and lazygit; `dayhand help ui`
 lists them, and [docs/omarchy.md](../docs/omarchy.md) turns it into an Omarchy app. Its screens
@@ -50,7 +50,7 @@ come in English, Polish, German, Spanish, French, Brazilian Portuguese, Japanese
 Chinese: `--lang`, then `DAYHAND_LANG`, then the locale (`LC_ALL`, `LC_MESSAGES`, `LANG`). The rest
 of the CLI, `--json`, error codes and the MCP tools stay English.
 
-Coming soon: polling starts at 60 s by default and doubles after three unchanged polls, up to
+Polling starts at 60 s by default and doubles after three unchanged polls, up to
 300 s. Any key or changed data restores the base interval. Ticks read only the current view
 (Today with its health line) and an open task. Projects reload on entry,
 view changes, your changes and manual refresh (`R`); projects also reload when a task on screen
@@ -64,7 +64,7 @@ It uses `pbcopy` on macOS, `wl-copy`, `xclip` or `xsel` on Linux, and `clip` on 
 OSC 52 as a fallback (for example over SSH). The terminal must allow OSC 52 clipboard writes;
 that fallback reports sending the text, since the terminal does not confirm copying it.
 
-Coming soon: the mouse still selects and scrolls, and `M` turns mouse reporting off so you can
+The mouse selects and scrolls, and `M` turns mouse reporting off so you can
 select and copy text with the mouse in the terminal; `M` again turns it back on.
 
 For agents and scripts: `DAYHAND_URL` and `DAYHAND_API_KEY` win over the file and the keychain,

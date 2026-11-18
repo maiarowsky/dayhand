@@ -62,14 +62,12 @@ keys follow vim and lazygit.
 - **Quick add** (`a`) previews the line before `Enter` adds it. Date phrases and project tokens follow
   [the quick-add rules](cli.md#topic-ui).
 - **The mouse** selects and scrolls. Mouse reporting stops the terminal's own text selection: hold
-  `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`.
-  **Coming soon:** `M` turns mouse reporting off so you can select and copy text with the mouse,
-  and `M` again turns it back on.
-- **Refresh**: what is on screen is read again every 12 seconds (`--interval 10` to `300`), within the
-  key's limits of 120 reads and 60 changes a minute; `R` refreshes now. Without a connection it keeps the
-  last data on screen, says so in red, and tries again.
-  **Coming soon:** a 60-second default, doubling after three unchanged polls up to 300 seconds.
-  Any key or changed data restores the base interval (still configurable from 10 to 300 seconds).
+  `Shift` while dragging to select anyway, or start `dayhand ui --no-mouse`. `M` turns mouse
+  reporting off so you can select and copy text with the mouse, and `M` again turns it back on.
+- **Refresh**: what is on screen is read again every 60 seconds by default, doubling after three
+  unchanged polls up to 300 seconds; any key or changed data restores the base interval
+  (`--interval 10` to `300`). Reads stay within the key's limits of 120 reads and 60 changes a minute;
+  `R` refreshes now. Without a connection it keeps the last data on screen, says so in red, and tries again.
   Ticks read only the current view (Today with its health line) and open task. Projects
   reload on entry, view changes, your changes and `R`; projects also reload when
   a task on screen names a project created elsewhere. A new project without tasks reaches quick-add
