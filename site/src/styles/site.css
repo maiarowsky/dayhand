@@ -150,7 +150,7 @@ a { color: var(--accent); text-underline-offset: 0.18em; }
 }
 .skip-link:focus { inset-block-start: var(--space-xs); }
 
-/* Layout: a content grid; children sit in the content column, or across the page with .bleed. */
+/* Layout: a content grid; children sit in the content column, or across the page with grid-column: full. */
 .site-header, main > section, .site-footer {
   display: grid;
   grid-template-columns:
@@ -412,7 +412,7 @@ pre.code {
   margin-block-end: var(--space-m);
   padding: var(--space-s) var(--space-m);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   background: var(--surface);
 }
 .docs-toc p { font-size: var(--step--1); font-weight: 700; }

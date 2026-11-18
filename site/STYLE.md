@@ -31,7 +31,6 @@ npm run preview   # serves dist/ as it will be published
 | `src/docs/pages.ts` | which `docs/*.md` files are pages, in which group and order, and their addresses |
 | `src/docs/html.ts` | turns the HTML Astro renders from a doc into a page (below) |
 | `src/components/Screenshot.astro` | one app screenshot, light and dark, as WebP at the widths a place needs |
-| `src/components/Icon.astro` | a small decorative line icon drawn inline in the text colour |
 | `src/styles/site.css` | the tokens on `:root`, the reset, the header, footer, buttons, code and the docs: every page |
 | `src/styles/home.css` | the sections of the home page, imported only by `index.astro` |
 | `src/scripts/copy-buttons.ts` | adds a Copy button to code blocks; the page works without it |
@@ -104,9 +103,9 @@ picture by eye for anything that is not demo data, and look at the page in both 
 
 Big type, a lot of air, and the product in front. The sections, in order: the first screen (a centred
 heading with the wheel icon inside it, the two buttons and the first two commands), the real Mac and Android
-apps on a backdrop, the ways an agent reaches the plan, one sentence set large, the agent rules on a card on
-a backdrop, one day of agent work as tiles with cropped screenshots, connecting an agent under a row of the
-commands it uses, the screens and platforms, "free" as one large word, where the plan lives (three cards, the
+apps on a backdrop, the ways an agent reaches the plan, one sentence set large, a card on a backdrop saying
+that agents work on the same plan, one day of agent work as tiles with cropped screenshots, connecting an agent
+under a row of the commands it uses, the screens and platforms, "free" as one large word, where the plan lives (three cards, the
 Dayhand Cloud waitlist in the middle one), the quick start as four numbered cards, Download, open source, the
 questions beside their heading, and a closing backdrop across the page above the footer.
 

@@ -1,39 +1,5 @@
 ---
-// How agents work on the plan, in six short lines on a card on a backdrop.
-import Icon from "../Icon.astro";
-
-const ways = [
-  {
-    icon: "check",
-    title: "Say what done means",
-    text: "Give a task acceptance criteria, a plan and a note. The agent ticks each criterion as it meets it.",
-  },
-  {
-    icon: "lock",
-    title: "Claim",
-    text: "An agent holds a task for a set time, so no other agent changes it. Your own changes always go through.",
-  },
-  {
-    icon: "ask",
-    title: "Ask",
-    text: "Before a step that cannot be undone, the agent asks on your phone and waits for your answer.",
-  },
-  {
-    icon: "check",
-    title: "Prove",
-    text: "A task with criteria is done only when they are met and the agent says what it did.",
-  },
-  {
-    icon: "pause",
-    title: "Your rules",
-    text: "One switch pauses every agent. A policy for each agent key allows, asks for or denies each tool.",
-  },
-  {
-    icon: "history",
-    title: "Who did what",
-    text: "Every person and agent key signs its changes, so an agent's edits stand out in each task's history.",
-  },
-] as const;
+// How agents work on the plan: a heading and one line on a card on a backdrop; the details follow in Workday.
 ---
 
 <section id="agents" class="agents" aria-labelledby="agents-title">
@@ -43,19 +9,6 @@ const ways = [
       <p class="section-lead">
         Any MCP client, or any agent that can run a command, works on the same plan you do.
       </p>
-      <ul class="ways" role="list">
-        {
-          ways.map((way) => (
-            <li>
-              <Icon name={way.icon} class="way-icon" />
-              <div>
-                <h3>{way.title}</h3>
-                <p>{way.text}</p>
-              </div>
-            </li>
-          ))
-        }
-      </ul>
     </div>
   </div>
 </section>
