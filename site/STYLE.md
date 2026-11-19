@@ -87,14 +87,14 @@ are configured in `wrangler.toml`.
 
 ## Screenshots
 
-Every screenshot shows the real apps, built from this repository, on sample data: a one-person
-business's day with its agents, entered into a throwaway local backend. Never take them on a real plan or a
-real account. The Mac app ran under its own bundle id with its own data folder and no keychain entry; the
-Android app ran on an emulator with the demo-mode status bar. App screens have light and dark files, which
+Every screenshot shows the real apps, built from this repository's `main`, on sample data; never take them on
+a real plan or a real account. The Android screens (`android-*`) show a one-person business's day with its agents,
+entered with the `dayhand` command into a throwaway local backend, on an emulator (1080 × 2400, 420 dpi) with the
+demo-mode status bar. The Mac screens (`mac-plan-*`, `mac-projects-*`, `mac-history-*`) are drawn from the app's
+own views by `swift run DayhandSnapshots` in `macos/`, on its built-in sample plan and with no server, at twice
+their size in points: `plan-today-1100`, `project-1100` and the top 1100 pixels of `panel`. The light plan and
+project files are cropped to the dark ones' frame, which has no toolbar. App screens have light and dark files, which
 `<picture>` swaps by `prefers-color-scheme`; the notification uses the same light capture in both themes.
-The Mac projects screen (`mac-projects-*`) is drawn from the app's own views by `swift run DayhandSnapshots`,
-on its built-in sample plan and with no server; the light file is cropped to the dark one's frame, which has no
-toolbar.
 
 The files in `src/assets/screens/` are lossless WebP at capture resolution, except for the notification,
 which is cropped to its card. The build makes smaller WebP files at the widths each place asks for, with
