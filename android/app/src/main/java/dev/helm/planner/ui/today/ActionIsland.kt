@@ -223,13 +223,12 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
         val height = constraints.maxHeight
         layout(width, height) {
             val fab = placeables.last()
-            val bottom = max(bottomBarHeight(), navigationBar.getBottom(density)) + FAB_MARGIN.roundToPx()
-            val endInset = if (layoutDirection == LayoutDirection.Ltr) {
-                safeDrawing.getRight(density, layoutDirection)
-            } else {
-                safeDrawing.getLeft(density, layoutDirection)
-            }
-            val fabX = width - endInset - FAB_MARGIN.roundToPx() - fab.width
+            val margin = FAB_MARGIN.roundToPx()
+            val bottom = max(bottomBarHeight(), navigationBar.getBottom(density)) + margin
+            val ltr = layoutDirection == LayoutDirection.Ltr
+            val startInset = if (ltr) safeDrawing.getLeft(density, layoutDirection) else safeDrawing.getRight(density, layoutDirection)
+            val endInset = if (ltr) safeDrawing.getRight(density, layoutDirection) else safeDrawing.getLeft(density, layoutDirection)
+            val fabX = width - endInset - margin - fab.width
             val fabY = height - bottom - fab.height
             val centerX = fabX + fab.width / 2f
             val centerY = fabY + fab.height / 2f
@@ -251,7 +250,10 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
                 val x = centerX + (targetX - centerX) * p
                 val y = centerY + (targetY - centerY) * p
                 val left = if (arc) x - option.width / 2f else x + circleHalf - option.width
-                option.placeRelative(left.roundToInt(), (y - circleCenter).roundToInt())
+                val clampedLeft = left.roundToInt()
+                    .coerceAtMost(width - endInset - margin - option.width)
+                    .coerceAtLeast(startInset + margin)
+                option.placeRelative(clampedLeft, (y - circleCenter).roundToInt())
             }
             fab.placeRelative(fabX, fabY)
         }
