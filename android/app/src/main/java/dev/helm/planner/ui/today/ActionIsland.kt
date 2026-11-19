@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -49,6 +50,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.local.Task
@@ -204,6 +206,7 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
     val windowWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() }
     val arc = density.fontScale < COLUMN_FONT_SCALE && windowWidth >= MIN_ARC_WIDTH
     val navigationBar = WindowInsets.navigationBars
+    val safeDrawing = WindowInsets.safeDrawing
     Layout(
         content = {
             if (mounted) {
@@ -221,7 +224,12 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
         layout(width, height) {
             val fab = placeables.last()
             val bottom = max(bottomBarHeight(), navigationBar.getBottom(density)) + FAB_MARGIN.roundToPx()
-            val fabX = width - FAB_MARGIN.roundToPx() - fab.width
+            val endInset = if (layoutDirection == LayoutDirection.Ltr) {
+                safeDrawing.getRight(density, layoutDirection)
+            } else {
+                safeDrawing.getLeft(density, layoutDirection)
+            }
+            val fabX = width - endInset - FAB_MARGIN.roundToPx() - fab.width
             val fabY = height - bottom - fab.height
             val centerX = fabX + fab.width / 2f
             val centerY = fabY + fab.height / 2f
