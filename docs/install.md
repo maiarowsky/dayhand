@@ -93,10 +93,14 @@ cd android
 ```
 
 `./gradlew :app:assembleDebug` makes the APK (`app/build/outputs/apk/debug/app-debug.apk`) without
-installing it. A debug build can also talk to a server over plain HTTP, which helps with a server on
-your computer during development; release builds use HTTPS only. A release build needs a signing key of
-your own (`DAYHAND_RELEASE_KEYSTORE`): see [android/README.md](../android/README.md#release-build). Keep
-that key, because every update must be signed with the same one.
+installing it. A debug build is a separate app, **Dayhand dev** (`io.github.maiarowsky.dayhand.dev`,
+teal icon): it installs next to the release APK and keeps its own plan. If the phone has an earlier test
+build installed as plain **Dayhand**, first save a backup (**Settings → Data → Backup → Save a backup
+file**), then uninstall it before installing the release; from this version on, test builds install next
+to it. A debug build can also talk to a server over plain HTTP, which helps with a server on your
+computer during development; release builds use HTTPS only. A release build needs a signing key of your
+own (`DAYHAND_RELEASE_KEYSTORE`): see [android/README.md](../android/README.md#release-build). Keep that
+key, because every update must be signed with the same one.
 
 Then open Dayhand and choose **On this phone only** or **Connect to my server**: [Android](android.md).
 

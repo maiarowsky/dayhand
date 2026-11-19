@@ -22,7 +22,8 @@ import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 
-PACKAGE = "io.github.maiarowsky.dayhand"
+# The debug build's id (applicationIdSuffix ".dev"); the release is io.github.maiarowsky.dayhand.
+PACKAGE = "io.github.maiarowsky.dayhand.dev"
 # The code's namespace, which differs from the application id.
 ACTIVITY = f"{PACKAGE}/dev.helm.planner.MainActivity"
 BACKEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "backend")

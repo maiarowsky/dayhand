@@ -28,6 +28,11 @@ your own can be connected later; everything made on the phone then goes to it
   before the rename (and with it the names of the database and settings on the phone), so
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
+- Debug builds (`assembleDebug`, `installDebug`) are `io.github.maiarowsky.dayhand.dev`, named
+  **Dayhand dev** with a teal icon. They are signed with the computer's
+  debug key, which Android refuses as an update to the release, so they are a separate app next to it
+  with a plan of their own.
+  The end-to-end scripts drive this id.
 - Version 0.14.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).

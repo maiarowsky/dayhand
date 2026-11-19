@@ -8,8 +8,13 @@ works offline, and reminders and the morning summary are worked out on the phone
 It runs on Android 8.0 or newer and speaks English, Polish, German, Spanish, French, Brazilian
 Portuguese, Japanese and Simplified Chinese. Download the signed APK from
 [Dayhand Planner 0.14.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0);
-[Install](install.md#android) says how to install it or build it yourself. How the app is built and
-tested: [android/README.md](../android/README.md).
+[Install](install.md#android) says how to install it or build it yourself. The APK from the releases
+page is **Dayhand**; a test build made from the code (a debug build) is **Dayhand dev**, with a teal
+icon. It installs next to Dayhand as a separate app with its own plan, so it never blocks installing or
+updating the release. If the phone has an earlier test build installed as plain **Dayhand**, first save a
+backup (**Settings → Data → Backup → Save a backup file**), then uninstall it before installing the
+release; from this version on, test builds install next to it. With both installed, a `dayhand://pair`
+link asks which one opens it. How the app is built and tested: [android/README.md](../android/README.md).
 
 ## First start: where the plan lives
 
