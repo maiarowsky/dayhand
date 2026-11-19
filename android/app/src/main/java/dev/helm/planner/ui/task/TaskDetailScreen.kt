@@ -1,5 +1,6 @@
 package dev.helm.planner.ui.task
 
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -27,17 +29,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
@@ -64,6 +71,7 @@ import dev.helm.planner.ui.theme.palette
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.launch
 
 object TaskDetailTags {
     const val TITLE = "detail-title"
@@ -76,6 +84,7 @@ object TaskDetailTags {
     const val NOW = "detail-now"
     const val NOTE = "detail-note"
     const val NOTE_MORE = "detail-note-more"
+    const val NOTE_COPY = "detail-note-copy"
     const val DUE = "detail-due"
     const val DUE_DAY = "detail-due-day"
     const val DUE_CLEAR = "detail-due-clear"
@@ -219,7 +228,8 @@ private fun TitleSection(task: Task, editable: Boolean, actions: TaskDetailActio
 
 /**
  * The note in the reading font with a small gap between its paragraphs, folded after about eight lines with a button
- * to show it whole. A tap on it opens the full-screen editor.
+ * to show it whole. A tap on it opens the full-screen editor; a long press selects its text, and Copy note takes it
+ * whole, line breaks included, so commands in it paste into a terminal as written.
  */
 @Composable
 private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailActions) {
@@ -245,24 +255,31 @@ private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailAction
         if (note == null) {
             Text(stringResource(R.string.note_empty), style = helmType.value, color = p.textMuted)
         } else {
-            Text(
-                paragraphs(note),
-                style = helmType.value,
-                color = p.text,
-                maxLines = if (whole) Int.MAX_VALUE else NOTE_LINES,
-                overflow = TextOverflow.Ellipsis,
-                onTextLayout = { if (!whole) cut = it.hasVisualOverflow },
-                // A screen reader gets the note as written, with its line breaks and whole while folded.
-                modifier = Modifier.clearAndSetSemantics { text = AnnotatedString(note) },
-            )
+            SelectionContainer {
+                Text(
+                    paragraphs(note),
+                    style = helmType.value,
+                    color = p.text,
+                    maxLines = if (whole) Int.MAX_VALUE else NOTE_LINES,
+                    overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { if (!whole) cut = it.hasVisualOverflow },
+                    // A screen reader gets the note as written, with its line breaks and whole while folded.
+                    modifier = Modifier.clearAndSetSemantics { text = AnnotatedString(note) },
+                )
+            }
         }
     }
-    if (cut || whole) {
-        TextAction(
-            stringResource(if (whole) R.string.title_show_less else R.string.note_show_all),
-            { whole = !whole },
-            modifier = Modifier.testTag(TaskDetailTags.NOTE_MORE),
-        )
+    if (note != null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (cut || whole) {
+                TextAction(
+                    stringResource(if (whole) R.string.title_show_less else R.string.note_show_all),
+                    { whole = !whole },
+                    modifier = Modifier.testTag(TaskDetailTags.NOTE_MORE),
+                )
+            }
+            CopyNoteAction(note)
+        }
     }
     if (editing) {
         LongTextEditor(
@@ -278,24 +295,50 @@ private fun NoteSection(task: Task, editable: Boolean, actions: TaskDetailAction
     }
 }
 
+/** Puts the whole note on the clipboard and says so in its label, which a screen reader announces. */
+@Composable
+private fun CopyNoteAction(note: String) {
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val label = stringResource(R.string.quick_add_note)
+    var copied by remember(note) { mutableStateOf(false) }
+    TextAction(
+        stringResource(if (copied) R.string.note_copied else R.string.note_copy),
+        {
+            scope.launch {
+                clipboard.setClipEntry(ClipData.newPlainText(label, note).toClipEntry())
+                copied = true
+            }
+        },
+        modifier = Modifier
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .testTag(TaskDetailTags.NOTE_COPY),
+    )
+}
+
 /**
- * The note's lines as paragraphs with a gap a third of a line high between them: a paragraph of one zero-width space
- * that low stands for each line break (a paragraph style starts a new paragraph by itself).
+ * The note's lines as paragraphs with a gap between them: each run of line breaks stays in the text as written, as a
+ * paragraph of its own in a low line height (a paragraph style starts a new paragraph by itself), so a copy of the
+ * text is the note itself.
  */
 private fun paragraphs(text: String): AnnotatedString = buildAnnotatedString {
-    text.split(LINE_BREAKS).forEachIndexed { index, line ->
-        if (index > 0) withStyle(ParagraphStyle(lineHeight = PARAGRAPH_GAP)) { append(GAP_MARK) }
-        append(line)
+    var start = 0
+    LINE_BREAKS.findAll(text).forEach { breaks ->
+        append(text, start, breaks.range.first)
+        withStyle(ParagraphStyle(lineHeight = BREAK_LINE)) { append(breaks.value) }
+        start = breaks.range.last + 1
     }
+    append(text, start, text.length)
 }
 
 private const val TITLE_LINES = 2
 
-/** About eight lines of note before it folds; the gaps between paragraphs count as lines. */
-private const val NOTE_LINES = 10
+/** About eight lines of note before it folds; each gap between paragraphs counts as two lines. */
+private const val NOTE_LINES = 13
 private val LINE_BREAKS = Regex("\n+")
-private val PARAGRAPH_GAP = 8.sp
-private const val GAP_MARK = "\u200B"
+
+/** A run of n line breaks lays out as n + 1 lines this low: a gap of about 10 sp for one, a little more for a blank line. */
+private val BREAK_LINE = 2.sp
 private val DETAIL_GAP = 8.dp
 private val CARD_PADDING = 12.dp
 

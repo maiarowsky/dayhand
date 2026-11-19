@@ -116,6 +116,8 @@
     <string name="edit_title">Edit title</string>
     <string name="title_required">The title cannot be empty</string>
     <string name="edit_note">Edit note</string>
+    <string name="note_copy">Copy note</string>
+    <string name="note_copied">Note copied</string>
     <string name="note_empty">Add a note</string>
     <string name="pick_day">Pick a day</string>
     <string name="add_time">Add a time</string>

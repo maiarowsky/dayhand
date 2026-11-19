@@ -3,6 +3,13 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## Unreleased
+
+### Fixed
+
+- A task's note can be copied: hold it to select text, or tap **Copy note** to copy all of it with its line breaks,
+  so commands in a note paste into a terminal as written.
+
 ## 0.14.0 (2026-11-19)
 
 Release: [Dayhand Planner 0.14.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0).

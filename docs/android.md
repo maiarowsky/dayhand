@@ -121,7 +121,8 @@ chips in one row; tap one to change it (the due day's menu also adds, changes or
 removes the day). Under them one row, **More**, names everything else with its value ("Does not repeat ·
 Default reminders · Checklist 1 of 3 done"); tap it for work on it now, the proof the task was completed
 with, the repeat, reminders, the checklist and the links. The note follows, with a small gap between its
-paragraphs; a note longer than about eight lines is folded with **Show the whole note**. Tap the note to
+paragraphs; a note longer than about eight lines is folded with **Show the whole note**. Hold the note to
+select and copy part of it, or tap **Copy note** to copy all of it with its line breaks. Tap the note to
 edit it in a sheet over most of the screen, as wide as the phone: **Cancel** and **Save** stay on top above
 the keyboard, and Back cancels too, so nothing is saved without **Save**. **Change history** is right under
 the note with its last three entries; **Show the whole history** lists the rest. Values and notes are set

@@ -118,6 +118,8 @@
     <string name="edit_title">Modifier le titre</string>
     <string name="title_required">Le titre ne peut pas être vide</string>
     <string name="edit_note">Modifier la note</string>
+    <string name="note_copy">Copier la note</string>
+    <string name="note_copied">Note copiée</string>
     <string name="note_empty">Ajouter une note</string>
     <string name="pick_day">Choisir un jour</string>
     <string name="add_time">Ajouter une heure</string>
