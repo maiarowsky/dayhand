@@ -114,6 +114,8 @@
     <string name="edit_title">Titel bearbeiten</string>
     <string name="title_required">Der Titel darf nicht leer sein</string>
     <string name="edit_note">Notiz bearbeiten</string>
+    <string name="note_copy">Notiz kopieren</string>
+    <string name="note_copied">Notiz kopiert</string>
     <string name="note_empty">Notiz hinzufügen</string>
     <string name="pick_day">Tag auswählen</string>
     <string name="add_time">Uhrzeit hinzufügen</string>

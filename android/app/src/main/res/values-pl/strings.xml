@@ -122,6 +122,8 @@
     <string name="edit_title">Zmień tytuł</string>
     <string name="title_required">Tytuł nie może być pusty</string>
     <string name="edit_note">Zmień notatkę</string>
+    <string name="note_copy">Kopiuj notatkę</string>
+    <string name="note_copied">Skopiowano notatkę</string>
     <string name="note_empty">Dodaj notatkę</string>
     <string name="pick_day">Wybierz dzień</string>
     <string name="add_time">Dodaj godzinę</string>

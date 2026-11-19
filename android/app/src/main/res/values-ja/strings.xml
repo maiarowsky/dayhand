@@ -110,6 +110,8 @@
     <string name="edit_title">タイトルを編集</string>
     <string name="title_required">タイトルは空にできません</string>
     <string name="edit_note">メモを編集</string>
+    <string name="note_copy">メモをコピー</string>
+    <string name="note_copied">メモをコピーしました</string>
     <string name="note_empty">メモを追加</string>
     <string name="pick_day">日を選択</string>
     <string name="add_time">時刻を追加</string>
