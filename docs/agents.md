@@ -109,7 +109,7 @@ dayhand ask Deploy 2.4 to production --option "Deploy now: live in 10 minutes" -
 dayhand approval <id> --wait 600 --json
 ```
 
-The request shows on your phone (Settings → Agents, the health card above Today, and a notification) and
+The request shows on your phone (Settings → Agents, the plan health line above Today, and a notification) and
 in `dayhand approvals`. You pick an option, optionally with a note; from a terminal with a `cli` key:
 `dayhand approvals decide <id> o2 --note "after the weekend"`. The agent reads the outcome with
 `dayhand approval <id>` (or the MCP tool `get_approval`), or hears it through the webhook
@@ -179,7 +179,7 @@ dayhand proposals reject 44 --reason "not now"
 - `--requested-by` says who asked for it; `--return-to <webhookId>` names a webhook that hears, with the
   task's proof, when it is completed, rejected or merged ([webhooks](webhooks.md#events)).
 
-The phone shows proposals under Settings → Agents and on the health card.
+The phone shows proposals under Settings → Agents and on the plan health line.
 
 ## The health report
 

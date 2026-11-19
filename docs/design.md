@@ -96,7 +96,7 @@ suit its own backgrounds.
 | `SettingsPage` (back + 22 sp title, scrolling column, pinned preview) | `ScreenHeader`, `SettingsPage` | `SettingsPage` is the Settings list and each of its pages. |
 | Top-level screen title | `LargeHeader` | Headline 24 sp with a subtitle and actions (Today, Board). |
 | Bottom navigation | `HelmTabBar`, `HelmTab` | Bar on `surface` under a thin line in the border colour, the selected tab in the accent on `accentSoft`. |
-| Accent "new" button | `HelmFab` | Accent pill with the on-accent icon (Today, Board). |
+| Accent "new" button | `HelmFab` | Accent pill with the on-accent icon (Board; Today and a project's list use the round `TaskActionIsland` button). |
 | `SettingsGroup`, `SettingsRow`, `SettingsNote`, `SettingsIcon` | `ListGroup`, `ListRow`, `ChoiceRow`, `ListNote`, `LineIcon` | Muted upper-case label over a card on `surface` with card corners, rows split by thin full-width lines. A row is at least 60 dp: a 22 dp outline icon (no tile, no state colour), the name, a short muted value (at most 190 dp) and a thin "›"; an optional muted note under the name or a control at the end. From font scale 1.5, or when the complete name and value do not fit side by side, the value goes under the name. `ChoiceRow` is a choice with an accent check mark. Settings is built from these: one row per setting, each opening its page. |
 | `OptionRow` (palette and font choice) | `OptionCard` | |
 | `AppearancePreview`, palette swatches, font sample "Aa ąę 0O il1" | `AppearancePreview`, `Swatches`, `FontOption` | Preview is a small Today screen in both chosen palettes. |

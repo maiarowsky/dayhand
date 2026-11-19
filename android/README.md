@@ -47,10 +47,9 @@ your own can be connected later; everything made on the phone then goes to it
 
 **Today**, top to bottom:
 
-1. **Overdue (n)**: not done, due before today in your time zone. Each task: tick it off,
-   **To today**, or from the menu another day or archive.
+1. **Overdue (n)**: not done, due before today in your time zone, the due date under the title.
 2. **Now**: the single task you are working on, with "where I stopped / next step" under its
-   title (tap it to edit). Pick it with "Work on it now" in a task's menu.
+   title (tap it to edit). Pick it with "Work on it now" in the task's details.
 3. **Today**: tasks due today, timed ones first by time.
 4. **Done (n)**: collapsed by default.
 
@@ -63,18 +62,26 @@ box fills and the title is struck through in 180 ms, then the row fades in 180 m
 under it move up. With animations off in the system settings the row stays still and ticked for
 600 ms instead.
 
+Overdue and today's rows have no buttons: the box ticks a task off, the title (at most two lines)
+opens it. A long press picks a task (`TaskSelection`): the checkbox becomes a circle, the header
+shows the count, ✕ and **Select overdue**, taps add or remove rows, and the round button in the
+corner (`TaskActionIsland`, otherwise **+** for quick add) opens **To today**, **Tomorrow**,
+**Another day…** and **Archive** in an arc, or in a column from font scale 1.3, in a narrow window
+or when the labels would touch. Back closes the options, then ends picking. A project's list
+picks the same way.
+
 With nothing to do, one sentence and an **Add task** button. A line at the top says when the
 phone is offline (and how many changes wait), while changes are being sent, or when the server
 signed the phone out; on this phone only there is no such line. While the sample plan is on the
 phone, a line says so with **Remove them**, which removes every sample task.
 
-With a server (backend 0.11.0 or later), a **plan health** card sits under those lines: one
-sentence with what needs a look, the most pressing first, and only what is there: agents paused,
+With a server (backend 0.11.0 or later), a thin **plan health** line sits under those lines,
+with what needs a look, the most pressing first, and only what is there: agents paused,
 overdue, claims that ran out, approval requests, blocked tasks, proposals, tasks done today
 without proof, due today, in progress, done today, and the oldest open task when it is two weeks
-old or more (`app:planHealth`, the same report as `plan_health` and `dayhand health`). It is red
-when agents are paused or something is late, amber when the owner is asked for something, and
-**Review** opens Agents when there is a request or a proposal to decide. It is read when Today
+old or more (`app:planHealth`, the same report as `plan_health` and `dayhand health`). Its dot is
+red when agents are paused or something is late, amber when the owner is asked for something, and
+the line (**Review**) opens Agents when there is a request or a proposal to decide. It is read when Today
 opens, when Dayhand comes back to the front and when the tasks change; offline it keeps the last
 report, and without a server it is not shown.
 
@@ -359,7 +366,7 @@ new request becomes one notification in the **Approval requests** channel (who a
 shown once; a tap opens Agents, and deciding it in the app removes the notification. A request
 can therefore wait up to about 15 minutes, longer while the phone is in Doze, before the phone
 shows it; one that expires first is never shown. Without the notification permission nothing is
-shown, and Agents and the health card still list the requests.
+shown, and Agents and the plan health line still list the requests.
 
 ## How offline works
 
