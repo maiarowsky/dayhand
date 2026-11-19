@@ -148,10 +148,10 @@
   mask-image: linear-gradient(black 72%, transparent);
 }
 .crop .phone { inline-size: min(100%, 16rem); margin-block-start: calc(min(100%, 16rem) * 2400 / 1080 * var(--crop-start) * -1); }
-.crop.claim { --crop-start: 0.58; }
-.crop.ask { --crop-start: 0.105; }
+.crop.claim { --crop-start: 0.38; }
+.crop.ask { --crop-start: 0.27; }
 .crop.prove { --crop-start: 0.105; }
-.crop.policies { --crop-start: 0.23; }
+.crop.policies { --crop-start: 0.41; }
 .rules { display: grid; justify-items: center; gap: var(--space-s); }
 .rules .notice { inline-size: min(100%, 22rem); }
 
