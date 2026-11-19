@@ -39,7 +39,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
@@ -47,9 +55,15 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
@@ -79,8 +93,8 @@ private class IslandOption(val label: String, val icon: LineIcon, val tag: Strin
 
 /**
  * The one round button in the corner of a task list. With nothing picked it adds a task ([onAdd]; hidden when null).
- * Once tasks are picked it opens their actions in an arc around itself (in a column when the text is large or the
- * screen narrow): to today, to tomorrow, to another day, archive. It sits above [tasks]' list and the bottom bar,
+ * Once tasks are picked it opens their actions in an arc around itself (in a column when the text is large or long, or
+ * the screen narrow): to today, to tomorrow, to another day, archive. It sits above [tasks]' list and the bottom bar,
  * [bottomBarHeight] pixels high, and lets touches through wherever it draws nothing.
  */
 @Composable
@@ -180,8 +194,9 @@ private fun IslandFab(selection: TaskSelection, open: Boolean, onAdd: (() -> Uni
 
 /**
  * Lays the button out where Scaffold puts a floating button (16 dp from the end, above the bottom bar) and each
- * option on its way from the button to its place in the arc. The positions are read while placing, so the opening
- * animation moves the options without composing them again.
+ * option on its way from the button to its place in the arc; the whole arc moves toward the start when a label would
+ * cross the end margin. The positions are read while placing, so the opening animation moves the options without
+ * composing them again.
  */
 @Composable
 private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHeight: () -> Int, fab: @Composable () -> Unit) {
@@ -204,7 +219,11 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
     }
     val density = LocalDensity.current
     val windowWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() }
-    val arc = density.fontScale < COLUMN_FONT_SCALE && windowWidth >= MIN_ARC_WIDTH
+    val measurer = rememberTextMeasurer()
+    val labelStyle = helmType.small
+    val labels = options.map { it.label }
+    val arc = density.fontScale < COLUMN_FONT_SCALE && windowWidth >= MIN_ARC_WIDTH &&
+        remember(labels, density, labelStyle) { arcFits(labels.map { measurer.pillSize(it, labelStyle, density) }, density) }
     val navigationBar = WindowInsets.navigationBars
     val safeDrawing = WindowInsets.safeDrawing
     Layout(
@@ -235,14 +254,23 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
             val circleHalf = OPTION_SIZE.toPx() / 2f
             val radius = ARC_RADIUS.toPx()
             val gap = COLUMN_GAP.toPx()
+            val optionPlaceables = placeables.dropLast(1)
+            val arcShift = if (arc) {
+                val reach = optionPlaceables.mapIndexed { index, option ->
+                    centerX + arcOffset(index, options.size, radius).x + option.width / 2f
+                }.maxOrNull() ?: 0f
+                max(0f, reach - (width - endInset - margin))
+            } else {
+                0f
+            }
             var columnTop = fabY.toFloat()
-            placeables.dropLast(1).forEachIndexed { index, option ->
+            optionPlaceables.forEachIndexed { index, option ->
                 val p = if (reducedMotion) 1f else progress[index].value
                 // In the arc the circle is the option's top; in the column a row of label and circle, centred.
                 val circleCenter = if (arc) circleHalf else option.height / 2f
                 val (targetX, targetY) = if (arc) {
-                    val angle = Math.toRadians(ARC_START_DEG + index * ARC_SWEEP_DEG / (options.size - 1).coerceAtLeast(1))
-                    (centerX + radius * cos(angle).toFloat()) to (centerY - radius * sin(angle).toFloat())
+                    val offset = arcOffset(index, options.size, radius)
+                    (centerX + offset.x - arcShift) to (centerY + offset.y)
                 } else {
                     columnTop -= gap + option.height
                     centerX to columnTop + circleCenter
@@ -250,10 +278,7 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
                 val x = centerX + (targetX - centerX) * p
                 val y = centerY + (targetY - centerY) * p
                 val left = if (arc) x - option.width / 2f else x + circleHalf - option.width
-                val clampedLeft = left.roundToInt()
-                    .coerceAtMost(width - endInset - margin - option.width)
-                    .coerceAtLeast(startInset + margin)
-                option.placeRelative(clampedLeft, (y - circleCenter).roundToInt())
+                option.placeRelative(left.roundToInt().coerceAtLeast(startInset + margin), (y - circleCenter).roundToInt())
             }
             fab.placeRelative(fabX, fabY)
         }
@@ -274,7 +299,7 @@ private fun OptionButton(option: IslandOption, arc: Boolean, enabled: Boolean, p
                 .widthIn(max = if (arc) ARC_LABEL_MAX else COLUMN_LABEL_MAX)
                 .clip(HelmShapes.pill)
                 .background(p.surface)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
+                .padding(horizontal = LABEL_PADDING_H, vertical = LABEL_PADDING_V),
         )
     }
     val circle: @Composable () -> Unit = {
@@ -296,11 +321,11 @@ private fun OptionButton(option: IslandOption, arc: Boolean, enabled: Boolean, p
             scaleX = scale
             scaleY = scale
         }
-        .clip(HelmShapes.card)
+        .clip(if (arc) ArcOptionShape else HelmShapes.card)
         .clickable(enabled = enabled, role = Role.Button, onClick = option.onClick)
         .testTag(option.tag)
     if (arc) {
-        Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(ARC_LABEL_GAP)) {
             circle()
             label()
         }
@@ -312,9 +337,58 @@ private fun OptionButton(option: IslandOption, arc: Boolean, enabled: Boolean, p
     }
 }
 
+/** Where the [index]th of [count] options sits in the arc, from the button's centre. */
+private fun arcOffset(index: Int, count: Int, radius: Float): Offset {
+    val angle = Math.toRadians(ARC_START_DEG + index * ARC_SWEEP_DEG / (count - 1).coerceAtLeast(1))
+    return Offset(radius * cos(angle).toFloat(), -radius * sin(angle).toFloat())
+}
+
+/** The size of an arc option's label pill, as [OptionButton] draws it. */
+private fun TextMeasurer.pillSize(label: String, style: TextStyle, density: Density): IntSize = with(density) {
+    val padding = IntSize((LABEL_PADDING_H * 2).roundToPx(), (LABEL_PADDING_V * 2).roundToPx())
+    val text = measure(
+        label,
+        style,
+        maxLines = 2,
+        constraints = Constraints(maxWidth = ARC_LABEL_MAX.roundToPx() - padding.width),
+        density = density,
+    ).size
+    IntSize(text.width + padding.width, text.height + padding.height)
+}
+
+/** Whether no option's circle or label pill, of [pills]' sizes, touches another option's in the arc. */
+private fun arcFits(pills: List<IntSize>, density: Density): Boolean = with(density) {
+    val circle = OPTION_SIZE.toPx()
+    val parts = pills.mapIndexed { index, pill ->
+        val center = arcOffset(index, pills.size, ARC_RADIUS.toPx())
+        val width = max(circle, pill.width.toFloat())
+        val pillTop = center.y + circle / 2f + ARC_LABEL_GAP.toPx()
+        listOf(Rect(center, circle / 2f), Rect(center.x - width / 2f, pillTop, center.x + width / 2f, pillTop + pill.height))
+    }
+    parts.indices.all { i ->
+        (i + 1 until parts.size).all { j -> parts[i].none { a -> parts[j].any { b -> a.overlaps(b) } } }
+    }
+}
+
+/** An arc option is its circle with the label's pill under it; it draws and takes touches only there. */
+private val ArcOptionShape = object : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val circle = with(density) { OPTION_SIZE.toPx() }
+        val pillTop = circle + with(density) { ARC_LABEL_GAP.toPx() }
+        val path = Path().apply {
+            addOval(Rect(Offset((size.width - circle) / 2f, 0f), Size(circle, circle)))
+            addRoundRect(RoundRect(0f, pillTop, size.width, size.height, CornerRadius((size.height - pillTop) / 2f)))
+        }
+        return Outline.Generic(path)
+    }
+}
+
 private val FAB_MARGIN = 16.dp
 private val OPTION_SIZE = 48.dp
 private val ARC_LABEL_MAX = 120.dp
+private val ARC_LABEL_GAP = 4.dp
+private val LABEL_PADDING_H = 8.dp
+private val LABEL_PADDING_V = 2.dp
 private val COLUMN_LABEL_MAX = 240.dp
 private val ARC_RADIUS = 184.dp
 private val COLUMN_GAP = 12.dp
@@ -327,6 +401,9 @@ private const val STAGGER_MS = 30L
 private const val OPEN_FADE_MS = 150
 private const val CLOSE_MS = 120
 private const val SCRIM_ALPHA = 0.5f
-/** From this font scale up, or in a window narrower than [MIN_ARC_WIDTH], the options stand in a column instead of an arc. */
+/**
+ * From this font scale up, in a window narrower than [MIN_ARC_WIDTH], or when the labels are too long to stay apart in
+ * the arc, the options stand in a column instead.
+ */
 private const val COLUMN_FONT_SCALE = 1.3f
 private val MIN_ARC_WIDTH = 340.dp
