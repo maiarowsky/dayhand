@@ -15,7 +15,18 @@
     <string name="complete_task">Marcar como hecha: %1$s</string>
     <string name="reopen_task">Marcar como no hecha: %1$s</string>
     <string name="move_to_today">A hoy</string>
-    <string name="move_to_today_described">Mover a hoy: %1$s</string>
+    <string name="move_to_tomorrow">Mañana</string>
+    <string name="select_task">Seleccionar</string>
+    <string name="select_task_described">Seleccionar: %1$s</string>
+    <string name="select_overdue">Elegir atrasadas</string>
+    <string name="selection_clear">Quitar selección</string>
+    <string name="selection_actions">Acciones para la selección</string>
+    <string name="selection_actions_close">Cerrar acciones</string>
+    <plurals name="selected_count">
+        <item quantity="one">%d seleccionada</item>
+        <item quantity="many">%d seleccionadas</item>
+        <item quantity="other">%d seleccionadas</item>
+    </plurals>
     <string name="move_to_day">Otro día…</string>
     <string name="archive">Archivar</string>
     <string name="set_now">Hacerla ahora</string>
