@@ -32,6 +32,9 @@ and Cal.com; first-party analytics only on Plausible, Ghostty and Super Producti
 
 ## What dayhand.dev takes from them
 
+This list describes the second version of the site. The current home page layout is in
+[site/STYLE.md](../site/STYLE.md#the-home-page).
+
 - **Two buttons and a line of reassurance.** Download and the documentation, as Ghostty, Zed and Immich
   pair them, with three short facts under the buttons (free, no account, your data) as Super
   Productivity and Plausible do.
