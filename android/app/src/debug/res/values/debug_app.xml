@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The debug build installs next to the release as io.github.maiarowsky.dayhand.dev: another name and a teal icon tell them apart. -->
+<resources>
+    <string name="launcher_name" translatable="false">Dayhand dev</string>
+    <color name="ic_launcher_background">#1B4B52</color>
+</resources>

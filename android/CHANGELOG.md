@@ -5,6 +5,11 @@ called Helm until 0.9.0.
 
 ## Unreleased
 
+### Changed
+
+- Debug builds are a separate app, **Dayhand dev** (`io.github.maiarowsky.dayhand.dev`, teal icon), that installs
+  next to the release instead of blocking its install or update with "App not installed".
+
 ### Fixed
 
 - A task's note can be copied: hold it to select text, or tap **Copy note** to copy all of it with its line breaks,

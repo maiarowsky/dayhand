@@ -68,6 +68,12 @@ android {
     }
 
     buildTypes {
+        // Signed with the local debug key, so it must be a separate app: under the release id Android
+        // would refuse to update one over the other.
+        debug {
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+        }
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
