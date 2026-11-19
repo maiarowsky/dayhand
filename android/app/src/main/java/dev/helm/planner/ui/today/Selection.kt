@@ -36,7 +36,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
@@ -158,13 +157,13 @@ fun SelectionHeader(count: Int, onClear: () -> Unit, selectAllLabel: String? = n
             style = helmType.title,
             color = p.text,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
-                .weight(1f)
-                .padding(start = 4.dp)
+                .padding(start = 4.dp, end = 8.dp)
                 .semantics { heading() },
         )
-        if (selectAllLabel != null && onSelectAll != null) TextAction(selectAllLabel, onSelectAll)
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            if (selectAllLabel != null && onSelectAll != null) TextAction(selectAllLabel, onSelectAll)
+        }
     }
 }
 

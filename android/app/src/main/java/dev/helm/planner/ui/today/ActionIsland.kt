@@ -227,19 +227,23 @@ private fun IslandLayout(open: Boolean, options: List<IslandOption>, bottomBarHe
             val centerY = fabY + fab.height / 2f
             val circleHalf = OPTION_SIZE.toPx() / 2f
             val radius = ARC_RADIUS.toPx()
-            val step = COLUMN_STEP.toPx()
+            val gap = COLUMN_GAP.toPx()
+            var columnTop = fabY.toFloat()
             placeables.dropLast(1).forEachIndexed { index, option ->
                 val p = if (reducedMotion) 1f else progress[index].value
+                // In the arc the circle is the option's top; in the column a row of label and circle, centred.
+                val circleCenter = if (arc) circleHalf else option.height / 2f
                 val (targetX, targetY) = if (arc) {
                     val angle = Math.toRadians(ARC_START_DEG + index * ARC_SWEEP_DEG / (options.size - 1).coerceAtLeast(1))
                     (centerX + radius * cos(angle).toFloat()) to (centerY - radius * sin(angle).toFloat())
                 } else {
-                    centerX to (centerY - fab.height / 2f - step * (index + 1) + circleHalf)
+                    columnTop -= gap + option.height
+                    centerX to columnTop + circleCenter
                 }
                 val x = centerX + (targetX - centerX) * p
                 val y = centerY + (targetY - centerY) * p
                 val left = if (arc) x - option.width / 2f else x + circleHalf - option.width
-                option.placeRelative(left.roundToInt(), (y - circleHalf).roundToInt())
+                option.placeRelative(left.roundToInt(), (y - circleCenter).roundToInt())
             }
             fab.placeRelative(fabX, fabY)
         }
@@ -256,7 +260,11 @@ private fun OptionButton(option: IslandOption, arc: Boolean, enabled: Boolean, p
             color = p.text,
             textAlign = if (arc) TextAlign.Center else TextAlign.End,
             maxLines = 2,
-            modifier = Modifier.widthIn(max = OPTION_LABEL_MAX),
+            modifier = Modifier
+                .widthIn(max = if (arc) ARC_LABEL_MAX else COLUMN_LABEL_MAX)
+                .clip(HelmShapes.pill)
+                .background(p.surface)
+                .padding(horizontal = 8.dp, vertical = 2.dp),
         )
     }
     val circle: @Composable () -> Unit = {
@@ -288,7 +296,7 @@ private fun OptionButton(option: IslandOption, arc: Boolean, enabled: Boolean, p
         }
     } else {
         Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.padding(start = 8.dp)) { label() }
+            label()
             circle()
         }
     }
@@ -296,9 +304,10 @@ private fun OptionButton(option: IslandOption, arc: Boolean, enabled: Boolean, p
 
 private val FAB_MARGIN = 16.dp
 private val OPTION_SIZE = 48.dp
-private val OPTION_LABEL_MAX = 104.dp
-private val ARC_RADIUS = 156.dp
-private val COLUMN_STEP = 64.dp
+private val ARC_LABEL_MAX = 120.dp
+private val COLUMN_LABEL_MAX = 240.dp
+private val ARC_RADIUS = 184.dp
+private val COLUMN_GAP = 12.dp
 private const val ARC_START_DEG = 90.0
 /** Not a full quarter: the last option's label stays clear of the bottom bar. */
 private const val ARC_SWEEP_DEG = 80.0
