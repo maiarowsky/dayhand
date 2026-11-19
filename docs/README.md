@@ -72,7 +72,7 @@ availability, see [Install](install.md).
 | Piece | Today | Planned |
 |---|---|---|
 | `dayhand` CLI and `dayhand ui` | [Install the command line](install.md#command-line-dayhand) | |
-| Android app | build it yourself | a signed APK on GitHub Releases and Google Play, coming soon |
+| Android app | [signed APK or build it yourself](install.md#android) | Google Play, coming soon |
 | Dayhand for macOS | build from source, runs on the Mac that built it | a signed, notarized download with updates, coming soon |
 | Dayhand for Linux | Arch Linux and Omarchy package built from the repository; CMake elsewhere | no AUR package yet |
 | iPhone and iPad | in development; nothing to install yet | an iOS app on the same backend |

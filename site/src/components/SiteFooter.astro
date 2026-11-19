@@ -1,29 +1,62 @@
 ---
-// The end of every page: the licence in one line, the links people look for last, and what this site does not do.
+// The end of every page: what Dayhand is, the links people look for last, and what this site does not do.
 import { DOCS_PATH, REPO_URL, repoFile } from "../site";
 
-const links = [
-  { href: DOCS_PATH, label: "Documentation" },
-  { href: REPO_URL, label: "Source code" },
-  { href: repoFile("cli/CHANGELOG.md"), label: "Changelog" },
-  { href: repoFile("CONTRIBUTING.md"), label: "Contributing" },
-  { href: repoFile("SECURITY.md"), label: "Security" },
-  { href: repoFile("LICENSE"), label: "Apache License 2.0" },
+const groups = [
+  {
+    title: "Dayhand",
+    links: [
+      { href: "/#get-dayhand", label: "Get started" },
+      { href: "/#download", label: "Download" },
+      { href: "/#faq", label: "Questions" },
+    ],
+  },
+  {
+    title: "Learn",
+    links: [
+      { href: DOCS_PATH, label: "Documentation" },
+      { href: `${DOCS_PATH}getting-started/`, label: "Quick start" },
+      { href: repoFile("cli/CHANGELOG.md"), label: "Changelog" },
+    ],
+  },
+  {
+    title: "Open source",
+    links: [
+      { href: REPO_URL, label: "Source code" },
+      { href: repoFile("CONTRIBUTING.md"), label: "Contributing" },
+      { href: repoFile("SECURITY.md"), label: "Security" },
+      { href: repoFile("LICENSE"), label: "Apache License 2.0" },
+    ],
+  },
 ];
 ---
 
 <footer class="site-footer">
-  <p class="brand-line">
-    <img src="/favicon.svg" alt="" width="24" height="24" />
-    Dayhand is free and open source under the Apache License 2.0.
-  </p>
-  <nav aria-label="Footer">
-    <ul>
-      {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
-    </ul>
-  </nav>
+  <div class="footer-grid">
+    <div class="footer-about">
+      <a class="brand" href="/">
+        <img src="/favicon.svg" alt="" width="32" height="32" />
+        <span>Dayhand</span>
+      </a>
+      <p>A day plan for you and your AI agents. Free and open source under the Apache License 2.0.</p>
+    </div>
+    <nav aria-label="Footer" class="footer-links">
+      {
+        groups.map((group) => (
+          <div>
+            <h2>{group.title}</h2>
+            <ul>
+              {group.links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
+  </div>
   <p class="fineprint">
-    This site sets no cookies, tracks no one and loads nothing from other servers. The screenshots show the real apps
-    with sample data.
+    This site sets no cookies and tracks no one. The one thing it loads from another server is the General Sans font,
+    from the Fontshare CDN. The screenshots show the real apps with sample data. The fonts are General Sans by Indian Type
+    Foundry, under the <a href="https://www.fontshare.com/licenses/itf-ffl">ITF Free Font License</a>, and Geist Mono,
+    under the <a href="/fonts/geist-mono-OFL.txt">SIL Open Font License</a>.
   </p>
 </footer>

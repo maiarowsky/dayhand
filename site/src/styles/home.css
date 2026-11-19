@@ -1,0 +1,378 @@
+/* dayhand.dev, the home page sections, in page order. Tokens and shared parts are in site.css; STYLE.md has the rules. */
+
+:root {
+  --bleed: clamp(0.5rem, 2.5vw, 3rem);
+}
+
+:where(.showcase, .strip, .bento, .plans, .steps, .downloads, .platforms, .split, .split-head, .tile) > * { min-inline-size: 0; }
+
+/* Backdrops: one flat colour from the palette behind the panels that hold the screenshots and cards. */
+.backdrop { border-radius: var(--radius); background: var(--backdrop); }
+
+/* First screen */
+.hero { padding-block-start: var(--space-l); }
+.hero-text { display: grid; justify-items: center; gap: var(--space-m); text-align: center; }
+.pill {
+  position: relative;
+  padding: 0.25em 0.95em;
+  border-radius: var(--radius-inner);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--step--1);
+  font-weight: 500;
+  text-decoration: none;
+}
+.pill::after { content: ""; position: absolute; inset: -0.6rem -0.2rem; }
+.hero h1 {
+  max-inline-size: 14ch;
+  font-size: var(--step-4);
+  font-weight: 450;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+.h1-mark {
+  display: inline-block;
+  inline-size: 0.8em;
+  block-size: 0.8em;
+  border-radius: 0.2em;
+  vertical-align: -0.08em;
+}
+.lead { max-inline-size: 44ch; color: var(--muted); font-size: var(--step-1); }
+.hero .actions { justify-content: center; }
+.quickstart { display: grid; justify-items: center; gap: var(--space-xs); }
+.quickstart .code-wrap { inline-size: min(100%, 27rem); }
+/* On a phone the one-line command takes two even lines, so "dayhand server start" stays whole. */
+.quickstart pre, .pill { text-wrap: balance; }
+
+.stage {
+  grid-column: full;
+  display: grid;
+  gap: var(--space-m);
+  margin-inline: var(--bleed);
+  margin-block-start: var(--space-l);
+  padding: clamp(1.5rem, 5vw, 4.5rem) clamp(0.75rem, 4vw, 4rem) var(--space-m);
+}
+.showcase { inline-size: min(100%, 66rem); margin-inline: auto; }
+.stage-caption, .phones figcaption {
+  justify-self: center;
+  padding: 0.3em 0.9em;
+  border-radius: var(--pill);
+  background: var(--surface-raised);
+  color: var(--muted);
+  font-size: var(--step--1);
+  text-align: center;
+}
+
+.reach {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-xs) var(--space-l);
+  margin-block-start: var(--space-m);
+  font-size: var(--step--1);
+}
+.reach p { font-weight: 600; }
+.reach ul { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-m); padding: 0; list-style: none; }
+.reach a { color: var(--muted); }
+
+/* Screenshots. Phones are bare screens with the corners of the device; Mac windows bring their own corners. */
+.phone img {
+  inline-size: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8% / 3.6%;
+  background: var(--surface);
+  box-shadow: 0 1rem 2.5rem -1.25rem var(--shot-shadow);
+}
+.window img { inline-size: 100%; filter: drop-shadow(0 0.9rem 1.4rem var(--shot-shadow)); }
+.notice img { inline-size: 100%; border-radius: var(--radius-card); box-shadow: 0 0.6rem 1.6rem -0.8rem var(--shot-shadow); }
+
+/* One sentence, set large. */
+.statement p {
+  font-size: var(--step-3);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  max-inline-size: 28ch;
+}
+
+/* Headings beside their lead on wide screens. */
+.split-head { display: grid; gap: var(--space-s) var(--space-l); align-items: end; }
+.split-side { display: grid; gap: var(--space-s); justify-items: start; }
+.split { display: grid; gap: var(--space-m) var(--space-l); align-items: start; }
+@media (width >= 52rem) {
+  .split-head, .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .split { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+}
+
+/* Agents: a card on a backdrop. */
+.panel { padding: clamp(0.75rem, 5vw, 4.5rem); }
+.panel-card {
+  display: grid;
+  gap: var(--space-m);
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+/* Bento tiles: a title, a line, and the screen that shows it. */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--space-m);
+  padding: 0;
+  list-style: none;
+}
+.tile {
+  display: grid;
+  gap: var(--space-xs);
+  align-content: start;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.tile h3 { font-size: var(--step-2); font-weight: 500; letter-spacing: -0.035em; }
+.tile p { color: var(--muted); }
+.tile-text { display: grid; gap: var(--space-xs); align-content: start; }
+.tile-media { margin-block-start: var(--space-s); }
+.tile.wide { gap: var(--space-m) var(--space-l); }
+.bento > .tile.wide { grid-column: 1 / -1; }
+@media (width >= 52rem) {
+  .tile.wide { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: center; }
+  .tile.wide .tile-media { margin-block-start: 0; }
+}
+.crop {
+  display: grid;
+  justify-items: center;
+  block-size: clamp(17rem, 28vw, 22rem);
+  overflow: clip;
+  mask-image: linear-gradient(black 72%, transparent);
+}
+.crop .phone { inline-size: min(100%, 16rem); margin-block-start: calc(min(100%, 16rem) * 2400 / 1080 * var(--crop-start) * -1); }
+.crop.claim { --crop-start: 0.36; }
+.crop.ask { --crop-start: 0.27; }
+.crop.prove { --crop-start: 0.105; }
+.crop.policies { --crop-start: 0.41; }
+.rules { display: grid; justify-items: center; gap: var(--space-s); }
+.rules .notice { inline-size: min(100%, 22rem); }
+
+/* Connect: a row of the commands an agent uses, then three ways in and the commands for Claude Code. */
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+}
+.band li { padding: 0.35em 0.9em; border-radius: var(--pill); background: var(--surface); }
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-m) var(--space-l);
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+}
+
+/* Screens: phones on a backdrop, then the Mac, the platforms and the terminal. */
+.phones { padding: clamp(1.5rem, 5vw, 4rem) clamp(0.75rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem); }
+.strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(62%, 15rem);
+  gap: var(--space-m);
+  padding-block-end: var(--space-xs);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline mandatory;
+}
+.strip > * { scroll-snap-align: start; }
+@media (width >= 60rem) {
+  .strip {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 15rem));
+    justify-content: center;
+    gap: var(--space-l);
+    overflow-x: visible;
+  }
+}
+.shot { display: grid; gap: var(--space-s); align-content: start; }
+.phones figcaption { justify-self: stretch; border-radius: var(--radius-card); text-align: start; }
+.shot strong { color: var(--text); }
+.platforms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--space-m);
+}
+.platforms div { display: grid; gap: var(--space-2xs); align-content: start; padding: var(--space-m); border-radius: var(--radius-card); background: var(--surface); }
+.platforms dt { font-weight: 600; }
+.platforms dd { color: var(--muted); font-size: var(--step--1); }
+
+/* Free, as one large word in the accent colour. */
+.free { justify-items: center; text-align: center; }
+.free h2 { display: grid; justify-items: center; letter-spacing: 0; line-height: 1; }
+.free-lead { font-size: var(--step-2); font-weight: 500; letter-spacing: -0.035em; }
+.free-word {
+  font-size: clamp(7rem, 3rem + 18vw, 17rem);
+  font-weight: 700;
+  letter-spacing: -0.07em;
+  line-height: 0.9;
+  padding-inline-end: 0.07em;
+  color: var(--accent);
+}
+.free-points { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-xs) var(--space-l); padding: 0; list-style: none; }
+
+/* Where the plan lives: three cards, each topped by a backdrop with a small sample of that place. */
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: var(--space-m);
+  align-items: start;
+  padding: 0;
+  list-style: none;
+}
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: 0.5rem 0.5rem var(--space-m);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.plan > :not(.plan-sample) { margin-inline: var(--space-s); }
+.plan > h3 { margin-block-start: var(--space-xs); font-size: var(--step-2); font-weight: 500; letter-spacing: -0.035em; }
+.plan > p { color: var(--muted); }
+.plan .price { color: var(--text); font-size: var(--step-3); font-weight: 500; letter-spacing: -0.045em; line-height: 1.1; }
+.plan .price span { color: var(--muted); font-size: var(--step-0); font-weight: 400; letter-spacing: 0; }
+.plan.cloud { box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--accent) 55%, transparent); }
+.plan-sample { display: grid; align-items: end; min-block-size: 10rem; padding: var(--space-m) var(--space-s) var(--space-s); border-radius: calc(var(--radius-card) - 0.5rem); }
+.mini {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-inner);
+  background: var(--surface-raised);
+  font-size: var(--step--1);
+}
+.mini p { display: flex; justify-content: space-between; gap: var(--space-s); }
+.mini span { color: var(--muted); white-space: nowrap; }
+.mini-status { padding-block-start: 0.35rem; border-block-start: 1px solid var(--border); }
+.more { align-self: flex-start; font-weight: 600; }
+
+/* The waitlist form. It needs the script, so without one it is hidden and a line says why. */
+.waitlist { display: grid; gap: var(--space-xs); }
+.waitlist label { font-size: var(--step--1); font-weight: 600; }
+.waitlist-row { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.waitlist input[type="email"] {
+  flex: 1 1 12rem;
+  min-block-size: 3rem;
+  padding-inline: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-inner);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+.waitlist input[aria-invalid="true"] { border-color: var(--error); }
+.waitlist .button:disabled { opacity: 0.6; cursor: progress; }
+.waitlist-trap { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.waitlist-status:empty { display: none; }
+.waitlist-status[data-state="ok"] { color: var(--ok); font-weight: 600; }
+.waitlist-status[data-state="error"] { color: var(--error); }
+.waitlist-noscript { display: none; }
+@media (scripting: none) {
+  .waitlist { display: none; }
+  .waitlist-noscript { display: block; }
+}
+
+/* Quick start: four numbered cards, each with its command at the foot. */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-m);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.steps li {
+  counter-increment: step;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-m);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.steps li::before { content: counter(step); font-size: var(--step-3); font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
+.steps p { color: var(--muted); font-size: var(--step--1); }
+.step-foot { margin-block-start: auto; padding-block-start: var(--space-s); }
+
+/* Download */
+.downloads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--space-m);
+  padding: 0;
+  list-style: none;
+}
+.downloads > * { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-m); border-radius: var(--radius-card); background: var(--surface); }
+.downloads .wide { grid-column: 1 / -1; }
+.downloads h3 { font-size: var(--step-2); font-weight: 500; letter-spacing: -0.035em; }
+.downloads .meta, .downloads .later { color: var(--muted); }
+.downloads .meta { font-size: var(--step--1); }
+.downloads .ios { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+:is(.downloads, .status) .badge { display: block; inline-size: fit-content; margin-block-end: var(--space-2xs); margin-inline-end: 0; }
+:is(.downloads, .status) :not(pre) > code { line-height: 1; }
+.status {
+  justify-self: start;
+  max-inline-size: 70ch;
+  padding: var(--space-s) var(--space-m);
+  border-radius: var(--radius-card);
+  background: color-mix(in oklch, var(--wip) 10%, var(--bg));
+}
+
+/* Open source and the questions: the heading on the left, the text on the right. */
+.open-source .split > div { display: grid; gap: var(--space-s); max-inline-size: 65ch; }
+.faq-head { display: grid; gap: var(--space-s); justify-items: start; }
+.faq-head p { color: var(--muted); }
+.faq { display: grid; gap: var(--space-xs); }
+.faq details { border-radius: var(--radius-card); background: var(--surface); }
+.faq summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-s);
+  min-block-size: 3.5rem;
+  padding: var(--space-xs) var(--space-xs) var(--space-xs) var(--space-m);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+" / "";
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: var(--radius-inner);
+  background: var(--surface-raised);
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+.faq details[open] summary::after { content: "−" / ""; }
+.faq details p { padding: 0 var(--space-m) var(--space-m); color: var(--muted); }
+
+/* The end: a backdrop as wide as the first screen's. */
+main > section.closing.finale {
+  margin-block-start: var(--space-xl);
+  margin-inline: var(--bleed);
+  padding-block: clamp(4rem, 9vw, 8rem);
+  row-gap: var(--space-m);
+}
+.finale h2 { font-size: clamp(2.4rem, 1.4rem + 4.2vw, 5.6rem); letter-spacing: -0.055em; line-height: 0.98; }
+.finale .section-lead { color: var(--text); }
+.finale .button:not(.primary) { background: var(--surface-raised); }

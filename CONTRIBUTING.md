@@ -94,7 +94,8 @@ npm run test:unit                         # pure tests only, under a second
 ## The site and the documentation
 
 `site/` is dayhand.dev: an Astro project that builds the landing page and the documentation into a
-static site in `site/dist/`, with nothing loaded from other servers. The documentation pages are the
+static site in `site/dist/`. The one thing a page loads from another server is the General Sans font, from the
+Fontshare CDN. The documentation pages are the
 Markdown in `docs/`, rendered at build time, so nothing generated is committed. How it is built, the
 screenshots and the CSS rules it follows: [site/STYLE.md](site/STYLE.md); how to write the docs:
 [docs/contributing.md](docs/contributing.md).

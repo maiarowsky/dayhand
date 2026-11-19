@@ -1,5 +1,5 @@
 ---
-// Every page: the head with its metadata, the site header and footer, one stylesheet and one small script.
+// Every page: the head with its metadata, the site header and footer, the shared stylesheet and one small script.
 import "../styles/site.css";
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
@@ -28,6 +28,7 @@ const ogImage = new URL("/og-image.png", SITE_URL).href;
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#fbf6ee" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1c140f" media="(prefers-color-scheme: dark)" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:type" content="website" />

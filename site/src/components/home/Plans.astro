@@ -1,0 +1,97 @@
+---
+// Get Dayhand: links to each download, then where the plan lives (this device, the planned hosted Dayhand Cloud with
+// its waitlist, or a server of your own), each card topped by a backdrop with a small sample of that place. Server
+// details live in docs/deploy.md.
+import { CONTACT_EMAIL, DOCS_PATH } from "../../site";
+
+const installs = [
+  { href: "#download-cli", label: "Command line" },
+  { href: "#download-macos", label: "macOS" },
+  { href: "#download-android", label: "Android" },
+  { href: "#download-linux", label: "Linux" },
+];
+---
+
+<section id="get-dayhand" class="plans-section" aria-labelledby="get-dayhand-title">
+  <div class="split-head">
+    <h2 id="get-dayhand-title">Get Dayhand, then choose where your plan lives</h2>
+    <div class="split-side">
+      <p class="section-lead">Start with the command line or an app. Move your plan to a server whenever you like.</p>
+      <ul class="actions" role="list">
+        {installs.map((install) => <li><a class="button small" href={install.href}>{install.label}</a></li>)}
+      </ul>
+    </div>
+  </div>
+
+  <ul class="plans" role="list">
+    <li class="plan">
+      <div class="backdrop plan-sample" aria-hidden="true">
+        <div class="mini">
+          <p><strong>Send the October invoices</strong><span>Overdue</span></p>
+          <p><strong>Write the bakery proposal</strong><span>Now</span></p>
+          <p class="mini-status"><strong>On this phone</strong><span>Works offline</span></p>
+        </div>
+      </div>
+      <h3>On this device</h3>
+      <p class="price">Free</p>
+      <p>Nothing to set up. Your plan stays on your phone or computer.</p>
+    </li>
+    <li class="plan cloud" id="dayhand-cloud">
+      <div class="backdrop plan-sample" aria-hidden="true">
+        <div class="mini">
+          <p><strong>Phone, Mac and Claude</strong><span>In sync</span></p>
+          <p><strong>claude asks for your approval</strong><span>Now</span></p>
+          <p class="mini-status"><strong>Dayhand Cloud</strong><span>Opens soon</span></p>
+        </div>
+      </div>
+      <h3>Dayhand Cloud <span class="badge soon">Opens soon</span></h3>
+      <p class="price">$5 <span>/ month</span></p>
+      <p>We run the server for you, so all your devices and Claude stay in sync.</p>
+      <form class="waitlist" action="/api/waitlist" method="post" data-waitlist novalidate>
+        <label for="waitlist-email">Email</label>
+        <div class="waitlist-row">
+          <input
+            id="waitlist-email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            maxlength="254"
+            required
+            aria-describedby="waitlist-privacy"
+          />
+          <button class="button primary" type="submit">Join the waitlist</button>
+        </div>
+        <div class="waitlist-trap" aria-hidden="true">
+          <label for="waitlist-website">Leave this empty</label>
+          <input id="waitlist-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+        <p class="waitlist-status" role="status" data-waitlist-status></p>
+        <p class="fineprint" id="waitlist-privacy">
+          We use your address only to send one email when Dayhand Cloud opens, then delete the list. To have it removed
+          sooner, write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        </p>
+      </form>
+      <p class="fineprint waitlist-noscript">Joining the waitlist needs JavaScript turned on.</p>
+    </li>
+    <li class="plan">
+      <div class="backdrop plan-sample" aria-hidden="true">
+        <div class="mini">
+          <p><strong>Agent key claude</strong><span>write</span></p>
+          <p><strong>MCP at /mcp</strong><span>Ready</span></p>
+          <p class="mini-status"><strong>Your server</strong><span>On while it runs</span></p>
+        </div>
+      </div>
+      <h3>Your own server</h3>
+      <p class="price">Free</p>
+      <p>One command on your computer, or a deploy to your own Convex account. Your data and keys stay with you.</p>
+      <a class="more" href={`${DOCS_PATH}deploy/`}>
+        Read the server guide
+      </a>
+    </li>
+  </ul>
+</section>
+
+<script>
+  import "../../scripts/waitlist.ts";
+</script>

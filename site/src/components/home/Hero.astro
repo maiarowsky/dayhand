@@ -1,58 +1,61 @@
 ---
-// The first screen: what Dayhand is, that it is free, the first step on the command line, and the apps themselves.
+// The first screen: what Dayhand is, the two ways in and the install command, then the real Mac app on a
+// backdrop, and the ways an agent reaches the plan.
 import Screenshot from "../Screenshot.astro";
 import { DOCS_PATH } from "../../site";
-import macLight from "../../assets/screens/mac-today-light.webp";
-import macDark from "../../assets/screens/mac-today-dark.webp";
-import phoneLight from "../../assets/screens/android-today-light.webp";
-import phoneDark from "../../assets/screens/android-today-dark.webp";
+import macLight from "../../assets/screens/mac-plan-light.webp";
+import macDark from "../../assets/screens/mac-plan-dark.webp";
+
+const reach = [
+  { href: `${DOCS_PATH}mcp/`, label: "MCP" },
+  { href: `${DOCS_PATH}cli/`, label: "the dayhand command" },
+  { href: `${DOCS_PATH}api/`, label: "a REST API" },
+  { href: `${DOCS_PATH}webhooks/`, label: "webhooks" },
+  { href: `${DOCS_PATH}calendar/`, label: "a calendar feed" },
+];
 ---
 
 <section class="hero" aria-labelledby="hero-title">
   <div class="hero-text">
-    <a class="pill" href="#open-source">Free and open source <span>Apache-2.0</span></a>
-    <h1 id="hero-title">A day plan for one-person businesses and the AI agents that work for them.</h1>
+    <a class="pill" href="#screens">Android, macOS, Linux and your terminal. iPhone coming soon</a>
+    <h1 id="hero-title">
+      A day plan <img class="h1-mark" src="/favicon.svg" alt="" width="64" height="64" /> for you and your AI agents
+    </h1>
     <p class="lead">
-      Tasks, a calendar and reminders on your phone, your Mac and your Linux desktop. Your AI agents work on the same
-      plan under rules you set, and ask you before a risky step.
+      Tasks, a calendar and reminders for people who run a business on their own. Your agents work on the same plan
+      under rules you set, and ask you before a risky step.
     </p>
     <div class="actions">
       <a class="button primary" href="#get-dayhand">Get started</a>
       <a class="button" href={DOCS_PATH}>Read the docs</a>
     </div>
-    <div class="quickstart">
-      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the commands that install the command line and start your own server"><code>npm i -g dayhand
-dayhand server start</code></pre>
-      <a class="more" href={`${DOCS_PATH}getting-started/`}>
-        Quick start, about 10 minutes <span aria-hidden="true">→</span>
-      </a>
+    <div class="quickstart inline-copy">
+      <pre tabindex="0" class="code" data-copy data-copy-label="Copy the command that installs the command line and starts your own server"><code>npm i -g dayhand && dayhand server start</code></pre>
+      <p class="fineprint">
+        Free and open source. No account needed. <a href={`${DOCS_PATH}getting-started/`}>Quick start, about 10 minutes</a>
+      </p>
     </div>
-    <ul class="reassure" role="list">
-      <li>Free to run yourself</li>
-      <li>No account needed</li>
-      <li>Your data stays with you</li>
-    </ul>
   </div>
 
-  <figure class="showcase">
-    <Screenshot
-      class="window"
-      light={macLight}
-      dark={macDark}
-      widths={[700, 1080, 1600, 2160]}
-      sizes="(min-width: 72rem) 58rem, (min-width: 40rem) 82vw, calc(100vw - 2rem)"
-      eager
-      alt="Dayhand for macOS. On the left, Today: one overdue task, Send the October invoices; the task being worked on now, Write the proposal for the bakery website; and seven tasks for today. On the right, the details of Write the case study for the logo project: in progress, due today, labelled marketing, with two of three checklist items done."
-    />
-    <Screenshot
-      class="phone"
-      light={phoneLight}
-      dark={phoneDark}
-      widths={[300, 600, 900]}
-      sizes="(min-width: 72rem) 18rem, (min-width: 40rem) 25vw, 50vw"
-      eager
-      alt="Dayhand for Android showing the same Today: a card that sums up the plan, with one overdue task, one approval request, one blocked task and one proposal, then the overdue invoices, the task being worked on now and the tasks for today with their times."
-    />
-    <figcaption class="showcase-caption">The real Dayhand for macOS and Android, on the same sample plan.</figcaption>
+  <figure class="stage backdrop">
+    <div class="showcase">
+      <Screenshot
+        class="window"
+        light={macLight}
+        dark={macDark}
+        widths={[700, 1080, 1600, 2200]}
+        sizes="(min-width: 76rem) 66rem, calc(100vw - 3rem)"
+        eager
+        alt="Dayhand for macOS showing the week of 16 to 22 November as a plan. A bar at the top shows the app's offline state: it is not connected to a server, and the tasks stay on this Mac. The sidebar lists Today, All Tasks and the projects Bakery website, Home, Dayhand and Health. Thursday the 19th is today, its date in a blue circle. Tasks without a time sit above the grid, such as Write the project brief and Buy milk; in the grid are Review pull request #42 at 09:30, the dentist on Friday at 10:00 and Call the accountant at 14:00, each a block in the colour of its status with a thin bar in its project's colour."
+      />
+    </div>
+    <figcaption class="stage-caption">The real Dayhand for macOS, on a sample plan.</figcaption>
   </figure>
+
+  <div class="reach">
+    <p>Agents reach the plan through</p>
+    <ul role="list">
+      {reach.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+    </ul>
+  </div>
 </section>

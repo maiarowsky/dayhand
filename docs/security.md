@@ -35,7 +35,8 @@ your account; Convex can technically reach it, as any host can reach what it hos
   checks the update feed (Sparkle), with Sparkle's system profile off; builds you make yourself never do.
 - `dayhand` talks only to the server you signed it in to. `dayhand server start` downloads the Convex
   local backend from Convex's GitHub releases once, at a pinned version whose checksum it checks.
-- This website sets no cookies and loads nothing from other servers.
+- This website sets no cookies. The one thing it loads from another server is the General Sans font file, from
+  the Fontshare CDN (Indian Type Foundry), which sees your IP address as any server does.
 
 ## Secrets and how they are kept
 
