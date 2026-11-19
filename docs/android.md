@@ -6,8 +6,10 @@ server, phone pairing, the calendar address, agent connections and the controls 
 works offline, and reminders and the morning summary are worked out on the phone.
 
 It runs on Android 8.0 or newer and speaks English, Polish, German, Spanish, French, Brazilian
-Portuguese, Japanese and Simplified Chinese. No APK is published yet; [Install](install.md#android)
-says how to build it. How the app is built and tested: [android/README.md](../android/README.md).
+Portuguese, Japanese and Simplified Chinese. Download the signed APK from
+[Dayhand Planner 0.14.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0);
+[Install](install.md#android) says how to install it or build it yourself. How the app is built and
+tested: [android/README.md](../android/README.md).
 
 ## First start: where the plan lives
 

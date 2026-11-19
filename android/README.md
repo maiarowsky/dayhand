@@ -11,7 +11,7 @@ code from `dayhand pair`, approves and disconnects **agent connections** such as
 turns on the read-only **calendar address** for Google and Apple Calendar.
 
 **Install**: download the signed `.apk` from
-[Dayhand Planner 0.13.5](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.13.5),
+[Dayhand Planner 0.14.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0),
 allow your browser or file manager to install apps when Android asks, and on the first start
 choose **On this phone only** to use Dayhand without a server. What works without a server, what
 needs one and how to connect your own: [On the phone](../README.md#on-the-phone). To build it yourself, see
