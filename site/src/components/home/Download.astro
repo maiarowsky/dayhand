@@ -1,13 +1,17 @@
 ---
 // Every platform with its real state today: first the command line from npm or Homebrew, then the pre-release
-// note for the apps, which build from the source, and iOS, which is not out yet.
-import { DOCS_PATH, repoFile } from "../../site";
+// note for the Mac and Linux apps, which build from the source, the Android app as a signed APK from GitHub
+// Releases, and iOS, which is not out yet.
+import { ANDROID_RELEASE, DOCS_PATH } from "../../site";
 ---
 
 <section id="download" aria-labelledby="download-title">
   <div class="split-head">
     <h2 id="download-title">Download</h2>
-    <p class="section-lead">The command line is out on npm and Homebrew. The apps build from the source until their first release.</p>
+    <p class="section-lead">
+      The command line is out on npm and Homebrew, and the Android app as a signed APK. The Mac and Linux apps build
+      from the source until their first release.
+    </p>
   </div>
 
   <div class="downloads inline-copy">
@@ -32,16 +36,23 @@ import { DOCS_PATH, repoFile } from "../../site";
 
   <p class="status">
     <span class="badge wip">Pre-release</span>
-    The apps for Android, macOS and Linux have no published release yet: they build from the source until the first
-    release, and ready-made downloads are marked Coming soon.
+    The apps for macOS and Linux have no published release yet: they build from the source until the first release,
+    and ready-made downloads are marked Coming soon.
   </p>
 
   <ul class="downloads inline-copy" role="list">
     <li id="download-android">
       <h3>Android</h3>
       <p class="meta">Android 8.0 or newer</p>
-      <p><span class="badge ok">Works today</span> <a href={repoFile("android/README.md")}>Build the app yourself</a></p>
-      <p class="later"><span class="badge soon">Coming soon</span> A signed APK on GitHub Releases</p>
+      <p><span class="badge ok">Version {ANDROID_RELEASE.version}</span> A signed APK from GitHub Releases:</p>
+      <p>
+        <a class="button primary small" href={ANDROID_RELEASE.apk}>Download Dayhand Planner {ANDROID_RELEASE.version}</a>
+      </p>
+      <p class="later">
+        Android asks once to allow installs from your browser. <a href={ANDROID_RELEASE.page}>The release page</a> has
+        the file's checksum and the signing certificate, and <a href={`${DOCS_PATH}install/#android`}>the install
+        guide</a> shows how to build the app yourself.
+      </p>
       <p class="later"><span class="badge soon">Coming soon</span> Google Play</p>
     </li>
     <li id="download-macos">

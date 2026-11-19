@@ -12,3 +12,14 @@ export const CONTACT_EMAIL = "hello@dayhand.dev";
 
 /** A file in the repository on GitHub, such as `LICENSE` or `docs/deploy.md`. */
 export const repoFile = (path: string): string => `${REPO_URL}/blob/main/${path}`;
+
+/**
+ * The Android app's current release: a signed APK on GitHub Releases, the same one docs/install.md#android links to.
+ * Change the version here when a new Android release is published.
+ */
+const ANDROID_VERSION = "0.14.0";
+export const ANDROID_RELEASE = {
+  version: ANDROID_VERSION,
+  apk: `${REPO_URL}/releases/download/android-v${ANDROID_VERSION}/dayhand-planner-${ANDROID_VERSION}.apk`,
+  page: `${REPO_URL}/releases/tag/android-v${ANDROID_VERSION}`,
+};
