@@ -29,7 +29,7 @@ your own can be connected later; everything made on the phone then goes to it
   the launcher activity is `io.github.maiarowsky.dayhand/dev.helm.planner.MainActivity`. Builds
   with the earlier id `dev.helm.planner` are a different app and install side by side.
 - Debug builds (`assembleDebug`, `installDebug`) are `io.github.maiarowsky.dayhand.dev`, named
-  **Dayhand dev** with a teal icon and a version ending in `-dev`. They are signed with the computer's
+  **Dayhand dev** with a teal icon. They are signed with the computer's
   debug key, which Android refuses as an update to the release, so they are a separate app next to it
   with a plan of their own.
   The end-to-end scripts drive this id.

@@ -8,7 +8,9 @@ called Helm until 0.9.0.
 ### Changed
 
 - Debug builds are a separate app, **Dayhand dev** (`io.github.maiarowsky.dayhand.dev`, teal icon), that installs
-  next to the release instead of blocking its install or update with "App not installed".
+  next to the release instead of blocking its install or update with "App not installed". If the phone has an
+  earlier test build installed as plain **Dayhand**, first save a backup (**Settings → Data → Backup → Save a backup
+  file**), then uninstall it before installing the release; from this version on, test builds install next to it.
 
 ### Fixed
 

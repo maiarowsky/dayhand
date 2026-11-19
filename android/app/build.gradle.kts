@@ -72,7 +72,6 @@ android {
         // would refuse to update one over the other.
         debug {
             applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
         }
         release {
             isMinifyEnabled = false
