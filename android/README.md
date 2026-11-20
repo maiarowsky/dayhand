@@ -33,7 +33,7 @@ your own can be connected later; everything made on the phone then goes to it
   debug key, which Android refuses as an update to the release, so they are a separate app next to it
   with a plan of their own.
   The end-to-end scripts drive this id.
-- Version 0.14.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.15.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
