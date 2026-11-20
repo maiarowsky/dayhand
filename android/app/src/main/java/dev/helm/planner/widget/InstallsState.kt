@@ -58,30 +58,40 @@ sealed interface WidgetView {
     data class Showing(val table: InstallsTable, val failure: FetchFailure?) : WidgetView
 }
 
-/** One app's all-time installs per store and over both; a number is null when it would leave a count out. */
-data class TableRow(val name: String, val counts: Map<Platform, Int?>, val total: Int?)
+/**
+ * One app's all-time installs per store and over both, and its installs on each store's latest published day added up
+ * ([lastDay]); a number is null when it would leave a count out.
+ */
+data class TableRow(val name: String, val counts: Map<Platform, Int?>, val total: Int?, val lastDay: Int?)
+
+/** The published days of one store's known counts; one day when every app's count is from the same day. */
+data class PublishedDays(val oldest: LocalDate, val newest: LocalDate)
 
 /**
- * The widget's table: a row per app, the oldest published day among the known counts, the stores with a count missing
- * for lack of data, and whether a count is missing because the file has no `total` field.
+ * The widget's table: a row per app, the published days per store among the known counts, the stores with a count
+ * missing for lack of data, and whether a count is missing because the file has no `total` field.
  */
 data class InstallsTable(
     val rows: List<TableRow>,
-    val asOf: LocalDate?,
+    val days: Map<Platform, PublishedDays>,
     val storesWithoutData: List<Platform>,
     val noTotalInFile: Boolean,
 ) {
     companion object {
         fun of(report: InstallsReport): InstallsTable {
             val rows = report.apps.map { app ->
-                val counts = Platform.entries.associateWith { (app.count(it) as? PlatformCount.Known)?.total }
-                TableRow(app.name, counts, sum(counts.values))
+                val known = Platform.entries.associateWith { app.count(it) as? PlatformCount.Known }
+                val counts = known.mapValues { it.value?.total }
+                TableRow(app.name, counts, sum(counts.values), sum(known.values.map { it?.dayInstalls }))
             }
             val counts = report.apps.flatMap { app -> Platform.entries.map { it to app.count(it) } }
             val reasons = counts.mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }
             return InstallsTable(
                 rows = rows,
-                asOf = counts.mapNotNull { (it.second as? PlatformCount.Known)?.day }.minOrNull(),
+                days = Platform.entries.mapNotNull { platform ->
+                    val days = report.apps.mapNotNull { (it.count(platform) as? PlatformCount.Known)?.day }
+                    days.minOrNull()?.let { platform to PublishedDays(it, days.max()) }
+                }.toMap(),
                 storesWithoutData = reasons.filter { it.second != MissingReason.NO_TOTAL }.map { it.first }.distinct().sorted(),
                 noTotalInFile = reasons.any { it.second == MissingReason.NO_TOTAL },
             )

@@ -6,6 +6,7 @@
     <string name="installs_as_of">a %1$s</string>
     <string name="installs_column_app">App</string>
     <string name="installs_column_total">Total</string>
+    <string name="installs_column_last_day">Último día</string>
     <string name="installs_no_data_ios">iOS: sin datos de App Store</string>
     <string name="installs_no_data_android">Android: sin datos de Google Play</string>
     <string name="installs_no_data_both">Sin datos de App Store ni Google Play</string>

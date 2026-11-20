@@ -13,9 +13,12 @@ import kotlinx.serialization.json.intOrNull
 
 enum class Platform(val key: String) { IOS("ios"), ANDROID("android") }
 
-/** One app on one store: all installs up to a published day, or why there is no such number. A missing count is never zero. */
+/**
+ * One app on one store: all installs up to a published day and the installs on that day ([dayInstalls], null when the
+ * file has no valid `value`), or why there is no such number. A missing count is never zero.
+ */
 sealed interface PlatformCount {
-    data class Known(val day: LocalDate, val total: Int) : PlatformCount
+    data class Known(val day: LocalDate, val total: Int, val dayInstalls: Int?) : PlatformCount
 
     data class Missing(val reason: MissingReason) : PlatformCount
 }
@@ -79,7 +82,7 @@ object InstallsJson {
             else -> field.count() ?: return PlatformCount.Missing(MissingReason.INVALID)
         }
         val day = entry.text("day")?.let(::date) ?: return PlatformCount.Missing(MissingReason.INVALID)
-        return PlatformCount.Known(day, total)
+        return PlatformCount.Known(day, total, entry["value"]?.count())
     }
 
     private fun JsonElement.count(): Int? = (this as? JsonPrimitive)?.takeUnless { it.isString }?.intOrNull?.takeIf { it >= 0 }

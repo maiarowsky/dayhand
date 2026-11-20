@@ -5,12 +5,14 @@ import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
@@ -41,10 +43,12 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs. A tap fetches the file again; before an address is set it opens the setup screen.
+ * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs and its
+ * installs on the latest published day. A narrow widget leaves out the iOS and Android columns so the app names keep
+ * their room. A tap fetches the file again; before an address is set it opens the setup screen.
  */
 class InstallsWidget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Single
+    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(NARROW, WIDE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val store = InstallsStore(context)
@@ -78,6 +82,8 @@ class RefreshInstalls : ActionCallback {
 
 private const val MAX_APPS = 6
 private val CELL_WIDTH = 56.dp
+private val NARROW = DpSize(250.dp, 200.dp)
+private val WIDE = DpSize(312.dp, 200.dp)
 
 @Composable
 internal fun InstallsContent(view: WidgetView) {
@@ -116,17 +122,21 @@ private fun Report(view: WidgetView.Showing) {
     // Glance keeps at most 10 children per Column and silently drops the rest, so each block is its own Column.
     Column(GlanceModifier.fillMaxWidth()) {
         Text(context.getString(R.string.installs_title), style = TextStyle(color = strong, fontSize = 14.sp, fontWeight = FontWeight.Bold))
-        table.asOf?.let { Text(context.getString(R.string.installs_as_of, dayFormatter(locale).format(it)), style = small(muted)) }
+        asOf(context, table, locale)?.let { Text(it, style = small(muted)) }
         Spacer(GlanceModifier.height(6.dp))
     }
+    val stores = if (LocalSize.current.width >= WIDE.width) Platform.entries else emptyList()
     Column(GlanceModifier.fillMaxWidth()) {
         TableLine(
             context.getString(R.string.installs_column_app),
-            Platform.entries.map { platformName(context, it) } + context.getString(R.string.installs_column_total),
+            stores.map { platformName(context, it) } +
+                context.getString(R.string.installs_column_total) + context.getString(R.string.installs_column_last_day),
             small(muted),
+            cellLines = 2,
         )
         table.rows.take(MAX_APPS).forEach { row ->
-            TableLine(row.name, Platform.entries.map { number(row.counts[it], numbers) } + number(row.total, numbers), cell(strong))
+            val cells = stores.map { row.counts[it] } + row.total + row.lastDay
+            TableLine(row.name, cells.map { number(it, numbers) }, cell(strong))
         }
     }
     Column(GlanceModifier.fillMaxWidth()) {
@@ -139,10 +149,12 @@ private fun Report(view: WidgetView.Showing) {
 }
 
 @Composable
-private fun TableLine(name: String, cells: List<String>, style: TextStyle) {
+private fun TableLine(name: String, cells: List<String>, style: TextStyle, cellLines: Int = 1) {
     Row(GlanceModifier.fillMaxWidth().padding(vertical = 1.dp)) {
         Text(name, style = style, maxLines = 1, modifier = GlanceModifier.defaultWeight())
-        cells.forEach { Text(it, style = style.copy(textAlign = TextAlign.End), maxLines = 1, modifier = GlanceModifier.width(CELL_WIDTH)) }
+        cells.forEach {
+            Text(it, style = style.copy(textAlign = TextAlign.End), maxLines = cellLines, modifier = GlanceModifier.width(CELL_WIDTH))
+        }
     }
 }
 
@@ -156,6 +168,16 @@ private fun cell(color: ColorProvider) = TextStyle(color = color, fontSize = 14.
 
 private fun dayFormatter(locale: Locale): DateTimeFormatter =
     DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dM"), locale)
+
+/** "as of" the published day of every number shown, or each store's days when the stores published different days. */
+private fun asOf(context: Context, table: InstallsTable, locale: Locale): String? {
+    if (table.days.isEmpty()) return null
+    val formatter = dayFormatter(locale)
+    fun text(days: PublishedDays): String = listOf(days.oldest, days.newest).distinct().joinToString("–") { formatter.format(it) }
+    val dates = table.days.values.distinct().singleOrNull()?.let(::text)
+        ?: table.days.entries.joinToString(" · ") { (platform, days) -> "${platformName(context, platform)} ${text(days)}" }
+    return context.getString(R.string.installs_as_of, dates)
+}
 
 /** One short line on why a number is missing: the stores without data, or a file that has no totals. */
 private fun footnote(context: Context, table: InstallsTable): String? {

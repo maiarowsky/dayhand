@@ -6,6 +6,7 @@
     <string name="installs_as_of">%1$s 時点</string>
     <string name="installs_column_app">アプリ</string>
     <string name="installs_column_total">合計</string>
+    <string name="installs_column_last_day">最新日</string>
     <string name="installs_no_data_ios">iOS: App Store のデータなし</string>
     <string name="installs_no_data_android">Android: Google Play のデータなし</string>
     <string name="installs_no_data_both">App Store と Google Play のデータなし</string>

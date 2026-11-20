@@ -11,8 +11,8 @@ class InstallsStateTest {
     private val url = "https://mac.tail0000.ts.net/installs.json"
     private val good = """
         {"schema": 1, "generatedAt": "2026-11-17T06:30:00Z", "apps": [
-          {"name": "Alpha", "ios": {"day": "2026-11-16", "total": 1200}, "android": {"day": "2026-11-15", "total": 340}},
-          {"name": "Beta", "ios": {"day": "2026-11-16", "total": 0}, "android": {"day": "2026-11-14", "total": 25}}
+          {"name": "Alpha", "ios": {"day": "2026-11-16", "value": 9, "total": 1200}, "android": {"day": "2026-11-15", "value": 4, "total": 340}},
+          {"name": "Beta", "ios": {"day": "2026-11-16", "value": 0, "total": 0}, "android": {"day": "2026-11-14", "value": 2, "total": 25}}
         ]}
     """.trimIndent()
 
@@ -53,12 +53,18 @@ class InstallsStateTest {
 
         assertEquals(
             listOf(
-                TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to 340), 1540),
-                TableRow("Beta", mapOf(Platform.IOS to 0, Platform.ANDROID to 25), 25),
+                TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to 340), 1540, 13),
+                TableRow("Beta", mapOf(Platform.IOS to 0, Platform.ANDROID to 25), 25, 2),
             ),
             table.rows,
         )
-        assertEquals(LocalDate.of(2026, 11, 14), table.asOf)
+        assertEquals(
+            mapOf(
+                Platform.IOS to PublishedDays(LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 16)),
+                Platform.ANDROID to PublishedDays(LocalDate.of(2026, 11, 14), LocalDate.of(2026, 11, 15)),
+            ),
+            table.days,
+        )
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
     }
@@ -66,12 +72,14 @@ class InstallsStateTest {
     @Test
     fun aMissingCountBlanksItsRowSumNeverAPartialSum() {
         val table = table(
-            """{"name": "Alpha", "ios": {"day": "2026-11-16", "total": 1200}, "android": {"day": "2026-11-15", "total": null, "note": "HTTP 403"}}""",
-            """{"name": "Beta", "ios": {"day": "2026-11-16", "total": 7}, "android": {"day": "2026-11-15", "total": 25}}""",
+            """{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 5, "total": 1200}, "android": {"day": "2026-11-15", "value": null, "total": null, "note": "HTTP 403"}}""",
+            """{"name": "Beta", "ios": {"day": "2026-11-16", "value": 1, "total": 7}, "android": {"day": "2026-11-15", "value": 3, "total": 25}}""",
+            """{"name": "Gamma", "ios": {"day": "2026-11-16", "total": 70}, "android": {"day": "2026-11-15", "value": 3, "total": 25}}""",
         )
 
-        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to null), null), table.rows[0])
-        assertEquals(TableRow("Beta", mapOf(Platform.IOS to 7, Platform.ANDROID to 25), 32), table.rows[1])
+        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to null), null, null), table.rows[0])
+        assertEquals(TableRow("Beta", mapOf(Platform.IOS to 7, Platform.ANDROID to 25), 32, 4), table.rows[1])
+        assertEquals("a store without the day's value", TableRow("Gamma", mapOf(Platform.IOS to 70, Platform.ANDROID to 25), 95, null), table.rows[2])
         assertEquals(listOf(Platform.ANDROID), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
     }
@@ -80,8 +88,8 @@ class InstallsStateTest {
     fun anOldFileWithoutTotalsShowsNoNumbersAndSaysSo() {
         val table = table("""{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 3}}""")
 
-        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to null, Platform.ANDROID to null), null), table.rows.single())
-        assertNull(table.asOf)
+        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to null, Platform.ANDROID to null), null, null), table.rows.single())
+        assertEquals(emptyMap<Platform, PublishedDays>(), table.days)
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertTrue(table.noTotalInFile)
     }
@@ -91,7 +99,8 @@ class InstallsStateTest {
         val table = table("""{"name": "Alpha", "ios": {"total": null}}""")
 
         assertNull(table.rows.single().total)
-        assertNull(table.asOf)
+        assertNull(table.rows.single().lastDay)
+        assertEquals(emptyMap<Platform, PublishedDays>(), table.days)
         assertEquals(listOf(Platform.IOS, Platform.ANDROID), table.storesWithoutData)
     }
 

@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceTheme
 import androidx.glance.appwidget.GlanceAppWidget
@@ -21,7 +23,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Every line of a full widget reaches the home screen: Glance drops a container's children past its limit. */
+/** Every line of a full widget reaches the home screen (Glance drops a container's children past its limit), and a narrow one keeps the totals. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class, qualifiers = "en")
 class InstallsWidgetLayoutTest {
@@ -29,8 +31,12 @@ class InstallsWidgetLayoutTest {
     private val url = "https://example.test/installs.json"
 
     private val sixApps = (1..6).joinToString(prefix = """{"schema": 1, "apps": [""", postfix = "]}") { n ->
-        val android = if (n == 6) """{"day": null, "total": null, "note": "HTTP 403"}""" else """{"day": "2026-11-15", "total": ${n * 100}}"""
-        """{"name": "App$n", "ios": {"day": "2026-11-16", "total": ${n * 1000}}, "android": $android}"""
+        val android = if (n == 6) {
+            """{"day": null, "value": null, "total": null, "note": "HTTP 403"}"""
+        } else {
+            """{"day": "2026-11-15", "value": $n, "total": ${n * 100}}"""
+        }
+        """{"name": "App$n", "ios": {"day": "2026-11-16", "value": ${n * 10}, "total": ${n * 1000}}, "android": $android}"""
     }
 
     @Test
@@ -38,37 +44,60 @@ class InstallsWidgetLayoutTest {
         val view = WidgetData(url).after(FetchResult.Body(sixApps), now = 1_000)
             .after(FetchResult.Failed(FetchFailure.Network), now = 2_000).view()
 
-        val texts = render(view)
+        val texts = render(view, wide)
 
-        listOf("Installs", "as of 11/15", "App", "iOS", "Android").forEach { assertTrue("$it in $texts", it in texts) }
+        listOf("Installs", "as of iOS 11/16 · Android 11/15", "App", "iOS", "Android", "Last day").forEach { assertTrue("$it in $texts", it in texts) }
         (1..6).forEach { assertTrue("App$it in $texts", "App$it" in texts) }
-        listOf("1,000", "100", "1,100", "6,000").forEach { assertTrue("$it in $texts", it in texts) }
+        listOf("1,000", "100", "1,100", "11", "6,000", "55").forEach { assertTrue("$it in $texts", it in texts) }
         assertEquals("Total header only, no row of sums in $texts", 1, texts.count { it == "Total" })
         assertFalse("no sum over the apps in $texts", "21,000" in texts)
-        assertEquals("App6 Android and its row sum in $texts", 2, texts.count { it == "—" })
+        assertEquals("App6 Android, its total and its last day in $texts", 3, texts.count { it == "—" })
         assertTrue("reason in $texts", "Android: no data from Google Play" in texts)
         assertTrue("failure in $texts", "No connection" in texts)
         assertFalse("no generator note in $texts", texts.any { "403" in it })
     }
 
     @Test
+    fun aNarrowWidgetShowsTheTotalAndTheLastDayOfEachApp() = runTest {
+        val texts = render(WidgetData(url).after(FetchResult.Body(sixApps), now = 1_000).view(), narrow)
+
+        assertEquals(listOf("App", "Total", "Last day"), texts.subList(texts.indexOf("App"), texts.indexOf("App") + 3))
+        assertEquals(listOf("App1", "1,100", "11"), texts.subList(texts.indexOf("App1"), texts.indexOf("App1") + 3))
+        assertEquals(listOf("App6", "—", "—"), texts.subList(texts.indexOf("App6"), texts.indexOf("App6") + 3))
+        assertFalse("no store columns in $texts", "iOS" in texts || "Android" in texts || "1,000" in texts)
+    }
+
+    @Test
+    fun storesWithTheSameDayShowOneDate() = runTest {
+        val sameDay = """{"schema": 1, "apps": [{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 4, "total": 40}, "android": {"day": "2026-11-16", "value": 1, "total": 9}}]}"""
+
+        val texts = render(WidgetData(url).after(FetchResult.Body(sameDay), now = 1_000).view(), wide)
+
+        assertTrue("one date in $texts", "as of 11/16" in texts)
+        assertEquals(listOf("Alpha", "40", "9", "49", "5"), texts.subList(texts.indexOf("Alpha"), texts.indexOf("Alpha") + 5))
+    }
+
+    @Test
     fun anOldFileWithoutTotalsSaysSo() = runTest {
         val old = """{"schema": 1, "apps": [{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": null, "value": null, "note": "HTTP 403"}}]}"""
 
-        val texts = render(WidgetData(url).after(FetchResult.Body(old), now = 1_000).view())
+        val texts = render(WidgetData(url).after(FetchResult.Body(old), now = 1_000).view(), wide)
 
         assertTrue("note in $texts", "no total in the file" in texts)
         assertFalse("no date in $texts", texts.any { it.startsWith("as of") })
         assertFalse("no daily number in $texts", texts.any { it == "12" || it == "80" })
     }
 
-    private suspend fun render(view: WidgetView): List<String> {
+    private val wide = DpSize(360.dp, 220.dp)
+    private val narrow = DpSize(260.dp, 220.dp)
+
+    private suspend fun render(view: WidgetView, size: DpSize): List<String> {
         val widget = object : GlanceAppWidget() {
             override suspend fun provideGlance(context: Context, id: GlanceId) {
                 provideContent { GlanceTheme { InstallsContent(view) } }
             }
         }
-        val root = widget.compose(context).apply(context, FrameLayout(context))
+        val root = widget.compose(context, size = size).apply(context, FrameLayout(context))
         return texts(root)
     }
 
