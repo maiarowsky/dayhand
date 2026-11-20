@@ -5,14 +5,12 @@ import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
-import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
@@ -43,12 +41,12 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs and its
- * installs on the latest published day. A narrow widget leaves out the iOS and Android columns so the app names keep
- * their room. A tap fetches the file again; before an address is set it opens the setup screen.
+ * Store installs on the home screen: a table with a row per app of its all-time installs and its installs on the latest
+ * published day, each added up over the App Store and Google Play. A tap fetches the file again; before an address is set
+ * it opens the setup screen.
  */
 class InstallsWidget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Responsive(setOf(NARROW, WIDE))
+    override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val store = InstallsStore(context)
@@ -82,8 +80,6 @@ class RefreshInstalls : ActionCallback {
 
 private const val MAX_APPS = 6
 private val CELL_WIDTH = 56.dp
-private val NARROW = DpSize(250.dp, 200.dp)
-private val WIDE = DpSize(312.dp, 200.dp)
 
 @Composable
 internal fun InstallsContent(view: WidgetView) {
@@ -125,18 +121,15 @@ private fun Report(view: WidgetView.Showing) {
         asOf(context, table, locale)?.let { Text(it, style = small(muted)) }
         Spacer(GlanceModifier.height(6.dp))
     }
-    val stores = if (LocalSize.current.width >= WIDE.width) Platform.entries else emptyList()
     Column(GlanceModifier.fillMaxWidth()) {
         TableLine(
             context.getString(R.string.installs_column_app),
-            stores.map { platformName(context, it) } +
-                context.getString(R.string.installs_column_total) + context.getString(R.string.installs_column_last_day),
+            listOf(context.getString(R.string.installs_column_total), context.getString(R.string.installs_column_last_day)),
             small(muted),
             cellLines = 2,
         )
         table.rows.take(MAX_APPS).forEach { row ->
-            val cells = stores.map { row.counts[it] } + row.total + row.lastDay
-            TableLine(row.name, cells.map { number(it, numbers) }, cell(strong))
+            TableLine(row.name, listOf(row.total, row.lastDay).map { number(it, numbers) }, cell(strong))
         }
     }
     Column(GlanceModifier.fillMaxWidth()) {

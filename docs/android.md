@@ -256,13 +256,12 @@ stores itself). Release builds read it over HTTPS only; for a file on your compu
 gives an HTTPS address inside your tailnet ([Phone and computer](deploy.md#phone-and-computer-tailscale)).
 On Android 12 and later the widget's settings change the address.
 
-The widget is a table with the columns App, iOS, Android, Total and Last day: a row per app with its
-total installs on each store and over both, and its installs on the latest published day, added up over
-both stores. The stores publish different days, so Last day adds each store's own latest day. Above the
-table a line says "as of" that day, or each store's day when they differ, such as "as of iOS 11/18 ·
-Android 11/17". A narrow widget leaves out the iOS and Android columns so the app names keep their room;
-widen it to see them. A number the file does not have shows as `—`, never as 0, and
-so do the Total and Last day of its row: the widget never shows a sum that leaves a number out. One line under the table says why numbers
+The widget is a table with the columns App, Total and Last day: a row per app with its total installs
+and its installs on the latest published day, each added up over both stores. The stores publish
+different days, so Last day adds each store's own latest day. Above the table a line says "as of" that
+day, or each store's day when they differ, such as "as of iOS 11/18 · Android 11/17". When the file does
+not have a store's number, the Total and Last day of its row show as `—`, never as 0: the widget never
+shows a sum that leaves a number out. One line under the table says why numbers
 are missing: which store has no data, such as "Android: no data from Google Play", and "no total in
 the file" when an entry lacks `total`. The widget fetches the file every three hours and when you tap it. When the fetch fails it keeps showing the last file and says why.
 
@@ -285,9 +284,9 @@ the file" when an entry lacks `total`. The widget fetches the file every three h
 | `schema` | `1`. Any other value and the widget refuses the file. |
 | `generatedAt` | When the file was written, ISO 8601 with a time zone; optional, the widget does not read it. |
 | `apps[].name` | The app's name, as the row shows it. |
-| `apps[].ios`, `apps[].android` | One store's numbers. A store left out shows as `—`. |
+| `apps[].ios`, `apps[].android` | One store's numbers. With a store left out, its app's Total and Last day show as `—`. |
 | `day` | The published day the numbers are for (`YYYY-MM-DD`). |
-| `total` | All installs from the app's release up to `day`, a whole number of 0 or more; `null` when there is no number. The widget shows it under the store and adds both stores up in Total. |
+| `total` | All installs from the app's release up to `day`, a whole number of 0 or more; `null` when there is no number. The widget adds both stores up in Total. |
 | `value` | Installs on `day`, a whole number of 0 or more. The widget adds both stores up in Last day; without it Last day shows `—`. |
 | `last7` | Installs over the 7 days ending on `day`; optional, the widget does not read it. |
 | `note` | Why `total` is `null`; for the program's own log, the widget does not show it. |

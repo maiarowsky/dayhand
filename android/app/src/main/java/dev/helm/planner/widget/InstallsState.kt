@@ -59,10 +59,10 @@ sealed interface WidgetView {
 }
 
 /**
- * One app's all-time installs per store and over both, and its installs on each store's latest published day added up
+ * One app's all-time installs over both stores, and its installs on each store's latest published day added up
  * ([lastDay]); a number is null when it would leave a count out.
  */
-data class TableRow(val name: String, val counts: Map<Platform, Int?>, val total: Int?, val lastDay: Int?)
+data class TableRow(val name: String, val total: Int?, val lastDay: Int?)
 
 /** The published days of one store's known counts; one day when every app's count is from the same day. */
 data class PublishedDays(val oldest: LocalDate, val newest: LocalDate)
@@ -80,9 +80,8 @@ data class InstallsTable(
     companion object {
         fun of(report: InstallsReport): InstallsTable {
             val rows = report.apps.map { app ->
-                val known = Platform.entries.associateWith { app.count(it) as? PlatformCount.Known }
-                val counts = known.mapValues { it.value?.total }
-                TableRow(app.name, counts, sum(counts.values), sum(known.values.map { it?.dayInstalls }))
+                val known = Platform.entries.map { app.count(it) as? PlatformCount.Known }
+                TableRow(app.name, sum(known.map { it?.total }), sum(known.map { it?.dayInstalls }))
             }
             val counts = report.apps.flatMap { app -> Platform.entries.map { it to app.count(it) } }
             val reasons = counts.mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }

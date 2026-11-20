@@ -53,8 +53,8 @@ class InstallsStateTest {
 
         assertEquals(
             listOf(
-                TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to 340), 1540, 13),
-                TableRow("Beta", mapOf(Platform.IOS to 0, Platform.ANDROID to 25), 25, 2),
+                TableRow("Alpha", 1540, 13),
+                TableRow("Beta", 25, 2),
             ),
             table.rows,
         )
@@ -77,9 +77,9 @@ class InstallsStateTest {
             """{"name": "Gamma", "ios": {"day": "2026-11-16", "total": 70}, "android": {"day": "2026-11-15", "value": 3, "total": 25}}""",
         )
 
-        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to 1200, Platform.ANDROID to null), null, null), table.rows[0])
-        assertEquals(TableRow("Beta", mapOf(Platform.IOS to 7, Platform.ANDROID to 25), 32, 4), table.rows[1])
-        assertEquals("a store without the day's value", TableRow("Gamma", mapOf(Platform.IOS to 70, Platform.ANDROID to 25), 95, null), table.rows[2])
+        assertEquals(TableRow("Alpha", null, null), table.rows[0])
+        assertEquals(TableRow("Beta", 32, 4), table.rows[1])
+        assertEquals("a store without the day's value", TableRow("Gamma", 95, null), table.rows[2])
         assertEquals(listOf(Platform.ANDROID), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
     }
@@ -88,7 +88,7 @@ class InstallsStateTest {
     fun anOldFileWithoutTotalsShowsNoNumbersAndSaysSo() {
         val table = table("""{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 3}}""")
 
-        assertEquals(TableRow("Alpha", mapOf(Platform.IOS to null, Platform.ANDROID to null), null, null), table.rows.single())
+        assertEquals(TableRow("Alpha", null, null), table.rows.single())
         assertEquals(emptyMap<Platform, PublishedDays>(), table.days)
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertTrue(table.noTotalInFile)

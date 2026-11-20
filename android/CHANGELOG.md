@@ -3,14 +3,14 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
-## 0.15.1 (unreleased)
+## Unreleased
 
 ### Changed
 
-- The store installs widget has a **Last day** column next to **Total**: each app's installs on the latest day the
-  App Store and Google Play published, added up over both and shown as `—` when a store's number is missing. The
-  "as of" line names each store's day when they differ, such as "as of iOS 11/18 · Android 11/17". A narrow widget
-  leaves out the iOS and Android columns so the app names keep their room.
+- The store installs widget shows two columns for each app: **Total**, its all-time installs, and **Last day**, its
+  installs on the latest day the App Store and Google Play published, each added up over both stores and shown as `—`
+  when a store's number is missing. The "as of" line names each store's day when they differ, such as
+  "as of iOS 11/18 · Android 11/17".
 
 ## 0.15.0 (2026-11-20)
 

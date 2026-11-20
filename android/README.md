@@ -33,7 +33,7 @@ your own can be connected later; everything made on the phone then goes to it
   debug key, which Android refuses as an update to the release, so they are a separate app next to it
   with a plan of their own.
   The end-to-end scripts drive this id.
-- Version 0.15.1 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
+- Version 0.15.0 (`versionName`: 0.x, MINOR for each step that adds screens, PATCH for fixes and
   polish); `versionCode` is the number of commits on `HEAD`.
 - minSdk 26, compileSdk and targetSdk 36 (see "Dependencies" for why not 37 yet).
 - Eight languages: English (the source and the default), Polski, Deutsch, Español, Français,
@@ -486,14 +486,14 @@ are restored too; with a server its settings stay. At most 2000 tasks, as the se
 ## Store installs widget
 
 `widget/` is a Jetpack Glance home screen widget with a table of the all-time and latest-day installs of
-your own apps from the App Store and Google Play, read from a JSON file at an address set when the widget is placed
+your own apps over the App Store and Google Play, read from a JSON file at an address set when the widget is placed
 (`InstallsConfigActivity`; release builds accept https only). `InstallsJson` parses the file (format and
 fields: [docs/android.md](../docs/android.md#store-installs-widget)), `InstallsStore` keeps the address
 and the last file that parsed, and `InstallsWorker` fetches it every three hours (WorkManager) and on a
-tap; `InstallsTable` works out the rows, each with its iOS + Android total and the two stores' `value` on
-their own latest day, and each store's published days for the "as of" line. A narrow widget
-(`SizeMode.Responsive`, under 312 dp) drops the iOS and Android columns. A failed fetch keeps the last
-file and says why; a missing number shows as `—`, never 0, and so do its row's sums.
+tap; `InstallsTable` works out the rows, each with its iOS + Android total (the Total column) and the two
+stores' `value` on their own latest day added up (the Last day column), and each store's published days for
+the "as of" line. A failed fetch keeps the last file and says why; a store's missing number blanks its row's
+sums as `—`, never 0.
 
 ## Signing in
 
@@ -597,7 +597,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # backup file (write, read, the server's export), sample plan, another server,
                                             # agents (answers, requests, proposals, the switch, tool policies and their refusals,
                                             # the health card, new requests)
-                                            # the installs widget's file (totals, day values, missing totals, broken files), its table's row and last-day sums, address check, that a full widget shows every line and a narrow one its sums,
+                                            # the installs widget's file (totals, day values, missing totals, broken files), its table's row and last-day sums, address check, and that a full widget shows every line,
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,
