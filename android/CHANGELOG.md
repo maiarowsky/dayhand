@@ -3,6 +3,16 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
+## Unreleased
+
+### Changed
+
+- The store installs widget shows two columns for each app: **Total**, its all-time installs, and **Last day**, its
+  installs on the latest day the App Store and Google Play published, each added up over both stores and shown as `—`
+  when a store's number for that column is missing; a file without `total` still shows Last day, and the line under
+  the table says "no day count in the file" when `value` is missing. The "as of" line names each store's day or range
+  of days when they differ, such as "as of iOS 11/18 · Android 11/16–11/17".
+
 ## 0.15.0 (2026-11-20)
 
 Release: [Dayhand Planner 0.15.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.15.0).

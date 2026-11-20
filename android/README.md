@@ -485,13 +485,15 @@ are restored too; with a server its settings stay. At most 2000 tasks, as the se
 
 ## Store installs widget
 
-`widget/` is a Jetpack Glance home screen widget with a table of the all-time installs of your own apps
-from the App Store and Google Play, read from a JSON file at an address set when the widget is placed
+`widget/` is a Jetpack Glance home screen widget with a table of the all-time and latest-day installs of
+your own apps over the App Store and Google Play, read from a JSON file at an address set when the widget is placed
 (`InstallsConfigActivity`; release builds accept https only). `InstallsJson` parses the file (format and
 fields: [docs/android.md](../docs/android.md#store-installs-widget)), `InstallsStore` keeps the address
 and the last file that parsed, and `InstallsWorker` fetches it every three hours (WorkManager) and on a
-tap; `InstallsTable` works out the rows, each with its iOS + Android total. A failed fetch keeps the last
-file and says why; a missing number shows as `—`, never 0, and so does its row's total.
+tap; `InstallsTable` works out the rows, each with its iOS + Android `total` (the Total column) and the two
+stores' `value` on their own latest day added up (the Last day column, independent of `total`), and each
+store's published days for the "as of" line. A failed fetch keeps the last file and says why; a store's
+missing number blanks that column of its row as `—`, never 0.
 
 ## Signing in
 
@@ -595,7 +597,7 @@ over the installed app: keep a copy of the keystore and its password somewhere s
                                             # backup file (write, read, the server's export), sample plan, another server,
                                             # agents (answers, requests, proposals, the switch, tool policies and their refusals,
                                             # the health card, new requests)
-                                            # the installs widget's file (totals, missing totals, broken files), its table's row sums, address check and that a full widget shows every line,
+                                            # the installs widget's file (totals, day values, missing totals, broken files), its table's row and last-day sums, address check, and that a full widget shows every line,
                                             # translations (keys, placeholders, plural forms) and the language picker's tags
 ./gradlew :app:lintDebug                    # missing or extra translations and plural forms are errors
 ./gradlew :app:connectedDebugAndroidTest    # emulator: Room and its migrations, outbox across restarts, settings sync and the phone's zone,

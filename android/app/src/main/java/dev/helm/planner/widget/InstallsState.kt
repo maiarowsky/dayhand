@@ -58,35 +58,54 @@ sealed interface WidgetView {
     data class Showing(val table: InstallsTable, val failure: FetchFailure?) : WidgetView
 }
 
-/** One app's all-time installs per store and over both; a number is null when it would leave a count out. */
-data class TableRow(val name: String, val counts: Map<Platform, Int?>, val total: Int?)
+/**
+ * One app's all-time installs over both stores, and its installs on each store's latest published day added up
+ * ([lastDay]); each number is null when it would leave one of its own counts out.
+ */
+data class TableRow(val name: String, val total: Int?, val lastDay: Int?)
+
+/** The published days of one store's counts in the table's sums; one day when every such count is from the same day. */
+data class PublishedDays(val oldest: LocalDate, val newest: LocalDate)
 
 /**
- * The widget's table: a row per app, the oldest published day among the known counts, the stores with a count missing
- * for lack of data, and whether a count is missing because the file has no `total` field.
+ * The widget's table: a row per app, the published days per store among the counts its sums show (totals and day counts), the
+ * stores with a count missing for lack of data, and whether a count is missing because the file has no `total` or no
+ * `value` field.
  */
 data class InstallsTable(
     val rows: List<TableRow>,
-    val asOf: LocalDate?,
+    val days: Map<Platform, PublishedDays>,
     val storesWithoutData: List<Platform>,
     val noTotalInFile: Boolean,
+    val noDayCountInFile: Boolean,
 ) {
     companion object {
         fun of(report: InstallsReport): InstallsTable {
             val rows = report.apps.map { app ->
-                val counts = Platform.entries.associateWith { (app.count(it) as? PlatformCount.Known)?.total }
-                TableRow(app.name, counts, sum(counts.values))
+                TableRow(app.name, sum(Platform.entries.map(app::total)), sum(Platform.entries.map(app::dayCount)))
             }
-            val counts = report.apps.flatMap { app -> Platform.entries.map { it to app.count(it) } }
-            val reasons = counts.mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }
+            val totals = report.apps.flatMap { app -> Platform.entries.map { it to app.total(it) } }
+            val dayCounts = report.apps.flatMap { app -> Platform.entries.map { it to app.dayCount(it) } }
+            val shown = report.apps.zip(rows).flatMap { (app, row) ->
+                Platform.entries.flatMap { platform ->
+                    listOfNotNull(app.total(platform).takeIf { row.total != null }, app.dayCount(platform).takeIf { row.lastDay != null })
+                        .mapNotNull { (it as? PlatformCount.Known)?.let { count -> platform to count.day } }
+                }
+            }
+            val missing = (totals + dayCounts).mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }
             return InstallsTable(
                 rows = rows,
-                asOf = counts.mapNotNull { (it.second as? PlatformCount.Known)?.day }.minOrNull(),
-                storesWithoutData = reasons.filter { it.second != MissingReason.NO_TOTAL }.map { it.first }.distinct().sorted(),
-                noTotalInFile = reasons.any { it.second == MissingReason.NO_TOTAL },
+                days = Platform.entries.mapNotNull { platform ->
+                    val days = shown.filter { it.first == platform }.map { it.second }
+                    days.minOrNull()?.let { platform to PublishedDays(it, days.max()) }
+                }.toMap(),
+                storesWithoutData = missing.filter { it.second != MissingReason.NO_FIELD }.map { it.first }.distinct().sorted(),
+                noTotalInFile = totals.any { (it.second as? PlatformCount.Missing)?.reason == MissingReason.NO_FIELD },
+                noDayCountInFile = dayCounts.any { (it.second as? PlatformCount.Missing)?.reason == MissingReason.NO_FIELD },
             )
         }
 
-        private fun sum(values: Collection<Int?>): Int? = values.takeIf { it.isNotEmpty() && null !in it }?.filterNotNull()?.sum()
+        private fun sum(counts: List<PlatformCount>): Int? =
+            counts.map { (it as? PlatformCount.Known)?.count }.takeIf { it.isNotEmpty() && null !in it }?.filterNotNull()?.sum()
     }
 }

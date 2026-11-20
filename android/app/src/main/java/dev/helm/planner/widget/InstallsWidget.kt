@@ -41,7 +41,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Store installs on the home screen: a table with a row per app of its all-time iOS, Android and combined installs. A tap fetches the file again; before an address is set it opens the setup screen.
+ * Store installs on the home screen: a table with a row per app of its all-time installs and its installs on the latest
+ * published day, each added up over the App Store and Google Play. A tap fetches the file again; before an address is set
+ * it opens the setup screen.
  */
 class InstallsWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Single
@@ -116,17 +118,18 @@ private fun Report(view: WidgetView.Showing) {
     // Glance keeps at most 10 children per Column and silently drops the rest, so each block is its own Column.
     Column(GlanceModifier.fillMaxWidth()) {
         Text(context.getString(R.string.installs_title), style = TextStyle(color = strong, fontSize = 14.sp, fontWeight = FontWeight.Bold))
-        table.asOf?.let { Text(context.getString(R.string.installs_as_of, dayFormatter(locale).format(it)), style = small(muted)) }
+        asOf(context, table, locale)?.let { Text(it, style = small(muted)) }
         Spacer(GlanceModifier.height(6.dp))
     }
     Column(GlanceModifier.fillMaxWidth()) {
         TableLine(
             context.getString(R.string.installs_column_app),
-            Platform.entries.map { platformName(context, it) } + context.getString(R.string.installs_column_total),
+            listOf(context.getString(R.string.installs_column_total), context.getString(R.string.installs_column_last_day)),
             small(muted),
+            cellLines = 2,
         )
         table.rows.take(MAX_APPS).forEach { row ->
-            TableLine(row.name, Platform.entries.map { number(row.counts[it], numbers) } + number(row.total, numbers), cell(strong))
+            TableLine(row.name, listOf(row.total, row.lastDay).map { number(it, numbers) }, cell(strong))
         }
     }
     Column(GlanceModifier.fillMaxWidth()) {
@@ -139,10 +142,12 @@ private fun Report(view: WidgetView.Showing) {
 }
 
 @Composable
-private fun TableLine(name: String, cells: List<String>, style: TextStyle) {
+private fun TableLine(name: String, cells: List<String>, style: TextStyle, cellLines: Int = 1) {
     Row(GlanceModifier.fillMaxWidth().padding(vertical = 1.dp)) {
         Text(name, style = style, maxLines = 1, modifier = GlanceModifier.defaultWeight())
-        cells.forEach { Text(it, style = style.copy(textAlign = TextAlign.End), maxLines = 1, modifier = GlanceModifier.width(CELL_WIDTH)) }
+        cells.forEach {
+            Text(it, style = style.copy(textAlign = TextAlign.End), maxLines = cellLines, modifier = GlanceModifier.width(CELL_WIDTH))
+        }
     }
 }
 
@@ -157,7 +162,17 @@ private fun cell(color: ColorProvider) = TextStyle(color = color, fontSize = 14.
 private fun dayFormatter(locale: Locale): DateTimeFormatter =
     DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dM"), locale)
 
-/** One short line on why a number is missing: the stores without data, or a file that has no totals. */
+/** "as of" the published day of every number shown, or each store's days when the stores published different days. */
+private fun asOf(context: Context, table: InstallsTable, locale: Locale): String? {
+    if (table.days.isEmpty()) return null
+    val formatter = dayFormatter(locale)
+    fun text(days: PublishedDays): String = listOf(days.oldest, days.newest).distinct().joinToString("–") { formatter.format(it) }
+    val dates = table.days.values.distinct().singleOrNull()?.let(::text)
+        ?: table.days.entries.joinToString(" · ") { (platform, days) -> "${platformName(context, platform)} ${text(days)}" }
+    return context.getString(R.string.installs_as_of, dates)
+}
+
+/** One short line on why a number is missing: the stores without data, or a file without totals or day counts. */
 private fun footnote(context: Context, table: InstallsTable): String? {
     val stores = when (table.storesWithoutData.toSet()) {
         emptySet<Platform>() -> null
@@ -165,7 +180,11 @@ private fun footnote(context: Context, table: InstallsTable): String? {
         setOf(Platform.ANDROID) -> R.string.installs_no_data_android
         else -> R.string.installs_no_data_both
     }
-    val parts = listOfNotNull(stores, R.string.installs_no_total.takeIf { table.noTotalInFile })
+    val parts = listOfNotNull(
+        stores,
+        R.string.installs_no_total.takeIf { table.noTotalInFile },
+        R.string.installs_no_day_count.takeIf { table.noDayCountInFile },
+    )
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ") { context.getString(it) }
 }
 

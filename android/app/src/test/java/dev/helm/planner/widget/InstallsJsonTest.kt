@@ -23,24 +23,41 @@ class InstallsJsonTest {
     """.trimIndent()
 
     @Test
-    fun readsTotalsAndWhyOneIsMissing() {
+    fun readsTotalsDayCountsAndWhyOneIsMissing() {
         val report = InstallsJson.parse(sample)
 
         assertEquals(listOf("Alpha", "Beta"), report.apps.map { it.name })
         val alpha = report.apps[0]
-        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 1520), alpha.count(Platform.IOS))
-        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 15), 0), alpha.count(Platform.ANDROID))
+        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 1520), alpha.total(Platform.IOS))
+        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 12), alpha.dayCount(Platform.IOS))
+        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 15), 0), alpha.total(Platform.ANDROID))
+        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 15), 0), alpha.dayCount(Platform.ANDROID))
         val beta = report.apps[1]
-        assertEquals(PlatformCount.Missing(MissingReason.NO_DATA), beta.count(Platform.IOS))
-        assertEquals(PlatformCount.Missing(MissingReason.NO_TOTAL), beta.count(Platform.ANDROID))
+        assertEquals(PlatformCount.Missing(MissingReason.NO_DATA), beta.total(Platform.IOS))
+        assertEquals(PlatformCount.Missing(MissingReason.NO_DATA), beta.dayCount(Platform.IOS))
+        assertEquals(PlatformCount.Missing(MissingReason.NO_FIELD), beta.total(Platform.ANDROID))
+        assertEquals("a day count without a total", PlatformCount.Known(LocalDate.of(2026, 11, 15), 3), beta.dayCount(Platform.ANDROID))
+    }
+
+    @Test
+    fun aDayCountDoesNotNeedAValidTotal() {
+        listOf("", "\"total\": null, ", "\"total\": \"12\", ", "\"total\": -1, ").forEach { total ->
+            val report = InstallsJson.parse(file("""{"name": "Alpha", "ios": {$total"day": "2026-11-16", "value": 12}}"""))
+
+            assertEquals(total, PlatformCount.Known(LocalDate.of(2026, 11, 16), 12), report.apps[0].dayCount(Platform.IOS))
+        }
+        val noDay = InstallsJson.parse(file("""{"name": "Alpha", "ios": {"value": 12}}"""))
+        assertEquals(PlatformCount.Missing(MissingReason.INVALID), noDay.apps[0].dayCount(Platform.IOS))
     }
 
     @Test
     fun aStoreLeftOutIsMissingNotZero() {
         val report = InstallsJson.parse(file("""{"name": "Alpha", "ios": {"day": "2026-11-16", "total": 3}}"""))
 
-        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 3), report.apps[0].count(Platform.IOS))
-        assertEquals(PlatformCount.Missing(MissingReason.NOT_IN_FILE), report.apps[0].count(Platform.ANDROID))
+        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 3), report.apps[0].total(Platform.IOS))
+        assertEquals(PlatformCount.Missing(MissingReason.NO_FIELD), report.apps[0].dayCount(Platform.IOS))
+        assertEquals(PlatformCount.Missing(MissingReason.NOT_IN_FILE), report.apps[0].total(Platform.ANDROID))
+        assertEquals(PlatformCount.Missing(MissingReason.NOT_IN_FILE), report.apps[0].dayCount(Platform.ANDROID))
     }
 
     @Test
@@ -55,16 +72,26 @@ class InstallsJsonTest {
         )
         broken.forEach { entry ->
             val report = InstallsJson.parse(file("""{"name": "Alpha", "ios": $entry, "android": {"day": "2026-11-15", "total": 4}}"""))
-            assertEquals(entry, PlatformCount.Missing(MissingReason.INVALID), report.apps[0].count(Platform.IOS))
-            assertEquals(entry, PlatformCount.Known(LocalDate.of(2026, 11, 15), 4), report.apps[0].count(Platform.ANDROID))
+            assertEquals(entry, PlatformCount.Missing(MissingReason.INVALID), report.apps[0].total(Platform.IOS))
+            assertEquals(entry, PlatformCount.Known(LocalDate.of(2026, 11, 15), 4), report.apps[0].total(Platform.ANDROID))
         }
     }
 
     @Test
-    fun theDailyFieldsDoNotMatter() {
-        val report = InstallsJson.parse(file("""{"name": "Alpha", "ios": {"day": "2026-11-16", "value": "broken", "last7": -3, "total": 7}}"""))
+    fun aBrokenDayValueLeavesTheTotal() {
+        val values = listOf(
+            "\"broken\"" to MissingReason.INVALID,
+            "-3" to MissingReason.INVALID,
+            "1.5" to MissingReason.INVALID,
+            "null" to MissingReason.NO_DATA,
+        )
+        values.forEach { (value, reason) ->
+            val app = """{"name": "Alpha", "ios": {"day": "2026-11-16", "value": $value, "last7": -3, "total": 7}}"""
+            val report = InstallsJson.parse(file(app))
 
-        assertEquals(PlatformCount.Known(LocalDate.of(2026, 11, 16), 7), report.apps[0].count(Platform.IOS))
+            assertEquals(value, PlatformCount.Known(LocalDate.of(2026, 11, 16), 7), report.apps[0].total(Platform.IOS))
+            assertEquals(value, PlatformCount.Missing(reason), report.apps[0].dayCount(Platform.IOS))
+        }
     }
 
     @Test

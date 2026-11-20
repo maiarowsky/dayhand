@@ -6,10 +6,12 @@
     <string name="installs_as_of">stan na %1$s</string>
     <string name="installs_column_app">Aplikacja</string>
     <string name="installs_column_total">Razem</string>
+    <string name="installs_column_last_day">Ostatni dzień</string>
     <string name="installs_no_data_ios">iOS: brak danych z App Store</string>
     <string name="installs_no_data_android">Android: brak danych z Google Play</string>
     <string name="installs_no_data_both">Brak danych z App Store i Google Play</string>
     <string name="installs_no_total">brak sumy w pliku</string>
+    <string name="installs_no_day_count">brak liczby z dnia w pliku</string>
     <string name="installs_failure_network">Brak połączenia</string>
     <string name="installs_failure_http">Serwer odpowiedział %1$d</string>
     <string name="installs_failure_file">To nie jest poprawny plik instalacji</string>

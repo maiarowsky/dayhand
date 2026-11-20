@@ -6,10 +6,12 @@
     <string name="installs_as_of">截至 %1$s</string>
     <string name="installs_column_app">应用</string>
     <string name="installs_column_total">合计</string>
+    <string name="installs_column_last_day">最近一天</string>
     <string name="installs_no_data_ios">iOS：无 App Store 数据</string>
     <string name="installs_no_data_android">Android：无 Google Play 数据</string>
     <string name="installs_no_data_both">无 App Store 和 Google Play 数据</string>
     <string name="installs_no_total">文件中没有总数</string>
+    <string name="installs_no_day_count">文件中没有当日数</string>
     <string name="installs_failure_network">无连接</string>
     <string name="installs_failure_http">服务器返回 %1$d</string>
     <string name="installs_failure_file">不是有效的安装量文件</string>
