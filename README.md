@@ -115,7 +115,7 @@ agents: [Connect the phone](#connect-the-phone).
 | [Linux](#linux) | npm or Homebrew | Dayhand for Linux, built from source | yes, x64 or arm64 |
 | [macOS](#macos) | npm or Homebrew | Dayhand for macOS, built from source | yes, Apple silicon or Intel |
 | [Windows](#windows) | npm, not tested on Windows | none | no: use a free Convex account |
-| [Android](#android) | none | [signed APK](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0) | not needed: the app works without one |
+| [Android](#android) | none | [signed APK](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.15.0) | not needed: the app works without one |
 
 `dayhand`, the command line (short name `dh`), and with it `dayhand ui` need
 [Node.js](https://nodejs.org) 22.12 or newer:
@@ -172,7 +172,7 @@ removes it. Updates, shell completion and manual pages: [docs/install.md](docs/i
 ### Android
 
 - **App**: Android 8.0 or newer. Download the
-  [signed APK from GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0)
+  [signed APK from GitHub Releases](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.15.0)
   and allow your browser or file manager to install apps when Android asks; the release includes
   `SHA256SUMS` and the signing certificate fingerprint. Google Play is coming soon.
 - **Build it yourself** with JDK 17 or newer and the Android SDK:

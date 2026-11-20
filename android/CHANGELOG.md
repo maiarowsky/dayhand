@@ -3,7 +3,9 @@
 Versions before 0.8.4 are described in the commit history (`git log -- android`). The app was
 called Helm until 0.9.0.
 
-## 0.15.0 (unreleased)
+## 0.15.0 (2026-11-20)
+
+Release: [Dayhand Planner 0.15.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.15.0).
 
 ### Changed
 
