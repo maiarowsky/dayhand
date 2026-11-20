@@ -25,12 +25,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -46,7 +49,6 @@ import dev.helm.planner.ui.components.ButtonTone
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmButton
-import dev.helm.planner.ui.components.HelmFab
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.common.SampleBanner
@@ -81,7 +83,7 @@ fun TodayScreen(
     actions: TodayActions,
     modifier: Modifier = Modifier,
     bottomBar: @Composable () -> Unit = {},
-    /** Under the status lines, above the list: the plan health card. */
+    /** Under the status lines, above the list: the plan health line. */
     header: @Composable () -> Unit = {},
     /** The moment quick add reads a date phrase at ("2pm" is today until 14:00, then tomorrow). */
     now: () -> Long = System::currentTimeMillis,
@@ -90,16 +92,40 @@ fun TodayScreen(
     var adding by rememberSaveable { mutableStateOf(false) }
     val today = LocalDate.parse(state.today)
     val shown = LocalDate.parse(state.sections.date)
-    Scaffold(
-        modifier = modifier,
-        containerColor = p.background,
-        topBar = { DayHeader(state.dayOffset, shown, today, actions) },
-        bottomBar = bottomBar,
-        floatingActionButton = {
-            HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag(TodayTags.FAB))
-        },
-    ) { padding ->
-        TodayList(state, actions, today, PaddingValues(bottom = 96.dp), Modifier.padding(padding), header, onAdd = { adding = true })
+    val selection = rememberTaskSelection()
+    var bottomBarHeight by remember { mutableIntStateOf(0) }
+    val overdueIds = state.sections.overdue.map { it.localId }
+    val pickable = remember(state.sections) { state.sections.overdue + state.sections.today }
+    Box(modifier) {
+        Scaffold(
+            containerColor = p.background,
+            topBar = {
+                HeaderOrSelection(
+                    selection.active,
+                    header = { DayHeader(state.dayOffset, shown, today, actions) },
+                    selectionHeader = {
+                        SelectionHeader(
+                            selection.ids.size,
+                            onClear = selection::clear,
+                            selectAllLabel = stringResource(R.string.select_overdue).takeIf { overdueIds.isNotEmpty() },
+                            onSelectAll = { selection.selectAll(overdueIds) },
+                        )
+                    },
+                )
+            },
+            bottomBar = { Box(Modifier.onSizeChanged { bottomBarHeight = it.height }) { bottomBar() } },
+        ) { padding ->
+            TodayList(state, actions, today, selection, PaddingValues(bottom = 96.dp), Modifier.padding(padding), header, onAdd = { adding = true })
+        }
+        TaskActionIsland(
+            selection = selection,
+            tasks = pickable,
+            today = today,
+            actions = actions,
+            onAdd = { adding = true },
+            bottomBarHeight = { bottomBarHeight },
+            fabTag = TodayTags.FAB,
+        )
     }
     if (adding) {
         QuickAddSheet(
@@ -160,6 +186,7 @@ private fun TodayList(
     state: TodayUiState,
     actions: TodayActions,
     today: LocalDate,
+    selection: TaskSelection,
     contentPadding: PaddingValues,
     modifier: Modifier,
     header: @Composable () -> Unit,
@@ -170,7 +197,7 @@ private fun TodayList(
         StatusBanner(state.connection, state.pendingChanges, actions::openSettings, Modifier.testTag(TodayTags.STATUS))
         if (state.sample) SampleBanner(actions::removeSample, Modifier.testTag(TodayTags.SAMPLE))
         header()
-        TodayItems(state, actions, today, contentPadding, onAdd)
+        TodayItems(state, actions, today, selection, contentPadding, onAdd)
     }
 }
 
@@ -179,6 +206,7 @@ private fun TodayItems(
     state: TodayUiState,
     actions: TodayActions,
     today: LocalDate,
+    selection: TaskSelection,
     contentPadding: PaddingValues,
     onAdd: () -> Unit,
 ) {
@@ -212,7 +240,7 @@ private fun TodayItems(
             val rowActions = actions.keepingTicked(leaving, TodayTags.OVERDUE, overdue)
             items(overdue, key = { it.localId }) {
                 Box(Modifier.animateItem(fadeInSpec = null, placementSpec = moving, fadeOutSpec = null)) {
-                    OverdueRow(it, today, rowActions, state.blocked[it.localId])
+                    OverdueRow(it, today, rowActions, state.blocked[it.localId], selection)
                 }
             }
         }
@@ -229,7 +257,7 @@ private fun TodayItems(
             val rowActions = actions.keepingTicked(leaving, TodayTags.TODAY, todays)
             items(todays, key = { it.localId }) {
                 Box(Modifier.animateItem(fadeInSpec = null, placementSpec = moving, fadeOutSpec = null)) {
-                    TodayRow(it, today, rowActions, state.blocked[it.localId])
+                    TodayRow(it, rowActions, state.blocked[it.localId], selection)
                 }
             }
         }

@@ -25,7 +25,7 @@ import kotlin.math.sin
  */
 enum class LineIcon {
     Contrast, Palette, Font, Globe, Bell, Sun, Clock, Download, Cloud, CloudOff, Link, Unlink, Phone, Document, Code,
-    List, Info, Warning, Check, Chevron, Calendar, Copy, Share, Refresh, Folder,
+    List, Info, Warning, Check, Chevron, Calendar, Copy, Share, Refresh, Folder, Arrow, Archive, More,
 }
 
 @Composable
@@ -169,6 +169,20 @@ private fun DrawScope.draw(icon: LineIcon, color: Color) {
         }
         LineIcon.Check -> path(0.2f to 0.52f, 0.42f to 0.72f, 0.8f to 0.3f)
         LineIcon.Chevron -> path(0.38f to 0.2f, 0.66f to 0.5f, 0.38f to 0.8f)
+        LineIcon.Arrow -> {
+            line(0.18f, 0.5f, 0.8f, 0.5f)
+            path(0.56f to 0.26f, 0.8f to 0.5f, 0.56f to 0.74f)
+        }
+        LineIcon.Archive -> {
+            rect(0.12f, 0.18f, 0.76f, 0.2f, 0.04f)
+            path(0.18f to 0.38f, 0.18f to 0.84f, 0.82f to 0.84f, 0.82f to 0.38f)
+            line(0.4f, 0.56f, 0.6f, 0.56f)
+        }
+        LineIcon.More -> {
+            circle(0.22f, 0.5f, 0.06f, fill = true)
+            circle(0.5f, 0.5f, 0.06f, fill = true)
+            circle(0.78f, 0.5f, 0.06f, fill = true)
+        }
         LineIcon.Calendar -> {
             rect(0.14f, 0.2f, 0.72f, 0.66f, 0.1f)
             line(0.14f, 0.4f, 0.86f, 0.4f)

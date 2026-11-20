@@ -19,7 +19,17 @@
     <string name="complete_task">Mark done: %1$s</string>
     <string name="reopen_task">Mark not done: %1$s</string>
     <string name="move_to_today">To today</string>
-    <string name="move_to_today_described">Move to today: %1$s</string>
+    <string name="move_to_tomorrow">Tomorrow</string>
+    <string name="select_task">Select</string>
+    <string name="select_task_described">Select: %1$s</string>
+    <string name="select_overdue">Select overdue</string>
+    <string name="selection_clear">Clear selection</string>
+    <string name="selection_actions">Actions for the selected tasks</string>
+    <string name="selection_actions_close">Close actions</string>
+    <plurals name="selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
     <string name="move_to_day">Another day…</string>
     <string name="archive">Archive</string>
     <string name="set_now">Work on it now</string>

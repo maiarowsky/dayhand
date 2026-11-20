@@ -15,10 +15,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import dev.helm.planner.R
+import dev.helm.planner.agents.PlanHealth
 import dev.helm.planner.auth.ConnectError
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
@@ -40,6 +43,7 @@ import dev.helm.planner.ui.settings.SettingsScreen
 import dev.helm.planner.ui.settings.SettingsTags
 import dev.helm.planner.ui.settings.SettingsUiState
 import dev.helm.planner.ui.today.ConnectionStatus
+import dev.helm.planner.ui.today.HealthCard
 import dev.helm.planner.ui.today.QuickAddTags
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
@@ -102,6 +106,30 @@ class ScreenTour {
         compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag(TodayTags.DONE))
         compose.onNodeWithTag(TodayTags.DONE).performClick()
         shot("02-today-done-open")
+    }
+
+    /** Long overdue titles under the plan line, then a long press: the picked task and the round button's arc. */
+    @Test
+    fun todayOverduePicking() {
+        val overdue = listOf(
+            task("o1", "Mieszkanie: zamówić fachowca do łazienki, potem umówić termin i przesłać mu zdjęcia przecieku", "2026-10-13"),
+            task("o2", "Urząd: złożyć wniosek o nowy dowód (zdjęcie, formularz online, odbiór po SMS-ie). Wizyta dopiero po potwierdzeniu, opłata 0 zł.", "2026-10-16"),
+        )
+        val today = listOf(
+            task("t1", "Zadzwonić do księgowej w sprawie faktur za październik (lista w notatce)", "2026-10-22"),
+            task("t2", "Odebrać paczkę z paczkomatu przy Kwiatowej przed 18:00", "2026-10-22"),
+            task("t3", "Przygotować prezentację na piątek: 6 slajdów, liczby z arkusza", "2026-10-22"),
+        )
+        val done = (1..6).map { task("d$it", "Zrobione $it", "2026-10-22") { copy(status = TaskStatus.DONE, completedAt = 1) } }
+        val health = PlanHealth(
+            agentsPaused = false, overdue = 10, dueToday = 3, inProgress = 0, expiredClaims = 0, blocked = 0,
+            awaitingApproval = 0, pendingApprovals = 0, proposals = 0, completedToday = 6, withoutProof = 2, oldestOpenDays = 21,
+        )
+        val state = TodayUiState(TodaySections("2026-10-22", overdue, null, today, done), ConnectionStatus.SYNCED, 0)
+        show { TodayScreen(state, object : TodayActions {}, header = { HealthCard(health, onReview = {}) }) }
+        shot("03-today-overdue")
+        compose.onNodeWithText(overdue[0].title).performTouchInput { longClick() }
+        shot("04-today-picking")
     }
 
     /** The arrows' day after, and a task caught in the moment it is ticked off (the clock paused mid-way). */

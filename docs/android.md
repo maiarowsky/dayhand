@@ -34,16 +34,20 @@ keep a backup file ([Backups](#backups)).
 
 From top to bottom:
 
-1. **Overdue**: not done and due before today in your time zone. Tick it off, move it **To today**,
-   or pick another day or archive it from the menu.
+1. **Overdue**: not done and due before today in your time zone, with its due date under the title.
 2. **Now**: the one task you are working on, with "where I stopped / next step" under its title. Tap
-   the note to edit it. Choose the task with **Work on it now** in a task's menu.
+   the note to edit it. Choose the task with **Work on it now** in its details.
 3. **Today**: tasks due today, timed ones first, by time.
 4. **Done**: what you finished today, folded.
 
 The arrows next to the title show the day before and the day after: that day's tasks and what you finished
 on it, with **Tomorrow**, **Yesterday** or the weekday as the title and the date under it. Tap the title to
 come back to today. A task added while another day is shown is due on that day.
+
+Rows have no buttons: the box ticks a task off, a tap on the title opens it, and a title takes at most two
+lines. To move overdue or today's tasks, long-press one: the round button at the bottom opens **To today**,
+**Tomorrow**, **Another day…** and **Archive** in an arc (in a column with large text), and a tap on another
+row adds or removes it. **Select overdue** at the top picks every overdue task; ✕ or Back ends picking.
 
 Ticking a task off saves it at once; its row stays a moment (the box fills, the title is struck through,
 the row fades) so you see which one you ticked, then the rows under it move up. With the phone's
@@ -52,10 +56,11 @@ animations turned off the row stays still, ticked, for a moment instead.
 A line at the top says when the phone is offline and how many changes wait, while changes are sent,
 or when the server signed the phone out.
 
-With a server, a **plan health** card sits above the lists: one sentence with what needs a look, the
-most pressing first (agents paused, overdue tasks, claims that ran out, approval requests, blocked
-tasks, proposals, tasks done today without proof). It is red when agents are paused or something is
-late and amber when you are asked for something; **Review** opens the agents page.
+With a server, a thin **plan health** line sits above the lists: what needs a look, the most pressing
+first (agents paused, overdue tasks, claims that ran out, approval requests, blocked tasks, proposals,
+tasks done today without proof). Its dot is red when agents are paused or something is late and amber
+when you are asked for something; with a request or proposal to decide, a tap on the line (**Review**) opens
+the agents page.
 
 ### Quick add
 
@@ -100,7 +105,7 @@ The **Projects** tab lists only projects: yours in your order, each with its col
 number of open and overdue tasks, then **No project**, **Archived** and **Trash**. Without any project
 yet, a sentence under **No project** says so, with a **New project** button. Tap a project for its tasks:
 overdue, today, later, without a day and the latest done. A project also has **List / Board**, and its
-**+** adds a task to it.
+**+** adds a task to it. In the list a long press picks tasks to move or archive, as on Today.
 
 - **+** at the top makes a project: a name, one of twelve colours, an optional emoji and a note on what
   it is about. Long-press a project to edit, archive or delete it; **Set order** shows handles to drag

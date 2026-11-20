@@ -34,7 +34,6 @@ import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.QuickAddSheet
 import dev.helm.planner.ui.today.QuickAddTags
 import dev.helm.planner.ui.today.TodayActions
-import dev.helm.planner.ui.today.TodayRow
 import java.time.LocalDate
 import org.junit.Assert.*
 import org.junit.Rule
@@ -123,14 +122,6 @@ class ProjectsScreenTest {
         assertNull(picked)
     }
 
-    @Test fun todayRowMenuOpensTheSharedPicker() {
-        compose.setContent { Host { TodayRow(task, LocalDate.parse("2026-10-23"), object : TodayActions {}) } }
-        compose.onNodeWithContentDescription("More actions: Milk").performClick()
-        compose.onNodeWithText("Move to project…").performClick()
-        compose.onNodeWithTag("project-pick-home").performClick()
-        assertEquals("home", picked)
-    }
-
     @Test fun boardCardMenuUsesTheSharedPicker() {
         compose.setContent { Host { dev.helm.planner.ui.board.BoardCard(task, LocalDate.parse("2026-10-23"), object : BoardActions {}, dev.helm.planner.ui.board.BoardDragState()) } }
         compose.onNodeWithContentDescription("More actions: Milk").performClick()
@@ -176,7 +167,7 @@ class ProjectsScreenTest {
             androidx.compose.foundation.layout.Column {
                 val actions = object : TodayActions {}
                 val day = LocalDate.parse("2026-10-23")
-                dev.helm.planner.ui.today.TodayRow(task, day, actions)
+                dev.helm.planner.ui.today.TodayRow(task, actions)
                 dev.helm.planner.ui.today.OverdueRow(task, day, actions)
                 dev.helm.planner.ui.today.NowCard(task, day, actions)
                 dev.helm.planner.ui.today.DoneRow(task, actions)

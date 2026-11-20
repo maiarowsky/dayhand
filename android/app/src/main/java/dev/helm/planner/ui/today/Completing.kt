@@ -79,11 +79,15 @@ val LocalLeavingTasks = staticCompositionLocalOf<LeavingTasks?> { null }
 @Composable
 fun rememberLeavingTasks(): LeavingTasks {
     val scope = rememberCoroutineScope()
+    val reducedMotion = rememberReducedMotion()
+    return remember { LeavingTasks(scope, reducedMotion) }
+}
+
+/** Whether the system's animations are off (developer options, or "Remove animations" in accessibility). */
+@Composable
+fun rememberReducedMotion(): Boolean {
     val context = LocalContext.current
-    return remember {
-        val scale = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
-        LeavingTasks(scope, reducedMotion = scale == 0f)
-    }
+    return remember { Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }
 
 /** These actions, except that ticking off a task of [tasks] (in [section]) first keeps its row for a moment. */

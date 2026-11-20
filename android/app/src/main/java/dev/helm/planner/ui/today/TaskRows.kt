@@ -1,7 +1,9 @@
 package dev.helm.planner.ui.today
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +34,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.data.TaskRepository
@@ -45,7 +48,6 @@ import dev.helm.planner.ui.components.HelmCard
 import dev.helm.planner.ui.components.HelmDialog
 import dev.helm.planner.ui.components.HelmMenu
 import dev.helm.planner.ui.components.HelmTextField
-import dev.helm.planner.ui.components.SecondaryButton
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.components.helmCheckboxColors
 import dev.helm.planner.ui.projects.LocalProjects
@@ -54,25 +56,19 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import java.time.LocalDate
 
-/** Overdue: done, to today, or (menu) another day and archive. [blocked] marks a task that cannot go on. */
+/**
+ * Overdue: the box ticks it off, the text opens it, a long press picks it for [selection]'s round button (today,
+ * tomorrow, another day, archive). Its due date under the title. [blocked] marks a task that cannot go on.
+ */
 @Composable
-fun OverdueRow(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentWork.Blocked? = null) {
-    TaskLine(task, actions, subtitle = overdueLabel(task, today), blocked = blocked) {
-        val todayText = stringResource(R.string.move_to_today_described, task.title)
-        SecondaryButton(
-            stringResource(R.string.move_to_today),
-            onClick = { actions.moveTo(task.localId, today.toString()) },
-            color = palette.accent,
-            modifier = Modifier.semantics { contentDescription = todayText },
-        )
-        TaskMenu(task, today, actions, offerNow = false)
-    }
+fun OverdueRow(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentWork.Blocked? = null, selection: TaskSelection? = null) {
+    TaskLine(task, actions, subtitle = overdueLabel(task, today), blocked = blocked, selection = selection)
 }
 
-/** Today: done, or (menu) work on it now, another day, archive. */
+/** A task for today, as [OverdueRow] without the date. */
 @Composable
-fun TodayRow(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentWork.Blocked? = null) {
-    TaskLine(task, actions, subtitle = null, blocked = blocked) { TaskMenu(task, today, actions, offerNow = true) }
+fun TodayRow(task: Task, actions: TodayActions, blocked: AgentWork.Blocked? = null, selection: TaskSelection? = null) {
+    TaskLine(task, actions, subtitle = null, blocked = blocked, selection = selection)
 }
 
 @Composable
@@ -142,36 +138,64 @@ fun NowCard(task: Task, today: LocalDate, actions: TodayActions, blocked: AgentW
     }
 }
 
+/** No buttons on the row: the title gets the whole width, at most [TITLE_LINES] lines; the rest is in the details. */
 @Composable
-private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, blocked: AgentWork.Blocked?, trailing: @Composable () -> Unit) {
+private fun TaskLine(task: Task, actions: TodayActions, subtitle: String?, blocked: AgentWork.Blocked?, selection: TaskSelection?) {
     val completeText = stringResource(R.string.complete_task, task.title)
     // Just ticked off: the box fills and the title is struck through, then the row fades (see LeavingTasks).
     val leaving = isLeaving(task)
     val progress = leaveProgress(leaving, reducedMotion())
+    val picking = selection?.active == true
+    val selected = selection?.isSelected(task.localId) == true
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .leaving(progress)
-            .padding(start = 8.dp, end = 8.dp)
+            .background(if (selected) palette.accentSoft else Color.Transparent)
+            .padding(start = 8.dp, end = 16.dp)
             .testTag(TodayTags.row(task.localId)),
     ) {
-        TaskCheckbox(checked = leaving, description = completeText) { if (!leaving) actions.complete(task.localId) }
+        if (picking) {
+            SelectCircle(task.localId, selected, stringResource(R.string.select_task_described, task.title)) { selection.toggle(task.localId) }
+        } else {
+            TaskCheckbox(checked = leaving, description = completeText) { if (!leaving) actions.complete(task.localId) }
+        }
         Column(
             Modifier
                 .weight(1f)
-                .openTask(task, actions)
+                .pickOrOpen(task, actions, selection)
                 .padding(vertical = 8.dp),
         ) {
-            TaskTitle(task, blocked, strike = progress.strike)
+            TaskTitle(task, blocked, strike = progress.strike, maxLines = TITLE_LINES)
             ProjectBadge(task)
             if (subtitle != null) {
                 Text(subtitle, style = helmType.small, color = palette.danger)
             }
         }
-        trailing()
     }
+}
+
+private const val TITLE_LINES = 2
+
+/**
+ * The row's text: a tap opens the task, a long press picks it; while picking, a tap adds or removes it. Without
+ * [selection] it only opens.
+ */
+@Composable
+private fun Modifier.pickOrOpen(task: Task, actions: TodayActions, selection: TaskSelection?): Modifier {
+    if (selection == null) return openTask(task, actions)
+    val picking = selection.active
+    val selectLabel = stringResource(R.string.select_task)
+    return heightIn(min = 48.dp)
+        .combinedClickable(
+            onClickLabel = if (picking) selectLabel else stringResource(R.string.open_details),
+            onLongClickLabel = selectLabel,
+            onLongClick = { selection.longPress(task.localId) },
+            onClick = { if (picking) selection.toggle(task.localId) else actions.openTask(task.localId) },
+        )
+        .wrapContentHeight(Alignment.CenterVertically)
 }
 
 /** A checkbox whose whole 48 dp square is the touch target, announced with the task's title. */
@@ -197,6 +221,7 @@ private fun TaskTitle(
     color: Color = palette.text,
     emphasized: Boolean = false,
     strike: Float = 0f,
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     val time = task.dueTime
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
@@ -206,6 +231,8 @@ private fun TaskTitle(
             text = if (time != null) "$time  ${task.title}" else task.title,
             style = if (emphasized) helmType.title else helmType.body,
             color = if (strike > 0f) palette.textMuted else color,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
             onTextLayout = { layout = it },
             modifier = Modifier.strikeThrough(strike, { layout }, palette.textMuted),
         )
@@ -226,29 +253,6 @@ private fun Modifier.openTask(task: Task, actions: TodayActions): Modifier {
     return heightIn(min = 48.dp)
         .clickable(onClickLabel = label) { actions.openTask(task.localId) }
         .wrapContentHeight(Alignment.CenterVertically)
-}
-
-@Composable
-private fun TaskMenu(task: Task, today: LocalDate, actions: TodayActions, offerNow: Boolean) {
-    val projects = LocalProjects.current
-    var open by remember { mutableStateOf(false) }
-    var picking by rememberSaveable { mutableStateOf(false) }
-    Box {
-        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, task.title), { open = true }, tint = palette.textMuted)
-        HelmMenu(expanded = open, onDismiss = { open = false }) {
-            if (offerNow) MenuItem(R.string.set_now) { open = false; actions.setNow(task.localId) }
-            MenuItem(R.string.project_move) { open = false; projects.pickTask(task) }
-            MenuItem(R.string.move_to_day) { open = false; picking = true }
-            MenuItem(R.string.archive) { open = false; actions.archive(task.localId) }
-        }
-    }
-    if (picking) {
-        DayPickerDialog(
-            initial = task.dueDate?.let(LocalDate::parse) ?: today,
-            onDismiss = { picking = false },
-            onPick = { picking = false; actions.moveTo(task.localId, it.toString()) },
-        )
-    }
 }
 
 @Composable

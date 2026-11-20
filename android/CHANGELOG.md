@@ -11,6 +11,11 @@ called Helm until 0.9.0.
   next to the release instead of blocking its install or update with "App not installed". If the phone has an
   earlier test build installed as plain **Dayhand**, first save a backup (**Settings → Data → Backup → Save a backup
   file**), then uninstall it before installing the release; from this version on, test builds install next to it.
+- Today's rows have no **To today** button or menu, so long titles keep the width. Long-press a task to pick it
+  (and tap more, or **Select overdue**), then the round button opens **To today**, **Tomorrow**, **Another day…**
+  and **Archive** in an arc; a project's list works the same way. **Work on it now** is in the task's details. The
+  plan health card is now one thin line of counters with a coloured dot. Details:
+  [docs/android.md](../docs/android.md#today).
 
 ### Fixed
 

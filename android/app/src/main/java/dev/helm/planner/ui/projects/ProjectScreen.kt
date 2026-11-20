@@ -1,5 +1,6 @@
 package dev.helm.planner.ui.projects
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.HorizontalDivider
@@ -19,23 +19,26 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.helm.planner.R
 import dev.helm.planner.domain.boardColumns
 import dev.helm.planner.domain.projectCounts
+import dev.helm.planner.domain.ProjectSections
 import dev.helm.planner.domain.projectSections
 import dev.helm.planner.ui.board.BoardActions
 import dev.helm.planner.ui.board.BoardScreen
 import dev.helm.planner.ui.board.BoardUiState
 import dev.helm.planner.ui.common.dueLabel
 import dev.helm.planner.ui.components.HeaderIconButton
-import dev.helm.planner.ui.components.HelmFab
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.components.TextAction
@@ -43,13 +46,18 @@ import dev.helm.planner.ui.theme.helmType
 import dev.helm.planner.ui.theme.palette
 import dev.helm.planner.ui.today.ConnectionStatus
 import dev.helm.planner.ui.today.DoneRow
+import dev.helm.planner.ui.today.HeaderOrSelection
 import dev.helm.planner.ui.today.LocalLeavingTasks
 import dev.helm.planner.ui.today.OverdueRow
 import dev.helm.planner.ui.today.QuickAddSheet
+import dev.helm.planner.ui.today.SelectionHeader
+import dev.helm.planner.ui.today.TaskActionIsland
+import dev.helm.planner.ui.today.TaskSelection
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayRow
 import dev.helm.planner.ui.today.keepingTicked
 import dev.helm.planner.ui.today.rememberLeavingTasks
+import dev.helm.planner.ui.today.rememberTaskSelection
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,18 +92,48 @@ fun ProjectScreen(state: ProjectUiState, todayActions: TodayActions, boardAction
         BoardScreen(BoardUiState(boardColumns(state.tasks, now, state.timezone), ConnectionStatus.LOCAL, 0, state.timezone,
             state.blocked), boardActions, bottomBar = bottomBar, header = header,
             defaultProjectId = state.projectId, allowAdding = canAdd)
-    } else Scaffold(containerColor = palette.background, topBar = header, bottomBar = bottomBar, floatingActionButton = {
-        if (canAdd) HelmFab(Icons.Filled.Add, stringResource(R.string.add_task), { adding = true }, Modifier.testTag("project-add"))
-    }) { padding -> ProjectTaskList(state, todayActions, Modifier.padding(padding)) }
+    } else ProjectListMode(state, todayActions, header, bottomBar, onAdd = if (canAdd) ({ adding = true }) else null)
     if (adding) QuickAddSheet(state.timezone, onDismiss = { adding = false }, defaultProjectId = state.projectId,
         onSave = { taskTitle, day, time, note, project -> todayActions.add(taskTitle, day, time, note, project); adding = false })
     if (editing) state.project?.let { ProjectEditSheet(it, onDismiss = { editing = false }) }
     if (managing) state.project?.let { ProjectManagement(it, onDismiss = { managing = false }, onDeleted = onBack) }
 }
 
+/** The list tab: as on Today, a long press picks tasks and the round button moves or archives them. */
 @Composable
-private fun ProjectTaskList(state: ProjectUiState, actions: TodayActions, modifier: Modifier) {
-    val sections = projectSections(state.tasks, state.today)
+private fun ProjectListMode(
+    state: ProjectUiState,
+    actions: TodayActions,
+    header: @Composable () -> Unit,
+    bottomBar: @Composable () -> Unit,
+    onAdd: (() -> Unit)?,
+) {
+    val selection = rememberTaskSelection()
+    var bottomBarHeight by remember { mutableIntStateOf(0) }
+    val sections = remember(state.tasks, state.today) { projectSections(state.tasks, state.today) }
+    val pickable = remember(sections) { sections.overdue + sections.today + sections.later + sections.undated }
+    Box {
+        Scaffold(
+            containerColor = palette.background,
+            topBar = {
+                HeaderOrSelection(selection.active, header) { SelectionHeader(selection.ids.size, onClear = selection::clear) }
+            },
+            bottomBar = { Box(Modifier.onSizeChanged { bottomBarHeight = it.height }) { bottomBar() } },
+        ) { padding -> ProjectTaskList(state, sections, actions, selection, Modifier.padding(padding)) }
+        TaskActionIsland(
+            selection = selection,
+            tasks = pickable,
+            today = LocalDate.parse(state.today),
+            actions = actions,
+            onAdd = onAdd,
+            bottomBarHeight = { bottomBarHeight },
+            fabTag = "project-add",
+        )
+    }
+}
+
+@Composable
+private fun ProjectTaskList(state: ProjectUiState, sections: ProjectSections, actions: TodayActions, selection: TaskSelection, modifier: Modifier) {
     val today = LocalDate.parse(state.today)
     val blocked = state.blocked
     var done by rememberSaveable { mutableStateOf(false) }
@@ -110,12 +148,12 @@ private fun ProjectTaskList(state: ProjectUiState, actions: TodayActions, modifi
         if (overdue.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.section_overdue, sections.overdue.size), Modifier.padding(20.dp), palette.danger) }
             val rowActions = actions.keepingTicked(leaving, "overdue", overdue)
-            items(overdue, key = { it.localId }) { OverdueRow(it, today, rowActions, blocked[it.localId]) }
+            items(overdue, key = { it.localId }) { OverdueRow(it, today, rowActions, blocked[it.localId], selection) }
         }
         if (todays.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.section_today), Modifier.padding(20.dp)) }
             val rowActions = actions.keepingTicked(leaving, "today", todays)
-            items(todays, key = { it.localId }) { TodayRow(it, today, rowActions, blocked[it.localId]) }
+            items(todays, key = { it.localId }) { TodayRow(it, rowActions, blocked[it.localId], selection) }
         }
         if (later.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.project_later), Modifier.padding(20.dp)) }
@@ -123,14 +161,14 @@ private fun ProjectTaskList(state: ProjectUiState, actions: TodayActions, modifi
             items(later, key = { it.localId }) { task ->
                 Column {
                     dueLabel(task, today)?.let { Text(it, style = helmType.small, color = palette.textMuted, modifier = Modifier.padding(horizontal = 20.dp)) }
-                    TodayRow(task, today, rowActions, blocked[task.localId])
+                    TodayRow(task, rowActions, blocked[task.localId], selection)
                 }
             }
         }
         if (undated.isNotEmpty()) {
             item { SectionLabel(stringResource(R.string.project_undated), Modifier.padding(20.dp)) }
             val rowActions = actions.keepingTicked(leaving, "undated", undated)
-            items(undated, key = { it.localId }) { TodayRow(it, today, rowActions, blocked[it.localId]) }
+            items(undated, key = { it.localId }) { TodayRow(it, rowActions, blocked[it.localId], selection) }
         }
         if (sections.done.isNotEmpty()) {
             item { TextAction(stringResource(R.string.section_done, sections.done.size), { done = !done }, Modifier.padding(horizontal = 20.dp)) }

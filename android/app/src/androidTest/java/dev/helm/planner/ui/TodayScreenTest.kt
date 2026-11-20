@@ -13,7 +13,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -25,6 +27,7 @@ import dev.helm.planner.domain.TodaySections
 import dev.helm.planner.ui.common.BlockedTags
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.ConnectionStatus
+import dev.helm.planner.ui.today.IslandTags
 import dev.helm.planner.ui.today.QuickAddTags
 import dev.helm.planner.ui.today.TodayActions
 import dev.helm.planner.ui.today.TodayScreen
@@ -105,12 +108,11 @@ class TodayScreenTest {
 
         compose.onNodeWithTag(TodayTags.OVERDUE).assertTextContains(text(R.string.section_overdue, 2), ignoreCase = true)
         compose.onNodeWithText(text(R.string.yesterday)).assertIsDisplayed()
-        compose.onNodeWithContentDescription(text(R.string.move_to_today_described, late.title)).performClick()
         compose.onNodeWithContentDescription(text(R.string.complete_task, late.title)).assertHeightIsAtLeast(48.dp).performClick()
-        compose.onNodeWithContentDescription(text(R.string.more_actions, late.title)).assertHeightIsAtLeast(48.dp).performClick()
-        compose.onNodeWithText(text(R.string.archive)).assertIsDisplayed()
+        compose.onNodeWithText("Task b").performTouchInput { longClick() }
+        compose.onNodeWithTag(IslandTags.TODAY).assertIsDisplayed().performClick()
 
-        assertEquals(listOf("move:a:2026-10-22", "complete:a"), actions.calls)
+        assertEquals(listOf("complete:a", "move:b:2026-10-22"), actions.calls)
     }
 
     @Test

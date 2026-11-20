@@ -15,7 +15,19 @@
     <string name="complete_task">Odhacz: %1$s</string>
     <string name="reopen_task">Cofnij odhaczenie: %1$s</string>
     <string name="move_to_today">Na dziś</string>
-    <string name="move_to_today_described">Przenieś na dziś: %1$s</string>
+    <string name="move_to_tomorrow">Jutro</string>
+    <string name="select_task">Zaznacz</string>
+    <string name="select_task_described">Zaznacz: %1$s</string>
+    <string name="select_overdue">Zaznacz zaległe</string>
+    <string name="selection_clear">Odznacz wszystkie</string>
+    <string name="selection_actions">Akcje dla zaznaczonych</string>
+    <string name="selection_actions_close">Zamknij akcje</string>
+    <plurals name="selected_count">
+        <item quantity="one">%d zaznaczone</item>
+        <item quantity="few">%d zaznaczone</item>
+        <item quantity="many">%d zaznaczonych</item>
+        <item quantity="other">%d zaznaczonego</item>
+    </plurals>
     <string name="move_to_day">Inny dzień…</string>
     <string name="archive">Archiwizuj</string>
     <string name="set_now">Zajmij się teraz</string>

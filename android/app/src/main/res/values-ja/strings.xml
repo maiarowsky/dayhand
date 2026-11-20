@@ -15,7 +15,16 @@
     <string name="complete_task">完了にする：%1$s</string>
     <string name="reopen_task">未完了に戻す：%1$s</string>
     <string name="move_to_today">今日へ</string>
-    <string name="move_to_today_described">今日に移動：%1$s</string>
+    <string name="move_to_tomorrow">明日</string>
+    <string name="select_task">選択</string>
+    <string name="select_task_described">選択：%1$s</string>
+    <string name="select_overdue">期限切れを選択</string>
+    <string name="selection_clear">選択を解除</string>
+    <string name="selection_actions">選択した項目の操作</string>
+    <string name="selection_actions_close">操作を閉じる</string>
+    <plurals name="selected_count">
+        <item quantity="other">%d件を選択</item>
+    </plurals>
     <string name="move_to_day">別の日…</string>
     <string name="archive">アーカイブ</string>
     <string name="set_now">今これをやる</string>
