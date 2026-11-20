@@ -103,7 +103,7 @@ add a task with a date phrase, `?` for every key and `q` to quit: [Terminal](ter
 
 The Android app works without any server (**On this phone only**). To share the plan between the phone,
 this computer and your agents, connect it to your server. Download the signed APK from
-[Dayhand Planner 0.14.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.14.0), or build
+[Dayhand Planner 0.15.0](https://github.com/maiarowsky/dayhand/releases/tag/android-v0.15.0), or build
 the app yourself ([Install](install.md#android)).
 
 A phone cannot reach a server that listens on `127.0.0.1`, and release builds of the app talk to their
