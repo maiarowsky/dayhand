@@ -114,6 +114,23 @@ class InstallsStateTest {
     }
 
     @Test
+    fun theDaysComeOnlyFromNumbersTheTableShows() {
+        val table = table(
+            """{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 4, "total": 40}, "android": {"day": "2026-11-15", "value": 1, "total": 9}}""",
+            """{"name": "Beta", "android": {"day": "2026-11-12", "value": 1, "total": 50}}""",
+        )
+
+        assertEquals(TableRow("Beta", null, null), table.rows[1])
+        assertEquals(
+            mapOf(
+                Platform.IOS to PublishedDays(LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 16)),
+                Platform.ANDROID to PublishedDays(LocalDate.of(2026, 11, 15), LocalDate.of(2026, 11, 15)),
+            ),
+            table.days,
+        )
+    }
+
+    @Test
     fun nothingKnownIsNoSumNotZero() {
         val table = table("""{"name": "Alpha", "ios": {"total": null}}""")
 

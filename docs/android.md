@@ -260,7 +260,7 @@ The widget is a table with the columns App, Total and Last day: a row per app wi
 (`total`) and its installs on the latest published day (`value`), each added up over both stores. The two
 columns are independent: an entry with `day` and `value` but no `total` still counts in Last day. The
 stores publish different days, so Last day adds each store's own latest day. Above the table a line says
-"as of" the day of the numbers, or each store's day when they differ, such as "as of iOS 11/18 ·
+"as of" the day of the numbers it shows, or each store's day when they differ, such as "as of iOS 11/18 ·
 Android 11/17"; when a store's apps have different days the line shows that store's range, such as
 "as of iOS 11/16 · Android 11/14–11/15". When the file does not have a store's number for a column,
 that column of its row shows as `—`, never as 0: the widget never shows a sum that leaves a number out.

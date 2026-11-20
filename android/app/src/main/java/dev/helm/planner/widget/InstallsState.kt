@@ -64,11 +64,11 @@ sealed interface WidgetView {
  */
 data class TableRow(val name: String, val total: Int?, val lastDay: Int?)
 
-/** The published days of one store's known counts; one day when every count is from the same day. */
+/** The published days of one store's counts in the table's sums; one day when every such count is from the same day. */
 data class PublishedDays(val oldest: LocalDate, val newest: LocalDate)
 
 /**
- * The widget's table: a row per app, the published days per store among the known counts (totals and day counts), the
+ * The widget's table: a row per app, the published days per store among the counts its sums show (totals and day counts), the
  * stores with a count missing for lack of data, and whether a count is missing because the file has no `total` or no
  * `value` field.
  */
@@ -86,12 +86,17 @@ data class InstallsTable(
             }
             val totals = report.apps.flatMap { app -> Platform.entries.map { it to app.total(it) } }
             val dayCounts = report.apps.flatMap { app -> Platform.entries.map { it to app.dayCount(it) } }
-            val known = (totals + dayCounts).mapNotNull { (platform, count) -> (count as? PlatformCount.Known)?.let { platform to it.day } }
+            val shown = report.apps.zip(rows).flatMap { (app, row) ->
+                Platform.entries.flatMap { platform ->
+                    listOfNotNull(app.total(platform).takeIf { row.total != null }, app.dayCount(platform).takeIf { row.lastDay != null })
+                        .mapNotNull { (it as? PlatformCount.Known)?.let { count -> platform to count.day } }
+                }
+            }
             val missing = (totals + dayCounts).mapNotNull { (platform, count) -> (count as? PlatformCount.Missing)?.let { platform to it.reason } }
             return InstallsTable(
                 rows = rows,
                 days = Platform.entries.mapNotNull { platform ->
-                    val days = known.filter { it.first == platform }.map { it.second }
+                    val days = shown.filter { it.first == platform }.map { it.second }
                     days.minOrNull()?.let { platform to PublishedDays(it, days.max()) }
                 }.toMap(),
                 storesWithoutData = missing.filter { it.second != MissingReason.NO_FIELD }.map { it.first }.distinct().sorted(),
