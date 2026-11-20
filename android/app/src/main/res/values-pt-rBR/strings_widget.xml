@@ -11,6 +11,7 @@
     <string name="installs_no_data_android">Android: sem dados do Google Play</string>
     <string name="installs_no_data_both">Sem dados da App Store e do Google Play</string>
     <string name="installs_no_total">sem total no arquivo</string>
+    <string name="installs_no_day_count">sem número do dia no arquivo</string>
     <string name="installs_failure_network">Sem conexão</string>
     <string name="installs_failure_http">O servidor respondeu %1$d</string>
     <string name="installs_failure_file">Não é um arquivo de instalações válido</string>

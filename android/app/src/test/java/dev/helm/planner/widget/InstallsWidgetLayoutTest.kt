@@ -74,14 +74,28 @@ class InstallsWidgetLayoutTest {
     }
 
     @Test
-    fun anOldFileWithoutTotalsSaysSo() = runTest {
-        val old = """{"schema": 1, "apps": [{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": null, "value": null, "note": "HTTP 403"}}]}"""
+    fun anOldFileWithoutTotalsShowsTheLastDayAndSaysSo() = runTest {
+        val old = """{"schema": 1, "apps": [{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 3}}]}"""
 
         val texts = render(WidgetData(url).after(FetchResult.Body(old), now = 1_000).view())
 
+        assertEquals(listOf("Alpha", "—", "15"), texts.subList(texts.indexOf("Alpha"), texts.indexOf("Alpha") + 3))
         assertTrue("note in $texts", "no total in the file" in texts)
-        assertFalse("no date in $texts", texts.any { it.startsWith("as of") })
-        assertFalse("no daily number in $texts", texts.any { it == "12" || it == "80" })
+        assertTrue("both days in $texts", "as of iOS 11/16 · Android 11/15" in texts)
+        assertFalse("no weekly number in $texts", "80" in texts)
+    }
+
+    @Test
+    fun aFileMissingTotalsAndDayCountsSaysBoth() = runTest {
+        val mixed = """{"schema": 1, "apps": [
+            {"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12}, "android": {"day": "2026-11-16", "value": 3}},
+            {"name": "Beta", "ios": {"day": "2026-11-16", "total": 40}, "android": {"day": "2026-11-16", "total": 9}}
+        ]}"""
+
+        val texts = render(WidgetData(url).after(FetchResult.Body(mixed), now = 1_000).view())
+
+        assertEquals(listOf("Beta", "49", "—"), texts.subList(texts.indexOf("Beta"), texts.indexOf("Beta") + 3))
+        assertTrue("both notes in $texts", "no total in the file · no day count in the file" in texts)
     }
 
     private suspend fun render(view: WidgetView): List<String> {

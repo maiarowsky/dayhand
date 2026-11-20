@@ -490,10 +490,10 @@ your own apps over the App Store and Google Play, read from a JSON file at an ad
 (`InstallsConfigActivity`; release builds accept https only). `InstallsJson` parses the file (format and
 fields: [docs/android.md](../docs/android.md#store-installs-widget)), `InstallsStore` keeps the address
 and the last file that parsed, and `InstallsWorker` fetches it every three hours (WorkManager) and on a
-tap; `InstallsTable` works out the rows, each with its iOS + Android total (the Total column) and the two
-stores' `value` on their own latest day added up (the Last day column), and each store's published days for
-the "as of" line. A failed fetch keeps the last file and says why; a store's missing number blanks its row's
-sums as `—`, never 0.
+tap; `InstallsTable` works out the rows, each with its iOS + Android `total` (the Total column) and the two
+stores' `value` on their own latest day added up (the Last day column, independent of `total`), and each
+store's published days for the "as of" line. A failed fetch keeps the last file and says why; a store's
+missing number blanks that column of its row as `—`, never 0.
 
 ## Signing in
 

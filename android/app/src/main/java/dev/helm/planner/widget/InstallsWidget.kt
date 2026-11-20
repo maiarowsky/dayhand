@@ -172,7 +172,7 @@ private fun asOf(context: Context, table: InstallsTable, locale: Locale): String
     return context.getString(R.string.installs_as_of, dates)
 }
 
-/** One short line on why a number is missing: the stores without data, or a file that has no totals. */
+/** One short line on why a number is missing: the stores without data, or a file without totals or day counts. */
 private fun footnote(context: Context, table: InstallsTable): String? {
     val stores = when (table.storesWithoutData.toSet()) {
         emptySet<Platform>() -> null
@@ -180,7 +180,11 @@ private fun footnote(context: Context, table: InstallsTable): String? {
         setOf(Platform.ANDROID) -> R.string.installs_no_data_android
         else -> R.string.installs_no_data_both
     }
-    val parts = listOfNotNull(stores, R.string.installs_no_total.takeIf { table.noTotalInFile })
+    val parts = listOfNotNull(
+        stores,
+        R.string.installs_no_total.takeIf { table.noTotalInFile },
+        R.string.installs_no_day_count.takeIf { table.noDayCountInFile },
+    )
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ") { context.getString(it) }
 }
 

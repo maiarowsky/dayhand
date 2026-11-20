@@ -11,6 +11,7 @@
     <string name="installs_no_data_android">Android: Google Play のデータなし</string>
     <string name="installs_no_data_both">App Store と Google Play のデータなし</string>
     <string name="installs_no_total">ファイルに合計なし</string>
+    <string name="installs_no_day_count">ファイルに日別の数なし</string>
     <string name="installs_failure_network">接続できません</string>
     <string name="installs_failure_http">サーバーの応答: %1$d</string>
     <string name="installs_failure_file">インストール数のファイルとして無効です</string>

@@ -67,6 +67,7 @@ class InstallsStateTest {
         )
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
+        assertFalse(table.noDayCountInFile)
     }
 
     @Test
@@ -82,16 +83,34 @@ class InstallsStateTest {
         assertEquals("a store without the day's value", TableRow("Gamma", 95, null), table.rows[2])
         assertEquals(listOf(Platform.ANDROID), table.storesWithoutData)
         assertFalse(table.noTotalInFile)
+        assertTrue("Gamma's iOS entry has no value", table.noDayCountInFile)
     }
 
     @Test
-    fun anOldFileWithoutTotalsShowsNoNumbersAndSaysSo() {
+    fun anOldFileWithoutTotalsShowsTheLastDayAndSaysTheTotalIsMissing() {
         val table = table("""{"name": "Alpha", "ios": {"day": "2026-11-16", "value": 12, "last7": 80}, "android": {"day": "2026-11-15", "value": 3}}""")
 
-        assertEquals(TableRow("Alpha", null, null), table.rows.single())
-        assertEquals(emptyMap<Platform, PublishedDays>(), table.days)
+        assertEquals(TableRow("Alpha", null, 15), table.rows.single())
+        assertEquals(
+            mapOf(
+                Platform.IOS to PublishedDays(LocalDate.of(2026, 11, 16), LocalDate.of(2026, 11, 16)),
+                Platform.ANDROID to PublishedDays(LocalDate.of(2026, 11, 15), LocalDate.of(2026, 11, 15)),
+            ),
+            table.days,
+        )
         assertEquals(emptyList<Platform>(), table.storesWithoutData)
         assertTrue(table.noTotalInFile)
+        assertFalse(table.noDayCountInFile)
+    }
+
+    @Test
+    fun totalsWithoutValuesShowTheTotalAndSayTheDayCountIsMissing() {
+        val table = table("""{"name": "Alpha", "ios": {"day": "2026-11-16", "total": 40}, "android": {"day": "2026-11-15", "total": 9}}""")
+
+        assertEquals(TableRow("Alpha", 49, null), table.rows.single())
+        assertEquals(emptyList<Platform>(), table.storesWithoutData)
+        assertFalse(table.noTotalInFile)
+        assertTrue(table.noDayCountInFile)
     }
 
     @Test

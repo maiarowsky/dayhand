@@ -9,8 +9,9 @@ called Helm until 0.9.0.
 
 - The store installs widget shows two columns for each app: **Total**, its all-time installs, and **Last day**, its
   installs on the latest day the App Store and Google Play published, each added up over both stores and shown as `—`
-  when a store's number is missing. The "as of" line names each store's day when they differ, such as
-  "as of iOS 11/18 · Android 11/17".
+  when a store's number for that column is missing; a file without `total` still shows Last day, and the line under
+  the table says "no day count in the file" when `value` is missing. The "as of" line names each store's day or range
+  of days when they differ, such as "as of iOS 11/18 · Android 11/16–11/17".
 
 ## 0.15.0 (2026-11-20)
 
