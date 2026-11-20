@@ -247,7 +247,7 @@ cannot do: [Agents and you](agents.md).
 ## Store installs widget
 
 A home screen widget shows how many people installed your own apps from the App Store and Google Play,
-in total since each app came out. The stores publish installs once a day, about a day late (Apple) or
+in total since each app came out and on the latest published day. The stores publish installs once a day, about a day late (Apple) or
 one to two days late (Google), so the numbers are as of the latest published day, not live.
 
 Add **Store installs** from the home screen's widget list. It asks for the address of a JSON file in
