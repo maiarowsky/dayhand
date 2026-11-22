@@ -590,8 +590,6 @@
 	<string>Retour l’ajoute pour aujourd’hui ; une date à la fin (tomorrow 9am, fri, 23 oct) fixe le jour, +projet le projet.</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Retour l’ajoute pour aujourd’hui ; une date à la fin, en anglais (tomorrow 9am, fri, 23 oct), fixe le jour.</string>
-	<key>Return adds “%@”: %@</key>
-	<string>Retour ajoute « %@ » : %@</string>
 	<key>Revert</key>
 	<string>Rétablir</string>
 	<key>Review</key>

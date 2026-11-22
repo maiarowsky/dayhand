@@ -83,7 +83,7 @@ struct TodayTasks: View {
         let s = model.searchedToday
         let timed = s.today.filter { $0.dueTime != nil }
         let anyTime = s.today.filter { $0.dueTime == nil }
-        if s.isEmpty && s.done.isEmpty && (showsOverdue || s.overdue.isEmpty) {
+        if s.now == nil && s.today.isEmpty && s.done.isEmpty && (!showsOverdue || s.overdue.isEmpty) {
             if model.isSearching {
                 PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
             } else {

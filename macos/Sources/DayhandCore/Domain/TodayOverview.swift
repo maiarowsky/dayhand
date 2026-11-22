@@ -18,7 +18,7 @@ public struct TodayOverview: Hashable, Sendable {
     public let repeating: Int
     /// Open tasks without a day, the oldest first.
     public let noDay: [TaskItem]
-    /// Open tasks due after today, up to `comingUpDays` ahead, by day and time.
+    /// Open tasks due after today, up to `comingUpDays` ahead, by day and time; not the now task.
     public let comingUp: [TaskItem]
 
     public static let empty = TodayOverview(days: [], timed: 0, repeating: 0, noDay: [], comingUp: [])
@@ -41,6 +41,6 @@ public func todayOverview(_ tasks: [TaskItem], sections: TodaySections, days: In
         timed: todays.filter { $0.dueTime != nil }.count,
         repeating: todays.filter { $0.repeat != nil }.count,
         noDay: open.filter { $0.dueDate == nil && !$0.isNow }.sorted(by: bySchedule),
-        comingUp: open.filter { ($0.dueDate ?? "") > today && ($0.dueDate ?? "") <= last }.sorted(by: bySchedule)
+        comingUp: open.filter { ($0.dueDate ?? "") > today && ($0.dueDate ?? "") <= last && !$0.isNow }.sorted(by: bySchedule)
     )
 }

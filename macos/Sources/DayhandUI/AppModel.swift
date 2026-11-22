@@ -48,8 +48,8 @@ final class AppModel: ObservableObject {
         didSet { if search != oldValue { recompute() } }
     }
     @Published var selection: String?
-    /// Moves on with ⌘K, so the toolbar's search field takes the keyboard.
-    @Published private(set) var searchFocusRequest = 0
+    /// Set by ⌘K until the toolbar's search field takes the keyboard, also when the main window opens only then.
+    @Published var searchFocusPending = false
     /// The plan's day, as days from today; the day strip on Today sets it.
     @Published var planDayOffset = 0
     /// The place picked in the sidebar (`show(_:)` changes it).
@@ -264,7 +264,7 @@ final class AppModel: ObservableObject {
         return now - lastRead >= healthMaxAgeMs
     }
 
-    /// The approval requests and proposals waiting for the owner, from the server (Review on the health card).
+    /// The approval requests and proposals waiting for the owner, from the server (Review in the plan health of Today's sentence).
     func loadInbox() async -> Result<AgentInbox, AgentInbox.LoadError> {
         await AgentInbox.load(engineBox.queries)
     }
@@ -322,7 +322,7 @@ final class AppModel: ObservableObject {
     /// Puts the keyboard in the toolbar's search field (⌘K).
     func focusSearch() {
         showMainWindow()
-        searchFocusRequest += 1
+        searchFocusPending = true
     }
 
     /// Adds what is typed in the search field as a task, as quick add would, and clears it.

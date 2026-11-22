@@ -50,8 +50,7 @@ latest one below).
   come back to the top of Today. The plan health card became the last part of the sentence, which opens the whole
   report and **Review**.
 - The toolbar's field **Search, or add a task** (⌘K) searches as before, and Return adds what is typed as a task,
-  with quick add's date phrases; the line under the toolbar says what will be added. The Board, Plan and List switch
-  moved next to **+ Task**.
+  with quick add's date phrases. The Board, Plan and List switch moved next to **+ Task**.
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
   Migrations v5 to v7 only clean up after development builds of 0.4.0, which queued project changes: v7 drops them
   from the outbox together with the projects the server never confirmed (their tasks stay, without a project).

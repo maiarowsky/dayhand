@@ -71,7 +71,6 @@ struct MainArea: View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 StatusLine()
-                SearchAddHint()
                 PlaceContent()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if let id = model.selection, let task = model.task(id) {

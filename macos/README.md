@@ -18,8 +18,7 @@ This version is the basic one (MVP):
   archived ones under **Archived**), **Done and Archived** and **Trash**. The **Go** menu opens each
   place: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects. The toolbar holds the field **Search, or
   add a task** (⌘K): what is typed narrows every list (title and note), Return adds it as a task in the place, with
-  quick add's date phrases (Today in an archived project), and a line under the toolbar says what Return will add;
-  Escape clears it. Next to it are the view switcher and **+ Task**. A task dragged onto a project, No Project or Today goes there; **Task → Move to
+  quick add's date phrases (Today in an archived project); Escape clears it. Next to it are the view switcher and **+ Task**. A task dragged onto a project, No Project or Today goes there; **Task → Move to
   Project…** (⇧⌘M) picks one by typing. The window is at least 820 × 500 points, 1100 × 700 by default.
 - **Lists**: All Tasks, No Project and a project list their open tasks in sections (Overdue, Today,
   Later with the day, No Day) and the latest done (folded), each task with a second line of its project (outside
@@ -405,7 +404,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
 - **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery
   classification, placeholders for fresh, cached and local-only history, translated, actor-neutral claim labels,
   the month choices and counts of the repeat editor in English and Polish, and picker days and times that do not
-  move with the zone. `AgentTextTests` checks the health card's sentence and colour, the claim, dependency and
+  move with the zone. `AgentTextTests` checks the plan health sentence and colour, the claim, dependency and
   approval texts in English and Polish, the default reminder choices and when a synced poll reads the report. These are unit checks, not clicks through the running app.
 - **Texts** (`DayhandLocalizationTests`): every key of the catalog is translated into all eight languages and no
   other, the format specifiers (`%lld`, `%@`, `%1$@`) and plural forms of each translation match the source and the

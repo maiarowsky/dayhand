@@ -991,60 +991,6 @@
         }
       }
     },
-    "Return adds “%@”: %@" : {
-      "comment" : "Line under the toolbar while something is typed in its field: the task's title, then its day and project",
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Return fügt „%@“ hinzu: %@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Return adds “%@”: %@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Return añade «%@»: %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retour ajoute « %@ » : %@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Return で「%@」を追加：%@"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Return doda „%@”: %@"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Return adiciona “%@”: %@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按 Return 添加“%@”：%@"
-          }
-        }
-      }
-    },
     "Search or Add…" : {
       "comment" : "File menu: puts the keyboard in the toolbar's field (⌘K)",
       "extractionState" : "manual",

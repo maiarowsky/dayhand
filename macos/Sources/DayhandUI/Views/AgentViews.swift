@@ -2,41 +2,6 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// The plan health card above Today: one sentence in the report's colour, the most pressing first, with Review when
-/// approval requests or proposals wait for the owner (the Android app's `HealthCard`). It shows the last report the
-/// server sent, also offline, and goes with Disconnect.
-struct HealthCard: View {
-    @EnvironmentObject private var model: AppModel
-    @State private var showInbox = false
-
-    var body: some View {
-        if let health = model.health {
-            let items = HealthSummary.items(health)
-            let color = AgentText.color(HealthSummary.tone(items), clear: items.isEmpty)
-            HStack(spacing: 8) {
-                Image(systemName: items.isEmpty ? "checkmark.circle" : "waveform.path.ecg")
-                    .foregroundStyle(color)
-                    .accessibilityHidden(true)
-                // Wraps without fixedSize, as the status line (StatusLine).
-                Text(AgentText.healthLine(items)).font(.callout)
-                Spacer(minLength: 0)
-                if HealthSummary.needsOwner(items) {
-                    Button(tr("Review")) { showInbox = true }
-                        .help(tr("The approval requests and proposals waiting for you, read-only"))
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-            .padding(.horizontal, Metrics.gutter)
-            .padding(.top, 4)
-            .sheet(isPresented: $showInbox) {
-                AgentInboxView().environmentObject(model)
-            }
-        }
-    }
-}
-
 /// The approval requests and proposals waiting for the owner, read from the server when the sheet opens. The Mac
 /// only lists them; deciding stays on the phone and with `dayhand`.
 struct AgentInboxView: View {

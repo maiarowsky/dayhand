@@ -38,29 +38,13 @@ struct SearchOrAddField: View {
         .frame(minWidth: 160, idealWidth: 260, maxWidth: 420, minHeight: 28)
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
         .help(tr("Search, or press Return to add a task (⌘K)"))
-        .onChange(of: model.searchFocusRequest) { _ in focused = true }
+        .onAppear(perform: takeFocusRequest)
+        .onChange(of: model.searchFocusPending) { _ in takeFocusRequest() }
     }
-}
 
-/// Under the toolbar while something is typed in its field: what Return will add, and where.
-struct SearchAddHint: View {
-    @EnvironmentObject private var model: AppModel
-
-    var body: some View {
-        if model.isSearching,
-           let preview = QuickAddPreview.of(model.search, readPhrase: true, model: model, place: model.searchAddPlace) {
-            HStack(spacing: 8) {
-                Image(systemName: "return").foregroundStyle(.secondary).accessibilityHidden(true)
-                Text(tr("Return adds “\(preview.title)”: \(preview.summary)"))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, Metrics.gutter)
-            .padding(.vertical, 6)
-            .background(.quaternary.opacity(0.5))
-        }
+    private func takeFocusRequest() {
+        guard model.searchFocusPending else { return }
+        focused = true
+        model.searchFocusPending = false
     }
 }
