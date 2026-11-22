@@ -389,12 +389,14 @@ export class Controller {
 
   /**
    * A change of layout only (z, a resize): the task under the cursor in Today,
-   * open details aside, stays under it, a narrow terminal showing the panel
-   * that lists it; folded away, the cursor stays in its column.
+   * whatever view is shown and open details aside, stays under it, a narrow
+   * terminal showing the panel that lists it; folded away, the cursor stays in
+   * its column.
    */
   private relayout(change: () => void): void {
     const was = derive(this.snapshot()).lists;
-    const id = this.ui.view === "today" ? selectedTask({ ...this.ui, detail: undefined }, was)?.id : undefined;
+    const inToday = (ui: UiState): UiState => ({ ...ui, view: "today", detail: undefined });
+    const id = selectedTask(inToday(this.ui), was)?.id;
     change();
     if (this.columns >= BESIDE_COLUMNS) this.ui = { ...this.ui, toPlan: false };
     if (!id) return;
@@ -402,8 +404,9 @@ export class Controller {
     const holds = (lists: Lists) => lists.today.some((task) => task.id === id);
     if (!holds(layout(this.ui.toPlan)) && holds(layout(!this.ui.toPlan))) this.ui = { ...this.ui, toPlan: !this.ui.toPlan };
     const now = layout(this.ui.toPlan);
-    const cursor = { ...this.ui, detail: undefined };
-    this.ui = { ...(holds(now) ? reanchor(cursor, id, now) : keepRow(cursor, now, was.todaySplit)), detail: this.ui.detail };
+    const { view, detail } = this.ui;
+    const cursor = inToday(this.ui);
+    this.ui = { ...(holds(now) ? reanchor(cursor, id, now) : keepRow(cursor, now, was.todaySplit)), view, detail };
   }
 
   /** Details and help scroll no further than their last row, so k works at once after G. */

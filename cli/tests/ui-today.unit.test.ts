@@ -180,6 +180,27 @@ describe("Today as an agenda", () => {
     expect(text()).toMatch(/TO PLAN \(4\) l →$/m);
   });
 
+  test("a resize while another view is shown keeps Today's selected task and its panel", async () => {
+    const { ui, text, selected } = await open(80);
+    ui.key("l");
+    ui.key("j");
+    ui.key("j");
+    expect(selected()).toBe("Photos for the gallery");
+    ui.key("2");
+    await ui.idle();
+    ui.resize(140, 24);
+    ui.key("1");
+    await ui.idle();
+    expect(selected()).toBe("Photos for the gallery");
+    ui.key("2");
+    await ui.idle();
+    ui.resize(80, 24);
+    ui.key("1");
+    await ui.idle();
+    expect(selected()).toBe("Photos for the gallery");
+    expect(text()).toMatch(/← h Today$/m);
+  });
+
   test("without colour, today is still in reverse, each task keeps its status mark and overdue its heading", async () => {
     const { ui } = await open(80);
     const rows = withoutColour(ui.frame().rows);
