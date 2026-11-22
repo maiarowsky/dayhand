@@ -89,7 +89,7 @@ tests:
 | `tst_dates`, `tst_recurrence` | the date phrases and repeat rules on the cases shared with the CLI and macOS (`tests/cases/*.json`) |
 | `tst_rules`, `tst_merge`, `tst_pairing`, `tst_sync` | Today's sections and overview (the Mac's cases), reminders, task/settings merges (including waiting settings mutations), pairing and sync against a fake server |
 | `tst_translations` | runs lupdate on the sources and fails when a text is missing, unfinished or stale in any language |
-| `tst_app` | the model, reminder rescheduling after settings changes, the Today window and the quick add window on the offscreen platform: typing, ticking off, the agenda (strip of days, the sentence about the day, To plan beside it or folded in, its place taken by task details), responsive task details and edits, the language switch |
+| `tst_app` | the model, reminder rescheduling after settings changes, the Today window and the quick add window on the offscreen platform: typing, ticking off, the agenda (strip of days, the sentence about the day, To plan beside it or folded in, its place taken by task details and its scroll kept), responsive task details and edits, the language switch |
 | `tst_desktop` | notifications and the tray against fake desktop services, as a client of a headless Weston |
 | `smoke_wayland` | the real `dayhand-qt` on Weston: starts in the background, a second copy hands `--quick-add` and a pairing link over |
 
