@@ -8,6 +8,8 @@ Rectangle {
     id: root
     objectName: "toPlanPanel"
 
+    /// A wide window, where To plan can be beside the agenda: its rows stay while a task or Trash takes its place.
+    required property bool wide
     readonly property bool empty: app.overdue.length === 0 && app.noDay.length === 0 && app.comingUp.length === 0
 
     color: Qt.darker(sys.window, 1.03)
@@ -43,6 +45,7 @@ Rectangle {
 
         ScrollView {
             id: scroll
+            objectName: "toPlanScroll"
             visible: !root.empty
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -57,20 +60,20 @@ Rectangle {
                     objectName: "toPlanOverdue"
                     Layout.fillWidth: true
                     title: qsTr("Overdue")
-                    tasks: root.visible ? app.overdue : []
+                    tasks: root.wide ? app.overdue : []
                     tint: app.overdueColor
                 }
                 ToPlanGroup {
                     objectName: "toPlanNoDay"
                     Layout.fillWidth: true
                     title: qsTr("No day")
-                    tasks: root.visible ? app.noDay : []
+                    tasks: root.wide ? app.noDay : []
                 }
                 ToPlanGroup {
                     objectName: "toPlanComingUp"
                     Layout.fillWidth: true
                     title: qsTr("Coming up")
-                    tasks: root.visible ? app.comingUp : []
+                    tasks: root.wide ? app.comingUp : []
                 }
                 Item { Layout.preferredHeight: 16 }
             }

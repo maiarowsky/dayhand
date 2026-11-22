@@ -164,6 +164,7 @@ private slots:
     void secondCopyHandsItsRequestOver();
     void windowShowsTodayAndAddsTasks();
     void agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails();
+    void toPlanKeepsItsPlaceWhileATaskOrTrashIsOpen();
     void detailsEditTheLocalRowAndKeepSelection();
     void quickAddWindowAddsAndCloses();
     void connectOpensWhenNotConnected();
@@ -527,7 +528,7 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     QCOMPARE(times, QStringList{u"14:00"_s});
     QVERIFY(rowTitled(window, u"Idea for the garden"_s));
     QVERIFY(!rowTitled(window, u"Far away"_s));
-    // Only the To plan in view builds rows: the agenda's folded copy and a hidden panel hold none.
+    // Only the To plan a window can show builds rows: the agenda's folded copy and a narrow window's panel hold none.
     const auto rowsTitled = [&](const QString &title) {
         int count = 0;
         for (QQuickItem *row : items(window, u"taskRow"_s))
@@ -561,7 +562,7 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     QTRY_COMPARE(model.selectedTask().value(u"title"_s).toString(), u"Idea for the garden"_s);
     QTRY_VERIFY(item(window, u"detailsPanel"_s));
     QVERIFY(!item(window, u"toPlanPanel"_s));
-    QTRY_COMPARE(rowsTitled(u"Idea for the garden"_s), 0);
+    QCOMPARE(rowsTitled(u"Idea for the garden"_s), 1);
     QVERIFY(item(window, u"todayList"_s));
     QVERIFY(!item(window, u"overdueHeader"_s));
     QVERIFY(!rowTitled(window, u"Send the invoice"_s));
@@ -608,6 +609,61 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     *now = utc(u"2026-10-24T19:30"_s);
     model.reload();
     QTRY_COMPARE(item(window, u"daySentence"_s)->property("text").toString(), u"Good evening. 2 on today's plan."_s);
+}
+
+void TestApp::toPlanKeepsItsPlaceWhileATaskOrTrashIsOpen()
+{
+    QTemporaryDir dir;
+    auto now = std::make_shared<qint64>(utc(u"2026-10-24T09:10"_s));
+    Desktop desktop(environment(now, dir.path()));
+    AppModel &model = desktop.appModel();
+    for (int i = 1; i <= 30; ++i) {
+        const QString title = u"Idea %1"_s.arg(i);
+        QVERIFY(model.quickAdd(title, false));
+        model.clearDue(idOf(model, title));
+    }
+    model.useOffline();
+    QCOMPARE(model.noDay().size(), 30);
+
+    QVERIFY(desktop.start({}));
+    auto *window = qobject_cast<QQuickWindow *>(desktop.qmlEngine().rootObjects().value(0));
+    QVERIFY(window);
+    window->resize(1000, 720);
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+    window->requestActivate();
+    QVERIFY(QTest::qWaitForWindowActive(window));
+
+    // To plan scrolled down, a task opened from it and closed again: To plan is where it was. Trash likewise.
+    QTRY_VERIFY(item(window, u"toPlanPanel"_s));
+    auto *list = item(window, u"toPlanScroll"_s)->property("contentItem").value<QQuickItem *>();
+    QVERIFY(list);
+    QTRY_VERIFY(list->property("contentHeight").toReal() > list->height() + 400);
+    list->setProperty("contentY", 400);
+    QCoreApplication::processEvents();
+    QQuickItem *row = nullptr;
+    for (QQuickItem *candidate : items(window, u"taskRow"_s)) {
+        const QPointF centre = candidate->mapToItem(list, QPointF(0, candidate->height() / 2));
+        if (candidate->isVisible() && centre.y() > 0 && centre.y() < list->height()) {
+            row = candidate;
+            break;
+        }
+    }
+    QVERIFY(row);
+    const QString title = row->property("task").toMap().value(u"title"_s).toString();
+    click(window, row);
+    QTRY_COMPARE(model.selectedTask().value(u"title"_s).toString(), title);
+    QTRY_VERIFY(!item(window, u"toPlanPanel"_s));
+    click(window, item(window, u"detailsBack"_s));
+    QTRY_VERIFY(item(window, u"toPlanPanel"_s));
+    QTest::qWait(50);
+    QCOMPARE(list->property("contentY").toReal(), 400.0);
+
+    window->setProperty("trashOpen", true);
+    QTRY_VERIFY(!item(window, u"toPlanPanel"_s));
+    window->setProperty("trashOpen", false);
+    QTRY_VERIFY(item(window, u"toPlanPanel"_s));
+    QTest::qWait(50);
+    QCOMPARE(list->property("contentY").toReal(), 400.0);
 }
 
 void TestApp::detailsEditTheLocalRowAndKeepSelection()

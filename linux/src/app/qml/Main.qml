@@ -217,6 +217,7 @@ ApplicationWindow {
         }
         ToPlanPanel {
             visible: window.toPlanBeside
+            wide: window.wide
             Layout.preferredWidth: 300
             Layout.fillHeight: true
         }
