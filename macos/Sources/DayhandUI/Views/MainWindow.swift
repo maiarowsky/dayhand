@@ -5,7 +5,8 @@ import SwiftUI
 
 /**
  * The main window: the sidebar on the left (it folds with ⌃⌘S or the toolbar button), and on the right the place
- * picked in it, with the selected task's details in a panel along the bottom. The toolbar holds search and + Task.
+ * picked in it, with the selected task's details in a panel along the bottom. The toolbar holds the search field that
+ * also adds (⌘K), the board, plan or list switch and + Task.
  */
 struct MainWindow: View {
     @EnvironmentObject private var model: AppModel
@@ -20,6 +21,9 @@ struct MainWindow: View {
                 .navigationTitle(PlaceText.title(model.place, model: model))
                 .toolbar {
                     ToolbarItem(placement: .principal) {
+                        SearchOrAddField()
+                    }
+                    ToolbarItem(placement: .primaryAction) {
                         if model.placeHasViews {
                             Picker(tr("View"), selection: $model.viewMode) {
                                 ForEach(ViewMode.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -36,7 +40,6 @@ struct MainWindow: View {
                             .help(tr("New task (⌘N, or the quick add shortcut from any app)"))
                     }
                 }
-                .searchable(text: $model.search, placement: .toolbar, prompt: Text(tr("Search")))
         }
         .background(HiddenWindowTitle())
         .sheet(isPresented: $model.showConnect) {

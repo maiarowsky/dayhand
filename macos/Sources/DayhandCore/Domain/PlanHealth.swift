@@ -1,7 +1,7 @@
 import Foundation
 
 /**
- * The plan health report (`app:planHealth`, docs/agent-work.md#8-the-plan-health-report) as the card above Today
+ * The plan health report (`app:planHealth`, docs/agent-work.md#8-the-plan-health-report) as Today's plan health
  * needs it: how many tasks each section counts (the server lists at most 20 per section; `count` counts them all).
  */
 public struct PlanHealth: Hashable, Sendable {
@@ -60,7 +60,7 @@ public struct PlanHealth: Hashable, Sendable {
     }
 }
 
-/// One fact of the plan health card, by how much it asks for a look (the Android app's `HealthKind`).
+/// One fact of the plan health report, by how much it asks for a look (the Android app's `HealthKind`).
 public enum HealthKind: Hashable, Sendable, CaseIterable {
     case paused, overdue, expiredClaims, approvals, blocked, proposals, withoutProof, dueToday, inProgress, doneToday, oldestOpen
 }
@@ -80,10 +80,10 @@ public enum HealthTone: Hashable, Sendable {
     case calm, look, act
 }
 
-/// The report as the card above Today says it, as the Android app's `HealthSummary`: only what is there, the most
+/// The report as Today's plan health says it, as the Android app's `HealthSummary`: only what is there, the most
 /// pressing first.
 public enum HealthSummary {
-    /// An open task this old is worth a word on the card.
+    /// An open task this old is worth a word in the report.
     public static let oldDays = 14
 
     public static func items(_ health: PlanHealth) -> [HealthItem] {
@@ -111,7 +111,7 @@ public enum HealthSummary {
         return .calm
     }
 
-    /// Whether the card offers Review, which lists the approval requests and proposals waiting for the owner.
+    /// Whether the report offers Review, which lists the approval requests and proposals waiting for the owner.
     public static func needsOwner(_ items: [HealthItem]) -> Bool {
         items.contains { [.paused, .approvals, .proposals].contains($0.kind) }
     }

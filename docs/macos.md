@@ -183,10 +183,10 @@ Since 0.3.0 the Mac shows agent work read-only and edits the notification settin
 - The agent fields (criteria, plan, proof, dependencies, blocked reason, claim holder and end, the task's number)
   come only from snapshots and always take the server's copy. A dependency shows its title only when the task is on
   this Mac; a proposal or a purged task reads "A task not on this Mac".
-- The plan health card shows the last report the server sent and is read a second after the tasks change, when a
+- The plan health in Today's sentence shows the last report the server sent and is read a second after the tasks change, when a
   server connects, whenever Today appears, on Sync Now and on a synced poll once a minute has passed. While Today
   stays open, these age-based reads check approval requests and proposals even when no task changes. Without a
-  server the card is not read; the last report stays (also after **Not now**) until **Disconnect** or a sign-out
+  server the plan health is not read; the last report stays (also after **Not now**) until **Disconnect** or a sign-out
   by the server.
 - **Review** reads the waiting approval requests and proposals when it opens and keeps nothing: offline it says
   they could not be read. Known limitation: `app:listApprovals` returns only the newest 50 pending requests, with

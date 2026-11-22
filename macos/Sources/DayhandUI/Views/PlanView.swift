@@ -5,9 +5,15 @@ import SwiftUI
 /// A seven-day plan, or one expanded day. Both use the same task operations and drop targets.
 struct PlanView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var dayOffset = 0
-    @AppStorage("planShowsDay") private var showsDay = false
+    @AppStorage(PlanView.showsDayKey) private var showsDay = false
     @AppStorage("planDrawerOpen") private var drawerOpen = false
+
+    static let showsDayKey = "planShowsDay"
+
+    private var dayOffset: Int {
+        get { model.planDayOffset }
+        nonmutating set { model.planDayOffset = newValue }
+    }
 
     var body: some View {
         let today = CivilDate(model.today) ?? CivilDate(dayNumber: 0)

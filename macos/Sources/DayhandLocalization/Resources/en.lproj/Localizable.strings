@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%@ %@</key>
+	<string>%@ %@</string>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@ (%2$@ does not exist that day)</string>
 	<key>%@ (done)</key>
@@ -76,6 +78,8 @@
 	<string>Allow Notifications</string>
 	<key>Amber</key>
 	<string>Amber</string>
+	<key>Any time</key>
+	<string>Any time</string>
 	<key>Approval requests (%lld)</key>
 	<string>Approval requests (%lld)</string>
 	<key>Approval requests (newest %lld)</key>
@@ -144,12 +148,16 @@
 	<string>Claim renewed</string>
 	<key>Claimed</key>
 	<string>Claimed</string>
+	<key>Clear</key>
+	<string>Clear</string>
 	<key>Close</key>
 	<string>Close</string>
 	<key>Close the details</key>
 	<string>Close the details</string>
 	<key>Color</key>
 	<string>Color</string>
+	<key>Coming up</key>
+	<string>Coming up</string>
 	<key>Connect</key>
 	<string>Connect</string>
 	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
@@ -266,6 +274,8 @@
 	<string>Enter a number from 1 to %lld.</string>
 	<key>Every how many</key>
 	<string>Every how many</string>
+	<key>Every open task has a day, and the next days are free.</key>
+	<string>Every open task has a day, and the next days are free.</string>
 	<key>Every task is in a project.</key>
 	<string>Every task is in a project.</string>
 	<key>Fold the tasks</key>
@@ -278,6 +288,12 @@
 	<string>General</string>
 	<key>Go</key>
 	<string>Go</string>
+	<key>Good afternoon.</key>
+	<string>Good afternoon.</string>
+	<key>Good evening.</key>
+	<string>Good evening.</string>
+	<key>Good morning.</key>
+	<string>Good morning.</string>
 	<key>Gray</key>
 	<string>Gray</string>
 	<key>Green</key>
@@ -488,10 +504,14 @@
 	<string>Open Task</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Opens the Character Viewer (⌃⌘Space)</string>
+	<key>Opens the day in the plan</key>
+	<string>Opens the day in the plan</string>
 	<key>Options: %@</key>
 	<string>Options: %@</string>
 	<key>Orange</key>
 	<string>Orange</string>
+	<key>Overdue</key>
+	<string>Overdue</string>
 	<key>Overdue (%lld)</key>
 	<string>Overdue (%lld)</string>
 	<key>Pairing code</key>
@@ -580,8 +600,12 @@
 	<string>Save Reminders</string>
 	<key>Save Repeat</key>
 	<string>Save Repeat</string>
-	<key>Search</key>
-	<string>Search</string>
+	<key>Search or Add…</key>
+	<string>Search or Add…</string>
+	<key>Search, or add a task</key>
+	<string>Search, or add a task</string>
+	<key>Search, or press Return to add a task (⌘K)</key>
+	<string>Search, or press Return to add a task (⌘K)</string>
 	<key>Server</key>
 	<string>Server</string>
 	<key>Server address</key>
@@ -592,6 +616,8 @@
 	<string>Shortcut from any app:</string>
 	<key>Shows the done tasks</key>
 	<string>Shows the done tasks</string>
+	<key>Shows the plan health</key>
+	<string>Shows the plan health</string>
 	<key>Shows the section</key>
 	<string>Shows the section</string>
 	<key>Shows the tasks done today</key>
@@ -716,6 +742,8 @@
 	<string>To Tomorrow</string>
 	<key>To do</key>
 	<string>To do</string>
+	<key>To plan</key>
+	<string>To plan</string>
 	<key>To today</key>
 	<string>To today</string>
 	<key>Today</key>

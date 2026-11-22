@@ -2,68 +2,132 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// Today, top to bottom: the plan health card, quick add, then overdue, now, today and done (folded), as on the phone.
+/**
+ * Today as an agenda: the title and the day, a strip of the coming days, one sentence about the day, quick add, then
+ * the tasks by time (the now task first, the ones without a time under "Any time", done today folded). Beside it, in
+ * the list view and while the window is wide enough, "To plan" holds the overdue tasks, those without a day and the
+ * next days'; in a narrower window the overdue tasks come back to the top of the agenda.
+ */
 struct TodayView: View {
     @EnvironmentObject private var model: AppModel
+
+    /// The width of the main area from which "To plan" sits beside the agenda.
+    static let sideColumnFrom: CGFloat = 740
+    static let sideColumnWidth: CGFloat = 290
+    /// Below this height the day strip makes room for the tasks.
+    static let stripFrom: CGFloat = 560
+
+    var body: some View {
+        GeometryReader { geometry in
+            let list = model.viewMode != .board
+            let side = list && geometry.size.width >= Self.sideColumnFrom
+            HStack(spacing: 0) {
+                TodayAgenda(showsOverdue: !side, showsStrip: geometry.size.height >= Self.stripFrom)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(list ? Color.card : .clear)
+                if side {
+                    Rectangle().fill(PlannerStyle.line).frame(width: 1).accessibilityHidden(true)
+                    ToPlanColumn().frame(width: Self.sideColumnWidth)
+                }
+            }
+        }
+        .onAppear { model.refreshHealth(afterNanoseconds: 0) }
+    }
+}
+
+/// The middle of Today: its heading, the strip of days, the sentence about the day, quick add and the tasks.
+struct TodayAgenda: View {
+    @EnvironmentObject private var model: AppModel
+    let showsOverdue: Bool
+    let showsStrip: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                TodayTitle(date: model.sections.date)
+                if showsStrip { DayStrip(days: model.overview.days).padding(.top, 10) }
+                DaySummary().padding(.top, showsStrip ? 14 : 10)
+                InlineQuickAdd().padding(.top, 12).padding(.bottom, 6)
+            }
+            .padding(.horizontal, TodayStyle.margin)
+            if model.viewMode == .board {
+                BoardView()
+            } else {
+                TodayTasks(showsOverdue: showsOverdue)
+            }
+        }
+    }
+}
+
+/// "Today" and the day's date on one line.
+struct TodayTitle: View {
+    let date: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(tr("Today")).font(.system(size: 28, weight: .bold)).accessibilityAddTraits(.isHeader)
+            Text(DateText.longDay(date)).font(.title3).foregroundStyle(.secondary).lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 16)
+    }
+}
+
+/// Today's tasks by time, as a list that keeps selection, the keyboard and the context menus.
+struct TodayTasks: View {
+    @EnvironmentObject private var model: AppModel
+    let showsOverdue: Bool
     @State private var showDone = false
 
     var body: some View {
         let s = model.searchedToday
-        VStack(spacing: 0) {
-            PlaceHeader(title: tr("Today"), subtitle: DateText.longDay(s.date))
-            HealthCard()
-            InlineQuickAdd()
-                .padding(.horizontal, Metrics.gutter)
-                .padding(.vertical, 8)
-            if model.viewMode == .board {
-                BoardView()
-            } else if s.isEmpty && s.done.isEmpty {
-                if model.isSearching {
-                    PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
-                } else {
-                    EmptyToday()
-                }
+        let timed = s.today.filter { $0.dueTime != nil }
+        let anyTime = s.today.filter { $0.dueTime == nil }
+        if s.now == nil && s.today.isEmpty && s.done.isEmpty && (!showsOverdue || s.overdue.isEmpty) {
+            if model.isSearching {
+                PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
             } else {
-                List(selection: $model.selection) {
-                    if !s.overdue.isEmpty {
-                        Section {
-                            ForEach(s.overdue) { task in
-                                TaskRow(task: task, today: s.date, overdue: true, showsDay: false).tag(task.localId)
-                            }
-                        } header: {
-                            Text(tr("Overdue (\(s.overdue.count))")).foregroundStyle(Color.overdue)
-                        }
-                    }
-                    if let now = s.now {
-                        Section(tr("Now")) {
-                            NowRow(task: now, today: s.date).tag(now.localId)
-                        }
-                    }
-                    Section(tr("Today")) {
-                        if let placeholder = model.todayPlaceholder {
-                            Text(placeholder).foregroundStyle(.secondary)
-                        }
-                        ForEach(s.today) { task in
-                            TaskRow(task: task, today: s.date, showsDay: false).tag(task.localId)
-                        }
-                    }
-                    if !s.done.isEmpty {
-                        Section {
-                            if showDone {
-                                ForEach(s.done) { task in
-                                    TaskRow(task: task, today: s.date, showsDay: false).tag(task.localId)
-                                }
-                            }
-                        } header: {
-                            FoldHeader(title: tr("Done (\(s.done.count))"), open: $showDone,
-                                       hint: showDone ? tr("Hides the tasks done today") : tr("Shows the tasks done today"))
-                        }
+                EmptyToday()
+            }
+        } else {
+            List(selection: $model.selection) {
+                if showsOverdue && !s.overdue.isEmpty {
+                    Section {
+                        ForEach(s.overdue) { TodayRow(task: $0, today: s.date, overdue: true).tag($0.localId) }
+                    } header: {
+                        Text(tr("Overdue (\(s.overdue.count))")).foregroundStyle(Color.overdue).padding(.leading, TodayStyle.titleInset)
                     }
                 }
-                .cardList()
+                Section {
+                    if let now = s.now { TodayNowRow(task: now, today: s.date).tag(now.localId) }
+                    if let placeholder = model.todayPlaceholder {
+                        Text(placeholder).foregroundStyle(.secondary).padding(.leading, TodayStyle.titleInset)
+                    }
+                    ForEach(timed) { TodayRow(task: $0, today: s.date).tag($0.localId) }
+                }
+                if !anyTime.isEmpty {
+                    Section {
+                        ForEach(anyTime) { TodayRow(task: $0, today: s.date).tag($0.localId) }
+                    } header: {
+                        if !timed.isEmpty || s.now != nil { Text(tr("Any time")).padding(.leading, TodayStyle.titleInset) }
+                    }
+                }
+                if !s.done.isEmpty {
+                    Section {
+                        if showDone {
+                            ForEach(s.done) { TodayRow(task: $0, today: s.date).tag($0.localId) }
+                        }
+                    } header: {
+                        FoldHeader(title: tr("Done (\(s.done.count))"), open: $showDone,
+                                   hint: showDone ? tr("Hides the tasks done today") : tr("Shows the tasks done today"))
+                            .padding(.leading, TodayStyle.titleInset)
+                    }
+                }
             }
+            .listStyle(.inset)
+            .scrollContentBackground(.hidden)
+            .padding(.horizontal, TodayStyle.margin - 14)
         }
-        .onAppear { model.refreshHealth(afterNanoseconds: 0) }
     }
 }
 

@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%@ %@</key>
+	<string>%@ %@</string>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@ (%2$@ gibt es an diesem Tag nicht)</string>
 	<key>%@ (done)</key>
@@ -76,6 +78,8 @@
 	<string>Mitteilungen erlauben</string>
 	<key>Amber</key>
 	<string>Bernstein</string>
+	<key>Any time</key>
+	<string>Ohne Uhrzeit</string>
 	<key>Approval requests (%lld)</key>
 	<string>Genehmigungsanfragen (%lld)</string>
 	<key>Approval requests (newest %lld)</key>
@@ -144,12 +148,16 @@
 	<string>Übernahme verlängert</string>
 	<key>Claimed</key>
 	<string>Übernommen</string>
+	<key>Clear</key>
+	<string>Leeren</string>
 	<key>Close</key>
 	<string>Schließen</string>
 	<key>Close the details</key>
 	<string>Details schließen</string>
 	<key>Color</key>
 	<string>Farbe</string>
+	<key>Coming up</key>
+	<string>Demnächst</string>
 	<key>Connect</key>
 	<string>Verbinden</string>
 	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
@@ -266,6 +274,8 @@
 	<string>Gib eine Zahl von 1 bis %lld ein.</string>
 	<key>Every how many</key>
 	<string>Wie oft</string>
+	<key>Every open task has a day, and the next days are free.</key>
+	<string>Jede offene Aufgabe hat einen Tag, und die nächsten Tage sind frei.</string>
 	<key>Every task is in a project.</key>
 	<string>Jede Aufgabe ist in einem Projekt.</string>
 	<key>Fold the tasks</key>
@@ -278,6 +288,12 @@
 	<string>Allgemein</string>
 	<key>Go</key>
 	<string>Gehe zu</string>
+	<key>Good afternoon.</key>
+	<string>Guten Tag.</string>
+	<key>Good evening.</key>
+	<string>Guten Abend.</string>
+	<key>Good morning.</key>
+	<string>Guten Morgen.</string>
 	<key>Gray</key>
 	<string>Grau</string>
 	<key>Green</key>
@@ -488,10 +504,14 @@
 	<string>Aufgabe öffnen</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Öffnet die Zeichenübersicht (⌃⌘Leertaste)</string>
+	<key>Opens the day in the plan</key>
+	<string>Öffnet den Tag im Plan</string>
 	<key>Options: %@</key>
 	<string>Optionen: %@</string>
 	<key>Orange</key>
 	<string>Orange</string>
+	<key>Overdue</key>
+	<string>Überfällig</string>
 	<key>Overdue (%lld)</key>
 	<string>Überfällig (%lld)</string>
 	<key>Pairing code</key>
@@ -580,8 +600,12 @@
 	<string>Erinnerungen sichern</string>
 	<key>Save Repeat</key>
 	<string>Wiederholung sichern</string>
-	<key>Search</key>
-	<string>Suchen</string>
+	<key>Search or Add…</key>
+	<string>Suchen oder hinzufügen …</string>
+	<key>Search, or add a task</key>
+	<string>Suchen oder Aufgabe hinzufügen</string>
+	<key>Search, or press Return to add a task (⌘K)</key>
+	<string>Suchen, oder Return drücken, um eine Aufgabe hinzuzufügen (⌘K)</string>
 	<key>Server</key>
 	<string>Server</string>
 	<key>Server address</key>
@@ -592,6 +616,8 @@
 	<string>Kürzel aus jeder App:</string>
 	<key>Shows the done tasks</key>
 	<string>Zeigt die erledigten Aufgaben</string>
+	<key>Shows the plan health</key>
+	<string>Zeigt den Zustand des Plans</string>
 	<key>Shows the section</key>
 	<string>Blendet den Abschnitt ein</string>
 	<key>Shows the tasks done today</key>
@@ -716,6 +742,8 @@
 	<string>Auf morgen</string>
 	<key>To do</key>
 	<string>Zu erledigen</string>
+	<key>To plan</key>
+	<string>Zu planen</string>
 	<key>To today</key>
 	<string>Auf heute</string>
 	<key>Today</key>

@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%@ %@</key>
+	<string>%@ %@</string>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@ (%2$@ não existe nesse dia)</string>
 	<key>%@ (done)</key>
@@ -76,6 +78,8 @@
 	<string>Permitir notificações</string>
 	<key>Amber</key>
 	<string>Âmbar</string>
+	<key>Any time</key>
+	<string>Sem horário</string>
 	<key>Approval requests (%lld)</key>
 	<string>Solicitações de aprovação (%lld)</string>
 	<key>Approval requests (newest %lld)</key>
@@ -144,12 +148,16 @@
 	<string>Atribuição renovada</string>
 	<key>Claimed</key>
 	<string>Assumida</string>
+	<key>Clear</key>
+	<string>Limpar</string>
 	<key>Close</key>
 	<string>Fechar</string>
 	<key>Close the details</key>
 	<string>Fechar os detalhes</string>
 	<key>Color</key>
 	<string>Cor</string>
+	<key>Coming up</key>
+	<string>Em breve</string>
 	<key>Connect</key>
 	<string>Conectar</string>
 	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
@@ -266,6 +274,8 @@
 	<string>Digite um número de 1 a %lld.</string>
 	<key>Every how many</key>
 	<string>A cada quantos</string>
+	<key>Every open task has a day, and the next days are free.</key>
+	<string>Toda tarefa pendente tem um dia, e os próximos dias estão livres.</string>
 	<key>Every task is in a project.</key>
 	<string>Todas as tarefas estão em um projeto.</string>
 	<key>Fold the tasks</key>
@@ -278,6 +288,12 @@
 	<string>Geral</string>
 	<key>Go</key>
 	<string>Ir</string>
+	<key>Good afternoon.</key>
+	<string>Boa tarde.</string>
+	<key>Good evening.</key>
+	<string>Boa noite.</string>
+	<key>Good morning.</key>
+	<string>Bom dia.</string>
 	<key>Gray</key>
 	<string>Cinza</string>
 	<key>Green</key>
@@ -488,10 +504,14 @@
 	<string>Abrir tarefa</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Abre o Visualizador de Caracteres (⌃⌘Espaço)</string>
+	<key>Opens the day in the plan</key>
+	<string>Abre o dia no plano</string>
 	<key>Options: %@</key>
 	<string>Opções: %@</string>
 	<key>Orange</key>
 	<string>Laranja</string>
+	<key>Overdue</key>
+	<string>Atrasadas</string>
 	<key>Overdue (%lld)</key>
 	<string>Atrasadas (%lld)</string>
 	<key>Pairing code</key>
@@ -580,8 +600,12 @@
 	<string>Salvar lembretes</string>
 	<key>Save Repeat</key>
 	<string>Salvar repetição</string>
-	<key>Search</key>
-	<string>Buscar</string>
+	<key>Search or Add…</key>
+	<string>Buscar ou adicionar…</string>
+	<key>Search, or add a task</key>
+	<string>Busque ou adicione uma tarefa</string>
+	<key>Search, or press Return to add a task (⌘K)</key>
+	<string>Busque ou pressione Return para adicionar uma tarefa (⌘K)</string>
 	<key>Server</key>
 	<string>Servidor</string>
 	<key>Server address</key>
@@ -592,6 +616,8 @@
 	<string>Atalho em qualquer app:</string>
 	<key>Shows the done tasks</key>
 	<string>Mostra as tarefas concluídas</string>
+	<key>Shows the plan health</key>
+	<string>Mostra a saúde do plano</string>
 	<key>Shows the section</key>
 	<string>Mostra a seção</string>
 	<key>Shows the tasks done today</key>
@@ -716,6 +742,8 @@
 	<string>Para amanhã</string>
 	<key>To do</key>
 	<string>A fazer</string>
+	<key>To plan</key>
+	<string>A planejar</string>
 	<key>To today</key>
 	<string>Para hoje</string>
 	<key>Today</key>

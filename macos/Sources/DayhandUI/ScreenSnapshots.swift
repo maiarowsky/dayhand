@@ -83,6 +83,14 @@ public enum ScreenSnapshots {
                 if selected != nil { try await render(window(), narrow, dark, png("\(name)-820\(suffix)"), sidebar: sidebar()) }
             }
         }
+        // Today's agenda with nothing selected: the strip of days, and To plan beside it where the window is wide enough.
+        model.show(.today)
+        model.selection = nil
+        for dark in [false, true] {
+            let suffix = dark ? "-dark" : ""
+            try await render(window(), wide, dark, png("today-agenda-1100\(suffix)"), sidebar: sidebar())
+            try await render(window(), narrow, dark, png("today-agenda-820\(suffix)"), sidebar: sidebar())
+        }
         // The same places as a board.
         model.viewMode = .board
         for (name, place, selected) in places where selected != nil {

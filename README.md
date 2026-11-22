@@ -81,10 +81,10 @@ Both work offline and speak English, Polish, German, Spanish, French, Brazilian 
 and Simplified Chinese. Both are built from source for now:
 [Build the desktop apps](#build-the-desktop-apps).
 
-Dayhand for macOS, Today as a list with a task open, then the same day as a week plan (sample data):
+Dayhand for macOS, Today as an agenda with To plan beside it, then the same day as a week plan (sample data):
 
 <p align="center">
-  <img src="docs/assets/macos-today.webp" width="700" alt="Dayhand for macOS, Today: projects in the sidebar, a plan health line, quick add, an overdue task, the task you are working on now, and the details of a task with due time, reminders, project and note">
+  <img src="docs/assets/macos-today.webp" width="700" alt="Dayhand for macOS, Today as an agenda: projects in the sidebar, the Search, or add a task field, a strip of the next days, one sentence about the day with counts and the plan health, quick add, the task you are working on now and today's tasks by time, and To plan beside it with the overdue task, tasks without a day and the next days">
   <img src="docs/assets/macos-week-plan.webp" width="700" alt="Dayhand for macOS, week plan: tasks placed on a calendar from Monday to Sunday, and below it the tasks to drag onto it in to do, in progress and done columns">
 </p>
 

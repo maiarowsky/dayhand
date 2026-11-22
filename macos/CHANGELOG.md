@@ -42,6 +42,15 @@ latest one below).
   Measurements: [docs/design.md](../docs/design.md#calendar-led-appearance).
 - The main window: the sidebar of places replaces the Today/Trash chooser, and the selected task opens in a panel
   along the bottom instead of a details column. The window is at least 820 × 500 points.
+- Today is an agenda: the title with the date, a strip of the next days (today in a blue circle, a dot per open task,
+  a day opens in the plan), one sentence about the day ("Good morning. 6 on today's plan." with the tasks at a set
+  time, the repeating ones, the overdue ones and what the plan health asks for), quick add, then the tasks by time
+  with a bar in their status's colour, those without a time under **Any time**. **To plan** beside it lists the
+  overdue tasks (**To today**), those without a day and the next three days'; in a narrow window the overdue ones
+  come back to the top of Today. The plan health card became the last part of the sentence, which opens the whole
+  report and **Review**.
+- The toolbar's field **Search, or add a task** (⌘K) searches as before, and Return adds what is typed as a task,
+  with quick add's date phrases. The Board, Plan and List switch moved next to **+ Task**.
 - The local database keeps projects and each task's project (migration v4); the next snapshot fills them in.
   Migrations v5 to v7 only clean up after development builds of 0.4.0, which queued project changes: v7 drops them
   from the outbox together with the projects the server never confirmed (their tasks stay, without a project).

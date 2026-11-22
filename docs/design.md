@@ -22,6 +22,13 @@ dates in 42 pt circles, and a day/week control. Narrow windows scroll horizontal
 in the day heading and the task drawer; the drawer can be expanded below the grid. Both apps use the existing
 due date and time fields. Block heights are visual slots, not stored or inferred task durations.
 
+Today on the Mac is an agenda on a white surface with **To plan** in a 290 pt grey column beside it, split by a
+1 pt line, from 740 pt of main-area width. The title is 28 pt bold with the date beside it; the strip of days gives
+each day at least 46 pt, 15 pt numbers in 30 pt circles (today's blue) and up to three 4 pt dots for open tasks;
+the sentence about the day is 14 pt with line icons in the colour of what they count. Rows put the time in a
+right-aligned column (44 pt, 62 pt for 12-hour clocks), then a 4 pt bar in the status's plan colour, the title in
+14 pt and the box that ticks it off at the trailing edge; margins are 28 pt.
+
 Dayhand's Android app started from the visual language of Mussh (the owner's other app) and keeps its palette
 roles and sixteen palettes, most of its type scale, its fonts, button shape, fields and states. The shapes,
 spacing, top-level headline, section labels and default palettes are Dayhand's own, as the table below notes.
