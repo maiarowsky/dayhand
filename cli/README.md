@@ -52,7 +52,7 @@ of the CLI, `--json`, error codes and the MCP tools stay English.
 
 Polling starts at 60 s by default and doubles after three unchanged polls, up to
 300 s. Any key or changed data restores the base interval. Ticks read only the current view
-(Today with its health line) and an open task. Projects reload on entry,
+(Today with plan health and To plan) and an open task. Projects reload on entry,
 view changes, your changes and manual refresh (`R`); projects also reload when a task on screen
 names a project created elsewhere. A new project without tasks reaches quick-add and filters
 after `R` or a view change. Your changes still refresh immediately.

@@ -25,6 +25,8 @@ export type RowOptions = {
   dueWidth?: number;
   /** Extra text on the right (e.g. "deleted 2026-10-20 14:05"). */
   note?: string;
+  /** Columns between the cursor mark and the number (Today's time and status bar). */
+  gutter?: Row;
 };
 
 export function dueText(task: Task, today: string, mode: "day" | "time"): string {
@@ -51,6 +53,7 @@ export function taskRow(task: Task, options: RowOptions): Row {
   const done = task.status === "done";
   const left: Row = [
     seg(selected ? "› " : "  ", { color: "cyan", bold: true }),
+    ...(options.gutter ?? []),
     seg(refText(task).padStart(options.refWidth ?? refText(task).length), { color: "cyan" }),
     seg(" "),
     seg(ICONS[task.status], { color: ICON_COLORS[task.status] }),

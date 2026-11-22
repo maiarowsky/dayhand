@@ -6,7 +6,7 @@ import type { Task } from "../render/model.js";
 import { addDays, isoWeekday } from "../when/calendar.js";
 import { editLine, line } from "./line.js";
 import { weekStart } from "./lists.js";
-import { clamp, moveColumn, moveRow, selectedAgent, selectedTask, VIEWS, type EditField, type EditKey, type Lists, type Mode, type UiState } from "./state.js";
+import { clamp, moveColumn, moveRow, moveSide, selectedAgent, selectedTask, VIEWS, type EditField, type EditKey, type Lists, type Mode, type UiState } from "./state.js";
 
 export type Effect =
   | { kind: "quit" }
@@ -134,6 +134,7 @@ function navigation(state: UiState, name: string, lists: Lists): Result | undefi
       return state.detail ? { state: { ...state, detail: undefined } } : { state, effect: { kind: "quit" } };
     case "esc":
       if (state.detail) return { state: { ...state, detail: undefined } };
+      if (state.view === "today" && state.toPlan) return { state: { ...state, filter: "", toPlan: false, cursor: { ...state.cursor, today: 0 } } };
       return { state: { ...state, filter: "" } };
     case "?":
       return { state: { ...state, mode: { kind: "help", scroll: 0 } } };
@@ -156,10 +157,15 @@ function navigation(state: UiState, name: string, lists: Lists): Result | undefi
       return { state: { ...state, detail: undefined, mode: { kind: "prompt", prompt: "filter", line: line(state.filter) } } };
     case "h":
     case "left":
-      return state.detail ? { state } : { state: moveColumn(state, -1) };
     case "l":
-    case "right":
-      return state.detail ? { state } : { state: moveColumn(state, 1) };
+    case "right": {
+      const delta = name === "h" || name === "left" ? -1 : 1;
+      if (state.detail) return { state };
+      return { state: state.view === "today" ? moveSide(state, lists, delta) : moveColumn(state, delta) };
+    }
+    case "z":
+      if (state.view !== "today" || state.detail) return undefined;
+      return { state: { ...state, doneOpen: !state.doneOpen } };
     case "[":
     case "]":
       if (state.view !== "week" || state.detail) return undefined;

@@ -28,11 +28,18 @@ export type Api = {
   board(): Promise<Board>;
   /** Tasks due Monday `start` to Sunday, done ones included. */
   week(start: string): Promise<Task[]>;
+  /** Open tasks due in the `PLAN_DAYS` days from `today`, and open tasks without a day. */
+  plan(today: string): Promise<Plan>;
   trash(): Promise<Task[]>;
   task(id: string): Promise<Detail>;
   /** A changing tool call, retried on a dropped connection; task changes carry one clientId. */
   change<T = Record<string, unknown>>(tool: string, args: Record<string, unknown>): Promise<T>;
 };
+
+export type Plan = { upcoming: Task[]; noDay: Task[] };
+
+/** Days from today that Today's strip of days and To plan look at. */
+export const PLAN_DAYS = 14;
 
 const RETRY_DELAYS_MS = [1000, 3000];
 const DONE_LIMIT = 30;
@@ -64,6 +71,18 @@ export function makeApi(
   }
   const read = <T>(tool: string, args: Record<string, unknown> = {}) => call<T>(reads, tool, args);
 
+  async function pages(args: Record<string, unknown>, more: (page: Task[]) => boolean = () => true): Promise<Task[]> {
+    const tasks: Task[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const result = await read<{ result: Task[]; nextCursor?: string | null }>("list_all", { ...args, limit: PAGE, ...(cursor ? { cursor } : {}) });
+      tasks.push(...(result.result ?? []));
+      if (!result.nextCursor || !more(result.result ?? [])) break;
+      cursor = result.nextCursor;
+    }
+    return tasks;
+  }
+
   return {
     settings: () => read("get_settings"),
     projects: async () => {
@@ -76,34 +95,22 @@ export function makeApi(
       const [controls, { approvals }, proposals] = await Promise.all([
         read<Controls>("get_agent_controls"),
         read<{ approvals: Approval[] }>("list_approvals", { status: "pending", limit: PAGE }),
-        (async () => {
-          const tasks: Task[] = [];
-          let cursor: string | undefined;
-          for (let page = 0; page < MAX_PAGES; page++) {
-            const result = await read<{ result: Task[]; nextCursor?: string | null }>("list_all", { proposed: true, limit: PAGE, ...(cursor ? { cursor } : {}) });
-            tasks.push(...(result.result ?? []));
-            if (!result.nextCursor) break;
-            cursor = result.nextCursor;
-          }
-          return tasks;
-        })(),
+        pages({ proposed: true }),
       ]);
       return { controls, approvals, proposals };
     },
     board: () => read("board", { doneLimit: DONE_LIMIT }),
     trash: async () => (await read<{ result: Task[] }>("list_trash")).result ?? [],
     task: (id) => read("get_task", { taskId: id }),
-    week: async (start) => {
-      const tasks: Task[] = [];
-      let cursor: string | undefined;
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const args = { dueAfter: addDays(start, -1), dueBefore: addDays(start, 7), includeDone: true, limit: PAGE, ...(cursor ? { cursor } : {}) };
-        const result = await read<{ result: Task[]; nextCursor?: string | null }>("list_all", args);
-        tasks.push(...(result.result ?? []));
-        if (!result.nextCursor) break;
-        cursor = result.nextCursor;
-      }
-      return tasks;
+    week: (start) => pages({ dueAfter: addDays(start, -1), dueBefore: addDays(start, 7), includeDone: true }),
+    plan: async (today) => {
+      const open = { status: ["todo", "doing"] };
+      // Tasks without a day come first, so their pages end where the first dated task shows.
+      const [upcoming, undated] = await Promise.all([
+        pages({ ...open, dueAfter: addDays(today, -1), dueBefore: addDays(today, PLAN_DAYS) }),
+        pages(open, (page) => page.every((task) => !task.dueDate)),
+      ]);
+      return { upcoming, noDay: undated.filter((task) => !task.dueDate) };
     },
     change: async <T>(tool: string, args: Record<string, unknown>) => {
       // These owner controls are idempotent and their MCP schemas do not accept clientId.

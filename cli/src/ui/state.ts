@@ -47,11 +47,18 @@ export type UiState = {
   lastDeleted?: string;
   /** Mouse reporting; M turns it off so the terminal selects text, and on again. */
   mouse: boolean;
+  /** Today in a narrow terminal shows To plan in place of the agenda (l, back with h). */
+  toPlan: boolean;
+  /** Today's done tasks unfolded (z). */
+  doneOpen: boolean;
 };
 
 /** What the keys can reach: each view's tasks in cursor order (filtered), plus the day for adding. */
 export type Lists = {
+  /** Today's tasks in cursor order: the agenda's, then To plan's when it is beside it. */
   today: Task[];
+  /** Where To plan's tasks start in `today` when it is beside the agenda; undefined when it is not. */
+  todaySplit?: number;
   board: [Task[], Task[], Task[]];
   week: Task[][];
   weekDates: string[];
@@ -73,6 +80,8 @@ export function initialState(view: ViewName, weekStart: string): UiState {
     weekStart,
     filter: "",
     mouse: true,
+    toPlan: false,
+    doneOpen: false,
   };
 }
 
@@ -161,11 +170,12 @@ export function moveRow(state: UiState, lists: Lists, delta: number): UiState {
   }
 }
 
-/** After completing a task the cursor keeps its row; in Today it stays among the open tasks (the first row when none is left). */
+/** After completing a task the cursor keeps its row; in Today it stays on an open task, the nearest above when needed. */
 export function keepRow(state: UiState, lists: Lists): UiState {
   if (state.view !== "today") return moveRow(state, lists, 0);
-  const open = lists.today.filter((task) => task.status !== "done").length;
-  return { ...state, cursor: { ...state.cursor, today: Math.max(0, Math.min(state.cursor.today, open - 1)) } };
+  let at = clamp(state.cursor.today, lists.today.length);
+  while (at > 0 && lists.today[at]?.status === "done") at--;
+  return { ...state, cursor: { ...state.cursor, today: at } };
 }
 
 /** j/k in the week: within the day, then on into the next or previous day. */
@@ -184,6 +194,20 @@ function moveInWeek(state: UiState, lists: Lists, delta: number): UiState {
     row += Math.max(1, length(day));
   }
   return { ...state, cursor: { ...c, weekDay: day, weekRow: clamp(row, Math.max(1, length(day))) } };
+}
+
+/** h/l in Today: from the agenda to To plan and back, beside it or, in a narrow terminal, in its place. */
+export function moveSide(state: UiState, lists: Lists, delta: number): UiState {
+  const c = state.cursor;
+  const split = lists.todaySplit;
+  if (split === undefined) {
+    const toPlan = delta > 0;
+    return toPlan === state.toPlan ? state : { ...state, toPlan, cursor: { ...c, today: 0 } };
+  }
+  const inPlan = c.today >= split;
+  if (delta > 0 && !inPlan && lists.today.length > split) return { ...state, cursor: { ...c, today: split } };
+  if (delta < 0 && inPlan && split > 0) return { ...state, cursor: { ...c, today: 0 } };
+  return state;
 }
 
 /** h/l: the board column or the week day. */

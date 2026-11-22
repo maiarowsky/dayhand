@@ -6,7 +6,14 @@ import { tokenProject, type Project } from "../projects.js";
 import type { Board, Task, TodayView } from "../render/model.js";
 import { addDays, isoWeekday } from "../when/calendar.js";
 
-export type Section = { key: "now" | "overdue" | "today" | "done"; label: string; tasks: Task[]; empty?: string };
+export type Section = {
+  key: "now" | "overdue" | "today" | "anyTime" | "done" | "noDay" | "comingUp";
+  label: string;
+  tasks: Task[];
+  empty?: string;
+  /** Done today starts folded: its row shows, its tasks do not. */
+  folded?: boolean;
+};
 export type Column = { key: "todo" | "doing" | "done"; label: string; tasks: Task[] };
 export type Day = { date: string; isToday: boolean; tasks: Task[] };
 
@@ -26,21 +33,60 @@ export function matches(task: Task, filter: string, projects: Project[] = []): b
 
 const only = (tasks: Task[], filter: string, projects: Project[]) => tasks.filter((t) => matches(t, filter, projects));
 
-/** The now task leads; it is not repeated in Overdue or Today. */
-export function todaySections(view: TodayView, filter = "", projects: Project[] = []): Section[] {
+/** Open tasks due in the next days that To plan lists under Coming up (after today). */
+export const COMING_UP_DAYS = 3;
+
+/** What To plan reads beside Today's view: open tasks due from today on, and those without a day. */
+export type PlanData = { date: string; upcoming: Task[]; noDay: Task[] };
+
+/**
+ * Today's agenda and To plan. `beside`: To plan is a column of its own and
+ * the overdue tasks are in it; otherwise they lead the agenda. The now task
+ * leads the agenda, timed tasks follow by time, then those without a time, then
+ * done today (folded unless `doneOpen`). Empty sections go, except Today's
+ * timed one, which says so when the day has nothing at all.
+ */
+export function todayLayout(
+  view: TodayView,
+  plan: PlanData | undefined,
+  options: { filter?: string; projects?: Project[]; beside: boolean; doneOpen: boolean },
+): { agenda: Section[]; toPlan: Section[] } {
+  const { filter = "", projects = [] } = options;
+  const open = (tasks: Task[]) => only(tasks, filter, projects).filter((t) => !t.isNow && t.status !== "done");
   const now = view.now && matches(view.now, filter, projects) ? [view.now] : [];
-  const open = (tasks: Task[]) => only(tasks, filter, projects).filter((t) => !t.isNow);
-  const sections: Section[] = [
+  const today = open(view.today);
+  const timed = today.filter((t) => t.dueTime).sort((a, b) => a.dueTime!.localeCompare(b.dueTime!));
+  const anyTime = today.filter((t) => !t.dueTime);
+  const nothing = now.length + timed.length + anyTime.length === 0;
+  const overdue: Section = { key: "overdue", label: t("section.overdue"), tasks: open(view.overdue) };
+  const agenda: Section[] = [
+    ...(options.beside ? [] : [overdue]),
     { key: "now", label: t("section.now"), tasks: now },
-    { key: "overdue", label: t("section.overdue"), tasks: open(view.overdue) },
-    { key: "today", label: t("section.today"), tasks: open(view.today), empty: filter ? t("section.noMatch") : t("section.nothingPlanned") },
-    { key: "done", label: t("section.doneToday"), tasks: only(view.doneToday, filter, projects) },
+    { key: "today", label: t("section.today"), tasks: timed, ...(nothing ? { empty: filter ? t("section.noMatch") : t("section.nothingPlanned") } : {}) },
+    { key: "anyTime", label: t("section.anyTime"), tasks: anyTime },
+    { key: "done", label: t("section.doneToday"), tasks: only(view.doneToday, filter, projects), folded: !options.doneOpen },
   ];
-  return sections.filter((s) => s.tasks.length > 0 || s.key === "today");
+  const last = plan && plan.date === view.date ? addDays(view.date, COMING_UP_DAYS) : "";
+  const toPlan: Section[] = [
+    overdue,
+    { key: "noDay", label: t("section.noDay"), tasks: plan ? open(plan.noDay) : [] },
+    { key: "comingUp", label: t("section.comingUp"), tasks: open(plan?.upcoming ?? []).filter((t) => t.dueDate! > view.date && t.dueDate! <= last).sort(bySchedule) },
+  ];
+  const shown = (s: Section) => s.tasks.length > 0 || s.empty !== undefined;
+  return { agenda: agenda.filter(shown), toPlan: toPlan.filter(shown) };
 }
 
-/** Today's tasks in the order the cursor walks them. */
-export const todayTasks = (sections: Section[]) => sections.flatMap((s) => s.tasks);
+/** The tasks of `sections` in the order the cursor walks them; a folded section's are left out. */
+export const sectionTasks = (sections: Section[]) => sections.flatMap((s) => (s.folded ? [] : s.tasks));
+
+export function openPerDay(upcoming: Task[], date: string, days: number): number[] {
+  return Array.from({ length: days }, (_, i) => {
+    const day = addDays(date, i);
+    return upcoming.filter((t) => t.dueDate === day && t.status !== "done").length;
+  });
+}
+
+const bySchedule = (a: Task, b: Task) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "") || (a.dueTime ?? "99").localeCompare(b.dueTime ?? "99");
 
 export function boardColumns(board: Board, filter = "", projects: Project[] = []): Column[] {
   return [

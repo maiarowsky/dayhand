@@ -59,7 +59,7 @@ describe("agent UI with the local backend", () => {
     try {
       await ui.refresh();
       expect(rowsText(ui.frame().rows)).toContain("Approval requests pending: 1");
-      expect(ui.frame().rows[2]?.[0]?.color).toBe("yellow");
+      expect(ui.frame().rows.flat().find((part) => part.text === "Approval requests pending: 1")?.color).toBe("yellow");
       ui.key("5");
       await ui.idle();
       expect(rowsText(ui.frame().rows)).toContain("APPROVAL REQUESTS (1)");
@@ -153,10 +153,10 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const executable = `#!${process.execPath}\nconst fs = require("node:fs"); fs.writeFileSync(process.env.CLIPBOARD_OUTPUT, fs.readFileSync(0));\n`;
     for (const command of ["pbcopy", "wl-copy", "xclip", "xsel"]) writeFileSync(join(dir, command), executable, { mode: 0o755 });
     const s = open(key, ["--view", view, "--lang", "en"], undefined, { PATH: dir, CLIPBOARD_OUTPUT: output });
-    await s.waitFor(/› #1 ○[^\n]*First task/);
+    await s.waitFor(/› [^#\n]*#1 ○[^\n]*First task/);
     await s.press("j");
     // Board truncates the visible title; the clipboard must still contain it all.
-    const selection = /› #2 ○[^\n]*Zażółć/;
+    const selection = /› [^#\n]*#2 ○[^\n]*Zażółć/;
     await s.waitFor(selection);
     await s.press("y");
     const screen = await s.waitFor("Task copied");
@@ -172,7 +172,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const before = await show(key, task.ref);
     const dir = mkdtempSync(join(TEST_HOME, "no-clipboard-"));
     const s = open(key, ["--lang", "en"], undefined, { PATH: dir });
-    await s.waitFor(/› #1 ○ Copy over SSH/);
+    await s.waitFor(/› [^#\n]*#1 ○ Copy over SSH/);
     await s.press("y");
     await s.waitFor("Sent to terminal clipboard (OSC 52)");
     const sequence = /\u001b\]52;c;([A-Za-z0-9+/=]+)\u0007/.exec(s.raw());
@@ -190,10 +190,12 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const s = open(key);
     const screen = await s.waitFor("NOW");
     expect(screen).toMatch(/^ Dayhand +1 Today +2 Board +3 Week +4 Trash/);
-    expect(screen).toMatch(/NOW\n› #3 ◐ +today +Draft the invoice +0\/2/);
-    expect(screen).toContain("next: rate is in the email");
-    expect(screen).toMatch(/OVERDUE \(1\)\n {2}#1 ○ yesterday Pay rent$/m);
-    expect(screen).toMatch(/TODAY \(1\)\n {2}#2 ○ 09:00 +Review the plan/);
+    expect(screen).toMatch(/^ Good (morning|afternoon|evening)\. 2 on today's plan\. {2}1 at a set time · 1 overdue/m);
+    expect(screen).toMatch(/OVERDUE \(1\)\n› +▌ #1 ○ yesterday Pay rent *$/m);
+    expect(screen).toMatch(/^ {4}NOW ▌ #3 ◐ Draft the invoice +0\/2$/m);
+    expect(screen).toMatch(/^ {8}▌ +next: rate is in the email$/m);
+    expect(screen).toMatch(/^ {2}09:00 ▌ #2 ○ Review the plan$/m);
+    expect(screen).toMatch(/TO PLAN \(1\) l →$/m);
     await s.shot("today");
     expect(s.raw()).toContain("\u001b[?1049h");
     expect(s.raw()).toContain("\u001b[?1000h\u001b[?1006h");
@@ -208,7 +210,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await dayhandJson(key, ["add", "First"]);
     await dayhandJson(key, ["add", "Second", "--note", "A note to select"]);
     const s = open(key, ["--lang", "en"], { columns: 140, rows: 24 });
-    const screen = await s.waitFor(/› #1 ○ First/);
+    const screen = await s.waitFor(/› [^#\n]*#1 ○ First/);
     const on = "\u001b[?1000h\u001b[?1006h";
     const off = "\u001b[?1000l\u001b[?1006l";
     expect(s.raw()).toContain(on);
@@ -223,7 +225,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(await s.screen()).not.toContain("Mouse off");
     expect(s.raw().slice(mark)).toContain(on);
     await s.click(second.x, second.y);
-    await s.waitFor(/› #2 ○ Second/);
+    await s.waitFor(/› [^#\n]*#2 ○ Second/);
     const back = s.raw().length;
     await s.press("q");
     expect(await s.exit).toBe(0);
@@ -243,16 +245,18 @@ describe.skipIf(!pty)("dayhand ui", () => {
 
     await s.press("a", ..."Send the newsletter");
     await s.press("enter");
-    await s.waitFor(/TODAY \(1\)\n› #2 ○ +Send the newsletter/);
+    await s.waitFor(/› +▌ #2 ○ Send the newsletter/);
     await s.press("s");
     await s.waitFor("Started: #2 Send the newsletter");
     expect((await show(key, 2)).task.status).toBe("doing");
     await s.press("n", ..."draft is in the doc", "enter");
-    await s.waitFor(/NOW\n› #2 ◐ today Send the newsletter[\s\S]*next: draft is in the doc/);
+    await s.waitFor(/› +NOW ▌ #2 ◐ Send the newsletter[\s\S]*next: draft is in the doc/);
     expect((await show(key, 2)).task).toMatchObject({ isNow: true, resumeNote: "draft is in the doc" });
     await s.press("space");
-    await s.waitFor(/DONE TODAY \(1\)\n› #2 ✔ +Send the newsletter/);
+    await s.waitFor(/▸ DONE TODAY \(1\) {2}z/);
     expect((await show(key, 2)).task.status).toBe("done");
+    await s.press("z");
+    await s.waitFor(/▾ DONE TODAY \(1\) {2}z\n› +▌ #2 ✔ Send the newsletter/);
     await s.press("N");
     await s.waitFor("Now task cleared");
   });
@@ -261,12 +265,15 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const { key } = await newUser();
     await dayhandJson(key, ["add", "Demo completion shortcut"]);
     const s = open(key, ["--lang", "en"]);
-    await s.waitFor(/› #1 ○ Demo completion shortcut/);
+    await s.waitFor(/› +▌ #1 ○ Demo completion shortcut/);
     await s.press(keyName);
-    await s.waitFor(/› #1 ✔ Demo completion shortcut/);
+    await s.waitFor(/▸ DONE TODAY \(1\)/);
     expect((await show(key, 1)).task.status).toBe("done");
+    // Done today is folded; z unfolds it and the same key reopens the task.
+    await s.press("z");
+    await s.waitFor(/› +▌ #1 ✔ Demo completion shortcut/);
     await s.press(keyName);
-    const screen = await s.waitFor(/› #1 ○ Demo completion shortcut/);
+    const screen = await s.waitFor(/› +▌ #1 ○ Demo completion shortcut/);
     expect((await show(key, 1)).task.status).toBe("todo");
     await s.shot(`completion-${keyName}`);
     expect(screen).toContain("x done");
@@ -282,11 +289,11 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await dayhandJson(key, ["add", "Middle task", "--time", "10:00"]);
     await dayhandJson(key, ["add", "Last task", "--time", "11:00"]);
     const s = open(key, ["--view", view, "--lang", "en"]);
-    await s.waitFor(/› #1 ○[^\n]*First task/);
+    await s.waitFor(/› [^#\n]*#1 ○[^\n]*First task/);
     await s.press("j");
-    await s.waitFor(/› #2 ○[^\n]*Middle task/);
+    await s.waitFor(/› [^#\n]*#2 ○[^\n]*Middle task/);
     await s.press(keyName);
-    await s.waitFor(/› #3 ○[^\n]*Last task/);
+    await s.waitFor(/› [^#\n]*#3 ○[^\n]*Last task/);
     expect((await show(key, 2)).task.status).toBe("done");
     // The next completion acts on the task that took the same slot, not the completed task.
     await s.press(keyName);
@@ -295,10 +302,10 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect((await show(key, 2)).task.status).toBe("done");
     if (view === "board") {
       // The last row disappeared: stay in TODO and clamp to its remaining row.
-      await s.waitFor(/› #1 ○[^\n]*First task/);
+      await s.waitFor(/› [^#\n]*#1 ○[^\n]*First task/);
       await s.press(keyName);
       const screen = await s.waitFor("TODO (0)");
-      expect(screen).not.toMatch(/› #\d/);
+      expect(screen).not.toMatch(/› [^#\n]*#\d/);
       expect((await show(key, 1)).task.status).toBe("done");
     }
   });
@@ -308,17 +315,17 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await dayhandJson(key, ["add", "First task", "--time", "09:00"]);
     await dayhandJson(key, ["add", "Last task", "--time", "10:00"]);
     const s = open(key, ["--view", "today", "--lang", "en"]);
-    await s.waitFor(/› #1 ○[^\n]*First task/);
+    await s.waitFor(/› [^#\n]*#1 ○[^\n]*First task/);
     await s.press("j");
-    await s.waitFor(/› #2 ○[^\n]*Last task/);
+    await s.waitFor(/› [^#\n]*#2 ○[^\n]*Last task/);
     await s.press(keyName);
     await s.waitFor("Done: #2 Last task");
-    await s.waitFor(/› #1 ○[^\n]*First task/);
-    // No open task left: the cursor stays on the first row of the list.
+    await s.waitFor(/› [^#\n]*#1 ○[^\n]*First task/);
     await s.press(keyName);
     await s.waitFor("Done: #1 First task");
-    const screen = await s.waitFor(/DONE TODAY \(2\)\n› #\d ✔/);
-    expect(screen.match(/› #\d/g)).toHaveLength(1);
+    // No open task left and done today folded: no row is selected.
+    const screen = await s.waitFor(/▸ DONE TODAY \(2\)/);
+    expect(screen).not.toMatch(/› [^#\n]*#\d/);
     expect((await show(key, 1)).task.status).toBe("done");
     expect((await show(key, 2)).task.status).toBe("done");
   });
@@ -475,10 +482,10 @@ describe.skipIf(!pty)("dayhand ui", () => {
     await dayhandJson(key, ["add", "First"]);
     await dayhandJson(key, ["add", "Second"]);
     const s = open(key);
-    const screen = await s.waitFor(/› #1 ○ First/);
+    const screen = await s.waitFor(/› [^#\n]*#1 ○ First/);
     const second = locate(screen, "Second");
     await s.click(second.x, second.y);
-    await s.waitFor(/› #2 ○ Second/);
+    await s.waitFor(/› [^#\n]*#2 ○ Second/);
     await s.click(second.x, second.y);
     await s.waitFor("history (1, newest first)");
     await s.press("esc");
@@ -496,7 +503,8 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const polish = open(key, [], undefined, { LANG: "pl_PL.UTF-8" });
     const screen = await polish.waitFor("ZALEGŁE");
     expect(screen).toMatch(/^ Dayhand +1 Dzisiaj +2 Tablica +3 Tydzień +4 Kosz/);
-    expect(screen).toMatch(/ZALEGŁE \(1\)\n› #1 ○ wczoraj Pay rent *$/m);
+    expect(screen).toMatch(/ZALEGŁE \(1\)\n› +▌ #1 ○ wczoraj Pay rent *$/m);
+    expect(screen).toMatch(/^ (Dzień dobry|Dobry wieczór)\. Na dziś nic nie zaplanowano\. {2}1 zaległe/m);
     await polish.press("a", ..."Zadzwoń tomorrow 2pm");
     await polish.press("enter");
     await polish.waitFor("Dodano #2 Zadzwoń · jutro 14:00");

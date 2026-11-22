@@ -107,9 +107,16 @@ with an unquoted prefix to complete a project name.
 
 const ui = `The terminal app (dayhand ui)
 
-dayhand ui opens Dayhand full screen in the terminal: Today (overdue, the now task with
-its resume note, today, done today), the board, the week (Monday to Sunday as
-bars, the selected day in full below) and the trash. Enter opens a task with its
+dayhand ui opens Dayhand full screen in the terminal: Today, the board, the week
+(Monday to Sunday as bars, the selected day in full below) and the trash. Today
+is an agenda: a strip of the next days (today in reverse, a dot for each open
+task, up to three), one sentence about the day (how many tasks, how many have a
+time, repeat or are overdue, and what plan health asks of you), then the now task
+with its resume note, today's tasks by time with the time on the left and a bar
+in the status's colour, those without a time, and done today folded (z unfolds
+it). To plan lists the overdue tasks, those without a day and those of the next
+three days: beside Today from 120 columns, in a narrower terminal behind l (h or
+Esc goes back), where the overdue tasks also lead Today. Enter opens a task with its
 history, which names who made each change: app, cli or agent: <name>. It uses
 the key from dayhand login and the same MCP tools as the other commands, refreshes
 what is on screen every 60 seconds (--interval), less often while nothing

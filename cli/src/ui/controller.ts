@@ -195,7 +195,8 @@ export class Controller {
   }
 
   private shown(): unknown[] {
-    return [this.data[this.ui.view], this.ui.view === "today" ? withoutReadTime(this.data.health) : undefined, this.ui.detail ? this.data.detail : undefined];
+    const today = this.ui.view === "today";
+    return [this.data[this.ui.view], today ? withoutReadTime(this.data.health) : undefined, today ? this.data.plan : undefined, this.ui.detail ? this.data.detail : undefined];
   }
 
   stop(): void {
@@ -253,8 +254,14 @@ export class Controller {
     switch (view) {
       case "today":
         return this.load("today", async () => {
-          const [today, health] = await Promise.all([api.today(), api.health().catch(() => undefined)]);
-          return { today, health };
+          const date = this.today();
+          // To plan and the strip of days keep their last read when only that read fails.
+          const [today, health, plan] = await Promise.all([
+            api.today(),
+            api.health().catch(() => undefined),
+            api.plan(date).then((p) => ({ date, ...p }), () => this.data.plan),
+          ]);
+          return { today, health, plan };
         }, (value) => (this.data = { ...this.data, ...value }), fresh);
       case "agents":
         return this.load("agents", () => api.agents(), (agents) => (this.data = { ...this.data, agents }), fresh);

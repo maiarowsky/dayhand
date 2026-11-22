@@ -7,7 +7,6 @@ import { formatTimestamp } from "../render/format.js";
 import { addDays } from "../when/calendar.js";
 import { whenText } from "./effects.js";
 import { derive, contentHeight, type Snapshot } from "./model.js";
-import { healthRow } from "./health.js";
 import { agentsScreen, approvalRows, approvalScreen } from "./screens/agents.js";
 import { projectToken } from "../projects.js";
 import { parseMove, parseQuickAdd } from "./quickadd.js";
@@ -71,13 +70,25 @@ function heading(s: Snapshot): Row {
         return viewLabel("agents");
     }
   })();
-  return [seg(` ${text}`, { bold: true }), ...filter];
+  const row: Row = [seg(` ${text}`, { bold: true }), ...filter];
+  const side = s.ui.view === "today" && !s.ui.detail && s.ui.mode.kind === "normal" ? planSwitch(s) : [];
+  const room = s.columns - rowWidth(row) - rowWidth(side) - 1;
+  return room > 0 && side.length ? [...row, seg(" ".repeat(room)), ...side] : row;
+}
+
+/** In a narrow terminal To plan is behind l: the way there with its count, or back with h. */
+function planSwitch(s: Snapshot): Row {
+  const { today } = derive(s);
+  if (today.beside || !s.data.today) return [];
+  if (today.showsPlan) return [seg("← h ", { bold: true }), seg(viewLabel("today"), { dim: true })];
+  const count = today.toPlan.reduce((n, section) => n + section.tasks.length, 0);
+  return [seg(`${t("section.toPlan")} (${count}) `, { dim: true }), seg("l →", { bold: true })];
 }
 
 function content(s: Snapshot, height: number): Screen {
   const { ui, data } = s;
   const width = s.columns;
-  const { sections, columns, days, lists } = derive(s);
+  const { today, columns, days, lists } = derive(s);
   if (ui.mode.kind === "help") return helpScreen(ui.mode.scroll, width, height);
   if (ui.mode.kind === "approval") return approvalScreen(ui.mode, s.timezone, width, height);
   if (ui.mode.kind === "edit") {
@@ -91,10 +102,12 @@ function content(s: Snapshot, height: number): Screen {
   if (!loaded) return messageScreen(waiting(s), height);
   const c = ui.cursor;
   switch (ui.view) {
-    case "today": {
-      const body = todayScreen(sections, c.today, s.today, width, height - 1);
-      return { rows: [data.health ? healthRow(data.health) : [], ...body.rows], hits: offsetHits(body.hits, 1) };
-    }
+    case "today":
+      return todayScreen(
+        { view: data.today!, parts: today, plan: data.plan, health: data.health, filter: ui.filter, cursor: c.today, now: s.now, timezone: s.timezone ?? data.today!.timezone },
+        width,
+        height,
+      );
     case "agents":
       return agentsScreen(data.agents!.controls, lists.agents, c.agents, s.today, width, height);
     case "board":

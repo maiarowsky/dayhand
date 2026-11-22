@@ -36,17 +36,21 @@ TODAY
 sample data:
 
 <p align="center">
-  <img src="docs/assets/terminal-today.webp" width="700" alt="dayhand ui in a terminal, Today: the views 1 to 5 on top, a red plan health line, the task you are working on now with its resume note, two overdue tasks, today's tasks with times and projects, one task done today and the main keys at the bottom">
+  <img src="docs/assets/terminal-today.webp" width="700" alt="dayhand ui in a terminal, Today as an agenda: the views 1 to 5 on top, a strip of the next fourteen days with today in reverse and dots for open tasks, one sentence about the day with its counts and two plan health items, the task you are working on now with its resume note, today's tasks with their times on the left and a coloured bar for their status, those without a time, done today folded, To plan beside it with an overdue task, two without a day and one tomorrow, and the main keys at the bottom">
 </p>
 
 It has five views: Today, the board (to do, in progress, done), the week, the trash and Agents.
 Enter opens a task with its history, which names who made each change (`app`, `cli` or
-`agent: <name>`), who claimed the work, its acceptance criteria, plan, proof and dependencies. The
-coloured line above Today sums up plan health, with the same counts as `dayhand health`.
+`agent: <name>`), who claimed the work, its acceptance criteria, plan, proof and dependencies.
+Today is an agenda, like Today in the Mac app: a strip of the next days, one sentence about the day
+that ends with what plan health asks of you, then the tasks by time with a bar in their status's
+colour, and **To plan** (overdue, without a day, the next three days) beside it from 120 columns or
+behind `l` in a narrower terminal.
 
 | Key | Does |
 |---|---|
-| `j` `k`, `h` `l` | Next and previous task; board column or week day |
+| `j` `k`, `h` `l` | Next and previous task; board column, week day, or Today and To plan |
+| `z` | Show or hide the tasks done today |
 | `Tab`, `1` to `5` | Next view; Today, Board, Week, Trash, Agents |
 | `a` | Add a task with a date phrase: `Call the accountant fri 2pm` |
 | `Space` or `x`, `s`, `n` | Done; start or stop; make it the task you are working on now |

@@ -2,6 +2,7 @@
 // language. English keeps the CLI's own formatters (render/format.ts), so its
 // screens read exactly as before; other languages take their day and month
 // names from Intl. Times stay HH:MM, the way they line up in columns.
+import stringWidth from "string-width";
 import { describeReminder, describeRepeat, formatDay, relativeDate } from "../render/format.js";
 import type { Reminder, Repeat } from "../render/model.js";
 import { daysBetween, yearOf } from "../when/calendar.js";
@@ -28,6 +29,14 @@ export function weekdayAndDay(date: string): [string, string] {
   const dayOfMonth = String(Number(date.slice(8, 10)));
   if (english()) return [formatDay(date).split(" ")[0]!, dayOfMonth];
   return [intlDay(date, { weekday: "short" }), dayOfMonth];
+}
+
+/** The weekday in at most three columns, for Today's strip of days: "Sun", "pon" (pon.), "nie" (niedz.), "日" (周日). */
+export function shortWeekday(date: string): string {
+  const name = weekdayAndDay(date)[0].replace(/\.$/, "");
+  if (stringWidth(name) <= 3) return name;
+  const chars = [...name];
+  return chars.every((char) => stringWidth(char) === 1) ? chars.slice(0, 3).join("") : intlDay(date, { weekday: "narrow" });
 }
 
 /** "today", "tomorrow", "yesterday", or "Fri 23 Oct" (with the year when not this year's). */

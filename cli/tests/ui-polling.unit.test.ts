@@ -51,9 +51,9 @@ afterEach(() => { controllers.splice(0).forEach((ui) => ui.stop()); vi.useRealTi
 
 describe("UI polling", () => {
   test.each([
-    ["today", ["list_today", "plan_health"]], ["board", ["board"]], ["week", ["list_all"]],
+    ["today", ["list_today", "plan_health", "list_all", "list_all"]], ["board", ["board"]], ["week", ["list_all"]],
     ["trash", ["list_trash"]], ["agents", ["get_agent_controls", "list_approvals", "list_all"]],
-  ] as const)("%s: five ticks read only the current view, Today with its health", async (view, reads) => {
+  ] as const)("%s: five ticks read only the current view, Today with its health and To plan", async (view, reads) => {
     const s = server();
     const ui = open(s.api, view);
     await ui.start();
@@ -65,7 +65,7 @@ describe("UI polling", () => {
       expect(s.count(reads[0])).toBe(tick);
       expect(s.count("plan_health")).toBe(view === "today" ? tick : 0);
     }
-    for (const read of reads) expect(s.count(read)).toBe(5);
+    for (const read of new Set<string>(reads)) expect(s.count(read)).toBe(5 * reads.filter((r) => r === read).length);
     expect(s.callTool).toHaveBeenCalledTimes(5 * reads.length);
     expect(s.count("get_settings")).toBe(0);
     expect(s.count("list_projects")).toBe(0);
@@ -84,25 +84,26 @@ describe("UI polling", () => {
     }
   });
 
-  test("an idle Today has 32 polling reads in the first hour and 24 per hour at the cap, versus 900 at the old 12-second cadence", async () => {
+  test("an idle Today has 64 polling reads in the first hour and 48 per hour at the cap, versus 1200 at the old 12-second cadence", async () => {
     expect(DEFAULT_INTERVAL_S).toBe(60);
     const s = server();
     await open(s.api).start();
-    expect(s.callTool).toHaveBeenCalledTimes(4); // settings + projects + Today + health
+    expect(s.callTool).toHaveBeenCalledTimes(6); // settings + projects + Today + health + To plan's two lists
     s.callTool.mockClear();
     await advance(3600);
     expect(s.count("list_today")).toBe(16);
     expect(s.count("plan_health")).toBe(16);
-    expect(s.callTool).toHaveBeenCalledTimes(32);
-    // At the cap: twelve ticks an hour, each reading Today and its health.
+    expect(s.count("list_all")).toBe(32);
+    expect(s.callTool).toHaveBeenCalledTimes(64);
+    // At the cap: twelve ticks an hour, each reading Today, its health and To plan.
     s.callTool.mockClear();
     await advance(3600);
     expect(s.count("list_today")).toBe(12);
     expect(s.count("plan_health")).toBe(12);
-    expect(s.callTool).toHaveBeenCalledTimes(24);
+    expect(s.callTool).toHaveBeenCalledTimes(48);
   });
 
-  test("changing data keeps Today at 120 polling reads per hour, without project reads", async () => {
+  test("changing data keeps Today at 240 polling reads per hour, without project reads", async () => {
     const s = server();
     await open(s.api).start();
     s.callTool.mockClear();
@@ -112,7 +113,7 @@ describe("UI polling", () => {
     }
     expect(s.count("list_today")).toBe(60);
     expect(s.count("plan_health")).toBe(60);
-    expect(s.callTool).toHaveBeenCalledTimes(120);
+    expect(s.callTool).toHaveBeenCalledTimes(240);
   });
 
   test("any key resets backoff without a read, and R, a view switch and a mutation read projects immediately", async () => {
@@ -222,7 +223,13 @@ describe("UI polling", () => {
     expect(ui.snapshot().data.health).toBeDefined();
     s.callTool.mockClear();
     await advance(60);
-    expect(s.callTool.mock.calls).toEqual([["list_today", {}], ["plan_health", {}]]);
+    const openTasks = { status: ["todo", "doing"], limit: 200 };
+    expect(s.callTool.mock.calls).toEqual([
+      ["list_today", {}],
+      ["plan_health", {}],
+      ["list_all", { ...openTasks, dueAfter: "2026-10-22", dueBefore: "2026-11-06" }],
+      ["list_all", openTasks],
+    ]);
   });
 
   test("offline retry text follows the backed-off interval and a key restores it", async () => {
