@@ -201,7 +201,6 @@ QVariantMap AppModel::selectedTask() const
         QVariantList links;
         for (const TaskLink &link : task.links)
             links.append(QVariantMap{{u"url"_s, link.url}, {u"title"_s, link.title.value_or(link.url)}});
-        detail.insert(u"status"_s, statusWire(task.status));
         detail.insert(u"note"_s, task.note.value_or(QString()));
         detail.insert(u"dueDate"_s, task.dueDate.value_or(QString()));
         detail.insert(u"dueTime"_s, task.dueTime.value_or(QString()));
