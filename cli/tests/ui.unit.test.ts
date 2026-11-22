@@ -13,7 +13,7 @@ import { ClipboardError, taskText } from "../src/ui/clipboard.js";
 import { handleKey } from "../src/ui/handle.js";
 import { chunkKeys, KEY_GROUPS, keyName, keysText } from "../src/ui/keys.js";
 import { editLine, insert, line } from "../src/ui/line.js";
-import { todaySections, weekDays, weekStart } from "../src/ui/lists.js";
+import { todayLayout, weekDays, weekStart } from "../src/ui/lists.js";
 import { derive } from "../src/ui/model.js";
 import { parseMove, parseQuickAdd } from "../src/ui/quickadd.js";
 import { detailRows } from "../src/ui/screens/detail.js";
@@ -183,19 +183,28 @@ describe("line editor and keys", () => {
 });
 
 describe("lists", () => {
-  test("Today: the now task leads and is not repeated; the filter narrows", () => {
+  test("Today: the now task leads and is not repeated; timed tasks by time, then those without one; the filter narrows", () => {
     const now = task("Invoice", { isNow: true, status: "doing", resumeNote: "rate in mail" });
-    const view: TodayView = { date: TODAY, timezone: "Europe/London", now, overdue: [task("Rent", { dueDate: "2026-10-22", overdue: true })], today: [now, task("Plan")], doneToday: [] };
-    expect(todaySections(view).map((s) => [s.key, s.tasks.map((t) => t.title)])).toEqual([
-      ["now", ["Invoice"]],
+    const rent = task("Rent", { dueDate: "2026-10-22", overdue: true });
+    const view: TodayView = { date: TODAY, timezone: "Europe/London", now, overdue: [rent], today: [now, task("Plan"), task("Late call", { dueTime: "16:00" }), task("Standup", { dueTime: "09:00" })], doneToday: [task("Post", { status: "done" })] };
+    const layout = (filter = "", beside = false) => todayLayout(view, undefined, { filter, beside, doneOpen: false });
+    const keys = (sections: ReturnType<typeof layout>["agenda"]) => sections.map((s) => [s.key, s.tasks.map((t) => t.title)]);
+    expect(keys(layout().agenda)).toEqual([
       ["overdue", ["Rent"]],
-      ["today", ["Plan"]],
+      ["now", ["Invoice"]],
+      ["today", ["Standup", "Late call"]],
+      ["anyTime", ["Plan"]],
+      ["done", ["Post"]],
     ]);
-    // Empty sections go, except Today, which says "no match".
-    expect(todaySections(view, "mail").map((s) => [s.key, s.tasks.length, s.empty])).toEqual([
+    expect(layout().agenda.find((s) => s.key === "done")?.folded).toBe(true);
+    // Beside the agenda, To plan takes the overdue tasks.
+    expect(keys(layout("", true).agenda).map(([key]) => key)).toEqual(["now", "today", "anyTime", "done"]);
+    expect(keys(layout("", true).toPlan)).toEqual([["overdue", ["Rent"]]]);
+    // Empty sections go; with nothing for the day, the timed section says "no match".
+    expect(layout("mail").agenda.map((s) => [s.key, s.tasks.length, s.empty])).toEqual([
       ["now", 1, undefined],
-      ["today", 0, "no match"],
     ]);
+    expect(layout("zzz").agenda.map((s) => [s.key, s.tasks.length, s.empty])).toEqual([["today", 0, "no match"]]);
   });
 
   test("the week starts on Monday; open before done, untimed before timed", () => {
@@ -296,14 +305,12 @@ describe("keys → state and effects", () => {
 describe("agent screens and decisions", () => {
   const view: TodayView = { date: TODAY, timezone: ZONE.timezone, now: null, overdue: [], today: [], doneToday: [] };
 
-  test("Today puts one coloured health line above the task sections and keeps mouse targets aligned", async () => {
+  test("Today's sentence counts the day and ends with what plan health asks for, in its colour; mouse targets stay aligned", async () => {
     const planned = task("A planned task");
     const { api, state } = fakeApi({ ...view, today: [planned] });
     const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
     for (const [report, colour, text] of [
-      [health(), "green", "Due today: 0 · In progress: 0 · Done today: 0"],
       [health({ proposals: { count: 2 } }), "yellow", "Proposals in the inbox: 2"],
-      [health({ overdue: { count: 1, tasks: [] } }), "red", "Overdue: 1"],
       [health({ blocked: { count: 1, tasks: [] } }), "red", "Blocked: 1"],
       [health({ expiredClaims: { count: 1, tasks: [] } }), "red", "Claims run out: 1"],
       [health({ agentsPaused: true }), "yellow", "Agents are paused"],
@@ -312,11 +319,15 @@ describe("agent screens and decisions", () => {
     ] as const) {
       state.health = report;
       await ui.refresh();
-      const row = ui.frame().rows[2]!;
-      expect(rowsText([row])).toContain(text);
-      expect(row[0]?.color).toBe(colour);
-      expect(rowsText(ui.frame().rows).indexOf(text)).toBeLessThan(rowsText(ui.frame().rows).indexOf("TODAY (1)"));
+      const rows = ui.frame().rows;
+      expect(rows.flat().find((part) => part.text === text)?.color).toBe(colour);
+      expect(rowsText(rows).indexOf(text)).toBeLessThan(rowsText(rows).indexOf("A planned task"));
     }
+    // What Today counts on its own is not repeated from the report.
+    state.health = health({ overdue: { count: 1, tasks: [] }, dueToday: { count: 1, tasks: [] } });
+    await ui.refresh();
+    expect(rowsText(ui.frame().rows)).toMatch(/^ Good morning\. 1 on today's plan\.$/m);
+    expect(rowsText(ui.frame().rows)).not.toContain("Overdue: 1");
     const target = ui.frame().hits.find((h) => h.target.kind === "task")!;
     expect(rowsText([ui.frame().rows[target.y]!])).toContain("A planned task");
     ui.mouse({ button: 0, x: target.x0, y: target.y, release: false });
@@ -466,6 +477,7 @@ function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
     agents: async () => (check(), state.agents),
     board: async () => (check(), board),
     week: async () => (check(), [...today.today, ...today.overdue]),
+    plan: async () => (check(), { upcoming: state.view.today.filter((t) => t.status !== "done"), noDay: [] }),
     trash: async () => (check(), []),
     task: async (id) => (check(), { task: [...today.today, ...today.overdue, ...state.agents.proposals].find((t) => t.id === id)!, history: [{ at: NOW, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "update", before: { title: "Old" }, after: { title: "New" } }] } as Detail),
     change: async <T>(tool: string, args: Record<string, unknown>) => {
@@ -636,7 +648,7 @@ describe("controller", () => {
     await ui.refresh();
     const text = () => rowsText(ui.frame().rows);
     expect(text()).toContain("Today, Fri 23 Oct 2026 · Europe/London");
-    expect(text()).toMatch(/OVERDUE \(1\)\n› #\d+ ○ yesterday Pay rent\n/);
+    expect(text()).toMatch(/OVERDUE \(1\)\n› +▌ #\d+ ○ yesterday Pay rent\n/);
     state.down = true;
     await ui.refresh();
     expect(text()).toContain("● offline");
@@ -784,7 +796,7 @@ describe("controller", () => {
       setLanguage("pl");
       const polish = rowsText(ui.frame().rows);
       expect(polish).toContain("Dzisiaj, pt., 23 paź 2026 · Europe/London");
-      expect(polish).toMatch(/ZALEGŁE \(1\)\n› #\d+ ○ wczoraj Pay rent\n/);
+      expect(polish).toMatch(/ZALEGŁE \(1\)\n› +▌ #\d+ ○ wczoraj Pay rent\n/);
       expect(polish).toContain("? pomoc");
       setLanguage("ja");
       for (const key of ["2", "3", "4", "5", "?"]) {

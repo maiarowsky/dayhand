@@ -33,17 +33,34 @@ phrases in your time zone from the server settings ([dates](cli.md#topic-dates))
 dayhand ui
 ```
 
-It opens full screen with five views: **Today** (a coloured plan-health line, overdue, the now task with its resume note, today, done
-today), the **Board** (to do, in progress, done), the **Week** (Monday to Sunday as bars, the selected day
+It opens full screen with five views: **Today**, the **Board** (to do, in progress, done), the **Week** (Monday to Sunday as bars, the selected day
 in full below) the **Trash** and **Agents**. `Enter` opens a task with its history, which names who made each change:
 `app`, `cli` or `agent: <name>`, so an agent's edits stand out; details also show who claimed the work, the acceptance criteria, plan, proof and what it waits on or is blocked by.
+
+**Today** is an agenda, like Today in the Mac app:
+
+- a strip of the next days (as many as fit, up to 14), today in reverse and a dot for each open task, up
+  to three; a terminal shorter than 18 rows leaves it out;
+- one sentence about the day: how many tasks are on today's plan, how many have a time, repeat or are
+  overdue, then what plan health asks of you (approval requests, blocked tasks, agents paused…) in its colour;
+- the now task with its resume note, today's tasks by time with the time on the left and a bar `▌` in the
+  colour of the status (blue to do, yellow in progress, green done, red overdue), those without a time
+  under **Any time**, and **Done today** folded: `z` unfolds and folds it;
+- **To plan**: the overdue tasks, the open tasks without a day and those of the next three days. From
+  120 columns it is a column beside Today, `l` and `h` jump between the two and `j` walks on into it.
+  In a narrower terminal the overdue tasks lead Today and `l` shows To plan in its place (`h` or `Esc`
+  goes back); the heading says how many tasks it holds.
+
+Without colour (`NO_COLOR`, `--no-color`) the status marks `○ ◐ ✔`, the headings and the reversed date
+still say what the colours do.
 
 The keys most people need:
 
 | Key | Does |
 |---|---|
 | `j` `k` (or the arrows) | Next and previous task |
-| `h` `l` | Board column, week day |
+| `h` `l` | Board column, week day; in Today, Today and To plan |
+| `z` | In Today: show or hide the tasks done today |
 | `Tab`, `1` `2` `3` `4` `5` | Next view; Today, Board, Week, Trash, Agents |
 | `p`, `A`, `X` | In Agents: pause or resume changes; accept or reject a proposal (`Enter` opens a request, a digit picks an option, `Enter` confirms) |
 | `a` | Add a task: `Pay rent fri 2pm #home` |
@@ -68,7 +85,7 @@ keys follow vim and lazygit.
   unchanged polls up to 300 seconds; any key or changed data restores the base interval
   (`--interval 10` to `300`). Reads stay within the key's limits of 120 reads and 60 changes a minute;
   `R` refreshes now. Without a connection it keeps the last data on screen, says so in red, and tries again.
-  Ticks read only the current view (Today with its health line) and open task. Projects
+  Ticks read only the current view (Today with plan health and To plan) and open task. Projects
   reload on entry, view changes, your changes and `R`; projects also reload when
   a task on screen names a project created elsewhere. A new project without tasks reaches quick-add
   and filters after `R` or a view change. Your changes still refresh immediately.

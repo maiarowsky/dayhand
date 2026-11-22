@@ -14,9 +14,9 @@ import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
 import { handleKey, type Effect } from "./handle.js";
 import { weekStart } from "./lists.js";
-import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
+import { BESIDE_COLUMNS, derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
-import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
+import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type Lists, type UiState, type ViewName } from "./state.js";
 
 export const DEFAULT_INTERVAL_S = 60;
 const MAX_INTERVAL_S = 300;
@@ -195,7 +195,8 @@ export class Controller {
   }
 
   private shown(): unknown[] {
-    return [this.data[this.ui.view], this.ui.view === "today" ? withoutReadTime(this.data.health) : undefined, this.ui.detail ? this.data.detail : undefined];
+    const today = this.ui.view === "today";
+    return [this.data[this.ui.view], today ? withoutReadTime(this.data.health) : undefined, today ? this.data.plan : undefined, this.ui.detail ? this.data.detail : undefined];
   }
 
   stop(): void {
@@ -206,8 +207,10 @@ export class Controller {
 
   resize(columns: number, rows: number): void {
     if (columns === this.columns && rows === this.rows) return;
-    this.columns = columns;
-    this.rows = rows;
+    this.relayout(() => {
+      this.columns = columns;
+      this.rows = rows;
+    });
     this.emit();
   }
 
@@ -253,8 +256,14 @@ export class Controller {
     switch (view) {
       case "today":
         return this.load("today", async () => {
-          const [today, health] = await Promise.all([api.today(), api.health().catch(() => undefined)]);
-          return { today, health };
+          const date = this.today();
+          // To plan and the strip of days keep their last read when only that read fails.
+          const [today, health, plan] = await Promise.all([
+            api.today(),
+            api.health().catch(() => undefined),
+            api.plan(date).then((p) => ({ date, ...p }), () => this.data.plan),
+          ]);
+          return { today, health, plan };
         }, (value) => (this.data = { ...this.data, ...value }), fresh);
       case "agents":
         return this.load("agents", () => api.agents(), (agents) => (this.data = { ...this.data, agents }), fresh);
@@ -278,10 +287,12 @@ export class Controller {
         const value = await get();
         if (this.stopped) return;
         const before = this.selectedId();
+        const completing = before !== undefined && before === this.completingTaskId;
+        const wasSplit = completing ? derive(this.snapshot()).lists.todaySplit : undefined;
         put(value);
         const lists = derive(this.snapshot()).lists;
         // Completing a task keeps its list position instead of following it to Done.
-        this.ui = before && before === this.completingTaskId ? keepRow(this.ui, lists) : reanchor(this.ui, before, lists);
+        this.ui = completing ? keepRow(this.ui, lists, wasSplit) : reanchor(this.ui, before, lists);
         this.conn = { state: "online", at: this.now() };
       } catch (error) {
         this.failed(error);
@@ -335,7 +346,9 @@ export class Controller {
     const lists = derive(this.snapshot()).lists;
     const before = this.ui.mode;
     const { state, effect } = handleKey(this.ui, name, lists);
-    this.ui = this.clampScroll(state);
+    if (state.doneOpen !== this.ui.doneOpen) this.relayout(() => (this.ui = state));
+    else this.ui = state;
+    this.ui = this.clampScroll(this.ui);
     this.emit();
     if (effect) this.run(effect, lists, before);
   }
@@ -372,6 +385,28 @@ export class Controller {
     else if (this.ui.view === "trash") this.ui = { ...this.ui, cursor: { ...c, trash: target.index } };
     if ((target.kind === "task" || target.kind === "agent") && before !== undefined && before === this.selectedId()) return this.key("enter");
     this.emit();
+  }
+
+  /**
+   * A change of layout only (z, a resize): the task under the cursor in Today,
+   * whatever view is shown and open details aside, stays under it, a narrow
+   * terminal showing the panel that lists it; folded away, the cursor stays in
+   * its column.
+   */
+  private relayout(change: () => void): void {
+    const was = derive(this.snapshot()).lists;
+    const inToday = (ui: UiState): UiState => ({ ...ui, view: "today", detail: undefined });
+    const id = selectedTask(inToday(this.ui), was)?.id;
+    change();
+    if (this.columns >= BESIDE_COLUMNS) this.ui = { ...this.ui, toPlan: false };
+    if (!id) return;
+    const layout = (toPlan: boolean) => derive({ ...this.snapshot(), ui: { ...this.ui, toPlan } }).lists;
+    const holds = (lists: Lists) => lists.today.some((task) => task.id === id);
+    if (!holds(layout(this.ui.toPlan)) && holds(layout(!this.ui.toPlan))) this.ui = { ...this.ui, toPlan: !this.ui.toPlan };
+    const now = layout(this.ui.toPlan);
+    const { view, detail } = this.ui;
+    const cursor = inToday(this.ui);
+    this.ui = { ...(holds(now) ? reanchor(cursor, id, now) : keepRow(cursor, now, was.todaySplit)), view, detail };
   }
 
   /** Details and help scroll no further than their last row, so k works at once after G. */

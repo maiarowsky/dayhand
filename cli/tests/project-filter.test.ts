@@ -29,6 +29,7 @@ test("every live task view resolves a canonical project before filtering IDs, ev
   try {
     await ui.refresh();
     ui.key("/"); ui.paste("+WEB-shop"); ui.key("enter");
+    ui.key("z"); // Today's done tasks unfolded, so the filter is checked on them too.
     for (const archived of [false, true]) {
       if (archived) await dayhandJson(key, ["project", "archive", "Web-shop"]);
       for (const [binding, view, expected] of [

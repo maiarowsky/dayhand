@@ -48,6 +48,7 @@ export const KEY_GROUPS: KeyGroup[] = [
     bindings: [
       { keys: "j k  ↓ ↑", does: "keys.move.next" },
       { keys: "h l  ← →", does: "keys.move.column" },
+      { keys: "z", does: "keys.move.done" },
       { keys: "g G  Home End", does: "keys.move.ends" },
       { keys: "C-d C-u  PgDn PgUp", does: "keys.move.page" },
       { keys: "Enter", does: "keys.move.open" },
