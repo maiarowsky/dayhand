@@ -6,7 +6,8 @@
   <summary>Today's tasks, quick add and reminders</summary>
   <description>
     <p>
-      Dayhand shows what is overdue, what you work on now and what is planned for today. Add a task with a date
+      Dayhand shows what is overdue, what you work on now and what is planned for today, by time, with the next
+      days at a glance and the tasks that still need a day. Add a task with a date
       at the end of the line ("Call the accountant fri 2pm"), tick tasks off, and get reminders as desktop
       notifications. It works offline and syncs with your own Dayhand server.
     </p>
@@ -21,6 +22,15 @@
     <binary>dayhand-qt</binary>
   </provides>
   <releases>
+    <release version="0.4.0" date="2026-11-22">
+      <description>
+        <p>Today is an agenda, as on the Mac: a strip of the next two weeks with a dot for each open task, one sentence
+          about the day (tasks on today's plan, at a set time, repeating, overdue), and the tasks by time with a bar in
+          their status's colour.</p>
+        <p>To plan lists the overdue tasks, those without a day and the next three days'. A wide window shows it on the
+          right until a task is opened; a narrow one folds it in at the end of Today.</p>
+      </description>
+    </release>
     <release version="0.3.0" date="2026-10-28">
       <description>
         <p>Labels are gone: Dayhand sorts tasks into projects only. The app removes the labels it kept on this computer.</p>

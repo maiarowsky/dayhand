@@ -5,6 +5,7 @@
 #include "TaskRules.h"
 #include "TestSupport.h"
 #include "Translations.h"
+#include "TodayOverview.h"
 #include "TodaySections.h"
 
 #include <QTest>
@@ -135,6 +136,78 @@ private slots:
         QVERIFY(s.isEmpty());
         QVERIFY(s.done.isEmpty());
         QVERIFY(todaySections({}, utc(u"2026-10-22T10:00"_s), london).isEmpty());
+    }
+
+    // The macOS app's TodayAgendaTests, case for case.
+    void theOverviewCountsTheDaysAndListsWhatNeedsADay()
+    {
+        const auto weekly = [](TaskItem &t) {
+            t.repeat = RepeatRule();
+            t.repeat->every = RepeatEvery::Week;
+        };
+        const QList<TaskItem> tasks{
+            task(u"call"_s, u"2026-10-22"_s, u"14:00"_s, TaskStatus::Todo, 10),
+            task(u"plants"_s, u"2026-10-22"_s, {}, TaskStatus::Todo, 10, weekly),
+            task(u"invoice"_s, u"2026-10-20"_s, {}, TaskStatus::Todo, 10),
+            task(u"idea"_s, {}, {}, TaskStatus::Todo, 9),
+            task(u"dentist"_s, u"2026-10-23"_s, u"10:00"_s, TaskStatus::Todo, 10),
+            task(u"cards"_s, u"2026-10-25"_s, {}, TaskStatus::Todo, 10),
+            task(u"far"_s, u"2026-10-26"_s, {}, TaskStatus::Todo, 10),
+            task(u"ran"_s, u"2026-10-22"_s, {}, TaskStatus::Done, 10,
+                 [](TaskItem &t) { t.completedAt = utc(u"2026-10-22T09:00"_s); }),
+            task(u"old-idea"_s, {}, {}, TaskStatus::Todo, 1, [](TaskItem &t) { t.archivedAt = 1; }),
+        };
+        const TodaySections s = todaySections(tasks, utc(u"2026-10-22T10:00"_s), warsaw);
+        const TodayOverview overview = todayOverview(tasks, s);
+
+        QCOMPARE(overview.days.size(), 14);
+        QCOMPARE(overview.days.first().date, u"2026-10-22"_s);
+        QCOMPARE(overview.days.last().date, u"2026-11-04"_s);
+        // Open tasks only: the done one does not weigh on today.
+        QList<int> open;
+        for (const auto &day : overview.days.mid(0, 5))
+            open.append(day.open);
+        QCOMPARE(open, (QList<int>{2, 1, 0, 1, 1}));
+        QCOMPARE(overview.timed, 1);
+        QCOMPARE(overview.repeating, 1);
+        QCOMPARE(ids(overview.noDay), QStringList{u"idea"_s});
+        // The next three days, not the fourth.
+        QCOMPARE(ids(overview.comingUp), (QStringList{u"dentist"_s, u"cards"_s}));
+        QCOMPARE(ids(s.overdue), QStringList{u"invoice"_s});
+    }
+
+    void theNowTaskCountsForTodayOnlyWhenDueTodayAndIsNeverToPlan()
+    {
+        const auto now = [](TaskItem &t) {
+            t.isNow = true;
+            t.status = TaskStatus::Doing;
+        };
+        // Worked on now but due tomorrow: shown once, as Now, not again under Coming up.
+        QList<TaskItem> tasks{
+            task(u"focus"_s, u"2026-10-23"_s, u"09:00"_s, TaskStatus::Todo, 1, now),
+            task(u"dentist"_s, u"2026-10-23"_s, u"10:00"_s),
+            task(u"idea"_s),
+        };
+        TodaySections s = todaySections(tasks, utc(u"2026-10-22T10:00"_s), london);
+        TodayOverview overview = todayOverview(tasks, s);
+        QCOMPARE(ids(overview.comingUp), QStringList{u"dentist"_s});
+        QCOMPARE(ids(overview.noDay), QStringList{u"idea"_s});
+        QCOMPARE(overview.timed, 0);
+        QCOMPARE(overview.days.value(1).open, 2);
+
+        // Due today, it counts with today's: at a set time.
+        tasks[0].dueDate = u"2026-10-22"_s;
+        s = todaySections(tasks, utc(u"2026-10-22T10:00"_s), london);
+        overview = todayOverview(tasks, s);
+        QCOMPARE(overview.timed, 1);
+        QCOMPARE(overview.days.first().open, 1);
+
+        // Without a day, it is not in No day either.
+        tasks[0].dueDate.reset();
+        tasks[0].dueTime.reset();
+        s = todaySections(tasks, utc(u"2026-10-22T10:00"_s), london);
+        QCOMPARE(ids(todayOverview(tasks, s).noDay), QStringList{u"idea"_s});
+        QCOMPARE(todayOverview({}, TodaySections{}), TodayOverview{});
     }
 
     void titlesAreTrimmedAndMustBe1To500Characters()

@@ -93,6 +93,45 @@ QString AppModel::dateTitle() const
     return Formatting::dayName(sections.date);
 }
 
+QVariantList AppModel::days() const
+{
+    QVariantList out;
+    for (const TodayOverview::Day &day : overview.days) {
+        const auto civil = CivilDate::parse(day.date);
+        out.append(QVariantMap{
+            {u"date"_s, day.date},
+            {u"weekday"_s, Formatting::shortWeekday(day.date)},
+            {u"number"_s, civil ? civil->day : 0},
+            {u"open"_s, day.open},
+            {u"today"_s, day.date == sections.date},
+            {u"label"_s, tr("%1: %n open", "a day of the strip: Sat 24 Oct: 2 open", day.open).arg(Formatting::dayName(day.date))},
+        });
+    }
+    return out;
+}
+
+QString AppModel::greeting() const
+{
+    const int hour = HelmDates::localAt(clock(), reminderSettings.timezone).time.hour;
+    if (hour >= 5 && hour < 12)
+        return tr("Good morning.");
+    if (hour >= 12 && hour < 18)
+        return tr("Good afternoon.");
+    return tr("Good evening.");
+}
+
+QVariantMap AppModel::daySummary() const
+{
+    const int planned = int(sections.today.size()) + (sections.now ? 1 : 0);
+    const int overdueTasks = int(sections.overdue.size());
+    const QString day = planned == 0 ? tr("Nothing planned for today.") : tr("%n on today's plan.", nullptr, planned);
+    return {{u"sentence"_s, tr("%1 %2", "a greeting, then how many tasks today has: Good morning. 6 on today's plan.")
+                                .arg(greeting(), day)},
+            {u"timed"_s, overview.timed > 0 ? tr("%n at a set time", nullptr, overview.timed) : QString()},
+            {u"repeating"_s, overview.repeating > 0 ? tr("%n repeating", nullptr, overview.repeating) : QString()},
+            {u"overdue"_s, overdueTasks > 0 ? tr("%n overdue", nullptr, overdueTasks) : QString()}};
+}
+
 QString AppModel::statusText() const
 {
     return Formatting::status(status, pending, offlineMode()).value_or(QString());
@@ -116,11 +155,11 @@ void AppModel::setOverdueColor(const QColor &color)
     emit themeChanged();
 }
 
-QVariantList AppModel::rows(const QList<TaskItem> &tasks, bool overdue) const
+QVariantList AppModel::rows(const QList<TaskItem> &tasks, bool showsDay) const
 {
     QVariantList out;
     for (const TaskItem &task : tasks)
-        out.append(row(task, overdue));
+        out.append(row(task, showsDay));
     return out;
 }
 
@@ -194,14 +233,18 @@ void AppModel::closeDetails()
     emit selectedTaskChanged();
 }
 
-QVariantMap AppModel::row(const TaskItem &task, bool overdue) const
+QVariantMap AppModel::row(const TaskItem &task, bool showsDay) const
 {
+    const bool today = task.dueDate == sections.date;
     return {{u"id"_s, task.localId},
             {u"title"_s, task.title},
-            {u"detail"_s, Formatting::detailLine(task, sections.date, overdue)},
+            {u"detail"_s, Formatting::detailLine(task, sections.date, showsDay)},
+            // The agenda's time column: a time on today, nothing for other days.
+            {u"time"_s, today && !showsDay ? task.dueTime.value_or(QString()) : QString()},
+            {u"status"_s, statusWire(task.status)},
             {u"done"_s, task.status == TaskStatus::Done},
             {u"isNow"_s, task.isNow},
-            {u"overdue"_s, overdue},
+            {u"overdue"_s, !task.isNow && HelmDates::isOverdue(task, sections.date)},
             {u"resumeNote"_s, task.resumeNote.value_or(QString())}};
 }
 
@@ -214,12 +257,16 @@ void AppModel::reload()
         const ReminderSettings settings = repository->settings();
         const qint64 waiting = repository->pendingCount();
         const TodaySections next = dayhand::todaySections(tasks, clock(), settings.timezone);
+        const TodayOverview nextOverview = dayhand::todayOverview(tasks, next);
         const bool settingsMoved = settings != reminderSettings;
         const bool tasksMoved = tasks != allTasks || settingsMoved;
         allTasks = std::move(tasks);
         reminderSettings = settings;
-        if (next != sections) {
+        const QString nextGreeting = greeting();
+        if (next != sections || nextOverview != overview || nextGreeting != shownGreeting) {
             sections = next;
+            overview = nextOverview;
+            shownGreeting = nextGreeting;
             emit sectionsChanged();
         }
         if (waiting != pending) {

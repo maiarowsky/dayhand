@@ -129,6 +129,15 @@ QQuickWindow *windowTitled(const QString &title)
     return nullptr;
 }
 
+/// The visible task row titled [title] (agenda or To plan), or nothing.
+QQuickItem *rowTitled(QQuickWindow *window, const QString &title)
+{
+    for (QQuickItem *row : items(window, u"taskRow"_s))
+        if (row->isVisible() && row->property("task").toMap().value(u"title"_s).toString() == title)
+            return row;
+    return nullptr;
+}
+
 /// Saves a picture of [window] when `DAYHAND_SNAPSHOT_DIR` names a folder (for the report; tests pass without it).
 void snapshot(QQuickWindow *window, const QString &name)
 {
@@ -154,6 +163,7 @@ private slots:
     void paletteFileSetsColours();
     void secondCopyHandsItsRequestOver();
     void windowShowsTodayAndAddsTasks();
+    void agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails();
     void detailsEditTheLocalRowAndKeepSelection();
     void quickAddWindowAddsAndCloses();
     void connectOpensWhenNotConnected();
@@ -390,6 +400,8 @@ void TestApp::windowShowsTodayAndAddsTasks()
     auto *window = qobject_cast<QQuickWindow *>(desktop.qmlEngine().rootObjects().value(0));
     QVERIFY(window);
     QCOMPARE(window->title(), u"Dayhand"_s);
+    // A narrow window: no To plan beside the agenda, so the overdue tasks lead it.
+    window->resize(440, 720);
     QVERIFY(QTest::qWaitForWindowExposed(window));
     window->requestActivate();
     QVERIFY(QTest::qWaitForWindowActive(window));
@@ -433,6 +445,138 @@ void TestApp::windowShowsTodayAndAddsTasks()
     click(window, item(window, u"doneHeader"_s));
     QTRY_COMPARE(item(window, u"doneHeader"_s)->property("text").toString(), u"▾ Done (2)"_s);
     snapshot(window, u"today-done-open.png"_s);
+}
+
+void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
+{
+    QTemporaryDir dir;
+    auto now = std::make_shared<qint64>(utc(u"2026-10-23T10:00"_s));
+    Desktop desktop(environment(now, dir.path()));
+    AppModel &model = desktop.appModel();
+    model.quickAdd(u"Send the invoice"_s);
+    *now = utc(u"2026-10-24T09:10"_s); // a Saturday morning
+    model.reload();
+    model.quickAdd(u"Call the bank 2pm"_s);
+    model.quickAdd(u"Water the plants"_s);
+    model.quickAdd(u"Dentist mon 10am"_s);
+    model.quickAdd(u"Write the cards tue"_s);
+    model.quickAdd(u"Far away wed"_s);
+    model.quickAdd(u"Idea for the garden"_s);
+    model.clearDue(idOf(model, u"Idea for the garden"_s));
+    model.quickAdd(u"Book train tickets"_s);
+    model.toggleDone(idOf(model, u"Book train tickets"_s));
+    TaskItem plants = *model.database().task(idOf(model, u"Water the plants"_s));
+    plants.repeat = RepeatRule();
+    plants.repeat->every = RepeatEvery::Week;
+    model.database().save(plants);
+    model.reload();
+    model.useOffline();
+
+    // The model: the strip of days, the sentence about the day and To plan, with the Mac's semantics.
+    const QVariantList days = model.days();
+    QCOMPARE(days.size(), 14);
+    QCOMPARE(days.first().toMap().value(u"date"_s).toString(), u"2026-10-24"_s);
+    QVERIFY(days.first().toMap().value(u"today"_s).toBool());
+    QCOMPARE(days.first().toMap().value(u"weekday"_s).toString(), u"Sat"_s);
+    QList<int> open;
+    for (const QVariant &day : days.mid(0, 5))
+        open.append(day.toMap().value(u"open"_s).toInt());
+    QCOMPARE(open, (QList<int>{2, 0, 1, 1, 1}));
+    QCOMPARE(days.value(2).toMap().value(u"label"_s).toString(), u"Mon 26 Oct: 1 open"_s);
+    QVariantMap summary = model.daySummary();
+    QCOMPARE(summary.value(u"sentence"_s).toString(), u"Good morning. 2 on today's plan."_s);
+    QCOMPARE(summary.value(u"timed"_s).toString(), u"1 at a set time"_s);
+    QCOMPARE(summary.value(u"repeating"_s).toString(), u"1 repeating"_s);
+    QCOMPARE(summary.value(u"overdue"_s).toString(), u"1 overdue"_s);
+    QCOMPARE(titles(model.noDay()), QStringList{u"Idea for the garden"_s});
+    // The next three days, not the fourth.
+    QCOMPARE(titles(model.comingUp()), (QStringList{u"Dentist"_s, u"Write the cards"_s}));
+    QCOMPARE(model.comingUp().first().toMap().value(u"detail"_s).toString(), u"Mon 26 Oct, 10:00"_s);
+    QCOMPARE(model.today().first().toMap().value(u"time"_s).toString(), u"14:00"_s);
+
+    QVERIFY(desktop.start({}));
+    auto *window = qobject_cast<QQuickWindow *>(desktop.qmlEngine().rootObjects().value(0));
+    QVERIFY(window);
+    window->resize(1000, 720);
+    QVERIFY(QTest::qWaitForWindowExposed(window));
+    window->requestActivate();
+    QVERIFY(QTest::qWaitForWindowActive(window));
+
+    // A wide window with nothing open: the agenda and To plan beside it, the overdue task there and not in the agenda.
+    QTRY_VERIFY(item(window, u"toPlanPanel"_s));
+    QVERIFY(item(window, u"dayStrip"_s));
+    int cells = 0;
+    for (QQuickItem *cell : items(window, u"dayCell"_s))
+        cells += cell->isVisible() ? 1 : 0;
+    QVERIFY2(cells >= 7 && cells <= 14, qPrintable(QString::number(cells)));
+    QCOMPARE(item(window, u"daySentence"_s)->property("text").toString(), u"Good morning. 2 on today's plan."_s);
+    QVERIFY(item(window, u"summaryTimed"_s));
+    QVERIFY(item(window, u"summaryRepeating"_s));
+    QVERIFY(item(window, u"summaryOverdue"_s));
+    QVERIFY(!item(window, u"overdueHeader"_s));
+    QVERIFY(item(window, u"toPlanOverdue"_s));
+    QVERIFY(item(window, u"toPlanNoDay"_s));
+    QVERIFY(item(window, u"toPlanComingUp"_s));
+    QVERIFY(!item(window, u"toPlanHeader"_s));
+    QVERIFY(!item(window, u"detailsPanel"_s));
+    QCOMPARE(item(window, u"anyTimeHeader"_s)->property("text").toString(), u"Any time"_s);
+    QStringList times;
+    for (QQuickItem *time : items(window, u"rowTime"_s))
+        if (time->isVisible() && !time->property("text").toString().isEmpty())
+            times.append(time->property("text").toString());
+    QCOMPARE(times, QStringList{u"14:00"_s});
+    QVERIFY(rowTitled(window, u"Idea for the garden"_s));
+    QVERIFY(!rowTitled(window, u"Far away"_s));
+    snapshot(window, u"agenda-wide.png"_s);
+
+    // A task opens its details in To plan's place; the overdue task comes back to the top of the agenda.
+    click(window, rowTitled(window, u"Idea for the garden"_s));
+    QTRY_COMPARE(model.selectedTask().value(u"title"_s).toString(), u"Idea for the garden"_s);
+    QTRY_VERIFY(item(window, u"detailsPanel"_s));
+    QVERIFY(!item(window, u"toPlanPanel"_s));
+    QVERIFY(item(window, u"todayList"_s));
+    QCOMPARE(item(window, u"overdueHeader"_s)->property("text").toString(), u"Overdue (1)"_s);
+    QCOMPARE(item(window, u"detailsBack"_s)->property("text").toString(), u"Close"_s);
+    model.openDetails(idOf(model, u"Call the bank"_s));
+    QTRY_VERIFY(rowTitled(window, u"Call the bank"_s)->property("selected").toBool());
+    snapshot(window, u"agenda-wide-details.png"_s);
+    click(window, item(window, u"detailsBack"_s));
+    QTRY_VERIFY(item(window, u"toPlanPanel"_s));
+    QVERIFY(!item(window, u"overdueHeader"_s));
+
+    // Moved to today, the overdue task leaves To plan for the agenda and the sentence counts it.
+    QVERIFY(item(window, u"toPlanOverdue"_s));
+    model.moveToToday(idOf(model, u"Send the invoice"_s));
+    QTRY_VERIFY(!item(window, u"toPlanOverdue"_s));
+    QCOMPARE(item(window, u"daySentence"_s)->property("text").toString(), u"Good morning. 3 on today's plan."_s);
+    QVERIFY(!item(window, u"summaryOverdue"_s));
+    TaskItem invoice = *model.database().task(idOf(model, u"Send the invoice"_s));
+    invoice.dueDate = u"2026-10-23"_s;
+    model.database().save(invoice);
+    model.reload();
+    QTRY_VERIFY(item(window, u"toPlanOverdue"_s));
+
+    // A narrow window: no To plan beside; the overdue tasks lead the agenda and To plan folds in at its end.
+    window->resize(440, 720);
+    QTRY_VERIFY(!item(window, u"toPlanPanel"_s));
+    QVERIFY(item(window, u"dayStrip"_s));
+    QCOMPARE(item(window, u"overdueHeader"_s)->property("text").toString(), u"Overdue (1)"_s);
+    QQuickItem *toPlan = item(window, u"toPlanHeader"_s);
+    QVERIFY(toPlan);
+    QCOMPARE(toPlan->property("text").toString(), u"▸ To plan (3)"_s);
+    QVERIFY(!item(window, u"toPlanNoDay"_s));
+    click(window, toPlan);
+    QTRY_COMPARE(item(window, u"toPlanHeader"_s)->property("text").toString(), u"▾ To plan (3)"_s);
+    QVERIFY(item(window, u"toPlanNoDay"_s));
+    QVERIFY(item(window, u"toPlanComingUp"_s));
+    snapshot(window, u"agenda-narrow.png"_s);
+
+    // A short window gives the strip's room to the tasks; the greeting follows the hour.
+    window->resize(440, 500);
+    QTRY_VERIFY(!item(window, u"dayStrip"_s));
+    *now = utc(u"2026-10-24T19:30"_s);
+    model.reload();
+    QTRY_COMPARE(item(window, u"daySentence"_s)->property("text").toString(), u"Good evening. 2 on today's plan."_s);
 }
 
 void TestApp::detailsEditTheLocalRowAndKeepSelection()
@@ -696,6 +840,10 @@ void TestApp::languageSwitchesAtOnce()
     QCOMPARE(model.language(), u"pl"_s);
     QCOMPARE(Translations::current(), u"pl"_s);
     QTRY_COMPARE(item(window, u"todayTitle"_s)->property("text").toString(), u"Dzisiaj"_s);
+    QCOMPARE(item(window, u"daySentence"_s)->property("text").toString(), u"Dzień dobry. 2 zadania na dziś."_s);
+    QCOMPARE(model.daySummary().value(u"overdue"_s).toString(), u"1 zaległe"_s);
+    window->resize(440, 720);
+    QTRY_VERIFY(item(window, u"overdueHeader"_s));
     QCOMPARE(item(window, u"overdueHeader"_s)->property("text").toString(), u"Zaległe (1)"_s);
     QCOMPARE(model.dateTitle(), u"sob 24 paź"_s);
     QCOMPARE(model.statusText(), u"Brak połączenia z serwerem; zadania zostają na tym komputerze."_s);

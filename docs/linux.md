@@ -31,9 +31,20 @@ later and sends them. **⋯ → Disconnect** forgets the sign-in here; `dayhand 
 Closing the window keeps Dayhand in the tray, so reminders keep ringing. **Quit Dayhand** (tray or **⋯**) stops it.
 Without a tray, closing the window quits.
 
+## Today
+
+Today is an agenda, as on the Mac: a strip of the next days with a dot for each open task, one sentence about the
+day (how many tasks are on today's plan, at a set time, repeating and overdue), quick add, and the tasks by time
+with **Now** first and those without a time under **Any time**.
+In a window at least 800 pixels wide, **To plan** is on the right: the overdue tasks, those without a day and the
+next three days'. Opening a task puts its details there instead; **Close** brings To plan back.
+In a narrower window the overdue tasks lead Today and **To plan** folds in at its end.
+A tiling layout that keeps the window narrow (a column of Hyprland's master layout, for example) shows the narrow
+version; the window opens 960 pixels wide where it floats.
+
 ## Task details
 
-Click a task row to open its details on the right (windows at least 800 pixels wide).
+Click a task row to open its details on the right (windows at least 800 pixels wide), in To plan's place.
 In a narrower window, the details replace Today and **Back** returns to the list.
 Title, status, current work, where you stopped and checklist edits save locally and queue for sync.
 The due field reads English date phrases like quick add, previews them with **I understand**, and applies them with Return or **Set date**.

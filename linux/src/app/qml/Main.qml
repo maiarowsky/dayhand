@@ -2,7 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// The main window: Today, top to bottom: overdue, now, today, done (folded), as on the phone and the Mac.
+// The main window: Today as an agenda, as on the Mac. The title and the date, a strip of the coming days, one
+// sentence about the day, quick add, then the tasks by time. In a wide window the right-hand side holds To plan
+// (overdue, no day, coming up) while no task is open, and the open task's details otherwise; in a narrow one the
+// details are a page of their own with Back, and To plan folds in at the end of the agenda.
 ApplicationWindow {
     id: window
 
@@ -10,6 +13,8 @@ ApplicationWindow {
     readonly property bool wide: width >= 800
     readonly property bool detailsOpen: app.selectedTask.id !== undefined
     property bool trashOpen: false
+    /// To plan beside the agenda: a wide window with no task open.
+    readonly property bool toPlanBeside: wide && !detailsOpen && !trashOpen
 
     function showMain() {
         window.show()
@@ -20,8 +25,8 @@ ApplicationWindow {
     }
 
     title: "Dayhand"
-    width: 440
-    height: 680
+    width: 960
+    height: 720
     minimumWidth: 320
     minimumHeight: 360
     visible: !startHidden
@@ -67,23 +72,30 @@ ApplicationWindow {
                 onClicked: window.trashOpen = false
             }
 
-            ColumnLayout {
-                spacing: 0
-                Label {
-                    objectName: "todayTitle"
-                    text: window.trashOpen ? qsTr("Trash") : qsTr("Today")
-                    font.pixelSize: 22
-                    font.bold: true
-                    color: sys.windowText
-                }
-                Label {
-                    visible: !window.trashOpen
-                    text: app.dateTitle
-                    color: sys.placeholderText
-                }
+            Label {
+                objectName: "todayTitle"
+                Layout.alignment: Qt.AlignBaseline
+                text: window.trashOpen ? qsTr("Trash") : qsTr("Today")
+                font.pixelSize: 24
+                font.bold: true
+                color: sys.windowText
+            }
+            Label {
+                objectName: "todayDate"
+                visible: !window.trashOpen
+                Layout.alignment: Qt.AlignBaseline
+                Layout.leftMargin: 6
+                Layout.fillWidth: true
+                elide: Text.ElideRight
+                text: app.dateTitle
+                font.pixelSize: 16
+                color: sys.placeholderText
             }
 
-            Item { Layout.fillWidth: true }
+            Item {
+                visible: window.trashOpen
+                Layout.fillWidth: true
+            }
 
             ToolButton {
                 id: menuButton
@@ -130,19 +142,14 @@ ApplicationWindow {
 
         StatusLine {
             Layout.fillWidth: true
+            Layout.topMargin: 6
             onConnectClicked: connectDialog.openWith(app.serverUrl, "")
         }
 
-        QuickAddField {
-            id: inlineQuickAdd
-            objectName: "inlineQuickAdd"
-            visible: !window.trashOpen
-            Layout.fillWidth: true
-            Layout.margins: 12
-        }
-
         Rectangle {
+            visible: window.trashOpen
             Layout.fillWidth: true
+            Layout.topMargin: 10
             implicitHeight: 1
             color: sys.mid
             opacity: 0.4
@@ -153,12 +160,48 @@ ApplicationWindow {
         anchors.fill: parent
         spacing: 0
 
-        TodayList {
-            objectName: "todayList"
+        // The agenda: the strip of days, the sentence about the day, quick add and the tasks.
+        ColumnLayout {
+            objectName: "agenda"
             visible: !window.trashOpen && (window.wide || !window.detailsOpen)
             Layout.fillWidth: true
             Layout.fillHeight: true
-            onAddClicked: inlineQuickAdd.focusField()
+            spacing: 0
+
+            DayStrip {
+                // Below this height the strip makes room for the tasks.
+                visible: window.height >= 560
+                Layout.fillWidth: true
+                Layout.leftMargin: 12
+                Layout.rightMargin: 12
+                Layout.topMargin: 8
+            }
+            DaySummary {
+                Layout.fillWidth: true
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                Layout.topMargin: 12
+            }
+            QuickAddField {
+                id: inlineQuickAdd
+                objectName: "inlineQuickAdd"
+                Layout.fillWidth: true
+                Layout.margins: 12
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 1
+                color: sys.mid
+                opacity: 0.4
+            }
+            TodayList {
+                objectName: "todayList"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                showsOverdue: !window.toPlanBeside
+                showsToPlan: !window.wide
+                onAddClicked: inlineQuickAdd.focusField()
+            }
         }
         TrashList {
             visible: window.trashOpen
@@ -166,11 +209,16 @@ ApplicationWindow {
             Layout.fillHeight: true
         }
         Rectangle {
-            visible: !window.trashOpen && window.wide && window.detailsOpen
+            visible: !window.trashOpen && window.wide
             Layout.fillHeight: true
             implicitWidth: 1
             color: sys.mid
             opacity: 0.4
+        }
+        ToPlanPanel {
+            visible: window.toPlanBeside
+            Layout.preferredWidth: 300
+            Layout.fillHeight: true
         }
         TaskDetails {
             visible: !window.trashOpen && window.detailsOpen

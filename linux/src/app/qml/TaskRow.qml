@@ -3,17 +3,23 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // A task on Today: a circle to tick it off, its title and when, and a menu of the moves Today offers
-// (right click, or the ⋯ button).
+// (right click, or the ⋯ button). In the agenda it starts with its time ("Now" for the task worked on now) and a bar
+// in its status's colour, as in the plan of the week.
 Rectangle {
     id: root
+    objectName: "taskRow"
 
     required property var task
     property bool nowRow: false
+    /// The agenda's row: the time column and the status bar before the circle.
+    property bool agenda: false
     readonly property bool isDone: task.done === true
     readonly property bool isOverdue: task.overdue === true
+    readonly property bool selected: task.id !== undefined && app.selectedTask.id === task.id
 
     implicitHeight: content.implicitHeight + 12
-    color: hover.hovered ? Qt.rgba(sys.highlight.r, sys.highlight.g, sys.highlight.b, 0.08) : "transparent"
+    color: selected ? Qt.rgba(sys.highlight.r, sys.highlight.g, sys.highlight.b, 0.16)
+                    : hover.hovered ? Qt.rgba(sys.highlight.r, sys.highlight.g, sys.highlight.b, 0.08) : "transparent"
 
     SystemPalette {
         id: sys
@@ -36,8 +42,35 @@ Rectangle {
         id: content
         anchors.fill: parent
         anchors.leftMargin: 12
+        anchors.topMargin: 6
+        anchors.bottomMargin: 6
         anchors.rightMargin: 8
         spacing: 10
+
+        // The time column: right-aligned, empty for a task without a time.
+        Label {
+            objectName: "rowTime"
+            visible: root.agenda
+            Layout.preferredWidth: 44
+            horizontalAlignment: Text.AlignRight
+            text: root.nowRow ? qsTr("Now") : (root.task.time !== undefined ? root.task.time : "")
+            font.pixelSize: 13
+            font.bold: root.nowRow
+            font.features: { "tnum": 1 }
+            color: root.nowRow ? sys.highlight : sys.placeholderText
+        }
+        // A bar in the plan's colour of the task's status; the status is also in the details.
+        Rectangle {
+            objectName: "statusBar"
+            visible: root.agenda
+            Layout.fillHeight: true
+            Layout.minimumHeight: 22
+            implicitWidth: 4
+            radius: 2
+            color: root.task.status === "doing" ? "#626d28"
+                 : root.task.status === "done" ? Qt.rgba(sys.placeholderText.r, sys.placeholderText.g, sys.placeholderText.b, 0.5)
+                 : "#cedc85"
+        }
 
         // The done circle.
         AbstractButton {

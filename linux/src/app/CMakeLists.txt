@@ -26,6 +26,8 @@ qt_add_qml_module(dayhand_app
     QML_FILES
         qml/Main.qml
         qml/ConnectDialog.qml
+        qml/DayStrip.qml
+        qml/DaySummary.qml
         qml/QuickAddField.qml
         qml/QuickAddWindow.qml
         qml/SectionHeader.qml
@@ -33,6 +35,8 @@ qt_add_qml_module(dayhand_app
         qml/StatusLine.qml
         qml/TaskDetails.qml
         qml/TaskRow.qml
+        qml/ToPlanGroup.qml
+        qml/ToPlanPanel.qml
         qml/TodayList.qml
         qml/TrashList.qml
 )

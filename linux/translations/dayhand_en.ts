@@ -97,6 +97,45 @@
     </message>
 </context>
 <context>
+    <name>dayhand::AppModel</name>
+    <message numerus="yes">
+        <source>%1: %n open</source>
+        <comment>a day of the strip: Sat 24 Oct: 2 open</comment>
+        <translation>
+            <numerusform>%1: %n open</numerusform>
+            <numerusform>%1: %n open</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n on today&apos;s plan.</source>
+        <translation>
+            <numerusform>%n on today&apos;s plan.</numerusform>
+            <numerusform>%n on today&apos;s plan.</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n at a set time</source>
+        <translation>
+            <numerusform>%n at a set time</numerusform>
+            <numerusform>%n at set times</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n repeating</source>
+        <translation>
+            <numerusform>%n repeating</numerusform>
+            <numerusform>%n repeating</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n overdue</source>
+        <translation>
+            <numerusform>%n overdue</numerusform>
+            <numerusform>%n overdue</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>dayhand::Tray</name>
     <message numerus="yes">
         <source>%n open task(s) today</source>

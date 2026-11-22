@@ -6,6 +6,7 @@
 #include "SyncEngine.h"
 #include "SyncWorker.h"
 #include "TaskRepository.h"
+#include "TodayOverview.h"
 #include "TodaySections.h"
 
 #include <QColor>
@@ -55,6 +56,10 @@ class AppModel final : public QObject {
     Q_PROPERTY(int openCount READ openCount NOTIFY sectionsChanged)
     Q_PROPERTY(int overdueCount READ overdueCount NOTIFY sectionsChanged)
     Q_PROPERTY(QString dateTitle READ dateTitle NOTIFY sectionsChanged)
+    Q_PROPERTY(QVariantList days READ days NOTIFY sectionsChanged)
+    Q_PROPERTY(QVariantMap daySummary READ daySummary NOTIFY sectionsChanged)
+    Q_PROPERTY(QVariantList noDay READ noDay NOTIFY sectionsChanged)
+    Q_PROPERTY(QVariantList comingUp READ comingUp NOTIFY sectionsChanged)
     Q_PROPERTY(QString statusText READ statusText NOTIFY statusChanged)
     Q_PROPERTY(bool connected READ connected NOTIFY statusChanged)
     Q_PROPERTY(bool offlineMode READ offlineMode NOTIFY statusChanged)
@@ -84,6 +89,17 @@ public:
     int openCount() const { return int(sections.openCount()); }
     int overdueCount() const { return int(sections.overdue.size()); }
     QString dateTitle() const;
+    /// Today's strip of days: `date`, `weekday` ("Sat"), `number` (24), `open` tasks, `today` and an accessible `label`.
+    QVariantList days() const;
+    /**
+     * One sentence about the day, as on the Mac: `sentence` (a greeting by the hour and how many tasks are on today's
+     * plan), then `timed`, `repeating` and `overdue` in words, each empty when there are none.
+     */
+    QVariantMap daySummary() const;
+    /// To plan: the open tasks without a day, the oldest first.
+    QVariantList noDay() const { return rows(overview.noDay, false); }
+    /// To plan: the open tasks of the next three days, with their day.
+    QVariantList comingUp() const { return rows(overview.comingUp, true); }
     QString statusText() const;
     bool connected() const { return credential.has_value(); }
     bool offlineMode() const;
@@ -107,6 +123,7 @@ public:
 
     const QList<TaskItem> &tasks() const { return allTasks; }
     const TodaySections &todaySections() const { return sections; }
+    const TodayOverview &todayOverview() const { return overview; }
     ReminderSettings settings() const { return reminderSettings; }
     Database &database() { return *db; }
     qint64 now() const { return clock(); }
@@ -172,8 +189,11 @@ signals:
     void tasksChanged();
 
 private:
-    QVariantList rows(const QList<TaskItem> &tasks, bool overdue) const;
-    QVariantMap row(const TaskItem &task, bool overdue) const;
+    /// Task rows for the screens; [showsDay] puts the day in the line under the title (overdue, coming up).
+    QVariantList rows(const QList<TaskItem> &tasks, bool showsDay) const;
+    QVariantMap row(const TaskItem &task, bool showsDay) const;
+    /// "Good morning.", "Good afternoon." or "Good evening." by the hour in the settings' time zone.
+    QString greeting() const;
     bool run(const std::function<void(TaskRepository &)> &action);
     void startSession(const DeviceCredential &credential);
     void stopSession();
@@ -188,6 +208,9 @@ private:
     std::unique_ptr<SyncWorker> worker;
     QList<TaskItem> allTasks;
     TodaySections sections;
+    TodayOverview overview;
+    /// The greeting last shown, so the sentence about the day follows the hour.
+    QString shownGreeting;
     ReminderSettings reminderSettings;
     std::optional<DeviceCredential> credential;
     SyncStatus status;

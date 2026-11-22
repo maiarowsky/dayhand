@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(dayhand-qt VERSION 0.3.0 DESCRIPTION "Dayhand for Linux" LANGUAGES CXX)
+project(dayhand-qt VERSION 0.4.0 DESCRIPTION "Dayhand for Linux" LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -49,6 +49,7 @@ add_library(dayhand_core STATIC
     src/core/TaskRepository.cpp
     src/core/TaskRows.cpp
     src/core/TaskRules.cpp
+    src/core/TodayOverview.cpp
     src/core/TodaySections.cpp
     src/core/Translations.cpp
     src/core/WhenParser.cpp

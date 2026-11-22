@@ -651,6 +651,10 @@
 <context>
     <name>TaskRow</name>
     <message>
+        <source>Now</source>
+        <translation>いま</translation>
+    </message>
+    <message>
         <source>Mark as not done</source>
         <translation>未完了にする</translation>
     </message>
@@ -712,6 +716,29 @@
     </message>
 </context>
 <context>
+    <name>ToPlanPanel</name>
+    <message>
+        <source>To plan</source>
+        <translation>予定を決める</translation>
+    </message>
+    <message>
+        <source>Every open task has a day, and the next days are free.</source>
+        <translation>未完了のタスクにはすべて日付があり、この先数日は空いています。</translation>
+    </message>
+    <message>
+        <source>Overdue</source>
+        <translation>期限切れ</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>日付なし</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>近日中</translation>
+    </message>
+</context>
+<context>
     <name>TodayList</name>
     <message>
         <source>Nothing planned for today.</source>
@@ -726,14 +753,6 @@
         <translation>期限切れ (%1)</translation>
     </message>
     <message>
-        <source>Now</source>
-        <translation>今</translation>
-    </message>
-    <message>
-        <source>Today</source>
-        <translation>今日</translation>
-    </message>
-    <message>
         <source>Nothing left for today.</source>
         <translation>今日の残りはありません。</translation>
     </message>
@@ -742,8 +761,24 @@
         <translation>今日はほかに予定がありません。</translation>
     </message>
     <message>
+        <source>Any time</source>
+        <translation>時刻なし</translation>
+    </message>
+    <message>
         <source>Done (%1)</source>
         <translation>完了 (%1)</translation>
+    </message>
+    <message>
+        <source>To plan (%1)</source>
+        <translation>予定を決める (%1)</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>日付なし</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>近日中</translation>
     </message>
 </context>
 <context>
@@ -766,6 +801,58 @@
     <message>
         <source>The keyring could not be read (%1), so Dayhand starts without a server.</source>
         <translation>キーリングを読み取れなかったため（%1）、Dayhand はサーバーなしで起動します。</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1: %n open</source>
+        <comment>a day of the strip: Sat 24 Oct: 2 open</comment>
+        <translation>
+            <numerusform>%1: 未完了 %n 件</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Good morning.</source>
+        <translation>おはようございます。</translation>
+    </message>
+    <message>
+        <source>Good afternoon.</source>
+        <translation>こんにちは。</translation>
+    </message>
+    <message>
+        <source>Good evening.</source>
+        <translation>こんばんは。</translation>
+    </message>
+    <message>
+        <source>Nothing planned for today.</source>
+        <translation>今日の予定はありません。</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n on today&apos;s plan.</source>
+        <translation>
+            <numerusform>今日の予定は %n 件。</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 %2</source>
+        <comment>a greeting, then how many tasks today has: Good morning. 6 on today&apos;s plan.</comment>
+        <translation>%1%2</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n at a set time</source>
+        <translation>
+            <numerusform>時刻指定 %n</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n repeating</source>
+        <translation>
+            <numerusform>繰り返し %n</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n overdue</source>
+        <translation>
+            <numerusform>期限切れ %n</numerusform>
+        </translation>
     </message>
     <message>
         <source>No day</source>
