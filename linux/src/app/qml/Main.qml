@@ -198,7 +198,7 @@ ApplicationWindow {
                 objectName: "todayList"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                showsOverdue: !window.toPlanBeside
+                showsOverdue: !window.wide
                 showsToPlan: !window.wide
                 onAddClicked: inlineQuickAdd.focusField()
             }

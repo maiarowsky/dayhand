@@ -30,7 +30,7 @@ Flow {
     Repeater {
         model: [
             { name: "summaryTimed", icon: "◷", text: root.summary.timed, tint: sys.highlight },
-            { name: "summaryRepeating", icon: "↻", text: root.summary.repeating, tint: "#626d28" },
+            { name: "summaryRepeating", icon: "↻", text: root.summary.repeating, tint: sys.window.hslLightness < 0.5 ? "#8e9a3f" : "#626d28" },
             { name: "summaryOverdue", icon: "!", text: root.summary.overdue, tint: app.overdueColor }
         ]
 

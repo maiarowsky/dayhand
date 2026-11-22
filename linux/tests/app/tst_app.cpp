@@ -529,13 +529,33 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     QVERIFY(!rowTitled(window, u"Far away"_s));
     snapshot(window, u"agenda-wide.png"_s);
 
-    // A task opens its details in To plan's place; the overdue task comes back to the top of the agenda.
+    // The to-do bar and the ↻ counter take the Mac's pair for the window: the darker one on a light window, the
+    // lighter one on a dark window.
+    const auto bar = [&] {
+        QList<QQuickItem *> bars;
+        collect(rowTitled(window, u"Call the bank"_s), u"statusBar"_s, bars);
+        return bars.value(0)->property("color").value<QColor>();
+    };
+    const auto repeating = [&] {
+        return item(window, u"summaryRepeating"_s)->childItems().value(0)->property("color").value<QColor>();
+    };
+    const QPalette systemPalette = QGuiApplication::palette();
+    QGuiApplication::setPalette(QPalette(QColor(u"#f4f4f4"_s)));
+    QTRY_COMPARE(bar(), QColor(u"#4a7c00"_s));
+    QCOMPARE(repeating(), QColor(u"#626d28"_s));
+    QGuiApplication::setPalette(QPalette(QColor(u"#1a1b26"_s)));
+    QTRY_COMPARE(bar(), QColor(u"#cedc85"_s));
+    QCOMPARE(repeating(), QColor(u"#8e9a3f"_s));
+    QGuiApplication::setPalette(systemPalette);
+
+    // A task opens its details in To plan's place; the agenda keeps its rows, the overdue task stays out of it.
     click(window, rowTitled(window, u"Idea for the garden"_s));
     QTRY_COMPARE(model.selectedTask().value(u"title"_s).toString(), u"Idea for the garden"_s);
     QTRY_VERIFY(item(window, u"detailsPanel"_s));
     QVERIFY(!item(window, u"toPlanPanel"_s));
     QVERIFY(item(window, u"todayList"_s));
-    QCOMPARE(item(window, u"overdueHeader"_s)->property("text").toString(), u"Overdue (1)"_s);
+    QVERIFY(!item(window, u"overdueHeader"_s));
+    QVERIFY(!rowTitled(window, u"Send the invoice"_s));
     QCOMPARE(item(window, u"detailsBack"_s)->property("text").toString(), u"Close"_s);
     model.openDetails(idOf(model, u"Call the bank"_s));
     QTRY_VERIFY(rowTitled(window, u"Call the bank"_s)->property("selected").toBool());

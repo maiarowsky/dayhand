@@ -59,17 +59,18 @@ Rectangle {
             font.features: { "tnum": 1 }
             color: root.nowRow ? sys.highlight : sys.placeholderText
         }
-        // A bar in the plan's colour of the task's status; the status is also in the details.
+        // A bar in the colour of the task's status, lighter on a dark window; the status is also in the details.
         Rectangle {
             objectName: "statusBar"
+            readonly property bool dark: sys.window.hslLightness < 0.5
             visible: root.agenda
             Layout.fillHeight: true
             Layout.minimumHeight: 22
             implicitWidth: 4
             radius: 2
-            color: root.task.status === "doing" ? "#626d28"
-                 : root.task.status === "done" ? Qt.rgba(sys.placeholderText.r, sys.placeholderText.g, sys.placeholderText.b, 0.5)
-                 : "#cedc85"
+            color: root.task.status === "doing" ? (dark ? "#8e9a3f" : "#626d28")
+                 : root.task.status === "done" ? (dark ? "#b8c0b8" : "#454c45")
+                 : (dark ? "#cedc85" : "#4a7c00")
         }
 
         // The done circle.

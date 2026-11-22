@@ -2,13 +2,13 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// Today's tasks by time, in one scrolling column: overdue (when To plan is not beside it), the task worked on now,
+// Today's tasks by time, in one scrolling column: overdue (in a narrow window), the task worked on now,
 // today's at a set time, those without one under Any time, and done today (folded). In a narrow window To plan
 // follows at the end, folded: the tasks without a day and the next three days'.
 ScrollView {
     id: root
 
-    /// The overdue tasks lead the agenda whenever To plan is not shown beside it.
+    /// A narrow window: the overdue tasks lead the agenda; a wide one keeps them in To plan.
     property bool showsOverdue: true
     /// A narrow window: To plan folds in at the end.
     property bool showsToPlan: false

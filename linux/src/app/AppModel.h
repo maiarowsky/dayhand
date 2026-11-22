@@ -123,7 +123,6 @@ public:
 
     const QList<TaskItem> &tasks() const { return allTasks; }
     const TodaySections &todaySections() const { return sections; }
-    const TodayOverview &todayOverview() const { return overview; }
     ReminderSettings settings() const { return reminderSettings; }
     Database &database() { return *db; }
     qint64 now() const { return clock(); }

@@ -24,9 +24,9 @@
   <releases>
     <release version="0.4.0" date="2026-11-22">
       <description>
-        <p>Today is an agenda, as on the Mac: a strip of the next two weeks with a dot for each open task, one sentence
-          about the day (tasks on today's plan, at a set time, repeating, overdue), and the tasks by time with a bar in
-          their status's colour.</p>
+        <p>Today is an agenda, as on the Mac: a strip of the coming days (up to two weeks, as many as fit) with a dot for
+          each open task, one sentence about the day (tasks on today's plan, at a set time, repeating, overdue), and the
+          tasks by time with a bar in their status's colour.</p>
         <p>To plan lists the overdue tasks, those without a day and the next three days'. A wide window shows it on the
           right until a task is opened; a narrow one folds it in at the end of Today.</p>
       </description>

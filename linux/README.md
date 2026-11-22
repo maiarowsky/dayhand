@@ -14,8 +14,8 @@ is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is i
   to today or tomorrow, archives it or moves it to the trash.
 - **To plan**: the overdue tasks (with **To today**), those without a day (oldest first) and the next three days'.
   In a window at least 800 pixels wide it is on the right while no task is open, and an open task's details take its
-  place (the overdue tasks then lead the agenda). In a narrower window the overdue tasks lead the agenda and **To
-  plan** folds in at its end, with the tasks without a day and the next three days'.
+  place. In a narrower window the overdue tasks lead the agenda and **To plan** folds in at its end, with the tasks
+  without a day and the next three days'.
 - **Task details**: click a row to open a right-hand panel in a wide window, or a page with **Back** in a narrow one.
   Edit the title, status, **Working on it now**, where you stopped and checklist items.
   A date phrase has an **I understand** preview; Return or **Set date** applies it, with **Today**, **No day** and
