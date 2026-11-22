@@ -16,7 +16,7 @@ import { handleKey, type Effect } from "./handle.js";
 import { weekStart } from "./lists.js";
 import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
-import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type UiState, type ViewName } from "./state.js";
+import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type Lists, type UiState, type ViewName } from "./state.js";
 
 export const DEFAULT_INTERVAL_S = 60;
 const MAX_INTERVAL_S = 300;
@@ -207,8 +207,11 @@ export class Controller {
 
   resize(columns: number, rows: number): void {
     if (columns === this.columns && rows === this.rows) return;
+    const lists = derive(this.snapshot()).lists;
+    const id = selectedTask(this.ui, lists)?.id;
     this.columns = columns;
     this.rows = rows;
+    this.keepSelection(id, lists);
     this.emit();
   }
 
@@ -344,7 +347,10 @@ export class Controller {
     const lists = derive(this.snapshot()).lists;
     const before = this.ui.mode;
     const { state, effect } = handleKey(this.ui, name, lists);
-    this.ui = this.clampScroll(state);
+    const id = state.doneOpen !== this.ui.doneOpen ? selectedTask(this.ui, lists)?.id : undefined;
+    this.ui = state;
+    this.keepSelection(id, lists);
+    this.ui = this.clampScroll(this.ui);
     this.emit();
     if (effect) this.run(effect, lists, before);
   }
@@ -384,6 +390,13 @@ export class Controller {
   }
 
   /** Details and help scroll no further than their last row, so k works at once after G. */
+  /** After a change of layout only (z, a resize): the same task stays selected or, folded away, the cursor stays in its column. */
+  private keepSelection(id: string | undefined, was: Lists): void {
+    if (!id || this.ui.view !== "today" || this.ui.detail) return;
+    const lists = derive(this.snapshot()).lists;
+    this.ui = lists.today.some((task) => task.id === id) ? reanchor(this.ui, id, lists) : keepRow(this.ui, lists, was.todaySplit);
+  }
+
   private clampScroll(state: UiState): UiState {
     const limits = scrollLimits({ ...this.snapshot(), ui: state });
     const detail = state.detail && state.detail.scroll > limits.detail ? { ...state.detail, scroll: limits.detail } : state.detail;

@@ -115,6 +115,31 @@ describe("Today as an agenda", () => {
     expect(text()).not.toContain("Book a haircut");
   });
 
+  test("wide: z keeps the selected task, and folding a selected done task leaves the cursor in the agenda", async () => {
+    const { ui, selected } = await open(140, 30);
+    ui.key("l");
+    expect(selected()).toBe("Send the invoice to Anna");
+    ui.key("z");
+    expect(selected()).toBe("Send the invoice to Anna");
+    ui.key("h");
+    for (let i = 0; i < 7; i++) ui.key("j");
+    expect(selected()).toBe("Book a haircut");
+    ui.key("z");
+    expect(selected()).toBe("Buy milk");
+  });
+
+  test("a resize across the width where To plan moves beside the agenda keeps the selected task", async () => {
+    const { ui, selected } = await open(80);
+    expect(selected()).toBe("Send the invoice to Anna");
+    ui.resize(140, 24);
+    expect(selected()).toBe("Send the invoice to Anna");
+    ui.key("h");
+    ui.key("j");
+    expect(selected()).toBe("Review pull request #42");
+    ui.resize(80, 24);
+    expect(selected()).toBe("Review pull request #42");
+  });
+
   test("without colour, today is still in reverse, each task keeps its status mark and overdue its heading", async () => {
     const { ui } = await open(80);
     const rows = withoutColour(ui.frame().rows);
