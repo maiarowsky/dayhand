@@ -157,6 +157,29 @@ describe("Today as an agenda", () => {
     expect(text()).toMatch(/TO PLAN \(4\) l →$/m);
   });
 
+  test("a resize with a task's details open keeps that task under the cursor for after Esc", async () => {
+    const { ui, text, selected } = await open(140);
+    ui.key("l");
+    ui.key("j");
+    ui.key("enter");
+    await ui.idle();
+    expect(ui.snapshot().ui.detail?.taskId).toBe(SAMPLE_TASKS.blog.id);
+    ui.resize(80, 24);
+    ui.key("esc");
+    expect(selected()).toBe("Idea for a blog post");
+    expect(text()).toMatch(/← h Today$/m);
+    ui.resize(140, 24);
+    ui.key("h");
+    ui.key("j");
+    expect(selected()).toBe("Review pull request #42");
+    ui.key("enter");
+    await ui.idle();
+    ui.resize(80, 24);
+    ui.key("esc");
+    expect(selected()).toBe("Review pull request #42");
+    expect(text()).toMatch(/TO PLAN \(4\) l →$/m);
+  });
+
   test("without colour, today is still in reverse, each task keeps its status mark and overdue its heading", async () => {
     const { ui } = await open(80);
     const rows = withoutColour(ui.frame().rows);

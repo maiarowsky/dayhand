@@ -207,16 +207,10 @@ export class Controller {
 
   resize(columns: number, rows: number): void {
     if (columns === this.columns && rows === this.rows) return;
-    const lists = derive(this.snapshot()).lists;
-    const id = selectedTask(this.ui, lists)?.id;
-    this.columns = columns;
-    this.rows = rows;
-    if (columns >= BESIDE_COLUMNS) this.ui = { ...this.ui, toPlan: false };
-    else if (id && this.ui.view === "today" && !this.ui.detail) {
-      const holds = (toPlan: boolean) => derive({ ...this.snapshot(), ui: { ...this.ui, toPlan } }).lists.today.some((task) => task.id === id);
-      if (!holds(this.ui.toPlan) && holds(!this.ui.toPlan)) this.ui = { ...this.ui, toPlan: !this.ui.toPlan };
-    }
-    this.keepSelection(id, lists);
+    this.relayout(() => {
+      this.columns = columns;
+      this.rows = rows;
+    });
     this.emit();
   }
 
@@ -352,9 +346,8 @@ export class Controller {
     const lists = derive(this.snapshot()).lists;
     const before = this.ui.mode;
     const { state, effect } = handleKey(this.ui, name, lists);
-    const id = state.doneOpen !== this.ui.doneOpen ? selectedTask(this.ui, lists)?.id : undefined;
-    this.ui = state;
-    this.keepSelection(id, lists);
+    if (state.doneOpen !== this.ui.doneOpen) this.relayout(() => (this.ui = state));
+    else this.ui = state;
     this.ui = this.clampScroll(this.ui);
     this.emit();
     if (effect) this.run(effect, lists, before);
@@ -394,14 +387,26 @@ export class Controller {
     this.emit();
   }
 
-  /** Details and help scroll no further than their last row, so k works at once after G. */
-  /** After a change of layout only (z, a resize): the same task stays selected or, folded away, the cursor stays in its column. */
-  private keepSelection(id: string | undefined, was: Lists): void {
-    if (!id || this.ui.view !== "today" || this.ui.detail) return;
-    const lists = derive(this.snapshot()).lists;
-    this.ui = lists.today.some((task) => task.id === id) ? reanchor(this.ui, id, lists) : keepRow(this.ui, lists, was.todaySplit);
+  /**
+   * A change of layout only (z, a resize): the task under the cursor in Today,
+   * open details aside, stays under it, a narrow terminal showing the panel
+   * that lists it; folded away, the cursor stays in its column.
+   */
+  private relayout(change: () => void): void {
+    const was = derive(this.snapshot()).lists;
+    const id = this.ui.view === "today" ? selectedTask({ ...this.ui, detail: undefined }, was)?.id : undefined;
+    change();
+    if (this.columns >= BESIDE_COLUMNS) this.ui = { ...this.ui, toPlan: false };
+    if (!id) return;
+    const layout = (toPlan: boolean) => derive({ ...this.snapshot(), ui: { ...this.ui, toPlan } }).lists;
+    const holds = (lists: Lists) => lists.today.some((task) => task.id === id);
+    if (!holds(layout(this.ui.toPlan)) && holds(layout(!this.ui.toPlan))) this.ui = { ...this.ui, toPlan: !this.ui.toPlan };
+    const now = layout(this.ui.toPlan);
+    const cursor = { ...this.ui, detail: undefined };
+    this.ui = { ...(holds(now) ? reanchor(cursor, id, now) : keepRow(cursor, now, was.todaySplit)), detail: this.ui.detail };
   }
 
+  /** Details and help scroll no further than their last row, so k works at once after G. */
   private clampScroll(state: UiState): UiState {
     const limits = scrollLimits({ ...this.snapshot(), ui: state });
     const detail = state.detail && state.detail.scroll > limits.detail ? { ...state.detail, scroll: limits.detail } : state.detail;
