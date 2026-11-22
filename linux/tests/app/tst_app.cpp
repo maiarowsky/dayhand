@@ -527,6 +527,14 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     QCOMPARE(times, QStringList{u"14:00"_s});
     QVERIFY(rowTitled(window, u"Idea for the garden"_s));
     QVERIFY(!rowTitled(window, u"Far away"_s));
+    // Only the To plan in view builds rows: the agenda's folded copy and a hidden panel hold none.
+    const auto rowsTitled = [&](const QString &title) {
+        int count = 0;
+        for (QQuickItem *row : items(window, u"taskRow"_s))
+            count += row->property("task").toMap().value(u"title"_s).toString() == title ? 1 : 0;
+        return count;
+    };
+    QCOMPARE(rowsTitled(u"Idea for the garden"_s), 1);
     snapshot(window, u"agenda-wide.png"_s);
 
     // The to-do bar and the ↻ counter take the Mac's pair for the window: the darker one on a light window, the
@@ -553,6 +561,7 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     QTRY_COMPARE(model.selectedTask().value(u"title"_s).toString(), u"Idea for the garden"_s);
     QTRY_VERIFY(item(window, u"detailsPanel"_s));
     QVERIFY(!item(window, u"toPlanPanel"_s));
+    QTRY_COMPARE(rowsTitled(u"Idea for the garden"_s), 0);
     QVERIFY(item(window, u"todayList"_s));
     QVERIFY(!item(window, u"overdueHeader"_s));
     QVERIFY(!rowTitled(window, u"Send the invoice"_s));
@@ -585,9 +594,11 @@ void TestApp::agendaShowsTheDaysAndToPlanShareTheRightSideWithDetails()
     QVERIFY(toPlan);
     QCOMPARE(toPlan->property("text").toString(), u"▸ To plan (3)"_s);
     QVERIFY(!item(window, u"toPlanNoDay"_s));
+    QTRY_COMPARE(rowsTitled(u"Idea for the garden"_s), 0);
     click(window, toPlan);
     QTRY_COMPARE(item(window, u"toPlanHeader"_s)->property("text").toString(), u"▾ To plan (3)"_s);
     QVERIFY(item(window, u"toPlanNoDay"_s));
+    QTRY_COMPARE(rowsTitled(u"Idea for the garden"_s), 1);
     QVERIFY(item(window, u"toPlanComingUp"_s));
     snapshot(window, u"agenda-narrow.png"_s);
 

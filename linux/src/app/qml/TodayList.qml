@@ -152,17 +152,15 @@ ScrollView {
         }
         ToPlanGroup {
             objectName: "toPlanNoDay"
-            visible: root.showsToPlan && root.showToPlan && tasks.length > 0
             Layout.fillWidth: true
             title: qsTr("No day")
-            tasks: app.noDay
+            tasks: root.showsToPlan && root.showToPlan ? app.noDay : []
         }
         ToPlanGroup {
             objectName: "toPlanComingUp"
-            visible: root.showsToPlan && root.showToPlan && tasks.length > 0
             Layout.fillWidth: true
             title: qsTr("Coming up")
-            tasks: app.comingUp
+            tasks: root.showsToPlan && root.showToPlan ? app.comingUp : []
         }
 
         Item { Layout.preferredHeight: 16 }

@@ -57,20 +57,20 @@ Rectangle {
                     objectName: "toPlanOverdue"
                     Layout.fillWidth: true
                     title: qsTr("Overdue")
-                    tasks: app.overdue
+                    tasks: root.visible ? app.overdue : []
                     tint: app.overdueColor
                 }
                 ToPlanGroup {
                     objectName: "toPlanNoDay"
                     Layout.fillWidth: true
                     title: qsTr("No day")
-                    tasks: app.noDay
+                    tasks: root.visible ? app.noDay : []
                 }
                 ToPlanGroup {
                     objectName: "toPlanComingUp"
                     Layout.fillWidth: true
                     title: qsTr("Coming up")
-                    tasks: app.comingUp
+                    tasks: root.visible ? app.comingUp : []
                 }
                 Item { Layout.preferredHeight: 16 }
             }
