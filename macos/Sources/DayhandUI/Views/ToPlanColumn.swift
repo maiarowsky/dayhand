@@ -3,9 +3,9 @@ import DayhandLocalization
 import SwiftUI
 
 /**
- * The column beside Today's agenda: the open tasks that still need a day (overdue, with To today, and those without
- * one) and the next few days', each with its count. A task opens in the panel like any other; the search narrows it
- * like the lists.
+ * The column beside Today's agenda: the open tasks that still need a day (overdue and those without one) and the next
+ * few days', each with its count. A task opens in the panel like any other; the selected one gets the round Move
+ * button, which takes it to another day or the archive. The search narrows the column like the lists.
  */
 struct ToPlanColumn: View {
     @EnvironmentObject private var model: AppModel
@@ -36,6 +36,11 @@ struct ToPlanColumn: View {
                 }
                 .listStyle(.inset)
                 .scrollContentBackground(.hidden)
+                .overlay(alignment: .bottomTrailing) {
+                    if let id = model.selection, (overdue + noDay + comingUp).contains(where: { $0.localId == id }) {
+                        MoveButton(taskId: id).padding(16)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -64,9 +69,8 @@ struct ToPlanColumn: View {
     }
 }
 
-/// A task in "To plan": the box, the title, its project and day, and To today for an overdue one.
+/// A task in "To plan": the box, the title, its project and day.
 struct ToPlanRow: View {
-    @EnvironmentObject private var model: AppModel
     let task: TaskItem
     let today: String
     var overdue = false
@@ -79,12 +83,7 @@ struct ToPlanRow: View {
                 Text(task.title).lineLimit(2)
                 TaskLine(task: task, today: today, overdue: overdue, showsDay: showsDay || overdue)
             }
-            Spacer(minLength: 4)
-            if overdue {
-                Button(tr("To today")) { model.moveToToday(task.localId) }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
-            }
+            Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
         .contextMenu { TaskMenu(task: task) }

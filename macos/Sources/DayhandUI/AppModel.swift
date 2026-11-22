@@ -50,8 +50,10 @@ final class AppModel: ObservableObject {
     @Published var selection: String?
     /// Set by ⌘K until the toolbar's search field takes the keyboard, also when the main window opens only then.
     @Published var searchFocusPending = false
-    /// The plan's day, as days from today; the day strip on Today sets it.
+    /// The plan's day, as days from today.
     @Published var planDayOffset = 0
+    /// A later day picked in Today's strip, shown in Today's place instead of today; nil while Today shows today.
+    @Published private(set) var previewDay: String?
     /// The place picked in the sidebar (`show(_:)` changes it).
     @Published private(set) var place: Place = .today
     /// Board, plan or list, as last picked in the toolbar.
@@ -66,6 +68,8 @@ final class AppModel: ObservableObject {
     @Published var projectEditor: ProjectEditorRequest?
     /// The task whose project is being picked (Move to Project…, ⇧⌘M).
     @Published var movingTask: TaskPick?
+    /// The task whose day is being picked (Another Day…).
+    @Published var reschedulingTask: TaskPick?
     /// The project whose deletion asks where its tasks go.
     @Published var deletingProject: ProjectPick?
     @Published var showConnect = false
@@ -209,6 +213,7 @@ final class AppModel: ObservableObject {
         let now = Clock.nowMs()
         let next = todaySections(tasks, nowMs: now, timezone: settings.timezone)
         if next != sections { sections = next }
+        if let day = previewDay, day <= next.date { previewDay = nil }
         let nextOverview = todayOverview(tasks, sections: next)
         if nextOverview != overview { overview = nextOverview }
         let nextCounts = sidebarCounts(tasks, projects: showsProjects ? projects : [], today: next.date)
@@ -289,7 +294,7 @@ final class AppModel: ObservableObject {
 
     /// What quick add takes from [place]; its project only while the server has projects.
     func quickAddContext(_ place: Place) -> QuickAddContext {
-        QuickAddContext(place, today: today, projects: showsProjects ? projects : [])
+        QuickAddContext(place, today: place == .today ? shownDay : today, projects: showsProjects ? projects : [])
     }
 
     /// One line of quick add as it will be added; without [readPhrase] the date words stay in the title.
@@ -309,11 +314,20 @@ final class AppModel: ObservableObject {
         run { try await $0.reschedule(id, to: tomorrow) }
     }
 
+    func moveToDay(_ id: String, _ date: String) { run { try await $0.reschedule(id, to: date) } }
+
+    /// Whether the task [id] is open and can be moved to another day (To Today, To Tomorrow, Another Day…).
+    func canReschedule(_ id: String?) -> Bool {
+        guard let id, let task = task(id) else { return false }
+        return task.isOpen
+    }
+
     /// Opens a place of the sidebar; a selected task that is not there is let go. A project opens its section.
     func show(_ place: Place) {
         guard place != self.place else { return }
         self.place = place
         planDayOffset = 0
+        previewDay = nil
         recompute()
         if case .project = place { projectsExpanded = true }
         if let id = selection, let task = task(id), !place.lists(task, projects: projectIds) { selection = nil }
@@ -333,12 +347,17 @@ final class AppModel: ObservableObject {
     /// Where Return in the search field adds: the current place, or Today in a place that takes no tasks.
     var searchAddPlace: Place { placeTakesTasks ? place : .today }
 
-    /// Opens [date] as one day of the plan.
-    func openPlanDay(_ date: String) {
-        guard let day = CivilDate(date), let start = CivilDate(today) else { return }
-        planDayOffset = day.dayNumber - start.dayNumber
-        UserDefaults.standard.set(true, forKey: PlanView.showsDayKey)
-        viewMode = .plan
+    /// Shows [date] in Today's place, as Today shows today; today or an earlier day goes back to today.
+    func preview(_ date: String) {
+        previewDay = date > today ? date : nil
+    }
+
+    /// The day Today's place shows: the one picked in the strip, or today.
+    var shownDay: String { previewDay ?? today }
+
+    /// The picked day's tasks as Today lists them, only those the search matches; nil while Today shows today.
+    var previewSections: TodaySections? {
+        previewDay.map { daySections(tasks, date: $0).filter(matchesSearch) }
     }
 
     func setNow(_ id: String) { run { try await $0.setNow(id) } }

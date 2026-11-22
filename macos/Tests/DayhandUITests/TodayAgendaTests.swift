@@ -5,7 +5,8 @@ import Testing
 @testable import DayhandUI
 
 /// Today as an agenda, through the app's model on a database in memory: what the strip of days, the sentence and
-/// To plan count, a day of the strip opening in the plan, and the toolbar's field adding what is typed on Return.
+/// To plan count, a day of the strip shown in Today's place, moving a task to another day, and the toolbar's field
+/// adding what is typed on Return.
 @MainActor
 struct TodayAgendaTests {
     private func makeModel() throws -> AppModel {
@@ -62,16 +63,69 @@ struct TodayAgendaTests {
         #expect(model.sections.overdue.map(\.title) == ["Invoice"])
     }
 
-    @Test func aDayOfTheStripOpensInThePlan() async throws {
+    @Test func aDayOfTheStripIsShownInTodaysPlaceNotInThePlan() async throws {
         let model = try makeModel()
-        defer { UserDefaults.standard.removeObject(forKey: PlanView.showsDayKey) }
-        model.openPlanDay(day(model, 3))
-        #expect(model.viewMode == .plan)
-        #expect(model.planDayOffset == 3)
-        #expect(UserDefaults.standard.bool(forKey: PlanView.showsDayKey))
+        try await seed(model)
+        let mode = model.viewMode
+        model.preview(day(model, 1))
 
-        model.show(.all)
+        #expect(model.viewMode == mode)
+        #expect(model.place == .today)
         #expect(model.planDayOffset == 0)
+        #expect(model.shownDay == day(model, 1))
+        let tomorrow = try #require(model.previewSections)
+        #expect(tomorrow.date == day(model, 1))
+        #expect(tomorrow.today.map(\.title) == ["Dentist"])
+        #expect(tomorrow.overdue.isEmpty && tomorrow.now == nil)
+
+        // Another day of the strip replaces it; a day without tasks is shown empty.
+        model.preview(day(model, 2))
+        #expect(model.previewSections?.today.isEmpty == true)
+
+        // The search narrows the picked day like today.
+        model.preview(day(model, 3))
+        model.search = "nothing like it"
+        #expect(model.previewSections?.today.isEmpty == true)
+        model.search = ""
+        #expect(model.previewSections?.today.map(\.title) == ["Cards"])
+    }
+
+    @Test func todayOrLeavingTodaysPlaceGoesBackToToday() async throws {
+        let model = try makeModel()
+        model.preview(day(model, 2))
+        model.preview(model.today)
+        #expect(model.previewDay == nil && model.previewSections == nil && model.shownDay == model.today)
+
+        // An earlier day is never shown in today's place.
+        model.preview(day(model, -1))
+        #expect(model.previewDay == nil)
+
+        model.preview(day(model, 2))
+        model.show(.all)
+        #expect(model.previewDay == nil)
+    }
+
+    @Test func quickAddOnAPickedDayPlansItForThatDay() async throws {
+        let model = try makeModel()
+        model.preview(day(model, 2))
+        #expect(model.quickAddContext(.today).date == day(model, 2))
+        #expect(model.quickAddContext(.all).date == nil)
+        model.preview(model.today)
+        #expect(model.quickAddContext(.today).date == model.today)
+    }
+
+    @Test func aTaskMovesToAnotherDayOnlyWhileOpen() async throws {
+        let model = try makeModel()
+        try await seed(model)
+        let invoice = try #require(model.tasks.first { $0.title == "Invoice" })
+        let ran = try #require(model.tasks.first { $0.title == "Ran" })
+        #expect(model.canReschedule(invoice.localId))
+        #expect(!model.canReschedule(ran.localId))
+        #expect(!model.canReschedule(nil))
+
+        model.moveToDay(invoice.localId, day(model, 5))
+        try await eventually { model.task(invoice.localId)?.dueDate == day(model, 5) }
+        #expect(model.sections.overdue.isEmpty)
     }
 
     @Test func returnInTheToolbarsFieldAddsWhatIsTypedAndClearsIt() async throws {

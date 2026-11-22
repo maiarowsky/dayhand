@@ -91,6 +91,23 @@ public enum ScreenSnapshots {
             try await render(window(), wide, dark, png("today-agenda-1100\(suffix)"), sidebar: sidebar())
             try await render(window(), narrow, dark, png("today-agenda-820\(suffix)"), sidebar: sidebar())
         }
+        // A later day picked in the strip, shown in Today's place; an overdue task selected in To plan, with the Move
+        // button and its options.
+        let mode = model.viewMode
+        model.viewMode = .list
+        model.preview(HelmDates.addDays(model.today, 1) ?? model.today)
+        for dark in [false, true] {
+            try await render(window(), wide, dark, png("today-picked-day-1100\(dark ? "-dark" : "")"), sidebar: sidebar())
+        }
+        model.preview(model.today)
+        model.selection = model.sections.overdue.first?.localId
+        try await render(window(), CGSize(width: 1400, height: 900), false, png("today-to-plan-move-1400"), sidebar: sidebar())
+        if let id = model.selection {
+            try await render(MoveOptions(taskId: id, close: {}).environmentObject(model), CGSize(width: 212, height: 150), false, png("move-options"))
+            try await render(DayPicker(taskId: id).environmentObject(model), CGSize(width: 320, height: 330), false, png("day-picker"))
+        }
+        model.selection = nil
+        model.viewMode = mode
         // The same places as a board.
         model.viewMode = .board
         for (name, place, selected) in places where selected != nil {

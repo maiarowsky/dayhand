@@ -34,13 +34,14 @@ and the selected task opens in a panel along the bottom. Projects need Dayhand s
 - **Search, or add a task** (⌘K) in the middle of the toolbar: what you type narrows every list, and Return
   adds it as a task, with the same date phrases as quick add. Escape clears it.
 
-- **Today**: the date, a strip of the next days (a dot for each open task; click a day to open it in the
-  plan), one sentence about the day (how many tasks, how many at a set time, repeating or overdue, and what
+- **Today**: the date, a strip of the next days (a dot for each open task; click a day to show it in
+  Today's place, **Back to Today** or Escape returns), one sentence about the day (how many tasks, how many at a set time, repeating or overdue, and what
   the plan health asks of you), then **Now** with "where I stopped", today's tasks by time and those for
-  any time, and done today, folded. **To plan** beside it lists the overdue tasks (with **To today**), the
+  any time, and done today, folded. **To plan** beside it lists the overdue tasks, the
   ones without a day and the next three days'; in a narrow window the overdue tasks are at the top of Today
-  instead. One click ticks a task off. The context menu makes a task the one you
-  work on now, moves it to today or tomorrow, archives it or moves it to the trash.
+  instead. Select one and the round button in the corner moves it to today, tomorrow or another day, or
+  archives it (⌘T, ⇧⌘T and ⌥⌘T in the Task menu do the same). One click ticks a task off. The context menu
+  makes a task the one you work on now, moves it to another day, archives it or moves it to the trash.
 - **Lists**: All Tasks, No Project or a project, their open tasks in sections by day, with search
   in the toolbar.
 - **Board**: To do, In progress and Done side by side; drag a card to another column to change its status.

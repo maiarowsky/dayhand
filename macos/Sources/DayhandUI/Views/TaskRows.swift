@@ -188,6 +188,7 @@ struct TaskMenu: View {
             Divider()
             Button(tr("To Today")) { model.moveToToday(task.localId) }
             Button(tr("To Tomorrow")) { model.moveToTomorrow(task.localId) }
+            Button(tr("Another Day…")) { model.reschedulingTask = TaskPick(id: task.localId) }
         }
         if model.canMoveToProject(task.localId) {
             Divider()

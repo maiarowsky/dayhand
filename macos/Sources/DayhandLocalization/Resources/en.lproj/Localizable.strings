@@ -78,6 +78,8 @@
 	<string>Allow Notifications</string>
 	<key>Amber</key>
 	<string>Amber</string>
+	<key>Another Day…</key>
+	<string>Another Day…</string>
 	<key>Any time</key>
 	<string>Any time</string>
 	<key>Approval requests (%lld)</key>
@@ -104,6 +106,8 @@
 	<string>Asked by %@</string>
 	<key>At a time of day</key>
 	<string>At a time of day</string>
+	<key>Back to Today</key>
+	<string>Back to Today</string>
 	<key>Bakery website</key>
 	<string>Bakery website</string>
 	<key>Before the due time</key>
@@ -302,8 +306,6 @@
 	<string>Hides the done tasks</string>
 	<key>Hides the section</key>
 	<string>Hides the section</string>
-	<key>Hides the tasks done today</key>
-	<string>Hides the tasks done today</string>
 	<key>History</key>
 	<string>History</string>
 	<key>History is unavailable offline.</key>
@@ -364,10 +366,14 @@
 	<string>More</string>
 	<key>Morning summary</key>
 	<string>Morning summary</string>
+	<key>Move</key>
+	<string>Move</string>
 	<key>Move Down</key>
 	<string>Move Down</string>
 	<key>Move Up</key>
 	<string>Move Up</string>
+	<key>Move the selected task</key>
+	<string>Move the selected task</string>
 	<key>Move the tasks to</key>
 	<string>Move the tasks to</string>
 	<key>Move the tasks to another project.</key>
@@ -466,6 +472,8 @@
 	<string>Nothing left for today.</string>
 	<key>Nothing open</key>
 	<string>Nothing open</string>
+	<key>Nothing planned for this day.</key>
+	<string>Nothing planned for this day.</string>
 	<key>Nothing planned for today.</key>
 	<string>Nothing planned for today.</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -504,8 +512,6 @@
 	<string>Open Task</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Opens the Character Viewer (⌃⌘Space)</string>
-	<key>Opens the day in the plan</key>
-	<string>Opens the day in the plan</string>
 	<key>Options: %@</key>
 	<string>Options: %@</string>
 	<key>Orange</key>
@@ -614,14 +620,16 @@
 	<string>Shared through the server with the phone, dayhand and agents. A change made here waits on this Mac until the server has it.</string>
 	<key>Shortcut from any app:</key>
 	<string>Shortcut from any app:</string>
+	<key>Shows the day here</key>
+	<string>Shows the day here</string>
 	<key>Shows the done tasks</key>
 	<string>Shows the done tasks</string>
 	<key>Shows the plan health</key>
 	<string>Shows the plan health</string>
 	<key>Shows the section</key>
 	<string>Shows the section</string>
-	<key>Shows the tasks done today</key>
-	<string>Shows the tasks done today</string>
+	<key>Shows today again (Esc)</key>
+	<string>Shows today again (Esc)</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
 	<string>Something answered at that address, but it is not a Dayhand server.</string>
 	<key>Start with: %@</key>

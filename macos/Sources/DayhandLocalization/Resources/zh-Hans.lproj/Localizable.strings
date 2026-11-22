@@ -78,6 +78,8 @@
 	<string>允许通知</string>
 	<key>Amber</key>
 	<string>琥珀色</string>
+	<key>Another Day…</key>
+	<string>其他日期…</string>
 	<key>Any time</key>
 	<string>无具体时间</string>
 	<key>Approval requests (%lld)</key>
@@ -104,6 +106,8 @@
 	<string>请求者：%@</string>
 	<key>At a time of day</key>
 	<string>在某个时间</string>
+	<key>Back to Today</key>
+	<string>回到今天</string>
 	<key>Bakery website</key>
 	<string>面包店网站</string>
 	<key>Before the due time</key>
@@ -302,8 +306,6 @@
 	<string>隐藏已完成的任务</string>
 	<key>Hides the section</key>
 	<string>隐藏此部分</string>
-	<key>Hides the tasks done today</key>
-	<string>隐藏今天完成的任务</string>
 	<key>History</key>
 	<string>历史</string>
 	<key>History is unavailable offline.</key>
@@ -364,10 +366,14 @@
 	<string>更多</string>
 	<key>Morning summary</key>
 	<string>早间摘要</string>
+	<key>Move</key>
+	<string>移动</string>
 	<key>Move Down</key>
 	<string>下移</string>
 	<key>Move Up</key>
 	<string>上移</string>
+	<key>Move the selected task</key>
+	<string>移动所选任务</string>
 	<key>Move the tasks to</key>
 	<string>将任务移到</string>
 	<key>Move the tasks to another project.</key>
@@ -466,6 +472,8 @@
 	<string>今天没有剩下的事了。</string>
 	<key>Nothing open</key>
 	<string>没有未完成的任务</string>
+	<key>Nothing planned for this day.</key>
+	<string>这一天没有计划。</string>
 	<key>Nothing planned for today.</key>
 	<string>今天没有计划。</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -504,8 +512,6 @@
 	<string>打开任务</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>打开字符检视器（⌃⌘空格）</string>
-	<key>Opens the day in the plan</key>
-	<string>在计划中打开这一天</string>
 	<key>Options: %@</key>
 	<string>选项：%@</string>
 	<key>Orange</key>
@@ -614,14 +620,16 @@
 	<string>通过服务器与手机、dayhand 和智能体共享。在此处所做的更改会在此 Mac 上等待，直到服务器收到。</string>
 	<key>Shortcut from any app:</key>
 	<string>在任何应用中使用的快捷键：</string>
+	<key>Shows the day here</key>
+	<string>在此显示这一天</string>
 	<key>Shows the done tasks</key>
 	<string>显示已完成的任务</string>
 	<key>Shows the plan health</key>
 	<string>显示计划状况</string>
 	<key>Shows the section</key>
 	<string>显示此部分</string>
-	<key>Shows the tasks done today</key>
-	<string>显示今天完成的任务</string>
+	<key>Shows today again (Esc)</key>
+	<string>重新显示今天(Esc)</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
 	<string>该地址有响应，但不是 Dayhand 服务器。</string>
 	<key>Start with: %@</key>

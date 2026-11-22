@@ -2,10 +2,11 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// Today and the days after it, as many as fit: each with its weekday, its number (today's in a blue circle) and a dot
-/// for each open task, up to three. A day opens in the plan.
+/// Today and the days after it, as many as fit: each with its weekday, its number and a dot for each open task, up to
+/// three. The day shown is in a blue circle, today's number is blue; a day clicked is shown in Today's place.
 struct DayStrip: View {
     let days: [TodayOverview.Day]
+    let picked: String
 
     static let dayWidth: CGFloat = 46
 
@@ -14,7 +15,7 @@ struct DayStrip: View {
             let count = min(days.count, max(7, Int(geometry.size.width / Self.dayWidth)))
             HStack(spacing: 0) {
                 ForEach(Array(days.prefix(count).enumerated()), id: \.element.date) { index, day in
-                    DayCell(day: day, isToday: index == 0).frame(maxWidth: .infinity)
+                    DayCell(day: day, isToday: index == 0, isPicked: day.date == picked).frame(maxWidth: .infinity)
                 }
             }
         }
@@ -27,21 +28,22 @@ struct DayCell: View {
     @EnvironmentObject private var model: AppModel
     let day: TodayOverview.Day
     let isToday: Bool
+    let isPicked: Bool
     @State private var hovered = false
 
     var body: some View {
         let civil = CivilDate(day.date)
-        Button { model.openPlanDay(day.date) } label: {
+        Button { model.preview(day.date) } label: {
             VStack(spacing: 4) {
                 Text(civil.flatMap { DateText.shortWeekday($0.weekday) } ?? "")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.secondary)
                 Text(civil.map { "\($0.day)" } ?? "")
-                    .font(.system(size: 15, weight: isToday ? .semibold : .regular).monospacedDigit())
-                    .foregroundStyle(isToday ? PlannerStyle.onBlue : .primary)
+                    .font(.system(size: 15, weight: isToday || isPicked ? .semibold : .regular).monospacedDigit())
+                    .foregroundStyle(isPicked ? AnyShapeStyle(PlannerStyle.onBlue) : isToday ? AnyShapeStyle(PlannerStyle.blue) : AnyShapeStyle(.primary))
                     .frame(width: 30, height: 30)
                     .background {
-                        Circle().fill(isToday ? AnyShapeStyle(PlannerStyle.blue) : AnyShapeStyle(Color.primary.opacity(hovered ? 0.07 : 0)))
+                        Circle().fill(isPicked ? AnyShapeStyle(PlannerStyle.blue) : AnyShapeStyle(Color.primary.opacity(hovered ? 0.07 : 0)))
                     }
                 HStack(spacing: 3) {
                     ForEach(0..<min(day.open, 3), id: \.self) { _ in
@@ -55,10 +57,10 @@ struct DayCell: View {
         }
         .buttonStyle(.plain)
         .onHover { hovered = $0 }
-        .help(tr("Opens the day in the plan"))
+        .help(tr("Shows the day here"))
         .accessibilityLabel(Formatting.pair(DateText.longDay(day.date), tr("\(day.open) open")))
-        .accessibilityHint(tr("Opens the day in the plan"))
-        .accessibilityAddTraits(isToday ? .isSelected : [])
+        .accessibilityHint(tr("Shows the day here"))
+        .accessibilityAddTraits(isPicked ? .isSelected : [])
     }
 }
 
@@ -93,6 +95,30 @@ struct DaySummary: View {
         if (5..<12).contains(hour) { return tr("Good morning.") }
         if (12..<18).contains(hour) { return tr("Good afternoon.") }
         return tr("Good evening.")
+    }
+}
+
+/// One sentence about a later day picked in the strip: how many tasks are on its plan and how many of them have a time
+/// or repeat.
+struct PickedDaySummary: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        let open = daySections(model.tasks, date: model.shownDay).today
+        let timed = open.filter { $0.dueTime != nil }.count
+        let repeating = open.filter { $0.repeat != nil }.count
+        FlowLine(spacing: 14, lineSpacing: 6) {
+            Text(open.isEmpty ? tr("Nothing planned for this day.") : tr("\(open.count) on this day's plan."))
+            if timed > 0 {
+                SummaryCount(icon: "clock", text: tr("\(timed) at a set time"), tint: PlannerStyle.blue)
+            }
+            if repeating > 0 {
+                SummaryCount(icon: "arrow.triangle.2.circlepath", text: tr("\(repeating) repeating"), tint: StatusStyle.color(.doing))
+            }
+        }
+        .font(.system(size: 14))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
     }
 }
 

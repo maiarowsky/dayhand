@@ -156,6 +156,20 @@
 			<string>还有 %lld 次</string>
 		</dict>
 	</dict>
+	<key>%lld on this day's plan.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>这一天有 %lld 项任务。</string>
+		</dict>
+	</dict>
 	<key>%lld on today's plan.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

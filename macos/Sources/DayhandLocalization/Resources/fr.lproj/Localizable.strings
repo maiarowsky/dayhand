@@ -78,6 +78,8 @@
 	<string>Autoriser les notifications</string>
 	<key>Amber</key>
 	<string>Ambre</string>
+	<key>Another Day…</key>
+	<string>Autre jour…</string>
 	<key>Any time</key>
 	<string>Sans heure</string>
 	<key>Approval requests (%lld)</key>
@@ -104,6 +106,8 @@
 	<string>Demandée par %@</string>
 	<key>At a time of day</key>
 	<string>À une heure précise</string>
+	<key>Back to Today</key>
+	<string>Revenir à aujourd’hui</string>
 	<key>Bakery website</key>
 	<string>Site de la boulangerie</string>
 	<key>Before the due time</key>
@@ -299,11 +303,9 @@
 	<key>Green</key>
 	<string>Vert</string>
 	<key>Hides the done tasks</key>
-	<string>Masque les tâches terminées</string>
+	<string>Masque les tâches faites</string>
 	<key>Hides the section</key>
 	<string>Masque la section</string>
-	<key>Hides the tasks done today</key>
-	<string>Masque les tâches terminées aujourd’hui</string>
 	<key>History</key>
 	<string>Historique</string>
 	<key>History is unavailable offline.</key>
@@ -364,10 +366,14 @@
 	<string>Plus</string>
 	<key>Morning summary</key>
 	<string>Résumé du matin</string>
+	<key>Move</key>
+	<string>Déplacer</string>
 	<key>Move Down</key>
 	<string>Descendre</string>
 	<key>Move Up</key>
 	<string>Monter</string>
+	<key>Move the selected task</key>
+	<string>Déplacer la tâche sélectionnée</string>
 	<key>Move the tasks to</key>
 	<string>Déplacer les tâches vers</string>
 	<key>Move the tasks to another project.</key>
@@ -466,6 +472,8 @@
 	<string>Plus rien pour aujourd’hui.</string>
 	<key>Nothing open</key>
 	<string>Rien en attente</string>
+	<key>Nothing planned for this day.</key>
+	<string>Rien de prévu ce jour-là.</string>
 	<key>Nothing planned for today.</key>
 	<string>Rien de prévu aujourd’hui.</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -504,8 +512,6 @@
 	<string>Ouvrir la tâche</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Ouvre le visualiseur de caractères (⌃⌘Espace)</string>
-	<key>Opens the day in the plan</key>
-	<string>Ouvre le jour dans le planning</string>
 	<key>Options: %@</key>
 	<string>Options : %@</string>
 	<key>Orange</key>
@@ -614,14 +620,16 @@
 	<string>Partagé via le serveur avec le téléphone, dayhand et les agents. Une modification faite ici attend sur ce Mac jusqu’à ce que le serveur l’ait reçue.</string>
 	<key>Shortcut from any app:</key>
 	<string>Raccourci depuis n’importe quelle app :</string>
+	<key>Shows the day here</key>
+	<string>Affiche ce jour ici</string>
 	<key>Shows the done tasks</key>
-	<string>Affiche les tâches terminées</string>
+	<string>Affiche les tâches faites</string>
 	<key>Shows the plan health</key>
 	<string>Affiche l’état du plan</string>
 	<key>Shows the section</key>
 	<string>Affiche la section</string>
-	<key>Shows the tasks done today</key>
-	<string>Affiche les tâches terminées aujourd’hui</string>
+	<key>Shows today again (Esc)</key>
+	<string>Affiche de nouveau aujourd’hui (Échap)</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
 	<string>Quelque chose répond à cette adresse, mais ce n’est pas un serveur Dayhand.</string>
 	<key>Start with: %@</key>

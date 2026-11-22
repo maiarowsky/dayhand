@@ -178,6 +178,22 @@
 			<string>encore %lld fois</string>
 		</dict>
 	</dict>
+	<key>%lld on this day's plan.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld tâche ce jour-là.</string>
+			<key>other</key>
+			<string>%lld tâches ce jour-là.</string>
+		</dict>
+	</dict>
 	<key>%lld on today's plan.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

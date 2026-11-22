@@ -222,6 +222,26 @@
 			<string>jeszcze %lld raza</string>
 		</dict>
 	</dict>
+	<key>%lld on this day's plan.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>few</key>
+			<string>%lld zadania na ten dzień.</string>
+			<key>many</key>
+			<string>%lld zadań na ten dzień.</string>
+			<key>one</key>
+			<string>%lld zadanie na ten dzień.</string>
+			<key>other</key>
+			<string>%lld zadania na ten dzień.</string>
+		</dict>
+	</dict>
 	<key>%lld on today's plan.</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
