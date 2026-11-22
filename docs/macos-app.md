@@ -31,9 +31,15 @@ and the selected task opens in a panel along the bottom. Projects need Dayhand s
   projects wait under **Archived**. How projects work: [Projects](projects.md).
 - **List, Board or Plan**: the switcher in the toolbar (⌃⌘1 Board, ⌃⌘2 Plan, ⌃⌘3 List) shows Today and
   every list place in three ways, and the choice is kept.
+- **Search, or add a task** (⌘K) in the middle of the toolbar: what you type narrows every list, and Return
+  adds it as a task, with the same date phrases as quick add. Escape clears it.
 
-- **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first, by
-  time) and done today, folded. One click ticks a task off. The context menu makes a task the one you
+- **Today**: the date, a strip of the next days (a dot for each open task; click a day to open it in the
+  plan), one sentence about the day (how many tasks, how many at a set time, repeating or overdue, and what
+  the plan health asks of you), then **Now** with "where I stopped", today's tasks by time and those for
+  any time, and done today, folded. **To plan** beside it lists the overdue tasks (with **To today**), the
+  ones without a day and the next three days'; in a narrow window the overdue tasks are at the top of Today
+  instead. One click ticks a task off. The context menu makes a task the one you
   work on now, moves it to today or tomorrow, archives it or moves it to the trash.
 - **Lists**: All Tasks, No Project or a project, their open tasks in sections by day, with search
   in the toolbar.

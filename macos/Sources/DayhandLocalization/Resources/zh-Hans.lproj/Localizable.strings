@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>%@ %@</key>
+	<string>%@%@</string>
 	<key>%@ (%@ does not exist that day)</key>
 	<string>%1$@（当天不存在 %2$@）</string>
 	<key>%@ (done)</key>
@@ -76,6 +78,8 @@
 	<string>允许通知</string>
 	<key>Amber</key>
 	<string>琥珀色</string>
+	<key>Any time</key>
+	<string>无具体时间</string>
 	<key>Approval requests (%lld)</key>
 	<string>审批请求（%lld）</string>
 	<key>Approval requests (newest %lld)</key>
@@ -144,12 +148,16 @@
 	<string>认领已续期</string>
 	<key>Claimed</key>
 	<string>已认领</string>
+	<key>Clear</key>
+	<string>清除</string>
 	<key>Close</key>
 	<string>关闭</string>
 	<key>Close the details</key>
 	<string>关闭详细信息</string>
 	<key>Color</key>
 	<string>颜色</string>
+	<key>Coming up</key>
+	<string>即将到来</string>
 	<key>Connect</key>
 	<string>连接</string>
 	<key>Connect a server to see the approval requests and proposals waiting for you.</key>
@@ -266,6 +274,8 @@
 	<string>请输入 1 到 %lld 之间的数字。</string>
 	<key>Every how many</key>
 	<string>间隔</string>
+	<key>Every open task has a day, and the next days are free.</key>
+	<string>所有未完成任务都有日期，接下来几天也有空。</string>
 	<key>Every task is in a project.</key>
 	<string>每个任务都在某个项目中。</string>
 	<key>Fold the tasks</key>
@@ -278,6 +288,12 @@
 	<string>通用</string>
 	<key>Go</key>
 	<string>前往</string>
+	<key>Good afternoon.</key>
+	<string>下午好。</string>
+	<key>Good evening.</key>
+	<string>晚上好。</string>
+	<key>Good morning.</key>
+	<string>早上好。</string>
 	<key>Gray</key>
 	<string>灰色</string>
 	<key>Green</key>
@@ -488,10 +504,14 @@
 	<string>打开任务</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>打开字符检视器（⌃⌘空格）</string>
+	<key>Opens the day in the plan</key>
+	<string>在计划中打开这一天</string>
 	<key>Options: %@</key>
 	<string>选项：%@</string>
 	<key>Orange</key>
 	<string>橙色</string>
+	<key>Overdue</key>
+	<string>已逾期</string>
 	<key>Overdue (%lld)</key>
 	<string>已逾期（%lld）</string>
 	<key>Pairing code</key>
@@ -570,6 +590,8 @@
 	<string>按回车添加为今天的任务；末尾的日期（tomorrow 9am、fri、23 oct）设定日期，+项目名设定项目。</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>按 Return 添加到今天；在末尾用英文写日期（tomorrow 9am、fri、23 oct）可设定日期。</string>
+	<key>Return adds “%@”: %@</key>
+	<string>按 Return 添加“%@”：%@</string>
 	<key>Revert</key>
 	<string>还原</string>
 	<key>Review</key>
@@ -580,8 +602,12 @@
 	<string>保存提醒</string>
 	<key>Save Repeat</key>
 	<string>保存重复</string>
-	<key>Search</key>
-	<string>搜索</string>
+	<key>Search or Add…</key>
+	<string>搜索或添加…</string>
+	<key>Search, or add a task</key>
+	<string>搜索或添加任务</string>
+	<key>Search, or press Return to add a task (⌘K)</key>
+	<string>搜索，或按 Return 添加任务 (⌘K)</string>
 	<key>Server</key>
 	<string>服务器</string>
 	<key>Server address</key>
@@ -592,6 +618,8 @@
 	<string>在任何应用中使用的快捷键：</string>
 	<key>Shows the done tasks</key>
 	<string>显示已完成的任务</string>
+	<key>Shows the plan health</key>
+	<string>显示计划状况</string>
 	<key>Shows the section</key>
 	<string>显示此部分</string>
 	<key>Shows the tasks done today</key>
@@ -716,6 +744,8 @@
 	<string>移到明天</string>
 	<key>To do</key>
 	<string>待办</string>
+	<key>To plan</key>
+	<string>待安排</string>
 	<key>To today</key>
 	<string>移到今天</string>
 	<key>Today</key>

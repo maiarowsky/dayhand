@@ -18,6 +18,8 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var tasks: [TaskItem] = []
     @Published private(set) var sections: TodaySections = .empty
+    /// The days around Today, its counts and the open tasks without a day or coming soon (`todayOverview`).
+    @Published private(set) var overview: TodayOverview = .empty
     /// The tasks in the trash, the most recently deleted first.
     @Published private(set) var trash: [TaskItem] = []
     @Published private(set) var pending = 0
@@ -46,6 +48,10 @@ final class AppModel: ObservableObject {
         didSet { if search != oldValue { recompute() } }
     }
     @Published var selection: String?
+    /// Moves on with ⌘K, so the toolbar's search field takes the keyboard.
+    @Published private(set) var searchFocusRequest = 0
+    /// The plan's day, as days from today; the day strip on Today sets it.
+    @Published var planDayOffset = 0
     /// The place picked in the sidebar (`show(_:)` changes it).
     @Published private(set) var place: Place = .today
     /// Board, plan or list, as last picked in the toolbar.
@@ -203,6 +209,8 @@ final class AppModel: ObservableObject {
         let now = Clock.nowMs()
         let next = todaySections(tasks, nowMs: now, timezone: settings.timezone)
         if next != sections { sections = next }
+        let nextOverview = todayOverview(tasks, sections: next)
+        if nextOverview != overview { overview = nextOverview }
         let nextCounts = sidebarCounts(tasks, projects: showsProjects ? projects : [], today: next.date)
         if nextCounts != counts { counts = nextCounts }
         let shown = isSearching ? tasks.filter(matchesSearch) : tasks
@@ -305,9 +313,32 @@ final class AppModel: ObservableObject {
     func show(_ place: Place) {
         guard place != self.place else { return }
         self.place = place
+        planDayOffset = 0
         recompute()
         if case .project = place { projectsExpanded = true }
         if let id = selection, let task = task(id), !place.lists(task, projects: projectIds) { selection = nil }
+    }
+
+    /// Puts the keyboard in the toolbar's search field (⌘K).
+    func focusSearch() {
+        showMainWindow()
+        searchFocusRequest += 1
+    }
+
+    /// Adds what is typed in the search field as a task, as quick add would, and clears it.
+    func addFromSearch() {
+        if quickAdd(search, in: searchAddPlace) { search = "" }
+    }
+
+    /// Where Return in the search field adds: the current place, or Today in a place that takes no tasks.
+    var searchAddPlace: Place { placeTakesTasks ? place : .today }
+
+    /// Opens [date] as one day of the plan.
+    func openPlanDay(_ date: String) {
+        guard let day = CivilDate(date), let start = CivilDate(today) else { return }
+        planDayOffset = day.dayNumber - start.dayNumber
+        UserDefaults.standard.set(true, forKey: PlanView.showsDayKey)
+        viewMode = .plan
     }
 
     func setNow(_ id: String) { run { try await $0.setNow(id) } }

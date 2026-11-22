@@ -44,6 +44,11 @@ enum Formatting {
         tr("\(first), \(second)")
     }
 
+    /// Two sentences one after the other: "Good morning. 5 on today's plan." (no space in Japanese and Chinese).
+    static func sentences(_ first: String, _ second: String) -> String {
+        tr("\(first) \(second)")
+    }
+
     /// The repeat rule in a few words: "Every 2 weeks on Mon, Thu", "Monthly on the last day".
     static func repeatRule(_ rule: RepeatRule) -> String {
         let n = rule.interval

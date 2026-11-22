@@ -16,8 +16,10 @@ This version is the basic one (MVP):
   (a dot of the project's colour or its emoji, the name and the number of open tasks, red while some are overdue;
   drag to reorder, **+** or ⌥⌘N for a new one, a context menu to edit, move, archive or delete one, and the
   archived ones under **Archived**), **Done and Archived** and **Trash**. The **Go** menu opens each
-  place: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects. The toolbar holds search (title and note, in
-  every list) and **+ Task**. A task dragged onto a project, No Project or Today goes there; **Task → Move to
+  place: ⌘1 Today, ⌘2 All Tasks, ⌘3 No Project, ⌘4 to ⌘9 the first six projects. The toolbar holds the field **Search, or
+  add a task** (⌘K): what is typed narrows every list (title and note), Return adds it as a task in the place, with
+  quick add's date phrases (Today in an archived project), and a line under the toolbar says what Return will add;
+  Escape clears it. Next to it are the view switcher and **+ Task**. A task dragged onto a project, No Project or Today goes there; **Task → Move to
   Project…** (⇧⌘M) picks one by typing. The window is at least 820 × 500 points, 1100 × 700 by default.
 - **Lists**: All Tasks, No Project and a project list their open tasks in sections (Overdue, Today,
   Later with the day, No Day) and the latest done (folded), each task with a second line of its project (outside
@@ -42,9 +44,15 @@ This version is the basic one (MVP):
   for that day at the half hour under the pointer, onto a day's top for the day without a time, onto another
   column to change its status, or onto a project in the sidebar to move it there. In a short window the header and
   the drawer shrink so the hours stay visible.
-- **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first by time) and
-  done today (folded). One click ticks a task off; the context menu works on it now, moves it to today or
-  tomorrow, archives it or moves it to the trash.
+- **Today** is an agenda: "Today" with the date, a strip of the next days (as many as fit, at least seven; today
+  in a blue circle, a dot for each open task up to three; a day opens the plan on that day), one sentence about the
+  day (a greeting, how many tasks are on today's plan, how many have a time, repeat or are overdue, and the plan
+  health), quick add, then **Now** with "where I stopped", today's tasks by time (the time on the left, a bar in the
+  status's colour) and those without a time under **Any time**, and done today (folded). Beside it, in the list
+  view and while the window is wide enough, **To plan** lists the overdue tasks (with **To today**), the open tasks
+  without a day and those of the next three days; in a narrower window it hides and the overdue tasks come back to
+  the top of Today. A short window drops the strip of days. One click ticks a task off; the context menu works on it
+  now, moves it to today or tomorrow, archives it or moves it to the trash.
 - **Quick add** at the top of Today, in the menu bar and in a floating panel from any app (**⌃⌥N** by default,
   changed in Settings). A date phrase at the end of the line sets the day and time, with the grammar of `dayhand`
   (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
@@ -60,9 +68,11 @@ This version is the basic one (MVP):
   criteria with ticks and how many are met, the plan, **Waiting for** with the tasks it depends on ("#12 Send the
   invoice (done)"; a task the Mac does not have is said so) and the proof of completion (summary, checks that
   passed or failed, links). The fields come with each snapshot and are kept in the database, so they show offline.
-- **Plan health card** above Today: one sentence from the server's report (`app:planHealth`), the most pressing
-  first ("Plan: 1 overdue · 1 approval request · 2 proposals · 5 due today"), red when something is late or
-  agents are paused, orange when the owner is asked for something, green when nothing needs a look. **Review**
+- **Plan health** at the end of Today's sentence: what the server's report (`app:planHealth`) asks for beyond
+  what Today already counts (agents paused, approval requests, blocked tasks…), in its colour; it opens the whole
+  report as one sentence, the most pressing first ("Plan: 1 overdue · 1 approval request · 2 proposals · 5 due today"). It
+  is red when something is late or agents are paused, orange when the owner is asked for something, and not shown
+  when nothing beyond Today's own counts needs a look. **Review**
   (when approval requests or proposals wait, or agents are paused) opens the waiting approval requests and
   proposals, read from the server and read-only: deciding stays on the phone and with `dayhand approvals` and
   `dayhand proposals`. The last report stays on the Mac offline; it goes with **Disconnect**.
@@ -373,7 +383,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   Archived, the archived projects, No Project and the trash, the sidebar with its update button, the
   project editor, Move to Project and the deletion dialog, the panel with cached history and
   with history unavailable offline, the Agent section (claim, blocked, criteria, plan, waiting for) and a proof,
-  the plan health card on Today, the read-only requests and proposals, the repeat and reminder editors (weekly with the reminders from Settings,
+  Today's agenda with To plan beside it and without it, the read-only requests and proposals, the repeat and reminder editors (weekly with the reminders from Settings,
   monthly on an nth weekday with a count and custom reminders), the menu bar, quick add, Connect, Settings, Settings → General with the notification settings, Settings → Updates and every
   state of the update window. Synthetic data is drawn off screen into PNG files (the sidebar's translucent
   background does not draw off screen, so the sidebar and task lists are also drawn on their own).

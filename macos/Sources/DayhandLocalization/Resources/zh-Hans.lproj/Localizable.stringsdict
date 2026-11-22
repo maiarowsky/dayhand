@@ -16,6 +16,20 @@
 			<string>%lld 个审批请求</string>
 		</dict>
 	</dict>
+	<key>%lld at a set time</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>定时 %lld</string>
+		</dict>
+	</dict>
 	<key>%lld blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -142,6 +156,20 @@
 			<string>还有 %lld 次</string>
 		</dict>
 	</dict>
+	<key>%lld on today's plan.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>今天有 %lld 项计划。</string>
+		</dict>
+	</dict>
 	<key>%lld open</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -182,6 +210,20 @@
 			<string>lld</string>
 			<key>other</key>
 			<string>%lld 个提议</string>
+		</dict>
+	</dict>
+	<key>%lld repeating</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>other</key>
+			<string>重复 %lld</string>
 		</dict>
 	</dict>
 	<key>%lld tasks today</key>

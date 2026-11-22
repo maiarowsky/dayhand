@@ -41,6 +41,8 @@ public struct DayhandApp: App {
             CommandGroup(replacing: .newItem) {
                 Button(tr("New Task…")) { QuickAddPanel.shared.show(place: model.place) }
                     .keyboardShortcut("n")
+                Button(tr("Search or Add…")) { model.focusSearch() }
+                    .keyboardShortcut("k")
             }
             SidebarCommands()
             CommandGroup(before: .sidebar) {

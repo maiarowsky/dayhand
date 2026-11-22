@@ -18,6 +18,22 @@
 			<string>%lld Genehmigungsanfragen</string>
 		</dict>
 	</dict>
+	<key>%lld at a set time</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld mit Uhrzeit</string>
+			<key>other</key>
+			<string>%lld mit Uhrzeit</string>
+		</dict>
+	</dict>
 	<key>%lld blocked</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -162,6 +178,22 @@
 			<string>noch %lld Mal</string>
 		</dict>
 	</dict>
+	<key>%lld on today's plan.</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld Aufgabe für heute.</string>
+			<key>other</key>
+			<string>%lld Aufgaben für heute.</string>
+		</dict>
+	</dict>
 	<key>%lld open</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -208,6 +240,22 @@
 			<string>%lld Vorschlag</string>
 			<key>other</key>
 			<string>%lld Vorschläge</string>
+		</dict>
+	</dict>
+	<key>%lld repeating</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@value@</string>
+		<key>value</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%lld wiederkehrend</string>
+			<key>other</key>
+			<string>%lld wiederkehrend</string>
 		</dict>
 	</dict>
 	<key>%lld tasks today</key>
