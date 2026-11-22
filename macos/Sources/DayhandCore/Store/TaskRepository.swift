@@ -406,7 +406,7 @@ public final class TaskRepository: Sendable {
 
     // MARK: Plan health
 
-    /// Keeps the last plan health report the server sent (`app:planHealth`), so the card above Today stays offline.
+    /// Keeps the last plan health report the server sent (`app:planHealth`), so Today's plan health stays offline.
     public func savePlanHealth(_ report: JSONValue) async throws {
         try await writer.write { db in try Meta.write(db, key: Meta.planHealthKey, report.encoded()) }
     }
