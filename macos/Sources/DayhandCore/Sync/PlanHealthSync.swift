@@ -11,7 +11,7 @@ public enum HealthRefresh: Hashable, Sendable {
 }
 
 /**
- * Reads the plan health report (`app:planHealth`) and keeps the last one in the database, so the card above Today
+ * Reads the plan health report (`app:planHealth`) and keeps the last one in the database, so the sentence on Today
  * shows it also offline, as the Android app's `HealthCardViewModel` (which keeps it only while the app runs).
  */
 public struct PlanHealthSync: Sendable {
