@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 // A task on Today: a circle to tick it off, its title and when, and a menu of the moves Today offers
 // (right click, or the ⋯ button). In the agenda it starts with its time ("Now" for the task worked on now) and a bar
-// in its status's colour, as in the plan of the week.
+// in its status's colour, as in the Mac's week plan.
 Rectangle {
     id: root
     objectName: "taskRow"
