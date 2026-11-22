@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 
 // One sentence about the day: a greeting, how many tasks are on today's plan, then how many of today's have a time
 // (◷) or repeat (↻) and how many are overdue (!), each in its colour. Wraps onto a second line in a narrow window.

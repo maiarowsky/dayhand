@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
 
 // Today and the days after it, as many as fit (a week at least): each with its weekday, its number (today's in a
 // circle in the accent colour) and a dot for each open task, up to three. Linux has no plan of the week to open, so a
