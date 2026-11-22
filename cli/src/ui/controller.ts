@@ -14,7 +14,7 @@ import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
 import { handleKey, type Effect } from "./handle.js";
 import { weekStart } from "./lists.js";
-import { derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
+import { BESIDE_COLUMNS, derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
 import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type Lists, type UiState, type ViewName } from "./state.js";
 
@@ -211,6 +211,11 @@ export class Controller {
     const id = selectedTask(this.ui, lists)?.id;
     this.columns = columns;
     this.rows = rows;
+    if (columns >= BESIDE_COLUMNS) this.ui = { ...this.ui, toPlan: false };
+    else if (id && this.ui.view === "today" && !this.ui.detail) {
+      const holds = (toPlan: boolean) => derive({ ...this.snapshot(), ui: { ...this.ui, toPlan } }).lists.today.some((task) => task.id === id);
+      if (!holds(this.ui.toPlan) && holds(!this.ui.toPlan)) this.ui = { ...this.ui, toPlan: !this.ui.toPlan };
+    }
     this.keepSelection(id, lists);
     this.emit();
   }

@@ -140,6 +140,23 @@ describe("Today as an agenda", () => {
     expect(selected()).toBe("Review pull request #42");
   });
 
+  test("a resize to a narrow terminal shows the panel that holds the selected task", async () => {
+    const { ui, text, selected } = await open(140);
+    ui.key("l");
+    ui.key("j");
+    expect(selected()).toBe("Idea for a blog post");
+    ui.resize(80, 24);
+    expect(selected()).toBe("Idea for a blog post");
+    expect(text()).toMatch(/← h Today$/m);
+    ui.resize(140, 24);
+    ui.key("h");
+    ui.key("j");
+    expect(selected()).toBe("Review pull request #42");
+    ui.resize(80, 24);
+    expect(selected()).toBe("Review pull request #42");
+    expect(text()).toMatch(/TO PLAN \(4\) l →$/m);
+  });
+
   test("without colour, today is still in reverse, each task keeps its status mark and overdue its heading", async () => {
     const { ui } = await open(80);
     const rows = withoutColour(ui.frame().rows);
