@@ -55,6 +55,9 @@ Rectangle {
             horizontalAlignment: Text.AlignRight
             text: root.nowRow ? qsTr("Now") : (root.task.time !== undefined ? root.task.time : "")
             font.pixelSize: 13
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: 8
+            elide: Text.ElideRight
             font.bold: root.nowRow
             font.features: { "tnum": 1 }
             color: root.nowRow ? sys.highlight : sys.placeholderText

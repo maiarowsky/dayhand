@@ -873,6 +873,18 @@ void TestApp::languageSwitchesAtOnce()
     QCOMPARE(ReminderPlanner::summaryTitle({2, 5, std::nullopt}), u"2 zadania na dziś, 5 zaległych"_s);
     snapshot(window, u"today-pl.png"_s);
 
+    // A longer word for Now (French) stays inside the time column, the same width as on the other rows.
+    model.setNow(idOf(model, u"Call mum"_s));
+    model.setLanguage(u"fr"_s);
+    QTRY_VERIFY(item(window, u"nowRow"_s));
+    QList<QQuickItem *> found;
+    collect(item(window, u"nowRow"_s), u"rowTime"_s, found);
+    QQuickItem *nowTime = found.value(0);
+    QTRY_COMPARE(nowTime->property("text").toString(), u"Maintenant"_s);
+    QTRY_COMPARE(nowTime->width(), 44.0);
+    QTRY_VERIFY2(nowTime->property("contentWidth").toReal() <= nowTime->width(),
+                 qPrintable(QString::number(nowTime->property("contentWidth").toReal())));
+
     // Empty follows the system's language.
     model.setLanguage(QString());
     QCOMPARE(model.language(), QString());
