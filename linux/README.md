@@ -4,9 +4,18 @@ Qt 6 and QML, C++20, built with CMake; Apache-2.0 like the rest of the repositor
 its app id `io.github.maiarowsky.dayhand` (the Wayland app id, the `.desktop` file and the icon name). This version
 is the basic one (MVP); installing it and setting it up on Omarchy/Hyprland is in [docs/linux.md](../docs/linux.md).
 
-- **Today**: overdue (with **To today**), **Now** with "where I stopped", today (timed tasks first by time) and done
-  today (folded). One click on the circle ticks a task off; the context menu (right click or **⋯**) works on it now,
-  moves it to today or tomorrow, archives it or moves it to the trash.
+- **Today** as an agenda, as on the Mac: the title with the date, a strip of the next days (today in a circle in the
+  accent colour, a dot for each open task, up to three; hover a day for its count), one sentence about the day
+  ("Good morning. 6 on today's plan." with ◷ at a set time, ↻ repeating and ! overdue), quick add, then the tasks by
+  time: **Now** with "where I stopped", today's at a set time, those without one under **Any time**, and done today
+  (folded). Each row has its time on the left and a bar in its status's colour (lime to do, olive in progress). The
+  strip gives its room to the tasks in a window less than 560 pixels high. The days do not open a plan: Linux has
+  none. One click on the circle ticks a task off; the context menu (right click or **⋯**) works on it now, moves it
+  to today or tomorrow, archives it or moves it to the trash.
+- **To plan**: the overdue tasks (with **To today**), those without a day (oldest first) and the next three days'.
+  In a window at least 800 pixels wide it is on the right while no task is open, and an open task's details take its
+  place. In a narrower window the overdue tasks lead the agenda and **To plan** folds in at its end, with the tasks
+  without a day and the next three days'.
 - **Task details**: click a row to open a right-hand panel in a wide window, or a page with **Back** in a narrow one.
   Edit the title, status, **Working on it now**, where you stopped and checklist items.
   A date phrase has an **I understand** preview; Return or **Set date** applies it, with **Today**, **No day** and
@@ -47,7 +56,7 @@ The rules are ported from the macOS app as behaviour, not code, and checked agai
 
 | Part | Where |
 |---|---|
-| Dates in the server's time zone, date phrases, quick add, repeat (RFC 5545 subset), Today's sections | `src/core/HelmDates`, `WhenParser`, `QuickAdd`, `Recurrence`, `TodaySections` |
+| Dates in the server's time zone, date phrases, quick add, repeat (RFC 5545 subset), Today's sections, the strip of days and To plan | `src/core/HelmDates`, `WhenParser`, `QuickAdd`, `Recurrence`, `TodaySections`, `TodayOverview` |
 | Reminders and the morning summary | `src/core/Reminders`, `ReminderPlanner`; `src/app/ReminderClock` rings them |
 | Local database (Qt SQL, SQLite, WAL) with the task rows and the outbox | `src/core/Database`, `TaskRows`, `TaskRepository` |
 | Sync: the outbox in order with `clientId` idempotency, then the snapshot merged field by field | `src/core/SyncEngine`, `SnapshotMerger`, `ConvexRemote`, on its own thread in `SyncWorker` |
@@ -78,9 +87,9 @@ tests:
 | Test | What it checks |
 |---|---|
 | `tst_dates`, `tst_recurrence` | the date phrases and repeat rules on the cases shared with the CLI and macOS (`tests/cases/*.json`) |
-| `tst_rules`, `tst_merge`, `tst_pairing`, `tst_sync` | Today's sections, reminders, task/settings merges (including waiting settings mutations), pairing and sync against a fake server |
+| `tst_rules`, `tst_merge`, `tst_pairing`, `tst_sync` | Today's sections and overview (the Mac's cases), reminders, task/settings merges (including waiting settings mutations), pairing and sync against a fake server |
 | `tst_translations` | runs lupdate on the sources and fails when a text is missing, unfinished or stale in any language |
-| `tst_app` | the model, reminder rescheduling after settings changes, the Today window and the quick add window on the offscreen platform: typing, ticking off, responsive task details and edits, the language switch |
+| `tst_app` | the model, reminder rescheduling after settings changes, the Today window and the quick add window on the offscreen platform: typing, ticking off, the agenda (strip of days, the sentence about the day, To plan beside it or folded in, its place taken by task details and its scroll kept), responsive task details and edits, the language switch |
 | `tst_desktop` | notifications and the tray against fake desktop services, as a client of a headless Weston |
 | `smoke_wayland` | the real `dayhand-qt` on Weston: starts in the background, a second copy hands `--quick-add` and a pairing link over |
 

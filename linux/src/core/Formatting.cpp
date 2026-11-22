@@ -72,6 +72,12 @@ QString dayName(const QString &date)
         .arg(Texts::tr(monthNames[civil->month - 1]));
 }
 
+QString shortWeekday(const QString &date)
+{
+    const auto civil = CivilDate::parse(date);
+    return civil ? Texts::tr(dayNames[civil->weekday() - 1]) : QString();
+}
+
 QString trashExpiry(qint64 deletedAt, const QString &today, const QString &timezone)
 {
     constexpr qint64 retentionMs = 30LL * 24 * 60 * 60 * 1000;
@@ -170,14 +176,12 @@ QString reminders(const TaskItem &task, const ReminderSettings &settings)
     return task.reminders ? text : Texts::tr("Default: %1").arg(text);
 }
 
-QString detailLine(const TaskItem &task, const QString &today, bool overdue)
+QString detailLine(const TaskItem &task, const QString &today, bool showsDay)
 {
     QStringList parts;
-    if (overdue) {
+    if (showsDay) {
         if (const auto text = due(task, today))
             parts.append(*text);
-    } else if (task.dueTime && task.dueDate == today) {
-        parts.append(*task.dueTime);
     }
     if (task.repeat)
         parts.append(u"↻"_s);

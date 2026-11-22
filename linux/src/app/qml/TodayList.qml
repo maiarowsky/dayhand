@@ -2,11 +2,25 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-// The sections of Today in one scrolling column.
+// Today's tasks by time, in one scrolling column: overdue (in a narrow window), the task worked on now,
+// today's at a set time, those without one under Any time, and done today (folded). In a narrow window To plan
+// follows at the end, folded: the tasks without a day and the next three days'.
 ScrollView {
     id: root
 
+    /// A narrow window: the overdue tasks lead the agenda; a wide one keeps them in To plan.
+    property bool showsOverdue: true
+    /// A narrow window: To plan folds in at the end.
+    property bool showsToPlan: false
     property bool showDone: false
+    property bool showToPlan: false
+
+    readonly property var timed: app.today.filter(task => task.time !== "")
+    readonly property var anyTime: app.today.filter(task => task.time === "")
+    readonly property bool hasNow: app.nowTask.id !== undefined
+    readonly property bool overdueShown: showsOverdue && app.overdue.length > 0
+    readonly property bool agendaEmpty: !hasNow && app.today.length === 0 && app.done.length === 0 && !overdueShown
+    readonly property int toPlanCount: app.noDay.length + app.comingUp.length
 
     signal addClicked()
 
@@ -24,9 +38,10 @@ ScrollView {
 
         ColumnLayout {
             objectName: "emptyToday"
-            visible: app.planEmpty && app.done.length === 0
+            visible: root.agendaEmpty
             Layout.fillWidth: true
-            Layout.topMargin: 64
+            Layout.topMargin: 48
+            Layout.bottomMargin: 16
             spacing: 12
 
             Label {
@@ -50,49 +65,63 @@ ScrollView {
 
         SectionHeader {
             objectName: "overdueHeader"
-            visible: app.overdue.length > 0
+            visible: root.overdueShown
             text: qsTr("Overdue (%1)").arg(app.overdue.length)
             color: app.overdueColor
         }
         Repeater {
-            model: app.overdue
+            model: root.showsOverdue ? app.overdue : []
             delegate: TaskRow {
                 required property var modelData
                 task: modelData
+                agenda: true
+                Layout.fillWidth: true
+            }
+        }
+
+        Item {
+            visible: root.overdueShown
+            Layout.preferredHeight: 10
+        }
+        TaskRow {
+            objectName: "nowRow"
+            visible: root.hasNow
+            Layout.fillWidth: true
+            task: app.nowTask
+            nowRow: true
+            agenda: true
+        }
+        Label {
+            objectName: "todayPlaceholder"
+            visible: app.today.length === 0 && !root.agendaEmpty
+            Layout.leftMargin: 78
+            Layout.topMargin: 6
+            Layout.bottomMargin: 6
+            color: sys.placeholderText
+            text: !root.overdueShown && !root.hasNow
+                  ? qsTr("Nothing left for today.") : qsTr("Nothing else planned for today.")
+        }
+        Repeater {
+            model: root.timed
+            delegate: TaskRow {
+                required property var modelData
+                task: modelData
+                agenda: true
                 Layout.fillWidth: true
             }
         }
 
         SectionHeader {
-            visible: app.nowTask.id !== undefined
-            text: qsTr("Now")
-        }
-        TaskRow {
-            objectName: "nowRow"
-            visible: app.nowTask.id !== undefined
-            Layout.fillWidth: true
-            task: app.nowTask
-            nowRow: true
-        }
-
-        SectionHeader {
-            objectName: "todayHeader"
-            visible: !(app.planEmpty && app.done.length === 0)
-            text: qsTr("Today")
-        }
-        Label {
-            visible: app.today.length === 0 && !(app.planEmpty && app.done.length === 0)
-            Layout.leftMargin: 16
-            Layout.bottomMargin: 6
-            color: sys.placeholderText
-            text: app.overdue.length === 0 && app.nowTask.id === undefined
-                  ? qsTr("Nothing left for today.") : qsTr("Nothing else planned for today.")
+            objectName: "anyTimeHeader"
+            visible: root.anyTime.length > 0 && (root.timed.length > 0 || root.hasNow)
+            text: qsTr("Any time")
         }
         Repeater {
-            model: app.today
+            model: root.anyTime
             delegate: TaskRow {
                 required property var modelData
                 task: modelData
+                agenda: true
                 Layout.fillWidth: true
             }
         }
@@ -109,8 +138,29 @@ ScrollView {
             delegate: TaskRow {
                 required property var modelData
                 task: modelData
+                agenda: true
                 Layout.fillWidth: true
             }
+        }
+
+        SectionHeader {
+            objectName: "toPlanHeader"
+            visible: root.showsToPlan && root.toPlanCount > 0
+            text: (root.showToPlan ? "▾ " : "▸ ") + qsTr("To plan (%1)").arg(root.toPlanCount)
+            clickable: true
+            onClicked: root.showToPlan = !root.showToPlan
+        }
+        ToPlanGroup {
+            objectName: "toPlanNoDay"
+            Layout.fillWidth: true
+            title: qsTr("No day")
+            tasks: root.showsToPlan && root.showToPlan ? app.noDay : []
+        }
+        ToPlanGroup {
+            objectName: "toPlanComingUp"
+            Layout.fillWidth: true
+            title: qsTr("Coming up")
+            tasks: root.showsToPlan && root.showToPlan ? app.comingUp : []
         }
 
         Item { Layout.preferredHeight: 16 }

@@ -663,6 +663,10 @@
 <context>
     <name>TaskRow</name>
     <message>
+        <source>Now</source>
+        <translation>Jetzt</translation>
+    </message>
+    <message>
         <source>Mark as not done</source>
         <translation>Als nicht erledigt markieren</translation>
     </message>
@@ -724,6 +728,29 @@
     </message>
 </context>
 <context>
+    <name>ToPlanPanel</name>
+    <message>
+        <source>To plan</source>
+        <translation>Zu planen</translation>
+    </message>
+    <message>
+        <source>Every open task has a day, and the next days are free.</source>
+        <translation>Jede offene Aufgabe hat einen Tag, und die nächsten Tage sind frei.</translation>
+    </message>
+    <message>
+        <source>Overdue</source>
+        <translation>Überfällig</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>Kein Tag</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>Demnächst</translation>
+    </message>
+</context>
+<context>
     <name>TodayList</name>
     <message>
         <source>Nothing planned for today.</source>
@@ -738,14 +765,6 @@
         <translation>Überfällig (%1)</translation>
     </message>
     <message>
-        <source>Now</source>
-        <translation>Jetzt</translation>
-    </message>
-    <message>
-        <source>Today</source>
-        <translation>Heute</translation>
-    </message>
-    <message>
         <source>Nothing left for today.</source>
         <translation>Für heute ist nichts mehr übrig.</translation>
     </message>
@@ -754,8 +773,24 @@
         <translation>Für heute ist sonst nichts geplant.</translation>
     </message>
     <message>
+        <source>Any time</source>
+        <translation>Ohne Uhrzeit</translation>
+    </message>
+    <message>
         <source>Done (%1)</source>
         <translation>Erledigt (%1)</translation>
+    </message>
+    <message>
+        <source>To plan (%1)</source>
+        <translation>Zu planen (%1)</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>Kein Tag</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>Demnächst</translation>
     </message>
 </context>
 <context>
@@ -778,6 +813,63 @@
     <message>
         <source>The keyring could not be read (%1), so Dayhand starts without a server.</source>
         <translation>Der Schlüsselbund konnte nicht gelesen werden (%1), daher startet Dayhand ohne Server.</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1: %n open</source>
+        <comment>a day of the strip: Sat 24 Oct: 2 open</comment>
+        <translation>
+            <numerusform>%1: %n offen</numerusform>
+            <numerusform>%1: %n offen</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Good morning.</source>
+        <translation>Guten Morgen.</translation>
+    </message>
+    <message>
+        <source>Good afternoon.</source>
+        <translation>Guten Tag.</translation>
+    </message>
+    <message>
+        <source>Good evening.</source>
+        <translation>Guten Abend.</translation>
+    </message>
+    <message>
+        <source>Nothing planned for today.</source>
+        <translation>Für heute ist nichts geplant.</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n on today&apos;s plan.</source>
+        <translation>
+            <numerusform>%n Aufgabe für heute.</numerusform>
+            <numerusform>%n Aufgaben für heute.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 %2</source>
+        <comment>a greeting, then how many tasks today has: Good morning. 6 on today&apos;s plan.</comment>
+        <translation>%1 %2</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n at a set time</source>
+        <translation>
+            <numerusform>%n mit Uhrzeit</numerusform>
+            <numerusform>%n mit Uhrzeit</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n repeating</source>
+        <translation>
+            <numerusform>%n wiederkehrend</numerusform>
+            <numerusform>%n wiederkehrend</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n overdue</source>
+        <translation>
+            <numerusform>%n überfällig</numerusform>
+            <numerusform>%n überfällig</numerusform>
+        </translation>
     </message>
     <message>
         <source>No day</source>

@@ -73,9 +73,11 @@ is signed in to ([Quick start](#quick-start)).
 
 ## Desktop apps
 
-**Dayhand for Linux** (Qt 6) has Today with task details, a trash with restore, reminder settings,
-a quick add window for a keyboard binding and a tray icon. Reminders and the morning summary come
-as desktop notifications.
+**Dayhand for Linux** (Qt 6) shows Today as an agenda, as the Mac does: a strip of the next days,
+one sentence about the day, and the tasks by time. To plan (overdue, no day, coming up) sits on the
+right until a task is opened there. It also has task details, a trash with restore, reminder
+settings, a quick add window for a keyboard binding and a tray icon. Reminders and the morning
+summary come as desktop notifications.
 
 **Dayhand for macOS** keeps Today, projects and lists in a sidebar. Each one opens as a list, a
 board or a week plan. It has quick add from the menu bar or a global shortcut, reminders and the

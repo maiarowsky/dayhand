@@ -651,6 +651,10 @@
 <context>
     <name>TaskRow</name>
     <message>
+        <source>Now</source>
+        <translation>现在</translation>
+    </message>
+    <message>
         <source>Mark as not done</source>
         <translation>标记为未完成</translation>
     </message>
@@ -712,6 +716,29 @@
     </message>
 </context>
 <context>
+    <name>ToPlanPanel</name>
+    <message>
+        <source>To plan</source>
+        <translation>待安排</translation>
+    </message>
+    <message>
+        <source>Every open task has a day, and the next days are free.</source>
+        <translation>所有未完成任务都有日期，接下来几天也有空。</translation>
+    </message>
+    <message>
+        <source>Overdue</source>
+        <translation>已逾期</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>无日期</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>即将到来</translation>
+    </message>
+</context>
+<context>
     <name>TodayList</name>
     <message>
         <source>Nothing planned for today.</source>
@@ -726,14 +753,6 @@
         <translation>已逾期 (%1)</translation>
     </message>
     <message>
-        <source>Now</source>
-        <translation>现在</translation>
-    </message>
-    <message>
-        <source>Today</source>
-        <translation>今天</translation>
-    </message>
-    <message>
         <source>Nothing left for today.</source>
         <translation>今天没有剩余任务了。</translation>
     </message>
@@ -742,8 +761,24 @@
         <translation>今天没有其他计划。</translation>
     </message>
     <message>
+        <source>Any time</source>
+        <translation>无具体时间</translation>
+    </message>
+    <message>
         <source>Done (%1)</source>
         <translation>已完成 (%1)</translation>
+    </message>
+    <message>
+        <source>To plan (%1)</source>
+        <translation>待安排（%1）</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>无日期</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>即将到来</translation>
     </message>
 </context>
 <context>
@@ -766,6 +801,58 @@
     <message>
         <source>The keyring could not be read (%1), so Dayhand starts without a server.</source>
         <translation>无法读取密钥环（%1），因此 Dayhand 在没有服务器的情况下启动。</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1: %n open</source>
+        <comment>a day of the strip: Sat 24 Oct: 2 open</comment>
+        <translation>
+            <numerusform>%1：%n 项未完成</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Good morning.</source>
+        <translation>早上好。</translation>
+    </message>
+    <message>
+        <source>Good afternoon.</source>
+        <translation>下午好。</translation>
+    </message>
+    <message>
+        <source>Good evening.</source>
+        <translation>晚上好。</translation>
+    </message>
+    <message>
+        <source>Nothing planned for today.</source>
+        <translation>今天没有计划。</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n on today&apos;s plan.</source>
+        <translation>
+            <numerusform>今天有 %n 项计划。</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 %2</source>
+        <comment>a greeting, then how many tasks today has: Good morning. 6 on today&apos;s plan.</comment>
+        <translation>%1%2</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n at a set time</source>
+        <translation>
+            <numerusform>定时 %n</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n repeating</source>
+        <translation>
+            <numerusform>重复 %n</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n overdue</source>
+        <translation>
+            <numerusform>%n 项逾期</numerusform>
+        </translation>
     </message>
     <message>
         <source>No day</source>

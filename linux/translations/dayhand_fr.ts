@@ -663,6 +663,10 @@
 <context>
     <name>TaskRow</name>
     <message>
+        <source>Now</source>
+        <translation>Maintenant</translation>
+    </message>
+    <message>
         <source>Mark as not done</source>
         <translation>Marquer comme non faite</translation>
     </message>
@@ -724,6 +728,29 @@
     </message>
 </context>
 <context>
+    <name>ToPlanPanel</name>
+    <message>
+        <source>To plan</source>
+        <translation>À planifier</translation>
+    </message>
+    <message>
+        <source>Every open task has a day, and the next days are free.</source>
+        <translation>Chaque tâche ouverte a un jour, et les prochains jours sont libres.</translation>
+    </message>
+    <message>
+        <source>Overdue</source>
+        <translation>En retard</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>Aucun jour</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>À venir</translation>
+    </message>
+</context>
+<context>
     <name>TodayList</name>
     <message>
         <source>Nothing planned for today.</source>
@@ -738,14 +765,6 @@
         <translation>En retard (%1)</translation>
     </message>
     <message>
-        <source>Now</source>
-        <translation>Maintenant</translation>
-    </message>
-    <message>
-        <source>Today</source>
-        <translation>Aujourd&apos;hui</translation>
-    </message>
-    <message>
         <source>Nothing left for today.</source>
         <translation>Plus rien pour aujourd&apos;hui.</translation>
     </message>
@@ -754,8 +773,24 @@
         <translation>Rien d&apos;autre de prévu aujourd&apos;hui.</translation>
     </message>
     <message>
+        <source>Any time</source>
+        <translation>Sans heure</translation>
+    </message>
+    <message>
         <source>Done (%1)</source>
         <translation>Faites (%1)</translation>
+    </message>
+    <message>
+        <source>To plan (%1)</source>
+        <translation>À planifier (%1)</translation>
+    </message>
+    <message>
+        <source>No day</source>
+        <translation>Aucun jour</translation>
+    </message>
+    <message>
+        <source>Coming up</source>
+        <translation>À venir</translation>
     </message>
 </context>
 <context>
@@ -778,6 +813,63 @@
     <message>
         <source>The keyring could not be read (%1), so Dayhand starts without a server.</source>
         <translation>Le trousseau n&apos;a pas pu être lu (%1), Dayhand démarre donc sans serveur.</translation>
+    </message>
+    <message numerus="yes">
+        <source>%1: %n open</source>
+        <comment>a day of the strip: Sat 24 Oct: 2 open</comment>
+        <translation>
+            <numerusform>%1 : %n ouverte</numerusform>
+            <numerusform>%1 : %n ouvertes</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Good morning.</source>
+        <translation>Bonjour.</translation>
+    </message>
+    <message>
+        <source>Good afternoon.</source>
+        <translation>Bonjour.</translation>
+    </message>
+    <message>
+        <source>Good evening.</source>
+        <translation>Bonsoir.</translation>
+    </message>
+    <message>
+        <source>Nothing planned for today.</source>
+        <translation>Rien de prévu aujourd&apos;hui.</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n on today&apos;s plan.</source>
+        <translation>
+            <numerusform>%n tâche pour aujourd&apos;hui.</numerusform>
+            <numerusform>%n tâches pour aujourd&apos;hui.</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 %2</source>
+        <comment>a greeting, then how many tasks today has: Good morning. 6 on today&apos;s plan.</comment>
+        <translation>%1 %2</translation>
+    </message>
+    <message numerus="yes">
+        <source>%n at a set time</source>
+        <translation>
+            <numerusform>%n à heure fixe</numerusform>
+            <numerusform>%n à heure fixe</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n repeating</source>
+        <translation>
+            <numerusform>%n récurrente</numerusform>
+            <numerusform>%n récurrentes</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <source>%n overdue</source>
+        <translation>
+            <numerusform>%n en retard</numerusform>
+            <numerusform>%n en retard</numerusform>
+        </translation>
     </message>
     <message>
         <source>No day</source>
