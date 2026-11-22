@@ -285,10 +285,12 @@ export class Controller {
         const value = await get();
         if (this.stopped) return;
         const before = this.selectedId();
+        const completing = before !== undefined && before === this.completingTaskId;
+        const wasSplit = completing ? derive(this.snapshot()).lists.todaySplit : undefined;
         put(value);
         const lists = derive(this.snapshot()).lists;
         // Completing a task keeps its list position instead of following it to Done.
-        this.ui = before && before === this.completingTaskId ? keepRow(this.ui, lists) : reanchor(this.ui, before, lists);
+        this.ui = completing ? keepRow(this.ui, lists, wasSplit) : reanchor(this.ui, before, lists);
         this.conn = { state: "online", at: this.now() };
       } catch (error) {
         this.failed(error);

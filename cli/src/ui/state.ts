@@ -170,11 +170,23 @@ export function moveRow(state: UiState, lists: Lists, delta: number): UiState {
   }
 }
 
-/** After completing a task the cursor keeps its row; in Today it stays on an open task, the nearest above when needed. */
-export function keepRow(state: UiState, lists: Lists): UiState {
+/**
+ * After completing a task the cursor keeps its row; in Today it stays on an open
+ * task, the nearest above when needed, and in the column it was in (`wasSplit`:
+ * the agenda's length before the refresh) while that column has tasks.
+ */
+export function keepRow(state: UiState, lists: Lists, wasSplit?: number): UiState {
   if (state.view !== "today") return moveRow(state, lists, 0);
-  let at = clamp(state.cursor.today, lists.today.length);
-  while (at > 0 && lists.today[at]?.status === "done") at--;
+  const split = lists.todaySplit;
+  let first = 0;
+  let end = lists.today.length;
+  let at = state.cursor.today;
+  if (split !== undefined && wasSplit !== undefined) {
+    if (at < wasSplit && split > 0) end = split;
+    else if (at >= wasSplit && split < end) [first, at] = [split, at + split - wasSplit];
+  }
+  at = first + clamp(at - first, end - first);
+  while (at > first && lists.today[at]?.status === "done") at--;
   return { ...state, cursor: { ...state.cursor, today: at } };
 }
 

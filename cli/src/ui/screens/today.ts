@@ -130,7 +130,10 @@ function planLines(input: TodayInput, first: number, width: number): Line[] {
   const dueWidth = dueWidthOf(all, view.date, "day");
   const lines: Line[] = [{ row: [seg(` ${t("section.toPlan")}`, { bold: true })] }];
   if (all.length === 0) {
-    lines.push({ row: [] }, { row: [seg(`  ${input.filter ? t("section.noMatch") : t("plan.empty")}`, { dim: true })] });
+    const plan = input.plan?.date === view.date ? input.plan : undefined;
+    const free = plan !== undefined && !plan.upcoming.some((task) => task.dueDate! > view.date && task.status !== "done");
+    const note = !plan ? undefined : input.filter ? t("section.noMatch") : free ? t("plan.empty") : undefined;
+    if (note) lines.push({ row: [] }, { row: [seg(`  ${note}`, { dim: true })] });
     return lines;
   }
   let index = first;

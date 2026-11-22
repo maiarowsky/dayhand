@@ -25,9 +25,9 @@ const api: Api = {
 };
 
 const controllers: Controller[] = [];
-async function open(columns: number, rows = 24, language: Language = "en") {
+async function open(columns: number, rows = 24, language: Language = "en", source: Api = api) {
   setLanguage(language);
-  const ui = new Controller({ api, view: "today", now: () => SAMPLE_NOW, columns, rows });
+  const ui = new Controller({ api: source, view: "today", now: () => SAMPLE_NOW, columns, rows });
   controllers.push(ui);
   await ui.refresh();
   return { ui, text: () => rowsText(ui.frame().rows), selected: () => derive(ui.snapshot()).lists.today[ui.snapshot().ui.cursor.today]?.title };
@@ -124,6 +124,40 @@ describe("Today as an agenda", () => {
     expect(text).toMatch(/OVERDUE \(1\)\n.*▌ #9 ○/);
     expect(text).toMatch(/▌ #5 ◐ Ship the release notes/);
     expect(text).toMatch(/Good morning\. 6 on today's plan\. {2}2 at set times · 1 repeating · 1 overdue/);
+  });
+
+  test("wide: completing the last open task of the agenda keeps the cursor in the agenda, on the task above", async () => {
+    let view = SAMPLE_VIEW;
+    const completing: Api = {
+      ...api,
+      today: async () => view,
+      change: (async (_name: string, args: { taskId: string }) => {
+        const task = { ...view.today.find((t) => t.id === args.taskId)!, status: "done" as const, completedAt: SAMPLE_NOW };
+        view = { ...view, today: view.today.filter((t) => t.id !== task.id), doneToday: [...view.doneToday, task] };
+        return { task, next: null };
+      }) as Api["change"],
+    };
+    const { ui, selected } = await open(140, 24, "en", completing);
+    for (let i = 0; i < 5; i++) ui.key("j");
+    expect(selected()).toBe("Buy milk");
+    ui.key("x");
+    await ui.idle();
+    expect(view.doneToday.map((t) => t.title)).toContain("Buy milk");
+    expect(selected()).toBe("Ship the release notes");
+  });
+
+  test("To plan says every open task has a day only when the plan has loaded and nothing is due after today", async () => {
+    const quiet = { ...SAMPLE_VIEW, overdue: [] };
+    const free = "Every open task has a day";
+    const withPlan = (plan: Api["plan"]): Api => ({ ...api, today: async () => quiet, plan });
+    const unloaded = await open(140, 24, "en", withPlan(async () => Promise.reject(new Error("offline"))));
+    expect(unloaded.text()).toMatch(/│ {2}TO PLAN/);
+    expect(unloaded.text()).not.toContain(free);
+    const later = await open(140, 24, "en", withPlan(async () => ({ upcoming: [SAMPLE_TASKS.passport], noDay: [] })));
+    expect(later.text()).not.toContain("Renew the passport");
+    expect(later.text()).not.toContain(free);
+    const empty = await open(140, 24, "en", withPlan(async () => ({ upcoming: [], noDay: [] })));
+    expect(empty.text()).toContain(free);
   });
 
   test("a short terminal gives the strip of days' rows to the tasks and keeps the sentence on one row", async () => {
