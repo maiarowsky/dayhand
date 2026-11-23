@@ -163,6 +163,7 @@ export const de: Catalog = {
   "change.reminders": "Erinnerungen",
   "change.note": "Notiz",
   "change.resumeNote": "Wo ich aufgehört habe",
+  "change.project": "Projekt",
   "change.yes": "ja",
   "change.no": "nein",
   "action.create": "hinzugefügt",

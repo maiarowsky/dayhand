@@ -5,6 +5,7 @@ import { dayText, relativeDay, reminderText, repeatText } from "../../i18n/dates
 import { getLanguage, t, type Key } from "../../i18n/index.js";
 import { formatTimestamp } from "../../render/format.js";
 import type { Detail, HistoryEntry } from "../../render/model.js";
+import type { Project } from "../../projects.js";
 import { ICONS, refText } from "../rows.js";
 import type { WorkTask } from "../agents.js";
 import { daysBetween } from "../../when/calendar.js";
@@ -21,7 +22,7 @@ export const actorColor = (actor: string): Color => (actor === "agent" ? "magent
 /** "agent: claude-code" with the actor's colour. */
 export const actorSeg = (entry: Pick<HistoryEntry, "actor" | "by">) => seg(entry.by, { color: actorColor(entry.actor), bold: entry.actor === "agent" });
 
-/** The names of the fields a history entry shows, as the Mac app's history names them; others keep their key. */
+/** The fields a history entry shows, by their names in the catalog as the Mac app's history names them; others and timestamps are left out. */
 const FIELD_NAMES: Record<string, Key> = {
   title: "change.title",
   status: "detail.status",
@@ -40,19 +41,18 @@ const FIELD_NAMES: Record<string, Key> = {
   dependsOn: "detail.dependsOn",
   blockedReason: "detail.blocked",
   claimedBy: "detail.claimedBy",
+  projectId: "change.project",
 };
 
 function fieldName(key: string): string {
-  const name = FIELD_NAMES[key];
-  if (!name) return key;
-  const text = t(name);
+  const text = t(FIELD_NAMES[key]!);
   return text.charAt(0).toLocaleUpperCase(getLanguage()) + text.slice(1);
 }
 
-/** A changed value as text: days as in the heading, the *At fields (Unix ms) as times in the user's zone. */
-function value(key: string, v: unknown, timezone: string | undefined): string {
+/** A changed value as text: days as in the heading, a project by its name. */
+function value(key: string, v: unknown, projects: Project[]): string {
   if (v === undefined || v === null) return t("detail.none");
-  if (key.endsWith("At") && typeof v === "number") return formatTimestamp(v, timezone);
+  if (key === "projectId") return projects.find((p) => p.id === v)!.name;
   if (key === "isNow" && typeof v === "boolean") return t(v ? "change.yes" : "change.no");
   if (key === "status" && (v === "todo" || v === "doing" || v === "done")) return t(`status.${v}`);
   if (key === "dueDate" && typeof v === "string") return dayText(v);
@@ -60,13 +60,14 @@ function value(key: string, v: unknown, timezone: string | undefined): string {
   return JSON.stringify(v);
 }
 
-/** "Title: "a" → "b"; Day: none → Fri 30 Oct 2026" (only the changed fields). */
-export function describeChange(entry: HistoryEntry, timezone?: string): string {
-  const after = entry.after;
+/** "Title: "a" → "b"; Day: none → Fri 30 Oct 2026" (only the changed fields the catalog names; a project only when it is known). */
+export function describeChange(entry: HistoryEntry, projects: Project[] = []): string {
+  const { after, before } = entry;
   if (!after || entry.action === "create") return "";
+  const known = (v: unknown) => v === undefined || v === null || projects.some((p) => p.id === v);
   return Object.keys(after)
-    .filter((k) => k !== "updatedAt")
-    .map((k) => (entry.before && k in entry.before ? `${fieldName(k)}: ${value(k, entry.before[k], timezone)} → ${value(k, after[k], timezone)}` : `${fieldName(k)}: ${value(k, after[k], timezone)}`))
+    .filter((k) => k in FIELD_NAMES && (k !== "projectId" || (known(after[k]) && known(before?.[k]))))
+    .map((k) => (before && k in before ? `${fieldName(k)}: ${value(k, before[k], projects)} → ${value(k, after[k], projects)}` : `${fieldName(k)}: ${value(k, after[k], projects)}`))
     .join("; ");
 }
 
@@ -116,7 +117,7 @@ function dueText(task: Detail["task"], today: string): string {
 }
 
 /** All rows of the details, before scrolling. */
-export function detailRows(detail: Detail, today: string, timezone: string | undefined, width: number, now = Date.now()): Row[] {
+export function detailRows(detail: Detail, today: string, timezone: string | undefined, width: number, now = Date.now(), projects: Project[] = []): Row[] {
   const { task, history } = detail;
   const last = history.at(-1);
   const first = history[0];
@@ -143,7 +144,7 @@ export function detailRows(detail: Detail, today: string, timezone: string | und
   rows.push([], [seg(t("detail.history", { count: history.length }), { bold: true })]);
   const byWidth = Math.min(28, Math.max(3, ...history.map((h) => h.by.length)));
   for (const entry of [...history].reverse()) {
-    const change = describeChange(entry, timezone);
+    const change = describeChange(entry, projects);
     rows.push([
       seg(`  ${formatTimestamp(entry.at, timezone)}  `, { dim: true }),
       { ...actorSeg(entry), text: cut(entry.by, byWidth).padEnd(byWidth) },
@@ -181,9 +182,9 @@ export function wrap(text: string, width: number): string[] {
 }
 
 /** The details scrolled to `scroll` (clamped so the last row stays at the bottom). */
-export function detailScreen(detail: Detail | undefined, scroll: number, today: string, timezone: string | undefined, width: number, height: number, now = Date.now()): Screen & { scroll: number } {
+export function detailScreen(detail: Detail | undefined, scroll: number, today: string, timezone: string | undefined, width: number, height: number, now = Date.now(), projects: Project[] = []): Screen & { scroll: number } {
   if (!detail) return { rows: toHeight([[seg(`  ${t("detail.loading")}`, { dim: true })]], height), hits: [], scroll: 0 };
-  const rows = detailRows(detail, today, timezone, width, now);
+  const rows = detailRows(detail, today, timezone, width, now, projects);
   const top = Math.max(0, Math.min(scroll, rows.length - height));
   return { rows: toHeight(rows.slice(top, top + height), height), hits: [], scroll: top };
 }

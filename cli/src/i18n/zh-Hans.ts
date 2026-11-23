@@ -163,6 +163,7 @@ export const zhHans: Catalog = {
   "change.reminders": "提醒",
   "change.note": "备注",
   "change.resumeNote": "停在哪里",
+  "change.project": "项目",
   "change.yes": "是",
   "change.no": "否",
   "action.create": "已添加",

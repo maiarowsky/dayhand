@@ -163,6 +163,7 @@ export const ptBR: Catalog = {
   "change.reminders": "Lembretes",
   "change.note": "Nota",
   "change.resumeNote": "Onde parei",
+  "change.project": "Projeto",
   "change.yes": "sim",
   "change.no": "não",
   "action.create": "adicionada",

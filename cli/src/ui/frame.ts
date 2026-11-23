@@ -100,7 +100,7 @@ function content(s: Snapshot, height: number): Screen {
     const title = task ? `${task.ref === undefined ? "" : `#${task.ref} `}${task.title}` : "task";
     return editScreen(title, mode.fields, mode.focus, (f) => fieldPreview(f, s), width, height);
   }
-  if (ui.detail) return detailScreen(data.detail?.task.id === ui.detail.taskId ? data.detail : undefined, ui.detail.scroll, s.today, s.timezone, width, height, s.now);
+  if (ui.detail) return detailScreen(data.detail?.task.id === ui.detail.taskId ? data.detail : undefined, ui.detail.scroll, s.today, s.timezone, width, height, s.now, data.projects);
   if (!loaded(s)) return messageScreen(waiting(s), height);
   const c = ui.cursor;
   switch (ui.view) {
@@ -213,7 +213,7 @@ function wholeHints(hints: string, width: number): string {
 /** How far details and help can scroll before their last row leaves the bottom. */
 export function scrollLimits(s: Snapshot): { detail: number; help: number; approval: number } {
   const height = contentHeight(s.rows);
-  const detail = s.ui.detail && s.data.detail ? detailRows(s.data.detail, s.today, s.timezone, s.columns, s.now).length : 0;
+  const detail = s.ui.detail && s.data.detail ? detailRows(s.data.detail, s.today, s.timezone, s.columns, s.now, s.data.projects).length : 0;
   const approval = s.ui.mode.kind === "approval" ? approvalRows(s.ui.mode, s.timezone, s.columns).length : 0;
   return { detail: Math.max(0, detail - height), help: Math.max(0, helpRows(s.columns).length - height), approval: Math.max(0, approval - height) };
 }

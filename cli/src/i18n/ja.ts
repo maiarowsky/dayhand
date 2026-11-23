@@ -163,6 +163,7 @@ export const ja: Catalog = {
   "change.reminders": "リマインダー",
   "change.note": "メモ",
   "change.resumeNote": "中断したところ",
+  "change.project": "プロジェクト",
   "change.yes": "はい",
   "change.no": "いいえ",
   "action.create": "追加",

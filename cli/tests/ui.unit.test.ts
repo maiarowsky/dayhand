@@ -465,6 +465,24 @@ describe("agent screens and decisions", () => {
     }
   });
 
+  test("history leaves out timestamps and fields without a name, and names a known project", () => {
+    const projects = [{ id: "p-home", name: "Home", position: 0, archived: false, createdAt: 1, updatedAt: 1 }];
+    const history: HistoryEntry[] = [
+      { at: NOW - 3_000, actor: "app", actorName: null, by: "app", action: "complete", before: { status: "todo", completedAt: null }, after: { status: "done", completedAt: NOW - 3_000 } },
+      { at: NOW - 2_000, actor: "app", actorName: null, by: "app", action: "delete", before: { deletedAt: null }, after: { deletedAt: NOW - 2_000 } },
+      { at: NOW - 1_000, actor: "app", actorName: null, by: "app", action: "restore", before: { deletedAt: NOW - 2_000 }, after: { deletedAt: null } },
+      { at: NOW, actor: "cli", actorName: null, by: "cli", action: "update", before: { projectId: null, position: 1 }, after: { projectId: "p-home", position: 2 } },
+      { at: NOW, actor: "cli", actorName: null, by: "cli", action: "update", before: { projectId: "p-home" }, after: { projectId: "p-gone" } },
+    ];
+    const lines = rowsText(detailRows({ task: task("Plan"), history }, TODAY, ZONE.timezone, 120, NOW, projects)).split("\n");
+    const entry = (action: string) => lines.filter((line) => new RegExp(` ${action}( |$)`).test(line)).map((line) => line.replace(/^.*? (app|cli) +/, "").trimEnd());
+    expect(entry("done")).toEqual(["done  Status: todo → done"]);
+    expect(entry("to the trash")).toEqual(["to the trash"]);
+    expect(entry("restored")).toEqual(["restored"]);
+    expect(entry("changed")).toEqual(["changed", "changed  Project: none → Home"]);
+    expect(lines.join("\n")).not.toMatch(/completedAt|deletedAt|position|projectId|p-gone/);
+  });
+
   test("details include claims, met and unmet criteria, a wrapped plan, proof, dependencies and blocking", () => {
     const work = task("Work item", {
       claimedBy: { name: "demo-agent" }, claimExpiresAt: NOW - 1,
@@ -706,6 +724,41 @@ describe("controller", () => {
     await ui.idle();
     expect(ui.snapshot().flash?.text).toBe("The server answered with an error; the change may or may not have been saved");
     ui.stop();
+  });
+
+  test("past midnight a week left on today starts on the new today; one paged away stays", async () => {
+    let at = NOW;
+    const { api } = fakeApi(view);
+    const ui = new Controller({ api, view: "week", now: () => at, columns: 100, rows: 24 });
+    await ui.refresh();
+    expect(ui.snapshot().ui.weekStart).toBe(TODAY);
+    ui.key("l");
+    ui.key("l");
+    at += 86_400_000;
+    await ui.refresh();
+    expect(ui.snapshot().ui).toMatchObject({ weekStart: "2026-10-24", cursor: { weekDay: 1 } });
+    ui.key("]");
+    await ui.idle();
+    at += 86_400_000;
+    await ui.refresh();
+    expect(ui.snapshot().ui.weekStart).toBe("2026-10-31");
+    ui.stop();
+  });
+
+  test("a change refused for a rejected key says so in the UI's language", async () => {
+    const { api } = fakeApi(view, { change: async () => { throw new CliError("unauthenticated", "The API key was rejected (wrong or revoked)"); } });
+    setLanguage("pl");
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    try {
+      await ui.refresh();
+      for (const key of ["a", ..."Zadzwo"]) ui.key(key);
+      ui.key("enter");
+      await ui.idle();
+      expect(ui.snapshot().flash?.text).toBe("Serwer odrzucił klucz API (błędny albo unieważniony)");
+    } finally {
+      setLanguage("en");
+      ui.stop();
+    }
   });
 
   test("a quick add sends add_task with the phrase resolved and a #word kept in the title; the details name the agent", async () => {

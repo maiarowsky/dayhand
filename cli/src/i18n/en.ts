@@ -164,6 +164,7 @@ export const en = {
   "change.reminders": "Reminders",
   "change.note": "Note",
   "change.resumeNote": "Where I stopped",
+  "change.project": "Project",
   "change.yes": "yes",
   "change.no": "no",
   "action.create": "added",
