@@ -6,14 +6,13 @@ import { CliError, toCliError } from "../core/exit.js";
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import { hasProjectTasks, withProjectNames } from "../projects.js";
-import { isoWeekday, localAt } from "../when/calendar.js";
+import { localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
 import { agentId, type Health } from "./agents.js";
 import { ClipboardError, copyText, taskText, type ClipboardMethod } from "./clipboard.js";
 import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
 import { handleKey, type Effect } from "./handle.js";
-import { weekStart } from "./lists.js";
 import { BESIDE_COLUMNS, derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
 import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type Lists, type UiState, type ViewName } from "./state.js";
@@ -81,8 +80,8 @@ export class Controller {
     this.columns = options.columns ?? 80;
     this.rows = options.rows ?? 24;
     const today = localAt(this.now(), "UTC").date;
-    const ui = initialState(options.view, weekStart(today));
-    this.ui = { ...ui, mouse: options.mouse ?? ui.mouse, cursor: { ...ui.cursor, weekDay: isoWeekday(today) - 1 } };
+    const ui = initialState(options.view, today);
+    this.ui = { ...ui, mouse: options.mouse ?? ui.mouse };
   }
 
   // React's useSyncExternalStore reads these.
@@ -244,11 +243,11 @@ export class Controller {
   /** The user's zone; the week moves to its today unless keys moved it while the settings loaded. */
   private setZone(timezone: string) {
     const utc = localAt(this.now(), "UTC").date;
-    const untouched = !this.timezone && this.ui.weekStart === weekStart(utc) && this.ui.cursor.weekDay === isoWeekday(utc) - 1;
+    const untouched = !this.timezone && this.ui.weekStart === utc && this.ui.cursor.weekDay === 0;
     this.timezone = timezone;
     if (!untouched) return;
     const today = localAt(this.now(), timezone).date;
-    this.ui = { ...this.ui, weekStart: weekStart(today), cursor: { ...this.ui.cursor, weekDay: isoWeekday(today) - 1 } };
+    this.ui = { ...this.ui, weekStart: today, cursor: { ...this.ui.cursor, weekDay: 0 } };
   }
 
   private loadView(view: ViewName, fresh: boolean): Promise<void> {
@@ -325,9 +324,9 @@ export class Controller {
       return;
     }
     const failure = toCliError(error);
-    if (failure.code === "unauthenticated") this.conn = { state: "rejected", message: failure.message };
+    if (failure.code === "unauthenticated") this.conn = { state: "rejected", message: t("conn.keyRejected") };
     else if (failure.code === "rate_limited") this.conn = { state: "throttled", message: failure.message, at: this.lastAt() };
-    else this.conn = { state: "offline", message: failure.message, at: this.lastAt() };
+    else this.conn = { state: "offline", message: failure.code === "unavailable" ? t("conn.unreachable") : failure.message, at: this.lastAt() };
   }
 
   private say(text: string, tone: Flash["tone"]) {
@@ -521,6 +520,6 @@ function withoutReadTime(health?: Health): Health | undefined {
 }
 
 function changeError(error: CliError): string {
-  if (error.code === "unavailable") return t("error.notSaved", { message: error.message });
+  if (error.code === "unavailable") return t("error.notSaved", { message: t("conn.unreachable") });
   return error.message;
 }

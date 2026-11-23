@@ -285,7 +285,8 @@ of `at`, in the user's time zone: `agentsPaused`; `overdue`, `dueToday`, `inProg
 `workingBy`: `"agent: <name>"` while a claim lasts), `expiredClaims`, `blocked` (each with
 `reasons`: the blocked reason and every dependency not done yet), `awaitingApproval` (tasks with a
 pending request, and `pendingApprovals` in all), `completedToday` (each with `proof`, and
-`withProof`, `withoutProof`): each `{ count, tasks }` with the first 20 tasks; `proposals.count`;
+`withProof`, `withoutProof`; `withoutProof` counts only tasks an agent completed or with acceptance
+criteria): each `{ count, tasks }` with the first 20 tasks; `proposals.count`;
 and `oldestOpen`, the open task created longest ago with `ageDays`
 ([schema](schemas/plan-health.schema.json)). Proposals and archived tasks are not counted as open.
 

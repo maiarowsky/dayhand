@@ -1197,7 +1197,8 @@ dayhand help ui
 The terminal app (dayhand ui)
 
 dayhand ui opens Dayhand full screen in the terminal: Today, the board, the week
-(Monday to Sunday as bars, the selected day in full below) and the trash. Today
+(today and the next six days as bars, the selected day in full below) and the
+trash. Today
 is an agenda: a strip of the next days (today in reverse, a dot for each open
 task, up to three), one sentence about the day (how many tasks, how many have a
 time, repeat or are overdue, and what plan health asks of you), then the now task
@@ -1222,8 +1223,8 @@ macOS, wl\-copy/xclip/xsel on Linux and clip on Windows, falling back to OSC 52
 (for example over SSH). The terminal must allow OSC 52 clipboard writes; the
 status reports sending the text because the terminal cannot confirm copying it.
 
-Quick add (a) reads a date phrase at the end or the start of the line:
-"Call the accountant fri 2pm +Home". The line below shows how
+Quick add (a) reads a date phrase in English at the end or the start of the
+line: "Call the accountant +Home fri 2pm". The line below shows how
 it was read before Enter adds it; "no date" adds no day, quotes keep it literal.
 With backend 0.13.0 or later, the first recognized +project token selects an
 existing active project. Names match in any case; hyphens may replace spaces
@@ -1253,7 +1254,7 @@ Views:
   q  C\-c              Quit (q in details: back)
 
 Tasks:
-  a                   Add: Pay rent fri 2pm
+  a                   Add: Pay rent +Home fri 2pm (the date goes last)
   y                   Copy the selected task as plain text
   Space x             Done / not done (repeats go on)
   s                   Start (doing) / stop (todo)

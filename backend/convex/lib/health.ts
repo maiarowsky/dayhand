@@ -2,7 +2,9 @@
 // what needs a look: overdue and today's tasks, what is in progress and who
 // works on it, claims that ran out, blocked tasks and why, tasks waiting for
 // an approval, proposals, what was done today with and without proof, and how
-// old the oldest open task is. The phone shows the same as a card above Today.
+// old the oldest open task is. Only work that owes proof counts as done without
+// it: a task an agent completed, or one with acceptance criteria. The phone
+// shows the same as a card above Today.
 import type { ObjectType } from "convex/values";
 import type { Doc } from "../_generated/dataModel";
 import type { QueryCtx } from "../_generated/server";
@@ -35,6 +37,19 @@ function section<T>(items: T[]) {
 
 const hasProof = (t: Doc<"tasks">) => Boolean(t.proof?.summary || t.proof?.links?.length || t.proof?.checks?.length);
 
+const hasCriteria = (t: Doc<"tasks">) => (t.acceptance?.length ?? 0) > 0;
+
+/** Who completed the task last: the actor of its latest "complete" event. */
+async function completedByAgent(ctx: QueryCtx, task: Doc<"tasks">) {
+  const event = await ctx.db
+    .query("taskEvents")
+    .withIndex("by_task", (q) => q.eq("taskId", task._id))
+    .order("desc")
+    .filter((q) => q.eq(q.field("action"), "complete"))
+    .first();
+  return event?.actor === "agent";
+}
+
 const byDue = (a: Doc<"tasks">, b: Doc<"tasks">) =>
   (a.dueDate ?? "9999").localeCompare(b.dueDate ?? "9999") || (a.dueTime ?? "99").localeCompare(b.dueTime ?? "99") || a.createdAt - b.createdAt;
 
@@ -52,7 +67,7 @@ function reasonsOf(task: Doc<"tasks">, byId: Map<string, Doc<"tasks">>): string[
 
 const isLive = (t: Doc<"tasks">) => t.deletedAt === undefined && t.archivedAt === undefined;
 
-/** Reads only what the report can show, never the history of finished tasks: polled every minute, it must stay cheap. */
+/** Reads only what the report can show, and history only for today's tasks done without proof: polled every minute, it must stay cheap. */
 export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args) {
   const at = input.at ?? Date.now();
   const { userId } = identity;
@@ -89,6 +104,10 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
     .filter((t) => t.status === "done" && isLive(t) && t.proposedAt === undefined && localDate(t.completedAt!, timezone) === today)
     .sort((a, b) => b.completedAt! - a.completedAt!);
   const withProof = doneToday.filter(hasProof).length;
+  let withoutProof = 0;
+  for (const t of doneToday) {
+    if (!hasProof(t) && (hasCriteria(t) || (await completedByAgent(ctx, t)))) withoutProof += 1;
+  }
   const blocked = open.map((t) => ({ task: t, reasons: reasonsOf(t, byId) })).filter((b) => b.reasons.length > 0);
   const oldest = [...open].sort((a, b) => a.createdAt - b.createdAt)[0];
   const liveClaim = (t: Doc<"tasks">) => t.claimedBy !== undefined && (t.claimExpiresAt ?? 0) > at;
@@ -121,7 +140,7 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
     completedToday: {
       ...section(doneToday.map((t) => ({ ...brief(t), proof: hasProof(t) }))),
       withProof,
-      withoutProof: doneToday.length - withProof,
+      withoutProof,
     },
     oldestOpen: oldest ? { ...brief(oldest), createdAt: oldest.createdAt, ageDays: Math.max(0, Math.floor((at - oldest.createdAt) / DAY_MS)) } : null,
   };

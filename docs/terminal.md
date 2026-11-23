@@ -33,7 +33,7 @@ phrases in your time zone from the server settings ([dates](cli.md#topic-dates))
 dayhand ui
 ```
 
-It opens full screen with five views: **Today**, the **Board** (to do, in progress, done), the **Week** (Monday to Sunday as bars, the selected day
+It opens full screen with five views: **Today**, the **Board** (to do, in progress, done), the **Week** (today and the next six days as bars, the selected day
 in full below) the **Trash** and **Agents**. `Enter` opens a task with its history, which names who made each change:
 `app`, `cli` or `agent: <name>`, so an agent's edits stand out; details also show who claimed the work, the acceptance criteria, plan, proof and what it waits on or is blocked by.
 
@@ -63,7 +63,7 @@ The keys most people need:
 | `z` | In Today: show or hide the tasks done today |
 | `Tab`, `1` `2` `3` `4` `5` | Next view; Today, Board, Week, Trash, Agents |
 | `p`, `A`, `X` | In Agents: pause or resume changes; accept or reject a proposal (`Enter` opens a request, a digit picks an option, `Enter` confirms) |
-| `a` | Add a task: `Pay rent fri 2pm #home` |
+| `a` | Add a task: `Pay rent +home fri 2pm` (title, then `+project`, the date last) |
 | `Space` or `x` | Done or not done |
 | `s` | Start (doing) or stop (to do) |
 | `n`, `N` | Make it the now task with a resume note; clear the now task |

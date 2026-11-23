@@ -1,12 +1,13 @@
 // Task details: every field, the checklist, the note, and the history newest
 // first with who made each change (app, cli or agent: <name>), because agents
 // change the plan too and the person needs to see which one did what.
-import { relativeDay, reminderText, repeatText } from "../../i18n/dates.js";
-import { t, type Key } from "../../i18n/index.js";
+import { dayText, relativeDay, reminderText, repeatText } from "../../i18n/dates.js";
+import { getLanguage, t, type Key } from "../../i18n/index.js";
 import { formatTimestamp } from "../../render/format.js";
 import type { Detail, HistoryEntry } from "../../render/model.js";
 import { ICONS, refText } from "../rows.js";
 import type { WorkTask } from "../agents.js";
+import { daysBetween } from "../../when/calendar.js";
 import { cut, padTo, seg, toHeight, widthOf, type Color, type Row } from "../text.js";
 import type { Screen } from "./screen.js";
 
@@ -20,40 +21,77 @@ export const actorColor = (actor: string): Color => (actor === "agent" ? "magent
 /** "agent: claude-code" with the actor's colour. */
 export const actorSeg = (entry: Pick<HistoryEntry, "actor" | "by">) => seg(entry.by, { color: actorColor(entry.actor), bold: entry.actor === "agent" });
 
-/** A changed value as text; the *At fields (Unix ms) as times in the user's zone. */
+/** The names of the fields a history entry shows, as the Mac app's history names them; others keep their key. */
+const FIELD_NAMES: Record<string, Key> = {
+  title: "change.title",
+  status: "detail.status",
+  isNow: "change.isNow",
+  dueDate: "change.dueDate",
+  dueTime: "change.dueTime",
+  repeat: "change.repeat",
+  links: "detail.links",
+  checklist: "change.checklist",
+  reminders: "change.reminders",
+  note: "change.note",
+  resumeNote: "change.resumeNote",
+  acceptance: "detail.criteria",
+  plan: "detail.plan",
+  proof: "detail.proof",
+  dependsOn: "detail.dependsOn",
+  blockedReason: "detail.blocked",
+  claimedBy: "detail.claimedBy",
+};
+
+function fieldName(key: string): string {
+  const name = FIELD_NAMES[key];
+  if (!name) return key;
+  const text = t(name);
+  return text.charAt(0).toLocaleUpperCase(getLanguage()) + text.slice(1);
+}
+
+/** A changed value as text: days as in the heading, the *At fields (Unix ms) as times in the user's zone. */
 function value(key: string, v: unknown, timezone: string | undefined): string {
   if (v === undefined || v === null) return t("detail.none");
   if (key.endsWith("At") && typeof v === "number") return formatTimestamp(v, timezone);
+  if (key === "isNow" && typeof v === "boolean") return t(v ? "change.yes" : "change.no");
+  if (key === "status" && (v === "todo" || v === "doing" || v === "done")) return t(`status.${v}`);
+  if (key === "dueDate" && typeof v === "string") return dayText(v);
+  if (key === "dueTime" && typeof v === "string") return v;
   return JSON.stringify(v);
 }
 
-/** "title: "a" → "b"; dueDate: none → "2026-10-30"" (only the changed fields). */
+/** "Title: "a" → "b"; Day: none → Fri 30 Oct 2026" (only the changed fields). */
 export function describeChange(entry: HistoryEntry, timezone?: string): string {
   const after = entry.after;
   if (!after || entry.action === "create") return "";
   return Object.keys(after)
     .filter((k) => k !== "updatedAt")
-    .map((k) => (entry.before && k in entry.before ? `${k}: ${value(k, entry.before[k], timezone)} → ${value(k, after[k], timezone)}` : `${k}: ${value(k, after[k], timezone)}`))
+    .map((k) => (entry.before && k in entry.before ? `${fieldName(k)}: ${value(k, entry.before[k], timezone)} → ${value(k, after[k], timezone)}` : `${fieldName(k)}: ${value(k, after[k], timezone)}`))
     .join("; ");
 }
 
 const LABEL_WIDTH = 10;
 
-/** A field's label, padded so the values line up (wider when a language's labels are). */
-const labelSeg = (label: string) => seg(padTo(label, Math.max(LABEL_WIDTH, widthOf(label) + 2)), { dim: true });
+type Style = Parameters<typeof seg>[1];
+/** A labelled field: its values (one per line, wrapped), or a row of its own segments. */
+type Field = { label: string; values: string[]; style?: Style } | { label: string; row: Row };
 
-function field(label: string, text: string | undefined, style: Parameters<typeof seg>[1] = {}): Row[] {
-  return text ? [[labelSeg(label), seg(text, style)]] : [];
+/** The fields as rows, every value starting in the same column: after the longest label shown. */
+function fieldRows(fields: Field[], width: number): Row[] {
+  const indent = Math.min(Math.max(LABEL_WIDTH, ...fields.map((f) => widthOf(f.label) + 2)), Math.floor(width / 2));
+  const label = (text: string) => seg(padTo(text, indent), { dim: true });
+  return fields.flatMap((f) =>
+    "row" in f ? [[label(f.label), ...f.row]] : f.values.flatMap((text) => wrap(text, width - indent)).map((text, i) => [label(i === 0 ? f.label : ""), seg(text, f.style)]),
+  );
 }
 
-/** Agent-work fields, wrapped so plans, criteria and proof are readable in narrow terminals. */
-function workRows(task: WorkTask, timezone: string | undefined, width: number, now: number): Row[] {
-  const rows: Row[] = [];
+const field = (label: string, text: string | undefined, style: Style = {}): Field[] => (text ? [{ label, values: [text], style }] : []);
+
+/** Agent-work fields that have something to show: who claimed it, criteria, plan, proof, what it waits on or why it is blocked. */
+function workFields(task: WorkTask, timezone: string | undefined, now: number): Field[] {
+  const fields: Field[] = [];
   const add = (key: Key, values: string[], color?: Color) => {
-    const label = t(key);
-    const indent = Math.min(Math.max(LABEL_WIDTH, widthOf(label) + 2), Math.floor(width / 2));
-    const lines = (values.length ? values : [t("detail.none")]).flatMap((text) => wrap(text, width - indent));
-    rows.push(...lines.map((text, i) => [seg(padTo(i === 0 ? label : "", indent), { dim: true }), seg(text, { color })]));
+    if (values.length) fields.push({ label: t(key), values, style: { color } });
   };
   const claim = task.claimedBy ? [task.claimedBy.name, task.claimExpiresAt ? t("detail.claimUntil", { time: formatTimestamp(task.claimExpiresAt, timezone) }) : "", task.claimExpiresAt && task.claimExpiresAt <= now ? t("detail.claimExpired") : ""].filter(Boolean).join(" · ") : "";
   add("detail.claimedBy", claim ? [claim] : [], "magenta");
@@ -66,38 +104,42 @@ function workRows(task: WorkTask, timezone: string | undefined, width: number, n
     ...(proof.checks ?? []).map((check) => `${t(check.result === "pass" ? "proof.pass" : "proof.fail")}: ${check.name}${check.url ? ` <${check.url}>` : ""}`),
   ] : []);
   add("detail.dependsOn", task.dependsOn ?? []);
-  add("detail.blocked", task.blockedReason ? [task.blockedReason] : [], task.blockedReason ? "red" : undefined);
-  return rows;
+  add("detail.blocked", task.blockedReason ? [task.blockedReason] : [], "red");
+  return fields;
+}
+
+/** "Sun, 22 Nov 2026 14:00 (today)": the day as the heading shows it, and today, tomorrow or yesterday when it is one. */
+function dueText(task: Detail["task"], today: string): string {
+  if (!task.dueDate) return t("day.none");
+  const due = [dayText(task.dueDate), task.dueTime].filter(Boolean).join(" ");
+  return Math.abs(daysBetween(today, task.dueDate)) <= 1 ? `${due} (${relativeDay(task.dueDate, today)})` : due;
 }
 
 /** All rows of the details, before scrolling. */
 export function detailRows(detail: Detail, today: string, timezone: string | undefined, width: number, now = Date.now()): Row[] {
   const { task, history } = detail;
-  const due = [task.dueDate, task.dueTime].filter(Boolean).join(" ");
-  const relative = task.dueDate ? relativeDay(task.dueDate, today) : undefined;
   const last = history.at(-1);
   const first = history[0];
-  const rows: Row[] = [
-    [seg(refText(task), { color: "cyan" }), seg(" "), seg(ICONS[task.status]), seg(" "), seg(task.title, { bold: true })],
-    [],
+  const fields: Field[] = [
     ...field(t("detail.status"), t(`status.${task.status}`) + (task.isNow ? t("detail.now") : "") + (task.overdue ? t("detail.overdue") : ""), { color: task.overdue ? "red" : undefined }),
-    ...field(t("detail.due"), due ? (relative && relative !== task.dueDate ? `${due} (${relative})` : due) : t("day.none")),
+    ...field(t("detail.due"), dueText(task, today)),
     ...field(t("detail.repeat"), task.repeat ? repeatText(task.repeat) : task.rrule),
     ...field(t("detail.remind"), task.reminders ? (task.reminders.length ? task.reminders.map(reminderText).join(", ") : t("detail.none")) : undefined),
     ...task.links.flatMap((l, i) => field(i ? "" : t("detail.links"), l.title ? `${l.title} <${l.url}>` : l.url)),
     ...field(t("detail.next"), task.resumeNote, { color: "green" }),
     ...field(t("detail.deleted"), task.deletedAt ? formatTimestamp(task.deletedAt, timezone) : undefined),
     ...field(t("detail.archived"), task.archivedAt ? formatTimestamp(task.archivedAt, timezone) : undefined),
+    ...(last ? [{ label: t("detail.changed"), row: [actorSeg(last), seg(`  ${formatTimestamp(last.at, timezone)}`, { dim: true })] }] : []),
+    ...(first && first.action === "create" ? [{ label: t("detail.addedBy"), row: [actorSeg(first), seg(`  ${formatTimestamp(first.at, timezone)}`, { dim: true })] }] : []),
+    ...workFields(task as WorkTask, timezone, now),
   ];
-  if (last) rows.push([labelSeg(t("detail.changed")), actorSeg(last), seg(`  ${formatTimestamp(last.at, timezone)}`, { dim: true })]);
-  if (first && first.action === "create") rows.push([labelSeg(t("detail.addedBy")), actorSeg(first), seg(`  ${formatTimestamp(first.at, timezone)}`, { dim: true })]);
+  const rows: Row[] = [[seg(refText(task), { color: "cyan" }), seg(" "), seg(ICONS[task.status]), seg(" "), seg(task.title, { bold: true })], [], ...fieldRows(fields, width)];
   if (task.checklist?.length) {
     const done = task.checklist.filter((i) => i.done).length;
     rows.push([], [seg(t("detail.checklist", { done, total: task.checklist.length }), { bold: true })]);
     rows.push(...task.checklist.map((item, i) => [seg(`  ${i + 1}. `), seg(item.done ? "[x] " : "[ ] ", { color: item.done ? "green" : undefined }), seg(item.title, { dim: item.done })]));
   }
   if (task.note) rows.push([], [seg(t("detail.note"), { bold: true })], ...wrap(task.note, width - 2).map((l) => [seg(`  ${l}`)]));
-  rows.push([], ...workRows(task as WorkTask, timezone, width, now));
   rows.push([], [seg(t("detail.history", { count: history.length }), { bold: true })]);
   const byWidth = Math.min(28, Math.max(3, ...history.map((h) => h.by.length)));
   for (const entry of [...history].reverse()) {

@@ -4,7 +4,7 @@
 import { t } from "../i18n/index.js";
 import { tokenProject, type Project } from "../projects.js";
 import type { Board, Task, TodayView } from "../render/model.js";
-import { addDays, isoWeekday } from "../when/calendar.js";
+import { addDays } from "../when/calendar.js";
 
 export type Section = {
   key: "now" | "overdue" | "today" | "anyTime" | "done" | "noDay" | "comingUp";
@@ -95,9 +95,6 @@ export function boardColumns(board: Board, filter = "", projects: Project[] = []
     { key: "done", label: t("column.done"), tasks: only(board.done, filter, projects) },
   ];
 }
-
-/** The Monday of the week of `date` (weeks start on Monday, as Dayhand's repeat rules do). */
-export const weekStart = (date: string) => addDays(date, 1 - isoWeekday(date));
 
 /**
  * Seven days from `start` with the tasks due on each: open ones first, untimed

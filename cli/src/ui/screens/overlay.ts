@@ -5,6 +5,7 @@ import { KEY_GROUPS } from "../keys.js";
 import type { Line } from "../line.js";
 import type { EditField } from "../state.js";
 import { columns, cut, padTo, seg, toHeight, widthOf, type Row } from "../text.js";
+import { wrap } from "./detail.js";
 import type { Screen } from "./screen.js";
 
 /** A text field: the text with the cursor cell inverted, scrolled so the cursor stays visible. */
@@ -21,19 +22,23 @@ export function fieldSegs(current: Line, width: number, focused: boolean): Row {
   ];
 }
 
-/** The key map in rows: two columns of groups on wide terminals. */
+/** The key map in rows, every description wrapped whole: two columns of groups on wide terminals. */
 export function helpRows(width: number): Row[] {
+  const twoColumns = width >= 96;
+  const half = Math.floor((width - 3) / 2);
+  const groupWidth = twoColumns ? half : width;
   const group = (index: number) => {
     const g = KEY_GROUPS[index]!;
-    const keyWidth = Math.max(...g.bindings.map((b) => widthOf(b.keys))) + 2;
-    return [[seg(t(g.title), { bold: true, color: "cyan" })], ...g.bindings.map((b) => [seg(`  ${b.keys.padEnd(keyWidth)}`, { color: "yellow" }), seg(t(b.does))]), []] as Row[];
+    const indent = Math.max(...g.bindings.map((b) => widthOf(b.keys))) + 4;
+    const binding = (keys: string, does: string): Row[] =>
+      wrap(does, groupWidth - indent).map((line, i) => [seg(padTo(i === 0 ? `  ${keys}` : "", indent), { color: "yellow" }), seg(line)]);
+    return [[seg(t(g.title), { bold: true, color: "cyan" })], ...g.bindings.flatMap((b) => binding(b.keys, t(b.does))), []] as Row[];
   };
   const all = KEY_GROUPS.map((_, i) => group(i));
   const intro: Row[] = [[seg(t("help.title"), { bold: true }), seg(t("help.closes"), { dim: true })], []];
-  if (width < 96) return [...intro, ...all.flat()];
+  if (!twoColumns) return [...intro, ...all.flat()];
   const left = [...all[0]!, ...all[1]!, ...all[4]!];
   const right = [...all[2]!, ...all[3]!, ...all[5]!];
-  const half = Math.floor((width - 3) / 2);
   return [...intro, ...columns([{ rows: left, width: half }, { rows: right, width: half }], Math.max(left.length, right.length), [seg(" │ ", { dim: true })])];
 }
 

@@ -105,7 +105,7 @@ describe("y copies only in normal task selection mode", () => {
     expect(KEY_GROUPS.flatMap((group) => group.bindings)).toContainEqual({ keys: "y", does: "keys.tasks.copy" });
     expect(keysText()).toMatch(/y +Copy the selected task as plain text/);
     for (const language of LANGUAGES) {
-      for (const key of ["hints.today", "hints.board", "hints.week", "hints.trash", "hints.detail", "hints.agents", "hints.proposal"] as const) expect(tIn(language, key)).toMatch(/^y /);
+      for (const key of ["hints.today", "hints.board", "hints.week", "hints.trash", "hints.detail", "hints.agents", "hints.proposal"] as const) expect(tIn(language, key).split("  ")).toContainEqual(expect.stringMatching(/^y /));
       expect(tIn(language, "keys.tasks.copy")).not.toBe("");
     }
   });

@@ -252,6 +252,25 @@ describe("Today as an agenda", () => {
     expect(text()).toMatch(/^ Good morning\. 6 on today's plan\..*…$/m);
     expect(text()).toContain("Write the project brief");
   });
+
+  test("a narrow terminal keeps the way to To plan, and the keys bar shows whole keys, help and quit first", async () => {
+    for (const [columns, rows] of [[80, 24], [60, 20], [50, 16]] as const) {
+      const { text } = await open(columns, rows, "pl");
+      const lines = text().split("\n");
+      expect(lines[1], `${columns}`).toMatch(/(DO ZAPLANOWANIA \(4\) l →|l →\(4\))$/);
+      expect(lines.at(-1), `${columns}`).toMatch(/^ \? pomoc {2}q wyjdź {2}a dodaj/);
+      expect(lines.at(-1), `${columns}`).not.toContain("…");
+    }
+  });
+
+  test("the help wraps descriptions instead of cutting them", async () => {
+    for (const columns of [140, 80]) {
+      const { ui, text } = await open(columns, 80, "pl");
+      ui.key("?");
+      expect(text(), `${columns}`).not.toContain("…");
+      if (columns === 80) expect(text().replace(/\s+/g, " ")).toContain("Kolumna tablicy, dzień tygodnia; Dzisiaj i Do zaplanowania");
+    }
+  });
 });
 
 describe("To plan's reads", () => {
