@@ -208,7 +208,7 @@ export async function getPrompt(ctx: ActionCtx, identity: Identity, name: string
       messages: [
         text(
           `Check the health of my plan in Dayhand (today is ${today}). The report from plan_health is below. ` +
-            "Summarise it in a few lines, most urgent first, then go through what needs a decision: overdue tasks, blocked tasks (is the reason still true?), claims that ran out (release_task or ask the agent), tasks waiting for an approval, proposals in the inbox (I accept or reject them on the phone), and tasks done today without proof. " +
+            "Summarise it in a few lines, most urgent first, then go through what needs a decision: overdue tasks, blocked tasks (is the reason still true?), claims that ran out (release_task or ask the agent), tasks waiting for an approval, proposals in the inbox (I accept or reject them on the phone), and tasks done today with owesProof but no proof. " +
             "If agents are paused, say so first. " +
             SAFE_CHANGES,
         ),

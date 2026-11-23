@@ -101,6 +101,7 @@ export const ptBR: Catalog = {
   "conn.notYet": "Ainda não conectado; tente daqui a pouco",
   "conn.unreachable": "O servidor não está respondendo",
   "conn.keyRejected": "O servidor recusou a chave de API (errada ou revogada)",
+  "conn.serverError": "O servidor respondeu com um erro",
   "conn.throttled": "Aguardando {seconds} s para respeitar os limites do servidor",
 
   "heading.filter": "filtro: {filter}",
@@ -255,6 +256,7 @@ export const ptBR: Catalog = {
   "error.clipboardUnavailable": "Não foi possível copiar: sem ferramenta de área de transferência ou terminal",
   "error.clipboard": "Não foi possível copiar: falha na ferramenta de área de transferência ou na escrita no terminal",
   "error.notSaved": "Não salvo: {message}",
+  "error.maybeSaved": "O servidor respondeu com um erro; a alteração pode ter sido salva ou não",
 
   "flash.noTask": "Nenhuma tarefa selecionada",
   "flash.inTrash": "Na lixeira: r restaura",

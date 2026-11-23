@@ -110,7 +110,7 @@ describe("dayhand agents, policy and health", () => {
       "Waiting for approval: 0",
       "Approval requests pending: 2",
       "Proposals in the inbox: 4",
-      "Done today: 3 (2 with proof, 1 without)",
+      "Done today: 3 (with proof: 2; agent work or criteria without proof: 1)",
       "Oldest open: #2 Pay rent, 9 days",
     ]);
   });

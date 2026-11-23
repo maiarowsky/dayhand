@@ -39,7 +39,7 @@ const hasProof = (t: Doc<"tasks">) => Boolean(t.proof?.summary || t.proof?.links
 
 const hasCriteria = (t: Doc<"tasks">) => (t.acceptance?.length ?? 0) > 0;
 
-/** Who completed the task last: the actor of its latest "complete" event. */
+/** Whether an agent completed the task last: the actor of its latest "complete" event. */
 async function completedByAgent(ctx: QueryCtx, task: Doc<"tasks">) {
   const event = await ctx.db
     .query("taskEvents")
@@ -67,7 +67,7 @@ function reasonsOf(task: Doc<"tasks">, byId: Map<string, Doc<"tasks">>): string[
 
 const isLive = (t: Doc<"tasks">) => t.deletedAt === undefined && t.archivedAt === undefined;
 
-/** Reads only what the report can show, and history only for today's tasks done without proof: polled every minute, it must stay cheap. */
+/** Reads only what the report can show, and history only for tasks done today: polled every minute, it must stay cheap. */
 export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args) {
   const at = input.at ?? Date.now();
   const { userId } = identity;
@@ -103,11 +103,8 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
   const doneToday = recentlyDone
     .filter((t) => t.status === "done" && isLive(t) && t.proposedAt === undefined && localDate(t.completedAt!, timezone) === today)
     .sort((a, b) => b.completedAt! - a.completedAt!);
-  const withProof = doneToday.filter(hasProof).length;
-  let withoutProof = 0;
-  for (const t of doneToday) {
-    if (!hasProof(t) && (hasCriteria(t) || (await completedByAgent(ctx, t)))) withoutProof += 1;
-  }
+  const done = [];
+  for (const t of doneToday) done.push({ task: t, proof: hasProof(t), owesProof: hasCriteria(t) || (await completedByAgent(ctx, t)) });
   const blocked = open.map((t) => ({ task: t, reasons: reasonsOf(t, byId) })).filter((b) => b.reasons.length > 0);
   const oldest = [...open].sort((a, b) => a.createdAt - b.createdAt)[0];
   const liveClaim = (t: Doc<"tasks">) => t.claimedBy !== undefined && (t.claimExpiresAt ?? 0) > at;
@@ -138,9 +135,9 @@ export async function planHealth(ctx: QueryCtx, identity: Identity, input: Args)
     },
     proposals: { count: proposals.length },
     completedToday: {
-      ...section(doneToday.map((t) => ({ ...brief(t), proof: hasProof(t) }))),
-      withProof,
-      withoutProof,
+      ...section(done.map(({ task, proof, owesProof }) => ({ ...brief(task), proof, owesProof }))),
+      withProof: done.filter((d) => d.proof).length,
+      withoutProof: done.filter((d) => d.owesProof && !d.proof).length,
     },
     oldestOpen: oldest ? { ...brief(oldest), createdAt: oldest.createdAt, ageDays: Math.max(0, Math.floor((at - oldest.createdAt) / DAY_MS)) } : null,
   };

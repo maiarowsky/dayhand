@@ -102,6 +102,7 @@ export const en = {
   "conn.notYet": "Not connected yet; try again in a moment",
   "conn.unreachable": "The server is not answering",
   "conn.keyRejected": "The API key was rejected (wrong or revoked)",
+  "conn.serverError": "The server answered with an error",
   "conn.throttled": "Waiting {seconds} s to stay under the server's limits",
 
   "heading.filter": "filter: {filter}",
@@ -256,6 +257,7 @@ export const en = {
   "error.clipboardUnavailable": "Cannot copy: no clipboard tool or terminal",
   "error.clipboard": "Cannot copy: clipboard tool or terminal write failed",
   "error.notSaved": "Not saved: {message}",
+  "error.maybeSaved": "The server answered with an error; the change may or may not have been saved",
 
   "flash.noTask": "No task selected",
   "flash.inTrash": "In the trash: r restores it",

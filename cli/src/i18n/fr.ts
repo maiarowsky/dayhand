@@ -101,6 +101,7 @@ export const fr: Catalog = {
   "conn.notYet": "Pas encore connecté ; réessayez dans un instant",
   "conn.unreachable": "Le serveur ne répond pas",
   "conn.keyRejected": "Le serveur a refusé la clé API (erronée ou révoquée)",
+  "conn.serverError": "Le serveur a répondu par une erreur",
   "conn.throttled": "Attente de {seconds} s pour rester sous les limites du serveur",
 
   "heading.filter": "filtre : {filter}",
@@ -255,6 +256,7 @@ export const fr: Catalog = {
   "error.clipboardUnavailable": "Copie impossible : aucun outil de presse-papiers ni terminal",
   "error.clipboard": "Copie impossible : échec de l’outil de presse-papiers ou de l’écriture dans le terminal",
   "error.notSaved": "Non enregistré : {message}",
+  "error.maybeSaved": "Le serveur a répondu par une erreur ; la modification a pu être enregistrée ou non",
 
   "flash.noTask": "Aucune tâche sélectionnée",
   "flash.inTrash": "Dans la corbeille : r la restaure",

@@ -348,7 +348,8 @@ Decisions:
 - **"Done without proof"** counts tasks completed today with no summary, link or check, among
   those that owe proof: a task an agent completed, or one with acceptance criteria. A task the
   owner ticks off in the app or with `dayhand` (and that has no criteria) is not counted, so an
-  ordinary day stays quiet. It is a prompt to look, not an error.
+  ordinary day stays quiet. Each task done today carries `owesProof`, so the list can be read the
+  same way. It is a prompt to look, not an error.
 
 ## The third problem: starting well, and plans kept elsewhere
 

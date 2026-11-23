@@ -101,6 +101,7 @@ export const ja: Catalog = {
   "conn.notYet": "まだ接続していません。少し待ってからお試しください",
   "conn.unreachable": "サーバーが応答しません",
   "conn.keyRejected": "サーバーが API キーを拒否しました（誤りまたは無効化済み）",
+  "conn.serverError": "サーバーがエラーを返しました",
   "conn.throttled": "サーバーの制限内に収めるため {seconds} 秒待機中",
 
   "heading.filter": "フィルター：{filter}",
@@ -255,6 +256,7 @@ export const ja: Catalog = {
   "error.clipboardUnavailable": "コピーできません：クリップボードツールも端末もありません",
   "error.clipboard": "コピーできません：クリップボードツールまたは端末への書き込みが失敗しました",
   "error.notSaved": "保存されませんでした：{message}",
+  "error.maybeSaved": "サーバーがエラーを返しました。変更が保存されたかどうかは不明です",
 
   "flash.noTask": "タスクが選択されていません",
   "flash.inTrash": "ゴミ箱にあります：r で元に戻す",

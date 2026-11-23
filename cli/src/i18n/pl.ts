@@ -101,6 +101,7 @@ export const pl: Catalog = {
   "conn.notYet": "Jeszcze nie połączono; spróbuj za chwilę",
   "conn.unreachable": "Serwer nie odpowiada",
   "conn.keyRejected": "Serwer odrzucił klucz API (błędny albo unieważniony)",
+  "conn.serverError": "Serwer odpowiedział błędem",
   "conn.throttled": "Czekam {seconds} s, żeby nie przekroczyć limitów serwera",
 
   "heading.filter": "filtr: {filter}",
@@ -260,6 +261,7 @@ export const pl: Catalog = {
   "error.clipboardUnavailable": "Nie skopiowano: brak narzędzia schowka lub terminala",
   "error.clipboard": "Nie skopiowano: błąd narzędzia schowka lub zapisu do terminala",
   "error.notSaved": "Nie zapisano: {message}",
+  "error.maybeSaved": "Serwer odpowiedział błędem; zmiana mogła zostać zapisana albo nie",
 
   "flash.noTask": "Nie wybrano zadania",
   "flash.inTrash": "W koszu: r je przywraca",

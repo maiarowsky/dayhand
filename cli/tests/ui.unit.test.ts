@@ -481,9 +481,10 @@ describe("agent screens and decisions", () => {
 
 /** A fake server: a Today view, a board and a week; changes recorded; `down` makes every call fail. */
 function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
-  const state = { down: false, changes: [] as { tool: string; args: Record<string, unknown> }[], view: today, health: health(), agents: emptyAgents() };
+  const state = { down: false, serverError: false, changes: [] as { tool: string; args: Record<string, unknown> }[], view: today, health: health(), agents: emptyAgents() };
   const check = () => {
-    if (state.down) throw new CliError("unavailable", "Cannot reach http://127.0.0.1:9 (ECONNREFUSED)", { retryable: true });
+    if (state.down) throw new CliError("unavailable", "Cannot reach http://127.0.0.1:9 (ECONNREFUSED)", { retryable: true }, { cause: new TypeError("fetch failed") });
+    if (state.serverError) throw new CliError("unavailable", "http://127.0.0.1:9 answered HTTP 500; the change may or may not have been applied", { retryable: true });
   };
   const board: Board = { todo: today.today, doing: today.now ? [today.now] : [], done: today.doneToday };
   const api: Api = {
@@ -691,6 +692,20 @@ describe("controller", () => {
     } finally {
       setLanguage("en");
     }
+  });
+
+  test("an HTTP 500 says the server answered with an error, and a change may or may not have been saved", async () => {
+    const { api, state } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    await ui.refresh();
+    state.serverError = true;
+    await ui.refresh();
+    expect(rowsText(ui.frame().rows)).toContain("The server answered with an error · showing data from 11:00");
+    for (const key of ["a", ..."Call mum"].map((k) => (k === " " ? "space" : k))) ui.key(key);
+    ui.key("enter");
+    await ui.idle();
+    expect(ui.snapshot().flash?.text).toBe("The server answered with an error; the change may or may not have been saved");
+    ui.stop();
   });
 
   test("a quick add sends add_task with the phrase resolved and a #word kept in the title; the details name the agent", async () => {

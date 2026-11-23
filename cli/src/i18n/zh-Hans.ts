@@ -101,6 +101,7 @@ export const zhHans: Catalog = {
   "conn.notYet": "尚未连接；请稍后再试",
   "conn.unreachable": "服务器没有响应",
   "conn.keyRejected": "服务器拒绝了 API 密钥（错误或已撤销）",
+  "conn.serverError": "服务器返回了错误",
   "conn.throttled": "为不超出服务器限制，等待 {seconds} 秒",
 
   "heading.filter": "筛选：{filter}",
@@ -255,6 +256,7 @@ export const zhHans: Catalog = {
   "error.clipboardUnavailable": "无法复制：没有剪贴板工具或终端",
   "error.clipboard": "无法复制：剪贴板工具或终端写入失败",
   "error.notSaved": "未保存：{message}",
+  "error.maybeSaved": "服务器返回了错误；更改可能已保存，也可能没有",
 
   "flash.noTask": "未选择任务",
   "flash.inTrash": "在废纸篓中：按 r 恢复",

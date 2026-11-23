@@ -40,7 +40,7 @@ export type UiState = {
   /** Task details open over the view (Enter); `scroll` is the first history row shown. */
   detail?: { taskId: string; scroll: number };
   cursor: Cursor;
-  /** Monday of the week shown. */
+  /** First of the seven days shown (today by default). */
   weekStart: string;
   filter: string;
   /** The task last moved to the trash, for u (undo). */

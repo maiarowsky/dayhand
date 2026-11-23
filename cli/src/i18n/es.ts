@@ -101,6 +101,7 @@ export const es: Catalog = {
   "conn.notYet": "Aún sin conexión; inténtalo en un momento",
   "conn.unreachable": "El servidor no responde",
   "conn.keyRejected": "El servidor rechazó la clave API (incorrecta o revocada)",
+  "conn.serverError": "El servidor respondió con un error",
   "conn.throttled": "Esperando {seconds} s para no superar los límites del servidor",
 
   "heading.filter": "filtro: {filter}",
@@ -255,6 +256,7 @@ export const es: Catalog = {
   "error.clipboardUnavailable": "No se pudo copiar: no hay herramienta de portapapeles ni terminal",
   "error.clipboard": "No se pudo copiar: falló la herramienta de portapapeles o la escritura en el terminal",
   "error.notSaved": "No guardado: {message}",
+  "error.maybeSaved": "El servidor respondió con un error; puede que el cambio se haya guardado o no",
 
   "flash.noTask": "Ninguna tarea seleccionada",
   "flash.inTrash": "En la papelera: r la restaura",

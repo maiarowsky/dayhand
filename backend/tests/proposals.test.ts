@@ -220,11 +220,11 @@ describe("the plan health report", () => {
       completedToday: { count: 4, withProof: 1, withoutProof: 2 },
       oldestOpen: { title: "Stale claim", ageDays: 10 },
     });
-    expect(health.completedToday.tasks.map((t: any) => [t.title, t.proof])).toEqual([
-      ["Check the backup", false],
-      ["Rotate the logs", false],
-      ["Tidy the desk", false],
-      ["Send the invoice", true],
+    expect(health.completedToday.tasks.map((t: any) => [t.title, t.proof, t.owesProof])).toEqual([
+      ["Check the backup", false, true],
+      ["Rotate the logs", false, true],
+      ["Tidy the desk", false, false],
+      ["Send the invoice", true, false],
     ]);
     expect(await app.query(api.app.planHealth, { at: health.at })).toEqual(health);
 

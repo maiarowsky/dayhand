@@ -326,7 +326,7 @@ export class Controller {
     const failure = toCliError(error);
     if (failure.code === "unauthenticated") this.conn = { state: "rejected", message: t("conn.keyRejected") };
     else if (failure.code === "rate_limited") this.conn = { state: "throttled", message: failure.message, at: this.lastAt() };
-    else this.conn = { state: "offline", message: failure.code === "unavailable" ? t("conn.unreachable") : failure.message, at: this.lastAt() };
+    else this.conn = { state: "offline", message: offlineText(failure), at: this.lastAt() };
   }
 
   private say(text: string, tone: Flash["tone"]) {
@@ -519,7 +519,16 @@ function withoutReadTime(health?: Health): Health | undefined {
   return rest;
 }
 
+/** A network failure carries its cause; an HTTP 5xx answer has none. */
+const serverAnswered = (error: CliError) => error.code === "unavailable" && error.cause === undefined;
+
+function offlineText(error: CliError): string {
+  if (error.code !== "unavailable") return error.message;
+  return t(serverAnswered(error) ? "conn.serverError" : "conn.unreachable");
+}
+
 function changeError(error: CliError): string {
+  if (serverAnswered(error)) return t("error.maybeSaved");
   if (error.code === "unavailable") return t("error.notSaved", { message: t("conn.unreachable") });
   return error.message;
 }

@@ -101,6 +101,7 @@ export const de: Catalog = {
   "conn.notYet": "Noch nicht verbunden; versuch es gleich noch einmal",
   "conn.unreachable": "Der Server antwortet nicht",
   "conn.keyRejected": "Der Server hat den API-Schlüssel abgelehnt (falsch oder widerrufen)",
+  "conn.serverError": "Der Server hat mit einem Fehler geantwortet",
   "conn.throttled": "Warte {seconds} s, um unter den Grenzen des Servers zu bleiben",
 
   "heading.filter": "Filter: {filter}",
@@ -255,6 +256,7 @@ export const de: Catalog = {
   "error.clipboardUnavailable": "Nicht kopiert: kein Zwischenablageprogramm oder Terminal",
   "error.clipboard": "Nicht kopiert: Fehler im Zwischenablageprogramm oder beim Schreiben ins Terminal",
   "error.notSaved": "Nicht gespeichert: {message}",
+  "error.maybeSaved": "Der Server hat mit einem Fehler geantwortet; die Änderung wurde vielleicht gespeichert, vielleicht nicht",
 
   "flash.noTask": "Keine Aufgabe ausgewählt",
   "flash.inTrash": "Im Papierkorb: r stellt sie wieder her",
