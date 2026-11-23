@@ -78,6 +78,8 @@
 	<string>Permitir notificaciones</string>
 	<key>Amber</key>
 	<string>Ámbar</string>
+	<key>Another Day…</key>
+	<string>Otro día…</string>
 	<key>Any time</key>
 	<string>Sin hora</string>
 	<key>Approval requests (%lld)</key>
@@ -104,6 +106,8 @@
 	<string>Solicitada por %@</string>
 	<key>At a time of day</key>
 	<string>A una hora del día</string>
+	<key>Back to Today</key>
+	<string>Volver a hoy</string>
 	<key>Bakery website</key>
 	<string>Web de la panadería</string>
 	<key>Before the due time</key>
@@ -302,8 +306,6 @@
 	<string>Oculta las tareas hechas</string>
 	<key>Hides the section</key>
 	<string>Oculta la sección</string>
-	<key>Hides the tasks done today</key>
-	<string>Oculta las tareas hechas hoy</string>
 	<key>History</key>
 	<string>Historial</string>
 	<key>History is unavailable offline.</key>
@@ -364,10 +366,14 @@
 	<string>Más</string>
 	<key>Morning summary</key>
 	<string>Resumen matinal</string>
+	<key>Move</key>
+	<string>Mover</string>
 	<key>Move Down</key>
 	<string>Bajar</string>
 	<key>Move Up</key>
 	<string>Subir</string>
+	<key>Move the selected task</key>
+	<string>Mover la tarea seleccionada</string>
 	<key>Move the tasks to</key>
 	<string>Mover las tareas a</string>
 	<key>Move the tasks to another project.</key>
@@ -466,6 +472,8 @@
 	<string>No queda nada para hoy.</string>
 	<key>Nothing open</key>
 	<string>Nada pendiente</string>
+	<key>Nothing planned for this day.</key>
+	<string>Nada planeado para este día.</string>
 	<key>Nothing planned for today.</key>
 	<string>No hay nada previsto para hoy.</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -504,8 +512,6 @@
 	<string>Abrir tarea</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Abre el visor de caracteres (⌃⌘Espacio)</string>
-	<key>Opens the day in the plan</key>
-	<string>Abre el día en el plan</string>
 	<key>Options: %@</key>
 	<string>Opciones: %@</string>
 	<key>Orange</key>
@@ -614,14 +620,16 @@
 	<string>Compartido por el servidor con el teléfono, dayhand y los agentes. Un cambio hecho aquí espera en este Mac hasta que el servidor lo tenga.</string>
 	<key>Shortcut from any app:</key>
 	<string>Atajo desde cualquier app:</string>
+	<key>Shows the day here</key>
+	<string>Muestra el día aquí</string>
 	<key>Shows the done tasks</key>
 	<string>Muestra las tareas hechas</string>
 	<key>Shows the plan health</key>
 	<string>Muestra el estado del plan</string>
 	<key>Shows the section</key>
 	<string>Muestra la sección</string>
-	<key>Shows the tasks done today</key>
-	<string>Muestra las tareas hechas hoy</string>
+	<key>Shows today again (Esc)</key>
+	<string>Vuelve a mostrar hoy (Esc)</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
 	<string>Algo respondió en esa dirección, pero no es un servidor de Dayhand.</string>
 	<key>Start with: %@</key>

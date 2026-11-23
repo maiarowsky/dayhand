@@ -4,7 +4,8 @@ import SwiftUI
 
 /**
  * Today as an agenda: the title and the day, a strip of the coming days, one sentence about the day, quick add, then
- * the tasks by time (the now task first, the ones without a time under "Any time", done today folded). Beside it, in
+ * the tasks by time (the now task first, the ones without a time under "Any time", done today folded). A later day
+ * picked in the strip takes today's place the same way until Back to Today. Beside it, in
  * the list view and while the window is wide enough, "To plan" holds the overdue tasks, those without a day and the
  * next days'; in a narrower window the overdue tasks come back to the top of the agenda.
  */
@@ -42,72 +43,96 @@ struct TodayAgenda: View {
     let showsStrip: Bool
 
     var body: some View {
+        let preview = model.previewSections
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                TodayTitle(date: model.sections.date)
-                if showsStrip { DayStrip(days: model.overview.days).padding(.top, 10) }
-                DaySummary().padding(.top, showsStrip ? 14 : 10)
-                InlineQuickAdd().padding(.top, 12).padding(.bottom, 6)
+                TodayTitle()
+                if showsStrip { DayStrip(days: model.overview.days, picked: model.shownDay).padding(.top, 10) }
+                Group {
+                    if preview == nil { DaySummary() } else { PickedDaySummary() }
+                }
+                .padding(.top, showsStrip ? 14 : 10)
+                InlineQuickAdd(day: model.shownDay).padding(.top, 12).padding(.bottom, 6)
             }
             .padding(.horizontal, TodayStyle.margin)
-            if model.viewMode == .board {
+            if let preview {
+                TodayTasks(sections: preview, showsOverdue: false)
+            } else if model.viewMode == .board {
                 BoardView()
             } else {
-                TodayTasks(showsOverdue: showsOverdue)
+                TodayTasks(sections: model.searchedToday, showsOverdue: showsOverdue)
             }
         }
     }
 }
 
-/// "Today" and the day's date on one line.
+/// "Today", or the day picked in the strip, and its date on one line; a picked day offers the way back to today.
 struct TodayTitle: View {
-    let date: String
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
+        let day = model.shownDay
         HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(tr("Today")).font(.system(size: 28, weight: .bold)).accessibilityAddTraits(.isHeader)
-            Text(DateText.longDay(date)).font(.title3).foregroundStyle(.secondary).lineLimit(1)
+            Text(heading(day)).font(.system(size: 28, weight: .bold)).accessibilityAddTraits(.isHeader)
+            Text(DateText.longDay(day)).font(.title3).foregroundStyle(.secondary).lineLimit(1)
             Spacer(minLength: 0)
+            if model.previewDay != nil {
+                Button { model.preview(model.today) } label: {
+                    Label(tr("Back to Today"), systemImage: "arrow.uturn.backward")
+                }
+                .keyboardShortcut(model.selection == nil && model.search.isEmpty ? .cancelAction : nil)
+                .help(tr("Shows today again (Esc)"))
+            }
         }
         .padding(.top, 16)
     }
+
+    private func heading(_ day: String) -> String {
+        if day == model.today { return tr("Today") }
+        if day == HelmDates.addDays(model.today, 1) { return tr("Tomorrow") }
+        return CivilDate(day).flatMap { DateText.weekday($0.weekday) } ?? day
+    }
 }
 
-/// Today's tasks by time, as a list that keeps selection, the keyboard and the context menus.
+/// The tasks of the day Today shows by time, as a list that keeps selection, the keyboard and the context menus.
 struct TodayTasks: View {
     @EnvironmentObject private var model: AppModel
+    let sections: TodaySections
     let showsOverdue: Bool
     @State private var showDone = false
 
     var body: some View {
-        let s = model.searchedToday
+        let s = sections
+        let isToday = s.date == model.today
         let timed = s.today.filter { $0.dueTime != nil }
         let anyTime = s.today.filter { $0.dueTime == nil }
         if s.now == nil && s.today.isEmpty && s.done.isEmpty && (!showsOverdue || s.overdue.isEmpty) {
             if model.isSearching {
                 PlaceEmpty(icon: "magnifyingglass", text: tr("No task matches the search."))
-            } else {
+            } else if isToday {
                 EmptyToday()
+            } else {
+                PlaceEmpty(icon: "calendar", text: tr("Nothing planned for this day."))
             }
         } else {
             List(selection: $model.selection) {
                 if showsOverdue && !s.overdue.isEmpty {
                     Section {
-                        ForEach(s.overdue) { TodayRow(task: $0, today: s.date, overdue: true).tag($0.localId) }
+                        ForEach(s.overdue) { TodayRow(task: $0, today: model.today, overdue: true).tag($0.localId) }
                     } header: {
                         Text(tr("Overdue (\(s.overdue.count))")).foregroundStyle(Color.overdue).padding(.leading, TodayStyle.titleInset)
                     }
                 }
                 Section {
-                    if let now = s.now { TodayNowRow(task: now, today: s.date).tag(now.localId) }
-                    if let placeholder = model.todayPlaceholder {
+                    if let now = s.now { TodayNowRow(task: now, today: model.today).tag(now.localId) }
+                    if isToday, let placeholder = model.todayPlaceholder {
                         Text(placeholder).foregroundStyle(.secondary).padding(.leading, TodayStyle.titleInset)
                     }
-                    ForEach(timed) { TodayRow(task: $0, today: s.date).tag($0.localId) }
+                    ForEach(timed) { TodayRow(task: $0, today: model.today).tag($0.localId) }
                 }
                 if !anyTime.isEmpty {
                     Section {
-                        ForEach(anyTime) { TodayRow(task: $0, today: s.date).tag($0.localId) }
+                        ForEach(anyTime) { TodayRow(task: $0, today: model.today).tag($0.localId) }
                     } header: {
                         if !timed.isEmpty || s.now != nil { Text(tr("Any time")).padding(.leading, TodayStyle.titleInset) }
                     }
@@ -115,11 +140,11 @@ struct TodayTasks: View {
                 if !s.done.isEmpty {
                     Section {
                         if showDone {
-                            ForEach(s.done) { TodayRow(task: $0, today: s.date).tag($0.localId) }
+                            ForEach(s.done) { TodayRow(task: $0, today: model.today).tag($0.localId) }
                         }
                     } header: {
                         FoldHeader(title: tr("Done (\(s.done.count))"), open: $showDone,
-                                   hint: showDone ? tr("Hides the tasks done today") : tr("Shows the tasks done today"))
+                                   hint: showDone ? tr("Hides the done tasks") : tr("Shows the done tasks"))
                             .padding(.leading, TodayStyle.titleInset)
                     }
                 }
@@ -127,6 +152,7 @@ struct TodayTasks: View {
             .listStyle(.inset)
             .scrollContentBackground(.hidden)
             .padding(.horizontal, TodayStyle.margin - 14)
+            .moveButton(for: showsOverdue ? model.selection.flatMap { id in s.overdue.contains { $0.localId == id } ? id : nil } : nil)
         }
     }
 }

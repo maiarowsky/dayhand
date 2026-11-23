@@ -78,6 +78,8 @@
 	<string>Permitir notificações</string>
 	<key>Amber</key>
 	<string>Âmbar</string>
+	<key>Another Day…</key>
+	<string>Outro dia…</string>
 	<key>Any time</key>
 	<string>Sem horário</string>
 	<key>Approval requests (%lld)</key>
@@ -104,6 +106,8 @@
 	<string>Solicitada por %@</string>
 	<key>At a time of day</key>
 	<string>Em um horário do dia</string>
+	<key>Back to Today</key>
+	<string>Voltar para hoje</string>
 	<key>Bakery website</key>
 	<string>Site da padaria</string>
 	<key>Before the due time</key>
@@ -299,11 +303,9 @@
 	<key>Green</key>
 	<string>Verde</string>
 	<key>Hides the done tasks</key>
-	<string>Oculta as tarefas concluídas</string>
+	<string>Oculta as tarefas feitas</string>
 	<key>Hides the section</key>
 	<string>Oculta a seção</string>
-	<key>Hides the tasks done today</key>
-	<string>Oculta as tarefas concluídas hoje</string>
 	<key>History</key>
 	<string>Histórico</string>
 	<key>History is unavailable offline.</key>
@@ -364,10 +366,14 @@
 	<string>Mais</string>
 	<key>Morning summary</key>
 	<string>Resumo da manhã</string>
+	<key>Move</key>
+	<string>Mover</string>
 	<key>Move Down</key>
 	<string>Mover para baixo</string>
 	<key>Move Up</key>
 	<string>Mover para cima</string>
+	<key>Move the selected task</key>
+	<string>Mover a tarefa selecionada</string>
 	<key>Move the tasks to</key>
 	<string>Mover as tarefas para</string>
 	<key>Move the tasks to another project.</key>
@@ -466,6 +472,8 @@
 	<string>Nada mais para hoje.</string>
 	<key>Nothing open</key>
 	<string>Nada pendente</string>
+	<key>Nothing planned for this day.</key>
+	<string>Nada planejado para este dia.</string>
 	<key>Nothing planned for today.</key>
 	<string>Nada planejado para hoje.</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -504,8 +512,6 @@
 	<string>Abrir tarefa</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>Abre o Visualizador de Caracteres (⌃⌘Espaço)</string>
-	<key>Opens the day in the plan</key>
-	<string>Abre o dia no plano</string>
 	<key>Options: %@</key>
 	<string>Opções: %@</string>
 	<key>Orange</key>
@@ -614,14 +620,16 @@
 	<string>Compartilhado pelo servidor com o telefone, o dayhand e os agentes. Uma alteração feita aqui aguarda neste Mac até o servidor recebê-la.</string>
 	<key>Shortcut from any app:</key>
 	<string>Atalho em qualquer app:</string>
+	<key>Shows the day here</key>
+	<string>Mostra o dia aqui</string>
 	<key>Shows the done tasks</key>
-	<string>Mostra as tarefas concluídas</string>
+	<string>Mostra as tarefas feitas</string>
 	<key>Shows the plan health</key>
 	<string>Mostra a saúde do plano</string>
 	<key>Shows the section</key>
 	<string>Mostra a seção</string>
-	<key>Shows the tasks done today</key>
-	<string>Mostra as tarefas concluídas hoje</string>
+	<key>Shows today again (Esc)</key>
+	<string>Mostra hoje de novo (Esc)</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
 	<string>Algo respondeu nesse endereço, mas não é um servidor Dayhand.</string>
 	<key>Start with: %@</key>

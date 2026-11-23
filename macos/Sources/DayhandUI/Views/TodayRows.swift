@@ -12,10 +12,9 @@ enum TodayStyle {
     static var titleInset: CGFloat { timeWidth + 24 }
 }
 
-/// A task of Today's agenda: its time, a bar in its status's colour, the title and its line, and the box that ticks
-/// it off. An overdue one offers To today instead of a time.
+/// A task of Today's agenda: its time (none for an overdue one), a bar in its status's colour, the title and its line,
+/// and the box that ticks it off.
 struct TodayRow: View {
-    @EnvironmentObject private var model: AppModel
     let task: TaskItem
     let today: String
     var overdue = false
@@ -33,11 +32,6 @@ struct TodayRow: View {
                 TaskLine(task: task, today: today, overdue: overdue)
             }
             Spacer(minLength: 4)
-            if overdue {
-                Button(tr("To today")) { model.moveToToday(task.localId) }
-                    .buttonStyle(.borderless)
-                    .controlSize(.small)
-            }
             DoneBox(task: task)
         }
         .fixedSize(horizontal: false, vertical: true)

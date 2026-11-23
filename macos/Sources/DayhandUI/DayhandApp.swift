@@ -54,6 +54,16 @@ public struct DayhandApp: App {
             }
             CommandMenu(tr("Go")) { GoCommands().environmentObject(model) }
             CommandMenu(tr("Task")) {
+                Button(tr("To Today")) { if let id = model.selection { model.moveToToday(id) } }
+                    .keyboardShortcut("t")
+                    .disabled(!model.canReschedule(model.selection))
+                Button(tr("To Tomorrow")) { if let id = model.selection { model.moveToTomorrow(id) } }
+                    .keyboardShortcut("t", modifiers: [.command, .shift])
+                    .disabled(!model.canReschedule(model.selection))
+                Button(tr("Another Day…")) { if let id = model.selection { model.reschedulingTask = TaskPick(id: id) } }
+                    .keyboardShortcut("t", modifiers: [.command, .option])
+                    .disabled(!model.canReschedule(model.selection))
+                Divider()
                 Button(tr("Move to Project…")) {
                     if let id = model.selection { model.movingTask = TaskPick(id: id) }
                 }

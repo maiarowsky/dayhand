@@ -13,13 +13,13 @@ struct QuickAddPreview: Equatable {
     /// A `+word` naming no project, which stays in the title.
     var unknownProject: String?
 
-    /// [place] gives the day when the line has none (today on Today) and the project.
+    /// [place] gives the day when the line has none (today on Today, or [day] when given) and the project.
     @MainActor
-    static func of(_ line: String, readPhrase: Bool, model: AppModel, place: Place = .today) -> QuickAddPreview? {
+    static func of(_ line: String, readPhrase: Bool, model: AppModel, place: Place = .today, day: String? = nil) -> QuickAddPreview? {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         let today = model.today
-        let context = model.quickAddContext(place)
+        let context = model.quickAddContext(place, day: day)
         let input = model.parseQuickAdd(trimmed, readPhrase: readPhrase)
         let day = input.when.map { Formatting.when($0, today: today) } ?? context.date.map { Formatting.day($0, today: today) }
         let project = model.project(input.projectLocalId ?? context.project)
@@ -98,23 +98,24 @@ struct QuickAddView: View {
 }
 
 /// The same quick add, at the top of the lists and in the menu bar: it adds to the place it is in ([place], or the
-/// place picked in the sidebar), so a line typed in a project goes to that project.
+/// place picked in the sidebar), so a line typed in a project goes to that project; [day] stands in for today.
 struct InlineQuickAdd: View {
     @EnvironmentObject private var model: AppModel
     var place: Place?
+    var day: String?
     @State private var line = ""
     @State private var readPhrase = true
 
     var body: some View {
         let place = place ?? model.place
-        let preview = QuickAddPreview.of(line, readPhrase: readPhrase, model: model, place: place)
+        let preview = QuickAddPreview.of(line, readPhrase: readPhrase, model: model, place: place, day: day)
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Image(systemName: "plus").foregroundStyle(.secondary)
                 TextField(prompt(place), text: $line)
                     .textFieldStyle(.plain)
                     .onSubmit {
-                        if model.quickAdd(line, readPhrase: readPhrase, in: place) { line = "" }
+                        if model.quickAdd(line, readPhrase: readPhrase, in: place, day: day) { line = "" }
                     }
                     .onChange(of: line) { _ in readPhrase = true }
             }

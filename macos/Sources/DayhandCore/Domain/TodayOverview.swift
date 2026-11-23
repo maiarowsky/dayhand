@@ -44,3 +44,16 @@ public func todayOverview(_ tasks: [TaskItem], sections: TodaySections, days: In
         comingUp: open.filter { ($0.dueDate ?? "") > today && ($0.dueDate ?? "") <= last && !$0.isNow }.sorted(by: bySchedule)
     )
 }
+
+/// One day of the plan as Today shows it when that day is picked in the strip: its open tasks by time (the now task
+/// among them when it is due that day) and the ones done that were due that day. Nothing is overdue on a picked day.
+public func daySections(_ tasks: [TaskItem], date: String) -> TodaySections {
+    let due = tasks.filter { $0.isActive && $0.dueDate == date }
+    return TodaySections(
+        date: date,
+        overdue: [],
+        now: nil,
+        today: due.filter { $0.status != .done }.sorted(by: bySchedule),
+        done: due.filter { $0.status == .done }.sorted { ($0.completedAt ?? 0) > ($1.completedAt ?? 0) }
+    )
+}

@@ -51,6 +51,9 @@ struct MainWindow: View {
         .sheet(item: $model.movingTask) { pick in
             ProjectPicker(taskId: pick.id).environmentObject(model)
         }
+        .sheet(item: $model.reschedulingTask) { pick in
+            DayPicker(taskId: pick.id).environmentObject(model)
+        }
         .sheet(item: $model.deletingProject) { pick in
             DeleteProjectSheet(projectId: pick.id).environmentObject(model)
         }

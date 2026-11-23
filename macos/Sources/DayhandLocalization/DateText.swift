@@ -43,6 +43,15 @@ public enum DateText {
         return symbols.count == 7 ? symbols[isoWeekday % 7] : nil
     }
 
+    /// The full name of an ISO weekday (1 Monday … 7 Sunday) as a title: "Monday", "Poniedziałek", "月曜日".
+    public static func weekday(_ isoWeekday: Int) -> String? {
+        guard (1...7).contains(isoWeekday) else { return nil }
+        let symbols = formatter("EEEE").standaloneWeekdaySymbols ?? []
+        guard symbols.count == 7 else { return nil }
+        let name = symbols[isoWeekday % 7]
+        return name.prefix(1).uppercased(with: Localization.current.locale) + name.dropFirst()
+    }
+
     /// Between the items of a short list such as weekdays: ", ", or "、" in Japanese and Chinese.
     public static var listSeparator: String {
         ["ja", "zh-Hans"].contains(Localization.current.language) ? "、" : ", "

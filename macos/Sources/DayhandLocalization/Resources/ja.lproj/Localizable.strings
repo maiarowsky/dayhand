@@ -78,6 +78,8 @@
 	<string>通知を許可</string>
 	<key>Amber</key>
 	<string>琥珀</string>
+	<key>Another Day…</key>
+	<string>別の日…</string>
 	<key>Any time</key>
 	<string>時刻なし</string>
 	<key>Approval requests (%lld)</key>
@@ -104,6 +106,8 @@
 	<string>依頼元：%@</string>
 	<key>At a time of day</key>
 	<string>指定の時刻</string>
+	<key>Back to Today</key>
+	<string>今日に戻る</string>
 	<key>Bakery website</key>
 	<string>パン屋のサイト</string>
 	<key>Before the due time</key>
@@ -302,8 +306,6 @@
 	<string>完了したタスクを隠します</string>
 	<key>Hides the section</key>
 	<string>セクションを隠します</string>
-	<key>Hides the tasks done today</key>
-	<string>今日完了したタスクを隠します</string>
 	<key>History</key>
 	<string>履歴</string>
 	<key>History is unavailable offline.</key>
@@ -364,10 +366,14 @@
 	<string>その他</string>
 	<key>Morning summary</key>
 	<string>朝のまとめ</string>
+	<key>Move</key>
+	<string>移動</string>
 	<key>Move Down</key>
 	<string>下へ移動</string>
 	<key>Move Up</key>
 	<string>上へ移動</string>
+	<key>Move the selected task</key>
+	<string>選択したタスクを移動</string>
 	<key>Move the tasks to</key>
 	<string>タスクの移動先</string>
 	<key>Move the tasks to another project.</key>
@@ -466,6 +472,8 @@
 	<string>今日やることは残っていません。</string>
 	<key>Nothing open</key>
 	<string>未完了なし</string>
+	<key>Nothing planned for this day.</key>
+	<string>この日の予定はありません。</string>
 	<key>Nothing planned for today.</key>
 	<string>今日の予定はありません。</string>
 	<key>Nothing planned. Add a task with the quick add shortcut.</key>
@@ -504,8 +512,6 @@
 	<string>タスクを開く</string>
 	<key>Opens the Character Viewer (⌃⌘Space)</key>
 	<string>文字ビューアを開きます（⌃⌘スペース）</string>
-	<key>Opens the day in the plan</key>
-	<string>プランでこの日を開きます</string>
 	<key>Options: %@</key>
 	<string>選択肢：%@</string>
 	<key>Orange</key>
@@ -614,14 +620,16 @@
 	<string>サーバーを通じてスマートフォン、dayhand、エージェントと共有されます。ここでの変更は、サーバーに届くまでこのMacで待機します。</string>
 	<key>Shortcut from any app:</key>
 	<string>どのアプリからでも使えるショートカット：</string>
+	<key>Shows the day here</key>
+	<string>この日をここに表示します</string>
 	<key>Shows the done tasks</key>
 	<string>完了したタスクを表示します</string>
 	<key>Shows the plan health</key>
 	<string>プランの状態を表示します</string>
 	<key>Shows the section</key>
 	<string>セクションを表示します</string>
-	<key>Shows the tasks done today</key>
-	<string>今日完了したタスクを表示します</string>
+	<key>Shows today again (Esc)</key>
+	<string>今日の表示に戻ります(Esc)</string>
 	<key>Something answered at that address, but it is not a Dayhand server.</key>
 	<string>そのアドレスで応答がありましたが、Dayhand サーバーではありません。</string>
 	<key>Start with: %@</key>
