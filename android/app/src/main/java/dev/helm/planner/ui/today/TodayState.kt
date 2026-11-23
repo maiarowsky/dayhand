@@ -1,5 +1,6 @@
 package dev.helm.planner.ui.today
 
+import dev.helm.planner.data.local.Task
 import dev.helm.planner.domain.AgentWork
 import dev.helm.planner.domain.HelmDates
 import dev.helm.planner.domain.TodaySections
@@ -40,6 +41,8 @@ data class TodayUiState(
     val blocked: Map<String, AgentWork.Blocked> = emptyMap(),
     /** The day shown, in days from today: 0 is today, -1 yesterday, 1 tomorrow. */
     val dayOffset: Int = 0,
+    /** Every task on the phone, for search. */
+    val tasks: List<Task> = emptyList(),
 ) {
     /** Today, whichever day is shown. */
     val today: String get() = java.time.LocalDate.parse(sections.date).minusDays(dayOffset.toLong()).toString()

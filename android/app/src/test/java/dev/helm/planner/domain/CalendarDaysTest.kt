@@ -21,10 +21,17 @@ class CalendarDaysTest {
     private fun week(tasks: List<Task>) = CalendarDays.days(tasks, monday, 7, today)
 
     @Test
-    fun `weeks start on Monday`() {
-        assertEquals(monday, CalendarDays.weekStart(LocalDate.parse("2026-10-22")))
-        assertEquals(monday, CalendarDays.weekStart(monday))
-        assertEquals(monday, CalendarDays.weekStart(LocalDate.parse("2026-10-25")))
+    fun `weeks roll from today, seven days at a time`() {
+        val thursday = LocalDate.parse(today)
+        assertEquals(thursday, CalendarDays.weekStart(thursday, thursday))
+        assertEquals(thursday, CalendarDays.weekStart(LocalDate.parse("2026-10-28"), thursday))
+        assertEquals(LocalDate.parse("2026-10-29"), CalendarDays.weekStart(LocalDate.parse("2026-10-29"), thursday))
+        assertEquals(LocalDate.parse("2026-10-15"), CalendarDays.weekStart(LocalDate.parse("2026-10-21"), thursday))
+        assertEquals(LocalDate.parse("2026-10-15"), CalendarDays.weekStart(monday, thursday))
+        // On a Sunday the week is that Sunday and the six days after it, not the week that is ending.
+        val sunday = LocalDate.parse("2026-11-22")
+        assertEquals(sunday, CalendarDays.weekStart(LocalDate.parse("2026-11-28"), sunday))
+        assertEquals(LocalDate.parse("2026-11-15"), CalendarDays.weekStart(LocalDate.parse("2026-11-16"), sunday))
     }
 
     @Test

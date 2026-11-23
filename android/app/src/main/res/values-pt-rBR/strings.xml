@@ -52,7 +52,8 @@
     <string name="quick_add_no_time">Sem horário</string>
     <string name="quick_add_note">Nota</string>
     <string name="quick_add_save">Adicionar</string>
-    <string name="quick_add_example">por ex. Ligar para o contador fri 2pm</string>
+    <string name="quick_add_example">por ex. Ligar para o contador</string>
+    <string name="quick_add_dates_hint">A data vai no fim, em inglês: fri 2pm, tomorrow 9am, in 3 days</string>
     <string name="quick_add_from_phrase">%1$s · de “%2$s”</string>
     <string name="quick_add_no_phrase">Sem data no texto: hoje</string>
     <string name="quick_add_no_phrase_on">Sem data no texto: %1$s</string>
@@ -434,4 +435,9 @@
     <string name="section_day_tasks">Planejado</string>
     <string name="change_due">Alterar prazo</string>
     <string name="palette_dayhand_note">Fundos neutros, controles azuis e tarefas verde-oliva.</string>
+    <string name="search_tasks">Buscar tarefas</string>
+    <string name="search_field">Buscar</string>
+    <string name="search_hint">Palavras do título ou da nota</string>
+    <string name="search_none">Nenhuma tarefa corresponde à busca.</string>
+    <string name="search_no_day">Sem dia</string>
 </resources>

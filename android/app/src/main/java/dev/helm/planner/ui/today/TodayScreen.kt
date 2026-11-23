@@ -19,9 +19,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -34,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -49,12 +54,15 @@ import dev.helm.planner.ui.components.ButtonTone
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmButton
+import dev.helm.planner.ui.components.HelmMenu
+import dev.helm.planner.ui.components.LARGE_TEXT_SCALE
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.common.SampleBanner
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.palette
+import dev.helm.planner.ui.theme.helmType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -69,6 +77,7 @@ object TodayTags {
     const val FAB = "add"
     const val PREVIOUS_DAY = "day-previous"
     const val NEXT_DAY = "day-next"
+    const val MENU = "day-menu"
     fun row(localId: String) = "row-$localId"
 }
 
@@ -90,6 +99,7 @@ fun TodayScreen(
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
+    var searching by rememberSaveable { mutableStateOf(false) }
     val today = LocalDate.parse(state.today)
     val shown = LocalDate.parse(state.sections.date)
     val selection = rememberTaskSelection()
@@ -102,7 +112,7 @@ fun TodayScreen(
             topBar = {
                 HeaderOrSelection(
                     selection.active,
-                    header = { DayHeader(state.dayOffset, shown, today, actions) },
+                    header = { DayHeader(state.dayOffset, shown, today, actions, onSearch = { searching = true }) },
                     selectionHeader = {
                         SelectionHeader(
                             selection.ids.size,
@@ -127,6 +137,17 @@ fun TodayScreen(
             fabTag = TodayTags.FAB,
         )
     }
+    if (searching) {
+        SearchSheet(
+            state.tasks,
+            today,
+            onOpen = {
+                searching = false
+                actions.openTask(it)
+            },
+            onDismiss = { searching = false },
+        )
+    }
     if (adding) {
         QuickAddSheet(
             timezone = state.timezone,
@@ -146,7 +167,7 @@ fun TodayScreen(
  * (each a 48 dp button with its name for a screen reader). On another day than today the title goes back to today.
  */
 @Composable
-private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: TodayActions) {
+private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: TodayActions, onSearch: () -> Unit) {
     val p = palette
     val locale = appLocale()
     val title = when (offset) {
@@ -155,11 +176,13 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
         -1 -> stringResource(R.string.day_title_yesterday)
         else -> shown.format(DateTimeFormatter.ofPattern("EEEE", locale)).replaceFirstChar { it.titlecase(locale) }
     }
+    val large = LocalDensity.current.fontScale >= LARGE_TEXT_SCALE
     LargeHeader(
         title = title,
         subtitle = shown.format(dateFormat(if (shown.year == today.year) "EEEEdMMMM" else "yEEEEdMMMM", locale)),
         onTitleClick = if (offset != 0) ({ actions.showDay(0) }) else null,
         titleClickLabel = stringResource(R.string.day_back_to_today),
+        singleLineTitle = true,
     ) {
         HelmButton(
             null,
@@ -177,7 +200,32 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
             icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             description = stringResource(R.string.day_next),
         )
-        HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
+        if (large) {
+            HeaderMenu(title, onSearch, actions::openSettings)
+        } else {
+            HeaderIconButton(Icons.Filled.Search, stringResource(R.string.search_tasks), onSearch, Modifier.testTag(SearchTags.OPEN), tint = p.textMuted)
+            HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
+        }
+    }
+}
+
+/** Large text: search and Settings in one menu, so that the day's title keeps its room beside the arrows. */
+@Composable
+private fun HeaderMenu(title: String, onSearch: () -> Unit, onSettings: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, title), { open = true }, Modifier.testTag(TodayTags.MENU), tint = palette.textMuted)
+        HelmMenu(open, { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.search_tasks), style = helmType.body, color = palette.text) },
+                onClick = { open = false; onSearch() },
+                modifier = Modifier.testTag(SearchTags.OPEN),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.open_settings), style = helmType.body, color = palette.text) },
+                onClick = { open = false; onSettings() },
+            )
+        }
     }
 }
 

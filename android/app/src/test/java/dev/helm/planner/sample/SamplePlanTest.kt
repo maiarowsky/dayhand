@@ -70,7 +70,7 @@ class SamplePlanTest {
     fun theCalendarShowsLaterDatesOfTheRepeatingTasks() {
         val wednesday = LocalDate.of(2026, 10, 21)
         val tasks = plan(wednesday, wednesday.atTime(8, 0).atZone(zone).toInstant().toEpochMilli())
-        val week = CalendarDays.days(tasks, CalendarDays.weekStart(wednesday), 7, wednesday.toString())
+        val week = CalendarDays.days(tasks, LocalDate.of(2026, 10, 19), 7, wednesday.toString())
         val repeats = week.flatMap { it.untimed + it.timed }.filter { it.repeat }.map { it.task.title to it.date }
         // The stand-up on Thursday and Friday, the plants every other day.
         assertEquals(

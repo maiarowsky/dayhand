@@ -5,8 +5,20 @@ called Helm until 0.9.0.
 
 ## Unreleased
 
+### Added
+
+- Task search: the magnifier in Today's header finds tasks by words from a title or note (case and accents do not
+  matter); a tap on a result opens it. Details: [docs/android.md](../docs/android.md#today).
+
 ### Changed
 
+- The calendar's week is today and the six days after it, as the strip of days on Today, instead of Monday to
+  Sunday; the arrows and a swipe turn it seven days at a time, and **Move** offers today's week for an overdue task.
+- Large text: a tab name at the bottom no longer breaks mid-word; when the names do not fit, the tabs show only their
+  icons (named for TalkBack). The calendar's day headers use one-letter weekdays when the short names do not fit,
+  the day view's date uses short names, Today's title stays on one line (smaller when it would not fit), and from
+  font scale 1.5 search and Settings move to Today's **⋮** menu.
+- Quick add's empty title field shows example date phrases (English, as before) on a line under it.
 - The store installs widget shows two columns for each app: **Total**, its all-time installs, and **Last day**, its
   installs on the latest day the App Store and Google Play published, each added up over both stores and shown as `—`
   when a store's number for that column is missing; a file without `total` still shows Last day, and the line under

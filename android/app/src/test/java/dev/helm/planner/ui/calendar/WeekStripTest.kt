@@ -29,21 +29,22 @@ class WeekStripTest {
 
     @Test
     fun homeIsTheWeekOfToday() {
-        val state = WeekStripState(monday.toEpochDay(), 0f)
+        val state = WeekStripState(thursday.toEpochDay(), 0f)
         assertEquals(0, state.home(thursday))
-        assertEquals(7, state.home(LocalDate.parse("2026-10-27")))
-        assertEquals(7, state.home(LocalDate.parse("2026-11-01")))
-        assertEquals(thursday, state.date(3))
-        assertEquals(-4, state.indexOf(LocalDate.parse("2026-10-15")))
+        assertEquals(0, state.home(LocalDate.parse("2026-10-28")))
+        assertEquals(7, state.home(LocalDate.parse("2026-10-29")))
+        assertEquals(thursday, state.date(0))
+        assertEquals(LocalDate.parse("2026-10-28"), state.date(6))
+        assertEquals(-7, state.indexOf(LocalDate.parse("2026-10-15")))
     }
 
     @Test
-    fun aDayBelongsToTheWeekOfItsMonday() {
+    fun aDayBelongsToTheWeekOfItsFirstDay() {
         val state = WeekStripState(monday.toEpochDay(), 0f)
         assertEquals(0, state.weekOf(3))
         assertEquals(0, state.weekOf(6))
         assertEquals(7, state.weekOf(13))
-        // Before the anchor: the Monday of that week, not the next one.
+        // Before the anchor: the first day of that week, not of the next one.
         assertEquals(-7, state.weekOf(-3))
     }
 

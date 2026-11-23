@@ -2,10 +2,9 @@ package dev.helm.planner.domain
 
 import dev.helm.planner.data.local.Task
 import dev.helm.planner.data.local.TaskStatus
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.temporal.TemporalAdjusters
+import java.time.temporal.ChronoUnit
 
 /**
  * One task on one day of the calendar. [repeat] marks a later date of a repeating series: not a task of its own yet,
@@ -39,11 +38,16 @@ data class PlacedEntry(val entry: CalendarEntry, val startMinute: Int, val lane:
  */
 object CalendarDays {
     const val EVENT_MINUTES = 30
+    const val WEEK_LENGTH = 7L
     private const val MINUTES_PER_DAY = 24 * 60
     private const val MAX_REPEATS_PER_TASK = 62
 
-    /** The Monday of [date]'s week (weeks start on Monday, as Dayhand's repeat rules do). */
-    fun weekStart(date: LocalDate): LocalDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    /**
+     * The first day of [date]'s week in the calendar. Weeks roll from [today]: today and the six days after it, then
+     * on in sevens either way, as the strip of days on Today does.
+     */
+    fun weekStart(date: LocalDate, today: LocalDate): LocalDate =
+        today.plusDays(Math.floorDiv(ChronoUnit.DAYS.between(today, date), WEEK_LENGTH) * WEEK_LENGTH)
 
     /**
      * [count] days from [from]. Active tasks (not archived, not in the trash) with a day appear on it; done ones stay

@@ -67,6 +67,7 @@ object QuickAddTags {
     const val SAVE = "quick_add_save"
     const val WHEN = "quick_add_when"
     const val KEEP = "quick_add_keep"
+    const val DATES_HINT = "quick_add_dates_hint"
 }
 
 /**
@@ -162,6 +163,10 @@ fun QuickAddSheet(
                     .focusRequester(focus)
                     .testTag(QuickAddTags.TITLE),
             )
+            if (title.isBlank()) {
+                Text(stringResource(R.string.quick_add_dates_hint), style = helmType.small, color = p.textMuted,
+                    modifier = Modifier.testTag(QuickAddTags.DATES_HINT))
+            }
             if (canSave) {
                 WhenLine(today, read, picked, selectedDay, time)
                 projects.firstOrNull { it.localId == selectedProject }?.let {

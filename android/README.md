@@ -143,8 +143,8 @@ colour alone. Deploy backend **0.13.2 or later before Android 0.12.0**: it confi
 repeat restoration without opening an archived project.
 
 **Calendar**: the week on an hour grid, or one day, switched by two text tabs (**Week** / **Day**).
-The week always shows Monday to Sunday; a swipe or the arrows turn it (in the day view the arrows go
-a day). With at least 80 dp a day (from about 610 dp wide: a tablet, a phone on its side) the tasks
+The week shows today and the six days after it; a swipe or the arrows turn it seven days at a time (in
+the day view the arrows go a day). With at least 80 dp a day (from about 610 dp wide: a tablet, a phone on its side) the tasks
 have their titles. A title breaks only between words: what does not fit ends in "…" (`wordLines`),
 never "Zadzw / onić". Tasks with a time are blocks at their hour (30 minutes tall, side by side when
 they overlap); tasks without a time sit in a band above the hours (two per day, then "+N", which
@@ -154,7 +154,7 @@ a time in the band (three, then "+N"). A tap on a bar opens the task; a tap on a
 its part of the band) opens the day with the titles; a **long press on a day** opens a sheet of its
 tasks with their titles, each with **Move**, for bars too small to read or hold. Bars drag like
 blocks (the lifted task is drawn at least 72 dp wide with its time and title); the left and right
-edges that turn the week are 12 dp there instead of 32 dp, so a task can be dropped on Sunday. The day view lists overdue
+edges that turn the week are 12 dp there instead of 32 dp, so a task can be dropped on the last day of the week. The day view lists overdue
 tasks (on today) and tasks without a time above its hours. Today's header is in the accent and
 underlined, its column lightly tinted, with a line at the current time; overdue tasks are in the
 danger colour and marked "!", later dates of a repeating task "↻" (computed by
@@ -169,7 +169,7 @@ the days move on (the week turns; the day view turns the day), and near the top 
 calendar, not the block (`CalendarDrag.kt`), so it goes on when the block's own day leaves the
 screen; the snapping and the edges are plain functions (`DropMath`). A long press let go without
 moving (or the screen reader's long press and "Move" action) opens a sheet, laid out like Settings, to
-pick a day of the task's week, another day or a time or "No time". A drop and **Move** change
+pick a day of the task's week (today's week for an overdue task), another day or a time or "No time". A drop and **Move** change
 Room and queue `setDue` through the outbox like any other change, and the snackbar offers
 **Undo**, which sends the old day and time back the same way. Later dates of a series and done
 tasks do not move. Moving a repeating task moves its own (current) date, as editing its due date

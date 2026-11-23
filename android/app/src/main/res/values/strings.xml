@@ -55,7 +55,8 @@
     <string name="quick_add_no_time">No time</string>
     <string name="quick_add_note">Note</string>
     <string name="quick_add_save">Add</string>
-    <string name="quick_add_example">e.g. Call the accountant fri 2pm</string>
+    <string name="quick_add_example">e.g. Call the accountant</string>
+    <string name="quick_add_dates_hint">A date phrase at the end sets the day: fri 2pm, tomorrow 9am, in 3 days</string>
     <string name="quick_add_from_phrase">%1$s · from “%2$s”</string>
     <string name="quick_add_no_phrase">No date phrase: today</string>
     <string name="quick_add_no_phrase_on">No date phrase: %1$s</string>
@@ -436,4 +437,9 @@
     <string name="section_day_tasks">Planned</string>
     <string name="change_due">Change due day</string>
     <string name="palette_dayhand_note">Neutral surfaces, blue controls and olive tasks.</string>
+    <string name="search_tasks">Search tasks</string>
+    <string name="search_field">Search</string>
+    <string name="search_hint">Words from a title or note</string>
+    <string name="search_none">No task matches the search.</string>
+    <string name="search_no_day">No day</string>
 </resources>
