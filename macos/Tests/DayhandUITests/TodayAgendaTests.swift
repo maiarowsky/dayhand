@@ -105,6 +105,31 @@ struct TodayAgendaTests {
         #expect(model.previewDay == nil)
     }
 
+    @Test func theBoardIsShownOnlyWhereThePlaceShowsIt() async throws {
+        let model = try makeModel()
+        model.viewMode = .board
+        #expect(model.showsBoard)
+
+        // A later day of the strip is listed, so the panel starts at the list's height.
+        model.preview(day(model, 1))
+        #expect(!model.showsBoard)
+        model.preview(model.today)
+        #expect(model.showsBoard)
+
+        // Places without views list their tasks whatever the view picked.
+        for place in [Place.inbox, .archivedProjects, .done, .trash] {
+            model.show(place)
+            #expect(!model.showsBoard)
+        }
+        model.show(.all)
+        #expect(model.showsBoard)
+
+        model.viewMode = .list
+        #expect(!model.showsBoard)
+        model.viewMode = .plan
+        #expect(!model.showsBoard)
+    }
+
     @Test func quickAddOnAPickedDayPlansItForThatDay() async throws {
         let model = try makeModel()
         model.preview(day(model, 2))

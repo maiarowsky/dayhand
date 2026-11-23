@@ -85,6 +85,9 @@ extension AppModel {
         case .inbox, .archivedProjects, .done, .trash: return false
         }
     }
+
+    /// Whether the board is on screen: picked as the view of a place that has views, and not a later day in Today.
+    var showsBoard: Bool { viewMode == .board && placeHasViews && previewDay == nil }
 }
 
 /// The board: To do, In progress and Done side by side. Dragging a card to another column changes its status, and a

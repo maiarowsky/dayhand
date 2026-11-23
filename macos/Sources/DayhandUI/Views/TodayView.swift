@@ -20,7 +20,7 @@ struct TodayView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let list = model.viewMode != .board
+            let list = !model.showsBoard
             let side = list && geometry.size.width >= Self.sideColumnFrom
             HStack(spacing: 0) {
                 TodayAgenda(showsOverdue: !side, showsStrip: geometry.size.height >= Self.stripFrom)
@@ -57,7 +57,7 @@ struct TodayAgenda: View {
             .padding(.horizontal, TodayStyle.margin)
             if let preview {
                 TodayTasks(sections: preview, showsOverdue: false)
-            } else if model.viewMode == .board {
+            } else if model.showsBoard {
                 BoardView()
             } else {
                 TodayTasks(sections: model.searchedToday, showsOverdue: showsOverdue)

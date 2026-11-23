@@ -19,7 +19,7 @@ struct TaskListView: View {
                     .padding(.horizontal, Metrics.gutter)
                     .padding(.vertical, 8)
             }
-            if model.viewMode == .board {
+            if model.showsBoard {
                 BoardView()
             } else if s.isEmpty {
                 PlaceEmpty(icon: "checklist", text: model.isSearching ? tr("No task matches the search.") : emptyText)

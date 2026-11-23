@@ -87,7 +87,7 @@ struct TaskPanel: View {
 
     private var shownHeight: Double {
         if let pinnedHeight { return pinnedHeight }
-        return Self.height(stored: height, available: available, board: model.viewMode == .board)
+        return Self.height(stored: height, available: available, board: model.showsBoard)
     }
 
     /**
