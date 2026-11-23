@@ -19,10 +19,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -35,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -50,12 +54,15 @@ import dev.helm.planner.ui.components.ButtonTone
 import dev.helm.planner.ui.components.EmptyState
 import dev.helm.planner.ui.components.HeaderIconButton
 import dev.helm.planner.ui.components.HelmButton
+import dev.helm.planner.ui.components.HelmMenu
+import dev.helm.planner.ui.components.LARGE_TEXT_SCALE
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.common.SampleBanner
 import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.theme.HelmDimens
 import dev.helm.planner.ui.theme.palette
+import dev.helm.planner.ui.theme.helmType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -70,6 +77,7 @@ object TodayTags {
     const val FAB = "add"
     const val PREVIOUS_DAY = "day-previous"
     const val NEXT_DAY = "day-next"
+    const val MENU = "day-menu"
     fun row(localId: String) = "row-$localId"
 }
 
@@ -190,8 +198,32 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
             icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             description = stringResource(R.string.day_next),
         )
-        HeaderIconButton(Icons.Filled.Search, stringResource(R.string.search_tasks), onSearch, Modifier.testTag(SearchTags.OPEN), tint = p.textMuted)
-        HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
+        if (LocalDensity.current.fontScale >= LARGE_TEXT_SCALE) {
+            HeaderMenu(title, onSearch, actions::openSettings)
+        } else {
+            HeaderIconButton(Icons.Filled.Search, stringResource(R.string.search_tasks), onSearch, Modifier.testTag(SearchTags.OPEN), tint = p.textMuted)
+            HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
+        }
+    }
+}
+
+/** Large text: search and Settings in one menu, so that the day's title keeps its room beside the arrows. */
+@Composable
+private fun HeaderMenu(title: String, onSearch: () -> Unit, onSettings: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        HeaderIconButton(Icons.Filled.MoreVert, stringResource(R.string.more_actions, title), { open = true }, Modifier.testTag(TodayTags.MENU), tint = palette.textMuted)
+        HelmMenu(open, { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.search_tasks), style = helmType.body, color = palette.text) },
+                onClick = { open = false; onSearch() },
+                modifier = Modifier.testTag(SearchTags.OPEN),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.open_settings), style = helmType.body, color = palette.text) },
+                onClick = { open = false; onSettings() },
+            )
+        }
     }
 }
 

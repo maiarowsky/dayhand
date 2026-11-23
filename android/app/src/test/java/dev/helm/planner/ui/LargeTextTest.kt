@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -26,7 +27,13 @@ import dev.helm.planner.ui.calendar.CalendarTags
 import dev.helm.planner.ui.calendar.CalendarUiState
 import dev.helm.planner.ui.components.HelmTabBar
 import dev.helm.planner.ui.components.HelmTabItem
+import dev.helm.planner.domain.daySections
 import dev.helm.planner.ui.today.ConnectionStatus
+import dev.helm.planner.ui.today.SearchTags
+import dev.helm.planner.ui.today.TodayActions
+import dev.helm.planner.ui.today.TodayScreen
+import dev.helm.planner.ui.today.TodayTags
+import dev.helm.planner.ui.today.TodayUiState
 import dev.helm.planner.ui.theme.HelmTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -37,7 +44,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** The tab bar and the calendar's days at the largest system font size (2.0) on a phone held upright. */
+/** The tab bar, Today's header and the calendar's days at the largest system font size (2.0) on a phone held upright. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = Application::class, qualifiers = "pl-w360dp-h780dp")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -119,6 +126,39 @@ class LargeTextTest {
         assertTrue("left ${button.left}", button.left >= screen.left)
         assertTrue("right ${button.right} of ${screen.right}", screen.right - button.right >= 16.dp)
         assertEquals(1, lines(context.getString(R.string.calendar_go_today)))
+    }
+
+    private val sunday = java.time.Instant.parse("2026-11-22T08:00:00Z").toEpochMilli()
+
+    private fun todayScreen(scale: Float, offset: Int = 0) = show(scale) {
+        TodayScreen(
+            TodayUiState(daySections(emptyList(), sunday, "UTC", offset), ConnectionStatus.LOCAL, 0, timezone = "UTC", dayOffset = offset),
+            object : TodayActions {},
+            now = { sunday },
+        )
+    }
+
+    @Test fun atTwiceTheSizeTodayKeepsItsTitleOnOneLineAndSearchesFromTheMenu() {
+        todayScreen(2f)
+        assertEquals(1, lines("Dzisiaj"))
+        compose.onNodeWithContentDescription(context.getString(R.string.search_tasks)).assertDoesNotExist()
+        compose.onNodeWithTag(TodayTags.MENU).performClick()
+        compose.onNodeWithText(context.getString(R.string.open_settings)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.search_tasks)).performClick()
+        compose.onNodeWithTag(SearchTags.SHEET).assertExists()
+    }
+
+    @Test fun atTwiceTheSizeTheLongestWeekdayStaysOnOneLine() {
+        // Monday 30 November, eight days on.
+        todayScreen(2f, offset = 8)
+        assertEquals(1, lines("Poniedziałek"))
+    }
+
+    @Test fun atTheUsualSizeSearchAndSettingsAreButtonsOfTheirOwn() {
+        todayScreen(1f)
+        compose.onNodeWithTag(TodayTags.MENU).assertDoesNotExist()
+        compose.onNodeWithContentDescription(context.getString(R.string.search_tasks)).assertExists()
+        compose.onNodeWithContentDescription(context.getString(R.string.open_settings)).assertExists()
     }
 
     @Test fun onASundayTheWeekStartsThatSundayNotTheMondayBefore() {
