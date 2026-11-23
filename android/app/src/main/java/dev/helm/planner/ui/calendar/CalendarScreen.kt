@@ -62,6 +62,7 @@ import dev.helm.planner.ui.common.StatusBanner
 import dev.helm.planner.ui.common.appLocale
 import dev.helm.planner.ui.common.dateFormat
 import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.LARGE_TEXT_SCALE
 import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.ui.components.SectionLabel
 import dev.helm.planner.ui.components.TextAction
@@ -84,7 +85,7 @@ private const val CENTER = PAGES / 2
 private val NARROW_WIDTH = 600.dp
 
 /**
- * The calendar: the week's hours, Monday to Sunday (tasks with a time on the hours, the rest in a band on top), or one
+ * The calendar: the week's hours, today and the six days after it (tasks with a time on the hours, the rest in a band on top), or one
  * day. A swipe or the arrows turn the week. On a tablet or a phone on its side the week's tasks have their titles; on a
  * phone held upright they are bars (see [barsOnly]): a tap on a day opens it with the titles, a long press lists its
  * tasks ([DaySheet]). A tap on a task opens its details; a long press lifts it to drag to another day and time (or, let
@@ -146,7 +147,9 @@ private fun CalendarContent(
     val subtitle = if (week) {
         dateRange(strip.date(strip.firstDay), strip.date(strip.firstDay + WEEK_DAYS - 1))
     } else {
-        dayOf(dayPager.currentPage).format(dateFormat("yMMMMEEEEd", locale))
+        // Large text: the short names, so that the date stays on one or two lines.
+        val large = LocalDensity.current.fontScale >= LARGE_TEXT_SCALE
+        dayOf(dayPager.currentPage).format(dateFormat(if (large) "yMMMEEEd" else "yMMMMEEEEd", locale))
     }
     val step = { by: Int ->
         scope.launch {
@@ -208,20 +211,22 @@ private fun CalendarContent(
                 )
                 if (!week) {
                     val selected = dayOf(dayPager.currentPage)
-                    val weekStart = CalendarDays.weekStart(selected)
+                    val weekStart = CalendarDays.weekStart(selected, today)
                     val days = remember(state.tasks, state.today, weekStart) { CalendarDays.days(state.tasks, weekStart, WEEK_DAYS, state.today) }
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
                         val dayWidth = (maxWidth / WEEK_DAYS).coerceAtLeast(HelmDimens.touchTarget)
                         val dateScroll = rememberScrollState()
                         val revealSelected = with(LocalDensity.current) {
-                            (dayWidth * selected.dayOfWeek.value - maxWidth).roundToPx().coerceAtLeast(0)
+                            val shownUpTo = ChronoUnit.DAYS.between(weekStart, selected).toInt() + 1
+                            (dayWidth * shownUpTo - maxWidth).roundToPx().coerceAtLeast(0)
                         }
                         LaunchedEffect(selected, revealSelected, dateScroll.maxValue) {
                             dateScroll.scrollTo(revealSelected)
                         }
+                        val narrow = !shortWeekdaysFit(dayWidth)
                         Row(Modifier.horizontalScroll(dateScroll)) {
                             days.forEach { day ->
-                                DayHeader(day, openDay, Modifier.width(dayWidth), selected = day.date == selected.toString())
+                                DayHeader(day, openDay, Modifier.width(dayWidth), narrow = narrow, selected = day.date == selected.toString())
                             }
                         }
                     }
@@ -284,7 +289,7 @@ private fun CalendarContent(
             },
         )
     }
-    moving?.let { entry -> MoveSheet(entry, onDismiss = { moving = null }) { date, time -> onMove(entry, date, time) } }
+    moving?.let { entry -> MoveSheet(entry, today, onDismiss = { moving = null }) { date, time -> onMove(entry, date, time) } }
 }
 
 /**

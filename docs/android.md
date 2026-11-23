@@ -44,6 +44,9 @@ The arrows next to the title show the day before and the day after: that day's t
 on it, with **Tomorrow**, **Yesterday** or the weekday as the title and the date under it. Tap the title to
 come back to today. A task added while another day is shown is due on that day.
 
+The magnifier in the header searches every task: type words from a title or note (case and accents do not
+matter) and tap a result to open it. Open tasks come first by day, then tasks without a day, then done ones.
+
 Rows have no buttons: the box ticks a task off, a tap on the title opens it, and a title takes at most two
 lines. To move overdue or today's tasks, long-press one: the round button at the bottom opens **To today**,
 **Tomorrow**, **Another day…** and **Archive** in an arc (in a column with large text), and a tap on another
@@ -64,7 +67,8 @@ the agents page.
 
 ### Quick add
 
-The button at the bottom opens one title field. A date phrase at the end sets the day and time:
+The button at the bottom opens one title field; the line under the empty field gives a few date phrases
+to write at the end. A date phrase at the end sets the day and time:
 "Call the accountant fri 2pm" is "Call the accountant" on the coming Friday at 14:00. Without a
 phrase, the task is for today, or for the day shown on Today. A grey line under the field says what
 will happen; **Keep in title** keeps the words as text. **More options** adds a day, a time and a note.
@@ -81,9 +85,9 @@ the title, with a hint. **More options** also has the project picker.
 
 The bar at the bottom switches between Today, the calendar, the board and Projects.
 
-- **Week** shows Monday to Sunday on an hour grid, **Day** one day. Swipe or use the arrows to turn.
-  Narrower than 600 dp (a phone held upright) the calendar opens on **Day** at today; Day has a row of
-  the week's dates to pick from.
+- **Week** shows today and the six days after it on an hour grid, **Day** one day. Swipe or use the
+  arrows to turn seven days at a time; **Today** comes back. Narrower than 600 dp (a phone held upright)
+  the calendar opens on **Day** at today; Day has a row of the same seven dates to pick from.
 - Tasks with a time are blocks at their hour; tasks without a time sit in a band above the hours.
   On a phone held upright the week shows them as bars without titles; tap a day for its titles, or
   long-press a day for a list with **Move** on each task.

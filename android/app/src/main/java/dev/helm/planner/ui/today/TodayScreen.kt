@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -90,6 +91,7 @@ fun TodayScreen(
 ) {
     val p = palette
     var adding by rememberSaveable { mutableStateOf(false) }
+    var searching by rememberSaveable { mutableStateOf(false) }
     val today = LocalDate.parse(state.today)
     val shown = LocalDate.parse(state.sections.date)
     val selection = rememberTaskSelection()
@@ -102,7 +104,7 @@ fun TodayScreen(
             topBar = {
                 HeaderOrSelection(
                     selection.active,
-                    header = { DayHeader(state.dayOffset, shown, today, actions) },
+                    header = { DayHeader(state.dayOffset, shown, today, actions, onSearch = { searching = true }) },
                     selectionHeader = {
                         SelectionHeader(
                             selection.ids.size,
@@ -127,6 +129,17 @@ fun TodayScreen(
             fabTag = TodayTags.FAB,
         )
     }
+    if (searching) {
+        SearchSheet(
+            state.tasks,
+            today,
+            onOpen = {
+                searching = false
+                actions.openTask(it)
+            },
+            onDismiss = { searching = false },
+        )
+    }
     if (adding) {
         QuickAddSheet(
             timezone = state.timezone,
@@ -146,7 +159,7 @@ fun TodayScreen(
  * (each a 48 dp button with its name for a screen reader). On another day than today the title goes back to today.
  */
 @Composable
-private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: TodayActions) {
+private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: TodayActions, onSearch: () -> Unit) {
     val p = palette
     val locale = appLocale()
     val title = when (offset) {
@@ -177,6 +190,7 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
             icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             description = stringResource(R.string.day_next),
         )
+        HeaderIconButton(Icons.Filled.Search, stringResource(R.string.search_tasks), onSearch, Modifier.testTag(SearchTags.OPEN), tint = p.textMuted)
         HeaderIconButton(Icons.Filled.Settings, stringResource(R.string.open_settings), actions::openSettings, tint = p.textMuted)
     }
 }

@@ -121,9 +121,10 @@ class CalendarScreenTest {
         show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23"), task("c", "2026-10-29", "14:00")))
 
         compose.onNodeWithTag(CalendarTags.WEEK).assertIsDisplayed()
-        (19..25).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertIsDisplayed() }
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertIsNotDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-18")).assertDoesNotExist()
+        // Today (Thursday) and the six days after it.
+        (22..28).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertIsDisplayed() }
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-29")).assertIsNotDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-21")).assertDoesNotExist()
         // A bar: no title on it, the title for a screen reader.
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22"))
             .assertIsDisplayed()
@@ -141,8 +142,8 @@ class CalendarScreenTest {
         compose.onNodeWithTag(CalendarTags.entry("c@2026-10-29")).assertDoesNotExist()
 
         compose.onNodeWithTag(CalendarTags.NEXT).performClick()
-        (26..31).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertIsDisplayed() }
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
+        (29..31).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertIsDisplayed() }
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-04")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.entry("c@2026-10-29")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertDoesNotExist()
         compose.onNodeWithTag(CalendarTags.TODAY).performClick()
@@ -157,13 +158,13 @@ class CalendarScreenTest {
         // A third of the screen, quickly: the next week.
         compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeLeft(startX = right - 10f, endX = right - width / 3f, durationMillis = 200) }
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertDoesNotExist()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-29")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-04")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.TODAY).assertIsDisplayed()
 
         compose.onNodeWithTag(CalendarTags.WEEK).performTouchInput { swipeRight(startX = left + 10f, endX = left + width / 3f, durationMillis = 200) }
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-19")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-28")).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.TODAY).assertIsDisplayed()
     }
 
@@ -224,23 +225,23 @@ class CalendarScreenTest {
         // Wider than the test device's screen, so parts of it are off screen: they exist rather than show.
         show(listOf(task("a", "2026-10-22", "09:00"), task("b", "2026-10-23")), width = 700.dp)
 
-        (19..25).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertExists() }
+        (22..28).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertExists() }
         assertEquals("Task a\n09:00", shownText(CalendarTags.entry("a@2026-10-22")))
         compose.onNodeWithTag(CalendarTags.entry("b@2026-10-23")).assertExists()
         compose.onNodeWithTag(CalendarTags.untimedBars("2026-10-23")).assertDoesNotExist()
     }
 
     @Test
-    fun aTabletShowsMondayToSunday() {
-        show(listOf(task("a", "2026-10-19"), task("b", "2026-10-25")), width = 900.dp)
+    fun aTabletShowsTodayAndTheSixDaysAfterIt() {
+        show(listOf(task("a", "2026-10-22"), task("b", "2026-10-28")), width = 900.dp)
 
-        (19..25).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertExists() }
-        compose.onNodeWithTag(CalendarTags.entry("a@2026-10-19")).assertExists()
-        compose.onNodeWithTag(CalendarTags.entry("b@2026-10-25")).assertExists()
+        (22..28).forEach { compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-$it")).assertExists() }
+        compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).assertExists()
+        compose.onNodeWithTag(CalendarTags.entry("b@2026-10-28")).assertExists()
         compose.onNodeWithTag(CalendarTags.NEXT).performClick()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertExists()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertExists()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-25")).assertDoesNotExist()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-29")).assertExists()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-04")).assertExists()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-28")).assertDoesNotExist()
     }
 
     @Test
@@ -269,10 +270,11 @@ class CalendarScreenTest {
     fun backFromADayShowsThatDayInTheWeek() {
         show(emptyList())
         compose.onNodeWithTag(CalendarTags.MODE_DAY).performClick()
-        repeat(4) { compose.onNodeWithTag(CalendarTags.NEXT).performClick() }
+        repeat(8) { compose.onNodeWithTag(CalendarTags.NEXT).performClick() }
         compose.onNodeWithTag(CalendarTags.MODE_WEEK).performClick()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-26")).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-30")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-29")).assertIsDisplayed()
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-04")).assertIsDisplayed()
     }
 
     @Test
@@ -331,9 +333,9 @@ class CalendarScreenTest {
         compose.onNodeWithTag(CalendarTags.entry("a@2026-10-22")).performTouchInput { longClick() }
         compose.onNodeWithTag(CalendarTags.MOVE_SHEET).assertIsDisplayed()
         compose.onNodeWithTag(CalendarTags.moveDay("2026-10-22")).assertIsSelected()
-        compose.onNodeWithTag(CalendarTags.moveDay("2026-10-19")).performClick()
+        compose.onNodeWithTag(CalendarTags.moveDay("2026-10-26")).performClick()
         compose.onNodeWithTag(CalendarTags.MOVE_CONFIRM).performClick()
-        assertEquals(listOf("move:a:2026-10-19:09:00"), actions.calls)
+        assertEquals(listOf("move:a:2026-10-26:09:00"), actions.calls)
     }
 
     @Test
@@ -368,33 +370,33 @@ class CalendarScreenTest {
         val actions = Recorder()
         show(listOf(task("a", "2026-10-22", "09:00")), actions)
 
-        // From Thursday to the last few dp of the screen, held there a second: the next week; then back into Sunday's
-        // column, and let go when the days have stopped. While the finger is at the edge the calendar runs frames and is
-        // never idle, so the test moves the clock itself.
-        drag("a@2026-10-22", dayWidth * 3.5f - 6.dp, 0.dp)
+        // From today, the first column, to the last few dp of the screen, held there a second: the next week; then back
+        // into its last column, and let go when the days have stopped. While the finger is at the edge the calendar runs
+        // frames and is never idle, so the test moves the clock itself.
+        drag("a@2026-10-22", dayWidth * 6.5f - 6.dp, 0.dp)
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithTag(CalendarTags.SCREEN).performTouchInput { moveBy(Offset(-dayWidth.toPx() / 2, 0f)) }
         compose.mainClock.advanceTimeBy(800)
         letGo()
         compose.mainClock.autoAdvance = true
-        assertEquals(listOf("move:a:2026-11-01:09:00"), actions.calls)
-        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-01")).assertIsDisplayed()
+        assertEquals(listOf("move:a:2026-11-04:09:00"), actions.calls)
+        compose.onNodeWithTag(CalendarTags.dayHeader("2026-11-04")).assertIsDisplayed()
     }
 
     @Test
-    fun aBarHeldOverSundayStaysInTheWeek() {
+    fun aBarHeldOverTheLastDayStaysInTheWeek() {
         val actions = Recorder()
         show(listOf(task("a", "2026-10-22", "09:00")), actions)
 
-        // Into the middle of Sunday's narrow column and held there: closer to the edge than a wider layout allows, but
-        // the week does not turn.
-        drag("a@2026-10-22", dayWidth * 3f, 0.dp)
+        // Into the middle of the last day's narrow column and held there: closer to the edge than a wider layout allows,
+        // but the week does not turn.
+        drag("a@2026-10-22", dayWidth * 6f, 0.dp)
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(1_500)
         letGo()
         compose.mainClock.autoAdvance = true
-        assertEquals(listOf("move:a:2026-10-25:09:00"), actions.calls)
+        assertEquals(listOf("move:a:2026-10-28:09:00"), actions.calls)
         compose.onNodeWithTag(CalendarTags.dayHeader("2026-10-22")).assertIsDisplayed()
     }
 

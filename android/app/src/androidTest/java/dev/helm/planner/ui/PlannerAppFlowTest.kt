@@ -69,7 +69,8 @@ class PlannerAppFlowTest {
     private val container get() = (context.applicationContext as HelmApplication).container
     private val arguments = InstrumentationRegistry.getArguments()
     private val today = LocalDate.now()
-    private val week = today.minusDays(today.dayOfWeek.value.toLong() - 1)
+    /** The calendar's week starts on today. */
+    private val week = today
     private val config = TourConfig.fromArguments()
     private val prefix = "sample-planner-proof-"
     private val createdTitle = "Studio rehearsal ${config.variant}"
@@ -229,25 +230,25 @@ class PlannerAppFlowTest {
         compose.onNodeWithTag(CalendarTags.PREVIOUS).performClick()
         compose.onNodeWithTag(CalendarTags.TODAY).performClick()
         compose.onNodeWithTag(CalendarTags.dayHeader(week.plusDays(6).toString())).assertIsDisplayed()
-        compose.onNodeWithTag(CalendarTags.entry("${prefix}plan-${today.dayOfWeek.value - 1}@$today")).performScrollTo()
+        compose.onNodeWithTag(CalendarTags.entry("${prefix}plan-0@$today")).performScrollTo()
         shot("02-week")
         compose.onNodeWithTag(CalendarTags.MODE_DAY).performClick()
         compose.onNodeWithTag(CalendarTags.entry("${prefix}untimed@$today")).performScrollTo().assertIsDisplayed()
         shot("03-day")
-        compose.onNodeWithTag(CalendarTags.entry("${prefix}review-${today.dayOfWeek.value - 1}@$today")).performScrollTo()
-        val morning = compose.onNodeWithTag(CalendarTags.entry("${prefix}plan-${today.dayOfWeek.value - 1}@$today")).fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag(CalendarTags.entry("${prefix}review-0@$today")).performScrollTo()
+        val morning = compose.onNodeWithTag(CalendarTags.entry("${prefix}plan-0@$today")).fetchSemanticsNode().boundsInRoot
         val viewport = compose.onNodeWithTag(CalendarTags.DAY).fetchSemanticsNode().boundsInRoot
         val inset = 16 * context.resources.displayMetrics.density
         compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange) and hasAnyAncestor(hasTestTag(CalendarTags.DAY)))
             .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, morning.top - viewport.top - inset) }
         shot("03b-day-hours")
 
-        // The same real task moves to Saturday through the calendar sheet, then Undo restores its day.
+        // The same real task moves two days on through the calendar sheet, then Undo restores its day.
         compose.onNodeWithTag(CalendarTags.entry("${prefix}untimed@$today")).performScrollTo().performTouchInput { longClick() }
-        val saturday = week.plusDays(5).toString()
-        compose.onNodeWithTag(CalendarTags.moveDay(saturday)).performClick()
+        val later = week.plusDays(2).toString()
+        compose.onNodeWithTag(CalendarTags.moveDay(later)).performClick()
         compose.onNodeWithTag(CalendarTags.MOVE_CONFIRM).performClick()
-        waitForTask(prefix + "untimed") { it.dueDate == saturday && it.dueTime == null }
+        waitForTask(prefix + "untimed") { it.dueDate == later && it.dueTime == null }
         compose.onNode(hasText(context.getString(R.string.calendar_undo)) and hasClickAction()).performClick()
         waitForTask(prefix + "untimed") { it.dueDate == today.toString() }
 

@@ -13,7 +13,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
@@ -55,8 +54,8 @@ import dev.helm.planner.ui.task.TaskDetailActions
 import dev.helm.planner.ui.task.TaskDetailScreen
 import dev.helm.planner.ui.task.TaskDetailUiState
 import dev.helm.planner.ui.task.TaskDetailViewModel
-import dev.helm.planner.ui.components.HelmTab
 import dev.helm.planner.ui.components.HelmTabBar
+import dev.helm.planner.ui.components.HelmTabItem
 import dev.helm.planner.ui.theme.HelmTheme
 import dev.helm.planner.ui.today.HealthCard
 import dev.helm.planner.ui.today.HealthCardViewModel
@@ -324,21 +323,15 @@ private fun TaskDetailUiState.localId(): String = when (this) {
 /** Bottom navigation between the main views. */
 @Composable
 private fun MainTabs(current: String, onSelect: (String) -> Unit) {
-    HelmTabBar {
-        Tab(Route.TODAY, current, Icons.Filled.Home, R.string.today_title, onSelect)
-        Tab(Route.CALENDAR, current, Icons.Filled.DateRange, R.string.calendar_title, onSelect)
-        Tab(Route.BOARD, current, Icons.AutoMirrored.Filled.List, R.string.board_title, onSelect)
-        Tab(Route.PROJECTS, current, ProjectFolderIcon, R.string.projects_title, onSelect)
+    val tab = { route: String, icon: ImageVector, label: String ->
+        HelmTabItem(label, icon, selected = current == route, tag = "tab-$route", onClick = { if (current != route) onSelect(route) })
     }
-}
-
-@Composable
-private fun androidx.compose.foundation.layout.RowScope.Tab(
-    route: String,
-    current: String,
-    icon: ImageVector,
-    @StringRes label: Int,
-    onSelect: (String) -> Unit,
-) {
-    HelmTab(selected = current == route, icon = icon, label = stringResource(label), onClick = { if (current != route) onSelect(route) })
+    HelmTabBar(
+        listOf(
+            tab(Route.TODAY, Icons.Filled.Home, stringResource(R.string.today_title)),
+            tab(Route.CALENDAR, Icons.Filled.DateRange, stringResource(R.string.calendar_title)),
+            tab(Route.BOARD, Icons.AutoMirrored.Filled.List, stringResource(R.string.board_title)),
+            tab(Route.PROJECTS, ProjectFolderIcon, stringResource(R.string.projects_title)),
+        ),
+    )
 }

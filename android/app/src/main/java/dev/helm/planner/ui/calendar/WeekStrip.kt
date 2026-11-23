@@ -65,8 +65,9 @@ private val FLING_VELOCITY = 400.dp
 fun barsOnly(width: Dp, gutter: Dp): Boolean = (width - gutter) / WEEK_DAYS < TITLED_DAY_WIDTH
 
 /**
- * Where the week view is: the column [offset] days after [anchor] (the epoch day of a Monday) comes first, with a
- * fraction while the days move. Swipes drag it; [settle], [animateTo] and [snapTo] put it back on a Monday.
+ * Where the week view is: the column [offset] days after [anchor] (the epoch day of today) comes first, with a
+ * fraction while the days move. Weeks roll from today, seven days at a time; swipes drag it, and [settle],
+ * [animateTo] and [snapTo] put it back on the first day of a week.
  */
 @Stable
 class WeekStripState(val anchor: Long, offset: Float) : DraggableState {
@@ -88,9 +89,9 @@ class WeekStripState(val anchor: Long, offset: Float) : DraggableState {
     fun indexOf(date: LocalDate): Int = (date.toEpochDay() - anchor).toInt()
 
     /** Where "Today" goes: the week that has today. */
-    fun home(today: LocalDate): Int = indexOf(CalendarDays.weekStart(today))
+    fun home(today: LocalDate): Int = weekOf(indexOf(today))
 
-    /** The Monday of the week of a column index. */
+    /** The first day of the week of a column index. */
     fun weekOf(index: Int): Int = Math.floorDiv(index, WEEK_DAYS) * WEEK_DAYS
 
     override fun dispatchRawDelta(delta: Float) {
@@ -121,20 +122,24 @@ class WeekStripState(val anchor: Long, offset: Float) : DraggableState {
     }
 }
 
-/** The week view's position, kept across rotation, on the Monday of a week. */
+/**
+ * The week view's position, kept across rotation, on the first day of a week. Weeks start on [today]: a new day, or
+ * a view restored on a later day, moves them to start on it.
+ */
 @Composable
 fun rememberWeekStripState(today: LocalDate): WeekStripState =
     rememberSaveable(
+        today,
         saver = listSaver<WeekStripState, Any>(
-            save = { listOf(it.anchor, it.firstDay) },
-            restore = { WeekStripState(it[0] as Long, 0f).apply { snapTo(weekOf(it[1] as Int)) } },
+            save = { listOf(it.anchor + it.firstDay) },
+            restore = { WeekStripState(today.toEpochDay(), 0f).apply { snapTo(weekOf(indexOf(LocalDate.ofEpochDay(it[0] as Long)))) } },
         ),
     ) {
-        WeekStripState(CalendarDays.weekStart(today).toEpochDay(), 0f).apply { snapTo(home(today)) }
+        WeekStripState(today.toEpochDay(), 0f)
     }
 
 /**
- * The week, Monday to Sunday: seven columns of hours side by side with the times on the left, the day headers and the
+ * The week, today and the six days after it (or seven days on either side of them): seven columns of hours side by side with the times on the left, the day headers and the
  * tasks without a time pinned above them. Swiping turns the week; the headers, the band and the hours move together.
  * With [bars] (a phone held upright) the tasks are bars without titles, a tap on a day opens it and a long press on a
  * day opens its tasks with their titles ([onHoldDay]).

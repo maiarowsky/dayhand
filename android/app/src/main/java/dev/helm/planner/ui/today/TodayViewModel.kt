@@ -45,6 +45,7 @@ class TodayViewModel(
                 timezone = s.timezone,
                 blocked = AgentWork.blockedTasks(tasks),
                 dayOffset = offset,
+                tasks = tasks,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 

@@ -50,7 +50,8 @@
     <string name="quick_add_no_time">時刻なし</string>
     <string name="quick_add_note">メモ</string>
     <string name="quick_add_save">追加</string>
-    <string name="quick_add_example">例：税理士に電話 fri 2pm</string>
+    <string name="quick_add_example">例：税理士に電話</string>
+    <string name="quick_add_dates_hint">日付は末尾に英語で：fri 2pm、tomorrow 9am、in 3 days</string>
     <string name="quick_add_from_phrase">%1$s・「%2$s」から</string>
     <string name="quick_add_no_phrase">日付の指定なし：今日</string>
     <string name="quick_add_no_phrase_on">日付の指定なし：%1$s</string>
@@ -391,4 +392,9 @@
     <string name="section_day_tasks">予定</string>
     <string name="change_due">期日を変更</string>
     <string name="palette_dayhand_note">落ち着いた背景、青い操作ボタン、オリーブ色のタスク。</string>
+    <string name="search_tasks">タスクを検索</string>
+    <string name="search_field">検索</string>
+    <string name="search_hint">タイトルやメモの語句</string>
+    <string name="search_none">検索に一致するタスクはありません。</string>
+    <string name="search_no_day">日付なし</string>
 </resources>
