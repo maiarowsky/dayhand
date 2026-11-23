@@ -60,8 +60,9 @@ This version is the basic one (MVP):
   Trash** (⌘⌫); a key means the same in the menu, the context menu and the Move button. ⌘↩ and ⌘⌫ typed in a field
   stay with the text, so editing the details never ticks off or trashes the task.
 - **Quick add** at the top of Today, in the menu bar and in a floating panel from any app (**⌃⌥N** by default,
-  changed in Settings). A date phrase at the end of the line sets the day and time, with the grammar of `dayhand`
-  (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
+  changed in Settings). A date phrase in English, in every language of the app, at the end of the line sets the day
+  and time, with the grammar of `dayhand` (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the
+  1st", "Plan next week". The line below
   the field says what was understood; **Keep in title** keeps the words as text. Without a phrase the task is
   for today, as on the phone.
 - **Task panel** along the bottom of the main window, with editing: the title, the status, **Work on It Now** and
