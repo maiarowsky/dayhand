@@ -105,6 +105,31 @@ struct TodayAgendaTests {
         #expect(model.previewDay == nil)
     }
 
+    @Test func theBoardIsShownOnlyWhereThePlaceShowsIt() async throws {
+        let model = try makeModel()
+        model.viewMode = .board
+        #expect(model.showsBoard)
+
+        // A later day of the strip is listed, so the panel starts at the list's height.
+        model.preview(day(model, 1))
+        #expect(!model.showsBoard)
+        model.preview(model.today)
+        #expect(model.showsBoard)
+
+        // Places without views list their tasks whatever the view picked.
+        for place in [Place.inbox, .archivedProjects, .done, .trash] {
+            model.show(place)
+            #expect(!model.showsBoard)
+        }
+        model.show(.all)
+        #expect(model.showsBoard)
+
+        model.viewMode = .list
+        #expect(!model.showsBoard)
+        model.viewMode = .plan
+        #expect(!model.showsBoard)
+    }
+
     @Test func quickAddOnAPickedDayPlansItForThatDay() async throws {
         let model = try makeModel()
         model.preview(day(model, 2))
@@ -134,9 +159,9 @@ struct TodayAgendaTests {
         try await seed(model)
         let invoice = try #require(model.tasks.first { $0.title == "Invoice" })
         let ran = try #require(model.tasks.first { $0.title == "Ran" })
-        #expect(model.canReschedule(invoice.localId))
-        #expect(!model.canReschedule(ran.localId))
-        #expect(!model.canReschedule(nil))
+        #expect(TaskCommand.anotherDay.isEnabled(invoice))
+        #expect(!TaskCommand.anotherDay.isEnabled(ran))
+        #expect(!TaskCommand.anotherDay.isEnabled(nil))
 
         model.moveToDay(invoice.localId, day(model, 5))
         try await eventually { model.task(invoice.localId)?.dueDate == day(model, 5) }

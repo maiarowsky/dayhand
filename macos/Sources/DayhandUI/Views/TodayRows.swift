@@ -23,22 +23,32 @@ struct TodayRow: View {
         HStack(alignment: .center, spacing: 10) {
             TimeColumn(text: overdue ? nil : task.dueTime.map(DateText.time))
             StatusBar(status: task.status)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(task.title)
-                    .font(.system(size: 14))
-                    .strikethrough(task.status == .done)
-                    .foregroundStyle(task.status == .done ? .secondary : .primary)
-                    .lineLimit(2)
-                TaskLine(task: task, today: today, overdue: overdue)
+            // The line beside the title while both fit, under it when they do not.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    title.lineLimit(1).fixedSize()
+                    TaskLine(task: task, today: today, overdue: overdue).fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    title.lineLimit(2)
+                    TaskLine(task: task, today: today, overdue: overdue)
+                }
             }
             Spacer(minLength: 4)
             DoneBox(task: task)
         }
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.vertical, 4)
+        .padding(.vertical, 1)
         .contextMenu { TaskMenu(task: task) }
         .draggable(TaskDrag.payload(task.localId)) { DragPreview(title: task.title) }
         .accessibilityElement(children: .combine)
+    }
+
+    private var title: some View {
+        Text(task.title)
+            .font(.system(size: 14))
+            .strikethrough(task.status == .done)
+            .foregroundStyle(task.status == .done ? .secondary : .primary)
     }
 }
 
@@ -69,7 +79,7 @@ struct TodayNowRow: View {
             DoneBox(task: task)
         }
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.vertical, 4)
+        .padding(.vertical, 1)
         .contextMenu { TaskMenu(task: task) }
         .draggable(TaskDrag.payload(task.localId)) { DragPreview(title: task.title) }
         .accessibilityElement(children: .combine)
@@ -114,7 +124,7 @@ struct StatusBar: View {
         RoundedRectangle(cornerRadius: 2)
             .fill(PlannerStyle.fill(status))
             .frame(width: 4)
-            .frame(minHeight: 22, maxHeight: .infinity)
+            .frame(minHeight: 18, maxHeight: .infinity)
             .accessibilityHidden(true)
     }
 }

@@ -33,6 +33,9 @@ and the selected task opens in a panel along the bottom. Projects need Dayhand s
   every list place in three ways, and the choice is kept.
 - **Search, or add a task** (⌘K) in the middle of the toolbar: what you type narrows every list, and Return
   adds it as a task, with the same date phrases as quick add. Escape clears it.
+- **Task menu** for the selected task: **Mark as Done** (⌘↩), **Work on It Now**, **To Today** (⌘T),
+  **To Tomorrow** (⇧⌘T), **Another Day…** (⌥⌘T), **Move to Project…** (⇧⌘M) and **Move to Trash** (⌘⌫).
+  While you type in a field, ⌘↩ and ⌘⌫ stay with the text.
 
 - **Today**: the date, a strip of the next days (a dot for each open task; click a day to show it in
   Today's place, **Back to Today** or Escape returns), one sentence about the day (how many tasks, how many at a set time, repeating or overdue, and what
@@ -45,7 +48,7 @@ and the selected task opens in a panel along the bottom. Projects need Dayhand s
 - **Lists**: All Tasks, No Project or a project, their open tasks in sections by day, with search
   in the toolbar.
 - **Board**: To do, In progress and Done side by side; drag a card to another column to change its status.
-- **Plan**: the week, Monday to Sunday, or one day, on an hour grid. Tasks with a time are blocks in their
+- **Plan**: seven days from today, like the strip of days on Today, or one day, on an hour grid. Tasks with a time are blocks in their
   status's colour with a bar of their project's colour; tasks without a time sit at the top of their day.
   Drag a task from the **Tasks** drawer along the bottom onto an hour to plan it then, or onto a day's top
   for the day without a time.

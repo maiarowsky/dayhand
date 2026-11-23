@@ -2,27 +2,27 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// The seven days, Monday to Sunday, the plan shows.
+/// The seven days the plan shows: today and the six after it, like the strip of days on Today, or a block of seven
+/// days before or after them.
 struct PlanWeek: Equatable {
-    let monday: CivilDate
+    let first: CivilDate
 
-    var days: [CivilDate] { (0..<7).map { monday.adding(days: $0) } }
+    var days: [CivilDate] { (0..<7).map { first.adding(days: $0) } }
 
-    /// The week [date] ("YYYY-MM-DD") falls in.
-    static func containing(_ date: String) -> PlanWeek? {
-        CivilDate(date).map { PlanWeek(monday: $0.adding(days: 1 - $0.weekday)) }
+    /// The seven days, counted in sevens from [today], that hold the day [offset] days from it.
+    static func around(_ offset: Int, from today: CivilDate) -> PlanWeek {
+        let weeks = offset >= 0 ? offset / 7 : -((6 - offset) / 7)
+        return PlanWeek(first: today.adding(days: 7 * weeks))
     }
-
-    func shifted(by weeks: Int) -> PlanWeek { PlanWeek(monday: monday.adding(days: 7 * weeks)) }
 
     func contains(_ date: String?) -> Bool {
         guard let date, let day = CivilDate(date) else { return false }
-        return (monday.dayNumber..<monday.dayNumber + 7).contains(day.dayNumber)
+        return (first.dayNumber..<first.dayNumber + 7).contains(day.dayNumber)
     }
 
-    /// "26 October – 1 November".
+    /// "23 November – 29 November".
     var range: String {
-        "\(DateText.dayAndMonth(monday.description)) – \(DateText.dayAndMonth(monday.adding(days: 6).description))"
+        "\(DateText.dayAndMonth(first.description)) – \(DateText.dayAndMonth(first.adding(days: 6).description))"
     }
 }
 

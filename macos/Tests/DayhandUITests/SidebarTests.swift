@@ -219,6 +219,11 @@ struct SidebarTests {
         #expect(TaskPanel.height(stored: 0, available: 2000) == 380)
         #expect(TaskPanel.height(stored: 600, available: 650) == 480)
         #expect(TaskPanel.height(stored: 50, available: 650) == TaskPanel.minHeight)
+        // Over the board it starts lower, so the cards keep room.
+        #expect(TaskPanel.height(stored: 0, available: 450, board: true) == TaskPanel.boardMinHeight)
+        #expect(TaskPanel.height(stored: 0, available: 650, board: true) == 195)
+        #expect(TaskPanel.height(stored: 0, available: 2000, board: true) == 300)
+        #expect(TaskPanel.height(stored: 600, available: 650, board: true) == 480)
     }
 
     @Test func theEditorChecksAndThePickerFilters() {

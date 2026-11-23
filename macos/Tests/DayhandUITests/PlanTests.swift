@@ -5,21 +5,26 @@ import SwiftUI
 import Testing
 @testable import DayhandUI
 
-/// The plan's week, where times sit in its grid, the lanes of tasks close in time, how a short window shares its
+/// The plan's seven days from today, where times sit in its grid, the lanes of tasks close in time, how a short window shares its
 /// height, and the tasks a place plans in a week.
 @MainActor
 struct PlanTests {
-    @Test func aWeekRunsMondayToSundayAndShifts() throws {
-        let week = try #require(PlanWeek.containing("2026-10-25"))
-        #expect(week.monday.description == "2026-10-19")
-        #expect(PlanWeek.containing("2026-10-19") == week)
-        #expect(week.days.map(\.description).last == "2026-10-25")
-        #expect(week.shifted(by: 1).monday.description == "2026-10-26")
-        #expect(week.shifted(by: -1).monday.description == "2026-10-12")
-        #expect(week.contains("2026-10-25") && !week.contains("2026-10-26") && !week.contains(nil) && !week.contains("soon"))
-        #expect(PlanWeek.containing("someday") == nil)
+    @Test func aWeekRunsFromTodayForSevenDaysAndMovesInSevens() throws {
+        // A Sunday: the plan starts on it, not on the Monday before.
+        let sunday = try #require(CivilDate("2026-11-22"))
+        let week = PlanWeek.around(0, from: sunday)
+        #expect(week.days.map(\.description) == [
+            "2026-11-22", "2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27", "2026-11-28",
+        ])
+        #expect(PlanWeek.around(6, from: sunday) == week)
+        #expect(PlanWeek.around(7, from: sunday).first.description == "2026-11-29")
+        #expect(PlanWeek.around(-1, from: sunday).first.description == "2026-11-15")
+        #expect(PlanWeek.around(-7, from: sunday).first.description == "2026-11-15")
+        #expect(PlanWeek.around(-8, from: sunday).first.description == "2026-11-08")
+        #expect(week.contains("2026-11-28") && !week.contains("2026-11-29") && !week.contains("2026-11-21"))
+        #expect(!week.contains(nil) && !week.contains("soon"))
         Localization.$override.withValue(Localization(language: "en", region: "GB")) {
-            #expect(week.range == "19 October – 25 October")
+            #expect(week.range == "22 November – 28 November")
         }
     }
 
@@ -93,14 +98,14 @@ struct PlanTests {
         ))
         let now = Clock.nowMs()
         let today = model.today
-        let week = try #require(PlanWeek.containing(today))
-        let monday = week.monday.description
+        let week = PlanWeek.around(0, from: try #require(CivilDate(today)))
+        let first = week.first.description
         try await model.repository.apply(Snapshot(
             tasks: [
-                RemoteTask(id: "t1", title: "Invoice", dueDate: monday, dueTime: "09:00", createdAt: now, updatedAt: now, projectId: "p1"),
-                RemoteTask(id: "t2", title: "Milk", dueDate: monday, createdAt: now, updatedAt: now),
-                RemoteTask(id: "t3", title: "Next week", dueDate: week.shifted(by: 1).monday.description, createdAt: now, updatedAt: now, projectId: "p1"),
-                RemoteTask(id: "t4", title: "Filed", dueDate: monday, archivedAt: now, createdAt: now, updatedAt: now, projectId: "p1"),
+                RemoteTask(id: "t1", title: "Invoice", dueDate: first, dueTime: "09:00", createdAt: now, updatedAt: now, projectId: "p1"),
+                RemoteTask(id: "t2", title: "Milk", dueDate: first, createdAt: now, updatedAt: now),
+                RemoteTask(id: "t3", title: "Next week", dueDate: week.first.adding(days: 7).description, createdAt: now, updatedAt: now, projectId: "p1"),
+                RemoteTask(id: "t4", title: "Filed", dueDate: first, archivedAt: now, createdAt: now, updatedAt: now, projectId: "p1"),
             ],
             settings: ReminderSettings(timezone: "Europe/Warsaw"),
             projects: [RemoteProject(id: "p1", name: "Bakery", position: 1, createdAt: now, updatedAt: now)]
@@ -111,11 +116,11 @@ struct PlanTests {
         let bakery = try #require(model.projects.first)
 
         model.show(.all)
-        #expect(model.plan(week)[monday]?.map(\.title).sorted() == ["Invoice", "Milk"])
+        #expect(model.plan(week)[first]?.map(\.title).sorted() == ["Invoice", "Milk"])
         model.show(.project(bakery.localId))
         #expect(model.plan(week).values.flatMap { $0 }.map(\.title) == ["Invoice"])
         model.show(.noProject)
-        #expect(model.plan(week)[monday]?.map(\.title) == ["Milk"])
+        #expect(model.plan(week)[first]?.map(\.title) == ["Milk"])
         model.search = "inv"
         model.show(.all)
         #expect(model.plan(week).values.flatMap { $0 }.map(\.title) == ["Invoice"])

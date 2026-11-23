@@ -85,6 +85,9 @@ extension AppModel {
         case .inbox, .archivedProjects, .done, .trash: return false
         }
     }
+
+    /// Whether the board is on screen: picked as the view of a place that has views, and not a later day in Today.
+    var showsBoard: Bool { viewMode == .board && placeHasViews && previewDay == nil }
 }
 
 /// The board: To do, In progress and Done side by side. Dragging a card to another column changes its status, and a
@@ -117,7 +120,7 @@ struct BoardColumn: View {
     static let inset: CGFloat = 8
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: StatusStyle.icon(status))
                     .foregroundStyle(StatusStyle.color(status))
@@ -127,10 +130,10 @@ struct BoardColumn: View {
                 Spacer()
             }
             .padding(.horizontal, 4)
-            .padding(.bottom, 8)
+            .padding(.bottom, 6)
             .overlay(alignment: .bottom) { Divider() }
             ScrollView {
-                LazyVStack(spacing: 10) {
+                LazyVStack(spacing: 8) {
                     ForEach(tasks) { TaskCard(task: $0) }
                     if status == .todo && model.placeTakesTasks { AddCard() }
                 }
@@ -161,7 +164,7 @@ struct TaskCard: View {
     var body: some View {
         let selected = model.selection == task.localId
         let today = model.today
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(task.title)
                     .font(.body.weight(.medium))
@@ -187,7 +190,8 @@ struct TaskCard: View {
             }
             CardChips(task: task, today: today)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.card, in: RoundedRectangle(cornerRadius: Metrics.radius))
         .overlay(alignment: .leading) { Rectangle().fill(PlannerStyle.fill(task.status)).frame(width: 3).padding(.vertical, 6) }
