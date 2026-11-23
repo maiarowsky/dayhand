@@ -188,11 +188,17 @@ struct TaskMenu: View {
             Divider()
             Button(tr("To Today")) { model.moveToToday(task.localId) }
             Button(tr("To Tomorrow")) { model.moveToTomorrow(task.localId) }
-            Button(tr("Another Day…")) { model.reschedulingTask = TaskPick(id: task.localId) }
+            Button(tr("Another Day…")) {
+                model.reschedulingTask = TaskPick(id: task.localId)
+                model.showMainWindow()
+            }
         }
         if model.canMoveToProject(task.localId) {
             Divider()
-            Button(tr("Move to Project…")) { model.movingTask = TaskPick(id: task.localId) }
+            Button(tr("Move to Project…")) {
+                model.movingTask = TaskPick(id: task.localId)
+                model.showMainWindow()
+            }
         }
         Divider()
         Button(tr("Archive")) { model.archive(task.localId) }
