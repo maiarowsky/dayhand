@@ -56,9 +56,9 @@ import java.time.LocalTime
 import java.time.format.TextStyle
 
 /**
- * Moves one task: a day of its week (weeks roll from [today], as in the calendar) or any other day, and a time or
- * none, in groups of rows as on Settings. Nothing changes until Move; the screen then offers Undo. [onMove] gets the
- * new day and time.
+ * Moves one task: a day of its week (weeks roll from [today], as in the calendar; an overdue task's is today's week)
+ * or any other day, and a time or none, in groups of rows as on Settings. Nothing changes until Move; the screen then
+ * offers Undo. [onMove] gets the new day and time.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +69,7 @@ fun MoveSheet(entry: CalendarEntry, today: LocalDate, onDismiss: () -> Unit, onM
     var time by rememberSaveable(entry.key) { mutableStateOf(entry.time) }
     var pickingDay by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
-    val week = CalendarDays.weekStart(LocalDate.parse(entry.date), today)
+    val week = CalendarDays.weekStart(maxOf(LocalDate.parse(entry.date), today), today)
     val otherDay = LocalDate.parse(day).takeIf { it < week || it > week.plusDays(6) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,

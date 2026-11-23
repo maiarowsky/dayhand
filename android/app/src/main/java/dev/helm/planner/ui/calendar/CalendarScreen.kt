@@ -302,7 +302,7 @@ private fun ModeTabs(mode: CalendarMode, onMode: (CalendarMode) -> Unit, onToday
     val p = palette
     Column {
         Row(
-            Modifier.fillMaxWidth().padding(end = HelmDimens.screenMargin - 12.dp),
+            Modifier.fillMaxWidth().padding(end = HelmDimens.screenMargin),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PrimaryScrollableTabRow(

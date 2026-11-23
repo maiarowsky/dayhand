@@ -10,11 +10,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import dev.helm.planner.R
 import dev.helm.planner.ui.calendar.CalendarActions
@@ -107,6 +110,15 @@ class LargeTextTest {
         calendar(1f)
         assertEquals("niedz.", weekday("2026-11-22"))
         assertTrue(weekday("2026-11-23").length > 1)
+    }
+
+    @Test fun atTwiceTheSizeTheTodayButtonFitsWithTheScreenMarginOnItsRight() {
+        calendar(2f)
+        val button = compose.onNodeWithTag(CalendarTags.TODAY).getUnclippedBoundsInRoot()
+        val screen = compose.onRoot().getUnclippedBoundsInRoot()
+        assertTrue("left ${button.left}", button.left >= screen.left)
+        assertTrue("right ${button.right} of ${screen.right}", screen.right - button.right >= 16.dp)
+        assertEquals(1, lines(context.getString(R.string.calendar_go_today)))
     }
 
     @Test fun onASundayTheWeekStartsThatSundayNotTheMondayBefore() {
