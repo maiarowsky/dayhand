@@ -52,7 +52,7 @@ struct TodayAgenda: View {
                     if preview == nil { DaySummary() } else { PickedDaySummary() }
                 }
                 .padding(.top, showsStrip ? 14 : 10)
-                InlineQuickAdd().padding(.top, 12).padding(.bottom, 6)
+                InlineQuickAdd(day: model.shownDay).padding(.top, 12).padding(.bottom, 6)
             }
             .padding(.horizontal, TodayStyle.margin)
             if let preview {
@@ -80,7 +80,7 @@ struct TodayTitle: View {
                 Button { model.preview(model.today) } label: {
                     Label(tr("Back to Today"), systemImage: "arrow.uturn.backward")
                 }
-                .keyboardShortcut(.cancelAction)
+                .keyboardShortcut(model.selection == nil && model.search.isEmpty ? .cancelAction : nil)
                 .help(tr("Shows today again (Esc)"))
             }
         }
@@ -152,11 +152,7 @@ struct TodayTasks: View {
             .listStyle(.inset)
             .scrollContentBackground(.hidden)
             .padding(.horizontal, TodayStyle.margin - 14)
-            .overlay(alignment: .bottomTrailing) {
-                if showsOverdue, let id = model.selection, s.overdue.contains(where: { $0.localId == id }) {
-                    MoveButton(taskId: id).padding(16)
-                }
-            }
+            .moveButton(for: showsOverdue ? model.selection.flatMap { id in s.overdue.contains { $0.localId == id } ? id : nil } : nil)
         }
     }
 }

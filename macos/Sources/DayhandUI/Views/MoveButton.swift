@@ -8,6 +8,8 @@ import SwiftUI
  * their width for the titles; the Task menu and the context menu offer the same with the keyboard (⌘T, ⇧⌘T, ⌥⌘T).
  */
 struct MoveButton: View {
+    static let size: CGFloat = 38
+    static let inset: CGFloat = 16
     let taskId: String
     @State private var open = false
 
@@ -16,7 +18,7 @@ struct MoveButton: View {
             Image(systemName: "calendar.badge.clock")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(PlannerStyle.onBlue)
-                .frame(width: 38, height: 38)
+                .frame(width: Self.size, height: Self.size)
                 .background(Circle().fill(PlannerStyle.blue))
                 .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
         }
@@ -107,5 +109,17 @@ struct DayPicker: View {
         }
         .padding(20)
         .frame(width: 320)
+    }
+}
+
+extension View {
+    /// The Move button in the bottom corner of a list for the task [id], with room under the last row so it covers none.
+    func moveButton(for id: String?) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            if id != nil { Color.clear.frame(height: MoveButton.size + MoveButton.inset) }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if let id { MoveButton(taskId: id).padding(MoveButton.inset) }
+        }
     }
 }

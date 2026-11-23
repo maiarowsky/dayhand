@@ -36,11 +36,7 @@ struct ToPlanColumn: View {
                 }
                 .listStyle(.inset)
                 .scrollContentBackground(.hidden)
-                .overlay(alignment: .bottomTrailing) {
-                    if let id = model.selection, (overdue + noDay + comingUp).contains(where: { $0.localId == id }) {
-                        MoveButton(taskId: id).padding(16)
-                    }
-                }
+                .moveButton(for: model.selection.flatMap { id in (overdue + noDay + comingUp).contains { $0.localId == id } ? id : nil })
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

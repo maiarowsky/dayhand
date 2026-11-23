@@ -108,10 +108,25 @@ struct TodayAgendaTests {
     @Test func quickAddOnAPickedDayPlansItForThatDay() async throws {
         let model = try makeModel()
         model.preview(day(model, 2))
-        #expect(model.quickAddContext(.today).date == day(model, 2))
-        #expect(model.quickAddContext(.all).date == nil)
-        model.preview(model.today)
+        #expect(model.quickAddContext(.today, day: model.shownDay).date == day(model, 2))
+        #expect(model.quickAddContext(.all, day: model.shownDay).date == nil)
+
+        // The toolbar's field on Today adds for the picked day.
+        model.search = "Pack"
+        model.addFromSearch()
+        try await eventually { model.tasks.contains { $0.title == "Pack" } }
+        #expect(model.tasks.first { $0.title == "Pack" }?.dueDate == day(model, 2))
+    }
+
+    @Test func theMenuBarAndTheQuickAddPanelAddForTodayWhileADayIsPicked() async throws {
+        let model = try makeModel()
+        model.preview(day(model, 3))
         #expect(model.quickAddContext(.today).date == model.today)
+        #expect(QuickAddPreview.of("Buy milk", readPhrase: true, model: model)?.when == tr("Today"))
+
+        model.quickAdd("Buy milk", in: .today)
+        try await eventually { model.tasks.contains { $0.title == "Buy milk" } }
+        #expect(model.tasks.first { $0.title == "Buy milk" }?.dueDate == model.today)
     }
 
     @Test func aTaskMovesToAnotherDayOnlyWhileOpen() async throws {

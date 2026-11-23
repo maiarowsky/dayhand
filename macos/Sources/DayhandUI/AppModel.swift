@@ -278,23 +278,23 @@ final class AppModel: ObservableObject {
 
     /**
      * Adds a task from one line of quick add: a date phrase at its end sets the day and time, otherwise the day of
-     * [place] (today on Today, none in the other lists); a `+project` word sets the project, otherwise the project of
-     * [place] while it takes tasks.
+     * [place] (today on Today, or [day] when given, none in the other lists); a `+project` word sets the project,
+     * otherwise the project of [place] while it takes tasks.
      */
     @discardableResult
-    func quickAdd(_ line: String, readPhrase: Bool = true, in place: Place = .today) -> Bool {
+    func quickAdd(_ line: String, readPhrase: Bool = true, in place: Place = .today, day: String? = nil) -> Bool {
         let input = parseQuickAdd(line, readPhrase: readPhrase)
         guard TaskRules.title(input.title) != nil else { return false }
-        let context = quickAddContext(place)
+        let context = quickAddContext(place, day: day)
         let date = input.when?.date ?? context.date
         let project = input.projectLocalId ?? context.project
         run { try await $0.add(title: input.title, dueDate: date, dueTime: input.when?.time, projectLocalId: project) }
         return true
     }
 
-    /// What quick add takes from [place]; its project only while the server has projects.
-    func quickAddContext(_ place: Place) -> QuickAddContext {
-        QuickAddContext(place, today: place == .today ? shownDay : today, projects: showsProjects ? projects : [])
+    /// What quick add takes from [place], with [day] in place of today; its project only while the server has projects.
+    func quickAddContext(_ place: Place, day: String? = nil) -> QuickAddContext {
+        QuickAddContext(place, today: day ?? today, projects: showsProjects ? projects : [])
     }
 
     /// One line of quick add as it will be added; without [readPhrase] the date words stay in the title.
@@ -339,9 +339,9 @@ final class AppModel: ObservableObject {
         searchFocusPending = true
     }
 
-    /// Adds what is typed in the search field as a task, as quick add would, and clears it.
+    /// Adds what is typed in the search field as a task, as quick add would (for the day Today shows), and clears it.
     func addFromSearch() {
-        if quickAdd(search, in: searchAddPlace) { search = "" }
+        if quickAdd(search, in: searchAddPlace, day: shownDay) { search = "" }
     }
 
     /// Where Return in the search field adds: the current place, or Today in a place that takes no tasks.
