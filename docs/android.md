@@ -46,8 +46,8 @@ come back to today. A task added while another day is shown is due on that day.
 
 The magnifier in the header searches every task: type words from a title or note (case and accents do not
 matter) and tap a result to open it. Open tasks come first by day, then tasks without a day, then done ones.
-With large text, search and Settings are in the **⋮** menu of the header, and the tabs at the bottom show only
-their icons.
+With large text, search and Settings are in the **⋮** menu of the header; when the tab names at the bottom do
+not fit, the tabs show only their icons.
 
 Rows have no buttons: the box ticks a task off, a tap on the title opens it, and a title takes at most two
 lines. To move overdue or today's tasks, long-press one: the round button at the bottom opens **To today**,

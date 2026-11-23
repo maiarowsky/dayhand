@@ -169,7 +169,7 @@ the days move on (the week turns; the day view turns the day), and near the top 
 calendar, not the block (`CalendarDrag.kt`), so it goes on when the block's own day leaves the
 screen; the snapping and the edges are plain functions (`DropMath`). A long press let go without
 moving (or the screen reader's long press and "Move" action) opens a sheet, laid out like Settings, to
-pick a day of the task's week, another day or a time or "No time". A drop and **Move** change
+pick a day of the task's week (today's week for an overdue task), another day or a time or "No time". A drop and **Move** change
 Room and queue `setDue` through the outbox like any other change, and the snackbar offers
 **Undo**, which sends the old day and time back the same way. Later dates of a series and done
 tasks do not move. Moving a repeating task moves its own (current) date, as editing its due date
