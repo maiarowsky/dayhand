@@ -48,8 +48,8 @@
 	<string>タスクを追加</string>
 	<key>Add a project…</key>
 	<string>プロジェクトを追加…</string>
-	<key>Add a task (try: Pay rent fri 9am)</key>
-	<string>タスクを追加（例：家賃を払う fri 9am）</string>
+	<key>Add a task</key>
+	<string>タスクを追加</string>
 	<key>Add an item</key>
 	<string>項目を追加</string>
 	<key>Add the words as part of the title instead of reading them as a date</key>
@@ -406,10 +406,10 @@
 	<string>新しい項目</string>
 	<key>New project (⌥⌘N)</key>
 	<string>新規プロジェクト（⌥⌘N）</string>
+	<key>New task</key>
+	<string>新規タスク</string>
 	<key>New task (⌘N, or the quick add shortcut from any app)</key>
 	<string>新規タスク（⌘N、またはどのアプリからでもクイック追加のショートカット）</string>
-	<key>New task, e.g. Call the accountant fri 2pm</key>
-	<string>新規タスク（例：税理士に電話 fri 2pm）</string>
 	<key>Next day</key>
 	<string>次の日</string>
 	<key>Next week</key>
@@ -593,7 +593,7 @@
 	<key>Restored</key>
 	<string>復元</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day, +project the project.</key>
-	<string>Returnで今日のタスクとして追加します。末尾の日付（tomorrow 9am、fri、23 oct）で日が、+プロジェクト名でプロジェクトが決まります。</string>
+	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日に、+プロジェクト名でプロジェクトが決まります。</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日になります。</string>
 	<key>Revert</key>

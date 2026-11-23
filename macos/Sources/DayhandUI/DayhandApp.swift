@@ -53,33 +53,7 @@ public struct DayhandApp: App {
                 Divider()
             }
             CommandMenu(tr("Go")) { GoCommands().environmentObject(model) }
-            CommandMenu(tr("Task")) {
-                Button(tr("To Today")) { if let id = model.selection { model.moveToToday(id) } }
-                    .keyboardShortcut("t")
-                    .disabled(!model.canReschedule(model.selection))
-                Button(tr("To Tomorrow")) { if let id = model.selection { model.moveToTomorrow(id) } }
-                    .keyboardShortcut("t", modifiers: [.command, .shift])
-                    .disabled(!model.canReschedule(model.selection))
-                Button(tr("Another Day…")) { if let id = model.selection { model.reschedulingTask = TaskPick(id: id) } }
-                    .keyboardShortcut("t", modifiers: [.command, .option])
-                    .disabled(!model.canReschedule(model.selection))
-                Divider()
-                Button(tr("Move to Project…")) {
-                    if let id = model.selection { model.movingTask = TaskPick(id: id) }
-                }
-                .keyboardShortcut("m", modifiers: [.command, .shift])
-                .disabled(!model.canMoveToProject(model.selection))
-                Button(tr("New Project…")) {
-                    model.showMainWindow()
-                    model.projectEditor = ProjectEditorRequest()
-                }
-                .keyboardShortcut("n", modifiers: [.command, .option])
-                .disabled(!model.showsProjects)
-                Divider()
-                Button(tr("Sync Now")) { Task { await model.syncNow() } }
-                    .keyboardShortcut("r")
-                    .disabled(model.credential == nil)
-            }
+            CommandMenu(tr("Task")) { TaskCommands().environmentObject(model) }
         }
 
         MenuBarExtra {

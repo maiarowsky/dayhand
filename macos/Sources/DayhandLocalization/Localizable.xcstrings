@@ -4954,56 +4954,56 @@
         }
       }
     },
-    "Add a task (try: Pay rent fri 9am)" : {
-      "comment" : "Placeholder of the quick add field at the top of Today; the date phrase stays English",
+    "Add a task" : {
+      "comment" : "Placeholder and name of the quick add field at the top of Today and the lists",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aufgabe hinzufügen (z. B. Miete zahlen fri 9am)"
+            "value" : "Aufgabe hinzufügen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add a task (try: Pay rent fri 9am)"
+            "value" : "Add a task"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añade una tarea (prueba: Pagar el alquiler fri 9am)"
+            "value" : "Añade una tarea"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter une tâche (essayez : Payer le loyer fri 9am)"
+            "value" : "Ajouter une tâche"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "タスクを追加（例：家賃を払う fri 9am）"
+            "value" : "タスクを追加"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj zadanie (np. Zapłać czynsz fri 9am)"
+            "value" : "Dodaj zadanie"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicione uma tarefa (tente: Pagar o aluguel fri 9am)"
+            "value" : "Adicione uma tarefa"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "添加任务（试试：交房租 fri 9am）"
+            "value" : "添加任务"
           }
         }
       }
@@ -15127,56 +15127,56 @@
         }
       }
     },
-    "New task, e.g. Call the accountant fri 2pm" : {
-      "comment" : "Placeholder of the quick add panel; the date phrase stays English",
+    "New task" : {
+      "comment" : "Placeholder of the quick add panel; the line under it says how to write a date",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neue Aufgabe, z. B. Steuerberater anrufen fri 2pm"
+            "value" : "Neue Aufgabe"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New task, e.g. Call the accountant fri 2pm"
+            "value" : "New task"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nueva tarea, p. ej. Llamar al contable fri 2pm"
+            "value" : "Nueva tarea"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nouvelle tâche, par ex. Appeler le comptable fri 2pm"
+            "value" : "Nouvelle tâche"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新規タスク（例：税理士に電話 fri 2pm）"
+            "value" : "新規タスク"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nowe zadanie, np. Zadzwoń do księgowej fri 2pm"
+            "value" : "Nowe zadanie"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nova tarefa, por ex. Ligar para o contador fri 2pm"
+            "value" : "Nova tarefa"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新任务，例如 给会计打电话 fri 2pm"
+            "value" : "新任务"
           }
         }
       }
@@ -20036,7 +20036,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Return fügt sie für heute hinzu; ein Datum am Ende (tomorrow 9am, fri, 23 oct) legt den Tag fest, +projekt das Projekt."
+            "value" : "Return fügt sie für heute hinzu; ein Datum am Ende, auf Englisch (tomorrow 9am, fri, 23 oct), legt den Tag fest, +projekt das Projekt."
           }
         },
         "en" : {
@@ -20048,37 +20048,37 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intro la añade para hoy; una fecha al final (tomorrow 9am, fri, 23 oct) fija el día y +proyecto el proyecto."
+            "value" : "Return la añade para hoy; una fecha al final, en inglés (tomorrow 9am, fri, 23 oct), fija el día, y +proyecto el proyecto."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Retour l’ajoute pour aujourd’hui ; une date à la fin (tomorrow 9am, fri, 23 oct) fixe le jour, +projet le projet."
+            "value" : "Retour l’ajoute pour aujourd’hui ; une date à la fin, en anglais (tomorrow 9am, fri, 23 oct), fixe le jour, +projet le projet."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Returnで今日のタスクとして追加します。末尾の日付（tomorrow 9am、fri、23 oct）で日が、+プロジェクト名でプロジェクトが決まります。"
+            "value" : "Return で今日に追加。末尾に英語の日付（tomorrow 9am、fri、23 oct）を書くとその日に、+プロジェクト名でプロジェクトが決まります。"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Return dodaje na dziś; data na końcu (tomorrow 9am, fri, 23 oct) ustawia dzień, a +projekt projekt."
+            "value" : "Return dodaje na dziś; data na końcu, po angielsku (tomorrow 9am, fri, 23 oct), ustawia dzień, a +projekt projekt."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Return adiciona para hoje; uma data no fim (tomorrow 9am, fri, 23 oct) define o dia, e +projeto o projeto."
+            "value" : "Return adiciona para hoje; uma data no final, em inglês (tomorrow 9am, fri, 23 oct), define o dia, e +projeto o projeto."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按回车添加为今天的任务；末尾的日期（tomorrow 9am、fri、23 oct）设定日期，+项目名设定项目。"
+            "value" : "按 Return 添加到今天；在末尾用英文写日期（tomorrow 9am、fri、23 oct）可设定日期，+项目名设定项目。"
           }
         }
       }

@@ -29,6 +29,8 @@ struct TaskPanel: View {
     enum FieldName: Hashable { case title, resume, note, item }
 
     static let minHeight = 200.0
+    /// The least height over the board, whose cards need the room more than a list's rows.
+    static let boardMinHeight = 160.0
     /// Room the list above keeps when the panel is dragged up.
     static let listRoom = 170.0
 
@@ -85,17 +87,21 @@ struct TaskPanel: View {
 
     private var shownHeight: Double {
         if let pinnedHeight { return pinnedHeight }
-        return Self.height(stored: height, available: available)
+        return Self.height(stored: height, available: available, board: model.viewMode == .board)
     }
 
     /**
      * The panel's height in an area [available] points tall: the one the user dragged to ([stored], 0 for none), or
-     * by default 40% of the area within 200 to 380 points, and never so tall that the list above loses its room.
+     * by default 40% of the area within 200 to 380 points, and never so tall that the list above loses its room. Over
+     * the [board] it starts lower, 30% within 160 to 300 points, so each column above keeps room for a few cards.
      */
-    static func height(stored: Double, available: Double) -> Double {
-        let most = max(minHeight, available - listRoom)
-        let wanted = stored > 0 ? stored : min(max(available * 0.4, minHeight), 380)
-        return min(max(wanted, minHeight), most)
+    static func height(stored: Double, available: Double, board: Bool = false) -> Double {
+        let least = board ? boardMinHeight : minHeight
+        let most = max(least, available - listRoom)
+        let wanted = stored > 0 ? stored
+            : board ? min(max(available * 0.3, least), 300)
+            : min(max(available * 0.4, least), 380)
+        return min(max(wanted, least), most)
     }
 
     /// The grip along the top edge: dragging it changes the panel's height, which is kept for next time.

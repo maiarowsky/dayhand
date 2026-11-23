@@ -54,7 +54,7 @@ struct QuickAddView: View {
     var body: some View {
         let preview = QuickAddPreview.of(line, readPhrase: readPhrase, model: model, place: place)
         VStack(alignment: .leading, spacing: 8) {
-            TextField(tr("New task, e.g. Call the accountant fri 2pm"), text: $line)
+            TextField(tr("New task"), text: $line)
                 .textFieldStyle(.plain)
                 .font(.system(size: 20))
                 .focused($focused)
@@ -114,6 +114,7 @@ struct InlineQuickAdd: View {
                 Image(systemName: "plus").foregroundStyle(.secondary)
                 TextField(prompt(place), text: $line)
                     .textFieldStyle(.plain)
+                    .accessibilityLabel(prompt(place))
                     .onSubmit {
                         if model.quickAdd(line, readPhrase: readPhrase, in: place, day: day) { line = "" }
                     }
@@ -144,6 +145,6 @@ struct InlineQuickAdd: View {
 
     private func prompt(_ place: Place) -> String {
         if let project = model.project(model.quickAddContext(place).project) { return tr("Add to \(project.name)") }
-        return tr("Add a task (try: Pay rent fri 9am)")
+        return tr("Add a task")
     }
 }

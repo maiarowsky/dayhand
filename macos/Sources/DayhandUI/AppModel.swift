@@ -316,12 +316,6 @@ final class AppModel: ObservableObject {
 
     func moveToDay(_ id: String, _ date: String) { run { try await $0.reschedule(id, to: date) } }
 
-    /// Whether the task [id] is open and can be moved to another day (To Today, To Tomorrow, Another Day…).
-    func canReschedule(_ id: String?) -> Bool {
-        guard let id, let task = task(id) else { return false }
-        return task.isOpen
-    }
-
     /// Opens a place of the sidebar; a selected task that is not there is let go. A project opens its section.
     func show(_ place: Place) {
         guard place != self.place else { return }

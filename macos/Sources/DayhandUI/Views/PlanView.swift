@@ -2,7 +2,7 @@ import DayhandCore
 import DayhandLocalization
 import SwiftUI
 
-/// A seven-day plan, or one expanded day. Both use the same task operations and drop targets.
+/// A seven-day plan from today, or one expanded day. Both use the same task operations and drop targets.
 struct PlanView: View {
     @EnvironmentObject private var model: AppModel
     @AppStorage(PlanView.showsDayKey) private var showsDay = false
@@ -18,7 +18,7 @@ struct PlanView: View {
     var body: some View {
         let today = CivilDate(model.today) ?? CivilDate(dayNumber: 0)
         let selected = today.adding(days: dayOffset)
-        let week = PlanWeek.containing(selected.description) ?? PlanWeek(monday: selected)
+        let week = PlanWeek.around(dayOffset, from: today)
         let plan = model.plan(week)
         GeometryReader { geometry in
             let layout = PlanLayout(height: geometry.size.height)

@@ -48,8 +48,8 @@
 	<string>Add Task</string>
 	<key>Add a project…</key>
 	<string>Add a project…</string>
-	<key>Add a task (try: Pay rent fri 9am)</key>
-	<string>Add a task (try: Pay rent fri 9am)</string>
+	<key>Add a task</key>
+	<string>Add a task</string>
 	<key>Add an item</key>
 	<string>Add an item</string>
 	<key>Add the words as part of the title instead of reading them as a date</key>
@@ -406,10 +406,10 @@
 	<string>New item</string>
 	<key>New project (⌥⌘N)</key>
 	<string>New project (⌥⌘N)</string>
+	<key>New task</key>
+	<string>New task</string>
 	<key>New task (⌘N, or the quick add shortcut from any app)</key>
 	<string>New task (⌘N, or the quick add shortcut from any app)</string>
-	<key>New task, e.g. Call the accountant fri 2pm</key>
-	<string>New task, e.g. Call the accountant fri 2pm</string>
 	<key>Next day</key>
 	<string>Next day</string>
 	<key>Next week</key>

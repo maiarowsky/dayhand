@@ -33,8 +33,8 @@ This version is the basic one (MVP):
   (not in an archived project's place, which takes no new tasks). The choice is kept between launches. A drop changes
   only the status, never the day: on Today's board a task done today without today's day leaves the board when it is
   dragged back to To do or In progress.
-- **Plan**: the place's week, Monday to Sunday, or one day, as a grid of the whole day's hours that opens at 08:00,
-  with **Today**, ‹ › to move by a week or a day and a **Week**/**Day** control; clicking a day's heading opens that
+- **Plan**: the place's seven days from today (as the strip of days on Today, so today is always the first column),
+  or one day, as a grid of the whole day's hours that opens at 08:00, with **Today**, ‹ › to move by seven days or a day and a **Week**/**Day** control; clicking a day's heading opens that
   day. A task with a time is a block in its status's colour with a bar of its project's colour on the left, its
   title, project and start time (a task has only a start, so a block is an hour long); tasks whose blocks overlap
   share the width. Tasks without a time sit at the top of their day (**+n more** past a few). A block opens a popover
@@ -55,6 +55,10 @@ This version is the basic one (MVP):
   window it hides and the overdue tasks come back to the top of Today. A short window drops the strip of days. One
   click ticks a task off; the context menu works on it now, moves it to today, tomorrow or another day, archives it
   or moves it to the trash.
+- **Task menu** on the selected task, in any view: **Mark as Done** (⌘↩), **Work on It Now** (or **Not Now**),
+  **To Today** (⌘T), **To Tomorrow** (⇧⌘T), **Another Day…** (⌥⌘T), **Move to Project…** (⇧⌘M) and **Move to
+  Trash** (⌘⌫); a key means the same in the menu, the context menu and the Move button. ⌘↩ and ⌘⌫ typed in a field
+  stay with the text, so editing the details never ticks off or trashes the task.
 - **Quick add** at the top of Today, in the menu bar and in a floating panel from any app (**⌃⌥N** by default,
   changed in Settings). A date phrase at the end of the line sets the day and time, with the grammar of `dayhand`
   (`cli/src/when/parse.ts`): "Call the accountant fri 2pm", "Pay rent the 1st", "Plan next week". The line below
@@ -63,7 +67,8 @@ This version is the basic one (MVP):
 - **Task panel** along the bottom of the main window, with editing: the title, the status, **Work on It Now** and
   the resume note at the top; **Details** (the day and time from a phrase or **Today**, **Tomorrow**, **No day**,
   **Remove the time**; reminders and repeat in popovers; the project), the checklist and the note side by
-  side; then what agents set, the history, and archive or trash. Its top edge drags it taller or shorter. Links are
+  side; then what agents set, the history, and archive or trash. Its top edge drags it taller or shorter; over a
+  board it starts lower, so the cards above keep room. Links are
   shown. A task in the trash is read-only until **Restore**.
 - **Agent** in the details, read-only, when an agent or `dayhand` set any of it: who holds the
   task's claim and until when (or that the claim ran out), **Blocked:** with the reason in red, the acceptance
@@ -393,6 +398,8 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   them is missing from the string catalog. It also lays out the main window in a real window with its title bar
   (wide, narrowest, sidebar closed, light and dark, as a list, a board and a plan) and fails when the content is
   taller than the window or quick add (the plan has none) sits under the title bar and its window buttons.
+- **Task menu** (`TaskCommandTests`): each command's key, none used twice, which commands a done, trashed or missing
+  task offers, and each one ticking off, starting, moving and trashing the selected task.
 - **Sidebar and lists** (`SidebarTests`): the sidebar's counts against the database, a project's list in sections
   and search, quick add in a project, a task dropped on a place, a server without projects hiding them, project
   changes without a server saying "Requires a connection to the server." with nothing queued, the panel's height
@@ -401,7 +408,7 @@ at the end of the sync loop's wait, which unit tests and debug builds did not re
   column taking its status (not on its own column or for an unknown task), the Done column counting every done task
   while it shows the latest, no new tasks in an archived project's place, and the view switcher (Board, Plan, List)
   with its choice kept between launches.
-- **Plan** (`PlanTests`): the week from Monday and moving it, where times sit in the grid and the half hour a point
+- **Plan** (`PlanTests`): the seven days from today, a Sunday included, and moving them by sevens, where times sit in the grid and the half hour a point
   gives, tasks whose blocks overlap sharing the width, a short window keeping room for the hours, and a place's active
   tasks due in the week, narrowed by the search.
 - **History presentation and editor texts** (`DayhandUITests`): refresh-key equality and connection-recovery

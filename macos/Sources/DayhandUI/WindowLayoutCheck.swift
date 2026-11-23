@@ -67,7 +67,7 @@ enum WindowLayoutCheck {
             "\(check.name): the content is \(Int($0.frame.height)) pt tall in a window of \(Int(content.bounds.height)) pt"
         }
         guard quickAdd else { return problems }
-        let placeholder = tr("Add a task (try: Pay rent fri 9am)")
+        let placeholder = tr("Add a task")
         guard let field = textFields(in: content).first(where: { $0.placeholderString == placeholder }) else {
             return problems + ["\(check.name): quick add is missing"]
         }

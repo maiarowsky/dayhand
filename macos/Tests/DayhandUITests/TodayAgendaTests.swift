@@ -134,9 +134,9 @@ struct TodayAgendaTests {
         try await seed(model)
         let invoice = try #require(model.tasks.first { $0.title == "Invoice" })
         let ran = try #require(model.tasks.first { $0.title == "Ran" })
-        #expect(model.canReschedule(invoice.localId))
-        #expect(!model.canReschedule(ran.localId))
-        #expect(!model.canReschedule(nil))
+        #expect(TaskCommand.anotherDay.isEnabled(invoice))
+        #expect(!TaskCommand.anotherDay.isEnabled(ran))
+        #expect(!TaskCommand.anotherDay.isEnabled(nil))
 
         model.moveToDay(invoice.localId, day(model, 5))
         try await eventually { model.task(invoice.localId)?.dueDate == day(model, 5) }

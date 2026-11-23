@@ -48,8 +48,8 @@
 	<string>Dodaj zadanie</string>
 	<key>Add a project…</key>
 	<string>Dodaj projekt…</string>
-	<key>Add a task (try: Pay rent fri 9am)</key>
-	<string>Dodaj zadanie (np. Zapłać czynsz fri 9am)</string>
+	<key>Add a task</key>
+	<string>Dodaj zadanie</string>
 	<key>Add an item</key>
 	<string>Dodaj punkt</string>
 	<key>Add the words as part of the title instead of reading them as a date</key>
@@ -406,10 +406,10 @@
 	<string>Nowy punkt</string>
 	<key>New project (⌥⌘N)</key>
 	<string>Nowy projekt (⌥⌘N)</string>
+	<key>New task</key>
+	<string>Nowe zadanie</string>
 	<key>New task (⌘N, or the quick add shortcut from any app)</key>
 	<string>Nowe zadanie (⌘N albo skrót szybkiego dodawania z dowolnej aplikacji)</string>
-	<key>New task, e.g. Call the accountant fri 2pm</key>
-	<string>Nowe zadanie, np. Zadzwoń do księgowej fri 2pm</string>
 	<key>Next day</key>
 	<string>Następny dzień</string>
 	<key>Next week</key>
@@ -593,7 +593,7 @@
 	<key>Restored</key>
 	<string>Przywrócono</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day, +project the project.</key>
-	<string>Return dodaje na dziś; data na końcu (tomorrow 9am, fri, 23 oct) ustawia dzień, a +projekt projekt.</string>
+	<string>Return dodaje na dziś; data na końcu, po angielsku (tomorrow 9am, fri, 23 oct), ustawia dzień, a +projekt projekt.</string>
 	<key>Return adds it for today; a date at the end (tomorrow 9am, fri, 23 oct) sets the day.</key>
 	<string>Return dodaje na dziś; data na końcu, po angielsku (tomorrow 9am, fri, 23 oct), ustawia dzień.</string>
 	<key>Revert</key>
