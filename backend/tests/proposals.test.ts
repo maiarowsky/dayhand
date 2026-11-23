@@ -188,6 +188,10 @@ describe("the plan health report", () => {
     await callTool(cli, "complete_task", { taskId: proven.id, proof: { summary: "sent" } });
     const unproven = await callTool(cli, "add_task", { title: "Tidy the desk" });
     await callTool(cli, "complete_task", { taskId: unproven.id });
+    const byAgent = await callTool(cli, "add_task", { title: "Rotate the logs" });
+    await callTool(agent, "complete_task", { taskId: byAgent.id });
+    const withCriteria = await callTool(cli, "add_task", { title: "Check the backup", acceptance: [{ text: "restore works" }] });
+    await callTool(cli, "complete_task", { taskId: withCriteria.id });
     await importRows("tasks", [
       {
         userId,
@@ -213,12 +217,14 @@ describe("the plan health report", () => {
       blocked: { count: 1, tasks: [{ id: blocked.id, reasons: ["waiting for legal", `waiting for #${doing.ref} Write the report`] }] },
       awaitingApproval: { count: 1, pendingApprovals: 1, tasks: [{ id: waiting.id, approvals: 1 }] },
       proposals: { count: 1 },
-      completedToday: { count: 2, withProof: 1, withoutProof: 1 },
+      completedToday: { count: 4, withProof: 1, withoutProof: 2 },
       oldestOpen: { title: "Stale claim", ageDays: 10 },
     });
-    expect(health.completedToday.tasks.map((t: any) => [t.title, t.proof])).toEqual([
-      ["Tidy the desk", false],
-      ["Send the invoice", true],
+    expect(health.completedToday.tasks.map((t: any) => [t.title, t.proof, t.owesProof])).toEqual([
+      ["Check the backup", false, true],
+      ["Rotate the logs", false, true],
+      ["Tidy the desk", false, false],
+      ["Send the invoice", true, false],
     ]);
     expect(await app.query(api.app.planHealth, { at: health.at })).toEqual(health);
 

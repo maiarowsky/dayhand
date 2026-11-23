@@ -1,4 +1,4 @@
-// The week, Monday to Sunday, always as seven columns of bars, one per task,
+// The week, today and the six days after it, always as seven columns of bars, one per task,
 // in the status colours (red overdue, yellow doing, green done). Columns 10 or
 // more wide carry the time and title on the bar; narrower ones show bars only,
 // as the phone does, and the selected day's tasks are listed in full below.

@@ -352,7 +352,7 @@ export type Health = {
   blocked: Section<{ reasons: string[] }>;
   awaitingApproval: Section<{ approvals: number }> & { pendingApprovals: number };
   proposals: { count: number };
-  completedToday: Section<{ proof: boolean }> & { withProof: number; withoutProof: number };
+  completedToday: Section<{ proof: boolean; owesProof: boolean }> & { withProof: number; withoutProof: number };
   oldestOpen: (Brief & { ageDays: number }) | null;
 };
 
@@ -374,7 +374,9 @@ export function healthText(h: Health): string {
   section("Waiting for approval", h.awaitingApproval);
   lines.push(`Approval requests pending: ${h.awaitingApproval.pendingApprovals}`);
   lines.push(`Proposals in the inbox: ${h.proposals.count}`);
-  lines.push(`Done today: ${h.completedToday.count} (${h.completedToday.withProof} with proof, ${h.completedToday.withoutProof} without)`);
+  lines.push(
+    `Done today: ${h.completedToday.count} (with proof: ${h.completedToday.withProof}; agent work or criteria without proof: ${h.completedToday.withoutProof})`,
+  );
   lines.push(h.oldestOpen ? `Oldest open: ${name(h.oldestOpen)}, ${h.oldestOpen.ageDays} days` : "Oldest open: none");
   return lines.join("\n");
 }

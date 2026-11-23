@@ -284,8 +284,9 @@ it (`reject_proposal`: to the trash). A proposal cannot be claimed, made the now
 of `at`, in the user's time zone: `agentsPaused`; `overdue`, `dueToday`, `inProgress` (each with
 `workingBy`: `"agent: <name>"` while a claim lasts), `expiredClaims`, `blocked` (each with
 `reasons`: the blocked reason and every dependency not done yet), `awaitingApproval` (tasks with a
-pending request, and `pendingApprovals` in all), `completedToday` (each with `proof`, and
-`withProof`, `withoutProof`): each `{ count, tasks }` with the first 20 tasks; `proposals.count`;
+pending request, and `pendingApprovals` in all), `completedToday` (each with `proof` and
+`owesProof`, true when an agent completed it or it has acceptance criteria; and `withProof`,
+`withoutProof`; `withoutProof` counts only tasks with `owesProof`): each `{ count, tasks }` with the first 20 tasks; `proposals.count`;
 and `oldestOpen`, the open task created longest ago with `ageDays`
 ([schema](schemas/plan-health.schema.json)). Proposals and archived tasks are not counted as open.
 

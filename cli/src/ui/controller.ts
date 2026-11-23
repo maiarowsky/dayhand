@@ -6,14 +6,13 @@ import { CliError, toCliError } from "../core/exit.js";
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
 import { hasProjectTasks, withProjectNames } from "../projects.js";
-import { isoWeekday, localAt } from "../when/calendar.js";
+import { daysBetween, localAt } from "../when/calendar.js";
 import { Throttled, type Api } from "./api.js";
 import { agentId, type Health } from "./agents.js";
 import { ClipboardError, copyText, taskText, type ClipboardMethod } from "./clipboard.js";
 import { runChange, type EffectContext } from "./effects.js";
 import { frame, scrollLimits } from "./frame.js";
 import { handleKey, type Effect } from "./handle.js";
-import { weekStart } from "./lists.js";
 import { BESIDE_COLUMNS, derive, type Conn, type Data, type Flash, type Snapshot } from "./model.js";
 import type { Screen } from "./screens/screen.js";
 import { initialState, keepRow, reanchor, selectedAgent, selectedTask, VIEWS, type Lists, type UiState, type ViewName } from "./state.js";
@@ -62,6 +61,8 @@ export class Controller {
   private completingTaskId?: string;
   private timer?: ReturnType<typeof setTimeout>;
   private pollDue = 0;
+  /** The day the week last followed as today, to move it on past midnight. */
+  private weekToday?: string;
   private pollingEnabled = false;
   private polling = false;
   private pollInterval: number;
@@ -81,8 +82,8 @@ export class Controller {
     this.columns = options.columns ?? 80;
     this.rows = options.rows ?? 24;
     const today = localAt(this.now(), "UTC").date;
-    const ui = initialState(options.view, weekStart(today));
-    this.ui = { ...ui, mouse: options.mouse ?? ui.mouse, cursor: { ...ui.cursor, weekDay: isoWeekday(today) - 1 } };
+    const ui = initialState(options.view, today);
+    this.ui = { ...ui, mouse: options.mouse ?? ui.mouse };
   }
 
   // React's useSyncExternalStore reads these.
@@ -143,8 +144,9 @@ export class Controller {
     return this.cached.screen;
   }
 
+  /** Today in the user's zone by the clock; before the zone is known, the server's Today or UTC. */
   private today(): string {
-    return this.data.today?.date ?? localAt(this.now(), this.timezone ?? "UTC").date;
+    return this.timezone ? localAt(this.now(), this.timezone).date : (this.data.today?.date ?? localAt(this.now(), "UTC").date);
   }
 
   /** Loads the first view, then polls only what is on screen, less often when idle. */
@@ -224,6 +226,7 @@ export class Controller {
       await this.load("settings", () => this.options.api.settings(), (s) => this.setZone(s.timezone));
       if (!this.timezone) return;
     }
+    this.followToday();
     const jobs = [this.loadView(this.ui.view, fresh)];
     // Retry an initial load that failed offline; once cached, projects are read only for a task naming an unknown one.
     if (ancillary || !this.data.projects) jobs.push(this.loadProjects(fresh));
@@ -244,11 +247,23 @@ export class Controller {
   /** The user's zone; the week moves to its today unless keys moved it while the settings loaded. */
   private setZone(timezone: string) {
     const utc = localAt(this.now(), "UTC").date;
-    const untouched = !this.timezone && this.ui.weekStart === weekStart(utc) && this.ui.cursor.weekDay === isoWeekday(utc) - 1;
+    const untouched = !this.timezone && this.ui.weekStart === utc && this.ui.cursor.weekDay === 0;
     this.timezone = timezone;
+    const today = this.today();
+    this.weekToday = today;
     if (!untouched) return;
-    const today = localAt(this.now(), timezone).date;
-    this.ui = { ...this.ui, weekStart: weekStart(today), cursor: { ...this.ui.cursor, weekDay: isoWeekday(today) - 1 } };
+    this.ui = { ...this.ui, weekStart: today, cursor: { ...this.ui.cursor, weekDay: 0 } };
+  }
+
+  /** Past midnight a week that starts on the old today starts on the new one; the selected day stays selected while it is in the week. */
+  private followToday() {
+    const today = this.today();
+    const last = this.weekToday;
+    this.weekToday = today;
+    if (!last || last === today || this.ui.weekStart !== last) return;
+    const weekDay = this.ui.cursor.weekDay - daysBetween(last, today);
+    const cursor = weekDay >= 0 ? { ...this.ui.cursor, weekDay } : { ...this.ui.cursor, weekDay: 0, weekRow: 0 };
+    this.ui = { ...this.ui, weekStart: today, cursor };
   }
 
   private loadView(view: ViewName, fresh: boolean): Promise<void> {
@@ -325,9 +340,9 @@ export class Controller {
       return;
     }
     const failure = toCliError(error);
-    if (failure.code === "unauthenticated") this.conn = { state: "rejected", message: failure.message };
+    if (failure.code === "unauthenticated") this.conn = { state: "rejected", message: t("conn.keyRejected") };
     else if (failure.code === "rate_limited") this.conn = { state: "throttled", message: failure.message, at: this.lastAt() };
-    else this.conn = { state: "offline", message: failure.message, at: this.lastAt() };
+    else this.conn = { state: "offline", message: offlineText(failure), at: this.lastAt() };
   }
 
   private say(text: string, tone: Flash["tone"]) {
@@ -520,7 +535,17 @@ function withoutReadTime(health?: Health): Health | undefined {
   return rest;
 }
 
+/** A network failure carries its cause; an HTTP 5xx answer has none. */
+const serverAnswered = (error: CliError) => error.code === "unavailable" && error.cause === undefined;
+
+function offlineText(error: CliError): string {
+  if (error.code !== "unavailable") return error.message;
+  return t(serverAnswered(error) ? "conn.serverError" : "conn.unreachable");
+}
+
 function changeError(error: CliError): string {
-  if (error.code === "unavailable") return t("error.notSaved", { message: error.message });
+  if (error.code === "unauthenticated") return t("conn.keyRejected");
+  if (serverAnswered(error)) return t("error.maybeSaved");
+  if (error.code === "unavailable") return t("error.notSaved", { message: t("conn.unreachable") });
   return error.message;
 }

@@ -1804,12 +1804,17 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
                 {
                   "type": "object",
                   "required": [
-                    "proof"
+                    "proof",
+                    "owesProof"
                   ],
                   "properties": {
                     "proof": {
                       "type": "boolean",
                       "description": "Completed with proof (a summary, links or checks)"
+                    },
+                    "owesProof": {
+                      "type": "boolean",
+                      "description": "Owes proof: an agent completed it, or it has acceptance criteria; withoutProof counts these without proof"
                     }
                   }
                 }

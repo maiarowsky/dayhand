@@ -345,8 +345,11 @@ Decisions:
   decides what to do about it. The `plan_health` prompt asks the agent to go through it with the
   owner, most urgent first, and to ask before changing anything.
 - **Open means in the plan**: not done, not archived, not in the trash and not a proposal.
-- **"Done without proof"** counts tasks completed today with no summary, link or check. It is a
-  prompt to look, not an error: people complete tasks without proof all the time.
+- **"Done without proof"** counts tasks completed today with no summary, link or check, among
+  those that owe proof: a task an agent completed, or one with acceptance criteria. A task the
+  owner ticks off in the app or with `dayhand` (and that has no criteria) is not counted, so an
+  ordinary day stays quiet. Each task done today carries `owesProof`, so the list can be read the
+  same way. It is a prompt to look, not an error.
 
 ## The third problem: starting well, and plans kept elsewhere
 

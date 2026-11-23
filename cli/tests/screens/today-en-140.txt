@@ -21,4 +21,4 @@
                                                                                         │
                                                                                         │
 
- y copy  ? help  a add  x done  s start  n now  e edit  m move  d trash  / filter  Tab views  q quit
+ ? help  q quit  a add  x done  s start  n now  e edit  m move  d trash  / filter  Tab views  y copy

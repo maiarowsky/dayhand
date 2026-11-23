@@ -162,7 +162,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const screen = await s.waitFor("Task copied");
     expect(readFileSync(output, "utf8")).toBe(`ID: ${task.id}\nRef: #2\nTitle: Zażółć 日本語 🚀\nStatus: todo\nProject: Demo project\nDue: ${task.dueDate} 09:00\nNote:\nFirst line\nSecond line`);
     expect(screen).toMatch(selection);
-    expect(screen).toContain("y copy");
+    expect(screen).toMatch(/^ \? help {2}q quit/m);
     expect(await show(key, task.ref)).toEqual(before);
   });
 
@@ -221,7 +221,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     expect(s.raw()).toContain(off);
     const mark = s.raw().length;
     await s.press("M");
-    await s.waitFor(/^ y copy {2}\? help/m);
+    await s.waitFor(/^ \? help {2}q quit/m);
     expect(await s.screen()).not.toContain("Mouse off");
     expect(s.raw().slice(mark)).toContain(on);
     await s.click(second.x, second.y);
@@ -379,7 +379,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
     const screen = await s.waitFor("history (2, newest first)");
     expect(screen).toMatch(/changed +cli/);
     expect(screen).toMatch(/added by +agent: claude-code/);
-    expect(screen).toMatch(/cli +changed +title: "Draft the ACME invoice" → "Draft and send/);
+    expect(screen).toMatch(/cli +changed +Title: "Draft the ACME invoice" → "Draft and send/);
     expect(screen).toMatch(/agent: claude-code +added/);
     expect(screen).toContain("hours are in the timesheet");
     await s.shot("detail");
@@ -467,7 +467,7 @@ describe.skipIf(!pty)("dayhand ui", () => {
   test("without a server it says so, stays responsive, and q quits", async () => {
     const { key } = await newUser();
     const s = open(key, [], undefined, { DAYHAND_URL: "http://127.0.0.1:9" });
-    const screen = await s.waitFor("Cannot reach http://127.0.0.1:9");
+    const screen = await s.waitFor("The server is not answering");
     expect(screen).toContain("● offline");
     expect(screen).toContain("Retrying every 60 s; R retries now, q quits.");
     await s.shot("offline");

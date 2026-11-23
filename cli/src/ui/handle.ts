@@ -3,9 +3,8 @@
 // which the controller carries out. Keys follow keys.ts.
 import { t } from "../i18n/index.js";
 import type { Task } from "../render/model.js";
-import { addDays, isoWeekday } from "../when/calendar.js";
+import { addDays } from "../when/calendar.js";
 import { editLine, line } from "./line.js";
-import { weekStart } from "./lists.js";
 import { clamp, moveColumn, moveRow, moveSide, selectedAgent, selectedTask, VIEWS, type EditField, type EditKey, type Lists, type Mode, type UiState } from "./state.js";
 
 export type Effect =
@@ -172,7 +171,7 @@ function navigation(state: UiState, name: string, lists: Lists): Result | undefi
       return { state: { ...state, weekStart: addDays(state.weekStart, name === "[" ? -7 : 7), cursor: { ...state.cursor, weekRow: 0 } }, effect: { kind: "refresh" } };
     case "t":
       if (state.view !== "week" || state.detail) return undefined;
-      return { state: { ...state, weekStart: weekStart(lists.date), cursor: { ...state.cursor, weekDay: isoWeekday(lists.date) - 1, weekRow: 0 } }, effect: { kind: "refresh" } };
+      return { state: { ...state, weekStart: lists.date, cursor: { ...state.cursor, weekDay: 0, weekRow: 0 } }, effect: { kind: "refresh" } };
     default:
       return undefined;
   }

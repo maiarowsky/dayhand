@@ -26,7 +26,7 @@ export type Api = {
   health(): Promise<Health>;
   agents(): Promise<Agents>;
   board(): Promise<Board>;
-  /** Tasks due Monday `start` to Sunday, done ones included. */
+  /** Tasks due in the seven days from `start` (today by default), done ones included. */
   week(start: string): Promise<Task[]>;
   /** Open tasks due in the `PLAN_DAYS` days from `today`, and open tasks without a day. */
   plan(today: string): Promise<Plan>;

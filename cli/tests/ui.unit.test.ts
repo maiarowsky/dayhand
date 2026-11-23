@@ -4,7 +4,7 @@
 import { describe, expect, test } from "vitest";
 import { CliError } from "../src/core/exit.js";
 import { LANGUAGES, setLanguage, tIn } from "../src/i18n/index.js";
-import type { Board, Detail, Task, TodayView } from "../src/render/model.js";
+import type { Board, Detail, HistoryEntry, Task, TodayView } from "../src/render/model.js";
 import { makeApi, retryAfterMs, Throttled, type Api } from "../src/ui/api.js";
 import { Budget } from "../src/ui/budget.js";
 import type { Agents, Approval, Health, WorkTask } from "../src/ui/agents.js";
@@ -13,7 +13,7 @@ import { ClipboardError, taskText } from "../src/ui/clipboard.js";
 import { handleKey } from "../src/ui/handle.js";
 import { chunkKeys, KEY_GROUPS, keyName, keysText } from "../src/ui/keys.js";
 import { editLine, insert, line } from "../src/ui/line.js";
-import { todayLayout, weekDays, weekStart } from "../src/ui/lists.js";
+import { todayLayout, weekDays } from "../src/ui/lists.js";
 import { derive } from "../src/ui/model.js";
 import { parseMove, parseQuickAdd } from "../src/ui/quickadd.js";
 import { detailRows } from "../src/ui/screens/detail.js";
@@ -207,14 +207,12 @@ describe("lists", () => {
     expect(layout("zzz").agenda.map((s) => [s.key, s.tasks.length, s.empty])).toEqual([["today", 0, "no match"]]);
   });
 
-  test("the week starts on Monday; open before done, untimed before timed", () => {
-    expect(weekStart(TODAY)).toBe("2026-10-19");
-    expect(weekStart("2026-10-25")).toBe("2026-10-19");
+  test("the week runs from the day it starts on; open before done, untimed before timed", () => {
     const tasks = [task("late", { dueDate: TODAY, dueTime: "18:00" }), task("done", { dueDate: TODAY, status: "done" }), task("any time", { dueDate: TODAY }), task("early", { dueDate: TODAY, dueTime: "08:00" })];
-    const days = weekDays("2026-10-19", tasks, TODAY);
-    expect(days).toHaveLength(7);
-    expect(days[4]!.isToday).toBe(true);
-    expect(days[4]!.tasks.map((t) => t.title)).toEqual(["any time", "early", "late", "done"]);
+    const days = weekDays(TODAY, tasks, TODAY);
+    expect(days.map((d) => d.date)).toEqual(["2026-10-23", "2026-10-24", "2026-10-25", "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29"]);
+    expect(days[0]!.isToday).toBe(true);
+    expect(days[0]!.tasks.map((t) => t.title)).toEqual(["any time", "early", "late", "done"]);
   });
 });
 
@@ -265,7 +263,7 @@ describe("keys → state and effects", () => {
     expect(press(week, ["j", "j", "j"], l).state.cursor).toMatchObject({ weekDay: 2, weekRow: 1 });
     expect(handleKey(week, "L", lists({ week: [[{ ...a, dueDate: "2026-10-19" }], [], [], [], [], [], []] })).effect).toMatchObject({ kind: "shift", days: 1 });
     expect(handleKey(week, "[", l).state.weekStart).toBe("2026-10-12");
-    expect(press(week, ["]", "]", "t"], l).state).toMatchObject({ weekStart: "2026-10-19", cursor: { weekDay: 4 } });
+    expect(press(week, ["]", "]", "t"], l).state).toMatchObject({ weekStart: TODAY, cursor: { weekDay: 0 } });
   });
 
   test("board: h/l columns, L moves to the next column (done completes)", () => {
@@ -448,6 +446,59 @@ describe("agent screens and decisions", () => {
     ui.stop();
   });
 
+  test("details line up their values, leave out empty agent fields, show the day as the heading does and name history fields", () => {
+    setLanguage("pl");
+    try {
+      const history: HistoryEntry[] = [
+        { at: NOW - 60_000, actor: "cli", actorName: null, by: "cli", action: "create", before: null, after: { title: "Plan" } },
+        { at: NOW, actor: "agent", actorName: "claude", by: "agent: claude", action: "update", before: { dueTime: "11:00", isNow: false }, after: { dueTime: "14:00", isNow: true } },
+      ];
+      const text = rowsText(detailRows({ task: task("Plan", { dueDate: TODAY, dueTime: "14:00" }), history }, TODAY, ZONE.timezone, 120, NOW));
+      const values = text.split("\n").filter((line) => /^(status|termin|zmienione|dodał\(a\)) /.test(line)).map((line) => line.search(/ \S/) + 1);
+      expect(values).toHaveLength(4);
+      expect(new Set(values).size).toBe(1);
+      expect(text).toContain("termin     pt., 23 paź 2026 14:00 (dziś)");
+      expect(text).not.toMatch(/przejęte przez|kryteria|plan pracy|dowód|czeka na|zablokowane|brak/);
+      expect(text).toContain("Godzina: 11:00 → 14:00; Teraz: nie → tak");
+    } finally {
+      setLanguage("en");
+    }
+  });
+
+  test("history leaves out timestamps and fields without a name, and names a known project", () => {
+    const projects = [{ id: "p-home", name: "Home", position: 0, archived: false, createdAt: 1, updatedAt: 1 }];
+    const history: HistoryEntry[] = [
+      { at: NOW - 3_000, actor: "app", actorName: null, by: "app", action: "complete", before: { status: "todo", completedAt: null }, after: { status: "done", completedAt: NOW - 3_000 } },
+      { at: NOW - 2_000, actor: "app", actorName: null, by: "app", action: "delete", before: { deletedAt: null }, after: { deletedAt: NOW - 2_000 } },
+      { at: NOW - 1_000, actor: "app", actorName: null, by: "app", action: "restore", before: { deletedAt: NOW - 2_000 }, after: { deletedAt: null } },
+      { at: NOW, actor: "cli", actorName: null, by: "cli", action: "update", before: { projectId: null, position: 1 }, after: { projectId: "p-home", position: 2 } },
+      { at: NOW, actor: "cli", actorName: null, by: "cli", action: "update", before: { projectId: "p-home" }, after: { projectId: "p-gone" } },
+    ];
+    const lines = rowsText(detailRows({ task: task("Plan"), history }, TODAY, ZONE.timezone, 120, NOW, projects)).split("\n");
+    const entry = (action: string) => lines.filter((line) => new RegExp(` ${action}( |$)`).test(line)).map((line) => line.replace(/^.*? (app|cli) +/, "").trimEnd());
+    expect(entry("done")).toEqual(["done  Status: todo → done"]);
+    expect(entry("to the trash")).toEqual(["to the trash"]);
+    expect(entry("restored")).toEqual(["restored"]);
+    expect(entry("changed")).toEqual(["changed", "changed  Project: none → Home"]);
+    expect(lines.join("\n")).not.toMatch(/completedAt|deletedAt|position|projectId|p-gone/);
+  });
+
+  test("history shows a claim by its holder's name and proof, criteria and a checklist as their items, never JSON or key ids", () => {
+    const history: HistoryEntry[] = [
+      { at: NOW - 1_000, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "update", before: { claimedBy: null, claimExpiresAt: null }, after: { claimedBy: { keyId: "key-secret-1", name: "claude-code" }, claimExpiresAt: NOW + 60_000 } },
+      { at: NOW, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "complete",
+        before: { status: "doing", claimedBy: { keyId: "key-secret-1", name: "claude-code" }, proof: null, acceptance: [{ id: "a", text: "Tests pass", met: false }], checklist: [{ id: "c", title: "Draft", done: false }] },
+        after: { status: "done", claimedBy: null, proof: { summary: "Shipped the fix" }, acceptance: [{ id: "a", text: "Tests pass", met: true }], checklist: [{ id: "c", title: "Draft", done: true }] } },
+    ];
+    const text = rowsText(detailRows({ task: task("Plan"), history }, TODAY, ZONE.timezone, 400, NOW));
+    expect(text).toContain("Claimed by: claude-code");
+    expect(text).toContain("Claimed by: claude-code → none");
+    expect(text).toContain("Proof: none → Shipped the fix");
+    expect(text).toContain("Criteria: [ ] Tests pass → [x] Tests pass");
+    expect(text).toContain("Checklist: [ ] Draft → [x] Draft");
+    expect(text).not.toMatch(/key-secret|[{}]/);
+  });
+
   test("details include claims, met and unmet criteria, a wrapped plan, proof, dependencies and blocking", () => {
     const work = task("Work item", {
       claimedBy: { name: "demo-agent" }, claimExpiresAt: NOW - 1,
@@ -464,9 +515,10 @@ describe("agent screens and decisions", () => {
 
 /** A fake server: a Today view, a board and a week; changes recorded; `down` makes every call fail. */
 function fakeApi(today: TodayView, extra: Partial<Api> = {}) {
-  const state = { down: false, changes: [] as { tool: string; args: Record<string, unknown> }[], view: today, health: health(), agents: emptyAgents() };
+  const state = { down: false, serverError: false, changes: [] as { tool: string; args: Record<string, unknown> }[], view: today, health: health(), agents: emptyAgents() };
   const check = () => {
-    if (state.down) throw new CliError("unavailable", "Cannot reach http://127.0.0.1:9 (ECONNREFUSED)", { retryable: true });
+    if (state.down) throw new CliError("unavailable", "Cannot reach http://127.0.0.1:9 (ECONNREFUSED)", { retryable: true }, { cause: new TypeError("fetch failed") });
+    if (state.serverError) throw new CliError("unavailable", "http://127.0.0.1:9 answered HTTP 500; the change may or may not have been applied", { retryable: true });
   };
   const board: Board = { todo: today.today, doing: today.now ? [today.now] : [], done: today.doneToday };
   const api: Api = {
@@ -652,12 +704,94 @@ describe("controller", () => {
     state.down = true;
     await ui.refresh();
     expect(text()).toContain("● offline");
-    expect(text()).toContain("Cannot reach http://127.0.0.1:9 (ECONNREFUSED) · showing data from 11:00");
+    expect(text()).toContain("The server is not answering · showing data from 11:00");
     expect(text()).toContain("Pay rent");
     state.down = false;
     await ui.refresh();
     expect(text()).toContain("● 11:00");
     ui.stop();
+  });
+
+  test("offline from the start, the reason is in the UI's language and on screen once", async () => {
+    const { api, state } = fakeApi(view);
+    state.down = true;
+    setLanguage("pl");
+    try {
+      const ui = new Controller({ api, view: "today", now: () => NOW, columns: 80, rows: 16 });
+      await ui.refresh();
+      const text = rowsText(ui.frame().rows);
+      expect(text.split("Serwer nie odpowiada").length - 1).toBe(1);
+      expect(text).not.toContain("Cannot reach");
+      ui.stop();
+    } finally {
+      setLanguage("en");
+    }
+  });
+
+  test("an HTTP 500 says the server answered with an error, and a change may or may not have been saved", async () => {
+    const { api, state } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    await ui.refresh();
+    state.serverError = true;
+    await ui.refresh();
+    expect(rowsText(ui.frame().rows)).toContain("The server answered with an error · showing data from 11:00");
+    for (const key of ["a", ..."Call mum"].map((k) => (k === " " ? "space" : k))) ui.key(key);
+    ui.key("enter");
+    await ui.idle();
+    expect(ui.snapshot().flash?.text).toBe("The server answered with an error; the change may or may not have been saved");
+    ui.stop();
+  });
+
+  test("past midnight a week left on today starts on the new today; one paged away stays", async () => {
+    let at = NOW;
+    const { api } = fakeApi(view);
+    const ui = new Controller({ api, view: "week", now: () => at, columns: 100, rows: 24 });
+    await ui.refresh();
+    expect(ui.snapshot().ui.weekStart).toBe(TODAY);
+    ui.key("l");
+    ui.key("l");
+    at += 86_400_000;
+    await ui.refresh();
+    expect(ui.snapshot().ui).toMatchObject({ weekStart: "2026-10-24", cursor: { weekDay: 1 } });
+    ui.key("]");
+    await ui.idle();
+    at += 86_400_000;
+    await ui.refresh();
+    expect(ui.snapshot().ui.weekStart).toBe("2026-10-31");
+    ui.stop();
+  });
+
+  test("opened on Today, a Week left open past midnight marks the new today and t keeps it", async () => {
+    let at = NOW;
+    const { api } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => at, columns: 100, rows: 24 });
+    await ui.refresh();
+    ui.key("3");
+    await ui.idle();
+    expect(ui.snapshot().ui).toMatchObject({ view: "week", weekStart: TODAY });
+    at += 86_400_000;
+    await ui.refresh(false, false);
+    expect(ui.snapshot()).toMatchObject({ today: "2026-10-24", ui: { weekStart: "2026-10-24" } });
+    ui.key("t");
+    await ui.idle();
+    expect(ui.snapshot().ui).toMatchObject({ weekStart: "2026-10-24", cursor: { weekDay: 0 } });
+    ui.stop();
+  });
+
+  test("a change refused for a rejected key says so in the UI's language", async () => {
+    const { api } = fakeApi(view, { change: async () => { throw new CliError("unauthenticated", "The API key was rejected (wrong or revoked)"); } });
+    setLanguage("pl");
+    const ui = new Controller({ api, view: "today", now: () => NOW, columns: 100, rows: 24 });
+    try {
+      await ui.refresh();
+      for (const key of ["a", ..."Zadzwo"]) ui.key(key);
+      ui.key("enter");
+      await ui.idle();
+      expect(ui.snapshot().flash?.text).toBe("Serwer odrzucił klucz API (błędny albo unieważniony)");
+    } finally {
+      setLanguage("en");
+      ui.stop();
+    }
   });
 
   test("a quick add sends add_task with the phrase resolved and a #word kept in the title; the details name the agent", async () => {
@@ -674,7 +808,7 @@ describe("controller", () => {
     await ui.idle();
     const detail = rowsText(ui.frame().rows);
     expect(detail).toContain("changed   agent: claude-code");
-    expect(detail).toMatch(/agent: claude-code +changed +title: "Old" → "New"/);
+    expect(detail).toMatch(/agent: claude-code +changed +Title: "Old" → "New"/);
     ui.stop();
   });
 
@@ -784,7 +918,7 @@ describe("controller", () => {
     const narrow = rowsText(ui.frame().rows);
     expect(narrow).toContain("█");
     expect(narrow).toContain("Fri 23 Oct 2026 · today · 1 task");
-    expect(derive(ui.snapshot()).lists.week[4]).toHaveLength(1);
+    expect(derive(ui.snapshot()).lists.week[0]).toHaveLength(1);
     ui.stop();
   });
 

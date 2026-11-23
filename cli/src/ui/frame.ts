@@ -71,18 +71,21 @@ function heading(s: Snapshot): Row {
     }
   })();
   const row: Row = [seg(` ${text}`, { bold: true }), ...filter];
-  const side = s.ui.view === "today" && !s.ui.detail && s.ui.mode.kind === "normal" ? planSwitch(s) : [];
-  const room = s.columns - rowWidth(row) - rowWidth(side) - 1;
-  return room > 0 && side.length ? [...row, seg(" ".repeat(room)), ...side] : row;
+  const switches = s.ui.view === "today" && !s.ui.detail && s.ui.mode.kind === "normal" ? planSwitch(s) : [];
+  if (switches.length === 0) return row;
+  const side = switches.find((option) => s.columns - rowWidth(row) - rowWidth(option) - 1 > 0) ?? switches.at(-1)!;
+  const room = s.columns - rowWidth(side) - 2;
+  const left = rowWidth(row) <= room ? row : [seg(cut(` ${text}`, room), { bold: true })];
+  return [...left, seg(" ".repeat(room + 1 - rowWidth(left))), ...side];
 }
 
-/** In a narrow terminal To plan is behind l: the way there with its count, or back with h. */
-function planSwitch(s: Snapshot): Row {
+/** In a narrow terminal To plan is behind l: the way there with its count, or back with h; the long form first, then the short one that always fits. */
+function planSwitch(s: Snapshot): Row[] {
   const { today } = derive(s);
   if (today.beside || !s.data.today) return [];
-  if (today.showsPlan) return [seg("← h ", { bold: true }), seg(viewLabel("today"), { dim: true })];
+  if (today.showsPlan) return [[seg("← h ", { bold: true }), seg(viewLabel("today"), { dim: true })], [seg("← h", { bold: true })]];
   const count = today.toPlan.reduce((n, section) => n + section.tasks.length, 0);
-  return [seg(`${t("section.toPlan")} (${count}) `, { dim: true }), seg("l →", { bold: true })];
+  return [[seg(`${t("section.toPlan")} (${count}) `, { dim: true }), seg("l →", { bold: true })], [seg("l →", { bold: true }), seg(`(${count})`, { dim: true })]];
 }
 
 function content(s: Snapshot, height: number): Screen {
@@ -97,9 +100,8 @@ function content(s: Snapshot, height: number): Screen {
     const title = task ? `${task.ref === undefined ? "" : `#${task.ref} `}${task.title}` : "task";
     return editScreen(title, mode.fields, mode.focus, (f) => fieldPreview(f, s), width, height);
   }
-  if (ui.detail) return detailScreen(data.detail?.task.id === ui.detail.taskId ? data.detail : undefined, ui.detail.scroll, s.today, s.timezone, width, height, s.now);
-  const loaded = { today: data.today, board: data.board, week: data.week?.start === ui.weekStart ? data.week : undefined, trash: data.trash, agents: data.agents }[ui.view];
-  if (!loaded) return messageScreen(waiting(s), height);
+  if (ui.detail) return detailScreen(data.detail?.task.id === ui.detail.taskId ? data.detail : undefined, ui.detail.scroll, s.today, s.timezone, width, height, s.now, data.projects);
+  if (!loaded(s)) return messageScreen(waiting(s), height);
   const c = ui.cursor;
   switch (ui.view) {
     case "today":
@@ -117,6 +119,12 @@ function content(s: Snapshot, height: number): Screen {
     case "trash":
       return trashScreen(lists.trash, c.trash, s.today, s.timezone, width, height);
   }
+}
+
+/** Whether the view has data to show; until it has, the content says why it waits. */
+function loaded(s: Snapshot): boolean {
+  const { ui, data } = s;
+  return Boolean({ today: data.today, board: data.board, week: data.week?.start === ui.weekStart ? data.week : undefined, trash: data.trash, agents: data.agents }[ui.view]);
 }
 
 function waiting(s: Snapshot): Row[] {
@@ -166,7 +174,8 @@ function statusRow(s: Snapshot): Row {
   if (mode.kind === "confirm") return [seg(t("confirm.trash", { ref: mode.ref, title: mode.title }), { bold: true, color: "yellow" }), seg("y/N", { bold: true })];
   if (mode.kind === "approval") return [seg(` ${t(mode.optionId ? "confirm.approval" : "hints.approval")}`, { bold: true, color: "yellow" })];
   if (s.flash) return [seg(` ${s.flash.text}`, { color: s.flash.tone === "error" ? "red" : s.flash.tone === "ok" ? "green" : undefined, bold: s.flash.tone === "error" })];
-  if (s.conn.state === "offline" || s.conn.state === "throttled" || s.conn.state === "rejected") {
+  const waitingShowsIt = mode.kind === "normal" && !s.ui.detail && !loaded(s) && (s.conn.state === "offline" || s.conn.state === "rejected");
+  if (!waitingShowsIt && (s.conn.state === "offline" || s.conn.state === "throttled" || s.conn.state === "rejected")) {
     const since = "at" in s.conn && s.conn.at ? t("conn.since", { time: clock(s.conn.at, s.timezone) }) : "";
     return [seg(` ${s.conn.message}${since}`, { color: s.conn.state === "throttled" ? "yellow" : "red" })];
   }
@@ -188,13 +197,23 @@ function keysRow(s: Snapshot): Row {
     return t("hints.today");
   })();
   const mouseOff: Row = !s.ui.mouse && mode === "normal" ? [seg(` ${t("hints.mouseOff")} `, { color: "yellow", bold: true })] : [];
-  return [...mouseOff, seg(` ${cut(hints, s.columns - 2)}`, { dim: true })];
+  return [...mouseOff, seg(` ${wholeHints(hints, s.columns - 2 - rowWidth(mouseOff))}`, { dim: true })];
+}
+
+/** The keys that fit whole, most important first (the catalogue lists them so); the rest are in the help. */
+function wholeHints(hints: string, width: number): string {
+  const shown: string[] = [];
+  for (const hint of hints.split("  ")) {
+    if (widthOf([...shown, hint].join("  ")) > width) break;
+    shown.push(hint);
+  }
+  return shown.length ? shown.join("  ") : cut(hints, width);
 }
 
 /** How far details and help can scroll before their last row leaves the bottom. */
 export function scrollLimits(s: Snapshot): { detail: number; help: number; approval: number } {
   const height = contentHeight(s.rows);
-  const detail = s.ui.detail && s.data.detail ? detailRows(s.data.detail, s.today, s.timezone, s.columns, s.now).length : 0;
+  const detail = s.ui.detail && s.data.detail ? detailRows(s.data.detail, s.today, s.timezone, s.columns, s.now, s.data.projects).length : 0;
   const approval = s.ui.mode.kind === "approval" ? approvalRows(s.ui.mode, s.timezone, s.columns).length : 0;
   return { detail: Math.max(0, detail - height), help: Math.max(0, helpRows(s.columns).length - height), approval: Math.max(0, approval - height) };
 }
