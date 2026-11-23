@@ -164,6 +164,18 @@ class LargeTextTest {
         compose.onNodeWithTag(SearchTags.SHEET).assertExists()
     }
 
+    /** Monday 30 November, eight days on, below large text: the magnifier and Settings still buttons of their own. */
+    private fun longestWeekdayBesideTheMagnifier(scale: Float) {
+        todayScreen(scale, offset = 8)
+        compose.onNodeWithTag(TodayTags.MENU).assertDoesNotExist()
+        compose.onNodeWithTag(SearchTags.OPEN).assertExists()
+        assertWholeOnOneLine("Poniedziałek")
+    }
+
+    @Test fun atALittleLargerTextTheLongestWeekdayStaysWhole() = longestWeekdayBesideTheMagnifier(1.15f)
+
+    @Test fun atLargerTextTheLongestWeekdayStaysWhole() = longestWeekdayBesideTheMagnifier(1.3f)
+
     @Test fun atTwiceTheSizeTheLongestWeekdayStaysOnOneLine() {
         // Monday 30 November, eight days on.
         todayScreen(2f, offset = 8)

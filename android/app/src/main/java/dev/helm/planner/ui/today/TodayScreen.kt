@@ -182,7 +182,7 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
         subtitle = shown.format(dateFormat(if (shown.year == today.year) "EEEEdMMMM" else "yEEEEdMMMM", locale)),
         onTitleClick = if (offset != 0) ({ actions.showDay(0) }) else null,
         titleClickLabel = stringResource(R.string.day_back_to_today),
-        singleLineTitle = large,
+        singleLineTitle = true,
     ) {
         HelmButton(
             null,
