@@ -1814,7 +1814,7 @@ export const SCHEMA_DEFS: Record<string, Record<string, unknown>> = {
                     },
                     "owesProof": {
                       "type": "boolean",
-                      "description": "Owes proof: an agent completed it, or it has acceptance criteria; withoutProof counts these without proof (since 0.17.0)"
+                      "description": "Owes proof: an agent completed it, or it has acceptance criteria; withoutProof counts these without proof"
                     }
                   }
                 }
