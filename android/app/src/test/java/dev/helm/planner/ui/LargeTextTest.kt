@@ -3,7 +3,9 @@ package dev.helm.planner.ui
 import android.app.Application
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -27,6 +29,8 @@ import dev.helm.planner.ui.calendar.CalendarTags
 import dev.helm.planner.ui.calendar.CalendarUiState
 import dev.helm.planner.ui.components.HelmTabBar
 import dev.helm.planner.ui.components.HelmTabItem
+import dev.helm.planner.ui.components.HeaderIconButton
+import dev.helm.planner.ui.components.LargeHeader
 import dev.helm.planner.domain.daySections
 import dev.helm.planner.ui.today.ConnectionStatus
 import dev.helm.planner.ui.today.SearchTags
@@ -36,6 +40,7 @@ import dev.helm.planner.ui.today.TodayTags
 import dev.helm.planner.ui.today.TodayUiState
 import dev.helm.planner.ui.theme.HelmTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -67,12 +72,23 @@ class LargeTextTest {
         tabs.mapIndexed { i, label -> HelmTabItem(label, if (i == 1) Icons.Filled.DateRange else Icons.Filled.Home, i == 1, "tab-$i") {} },
     )
 
-    /** The lines a text node was laid out in. */
-    private fun lines(text: String): Int {
+    /** How a text node was laid out. */
+    private fun layout(text: String): androidx.compose.ui.text.TextLayoutResult {
         val node = compose.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode()
         val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
         node.config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action?.invoke(results)
-        return results.single().lineCount
+        return results.single()
+    }
+
+    /** The lines a text node was laid out in. */
+    private fun lines(text: String): Int = layout(text).lineCount
+
+    /** [text] on one line and whole: not cut short, not running past its box. */
+    private fun assertWholeOnOneLine(text: String) {
+        val result = layout(text)
+        assertEquals(text, 1, result.lineCount)
+        assertFalse("$text ellipsized", result.isLineEllipsized(0))
+        assertFalse("$text overflows", result.hasVisualOverflow)
     }
 
     @Test fun atTheUsualSizeEveryTabHasItsLabelOnOneLine() {
@@ -140,7 +156,7 @@ class LargeTextTest {
 
     @Test fun atTwiceTheSizeTodayKeepsItsTitleOnOneLineAndSearchesFromTheMenu() {
         todayScreen(2f)
-        assertEquals(1, lines("Dzisiaj"))
+        assertWholeOnOneLine("Dzisiaj")
         compose.onNodeWithContentDescription(context.getString(R.string.search_tasks)).assertDoesNotExist()
         compose.onNodeWithTag(TodayTags.MENU).performClick()
         compose.onNodeWithText(context.getString(R.string.open_settings)).assertExists()
@@ -151,7 +167,7 @@ class LargeTextTest {
     @Test fun atTwiceTheSizeTheLongestWeekdayStaysOnOneLine() {
         // Monday 30 November, eight days on.
         todayScreen(2f, offset = 8)
-        assertEquals(1, lines("Poniedziałek"))
+        assertWholeOnOneLine("Poniedziałek")
     }
 
     @Test fun atTheUsualSizeSearchAndSettingsAreButtonsOfTheirOwn() {
@@ -159,6 +175,21 @@ class LargeTextTest {
         compose.onNodeWithTag(TodayTags.MENU).assertDoesNotExist()
         compose.onNodeWithContentDescription(context.getString(R.string.search_tasks)).assertExists()
         compose.onNodeWithContentDescription(context.getString(R.string.open_settings)).assertExists()
+    }
+
+    @Test fun atTheUsualSizeALongHeaderTitleWrapsWhole() {
+        val name = "Remont mieszkania na Mokotowie przed zimą 2027"
+        // A project's header: back, edit and more beside its name.
+        show(1f) {
+            LargeHeader(name, onBack = {}) {
+                HeaderIconButton(Icons.Filled.Edit, "edit", {})
+                HeaderIconButton(Icons.Filled.MoreVert, "more", {})
+            }
+        }
+        val result = layout(name)
+        assertTrue("lines ${result.lineCount}", result.lineCount > 1)
+        assertFalse(result.isLineEllipsized(result.lineCount - 1))
+        assertFalse(result.hasVisualOverflow)
     }
 
     @Test fun onASundayTheWeekStartsThatSundayNotTheMondayBefore() {

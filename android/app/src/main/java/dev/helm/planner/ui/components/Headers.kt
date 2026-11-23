@@ -48,7 +48,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = pal
 
 /**
  * Header of a top-level screen: a large title with an optional line under it and actions on the right. It keeps clear
- * of the status bar by itself. The title stays on one line, smaller when large text would not fit.
+ * of the status bar by itself. With [singleLineTitle] the title stays on one line, smaller when it would not fit.
  */
 @Composable
 fun LargeHeader(
@@ -59,6 +59,7 @@ fun LargeHeader(
     /** A tap on the title, with what it does for a screen reader ([titleClickLabel]); none when null. */
     onTitleClick: (() -> Unit)? = null,
     titleClickLabel: String? = null,
+    singleLineTitle: Boolean = false,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val p = palette
@@ -84,14 +85,18 @@ fun LargeHeader(
                 )
                 .semantics(mergeDescendants = true) { heading() },
         ) {
-            Text(
-                title,
-                style = helmType.headline,
-                color = p.text,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                autoSize = TextAutoSize.StepBased(minFontSize = helmType.body.fontSize, maxFontSize = helmType.headline.fontSize),
-            )
+            if (singleLineTitle) {
+                Text(
+                    title,
+                    style = helmType.headline,
+                    color = p.text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = TextAutoSize.StepBased(minFontSize = helmType.body.fontSize, maxFontSize = helmType.headline.fontSize),
+                )
+            } else {
+                Text(title, style = helmType.headline, color = p.text)
+            }
             subtitle?.let { Text(it, style = helmType.body, color = p.textMuted) }
         }
         actions()

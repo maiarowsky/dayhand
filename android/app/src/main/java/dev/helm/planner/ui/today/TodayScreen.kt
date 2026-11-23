@@ -176,11 +176,13 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
         -1 -> stringResource(R.string.day_title_yesterday)
         else -> shown.format(DateTimeFormatter.ofPattern("EEEE", locale)).replaceFirstChar { it.titlecase(locale) }
     }
+    val large = LocalDensity.current.fontScale >= LARGE_TEXT_SCALE
     LargeHeader(
         title = title,
         subtitle = shown.format(dateFormat(if (shown.year == today.year) "EEEEdMMMM" else "yEEEEdMMMM", locale)),
         onTitleClick = if (offset != 0) ({ actions.showDay(0) }) else null,
         titleClickLabel = stringResource(R.string.day_back_to_today),
+        singleLineTitle = large,
     ) {
         HelmButton(
             null,
@@ -198,7 +200,7 @@ private fun DayHeader(offset: Int, shown: LocalDate, today: LocalDate, actions: 
             icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             description = stringResource(R.string.day_next),
         )
-        if (LocalDensity.current.fontScale >= LARGE_TEXT_SCALE) {
+        if (large) {
             HeaderMenu(title, onSearch, actions::openSettings)
         } else {
             HeaderIconButton(Icons.Filled.Search, stringResource(R.string.search_tasks), onSearch, Modifier.testTag(SearchTags.OPEN), tint = p.textMuted)
