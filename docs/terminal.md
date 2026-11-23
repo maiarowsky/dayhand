@@ -35,7 +35,7 @@ dayhand ui
 
 It opens full screen with five views: **Today**, the **Board** (to do, in progress, done), the **Week** (today and the next six days as bars, the selected day
 in full below) the **Trash** and **Agents**. `Enter` opens a task with its history, which names who made each change:
-`app`, `cli` or `agent: <name>`, so an agent's edits stand out; details also show who claimed the work, the acceptance criteria, plan, proof and what it waits on or is blocked by.
+`app`, `cli` or `agent: <name>`, so an agent's edits stand out; details also show, when set, who claimed the work, the acceptance criteria, plan, proof and what it waits on or is blocked by.
 
 **Today** is an agenda, like Today in the Mac app:
 
