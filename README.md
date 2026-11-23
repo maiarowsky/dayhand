@@ -91,7 +91,7 @@ Dayhand for macOS, Today as an agenda with To plan beside it, then the same day 
 
 <p align="center">
   <img src="docs/assets/macos-today.webp" width="700" alt="Dayhand for macOS, Today as an agenda: projects in the sidebar, the Search, or add a task field, a strip of the next days, one sentence about the day with counts and the plan health, quick add, the task you are working on now and today's tasks by time, and To plan beside it with the overdue task, tasks without a day and the next days">
-  <img src="docs/assets/macos-week-plan.webp" width="700" alt="Dayhand for macOS, week plan: tasks placed on a calendar from Monday to Sunday, and below it the tasks to drag onto it in to do, in progress and done columns">
+  <img src="docs/assets/macos-week-plan.webp" width="700" alt="Dayhand for macOS, week plan: tasks placed on a calendar of seven days starting today, today in the first column, and below it the folded Tasks drawer to drag tasks onto it">
 </p>
 
 ## On the phone
