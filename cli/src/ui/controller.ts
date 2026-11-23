@@ -144,8 +144,9 @@ export class Controller {
     return this.cached.screen;
   }
 
+  /** Today in the user's zone by the clock; before the zone is known, the server's Today or UTC. */
   private today(): string {
-    return this.data.today?.date ?? localAt(this.now(), this.timezone ?? "UTC").date;
+    return this.timezone ? localAt(this.now(), this.timezone).date : (this.data.today?.date ?? localAt(this.now(), "UTC").date);
   }
 
   /** Loads the first view, then polls only what is on screen, less often when idle. */
@@ -248,7 +249,7 @@ export class Controller {
     const utc = localAt(this.now(), "UTC").date;
     const untouched = !this.timezone && this.ui.weekStart === utc && this.ui.cursor.weekDay === 0;
     this.timezone = timezone;
-    const today = localAt(this.now(), timezone).date;
+    const today = this.today();
     this.weekToday = today;
     if (!untouched) return;
     this.ui = { ...this.ui, weekStart: today, cursor: { ...this.ui.cursor, weekDay: 0 } };
@@ -256,7 +257,7 @@ export class Controller {
 
   /** Past midnight a week that starts on the old today starts on the new one; the selected day stays selected while it is in the week. */
   private followToday() {
-    const today = localAt(this.now(), this.timezone ?? "UTC").date;
+    const today = this.today();
     const last = this.weekToday;
     this.weekToday = today;
     if (!last || last === today || this.ui.weekStart !== last) return;

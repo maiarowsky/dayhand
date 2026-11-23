@@ -4,7 +4,7 @@
 import { dayText, relativeDay, reminderText, repeatText } from "../../i18n/dates.js";
 import { getLanguage, t, type Key } from "../../i18n/index.js";
 import { formatTimestamp } from "../../render/format.js";
-import type { Detail, HistoryEntry } from "../../render/model.js";
+import type { Detail, HistoryEntry, Reminder, Repeat } from "../../render/model.js";
 import type { Project } from "../../projects.js";
 import { ICONS, refText } from "../rows.js";
 import type { WorkTask } from "../agents.js";
@@ -49,15 +49,49 @@ function fieldName(key: string): string {
   return text.charAt(0).toLocaleUpperCase(getLanguage()) + text.slice(1);
 }
 
-/** A changed value as text: days as in the heading, a project by its name. */
+type LinkValue = { url: string; title?: string };
+const linkText = (link: LinkValue) => link.title || link.url;
+const mark = (done: boolean | undefined, text: string) => `${done ? "[x]" : "[ ]"} ${text}`;
+
+/** A changed value as text: days as in the heading, a project or claim by its name, lists as their items; text fields quoted. */
 function value(key: string, v: unknown, projects: Project[]): string {
   if (v === undefined || v === null) return t("detail.none");
-  if (key === "projectId") return projects.find((p) => p.id === v)!.name;
-  if (key === "isNow" && typeof v === "boolean") return t(v ? "change.yes" : "change.no");
-  if (key === "status" && (v === "todo" || v === "doing" || v === "done")) return t(`status.${v}`);
-  if (key === "dueDate" && typeof v === "string") return dayText(v);
-  if (key === "dueTime" && typeof v === "string") return v;
-  return JSON.stringify(v);
+  return valueText(key, v, projects) || t("detail.none");
+}
+
+function valueText(key: string, v: unknown, projects: Project[]): string {
+  switch (key) {
+    case "projectId":
+      return projects.find((p) => p.id === v)!.name;
+    case "isNow":
+      return t(v ? "change.yes" : "change.no");
+    case "status":
+      return v === "todo" || v === "doing" || v === "done" ? t(`status.${v}`) : String(v);
+    case "dueDate":
+      return dayText(String(v));
+    case "dueTime":
+      return String(v);
+    case "repeat":
+      return repeatText(v as Repeat);
+    case "claimedBy":
+      return (v as { name: string }).name;
+    case "proof": {
+      const proof = v as { summary?: string; links?: LinkValue[]; checks?: { name: string }[] };
+      return proof.summary || [...(proof.links ?? []).map(linkText), ...(proof.checks ?? []).map((check) => check.name)].join(", ");
+    }
+    case "links":
+      return (v as LinkValue[]).map(linkText).join(", ");
+    case "checklist":
+      return (v as { title: string; done?: boolean }[]).map((item) => mark(item.done, item.title)).join(", ");
+    case "acceptance":
+      return (v as { text: string; met?: boolean }[]).map((item) => mark(item.met, item.text)).join(", ");
+    case "reminders":
+      return (v as Reminder[]).map(reminderText).join(", ");
+    case "dependsOn":
+      return String((v as unknown[]).length);
+    default:
+      return JSON.stringify(v);
+  }
 }
 
 /** "Title: "a" → "b"; Day: none → Fri 30 Oct 2026" (only the changed fields the catalog names; a project only when it is known). */

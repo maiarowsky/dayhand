@@ -483,6 +483,22 @@ describe("agent screens and decisions", () => {
     expect(lines.join("\n")).not.toMatch(/completedAt|deletedAt|position|projectId|p-gone/);
   });
 
+  test("history shows a claim by its holder's name and proof, criteria and a checklist as their items, never JSON or key ids", () => {
+    const history: HistoryEntry[] = [
+      { at: NOW - 1_000, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "update", before: { claimedBy: null, claimExpiresAt: null }, after: { claimedBy: { keyId: "key-secret-1", name: "claude-code" }, claimExpiresAt: NOW + 60_000 } },
+      { at: NOW, actor: "agent", actorName: "claude-code", by: "agent: claude-code", action: "complete",
+        before: { status: "doing", claimedBy: { keyId: "key-secret-1", name: "claude-code" }, proof: null, acceptance: [{ id: "a", text: "Tests pass", met: false }], checklist: [{ id: "c", title: "Draft", done: false }] },
+        after: { status: "done", claimedBy: null, proof: { summary: "Shipped the fix" }, acceptance: [{ id: "a", text: "Tests pass", met: true }], checklist: [{ id: "c", title: "Draft", done: true }] } },
+    ];
+    const text = rowsText(detailRows({ task: task("Plan"), history }, TODAY, ZONE.timezone, 400, NOW));
+    expect(text).toContain("Claimed by: claude-code");
+    expect(text).toContain("Claimed by: claude-code → none");
+    expect(text).toContain("Proof: none → Shipped the fix");
+    expect(text).toContain("Criteria: [ ] Tests pass → [x] Tests pass");
+    expect(text).toContain("Checklist: [ ] Draft → [x] Draft");
+    expect(text).not.toMatch(/key-secret|[{}]/);
+  });
+
   test("details include claims, met and unmet criteria, a wrapped plan, proof, dependencies and blocking", () => {
     const work = task("Work item", {
       claimedBy: { name: "demo-agent" }, claimExpiresAt: NOW - 1,
@@ -742,6 +758,23 @@ describe("controller", () => {
     at += 86_400_000;
     await ui.refresh();
     expect(ui.snapshot().ui.weekStart).toBe("2026-10-31");
+    ui.stop();
+  });
+
+  test("opened on Today, a Week left open past midnight marks the new today and t keeps it", async () => {
+    let at = NOW;
+    const { api } = fakeApi(view);
+    const ui = new Controller({ api, view: "today", now: () => at, columns: 100, rows: 24 });
+    await ui.refresh();
+    ui.key("3");
+    await ui.idle();
+    expect(ui.snapshot().ui).toMatchObject({ view: "week", weekStart: TODAY });
+    at += 86_400_000;
+    await ui.refresh(false, false);
+    expect(ui.snapshot()).toMatchObject({ today: "2026-10-24", ui: { weekStart: "2026-10-24" } });
+    ui.key("t");
+    await ui.idle();
+    expect(ui.snapshot().ui).toMatchObject({ weekStart: "2026-10-24", cursor: { weekDay: 0 } });
     ui.stop();
   });
 
